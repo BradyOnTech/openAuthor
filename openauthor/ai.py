@@ -695,6 +695,20 @@ def _write_generation_failure_log(
   return run_id, str(log_file.relative_to(paths.root))
 
 
+def _attach_proposal_to_generation_log(
+  paths: ProjectPaths,
+  *,
+  run_id: str,
+  proposal_id: str,
+) -> None:
+  log_file = paths.generations_dir / f"{run_id}.json"
+  if not log_file.exists():
+    raise OpenAuthorError(f"Missing generation log for run '{run_id}'.")
+  payload = json.loads(log_file.read_text(encoding="utf-8"))
+  payload["proposal_id"] = proposal_id
+  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def _default_title(scene_title: str, instruction: str) -> str:
   short_instruction = _truncate(instruction, 48)
   return _truncate(f"{scene_title}: {short_instruction}", 72)
@@ -805,5 +819,10 @@ def generate_proposal(
       "estimated_cost_usd": estimated_cost_usd,
       "log_path": log_path,
     },
+  )
+  _attach_proposal_to_generation_log(
+    paths,
+    run_id=generation_id,
+    proposal_id=proposal_id,
   )
   return get_proposal(paths, proposal_id)

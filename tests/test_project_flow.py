@@ -181,6 +181,19 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(generated_proposal["source"], "ai_generate")
       self.assertEqual(generated_proposal["generation"]["provider"], "local")
       self.assertTrue((root / generated_proposal["generation"]["log_path"]).exists())
+      run_id = generated_proposal["generation"]["id"]
+
+      code, out, err = self.run_cli(["generation", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      generation_rows = json.loads(out)
+      self.assertTrue(any(row["run_id"] == run_id for row in generation_rows))
+
+      code, out, err = self.run_cli(["generation", "get", "--id", run_id, "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      generation_run = json.loads(out)
+      self.assertEqual(generation_run["run_id"], run_id)
+      self.assertEqual(generation_run["status"], "succeeded")
+      self.assertEqual(generation_run["proposal_id"], generated_proposal["id"])
 
       code, out, err = self.run_cli(["proposal", "apply", "--id", proposal_id], root)
       self.assertEqual(code, 0, msg=err)

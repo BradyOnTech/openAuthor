@@ -61,6 +61,57 @@ export type ProposalRecord = {
   };
 };
 
+export type GenerationRunSummary = {
+  run_id: string;
+  status: "succeeded" | "failed" | string;
+  created_at: string;
+  scene_id: string;
+  provider: ProposalProvider | string;
+  model: string;
+  proposal_id: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  latency_ms: number | null;
+  provider_attempts: number | null;
+  estimated_cost_usd: number | null;
+  error_category: string;
+  error_retriable: boolean | null;
+  log_path: string;
+};
+
+export type GenerationRunDetail = {
+  run_id: string;
+  status: "succeeded" | "failed" | string;
+  created_at: string;
+  scene_id: string;
+  provider: ProposalProvider | string;
+  model: string;
+  instruction: string;
+  prompt_sha256: string;
+  system_prompt: string;
+  user_prompt: string;
+  context: Record<string, unknown>;
+  proposal_id?: string;
+  raw_response_text?: string;
+  normalized_instruction?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    latency_ms?: number;
+    provider_attempts?: number;
+    estimated_cost_usd?: number | null;
+  };
+  error?: {
+    message?: string;
+    category?: string;
+    retriable?: boolean;
+    http_status?: number | null;
+    attempts?: number;
+    provider?: string;
+  };
+  log_path: string;
+};
+
 export type CodexEntity = {
   id: string;
   type: "character" | "location" | "lore" | "item" | "faction" | "event";

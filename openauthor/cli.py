@@ -8,6 +8,7 @@ from pathlib import Path
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
+from .generations import get_generation_run, list_generation_runs
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
 from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
@@ -142,6 +143,28 @@ def build_parser() -> argparse.ArgumentParser:
   check_sub = check_parser.add_subparsers(dest="check_command", required=True)
   check_continuity = check_sub.add_parser("continuity", help="Run continuity checks.")
   check_continuity.add_argument("--json", action="store_true", help="Output JSON.")
+
+  generation_parser = subparsers.add_parser("generation", help="Inspect generation runs.")
+  generation_sub = generation_parser.add_subparsers(dest="generation_command", required=True)
+  generation_list = generation_sub.add_parser("list", help="List generation runs.")
+  generation_list.add_argument(
+    "--status",
+    choices=["succeeded", "failed"],
+    default=None,
+    help="Filter by generation status.",
+  )
+  generation_list.add_argument("--scene", default=None, help="Filter by scene id.")
+  generation_list.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default=None,
+    help="Filter by provider.",
+  )
+  generation_list.add_argument("--limit", type=int, default=None, help="Max rows.")
+  generation_list.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_get = generation_sub.add_parser("get", help="Get generation run by id.")
+  generation_get.add_argument("--id", required=True, help="Generation run id.")
+  generation_get.add_argument("--json", action="store_true", help="Output JSON.")
 
   return parser
 
@@ -358,6 +381,38 @@ def _run(args: argparse.Namespace) -> int:
     for row in rows:
       print(
         f"{row['severity']}\t{row['code']}\t{row['scene_id']}\t{row['title']}\t{row['path']}"
+      )
+    return 0
+
+  if args.command == "generation":
+    if args.generation_command == "get":
+      row = get_generation_run(paths, args.id)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(
+        f"{row.get('run_id','')}\t{row.get('status','')}\t{row.get('provider','')}\t"
+        f"{row.get('scene_id','')}\t{row.get('log_path','')}"
+      )
+      return 0
+
+    rows = list_generation_runs(
+      paths,
+      status=args.status,
+      scene_id=args.scene,
+      provider=args.provider,
+      limit=args.limit,
+    )
+    if args.json:
+      print(json.dumps(rows))
+      return 0
+    if not rows:
+      print("No generation runs found.")
+      return 0
+    for row in rows:
+      print(
+        f"{row.get('run_id','')}\t{row.get('status','')}\t{row.get('provider','')}\t"
+        f"{row.get('scene_id','')}\t{row.get('proposal_id','')}\t{row.get('log_path','')}"
       )
     return 0
 

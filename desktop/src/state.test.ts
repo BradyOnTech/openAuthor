@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   continuityIssuesForScene,
+  countGenerationRuns,
   countSceneStatuses,
   countContinuityIssues,
   countProposals,
+  orderGenerationRuns,
   orderScenesForOutline,
   orderCodexEntities,
   orderContinuityIssues,
@@ -13,6 +15,7 @@ import {
 import type {
   CodexEntity,
   ContinuityIssue,
+  GenerationRunSummary,
   ProposalRecord,
   SceneSummary
 } from "./types";
@@ -338,5 +341,111 @@ describe("continuityIssuesForScene", () => {
       }
     ];
     expect(continuityIssuesForScene(rows, "scene-0001").map((item) => item.id)).toEqual(["a"]);
+  });
+});
+
+describe("orderGenerationRuns", () => {
+  it("sorts generation runs by created_at desc", () => {
+    const rows: GenerationRunSummary[] = [
+      {
+        run_id: "gen-a",
+        status: "succeeded",
+        created_at: "2026-02-11T10:00:00Z",
+        scene_id: "scene-0001",
+        provider: "openai",
+        model: "gpt-4.1-mini",
+        proposal_id: "proposal-a",
+        input_tokens: 100,
+        output_tokens: 80,
+        latency_ms: 1200,
+        provider_attempts: 1,
+        estimated_cost_usd: 0.001,
+        error_category: "",
+        error_retriable: null,
+        log_path: ".openauthor/generations/gen-a.json"
+      },
+      {
+        run_id: "gen-b",
+        status: "failed",
+        created_at: "2026-02-11T12:00:00Z",
+        scene_id: "scene-0002",
+        provider: "anthropic",
+        model: "claude-3-5-haiku-latest",
+        proposal_id: "",
+        input_tokens: null,
+        output_tokens: null,
+        latency_ms: null,
+        provider_attempts: 3,
+        estimated_cost_usd: null,
+        error_category: "rate_limited",
+        error_retriable: true,
+        log_path: ".openauthor/generations/gen-b.json"
+      }
+    ];
+    const ordered = orderGenerationRuns(rows);
+    expect(ordered.map((item) => item.run_id)).toEqual(["gen-b", "gen-a"]);
+  });
+});
+
+describe("countGenerationRuns", () => {
+  it("counts succeeded and failed run statuses", () => {
+    const counts = countGenerationRuns([
+      {
+        run_id: "gen-a",
+        status: "succeeded",
+        created_at: "",
+        scene_id: "",
+        provider: "local",
+        model: "heuristic-v1",
+        proposal_id: "",
+        input_tokens: null,
+        output_tokens: null,
+        latency_ms: null,
+        provider_attempts: 1,
+        estimated_cost_usd: null,
+        error_category: "",
+        error_retriable: null,
+        log_path: ""
+      },
+      {
+        run_id: "gen-b",
+        status: "failed",
+        created_at: "",
+        scene_id: "",
+        provider: "openai",
+        model: "gpt-4.1-mini",
+        proposal_id: "",
+        input_tokens: null,
+        output_tokens: null,
+        latency_ms: null,
+        provider_attempts: 2,
+        estimated_cost_usd: null,
+        error_category: "network_error",
+        error_retriable: true,
+        log_path: ""
+      },
+      {
+        run_id: "gen-c",
+        status: "other",
+        created_at: "",
+        scene_id: "",
+        provider: "openai",
+        model: "gpt-4.1-mini",
+        proposal_id: "",
+        input_tokens: null,
+        output_tokens: null,
+        latency_ms: null,
+        provider_attempts: 1,
+        estimated_cost_usd: null,
+        error_category: "",
+        error_retriable: null,
+        log_path: ""
+      }
+    ]);
+    expect(counts).toEqual({
+      succeeded: 1,
+      failed: 1,
+      other: 1
+    });
   });
 });

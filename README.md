@@ -23,7 +23,7 @@ make test-all
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks.
+Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Context Lens + Codex Panel + Continuity Checks.
 
 ```bash
 cd desktop
@@ -66,6 +66,11 @@ python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighte
 # generate proposal using OpenAI or Anthropic (requires API keys)
 OPENAI_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Improve dialogue clarity" --provider openai --model gpt-4.1-mini --json
 ANTHROPIC_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Increase tension" --provider anthropic --json
+
+# inspect generation runs and failures
+python3 -m openauthor generation list --json
+python3 -m openauthor generation list --status failed --json
+python3 -m openauthor generation get --id gen-xxxxxxxxxxxx --json
 
 # create git snapshot
 python3 -m openauthor snapshot create -m "Draft scene and codex seed"

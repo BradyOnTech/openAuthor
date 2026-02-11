@@ -1,6 +1,7 @@
 import type {
   CodexEntity,
   ContinuityIssue,
+  GenerationRunSummary,
   ProposalRecord,
   SceneSummary
 } from "./types";
@@ -21,6 +22,12 @@ export type SceneStatusCounts = {
   draft: number;
   revised: number;
   final: number;
+  other: number;
+};
+
+export type GenerationRunCounts = {
+  succeeded: number;
+  failed: number;
   other: number;
 };
 
@@ -130,4 +137,26 @@ export function continuityIssuesForScene(
 ): ContinuityIssue[] {
   if (!sceneId) return [];
   return rows.filter((row) => row.scene_id === sceneId);
+}
+
+export function orderGenerationRuns(rows: GenerationRunSummary[]): GenerationRunSummary[] {
+  return [...rows].sort((a, b) => {
+    return timestamp(b.created_at) - timestamp(a.created_at);
+  });
+}
+
+export function countGenerationRuns(rows: GenerationRunSummary[]): GenerationRunCounts {
+  return rows.reduce(
+    (acc, row) => {
+      if (row.status === "succeeded") {
+        acc.succeeded += 1;
+      } else if (row.status === "failed") {
+        acc.failed += 1;
+      } else {
+        acc.other += 1;
+      }
+      return acc;
+    },
+    { succeeded: 0, failed: 0, other: 0 } satisfies GenerationRunCounts
+  );
 }

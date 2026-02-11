@@ -5,10 +5,12 @@ import {
   applyProposal,
   createProposal,
   generateProposal,
+  getGenerationRun,
   getCodexEntity,
   getProjectStatus,
   getScene,
   listCodexEntities,
+  listGenerationRuns,
   listProposals,
   listScenes,
   rejectProposal,
@@ -18,9 +20,11 @@ import {
 } from "./api";
 import {
   continuityIssuesForScene,
+  countGenerationRuns,
   countContinuityIssues,
   countProposals,
   countSceneStatuses,
+  orderGenerationRuns,
   orderScenesForOutline,
   orderCodexEntities,
   orderContinuityIssues,
@@ -30,6 +34,8 @@ import {
 import type {
   CodexEntity,
   ContinuityIssue,
+  GenerationRunDetail,
+  GenerationRunSummary,
   ProposalProvider,
   ProposalRecord,
   SceneDetail,
@@ -47,9 +53,10 @@ function loadDefaultRoot(): string {
   }
 }
 
-type RightTab = "proposals" | "codex" | "checks" | "context";
+type RightTab = "proposals" | "codex" | "checks" | "context" | "runs";
 type CenterView = "editor" | "outliner";
 type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
+type GenerationStatusFilter = "all" | "succeeded" | "failed";
 
 type DraftScene = {
   title: string;
@@ -130,6 +137,8 @@ export function App() {
   const [outlinerQuery, setOutlinerQuery] = useState("");
   const [outlinerStatusFilter, setOutlinerStatusFilter] =
     useState<OutlinerStatusFilter>("all");
+  const [generationStatusFilter, setGenerationStatusFilter] =
+    useState<GenerationStatusFilter>("all");
 
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
@@ -151,6 +160,10 @@ export function App() {
 
   const [continuityIssues, setContinuityIssues] = useState<ContinuityIssue[]>([]);
   const [selectedContinuityIssueId, setSelectedContinuityIssueId] = useState<string>("");
+  const [generationRuns, setGenerationRuns] = useState<GenerationRunSummary[]>([]);
+  const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
+  const [selectedGenerationRun, setSelectedGenerationRun] =
+    useState<GenerationRunDetail | null>(null);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -165,6 +178,10 @@ export function App() {
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
   const sceneStatusCounts = useMemo(() => countSceneStatuses(scenes), [scenes]);
+  const generationRunCounts = useMemo(
+    () => countGenerationRuns(generationRuns),
+    [generationRuns]
+  );
   const continuityCounts = useMemo(
     () => countContinuityIssues(continuityIssues),
     [continuityIssues]
@@ -287,6 +304,30 @@ export function App() {
     setSelectedCodexEntityId(target);
   }
 
+  async function refreshGenerationRuns(nextSelectedRunId?: string) {
+    const status =
+      generationStatusFilter === "all" ? undefined : generationStatusFilter;
+    const rows = await listGenerationRuns(projectRoot, {
+      status,
+      limit: 50
+    });
+    const ordered = orderGenerationRuns(rows);
+    setGenerationRuns(ordered);
+    if (ordered.length === 0) {
+      setSelectedGenerationRunId("");
+      setSelectedGenerationRun(null);
+      return;
+    }
+    const target =
+      nextSelectedRunId && ordered.some((item) => item.run_id === nextSelectedRunId)
+        ? nextSelectedRunId
+        : selectedGenerationRunId &&
+            ordered.some((item) => item.run_id === selectedGenerationRunId)
+          ? selectedGenerationRunId
+          : ordered[0].run_id;
+    setSelectedGenerationRunId(target);
+  }
+
   async function loadSelectedScene(sceneId: string) {
     const row = await getScene(projectRoot, sceneId);
     setScene(row);
@@ -306,6 +347,11 @@ export function App() {
       name: row.name,
       description: row.description
     });
+  }
+
+  async function loadSelectedGenerationRun(runId: string) {
+    const row = await getGenerationRun(projectRoot, runId);
+    setSelectedGenerationRun(row);
   }
 
   async function checkProjectAndLoad() {
@@ -328,9 +374,17 @@ export function App() {
         setCodexDraft(EMPTY_DRAFT_CODEX);
         setContinuityIssues([]);
         setSelectedContinuityIssueId("");
+        setGenerationRuns([]);
+        setSelectedGenerationRunId("");
+        setSelectedGenerationRun(null);
         return;
       }
-      await Promise.all([refreshSceneList(), refreshProposalList(), refreshCodexList()]);
+      await Promise.all([
+        refreshSceneList(),
+        refreshProposalList(),
+        refreshCodexList(),
+        refreshGenerationRuns()
+      ]);
       setContinuityIssues([]);
       setSelectedContinuityIssueId("");
       setMessage("Project loaded.");
@@ -385,6 +439,28 @@ export function App() {
       .finally(() => setBusy(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCodexEntityId]);
+
+  useEffect(() => {
+    if (projectFound !== true) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    void refreshGenerationRuns()
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setBusy(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationStatusFilter]);
+
+  useEffect(() => {
+    if (!selectedGenerationRunId) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    void loadSelectedGenerationRun(selectedGenerationRunId)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setBusy(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGenerationRunId]);
 
   async function handleCreateScene() {
     if (addForm.title.trim() === "") return;
@@ -474,6 +550,10 @@ export function App() {
         codexLimit: proposalGenerateForm.codexLimit
       });
       await refreshProposalList(generated.id);
+      const generatedRunId = generated.generation?.id;
+      if (generatedRunId) {
+        await refreshGenerationRuns(generatedRunId);
+      }
       setProposalGenerateForm((prev) => ({
         ...prev,
         title: "",
@@ -599,12 +679,41 @@ export function App() {
     setMessage(`Loaded ${selectedContinuityIssue.scene_id} in editor.`);
   }
 
+  function handleOpenGenerationScene(sceneId: string) {
+    if (!sceneId) return;
+    if (!scenes.some((item) => item.id === sceneId)) {
+      setError(`Scene '${sceneId}' no longer exists in this project.`);
+      return;
+    }
+    setCenterView("editor");
+    setSelectedSceneId(sceneId);
+    setMessage(`Loaded ${sceneId} in editor.`);
+    setError("");
+  }
+
+  async function handleOpenGenerationProposal(proposalId: string) {
+    if (!proposalId) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await refreshProposalList(proposalId);
+      setRightTab("proposals");
+      setSelectedProposalId(proposalId);
+      setMessage(`Loaded ${proposalId} in proposals.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
         <div>
           <h1>openAuthor</h1>
-          <p>Binder + Editor/Outliner + Proposal/Context/Codex/Checks desktop shell</p>
+          <p>Binder + Editor/Outliner + Proposal/Runs/Context/Codex/Checks desktop shell</p>
         </div>
         <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
           {projectFound ? "Project Ready" : "No Project"}
@@ -877,6 +986,12 @@ export function App() {
               onClick={() => setRightTab("context")}
             >
               Context
+            </button>
+            <button
+              className={rightTab === "runs" ? "active" : ""}
+              onClick={() => setRightTab("runs")}
+            >
+              Runs
             </button>
           </div>
 
@@ -1284,6 +1399,110 @@ export function App() {
               ) : (
                 <div className="check-detail empty-review">
                   <p>Select a check issue to inspect.</p>
+                </div>
+              )}
+            </div>
+          ) : rightTab === "runs" ? (
+            <div className="side-content">
+              <div className="runs-header">
+                <h2>Runs</h2>
+                <span>
+                  {generationRunCounts.succeeded} succeeded / {generationRunCounts.failed} failed /{" "}
+                  {generationRunCounts.other} other
+                </span>
+              </div>
+
+              <div className="runs-controls">
+                <select
+                  value={generationStatusFilter}
+                  onChange={(event) =>
+                    setGenerationStatusFilter(event.target.value as GenerationStatusFilter)
+                  }
+                >
+                  <option value="all">all statuses</option>
+                  <option value="succeeded">succeeded</option>
+                  <option value="failed">failed</option>
+                </select>
+                <button disabled={busy || !projectFound} onClick={() => void refreshGenerationRuns()}>
+                  Refresh Runs
+                </button>
+              </div>
+
+              <div className="runs-list">
+                {generationRuns.length === 0 ? (
+                  <div className="run-detail empty-review">
+                    <p>No generation runs found for this filter.</p>
+                  </div>
+                ) : (
+                  generationRuns.map((run) => (
+                    <button
+                      key={run.run_id}
+                      className={`run-item ${run.run_id === selectedGenerationRunId ? "selected" : ""} status-${run.status}`}
+                      onClick={() => setSelectedGenerationRunId(run.run_id)}
+                    >
+                      <strong>{run.run_id}</strong>
+                      <span>{run.provider || "unknown provider"}</span>
+                      <em>{run.status}</em>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {selectedGenerationRun ? (
+                <div className="run-detail">
+                  <h3>{selectedGenerationRun.run_id}</h3>
+                  <p className="run-meta">
+                    {selectedGenerationRun.provider}/{selectedGenerationRun.model}
+                  </p>
+                  <p className="run-meta">Scene: {selectedGenerationRun.scene_id || "n/a"}</p>
+                  <p className="run-meta">Status: {selectedGenerationRun.status}</p>
+                  {selectedGenerationRun.status === "succeeded" ? (
+                    <>
+                      <p className="run-meta">
+                        Usage: in {selectedGenerationRun.usage?.input_tokens ?? "n/a"} / out{" "}
+                        {selectedGenerationRun.usage?.output_tokens ?? "n/a"} tokens,{" "}
+                        {selectedGenerationRun.usage?.latency_ms ?? "n/a"} ms,{" "}
+                        {selectedGenerationRun.usage?.provider_attempts ?? "n/a"} attempt(s)
+                        {typeof selectedGenerationRun.usage?.estimated_cost_usd === "number"
+                          ? `, est $${selectedGenerationRun.usage.estimated_cost_usd.toFixed(6)}`
+                          : ""}
+                      </p>
+                      <p className="run-meta">Proposal: {selectedGenerationRun.proposal_id || "n/a"}</p>
+                      {selectedGenerationRun.normalized_instruction ? (
+                        <p className="run-text">{selectedGenerationRun.normalized_instruction}</p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <p className="run-meta">
+                        Error: {selectedGenerationRun.error?.category || "unknown_error"}
+                      </p>
+                      <p className="run-text">
+                        {selectedGenerationRun.error?.message || "No error message."}
+                      </p>
+                    </>
+                  )}
+                  <p className="run-meta">Log: {selectedGenerationRun.log_path}</p>
+                  <div className="proposal-actions">
+                    <button
+                      disabled={busy || !selectedGenerationRun.scene_id}
+                      onClick={() => handleOpenGenerationScene(selectedGenerationRun.scene_id)}
+                    >
+                      Open Scene
+                    </button>
+                    <button
+                      disabled={busy || !selectedGenerationRun.proposal_id}
+                      onClick={() =>
+                        void handleOpenGenerationProposal(selectedGenerationRun.proposal_id || "")
+                      }
+                    >
+                      Open Proposal
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="run-detail empty-review">
+                  <p>Select a run to inspect details.</p>
                 </div>
               )}
             </div>

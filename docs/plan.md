@@ -37,6 +37,7 @@
   - Token usage + latency metadata are persisted per generation run. ✅
   - Cost estimation is configurable via `.openauthor/provider_pricing.json`. ✅
   - Budget policy enforcement (hard spend/token caps) is deferred to future TODO. 📝
+  - Generation run history/failure inspection is available via CLI and desktop runs panel. ✅
 
 ## No-Mock Guardrails (active)
 

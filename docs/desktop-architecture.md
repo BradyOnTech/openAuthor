@@ -49,6 +49,11 @@
 - Codex context: derived from `codex list --json`
 - Continuity context: derived from `check continuity --json`
 
+## Implemented command usage (Generation Runs)
+
+- Run list: `generation list --json`
+- Run detail: `generation get --id <run-id> --json`
+
 ## Why sidecar-first
 
 - Reuses the already-tested Python core immediately.

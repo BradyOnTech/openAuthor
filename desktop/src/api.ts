@@ -2,6 +2,8 @@ import type {
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
+  GenerationRunDetail,
+  GenerationRunSummary,
   ProposalProvider,
   ProposalRecord,
   ProjectStatus,
@@ -9,7 +11,15 @@ import type {
   SceneSummary
 } from "./types";
 
-const ALLOWED = new Set(["init", "scene", "codex", "proposal", "snapshot", "check"]);
+const ALLOWED = new Set([
+  "init",
+  "scene",
+  "codex",
+  "proposal",
+  "snapshot",
+  "check",
+  "generation"
+]);
 
 function ensureAllowed(args: string[]): void {
   if (args.length === 0) {
@@ -314,4 +324,45 @@ export async function updateCodexEntity(
 export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
   const result = await runCoreCommand(projectRoot, ["check", "continuity", "--json"]);
   return decodeJson<ContinuityIssue[]>(result);
+}
+
+export async function listGenerationRuns(
+  projectRoot: string,
+  filters?: {
+    status?: "succeeded" | "failed";
+    sceneId?: string;
+    provider?: ProposalProvider;
+    limit?: number;
+  }
+): Promise<GenerationRunSummary[]> {
+  const args = ["generation", "list"];
+  if (filters?.status) {
+    args.push("--status", filters.status);
+  }
+  if (filters?.sceneId) {
+    args.push("--scene", filters.sceneId);
+  }
+  if (filters?.provider) {
+    args.push("--provider", filters.provider);
+  }
+  if (typeof filters?.limit === "number") {
+    args.push("--limit", String(filters.limit));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<GenerationRunSummary[]>(result);
+}
+
+export async function getGenerationRun(
+  projectRoot: string,
+  runId: string
+): Promise<GenerationRunDetail> {
+  const result = await runCoreCommand(projectRoot, [
+    "generation",
+    "get",
+    "--id",
+    runId,
+    "--json"
+  ]);
+  return decodeJson<GenerationRunDetail>(result);
 }
