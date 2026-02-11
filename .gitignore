@@ -1,0 +1,43 @@
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# dependencies
+node_modules/
+
+# build / cache
+dist/
+build/
+.next/
+.turbo/
+.cache/
+coverage/
+tmp/
+temp/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# openauthor runtime data
+codex/codex.sqlite3
+.openauthor/proposals/*.json
+manuscript/scenes/*.md
+!manuscript/scenes/.gitkeep
+!.openauthor/proposals/.gitkeep
