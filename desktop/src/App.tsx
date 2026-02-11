@@ -11,16 +11,20 @@ import {
   listProposals,
   listScenes,
   rejectProposal,
+  runContinuityChecks,
   updateCodexEntity,
   updateScene
 } from "./api";
 import {
+  countContinuityIssues,
   countProposals,
   orderCodexEntities,
+  orderContinuityIssues,
   orderProposalsForReview
 } from "./state";
 import type {
   CodexEntity,
+  ContinuityIssue,
   ProposalRecord,
   SceneDetail,
   SceneSummary
@@ -28,7 +32,7 @@ import type {
 
 const DEFAULT_ROOT = ".";
 
-type RightTab = "proposals" | "codex";
+type RightTab = "proposals" | "codex" | "checks";
 
 type DraftScene = {
   title: string;
@@ -91,6 +95,9 @@ export function App() {
   const [selectedCodexEntityId, setSelectedCodexEntityId] = useState<string>("");
   const [codexDraft, setCodexDraft] = useState<DraftCodex>(EMPTY_DRAFT_CODEX);
 
+  const [continuityIssues, setContinuityIssues] = useState<ContinuityIssue[]>([]);
+  const [selectedContinuityIssueId, setSelectedContinuityIssueId] = useState<string>("");
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -103,11 +110,25 @@ export function App() {
   }, [selectedCodexEntityId, codexDraft.name]);
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
+  const continuityCounts = useMemo(
+    () => countContinuityIssues(continuityIssues),
+    [continuityIssues]
+  );
 
   const selectedProposal = useMemo(
     () => proposals.find((item) => item.id === selectedProposalId) ?? null,
     [proposals, selectedProposalId]
   );
+
+  const selectedContinuityIssue = useMemo(
+    () => continuityIssues.find((item) => item.id === selectedContinuityIssueId) ?? null,
+    [continuityIssues, selectedContinuityIssueId]
+  );
+
+  const canOpenSelectedIssueScene = useMemo(() => {
+    if (!selectedContinuityIssue) return false;
+    return scenes.some((item) => item.id === selectedContinuityIssue.scene_id);
+  }, [selectedContinuityIssue, scenes]);
 
   async function refreshSceneList(nextSelectedSceneId?: string) {
     const rows = await listScenes(projectRoot);
@@ -199,13 +220,13 @@ export function App() {
         setCodexEntities([]);
         setSelectedCodexEntityId("");
         setCodexDraft(EMPTY_DRAFT_CODEX);
+        setContinuityIssues([]);
+        setSelectedContinuityIssueId("");
         return;
       }
-      await Promise.all([
-        refreshSceneList(),
-        refreshProposalList(),
-        refreshCodexList()
-      ]);
+      await Promise.all([refreshSceneList(), refreshProposalList(), refreshCodexList()]);
+      setContinuityIssues([]);
+      setSelectedContinuityIssueId("");
       setMessage("Project loaded.");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -374,12 +395,50 @@ export function App() {
     }
   }
 
+  async function handleRunContinuityChecks() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const rows = await runContinuityChecks(projectRoot);
+      const ordered = orderContinuityIssues(rows);
+      setContinuityIssues(ordered);
+      setSelectedContinuityIssueId((previous) => {
+        if (previous && ordered.some((item) => item.id === previous)) {
+          return previous;
+        }
+        return ordered[0]?.id ?? "";
+      });
+      if (ordered.length === 0) {
+        setMessage("No continuity issues found.");
+      } else {
+        const issueLabel = ordered.length === 1 ? "issue" : "issues";
+        setMessage(`Continuity check found ${ordered.length} ${issueLabel}.`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleOpenIssueScene() {
+    if (!selectedContinuityIssue) return;
+    if (!scenes.some((item) => item.id === selectedContinuityIssue.scene_id)) {
+      setError(`Scene '${selectedContinuityIssue.scene_id}' no longer exists in this project.`);
+      return;
+    }
+    setError("");
+    setSelectedSceneId(selectedContinuityIssue.scene_id);
+    setMessage(`Loaded ${selectedContinuityIssue.scene_id} in editor.`);
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
         <div>
           <h1>openAuthor</h1>
-          <p>Binder + Editor + Proposal/Codex desktop shell</p>
+          <p>Binder + Editor + Proposal/Codex/Checks desktop shell</p>
         </div>
         <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
           {projectFound ? "Project Ready" : "No Project"}
@@ -551,6 +610,12 @@ export function App() {
             >
               Codex
             </button>
+            <button
+              className={rightTab === "checks" ? "active" : ""}
+              onClick={() => setRightTab("checks")}
+            >
+              Checks
+            </button>
           </div>
 
           {rightTab === "proposals" ? (
@@ -648,7 +713,7 @@ export function App() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : rightTab === "codex" ? (
             <div className="side-content">
               <div className="codex-header">
                 <h2>Codex</h2>
@@ -755,6 +820,60 @@ export function App() {
               ) : (
                 <div className="codex-edit-card empty-review">
                   <p>Select a codex entity to edit.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="side-content">
+              <div className="checks-header">
+                <h2>Checks</h2>
+                <span>
+                  {continuityCounts.error} error / {continuityCounts.warning} warning /{" "}
+                  {continuityCounts.info} info
+                </span>
+              </div>
+
+              <div className="checks-actions">
+                <button disabled={busy || !projectFound} onClick={handleRunContinuityChecks}>
+                  Run Continuity Check
+                </button>
+              </div>
+
+              <div className="checks-list">
+                {continuityIssues.length === 0 ? (
+                  <div className="check-detail empty-review">
+                    <p>Run checks to surface continuity risks.</p>
+                  </div>
+                ) : (
+                  continuityIssues.map((issue) => (
+                    <button
+                      key={issue.id}
+                      className={`check-item ${issue.id === selectedContinuityIssueId ? "selected" : ""} severity-${issue.severity}`}
+                      onClick={() => setSelectedContinuityIssueId(issue.id)}
+                    >
+                      <strong>{issue.title}</strong>
+                      <span>{issue.scene_id}</span>
+                      <em>{issue.severity}</em>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {selectedContinuityIssue ? (
+                <div className="check-detail">
+                  <h3>{selectedContinuityIssue.title}</h3>
+                  <p className="check-detail-code">{selectedContinuityIssue.code}</p>
+                  <p className="check-detail-message">{selectedContinuityIssue.message}</p>
+                  <p className="check-detail-path">{selectedContinuityIssue.path}</p>
+                  <div className="proposal-actions">
+                    <button disabled={busy || !canOpenSelectedIssueScene} onClick={handleOpenIssueScene}>
+                      Open Scene
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="check-detail empty-review">
+                  <p>Select a check issue to inspect.</p>
                 </div>
               )}
             </div>

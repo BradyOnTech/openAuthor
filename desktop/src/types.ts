@@ -47,3 +47,13 @@ export type CodexEntity = {
   created_at: string;
   updated_at: string;
 };
+
+export type ContinuityIssue = {
+  id: string;
+  severity: "error" | "warning" | "info";
+  code: string;
+  title: string;
+  message: string;
+  scene_id: string;
+  path: string;
+};

@@ -1,5 +1,6 @@
 import type {
   CodexEntity,
+  ContinuityIssue,
   CoreCommandResponse,
   ProposalRecord,
   ProjectStatus,
@@ -7,7 +8,7 @@ import type {
   SceneSummary
 } from "./types";
 
-const ALLOWED = new Set(["init", "scene", "codex", "proposal", "snapshot"]);
+const ALLOWED = new Set(["init", "scene", "codex", "proposal", "snapshot", "check"]);
 
 function ensureAllowed(args: string[]): void {
   if (args.length === 0) {
@@ -260,4 +261,9 @@ export async function updateCodexEntity(
     "--json"
   ]);
   return decodeJson<CodexEntity>(result);
+}
+
+export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
+  const result = await runCoreCommand(projectRoot, ["check", "continuity", "--json"]);
+  return decodeJson<ContinuityIssue[]>(result);
 }

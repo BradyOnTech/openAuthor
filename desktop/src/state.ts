@@ -1,9 +1,15 @@
-import type { CodexEntity, ProposalRecord } from "./types";
+import type { CodexEntity, ContinuityIssue, ProposalRecord } from "./types";
 
 export type ProposalCounts = {
   pending: number;
   applied: number;
   rejected: number;
+};
+
+export type ContinuityCounts = {
+  error: number;
+  warning: number;
+  info: number;
 };
 
 function timestamp(value: string): number {
@@ -41,4 +47,30 @@ export function orderCodexEntities(rows: CodexEntity[]): CodexEntity[] {
     if (typeDiff !== 0) return typeDiff;
     return a.name.localeCompare(b.name);
   });
+}
+
+const CHECK_SEVERITY_ORDER: Record<ContinuityIssue["severity"], number> = {
+  error: 0,
+  warning: 1,
+  info: 2
+};
+
+export function orderContinuityIssues(rows: ContinuityIssue[]): ContinuityIssue[] {
+  return [...rows].sort((a, b) => {
+    const severityDiff = CHECK_SEVERITY_ORDER[a.severity] - CHECK_SEVERITY_ORDER[b.severity];
+    if (severityDiff !== 0) return severityDiff;
+    const sceneDiff = a.scene_id.localeCompare(b.scene_id);
+    if (sceneDiff !== 0) return sceneDiff;
+    return a.code.localeCompare(b.code);
+  });
+}
+
+export function countContinuityIssues(rows: ContinuityIssue[]): ContinuityCounts {
+  return rows.reduce(
+    (acc, row) => {
+      acc[row.severity] += 1;
+      return acc;
+    },
+    { error: 0, warning: 0, info: 0 } satisfies ContinuityCounts
+  );
 }

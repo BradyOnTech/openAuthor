@@ -130,6 +130,11 @@ class OpenAuthorFlowTests(unittest.TestCase):
       updated_entity = json.loads(out)
       self.assertEqual(updated_entity["description"], "Updated protagonist profile.")
 
+      code, out, err = self.run_cli(["check", "continuity", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      continuity_rows = json.loads(out)
+      self.assertTrue(any(row["code"] == "scene_body_short" for row in continuity_rows))
+
       code, out, err = self.run_cli(
         [
           "proposal",

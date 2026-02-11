@@ -37,6 +37,10 @@
 - Codex fetch: `codex get --id <entity-id> --json`
 - Codex update: `codex update --id <entity-id> ... --json`
 
+## Implemented command usage (Continuity Checks)
+
+- Continuity scan: `check continuity --json`
+
 ## Why sidecar-first
 
 - Reuses the already-tested Python core immediately.

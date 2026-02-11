@@ -19,7 +19,7 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
   if args.is_empty() {
     return Err("No command arguments provided.".to_string());
   }
-  let allowed = ["init", "scene", "codex", "proposal", "snapshot"];
+  let allowed = ["init", "scene", "codex", "proposal", "snapshot", "check"];
   if allowed.contains(&args[0].as_str()) {
     Ok(())
   } else {

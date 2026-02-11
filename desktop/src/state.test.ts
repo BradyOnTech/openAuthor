@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { countProposals, orderCodexEntities, orderProposalsForReview } from "./state";
-import type { CodexEntity, ProposalRecord } from "./types";
+import {
+  countContinuityIssues,
+  countProposals,
+  orderCodexEntities,
+  orderContinuityIssues,
+  orderProposalsForReview
+} from "./state";
+import type { CodexEntity, ContinuityIssue, ProposalRecord } from "./types";
 
 const rows: ProposalRecord[] = [
   {
@@ -98,5 +104,89 @@ describe("orderCodexEntities", () => {
     ];
     const ordered = orderCodexEntities(entities);
     expect(ordered.map((item) => item.id)).toEqual(["entity-a", "entity-b", "entity-z"]);
+  });
+});
+
+describe("orderContinuityIssues", () => {
+  it("orders by severity, scene id, and code", () => {
+    const issues: ContinuityIssue[] = [
+      {
+        id: "a",
+        severity: "warning",
+        code: "b_code",
+        title: "A",
+        message: "A",
+        scene_id: "scene-0002",
+        path: "manuscript/scenes/0002-a.md"
+      },
+      {
+        id: "b",
+        severity: "info",
+        code: "a_code",
+        title: "B",
+        message: "B",
+        scene_id: "scene-0001",
+        path: "manuscript/scenes/0001-b.md"
+      },
+      {
+        id: "c",
+        severity: "error",
+        code: "z_code",
+        title: "C",
+        message: "C",
+        scene_id: "scene-0003",
+        path: "manuscript/scenes/0003-c.md"
+      },
+      {
+        id: "d",
+        severity: "warning",
+        code: "a_code",
+        title: "D",
+        message: "D",
+        scene_id: "scene-0002",
+        path: "manuscript/scenes/0002-d.md"
+      }
+    ];
+    const ordered = orderContinuityIssues(issues);
+    expect(ordered.map((item) => item.id)).toEqual(["c", "d", "a", "b"]);
+  });
+});
+
+describe("countContinuityIssues", () => {
+  it("returns severity counts", () => {
+    const counts = countContinuityIssues([
+      {
+        id: "a",
+        severity: "error",
+        code: "a",
+        title: "A",
+        message: "A",
+        scene_id: "scene-0001",
+        path: "x"
+      },
+      {
+        id: "b",
+        severity: "warning",
+        code: "b",
+        title: "B",
+        message: "B",
+        scene_id: "scene-0001",
+        path: "y"
+      },
+      {
+        id: "c",
+        severity: "warning",
+        code: "c",
+        title: "C",
+        message: "C",
+        scene_id: "scene-0002",
+        path: "z"
+      }
+    ]);
+    expect(counts).toEqual({
+      error: 1,
+      warning: 2,
+      info: 0
+    });
   });
 });

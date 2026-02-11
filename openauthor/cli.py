@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
@@ -90,6 +91,11 @@ def build_parser() -> argparse.ArgumentParser:
   snapshot_create.add_argument("-m", "--message", required=True, help="Snapshot message.")
   snapshot_log = snapshot_sub.add_parser("log", help="Show snapshot history.")
   snapshot_log.add_argument("--limit", type=int, default=10, help="Max entries.")
+
+  check_parser = subparsers.add_parser("check", help="Run repository quality checks.")
+  check_sub = check_parser.add_subparsers(dest="check_command", required=True)
+  check_continuity = check_sub.add_parser("continuity", help="Run continuity checks.")
+  check_continuity.add_argument("--json", action="store_true", help="Output JSON.")
 
   return parser
 
@@ -269,6 +275,22 @@ def _run(args: argparse.Namespace) -> int:
 
     for line in list_snapshots(paths, limit=args.limit):
       print(line)
+    return 0
+
+  if args.command == "check":
+    if args.check_command != "continuity":
+      raise OpenAuthorError(f"Unsupported check command: {args.check_command}")
+    rows = run_continuity_checks(paths)
+    if args.json:
+      print(json.dumps(rows))
+      return 0
+    if not rows:
+      print("No continuity issues found.")
+      return 0
+    for row in rows:
+      print(
+        f"{row['severity']}\t{row['code']}\t{row['scene_id']}\t{row['title']}\t{row['path']}"
+      )
     return 0
 
   raise OpenAuthorError(f"Unsupported command: {args.command}")

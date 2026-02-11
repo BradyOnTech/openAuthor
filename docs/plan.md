@@ -41,7 +41,7 @@
   - Context lens UI pending
 - Add codex panel and continuity checks panel.
   - Codex panel (create/list/edit entities) ✅
-  - Continuity checks panel pending
+  - Continuity checks panel (run/list/jump-to-scene) ✅
 
 ## Testing Strategy (active)
 

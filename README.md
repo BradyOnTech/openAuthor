@@ -22,7 +22,7 @@ make test-all
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Proposal Review + Codex Panel.
+Current desktop slice: Binder + Editor + Proposal Review + Codex Panel + Continuity Checks.
 
 ```bash
 cd desktop
@@ -62,6 +62,10 @@ python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx
 # create git snapshot
 python3 -m openauthor snapshot create -m "Draft scene and codex seed"
 python3 -m openauthor snapshot log
+
+# run continuity checks
+python3 -m openauthor check continuity
+python3 -m openauthor check continuity --json
 ```
 
 `snapshot create` stages only authoring artifacts:
@@ -87,4 +91,4 @@ python3 -m openauthor snapshot log
 
 ## Status
 
-Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review + Codex Panel implemented. See `docs/plan.md`.
+Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.
