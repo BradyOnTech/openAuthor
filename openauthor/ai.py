@@ -22,6 +22,7 @@ DEFAULT_MODELS = {
   "openai": "gpt-4.1-mini",
   "anthropic": "claude-3-5-haiku-latest",
 }
+PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 
 
 def _scene_number(scene_id: str) -> int:
@@ -117,25 +118,145 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
   continuity_issues = context["continuity_issues"]
   codex_entities = context["codex_entities"]
 
-  lines: list[str] = []
-  lines.append(f"Refine scene '{scene_title}' with focus on: {instruction.strip()}.")
-  lines.append(f"Preserve POV voice: {scene_pov}.")
-  lines.append(f"Keep intent aligned with summary: {scene_summary}.")
-
-  if continuity_issues:
-    lines.append("Address continuity risks:")
-    for issue in continuity_issues[:3]:
-      lines.append(f"- {issue['title']}: {issue['message']}")
-
+  constraint_lines = [
+    f"Preserve POV voice: {scene_pov}.",
+    f"Stay aligned with summary: {scene_summary}.",
+  ]
   if codex_entities:
-    lines.append("Respect codex anchors:")
-    for entity in codex_entities[:3]:
-      lines.append(f"- {entity['type']}: {entity['name']}")
+    anchors = ", ".join(entity["name"] for entity in codex_entities[:3])
+    constraint_lines.append(f"Respect codex anchors: {anchors}.")
 
-  lines.append(
-    "Deliver one concise rewrite pass and retain established character motivations."
+  continuity_lines = (
+    [
+      f"{issue['title']}: {issue['message']}"
+      for issue in continuity_issues[:3]
+    ]
+    if continuity_issues
+    else ["No blocking continuity issues detected for this scene."]
   )
-  return "\n".join(lines)
+
+  return (
+    "Intent:\n"
+    f"- Refine scene '{scene_title}' with focus on: {instruction.strip()}.\n\n"
+    "Constraints:\n"
+    + "\n".join(f"- {line}" for line in constraint_lines)
+    + "\n\nEdit Plan:\n"
+    "- Tighten sentence rhythm and reduce exposition where possible.\n"
+    "- Keep motivations and timeline continuity explicit.\n"
+    "- Preserve existing voice markers while improving clarity.\n\n"
+    "Continuity Notes:\n"
+    + "\n".join(f"- {line}" for line in continuity_lines)
+  )
+
+
+def _normalize_header(value: str) -> str:
+  lowered = value.strip().lower()
+  aliases = {
+    "intent": "Intent",
+    "constraints": "Constraints",
+    "constraint": "Constraints",
+    "edit plan": "Edit Plan",
+    "plan": "Edit Plan",
+    "continuity notes": "Continuity Notes",
+    "continuity": "Continuity Notes",
+    "notes": "Continuity Notes",
+  }
+  return aliases.get(lowered, "")
+
+
+def _clean_bullet_line(value: str) -> str:
+  clean = re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", value).strip()
+  return re.sub(r"\s+", " ", clean)
+
+
+def _normalize_proposal_text(
+  raw_text: str,
+  *,
+  instruction: str,
+  context: dict[str, Any],
+) -> str:
+  section_rows: dict[str, list[str]] = {name: [] for name in PROPOSAL_SECTIONS}
+  preamble: list[str] = []
+  current_section = ""
+
+  header_pattern = re.compile(
+    r"^\s*(?:#+\s*)?(intent|constraints?|edit plan|plan|continuity notes|continuity|notes)\s*:?\s*(.*)$",
+    flags=re.IGNORECASE,
+  )
+
+  for line in raw_text.splitlines():
+    stripped = line.strip()
+    if not stripped:
+      continue
+
+    match = header_pattern.match(stripped)
+    if match:
+      current_section = _normalize_header(match.group(1))
+      trailing = _clean_bullet_line(match.group(2))
+      if trailing:
+        section_rows[current_section].append(_truncate(trailing, 220))
+      continue
+
+    clean = _clean_bullet_line(stripped)
+    if not clean:
+      continue
+    if current_section:
+      section_rows[current_section].append(_truncate(clean, 220))
+    else:
+      preamble.append(_truncate(clean, 220))
+
+  if preamble and not section_rows["Intent"]:
+    section_rows["Intent"].append(preamble[0])
+    preamble = preamble[1:]
+  if preamble:
+    section_rows["Edit Plan"].extend(preamble)
+
+  scene = context["scene"]
+  if not section_rows["Intent"]:
+    section_rows["Intent"].append(
+      _truncate(
+        f"Apply requested change to scene '{scene['title']}': {instruction.strip()}",
+        220,
+      )
+    )
+
+  if not section_rows["Constraints"]:
+    section_rows["Constraints"] = [
+      _truncate(
+        f"Preserve POV voice: {scene['pov'] or 'unspecified POV in metadata'}.",
+        220,
+      ),
+      _truncate(
+        f"Stay aligned with scene summary: {scene['summary'] or 'no summary provided'}.",
+        220,
+      ),
+    ]
+
+  if not section_rows["Edit Plan"]:
+    section_rows["Edit Plan"] = [
+      "Revise the scene opening for clearer momentum and stakes.",
+      "Preserve established facts, motivations, and sequence continuity.",
+    ]
+
+  if not section_rows["Continuity Notes"]:
+    issues = context["continuity_issues"]
+    if issues:
+      section_rows["Continuity Notes"] = [
+        _truncate(f"{issue['title']}: {issue['message']}", 220)
+        for issue in issues[:3]
+      ]
+    else:
+      section_rows["Continuity Notes"] = [
+        "No blocking continuity issues detected for this scene."
+      ]
+
+  normalized_sections: list[str] = []
+  for section_name in PROPOSAL_SECTIONS:
+    items = section_rows[section_name][:5]
+    normalized_sections.append(
+      section_name + ":\n" + "\n".join(f"- {item}" for item in items)
+    )
+  return "\n\n".join(normalized_sections)
 
 
 def _openai_chat_completion(
@@ -361,13 +482,16 @@ def _build_prompts(context: dict[str, Any], instruction: str) -> tuple[str, str]
   system_prompt = (
     "You are an editorial assistant for a fiction project. "
     "Return one proposal instruction block that is actionable, "
-    "scene-specific, and continuity-safe."
+    "scene-specific, and continuity-safe. "
+    "Use exactly these section headers: Intent, Constraints, Edit Plan, Continuity Notes."
   )
   user_prompt = (
     f"User instruction:\n{instruction.strip()}\n\n"
     "Project context (JSON):\n"
     f"{json.dumps(context, indent=2)}\n\n"
-    "Write a concise instruction that can be applied as a proposal card."
+    "Write a concise instruction that can be applied as a proposal card.\n"
+    "Output must be plain text with these sections in order:\n"
+    "Intent:\n- ...\n\nConstraints:\n- ...\n\nEdit Plan:\n- ...\n\nContinuity Notes:\n- ..."
   )
   return system_prompt, user_prompt
 
@@ -383,6 +507,7 @@ def _write_generation_log(
   system_prompt: str,
   user_prompt: str,
   provider_result: dict[str, Any],
+  raw_provider_text: str,
   estimated_cost_usd: float | None,
 ) -> tuple[str, str]:
   run_id = f"gen-{uuid.uuid4().hex[:12]}"
@@ -400,7 +525,8 @@ def _write_generation_log(
     "system_prompt": system_prompt,
     "user_prompt": user_prompt,
     "context": context,
-    "response_text": provider_result["text"],
+    "raw_response_text": raw_provider_text,
+    "normalized_instruction": provider_result["text"],
     "usage": {
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
@@ -455,6 +581,12 @@ def generate_proposal(
     temperature=temperature,
     max_output_tokens=max_output_tokens,
   )
+  raw_provider_text = provider_result["text"]
+  provider_result["text"] = _normalize_proposal_text(
+    raw_provider_text,
+    instruction=instruction,
+    context=context,
+  )
 
   estimated_cost_usd = _estimate_cost_usd(
     paths,
@@ -474,6 +606,7 @@ def generate_proposal(
     system_prompt=system_prompt,
     user_prompt=user_prompt,
     provider_result=provider_result,
+    raw_provider_text=raw_provider_text,
     estimated_cost_usd=estimated_cost_usd,
   )
 

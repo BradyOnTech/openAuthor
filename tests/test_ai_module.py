@@ -68,6 +68,10 @@ class AIModuleTests(unittest.TestCase):
       self.assertEqual(generation["model"], "heuristic-v1")
       self.assertIn("input_tokens", generation)
       self.assertIn("output_tokens", generation)
+      self.assertIn("Intent:", proposal["instruction"])
+      self.assertIn("Constraints:", proposal["instruction"])
+      self.assertIn("Edit Plan:", proposal["instruction"])
+      self.assertIn("Continuity Notes:", proposal["instruction"])
 
       log_path = root / generation["log_path"]
       self.assertTrue(log_path.exists())
@@ -75,6 +79,9 @@ class AIModuleTests(unittest.TestCase):
       self.assertEqual(log_payload["scene_id"], "scene-0002")
       self.assertEqual(log_payload["provider"], "local")
       self.assertEqual(log_payload["context"]["scene"]["id"], "scene-0002")
+      self.assertIn("raw_response_text", log_payload)
+      self.assertIn("normalized_instruction", log_payload)
+      self.assertIn("Intent:", log_payload["normalized_instruction"])
       nearby_ids = [row["id"] for row in log_payload["context"]["nearby_scenes"]]
       self.assertEqual(nearby_ids, ["scene-0001", "scene-0003"])
 

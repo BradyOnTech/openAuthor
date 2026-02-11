@@ -88,6 +88,13 @@ AI generation artifacts:
 - `.openauthor/generations/*.json` stores prompt/context/usage logs per run.
 - `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
 
+Generated proposal format is normalized to four sections for review consistency:
+
+- `Intent`
+- `Constraints`
+- `Edit Plan`
+- `Continuity Notes`
+
 ## Repository layout
 
 ```text
