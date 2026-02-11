@@ -8,7 +8,7 @@ from pathlib import Path
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
-from .generations import get_generation_run, list_generation_runs
+from .generations import get_generation_run, get_generation_runtime_config, list_generation_runs
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
 from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
@@ -165,6 +165,8 @@ def build_parser() -> argparse.ArgumentParser:
   generation_get = generation_sub.add_parser("get", help="Get generation run by id.")
   generation_get.add_argument("--id", required=True, help="Generation run id.")
   generation_get.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_config = generation_sub.add_parser("config", help="Show generation runtime config.")
+  generation_config.add_argument("--json", action="store_true", help="Output JSON.")
 
   return parser
 
@@ -385,6 +387,25 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
   if args.command == "generation":
+    if args.generation_command == "config":
+      row = get_generation_runtime_config(paths)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      retry = row.get("retry", {})
+      providers = row.get("providers", {})
+      print(
+        f"retry.max_retries={retry.get('max_retries')} "
+        f"retry.base_delay_ms={retry.get('base_delay_ms')}"
+      )
+      for name in ("local", "openai", "anthropic"):
+        provider = providers.get(name, {})
+        print(
+          f"{name}\tdefault_model={provider.get('default_model','')}\t"
+          f"credential_present={provider.get('credential_present')}"
+        )
+      return 0
+
     if args.generation_command == "get":
       row = get_generation_run(paths, args.id)
       if args.json:

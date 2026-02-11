@@ -53,6 +53,7 @@
 
 - Run list: `generation list --json`
 - Run detail: `generation get --id <run-id> --json`
+- Runtime config: `generation config --json`
 
 ## Why sidecar-first
 

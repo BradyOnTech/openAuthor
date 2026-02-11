@@ -6,6 +6,7 @@ import {
   createProposal,
   generateProposal,
   getGenerationRun,
+  getGenerationRuntimeConfig,
   getCodexEntity,
   getProjectStatus,
   getScene,
@@ -35,6 +36,7 @@ import type {
   CodexEntity,
   ContinuityIssue,
   GenerationRunDetail,
+  GenerationRuntimeConfig,
   GenerationRunSummary,
   ProposalProvider,
   ProposalRecord,
@@ -164,6 +166,8 @@ export function App() {
   const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
   const [selectedGenerationRun, setSelectedGenerationRun] =
     useState<GenerationRunDetail | null>(null);
+  const [generationRuntimeConfig, setGenerationRuntimeConfig] =
+    useState<GenerationRuntimeConfig | null>(null);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -354,6 +358,11 @@ export function App() {
     setSelectedGenerationRun(row);
   }
 
+  async function refreshGenerationRuntimeConfig() {
+    const row = await getGenerationRuntimeConfig(projectRoot);
+    setGenerationRuntimeConfig(row);
+  }
+
   async function checkProjectAndLoad() {
     setBusy(true);
     setError("");
@@ -377,13 +386,15 @@ export function App() {
         setGenerationRuns([]);
         setSelectedGenerationRunId("");
         setSelectedGenerationRun(null);
+        setGenerationRuntimeConfig(null);
         return;
       }
       await Promise.all([
         refreshSceneList(),
         refreshProposalList(),
         refreshCodexList(),
-        refreshGenerationRuns()
+        refreshGenerationRuns(),
+        refreshGenerationRuntimeConfig()
       ]);
       setContinuityIssues([]);
       setSelectedContinuityIssueId("");
@@ -1423,9 +1434,43 @@ export function App() {
                   <option value="succeeded">succeeded</option>
                   <option value="failed">failed</option>
                 </select>
-                <button disabled={busy || !projectFound} onClick={() => void refreshGenerationRuns()}>
+                <button
+                  disabled={busy || !projectFound}
+                  onClick={() =>
+                    void Promise.all([
+                      refreshGenerationRuns(),
+                      refreshGenerationRuntimeConfig()
+                    ])
+                  }
+                >
                   Refresh Runs
                 </button>
+              </div>
+
+              <div className="run-config-card">
+                <h3>Provider Runtime</h3>
+                {generationRuntimeConfig ? (
+                  <>
+                    <p className="run-meta">
+                      Retry: {generationRuntimeConfig.retry.max_retries} max /{" "}
+                      {generationRuntimeConfig.retry.base_delay_ms}ms base delay
+                    </p>
+                    <p className="run-meta">
+                      OpenAI key:{" "}
+                      {generationRuntimeConfig.providers.openai.credential_present
+                        ? "present"
+                        : "missing"}
+                    </p>
+                    <p className="run-meta">
+                      Anthropic key:{" "}
+                      {generationRuntimeConfig.providers.anthropic.credential_present
+                        ? "present"
+                        : "missing"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="run-meta">Config unavailable.</p>
+                )}
               </div>
 
               <div className="runs-list">
@@ -1468,6 +1513,24 @@ export function App() {
                           : ""}
                       </p>
                       <p className="run-meta">Proposal: {selectedGenerationRun.proposal_id || "n/a"}</p>
+                      <p className="run-meta">
+                        Normalization changed:{" "}
+                        {selectedGenerationRun.normalization?.normalization_changed
+                          ? "yes"
+                          : "no"}
+                      </p>
+                      {selectedGenerationRun.normalization?.missing_sections_filled?.length ? (
+                        <p className="run-meta">
+                          Filled sections:{" "}
+                          {selectedGenerationRun.normalization.missing_sections_filled.join(", ")}
+                        </p>
+                      ) : null}
+                      {selectedGenerationRun.normalization?.detected_headers?.length ? (
+                        <p className="run-meta">
+                          Detected headers:{" "}
+                          {selectedGenerationRun.normalization.detected_headers.join(", ")}
+                        </p>
+                      ) : null}
                       {selectedGenerationRun.normalized_instruction ? (
                         <p className="run-text">{selectedGenerationRun.normalized_instruction}</p>
                       ) : null}

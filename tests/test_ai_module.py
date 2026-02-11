@@ -87,6 +87,8 @@ class AIModuleTests(unittest.TestCase):
       self.assertIn("raw_response_text", log_payload)
       self.assertIn("normalized_instruction", log_payload)
       self.assertIn("Intent:", log_payload["normalized_instruction"])
+      self.assertIn("normalization", log_payload)
+      self.assertIn("normalization_changed", log_payload["normalization"])
       self.assertEqual(log_payload["usage"]["provider_attempts"], 1)
       nearby_ids = [row["id"] for row in log_payload["context"]["nearby_scenes"]]
       self.assertEqual(nearby_ids, ["scene-0001", "scene-0003"])

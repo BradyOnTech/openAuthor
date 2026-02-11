@@ -362,6 +362,8 @@ describe("orderGenerationRuns", () => {
         estimated_cost_usd: 0.001,
         error_category: "",
         error_retriable: null,
+        normalization_changed: true,
+        missing_sections_filled: [],
         log_path: ".openauthor/generations/gen-a.json"
       },
       {
@@ -379,6 +381,8 @@ describe("orderGenerationRuns", () => {
         estimated_cost_usd: null,
         error_category: "rate_limited",
         error_retriable: true,
+        normalization_changed: null,
+        missing_sections_filled: [],
         log_path: ".openauthor/generations/gen-b.json"
       }
     ];
@@ -405,6 +409,8 @@ describe("countGenerationRuns", () => {
         estimated_cost_usd: null,
         error_category: "",
         error_retriable: null,
+        normalization_changed: false,
+        missing_sections_filled: [],
         log_path: ""
       },
       {
@@ -422,6 +428,8 @@ describe("countGenerationRuns", () => {
         estimated_cost_usd: null,
         error_category: "network_error",
         error_retriable: true,
+        normalization_changed: null,
+        missing_sections_filled: [],
         log_path: ""
       },
       {
@@ -439,6 +447,8 @@ describe("countGenerationRuns", () => {
         estimated_cost_usd: null,
         error_category: "",
         error_retriable: null,
+        normalization_changed: false,
+        missing_sections_filled: [],
         log_path: ""
       }
     ]);

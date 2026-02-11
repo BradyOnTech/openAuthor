@@ -26,6 +26,7 @@
   - Provider interfaces (`openai`, `anthropic`, `local`) with real adapter calls are implemented in core. ✅
   - Local provider uses deterministic generation; remote providers fail closed without credentials. ✅
   - Retry/backoff for transient provider failures and structured provider error categories are implemented. ✅
+  - Runtime provider/retry config inspection is available via `generation config`. ✅
 - 2.2 Prompt/context packing:
   - Deterministic context packs from selected scene + neighbors + codex + continuity checks are implemented. ✅
   - Saved generation artifacts for reproducible runs are implemented under `.openauthor/generations/`. ✅
@@ -38,6 +39,7 @@
   - Cost estimation is configurable via `.openauthor/provider_pricing.json`. ✅
   - Budget policy enforcement (hard spend/token caps) is deferred to future TODO. 📝
   - Generation run history/failure inspection is available via CLI and desktop runs panel. ✅
+  - Normalization quality diagnostics are persisted per run and exposed in run detail views. ✅
 
 ## No-Mock Guardrails (active)
 

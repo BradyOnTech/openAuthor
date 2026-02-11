@@ -3,6 +3,7 @@ import type {
   ContinuityIssue,
   CoreCommandResponse,
   GenerationRunDetail,
+  GenerationRuntimeConfig,
   GenerationRunSummary,
   ProposalProvider,
   ProposalRecord,
@@ -365,4 +366,11 @@ export async function getGenerationRun(
     "--json"
   ]);
   return decodeJson<GenerationRunDetail>(result);
+}
+
+export async function getGenerationRuntimeConfig(
+  projectRoot: string
+): Promise<GenerationRuntimeConfig> {
+  const result = await runCoreCommand(projectRoot, ["generation", "config", "--json"]);
+  return decodeJson<GenerationRuntimeConfig>(result);
 }

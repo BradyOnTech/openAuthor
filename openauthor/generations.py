@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .ai import get_provider_runtime_config
 from .project import OpenAuthorError, ProjectPaths
 
 STATUSES = {"succeeded", "failed"}
@@ -26,6 +27,11 @@ def _read_generation(log_file: Path) -> dict[str, Any]:
 def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) -> dict[str, Any]:
   usage = payload.get("usage", {}) if isinstance(payload.get("usage"), dict) else {}
   error = payload.get("error", {}) if isinstance(payload.get("error"), dict) else {}
+  normalization = (
+    payload.get("normalization", {})
+    if isinstance(payload.get("normalization"), dict)
+    else {}
+  )
 
   return {
     "run_id": payload.get("run_id", log_file.stem),
@@ -42,6 +48,8 @@ def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) ->
     "estimated_cost_usd": usage.get("estimated_cost_usd"),
     "error_category": error.get("category", ""),
     "error_retriable": error.get("retriable"),
+    "normalization_changed": normalization.get("normalization_changed"),
+    "missing_sections_filled": normalization.get("missing_sections_filled", []),
     "log_path": str(log_file.relative_to(paths.root)),
   }
 
@@ -84,3 +92,8 @@ def list_generation_runs(
   if limit is not None:
     return rows[:limit]
   return rows
+
+
+def get_generation_runtime_config(paths: ProjectPaths) -> dict[str, Any]:
+  del paths
+  return get_provider_runtime_config()

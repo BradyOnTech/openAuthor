@@ -5,7 +5,11 @@ import unittest
 from pathlib import Path
 
 from openauthor.ai import generate_proposal
-from openauthor.generations import get_generation_run, list_generation_runs
+from openauthor.generations import (
+  get_generation_run,
+  get_generation_runtime_config,
+  list_generation_runs,
+)
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene
 
@@ -46,6 +50,8 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertEqual(rows[0]["run_id"], run_id)
       self.assertEqual(rows[0]["status"], "succeeded")
       self.assertEqual(rows[0]["proposal_id"], proposal["id"])
+      self.assertIn("normalization_changed", rows[0])
+      self.assertIn("missing_sections_filled", rows[0])
 
       filtered = list_generation_runs(paths, status="succeeded", scene_id="scene-0001")
       self.assertEqual(len(filtered), 1)
@@ -56,6 +62,7 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertEqual(details["status"], "succeeded")
       self.assertEqual(details["proposal_id"], proposal["id"])
       self.assertIn("normalized_instruction", details)
+      self.assertIn("normalization", details)
 
   def test_generation_run_errors(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -67,6 +74,11 @@ class GenerationsModuleTests(unittest.TestCase):
 
       with self.assertRaises(OpenAuthorError):
         list_generation_runs(paths, status="invalid")
+
+      runtime = get_generation_runtime_config(paths)
+      self.assertIn("retry", runtime)
+      self.assertIn("providers", runtime)
+      self.assertIn("openai", runtime["providers"])
 
 
 if __name__ == "__main__":

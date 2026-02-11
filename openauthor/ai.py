@@ -83,6 +83,35 @@ def _retry_settings() -> tuple[int, int]:
   return max_retries, base_ms
 
 
+def get_provider_runtime_config() -> dict[str, Any]:
+  max_retries, base_ms = _retry_settings()
+  return {
+    "retry": {
+      "max_retries": max_retries,
+      "base_delay_ms": base_ms,
+    },
+    "providers": {
+      "local": {
+        "default_model": DEFAULT_MODELS["local"],
+        "credential_present": True,
+      },
+      "openai": {
+        "default_model": DEFAULT_MODELS["openai"],
+        "credential_present": bool(os.getenv("OPENAI_API_KEY")),
+        "base_url": os.getenv("OPENAUTHOR_OPENAI_BASE_URL", "https://api.openai.com/v1"),
+      },
+      "anthropic": {
+        "default_model": DEFAULT_MODELS["anthropic"],
+        "credential_present": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "base_url": os.getenv(
+          "OPENAUTHOR_ANTHROPIC_BASE_URL",
+          "https://api.anthropic.com/v1",
+        ),
+      },
+    },
+  }
+
+
 def _http_error_category(status_code: int, details: str) -> str:
   lowered = details.lower()
   if status_code == 429 or "rate limit" in lowered:
@@ -264,10 +293,14 @@ def _normalize_proposal_text(
   *,
   instruction: str,
   context: dict[str, Any],
-) -> str:
+) -> tuple[str, dict[str, Any]]:
   section_rows: dict[str, list[str]] = {name: [] for name in PROPOSAL_SECTIONS}
   preamble: list[str] = []
+  preamble_count = 0
   current_section = ""
+  detected_headers: set[str] = set()
+  missing_sections_filled: list[str] = []
+  raw_nonempty_line_count = 0
 
   header_pattern = re.compile(
     r"^\s*(?:#+\s*)?(intent|constraints?|edit plan|plan|continuity notes|continuity|notes)\s*:?\s*(.*)$",
@@ -278,10 +311,13 @@ def _normalize_proposal_text(
     stripped = line.strip()
     if not stripped:
       continue
+    raw_nonempty_line_count += 1
 
     match = header_pattern.match(stripped)
     if match:
       current_section = _normalize_header(match.group(1))
+      if current_section:
+        detected_headers.add(current_section)
       trailing = _clean_bullet_line(match.group(2))
       if trailing:
         section_rows[current_section].append(_truncate(trailing, 220))
@@ -294,6 +330,7 @@ def _normalize_proposal_text(
       section_rows[current_section].append(_truncate(clean, 220))
     else:
       preamble.append(_truncate(clean, 220))
+      preamble_count += 1
 
   if preamble and not section_rows["Intent"]:
     section_rows["Intent"].append(preamble[0])
@@ -303,6 +340,7 @@ def _normalize_proposal_text(
 
   scene = context["scene"]
   if not section_rows["Intent"]:
+    missing_sections_filled.append("Intent")
     section_rows["Intent"].append(
       _truncate(
         f"Apply requested change to scene '{scene['title']}': {instruction.strip()}",
@@ -311,6 +349,7 @@ def _normalize_proposal_text(
     )
 
   if not section_rows["Constraints"]:
+    missing_sections_filled.append("Constraints")
     section_rows["Constraints"] = [
       _truncate(
         f"Preserve POV voice: {scene['pov'] or 'unspecified POV in metadata'}.",
@@ -323,12 +362,14 @@ def _normalize_proposal_text(
     ]
 
   if not section_rows["Edit Plan"]:
+    missing_sections_filled.append("Edit Plan")
     section_rows["Edit Plan"] = [
       "Revise the scene opening for clearer momentum and stakes.",
       "Preserve established facts, motivations, and sequence continuity.",
     ]
 
   if not section_rows["Continuity Notes"]:
+    missing_sections_filled.append("Continuity Notes")
     issues = context["continuity_issues"]
     if issues:
       section_rows["Continuity Notes"] = [
@@ -346,7 +387,20 @@ def _normalize_proposal_text(
     normalized_sections.append(
       section_name + ":\n" + "\n".join(f"- {item}" for item in items)
     )
-  return "\n\n".join(normalized_sections)
+  normalized_text = "\n\n".join(normalized_sections)
+  diagnostics = {
+    "schema_version": 1,
+    "raw_nonempty_line_count": raw_nonempty_line_count,
+    "preamble_line_count": preamble_count,
+    "detected_headers": sorted(detected_headers),
+    "missing_sections_filled": missing_sections_filled,
+    "normalization_changed": normalized_text.strip() != raw_text.strip(),
+    "section_item_counts": {
+      section_name: len(section_rows[section_name][:5])
+      for section_name in PROPOSAL_SECTIONS
+    },
+  }
+  return normalized_text, diagnostics
 
 
 def _openai_chat_completion(
@@ -622,6 +676,7 @@ def _write_generation_log(
   user_prompt: str,
   provider_result: dict[str, Any],
   raw_provider_text: str,
+  normalization: dict[str, Any],
   estimated_cost_usd: float | None,
 ) -> tuple[str, str]:
   run_id = f"gen-{uuid.uuid4().hex[:12]}"
@@ -642,6 +697,7 @@ def _write_generation_log(
     "context": context,
     "raw_response_text": raw_provider_text,
     "normalized_instruction": provider_result["text"],
+    "normalization": normalization,
     "usage": {
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
@@ -769,11 +825,12 @@ def generate_proposal(
       f"Proposal generation failed ({error.category}). See {failure_log_path}."
     ) from error
   raw_provider_text = provider_result["text"]
-  provider_result["text"] = _normalize_proposal_text(
+  normalized_text, normalization_diagnostics = _normalize_proposal_text(
     raw_provider_text,
     instruction=instruction,
     context=context,
   )
+  provider_result["text"] = normalized_text
 
   estimated_cost_usd = _estimate_cost_usd(
     paths,
@@ -794,6 +851,7 @@ def generate_proposal(
     user_prompt=user_prompt,
     provider_result=provider_result,
     raw_provider_text=raw_provider_text,
+    normalization=normalization_diagnostics,
     estimated_cost_usd=estimated_cost_usd,
   )
 

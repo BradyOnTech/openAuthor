@@ -10,6 +10,7 @@ Current UI slice:
 - Proposal Review (proposal create/list/apply/reject)
 - Proposal Generate (provider-backed proposal generation from desktop)
 - Generation Runs (history/errors with run detail inspection)
+  - Includes provider runtime config (credentials present/missing, retry settings)
 - Context Lens (scene-linked proposal/codex/continuity context)
 - Codex Panel (entity create/list/edit)
 - Continuity Checks (run/list/jump to scene)

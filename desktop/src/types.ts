@@ -76,6 +76,8 @@ export type GenerationRunSummary = {
   estimated_cost_usd: number | null;
   error_category: string;
   error_retriable: boolean | null;
+  normalization_changed: boolean | null;
+  missing_sections_filled: string[];
   log_path: string;
 };
 
@@ -94,6 +96,15 @@ export type GenerationRunDetail = {
   proposal_id?: string;
   raw_response_text?: string;
   normalized_instruction?: string;
+  normalization?: {
+    schema_version?: number;
+    raw_nonempty_line_count?: number;
+    preamble_line_count?: number;
+    detected_headers?: string[];
+    missing_sections_filled?: string[];
+    normalization_changed?: boolean;
+    section_item_counts?: Record<string, number>;
+  };
   usage?: {
     input_tokens?: number;
     output_tokens?: number;
@@ -110,6 +121,29 @@ export type GenerationRunDetail = {
     provider?: string;
   };
   log_path: string;
+};
+
+export type GenerationRuntimeConfig = {
+  retry: {
+    max_retries: number;
+    base_delay_ms: number;
+  };
+  providers: {
+    local: {
+      default_model: string;
+      credential_present: boolean;
+    };
+    openai: {
+      default_model: string;
+      credential_present: boolean;
+      base_url: string;
+    };
+    anthropic: {
+      default_model: string;
+      credential_present: boolean;
+      base_url: string;
+    };
+  };
 };
 
 export type CodexEntity = {

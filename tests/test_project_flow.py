@@ -195,6 +195,13 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(generation_run["status"], "succeeded")
       self.assertEqual(generation_run["proposal_id"], generated_proposal["id"])
 
+      code, out, err = self.run_cli(["generation", "config", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      generation_config = json.loads(out)
+      self.assertIn("retry", generation_config)
+      self.assertIn("providers", generation_config)
+      self.assertIn("openai", generation_config["providers"])
+
       code, out, err = self.run_cli(["proposal", "apply", "--id", proposal_id], root)
       self.assertEqual(code, 0, msg=err)
       self.assertIn(f"Applied proposal {proposal_id}", out)
