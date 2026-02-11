@@ -1,4 +1,5 @@
 import type {
+  CodexEntity,
   CoreCommandResponse,
   ProposalRecord,
   ProjectStatus,
@@ -185,4 +186,78 @@ export async function rejectProposal(
     "--json"
   ]);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function listCodexEntities(
+  projectRoot: string,
+  type?: CodexEntity["type"]
+): Promise<CodexEntity[]> {
+  const args = ["codex", "list"];
+  if (type) {
+    args.push("--type", type);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<CodexEntity[]>(result);
+}
+
+export async function getCodexEntity(
+  projectRoot: string,
+  entityId: string
+): Promise<CodexEntity> {
+  const result = await runCoreCommand(projectRoot, [
+    "codex",
+    "get",
+    "--id",
+    entityId,
+    "--json"
+  ]);
+  return decodeJson<CodexEntity>(result);
+}
+
+export async function addCodexEntity(
+  projectRoot: string,
+  payload: {
+    type: CodexEntity["type"];
+    name: string;
+    description: string;
+  }
+): Promise<CodexEntity> {
+  const result = await runCoreCommand(projectRoot, [
+    "codex",
+    "add",
+    "--type",
+    payload.type,
+    "--name",
+    payload.name,
+    "--description",
+    payload.description,
+    "--json"
+  ]);
+  return decodeJson<CodexEntity>(result);
+}
+
+export async function updateCodexEntity(
+  projectRoot: string,
+  entityId: string,
+  payload: {
+    type: CodexEntity["type"];
+    name: string;
+    description: string;
+  }
+): Promise<CodexEntity> {
+  const result = await runCoreCommand(projectRoot, [
+    "codex",
+    "update",
+    "--id",
+    entityId,
+    "--type",
+    payload.type,
+    "--name",
+    payload.name,
+    "--description",
+    payload.description,
+    "--json"
+  ]);
+  return decodeJson<CodexEntity>(result);
 }

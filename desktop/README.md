@@ -7,6 +7,7 @@ Current UI slice:
 - Binder (scene list + create scene)
 - Editor (load/edit/save scene metadata + body)
 - Proposal Review (proposal create/list/apply/reject)
+- Codex Panel (entity create/list/edit)
 
 ## Prerequisites
 

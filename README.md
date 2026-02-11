@@ -22,7 +22,7 @@ make test-all
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Proposal Review (scene list/create/load/save + proposal review queue).
+Current desktop slice: Binder + Editor + Proposal Review + Codex Panel.
 
 ```bash
 cd desktop
@@ -50,6 +50,9 @@ python3 -m openauthor scene update --id scene-0001 --summary "Tighter opening" -
 # add and list codex entities
 python3 -m openauthor codex add --type character --name "Elara" --description "Main POV character"
 python3 -m openauthor codex list --type character
+python3 -m openauthor codex list --json
+python3 -m openauthor codex get --id entity-xxxxxxxxxxxx --json
+python3 -m openauthor codex update --id entity-xxxxxxxxxxxx --description "Updated profile" --json
 
 # create and apply proposal cards
 python3 -m openauthor proposal add --title "Tighten prose" --instruction "Make paragraph one more direct" --scene scene-0001
@@ -84,4 +87,4 @@ python3 -m openauthor snapshot log
 
 ## Status
 
-Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review implemented. See `docs/plan.md`.
+Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review + Codex Panel implemented. See `docs/plan.md`.

@@ -38,3 +38,12 @@ export type ProposalRecord = {
   updated_at: string;
   notes: string;
 };
+
+export type CodexEntity = {
+  id: string;
+  type: "character" | "location" | "lore" | "item" | "faction" | "event";
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};

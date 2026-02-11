@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from .codex import ENTITY_TYPES, add_entity, ensure_codex, list_entities
+from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
 from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
@@ -48,8 +48,19 @@ def build_parser() -> argparse.ArgumentParser:
   codex_add.add_argument("--type", required=True, choices=sorted(ENTITY_TYPES), help="Entity type.")
   codex_add.add_argument("--name", required=True, help="Entity name.")
   codex_add.add_argument("--description", default="", help="Entity description.")
+  codex_add.add_argument("--json", action="store_true", help="Output JSON.")
   codex_list = codex_sub.add_parser("list", help="List codex entities.")
   codex_list.add_argument("--type", choices=sorted(ENTITY_TYPES), default=None, help="Filter by type.")
+  codex_list.add_argument("--json", action="store_true", help="Output JSON.")
+  codex_get = codex_sub.add_parser("get", help="Get codex entity by id.")
+  codex_get.add_argument("--id", required=True, help="Entity id.")
+  codex_get.add_argument("--json", action="store_true", help="Output JSON.")
+  codex_update = codex_sub.add_parser("update", help="Update codex entity.")
+  codex_update.add_argument("--id", required=True, help="Entity id.")
+  codex_update.add_argument("--type", choices=sorted(ENTITY_TYPES), default=None, help="Entity type.")
+  codex_update.add_argument("--name", default=None, help="Entity name.")
+  codex_update.add_argument("--description", default=None, help="Entity description.")
+  codex_update.add_argument("--json", action="store_true", help="Output JSON.")
 
   proposal_parser = subparsers.add_parser("proposal", help="Manage AI proposal queue.")
   proposal_sub = proposal_parser.add_subparsers(dest="proposal_command", required=True)
@@ -157,10 +168,41 @@ def _run(args: argparse.Namespace) -> int:
         name=args.name,
         description=args.description,
       )
+      if args.json:
+        print(json.dumps(get_entity(paths, entity_id)))
+        return 0
       print(f"Created entity {entity_id}")
       return 0
 
-    for row in list_entities(paths, kind=args.type):
+    if args.codex_command == "get":
+      row = get_entity(paths, args.id)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"{row['id']}\t{row['type']}\t{row['name']}\t{row['description']}")
+      return 0
+
+    if args.codex_command == "update":
+      if all(value is None for value in (args.type, args.name, args.description)):
+        raise OpenAuthorError("No updates provided. Supply at least one field.")
+      row = update_entity(
+        paths,
+        entity_id=args.id,
+        kind=args.type,
+        name=args.name,
+        description=args.description,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"Updated entity {row['id']}")
+      return 0
+
+    rows = list_entities(paths, kind=args.type)
+    if args.json:
+      print(json.dumps(rows))
+      return 0
+    for row in rows:
       print(f"{row['id']}\t{row['type']}\t{row['name']}\t{row['description']}")
     return 0
 

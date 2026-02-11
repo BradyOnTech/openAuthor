@@ -103,6 +103,33 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("character", out)
       self.assertIn("Elara", out)
 
+      code, out, err = self.run_cli(["codex", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      codex_rows = json.loads(out)
+      self.assertTrue(any(row["name"] == "Elara" for row in codex_rows))
+      elara = next(row for row in codex_rows if row["name"] == "Elara")
+
+      code, out, err = self.run_cli(["codex", "get", "--id", elara["id"], "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      codex_entity = json.loads(out)
+      self.assertEqual(codex_entity["name"], "Elara")
+
+      code, out, err = self.run_cli(
+        [
+          "codex",
+          "update",
+          "--id",
+          elara["id"],
+          "--description",
+          "Updated protagonist profile.",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      updated_entity = json.loads(out)
+      self.assertEqual(updated_entity["description"], "Updated protagonist profile.")
+
       code, out, err = self.run_cli(
         [
           "proposal",

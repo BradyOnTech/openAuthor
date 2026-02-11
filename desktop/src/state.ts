@@ -1,4 +1,4 @@
-import type { ProposalRecord } from "./types";
+import type { CodexEntity, ProposalRecord } from "./types";
 
 export type ProposalCounts = {
   pending: number;
@@ -33,4 +33,12 @@ export function countProposals(rows: ProposalRecord[]): ProposalCounts {
     },
     { pending: 0, applied: 0, rejected: 0 } satisfies ProposalCounts
   );
+}
+
+export function orderCodexEntities(rows: CodexEntity[]): CodexEntity[] {
+  return [...rows].sort((a, b) => {
+    const typeDiff = a.type.localeCompare(b.type);
+    if (typeDiff !== 0) return typeDiff;
+    return a.name.localeCompare(b.name);
+  });
 }

@@ -89,7 +89,7 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
     if kind:
       rows = cursor.execute(
         """
-        SELECT id, kind, name, description, updated_at
+        SELECT id, kind, name, description, created_at, updated_at
         FROM entities
         WHERE kind = ?
         ORDER BY name ASC
@@ -99,7 +99,7 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
     else:
       rows = cursor.execute(
         """
-        SELECT id, kind, name, description, updated_at
+        SELECT id, kind, name, description, created_at, updated_at
         FROM entities
         ORDER BY kind ASC, name ASC
         """
@@ -113,10 +113,85 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
       "type": row[1],
       "name": row[2],
       "description": row[3],
-      "updated_at": row[4],
+      "created_at": row[4],
+      "updated_at": row[5],
     }
     for row in rows
   ]
+
+
+def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, str]:
+  ensure_codex(paths)
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    cursor = connection.cursor()
+    row = cursor.execute(
+      """
+      SELECT id, kind, name, description, created_at, updated_at
+      FROM entities
+      WHERE id = ?
+      """,
+      (entity_id,),
+    ).fetchone()
+  finally:
+    connection.close()
+
+  if row is None:
+    raise OpenAuthorError(f"Unknown codex entity id '{entity_id}'.")
+
+  return {
+    "id": row[0],
+    "type": row[1],
+    "name": row[2],
+    "description": row[3],
+    "created_at": row[4],
+    "updated_at": row[5],
+  }
+
+
+def update_entity(
+  paths: ProjectPaths,
+  *,
+  entity_id: str,
+  kind: str | None = None,
+  name: str | None = None,
+  description: str | None = None,
+) -> dict[str, str]:
+  if kind is not None and kind not in ENTITY_TYPES:
+    allowed = ", ".join(sorted(ENTITY_TYPES))
+    raise OpenAuthorError(f"Invalid entity type '{kind}'. Allowed: {allowed}.")
+
+  current = get_entity(paths, entity_id)
+  next_kind = kind if kind is not None else current["type"]
+  next_name = name if name is not None else current["name"]
+  next_description = description if description is not None else current["description"]
+  next_updated_at = utc_now()
+
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    cursor = connection.cursor()
+    cursor.execute(
+      """
+      UPDATE entities
+      SET kind = ?, name = ?, description = ?, updated_at = ?
+      WHERE id = ?
+      """,
+      (next_kind, next_name, next_description, next_updated_at, entity_id),
+    )
+    connection.commit()
+  except sqlite3.IntegrityError as error:
+    raise OpenAuthorError(f"Entity with name '{next_name}' already exists.") from error
+  finally:
+    connection.close()
+
+  return {
+    "id": entity_id,
+    "type": next_kind,
+    "name": next_name,
+    "description": next_description,
+    "created_at": current["created_at"],
+    "updated_at": next_updated_at,
+  }
 
 
 def export_codex_json(paths: ProjectPaths) -> Path:

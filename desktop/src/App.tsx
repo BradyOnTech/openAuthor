@@ -1,19 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  addCodexEntity,
   addScene,
   applyProposal,
   createProposal,
+  getCodexEntity,
   getProjectStatus,
   getScene,
+  listCodexEntities,
   listProposals,
   listScenes,
   rejectProposal,
+  updateCodexEntity,
   updateScene
 } from "./api";
-import { countProposals, orderProposalsForReview } from "./state";
-import type { ProposalRecord, SceneDetail, SceneSummary } from "./types";
+import {
+  countProposals,
+  orderCodexEntities,
+  orderProposalsForReview
+} from "./state";
+import type {
+  CodexEntity,
+  ProposalRecord,
+  SceneDetail,
+  SceneSummary
+} from "./types";
 
 const DEFAULT_ROOT = ".";
+
+type RightTab = "proposals" | "codex";
 
 type DraftScene = {
   title: string;
@@ -27,6 +42,12 @@ type DraftProposal = {
   title: string;
   instruction: string;
   sceneId: string;
+};
+
+type DraftCodex = {
+  type: CodexEntity["type"];
+  name: string;
+  description: string;
 };
 
 const EMPTY_DRAFT_SCENE: DraftScene = {
@@ -43,24 +64,43 @@ const EMPTY_DRAFT_PROPOSAL: DraftProposal = {
   sceneId: ""
 };
 
+const EMPTY_DRAFT_CODEX: DraftCodex = {
+  type: "character",
+  name: "",
+  description: ""
+};
+
 export function App() {
   const [projectRoot, setProjectRoot] = useState(DEFAULT_ROOT);
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rightTab, setRightTab] = useState<RightTab>("proposals");
+
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const [scene, setScene] = useState<SceneDetail | null>(null);
   const [draft, setDraft] = useState<DraftScene>(EMPTY_DRAFT_SCENE);
   const [addForm, setAddForm] = useState<DraftScene>(EMPTY_DRAFT_SCENE);
+
   const [proposals, setProposals] = useState<ProposalRecord[]>([]);
   const [proposalForm, setProposalForm] = useState<DraftProposal>(EMPTY_DRAFT_PROPOSAL);
   const [selectedProposalId, setSelectedProposalId] = useState<string>("");
+
+  const [codexEntities, setCodexEntities] = useState<CodexEntity[]>([]);
+  const [codexForm, setCodexForm] = useState<DraftCodex>(EMPTY_DRAFT_CODEX);
+  const [selectedCodexEntityId, setSelectedCodexEntityId] = useState<string>("");
+  const [codexDraft, setCodexDraft] = useState<DraftCodex>(EMPTY_DRAFT_CODEX);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const canSaveScene = useMemo(() => {
     return Boolean(selectedSceneId && draft.title.trim() !== "");
   }, [selectedSceneId, draft.title]);
+
+  const canSaveCodex = useMemo(() => {
+    return Boolean(selectedCodexEntityId && codexDraft.name.trim() !== "");
+  }, [selectedCodexEntityId, codexDraft.name]);
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
 
@@ -104,6 +144,24 @@ export function App() {
     setSelectedProposalId(target);
   }
 
+  async function refreshCodexList(nextSelectedCodexId?: string) {
+    const rows = await listCodexEntities(projectRoot);
+    const ordered = orderCodexEntities(rows);
+    setCodexEntities(ordered);
+    if (ordered.length === 0) {
+      setSelectedCodexEntityId("");
+      setCodexDraft(EMPTY_DRAFT_CODEX);
+      return;
+    }
+    const target =
+      nextSelectedCodexId && ordered.some((item) => item.id === nextSelectedCodexId)
+        ? nextSelectedCodexId
+        : selectedCodexEntityId && ordered.some((item) => item.id === selectedCodexEntityId)
+          ? selectedCodexEntityId
+          : ordered[0].id;
+    setSelectedCodexEntityId(target);
+  }
+
   async function loadSelectedScene(sceneId: string) {
     const row = await getScene(projectRoot, sceneId);
     setScene(row);
@@ -113,6 +171,15 @@ export function App() {
       pov: row.pov,
       status: row.status,
       body: row.body
+    });
+  }
+
+  async function loadSelectedCodex(entityId: string) {
+    const row = await getCodexEntity(projectRoot, entityId);
+    setCodexDraft({
+      type: row.type,
+      name: row.name,
+      description: row.description
     });
   }
 
@@ -129,9 +196,16 @@ export function App() {
         setDraft(EMPTY_DRAFT_SCENE);
         setProposals([]);
         setSelectedProposalId("");
+        setCodexEntities([]);
+        setSelectedCodexEntityId("");
+        setCodexDraft(EMPTY_DRAFT_CODEX);
         return;
       }
-      await Promise.all([refreshSceneList(), refreshProposalList()]);
+      await Promise.all([
+        refreshSceneList(),
+        refreshProposalList(),
+        refreshCodexList()
+      ]);
       setMessage("Project loaded.");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -160,6 +234,17 @@ export function App() {
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSceneId]);
+
+  useEffect(() => {
+    if (!selectedCodexEntityId) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    void loadSelectedCodex(selectedCodexEntityId)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setBusy(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCodexEntityId]);
 
   async function handleCreateScene() {
     if (addForm.title.trim() === "") return;
@@ -256,12 +341,45 @@ export function App() {
     }
   }
 
+  async function handleCreateCodex() {
+    if (codexForm.name.trim() === "") return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const created = await addCodexEntity(projectRoot, codexForm);
+      await refreshCodexList(created.id);
+      setCodexForm(EMPTY_DRAFT_CODEX);
+      setMessage("Codex entity created.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSaveCodex() {
+    if (!selectedCodexEntityId || codexDraft.name.trim() === "") return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const updated = await updateCodexEntity(projectRoot, selectedCodexEntityId, codexDraft);
+      await refreshCodexList(updated.id);
+      setMessage("Codex entity saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
         <div>
           <h1>openAuthor</h1>
-          <p>Binder + Editor + Proposal Review desktop shell</p>
+          <p>Binder + Editor + Proposal/Codex desktop shell</p>
         </div>
         <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
           {projectFound ? "Project Ready" : "No Project"}
@@ -419,92 +537,226 @@ export function App() {
           )}
         </section>
 
-        <aside className="proposal-pane">
-          <div className="proposal-header">
-            <h2>Proposals</h2>
-            <span>
-              {proposalCounts.pending} pending / {proposalCounts.applied} applied /{" "}
-              {proposalCounts.rejected} rejected
-            </span>
-          </div>
-
-          <div className="new-proposal-card">
-            <h3>New Proposal</h3>
-            <input
-              value={proposalForm.title}
-              onChange={(event) =>
-                setProposalForm((prev) => ({ ...prev, title: event.target.value }))
-              }
-              placeholder="Proposal title"
-            />
-            <textarea
-              className="proposal-instruction"
-              value={proposalForm.instruction}
-              onChange={(event) =>
-                setProposalForm((prev) => ({ ...prev, instruction: event.target.value }))
-              }
-              placeholder="Instruction"
-            />
-            <input
-              value={proposalForm.sceneId}
-              onChange={(event) =>
-                setProposalForm((prev) => ({ ...prev, sceneId: event.target.value }))
-              }
-              placeholder="Scene id (optional)"
-            />
+        <aside className="side-pane">
+          <div className="side-tabs">
             <button
-              disabled={
-                busy ||
-                proposalForm.title.trim() === "" ||
-                proposalForm.instruction.trim() === ""
-              }
-              onClick={handleCreateProposal}
+              className={rightTab === "proposals" ? "active" : ""}
+              onClick={() => setRightTab("proposals")}
             >
-              Add Proposal
+              Proposals
+            </button>
+            <button
+              className={rightTab === "codex" ? "active" : ""}
+              onClick={() => setRightTab("codex")}
+            >
+              Codex
             </button>
           </div>
 
-          <div className="proposal-list">
-            {proposals.map((item) => (
-              <button
-                key={item.id}
-                className={`proposal-item ${item.id === selectedProposalId ? "selected" : ""} status-${item.status}`}
-                onClick={() => setSelectedProposalId(item.id)}
-              >
-                <strong>{item.title}</strong>
-                <span>{item.scene_id || "global"}</span>
-                <em>{item.status}</em>
-              </button>
-            ))}
-          </div>
+          {rightTab === "proposals" ? (
+            <div className="side-content">
+              <div className="proposal-header">
+                <h2>Proposals</h2>
+                <span>
+                  {proposalCounts.pending} pending / {proposalCounts.applied} applied /{" "}
+                  {proposalCounts.rejected} rejected
+                </span>
+              </div>
 
-          {selectedProposal ? (
-            <div className="proposal-review">
-              <h3>Review</h3>
-              <p className="proposal-title">{selectedProposal.title}</p>
-              <p className="proposal-body">{selectedProposal.instruction}</p>
-              <p className="proposal-meta">
-                {selectedProposal.scene_id ? `Scene: ${selectedProposal.scene_id}` : "Scene: n/a"}
-              </p>
-              <div className="proposal-actions">
+              <div className="new-proposal-card">
+                <h3>New Proposal</h3>
+                <input
+                  value={proposalForm.title}
+                  onChange={(event) =>
+                    setProposalForm((prev) => ({ ...prev, title: event.target.value }))
+                  }
+                  placeholder="Proposal title"
+                />
+                <textarea
+                  className="proposal-instruction"
+                  value={proposalForm.instruction}
+                  onChange={(event) =>
+                    setProposalForm((prev) => ({
+                      ...prev,
+                      instruction: event.target.value
+                    }))
+                  }
+                  placeholder="Instruction"
+                />
+                <input
+                  value={proposalForm.sceneId}
+                  onChange={(event) =>
+                    setProposalForm((prev) => ({ ...prev, sceneId: event.target.value }))
+                  }
+                  placeholder="Scene id (optional)"
+                />
                 <button
-                  disabled={busy || selectedProposal.status !== "pending"}
-                  onClick={() => handleApplyProposal(selectedProposal.id)}
+                  disabled={
+                    busy ||
+                    proposalForm.title.trim() === "" ||
+                    proposalForm.instruction.trim() === ""
+                  }
+                  onClick={handleCreateProposal}
                 >
-                  Apply
-                </button>
-                <button
-                  className="reject-btn"
-                  disabled={busy || selectedProposal.status !== "pending"}
-                  onClick={() => handleRejectProposal(selectedProposal.id)}
-                >
-                  Reject
+                  Add Proposal
                 </button>
               </div>
+
+              <div className="proposal-list">
+                {proposals.map((item) => (
+                  <button
+                    key={item.id}
+                    className={`proposal-item ${item.id === selectedProposalId ? "selected" : ""} status-${item.status}`}
+                    onClick={() => setSelectedProposalId(item.id)}
+                  >
+                    <strong>{item.title}</strong>
+                    <span>{item.scene_id || "global"}</span>
+                    <em>{item.status}</em>
+                  </button>
+                ))}
+              </div>
+
+              {selectedProposal ? (
+                <div className="proposal-review">
+                  <h3>Review</h3>
+                  <p className="proposal-title">{selectedProposal.title}</p>
+                  <p className="proposal-body">{selectedProposal.instruction}</p>
+                  <p className="proposal-meta">
+                    {selectedProposal.scene_id
+                      ? `Scene: ${selectedProposal.scene_id}`
+                      : "Scene: n/a"}
+                  </p>
+                  <div className="proposal-actions">
+                    <button
+                      disabled={busy || selectedProposal.status !== "pending"}
+                      onClick={() => handleApplyProposal(selectedProposal.id)}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      className="reject-btn"
+                      disabled={busy || selectedProposal.status !== "pending"}
+                      onClick={() => handleRejectProposal(selectedProposal.id)}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="proposal-review empty-review">
+                  <p>Select a proposal to review.</p>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="proposal-review empty-review">
-              <p>Select a proposal to review.</p>
+            <div className="side-content">
+              <div className="codex-header">
+                <h2>Codex</h2>
+                <span>{codexEntities.length} entities</span>
+              </div>
+
+              <div className="new-codex-card">
+                <h3>New Entity</h3>
+                <div className="row">
+                  <select
+                    value={codexForm.type}
+                    onChange={(event) =>
+                      setCodexForm((prev) => ({
+                        ...prev,
+                        type: event.target.value as CodexEntity["type"]
+                      }))
+                    }
+                  >
+                    <option value="character">character</option>
+                    <option value="location">location</option>
+                    <option value="lore">lore</option>
+                    <option value="item">item</option>
+                    <option value="faction">faction</option>
+                    <option value="event">event</option>
+                  </select>
+                  <input
+                    value={codexForm.name}
+                    onChange={(event) =>
+                      setCodexForm((prev) => ({ ...prev, name: event.target.value }))
+                    }
+                    placeholder="Name"
+                  />
+                </div>
+                <textarea
+                  className="codex-description-input"
+                  value={codexForm.description}
+                  onChange={(event) =>
+                    setCodexForm((prev) => ({ ...prev, description: event.target.value }))
+                  }
+                  placeholder="Description"
+                />
+                <button
+                  disabled={busy || codexForm.name.trim() === ""}
+                  onClick={handleCreateCodex}
+                >
+                  Add Entity
+                </button>
+              </div>
+
+              <div className="codex-list">
+                {codexEntities.map((entity) => (
+                  <button
+                    key={entity.id}
+                    className={`codex-item ${entity.id === selectedCodexEntityId ? "selected" : ""}`}
+                    onClick={() => setSelectedCodexEntityId(entity.id)}
+                  >
+                    <strong>{entity.name}</strong>
+                    <span>{entity.type}</span>
+                  </button>
+                ))}
+              </div>
+
+              {selectedCodexEntityId ? (
+                <div className="codex-edit-card">
+                  <h3>Edit Entity</h3>
+                  <div className="row">
+                    <select
+                      value={codexDraft.type}
+                      onChange={(event) =>
+                        setCodexDraft((prev) => ({
+                          ...prev,
+                          type: event.target.value as CodexEntity["type"]
+                        }))
+                      }
+                    >
+                      <option value="character">character</option>
+                      <option value="location">location</option>
+                      <option value="lore">lore</option>
+                      <option value="item">item</option>
+                      <option value="faction">faction</option>
+                      <option value="event">event</option>
+                    </select>
+                    <input
+                      value={codexDraft.name}
+                      onChange={(event) =>
+                        setCodexDraft((prev) => ({ ...prev, name: event.target.value }))
+                      }
+                    />
+                  </div>
+                  <textarea
+                    className="codex-description-input"
+                    value={codexDraft.description}
+                    onChange={(event) =>
+                      setCodexDraft((prev) => ({
+                        ...prev,
+                        description: event.target.value
+                      }))
+                    }
+                  />
+                  <button disabled={busy || !canSaveCodex} onClick={handleSaveCodex}>
+                    Save Entity
+                  </button>
+                </div>
+              ) : (
+                <div className="codex-edit-card empty-review">
+                  <p>Select a codex entity to edit.</p>
+                </div>
+              )}
             </div>
           )}
         </aside>

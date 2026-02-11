@@ -39,7 +39,9 @@
 - Add proposal review pane and context lens UI.
   - Proposal review pane (create/list/apply/reject) ✅
   - Context lens UI pending
-- Add codex panel and continuity checks panel. (pending)
+- Add codex panel and continuity checks panel.
+  - Codex panel (create/list/edit entities) ✅
+  - Continuity checks panel pending
 
 ## Testing Strategy (active)
 

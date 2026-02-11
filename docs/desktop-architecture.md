@@ -30,6 +30,13 @@
 - Proposal apply: `proposal apply --id <proposal-id> --json`
 - Proposal reject: `proposal reject --id <proposal-id> --json`
 
+## Implemented command usage (Codex Panel)
+
+- Codex list: `codex list --json`
+- Codex create: `codex add --type ... --name ... --description ... --json`
+- Codex fetch: `codex get --id <entity-id> --json`
+- Codex update: `codex update --id <entity-id> ... --json`
+
 ## Why sidecar-first
 
 - Reuses the already-tested Python core immediately.

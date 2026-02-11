@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { countProposals, orderProposalsForReview } from "./state";
-import type { ProposalRecord } from "./types";
+import { countProposals, orderCodexEntities, orderProposalsForReview } from "./state";
+import type { CodexEntity, ProposalRecord } from "./types";
 
 const rows: ProposalRecord[] = [
   {
@@ -65,5 +65,38 @@ describe("countProposals", () => {
       applied: 1,
       rejected: 1
     });
+  });
+});
+
+describe("orderCodexEntities", () => {
+  it("orders entities by type then name", () => {
+    const entities: CodexEntity[] = [
+      {
+        id: "entity-z",
+        type: "location",
+        name: "Zeta City",
+        description: "",
+        created_at: "2026-02-11T10:00:00Z",
+        updated_at: "2026-02-11T10:00:00Z"
+      },
+      {
+        id: "entity-a",
+        type: "character",
+        name: "Aria",
+        description: "",
+        created_at: "2026-02-11T10:00:00Z",
+        updated_at: "2026-02-11T10:00:00Z"
+      },
+      {
+        id: "entity-b",
+        type: "character",
+        name: "Bran",
+        description: "",
+        created_at: "2026-02-11T10:00:00Z",
+        updated_at: "2026-02-11T10:00:00Z"
+      }
+    ];
+    const ordered = orderCodexEntities(entities);
+    expect(ordered.map((item) => item.id)).toEqual(["entity-a", "entity-b", "entity-z"]);
   });
 });
