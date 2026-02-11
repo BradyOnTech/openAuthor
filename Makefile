@@ -1,12 +1,13 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check
+.PHONY: help setup check audit-no-mocks test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup  - Verify local toolchain availability"
 	@echo "  make check  - Run lightweight repository checks"
+	@echo "  make audit-no-mocks - Fail if placeholder/stub markers are present"
 	@echo "  make test   - Run Python tests"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make test-all - Run Python and desktop tests"
@@ -31,6 +32,13 @@ check:
 	@test -f docs/desktop-architecture.md && echo "docs/desktop-architecture.md: OK" || (echo "docs/desktop-architecture.md missing" && exit 1)
 	@test -f openauthor/cli.py && echo "openauthor CLI: OK" || (echo "openauthor/cli.py missing" && exit 1)
 	@test -f desktop/src/App.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
+	@$(MAKE) audit-no-mocks
+
+audit-no-mocks:
+	@echo "Scanning for placeholder/stub markers..."
+	@! rg -n -i "TODO|FIXME|TBD|NotImplemented|mock data|stubbed|hardcoded demo" \
+		openauthor desktop/src tests \
+		|| (echo "Placeholder/stub markers found. Resolve before merge." && exit 1)
 
 test:
 	@echo "Running tests..."

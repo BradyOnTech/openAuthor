@@ -21,6 +21,8 @@ class ProjectPaths:
   scenes_dir: Path
   codex_db: Path
   proposals_dir: Path
+  generations_dir: Path
+  pricing_file: Path
 
 
 def utc_now() -> str:
@@ -36,6 +38,8 @@ def get_project_paths(root: Path) -> ProjectPaths:
     scenes_dir=root / "manuscript" / "scenes",
     codex_db=root / "codex" / "codex.sqlite3",
     proposals_dir=project_dir / "proposals",
+    generations_dir=project_dir / "generations",
+    pricing_file=project_dir / "provider_pricing.json",
   )
 
 
@@ -63,6 +67,7 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
   paths.scenes_dir.mkdir(parents=True, exist_ok=True)
   paths.codex_db.parent.mkdir(parents=True, exist_ok=True)
   paths.proposals_dir.mkdir(parents=True, exist_ok=True)
+  paths.generations_dir.mkdir(parents=True, exist_ok=True)
 
   if not paths.config_file.exists():
     project_name = name or root.name
@@ -82,6 +87,25 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
     manuscript_readme.write_text(
       "# Manuscript\n\n"
       "Scene files live in `manuscript/scenes/` and are versioned in git.\n",
+      encoding="utf-8",
+    )
+
+  if not paths.pricing_file.exists():
+    paths.pricing_file.write_text(
+      json.dumps(
+        {
+          "openai": {},
+          "anthropic": {},
+          "local": {
+            "heuristic-v1": {
+              "input_per_million": 0.0,
+              "output_per_million": 0.0,
+            }
+          },
+        },
+        indent=2,
+      )
+      + "\n",
       encoding="utf-8",
     )
 

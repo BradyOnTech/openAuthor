@@ -41,6 +41,21 @@ export type ProposalRecord = {
   created_at: string;
   updated_at: string;
   notes: string;
+  source?: "manual" | "ai_generate";
+  generation?: {
+    id: string;
+    provider: string;
+    model: string;
+    temperature: number;
+    max_output_tokens: number;
+    context_scene_radius: number;
+    codex_limit: number;
+    input_tokens: number;
+    output_tokens: number;
+    latency_ms: number;
+    estimated_cost_usd: number | null;
+    log_path: string;
+  };
 };
 
 export type CodexEntity = {

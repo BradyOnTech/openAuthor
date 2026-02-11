@@ -161,6 +161,27 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIsNotNone(match)
       proposal_id = match.group(1)  # type: ignore[union-attr]
 
+      code, out, err = self.run_cli(
+        [
+          "proposal",
+          "generate",
+          "--scene",
+          "scene-0001",
+          "--instruction",
+          "Tighten scene rhythm while preserving voice.",
+          "--provider",
+          "local",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      generated_proposal = json.loads(out)
+      self.assertEqual(generated_proposal["scene_id"], "scene-0001")
+      self.assertEqual(generated_proposal["source"], "ai_generate")
+      self.assertEqual(generated_proposal["generation"]["provider"], "local")
+      self.assertTrue((root / generated_proposal["generation"]["log_path"]).exists())
+
       code, out, err = self.run_cli(["proposal", "apply", "--id", proposal_id], root)
       self.assertEqual(code, 0, msg=err)
       self.assertIn(f"Applied proposal {proposal_id}", out)
@@ -213,6 +234,7 @@ class OpenAuthorFlowTests(unittest.TestCase):
       ).stdout
       self.assertIn("?? notes.txt", status)
       self.assertTrue((root / "codex" / "codex.json").exists())
+      self.assertTrue((root / ".openauthor" / "provider_pricing.json").exists())
 
 
 if __name__ == "__main__":

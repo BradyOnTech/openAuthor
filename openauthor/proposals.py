@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 import uuid
 from pathlib import Path
 
@@ -19,9 +20,11 @@ def create_proposal(
   title: str,
   instruction: str,
   scene_id: str = "",
+  source: str = "manual",
+  generation: dict[str, Any] | None = None,
 ) -> str:
   proposal_id = f"proposal-{uuid.uuid4().hex[:12]}"
-  payload = {
+  payload: dict[str, Any] = {
     "id": proposal_id,
     "title": title,
     "instruction": instruction,
@@ -30,7 +33,10 @@ def create_proposal(
     "created_at": utc_now(),
     "updated_at": utc_now(),
     "notes": "",
+    "source": source,
   }
+  if generation is not None:
+    payload["generation"] = generation
   _proposal_file(paths, proposal_id).write_text(
     json.dumps(payload, indent=2) + "\n",
     encoding="utf-8",
@@ -38,23 +44,23 @@ def create_proposal(
   return proposal_id
 
 
-def _read_proposal(proposal_file: Path) -> dict[str, str]:
+def _read_proposal(proposal_file: Path) -> dict[str, Any]:
   return json.loads(proposal_file.read_text(encoding="utf-8"))
 
 
-def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, str]:
+def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, Any]:
   proposal_path = _proposal_file(paths, proposal_id)
   if not proposal_path.exists():
     raise OpenAuthorError(f"Unknown proposal id '{proposal_id}'.")
   return _read_proposal(proposal_path)
 
 
-def list_proposals(paths: ProjectPaths, *, status: str | None = None) -> list[dict[str, str]]:
+def list_proposals(paths: ProjectPaths, *, status: str | None = None) -> list[dict[str, Any]]:
   if status and status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
     raise OpenAuthorError(f"Invalid status '{status}'. Allowed: {allowed}.")
 
-  rows: list[dict[str, str]] = []
+  rows: list[dict[str, Any]] = []
   for proposal_file in sorted(paths.proposals_dir.glob("*.json")):
     item = _read_proposal(proposal_file)
     if status and item.get("status") != status:
@@ -69,7 +75,7 @@ def update_proposal_status(
   proposal_id: str,
   status: str,
   notes: str = "",
-) -> dict[str, str]:
+) -> dict[str, Any]:
   if status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
     raise OpenAuthorError(f"Invalid status '{status}'. Allowed: {allowed}.")

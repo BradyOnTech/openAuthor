@@ -27,6 +27,7 @@ class ProposalModuleTests(unittest.TestCase):
       )
       created = get_proposal(paths, proposal_id)
       self.assertEqual(created["status"], "pending")
+      self.assertEqual(created["source"], "manual")
 
       applied = update_proposal_status(
         paths,

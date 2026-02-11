@@ -14,6 +14,7 @@ Architecture note: desktop v1 will use `Tauri + React`, with Tauri invoking the 
 ```bash
 make setup
 make check
+make audit-no-mocks
 make test
 make test-desktop
 make test-all
@@ -59,6 +60,13 @@ python3 -m openauthor proposal add --title "Tighten prose" --instruction "Make p
 python3 -m openauthor proposal list --status pending
 python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx
 
+# generate proposal using local provider (real deterministic adapter)
+python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --json
+
+# generate proposal using OpenAI or Anthropic (requires API keys)
+OPENAI_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Improve dialogue clarity" --provider openai --model gpt-4.1-mini --json
+ANTHROPIC_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Increase tension" --provider anthropic --json
+
 # create git snapshot
 python3 -m openauthor snapshot create -m "Draft scene and codex seed"
 python3 -m openauthor snapshot log
@@ -74,6 +82,11 @@ python3 -m openauthor check continuity --json
 - `.openauthor/project.json`
 - `.openauthor/proposals/`
 - `codex/codex.json` (exported from SQLite on snapshot)
+
+AI generation artifacts:
+
+- `.openauthor/generations/*.json` stores prompt/context/usage logs per run.
+- `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
 
 ## Repository layout
 

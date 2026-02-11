@@ -22,10 +22,28 @@
 
 ## Phase 2: AI integration layer (pending)
 
-- Add provider abstraction (`openai`, `anthropic`, `local` adapters).
-- Implement prompt/context packer from scenes + codex.
-- Add proposal-generation command (`proposal generate`) with deterministic logs.
-- Add budget/cost and token accounting metadata.
+- 2.1 Provider abstraction:
+  - Provider interfaces (`openai`, `anthropic`, `local`) with real adapter calls are implemented in core. ✅
+  - Local provider uses deterministic generation; remote providers fail closed without credentials. ✅
+- 2.2 Prompt/context packing:
+  - Deterministic context packs from selected scene + neighbors + codex + continuity checks are implemented. ✅
+  - Saved generation artifacts for reproducible runs are implemented under `.openauthor/generations/`. ✅
+- 2.3 Proposal generation:
+  - `proposal generate` command persists generated proposals through existing proposal queue/storage. ✅
+  - Provider/model and generation metadata are attached to proposal payloads. ✅
+- 2.4 Budget and observability:
+  - Token usage + latency metadata are persisted per generation run. ✅
+  - Cost estimation is configurable via `.openauthor/provider_pricing.json`; next step is richer budget policy enforcement. ⏳
+
+## No-Mock Guardrails (active)
+
+- Every desktop action must map to a real core command or persisted local computation.
+- No placeholder outputs, synthetic “demo” responses, or stubbed provider paths in shipped features.
+- New Phase 2 features must include:
+  - CLI regression coverage for new command contracts.
+  - Unit tests for pure parsing/selection logic.
+  - Build gates (`make test-all`, `make desktop-build`, `make tauri-check`) passing.
+- Repository check now includes `make audit-no-mocks`.
 
 ## Phase 3: Desktop UX (in progress)
 

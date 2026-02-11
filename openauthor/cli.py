@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
 from .git_ops import create_snapshot, initialize_git, list_snapshots
@@ -84,6 +85,51 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_reject.add_argument("--id", required=True, help="Proposal id.")
   proposal_reject.add_argument("--notes", default="", help="Optional note.")
   proposal_reject.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_generate = proposal_sub.add_parser("generate", help="Generate proposal via provider.")
+  proposal_generate.add_argument("--scene", required=True, help="Scene id.")
+  proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
+  proposal_generate.add_argument("--title", default="", help="Optional proposal title override.")
+  proposal_generate.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default="local",
+    help="Generation provider.",
+  )
+  proposal_generate.add_argument(
+    "--model",
+    default=None,
+    help=(
+      "Provider model override. "
+      f"Defaults: local={DEFAULT_MODELS['local']}, "
+      f"openai={DEFAULT_MODELS['openai']}, "
+      f"anthropic={DEFAULT_MODELS['anthropic']}."
+    ),
+  )
+  proposal_generate.add_argument(
+    "--temperature",
+    type=float,
+    default=0.2,
+    help="Sampling temperature.",
+  )
+  proposal_generate.add_argument(
+    "--max-output-tokens",
+    type=int,
+    default=700,
+    help="Maximum output tokens.",
+  )
+  proposal_generate.add_argument(
+    "--context-scenes",
+    type=int,
+    default=1,
+    help="Nearby scene radius for context packing.",
+  )
+  proposal_generate.add_argument(
+    "--codex-limit",
+    type=int,
+    default=20,
+    help="Maximum codex entities in packed context.",
+  )
+  proposal_generate.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -258,6 +304,28 @@ def _run(args: argparse.Namespace) -> int:
         print(json.dumps(row))
         return 0
       print(f"Rejected proposal {args.id}")
+      return 0
+
+    if args.proposal_command == "generate":
+      row = generate_proposal(
+        paths,
+        scene_id=args.scene,
+        instruction=args.instruction,
+        title=args.title,
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
+        context_scene_radius=args.context_scenes,
+        codex_limit=args.codex_limit,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      generation = row.get("generation", {})
+      provider = generation.get("provider", "unknown")
+      model = generation.get("model", "unknown")
+      print(f"Generated proposal {row['id']} via {provider}/{model}")
       return 0
 
     rows = list_proposals(paths, status=args.status)

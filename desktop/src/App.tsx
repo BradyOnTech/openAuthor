@@ -34,7 +34,16 @@ import type {
   SceneSummary
 } from "./types";
 
-const DEFAULT_ROOT = ".";
+const PROJECT_ROOT_STORAGE_KEY = "openauthor.projectRoot";
+
+function loadDefaultRoot(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(PROJECT_ROOT_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
 
 type RightTab = "proposals" | "codex" | "checks" | "context";
 type CenterView = "editor" | "outliner";
@@ -81,7 +90,7 @@ const EMPTY_DRAFT_CODEX: DraftCodex = {
 };
 
 export function App() {
-  const [projectRoot, setProjectRoot] = useState(DEFAULT_ROOT);
+  const [projectRoot, setProjectRoot] = useState(loadDefaultRoot);
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("proposals");
@@ -299,6 +308,15 @@ export function App() {
     void checkProjectAndLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PROJECT_ROOT_STORAGE_KEY, projectRoot);
+    } catch {
+      // Ignore storage errors; path editing still works.
+    }
+  }, [projectRoot]);
 
   useEffect(() => {
     if (!selectedSceneId) return;
