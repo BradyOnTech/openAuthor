@@ -1,4 +1,9 @@
-import type { CodexEntity, ContinuityIssue, ProposalRecord } from "./types";
+import type {
+  CodexEntity,
+  ContinuityIssue,
+  ProposalRecord,
+  SceneSummary
+} from "./types";
 
 export type ProposalCounts = {
   pending: number;
@@ -10,6 +15,13 @@ export type ContinuityCounts = {
   error: number;
   warning: number;
   info: number;
+};
+
+export type SceneStatusCounts = {
+  draft: number;
+  revised: number;
+  final: number;
+  other: number;
 };
 
 function timestamp(value: string): number {
@@ -73,4 +85,49 @@ export function countContinuityIssues(rows: ContinuityIssue[]): ContinuityCounts
     },
     { error: 0, warning: 0, info: 0 } satisfies ContinuityCounts
   );
+}
+
+function sceneNumber(sceneId: string): number {
+  const match = sceneId.match(/scene-(\d+)$/);
+  if (!match) return Number.POSITIVE_INFINITY;
+  return Number.parseInt(match[1], 10);
+}
+
+export function orderScenesForOutline(rows: SceneSummary[]): SceneSummary[] {
+  return [...rows].sort((a, b) => {
+    const indexDiff = sceneNumber(a.id) - sceneNumber(b.id);
+    if (indexDiff !== 0) return indexDiff;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+export function countSceneStatuses(rows: SceneSummary[]): SceneStatusCounts {
+  return rows.reduce(
+    (acc, row) => {
+      const status = row.status.toLowerCase();
+      if (status === "draft" || status === "revised" || status === "final") {
+        acc[status] += 1;
+      } else {
+        acc.other += 1;
+      }
+      return acc;
+    },
+    { draft: 0, revised: 0, final: 0, other: 0 } satisfies SceneStatusCounts
+  );
+}
+
+export function proposalsForScene(
+  rows: ProposalRecord[],
+  sceneId: string
+): ProposalRecord[] {
+  if (!sceneId) return [];
+  return rows.filter((row) => row.scene_id === sceneId || row.scene_id === "");
+}
+
+export function continuityIssuesForScene(
+  rows: ContinuityIssue[],
+  sceneId: string
+): ContinuityIssue[] {
+  if (!sceneId) return [];
+  return rows.filter((row) => row.scene_id === sceneId);
 }

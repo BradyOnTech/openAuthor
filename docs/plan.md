@@ -31,14 +31,14 @@
 
 - Build Tauri shell + editor/outliner views.
   - Binder + Editor implemented in desktop shell ✅
-  - Outliner view pending
+  - Outliner view (search/filter/open-in-editor) ✅
 - Establish desktop/core contract:
   - Tauri commands as UI boundary
   - Python core called as sidecar process for v1 ✅
   - Typed request/response payloads for future Rust migration ✅
 - Add proposal review pane and context lens UI.
   - Proposal review pane (create/list/apply/reject) ✅
-  - Context lens UI pending
+  - Context lens UI (scene-linked proposal/codex/continuity context) ✅
 - Add codex panel and continuity checks panel.
   - Codex panel (create/list/edit entities) ✅
   - Continuity checks panel (run/list/jump-to-scene) ✅

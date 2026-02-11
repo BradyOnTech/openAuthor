@@ -57,6 +57,14 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("scene-0001", out)
       self.assertIn("Opening Scene", out)
 
+      code, out, err = self.run_cli(["scene", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      scene_rows = json.loads(out)
+      self.assertEqual(scene_rows[0]["id"], "scene-0001")
+      self.assertIn("summary", scene_rows[0])
+      self.assertIn("pov", scene_rows[0])
+      self.assertIn("updated_at", scene_rows[0])
+
       code, out, err = self.run_cli(["scene", "get", "--id", "scene-0001", "--json"], root)
       self.assertEqual(code, 0, msg=err)
       scene = json.loads(out)

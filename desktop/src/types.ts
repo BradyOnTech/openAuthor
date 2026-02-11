@@ -12,7 +12,11 @@ export type ProjectStatus = {
 export type SceneSummary = {
   id: string;
   title: string;
+  summary: string;
+  pov: string;
   status: string;
+  created_at: string;
+  updated_at: string;
   path: string;
 };
 

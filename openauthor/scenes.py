@@ -104,7 +104,11 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, str]]:
       {
         "id": front_matter.get("id", scene_file.stem),
         "title": front_matter.get("title", scene_file.stem),
+        "summary": front_matter.get("summary", ""),
+        "pov": front_matter.get("pov", ""),
         "status": front_matter.get("status", "unknown"),
+        "created_at": front_matter.get("created_at", ""),
+        "updated_at": front_matter.get("updated_at", ""),
         "path": str(scene_file.relative_to(paths.root)),
       }
     )

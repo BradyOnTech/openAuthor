@@ -22,7 +22,7 @@ make test-all
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Proposal Review + Codex Panel + Continuity Checks.
+Current desktop slice: Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks.
 
 ```bash
 cd desktop
@@ -91,4 +91,4 @@ python3 -m openauthor check continuity --json
 
 ## Status
 
-Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.
+Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.

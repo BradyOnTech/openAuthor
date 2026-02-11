@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  continuityIssuesForScene,
+  countSceneStatuses,
   countContinuityIssues,
   countProposals,
+  orderScenesForOutline,
   orderCodexEntities,
   orderContinuityIssues,
-  orderProposalsForReview
+  orderProposalsForReview,
+  proposalsForScene
 } from "./state";
-import type { CodexEntity, ContinuityIssue, ProposalRecord } from "./types";
+import type {
+  CodexEntity,
+  ContinuityIssue,
+  ProposalRecord,
+  SceneSummary
+} from "./types";
 
 const rows: ProposalRecord[] = [
   {
@@ -188,5 +197,146 @@ describe("countContinuityIssues", () => {
       warning: 2,
       info: 0
     });
+  });
+});
+
+describe("orderScenesForOutline", () => {
+  it("orders scenes by numeric id", () => {
+    const scenes: SceneSummary[] = [
+      {
+        id: "scene-0010",
+        title: "Ten",
+        summary: "",
+        pov: "",
+        status: "draft",
+        created_at: "",
+        updated_at: "",
+        path: "manuscript/scenes/0010-ten.md"
+      },
+      {
+        id: "scene-0002",
+        title: "Two",
+        summary: "",
+        pov: "",
+        status: "draft",
+        created_at: "",
+        updated_at: "",
+        path: "manuscript/scenes/0002-two.md"
+      },
+      {
+        id: "scene-0001",
+        title: "One",
+        summary: "",
+        pov: "",
+        status: "draft",
+        created_at: "",
+        updated_at: "",
+        path: "manuscript/scenes/0001-one.md"
+      }
+    ];
+    const ordered = orderScenesForOutline(scenes);
+    expect(ordered.map((item) => item.id)).toEqual(["scene-0001", "scene-0002", "scene-0010"]);
+  });
+});
+
+describe("countSceneStatuses", () => {
+  it("counts standard statuses and groups unknown statuses as other", () => {
+    const counts = countSceneStatuses([
+      {
+        id: "scene-0001",
+        title: "",
+        summary: "",
+        pov: "",
+        status: "draft",
+        created_at: "",
+        updated_at: "",
+        path: ""
+      },
+      {
+        id: "scene-0002",
+        title: "",
+        summary: "",
+        pov: "",
+        status: "revised",
+        created_at: "",
+        updated_at: "",
+        path: ""
+      },
+      {
+        id: "scene-0003",
+        title: "",
+        summary: "",
+        pov: "",
+        status: "final",
+        created_at: "",
+        updated_at: "",
+        path: ""
+      },
+      {
+        id: "scene-0004",
+        title: "",
+        summary: "",
+        pov: "",
+        status: "blocked",
+        created_at: "",
+        updated_at: "",
+        path: ""
+      }
+    ]);
+    expect(counts).toEqual({
+      draft: 1,
+      revised: 1,
+      final: 1,
+      other: 1
+    });
+  });
+});
+
+describe("proposalsForScene", () => {
+  it("returns scene-specific and global proposals for a scene", () => {
+    const sceneRows = proposalsForScene(rows, "scene-0001");
+    expect(sceneRows.map((item) => item.id)).toEqual(["proposal-a"]);
+
+    const mixed: ProposalRecord[] = [
+      ...rows,
+      {
+        id: "proposal-global",
+        title: "Global",
+        instruction: "Global",
+        scene_id: "",
+        status: "pending",
+        created_at: "2026-02-11T13:00:00Z",
+        updated_at: "2026-02-11T13:00:00Z",
+        notes: ""
+      }
+    ];
+    const mixedRows = proposalsForScene(mixed, "scene-0001");
+    expect(mixedRows.map((item) => item.id)).toEqual(["proposal-a", "proposal-global"]);
+  });
+});
+
+describe("continuityIssuesForScene", () => {
+  it("filters issues by scene id", () => {
+    const rows: ContinuityIssue[] = [
+      {
+        id: "a",
+        severity: "warning",
+        code: "x",
+        title: "A",
+        message: "A",
+        scene_id: "scene-0001",
+        path: "a"
+      },
+      {
+        id: "b",
+        severity: "info",
+        code: "y",
+        title: "B",
+        message: "B",
+        scene_id: "scene-0002",
+        path: "b"
+      }
+    ];
+    expect(continuityIssuesForScene(rows, "scene-0001").map((item) => item.id)).toEqual(["a"]);
   });
 });

@@ -15,7 +15,7 @@
   - `python3 -m openauthor <args...>`
   - Working directory is set to `project_root`
 
-## Implemented command usage (Binder + Editor)
+## Implemented command usage (Binder + Editor + Outliner)
 
 - Binder list: `scene list --json`
 - Scene load: `scene get --id <scene-id> --json`
@@ -40,6 +40,13 @@
 ## Implemented command usage (Continuity Checks)
 
 - Continuity scan: `check continuity --json`
+
+## Implemented command usage (Context Lens)
+
+- Scene context: derived from loaded `scene get --id <scene-id> --json`
+- Proposal context: derived from `proposal list --json`
+- Codex context: derived from `codex list --json`
+- Continuity context: derived from `check continuity --json`
 
 ## Why sidecar-first
 

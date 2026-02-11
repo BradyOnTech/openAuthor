@@ -16,11 +16,15 @@ import {
   updateScene
 } from "./api";
 import {
+  continuityIssuesForScene,
   countContinuityIssues,
   countProposals,
+  countSceneStatuses,
+  orderScenesForOutline,
   orderCodexEntities,
   orderContinuityIssues,
-  orderProposalsForReview
+  orderProposalsForReview,
+  proposalsForScene
 } from "./state";
 import type {
   CodexEntity,
@@ -32,7 +36,9 @@ import type {
 
 const DEFAULT_ROOT = ".";
 
-type RightTab = "proposals" | "codex" | "checks";
+type RightTab = "proposals" | "codex" | "checks" | "context";
+type CenterView = "editor" | "outliner";
+type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
 
 type DraftScene = {
   title: string;
@@ -79,6 +85,10 @@ export function App() {
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("proposals");
+  const [centerView, setCenterView] = useState<CenterView>("editor");
+  const [outlinerQuery, setOutlinerQuery] = useState("");
+  const [outlinerStatusFilter, setOutlinerStatusFilter] =
+    useState<OutlinerStatusFilter>("all");
 
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
@@ -110,10 +120,33 @@ export function App() {
   }, [selectedCodexEntityId, codexDraft.name]);
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
+  const sceneStatusCounts = useMemo(() => countSceneStatuses(scenes), [scenes]);
   const continuityCounts = useMemo(
     () => countContinuityIssues(continuityIssues),
     [continuityIssues]
   );
+  const outlinerRows = useMemo(() => {
+    const ordered = orderScenesForOutline(scenes);
+    const query = outlinerQuery.trim().toLowerCase();
+    return ordered.filter((item) => {
+      const matchesStatus =
+        outlinerStatusFilter === "all" ||
+        item.status.toLowerCase() === outlinerStatusFilter;
+      if (!matchesStatus) return false;
+      if (query === "") return true;
+      const haystack = [
+        item.id,
+        item.title,
+        item.summary,
+        item.pov,
+        item.status,
+        item.path
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [scenes, outlinerQuery, outlinerStatusFilter]);
 
   const selectedProposal = useMemo(
     () => proposals.find((item) => item.id === selectedProposalId) ?? null,
@@ -124,6 +157,33 @@ export function App() {
     () => continuityIssues.find((item) => item.id === selectedContinuityIssueId) ?? null,
     [continuityIssues, selectedContinuityIssueId]
   );
+  const contextProposals = useMemo(
+    () => proposalsForScene(proposals, selectedSceneId),
+    [proposals, selectedSceneId]
+  );
+  const contextProposalCounts = useMemo(
+    () => countProposals(contextProposals),
+    [contextProposals]
+  );
+  const contextContinuityIssues = useMemo(
+    () => continuityIssuesForScene(continuityIssues, selectedSceneId),
+    [continuityIssues, selectedSceneId]
+  );
+  const contextContinuityCounts = useMemo(
+    () => countContinuityIssues(contextContinuityIssues),
+    [contextContinuityIssues]
+  );
+  const povCharacterEntity = useMemo(() => {
+    if (!scene?.pov) return null;
+    const normalizedPov = scene.pov.trim().toLowerCase();
+    return (
+      codexEntities.find(
+        (entity) =>
+          entity.type === "character" &&
+          entity.name.trim().toLowerCase() === normalizedPov
+      ) ?? null
+    );
+  }, [codexEntities, scene?.pov]);
 
   const canOpenSelectedIssueScene = useMemo(() => {
     if (!selectedContinuityIssue) return false;
@@ -422,12 +482,20 @@ export function App() {
     }
   }
 
+  function handleOpenSceneFromOutliner(sceneId: string) {
+    setCenterView("editor");
+    setSelectedSceneId(sceneId);
+    setMessage(`Loaded ${sceneId} in editor.`);
+    setError("");
+  }
+
   function handleOpenIssueScene() {
     if (!selectedContinuityIssue) return;
     if (!scenes.some((item) => item.id === selectedContinuityIssue.scene_id)) {
       setError(`Scene '${selectedContinuityIssue.scene_id}' no longer exists in this project.`);
       return;
     }
+    setCenterView("editor");
     setError("");
     setSelectedSceneId(selectedContinuityIssue.scene_id);
     setMessage(`Loaded ${selectedContinuityIssue.scene_id} in editor.`);
@@ -438,7 +506,7 @@ export function App() {
       <header className="topbar">
         <div>
           <h1>openAuthor</h1>
-          <p>Binder + Editor + Proposal/Codex/Checks desktop shell</p>
+          <p>Binder + Editor/Outliner + Proposal/Context/Codex/Checks desktop shell</p>
         </div>
         <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
           {projectFound ? "Project Ready" : "No Project"}
@@ -523,74 +591,164 @@ export function App() {
 
         <section className="editor">
           <div className="editor-header">
-            <h2>Editor</h2>
-            <button disabled={busy || !canSaveScene} onClick={handleSaveScene}>
-              Save Scene
-            </button>
+            <div className="center-tabs">
+              <button
+                className={centerView === "editor" ? "active" : ""}
+                onClick={() => setCenterView("editor")}
+              >
+                Editor
+              </button>
+              <button
+                className={centerView === "outliner" ? "active" : ""}
+                onClick={() => setCenterView("outliner")}
+              >
+                Outliner
+              </button>
+            </div>
+            {centerView === "editor" ? (
+              <button
+                className="save-scene-btn"
+                disabled={busy || !canSaveScene}
+                onClick={handleSaveScene}
+              >
+                Save Scene
+              </button>
+            ) : (
+              <span className="outliner-count">{outlinerRows.length} scenes shown</span>
+            )}
           </div>
 
-          {!scene ? (
-            <div className="empty-state">
-              <p>Select a scene from the Binder to edit.</p>
-            </div>
+          {centerView === "editor" ? (
+            !scene ? (
+              <div className="empty-state">
+                <p>Select a scene from the Binder to edit.</p>
+              </div>
+            ) : (
+              <div className="editor-form">
+                <div className="meta-grid">
+                  <label>
+                    <span>Title</span>
+                    <input
+                      value={draft.title}
+                      onChange={(event) =>
+                        setDraft((prev) => ({ ...prev, title: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Status</span>
+                    <select
+                      value={draft.status}
+                      onChange={(event) =>
+                        setDraft((prev) => ({ ...prev, status: event.target.value }))
+                      }
+                    >
+                      <option value="draft">draft</option>
+                      <option value="revised">revised</option>
+                      <option value="final">final</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>POV</span>
+                    <input
+                      value={draft.pov}
+                      onChange={(event) =>
+                        setDraft((prev) => ({ ...prev, pov: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Summary</span>
+                    <input
+                      value={draft.summary}
+                      onChange={(event) =>
+                        setDraft((prev) => ({ ...prev, summary: event.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <label>
+                  <span>Body</span>
+                  <textarea
+                    value={draft.body}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, body: event.target.value }))
+                    }
+                  />
+                </label>
+
+                <div className="meta-row">
+                  <code>{scene.path}</code>
+                  <span>Updated: {scene.updated_at || "n/a"}</span>
+                </div>
+              </div>
+            )
           ) : (
-            <div className="editor-form">
-              <div className="meta-grid">
-                <label>
-                  <span>Title</span>
-                  <input
-                    value={draft.title}
-                    onChange={(event) =>
-                      setDraft((prev) => ({ ...prev, title: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={draft.status}
-                    onChange={(event) =>
-                      setDraft((prev) => ({ ...prev, status: event.target.value }))
-                    }
-                  >
-                    <option value="draft">draft</option>
-                    <option value="revised">revised</option>
-                    <option value="final">final</option>
-                  </select>
-                </label>
-                <label>
-                  <span>POV</span>
-                  <input
-                    value={draft.pov}
-                    onChange={(event) =>
-                      setDraft((prev) => ({ ...prev, pov: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Summary</span>
-                  <input
-                    value={draft.summary}
-                    onChange={(event) =>
-                      setDraft((prev) => ({ ...prev, summary: event.target.value }))
-                    }
-                  />
-                </label>
+            <div className="outliner-view">
+              <div className="outliner-controls">
+                <input
+                  value={outlinerQuery}
+                  onChange={(event) => setOutlinerQuery(event.target.value)}
+                  placeholder="Search title, summary, POV, id"
+                />
+                <select
+                  value={outlinerStatusFilter}
+                  onChange={(event) =>
+                    setOutlinerStatusFilter(event.target.value as OutlinerStatusFilter)
+                  }
+                >
+                  <option value="all">all statuses</option>
+                  <option value="draft">draft</option>
+                  <option value="revised">revised</option>
+                  <option value="final">final</option>
+                </select>
               </div>
 
-              <label>
-                <span>Body</span>
-                <textarea
-                  value={draft.body}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, body: event.target.value }))
-                  }
-                />
-              </label>
+              <div className="outliner-summary">
+                <span>Draft: {sceneStatusCounts.draft}</span>
+                <span>Revised: {sceneStatusCounts.revised}</span>
+                <span>Final: {sceneStatusCounts.final}</span>
+                <span>Other: {sceneStatusCounts.other}</span>
+              </div>
 
-              <div className="meta-row">
-                <code>{scene.path}</code>
-                <span>Updated: {scene.updated_at || "n/a"}</span>
+              <div className="outliner-list">
+                {outlinerRows.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No scenes match the current filter.</p>
+                  </div>
+                ) : (
+                  outlinerRows.map((item) => {
+                    const updatedLabel = item.updated_at
+                      ? new Date(item.updated_at).toLocaleString()
+                      : "n/a";
+                    return (
+                      <article
+                        key={item.id}
+                        className={`outline-card ${item.id === selectedSceneId ? "selected" : ""}`}
+                      >
+                        <div className="outline-top">
+                          <strong>{item.title}</strong>
+                          <em>{item.status}</em>
+                        </div>
+                        <p>{item.summary || "No summary yet."}</p>
+                        <div className="outline-meta">
+                          <span>{item.id}</span>
+                          <span>POV: {item.pov || "n/a"}</span>
+                          <span>Updated: {updatedLabel}</span>
+                        </div>
+                        <div className="outline-actions">
+                          <button
+                            disabled={busy}
+                            onClick={() => handleOpenSceneFromOutliner(item.id)}
+                          >
+                            Open In Editor
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -616,10 +774,16 @@ export function App() {
             >
               Checks
             </button>
+            <button
+              className={rightTab === "context" ? "active" : ""}
+              onClick={() => setRightTab("context")}
+            >
+              Context
+            </button>
           </div>
 
           {rightTab === "proposals" ? (
-            <div className="side-content">
+            <div className="side-content context-content">
               <div className="proposal-header">
                 <h2>Proposals</h2>
                 <span>
@@ -823,7 +987,7 @@ export function App() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : rightTab === "checks" ? (
             <div className="side-content">
               <div className="checks-header">
                 <h2>Checks</h2>
@@ -875,6 +1039,93 @@ export function App() {
                 <div className="check-detail empty-review">
                   <p>Select a check issue to inspect.</p>
                 </div>
+              )}
+            </div>
+          ) : (
+            <div className="side-content">
+              <div className="context-header">
+                <h2>Context Lens</h2>
+                <span>{scene ? scene.id : "No scene selected"}</span>
+              </div>
+
+              {!scene ? (
+                <div className="context-card empty-review">
+                  <p>Select a scene to inspect context.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="context-card">
+                    <h3>Scene Snapshot</h3>
+                    <p className="context-main">{scene.title}</p>
+                    <p className="context-sub">POV: {scene.pov || "n/a"}</p>
+                    <p className="context-sub">Status: {scene.status}</p>
+                    <p className="context-sub">{scene.summary || "No summary yet."}</p>
+                  </div>
+
+                  <div className="context-card">
+                    <h3>Proposal Context</h3>
+                    <p className="context-sub">
+                      {contextProposalCounts.pending} pending / {contextProposalCounts.applied} applied
+                      / {contextProposalCounts.rejected} rejected
+                    </p>
+                    <div className="context-list">
+                      {contextProposals.length === 0 ? (
+                        <p className="context-sub">No proposals for this scene.</p>
+                      ) : (
+                        contextProposals.slice(0, 4).map((item) => (
+                          <div key={item.id} className="context-list-item">
+                            <strong>{item.title}</strong>
+                            <span>{item.status}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="context-card">
+                    <h3>Continuity Context</h3>
+                    <p className="context-sub">
+                      {contextContinuityCounts.error} error / {contextContinuityCounts.warning} warning
+                      / {contextContinuityCounts.info} info
+                    </p>
+                    {continuityIssues.length === 0 ? (
+                      <p className="context-sub">Run checks to populate scene-level risks.</p>
+                    ) : contextContinuityIssues.length === 0 ? (
+                      <p className="context-sub">No continuity issues detected for this scene.</p>
+                    ) : (
+                      <div className="context-list">
+                        {contextContinuityIssues.slice(0, 4).map((item) => (
+                          <div key={item.id} className="context-list-item">
+                            <strong>{item.title}</strong>
+                            <span>{item.severity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="context-actions">
+                      <button disabled={busy} onClick={() => setRightTab("checks")}>
+                        Open Checks Tab
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="context-card">
+                    <h3>Codex Context</h3>
+                    <p className="context-sub">
+                      {povCharacterEntity
+                        ? `POV matched to character '${povCharacterEntity.name}'.`
+                        : "POV has no exact character match in codex."}
+                    </p>
+                    {povCharacterEntity ? (
+                      <p className="context-sub">{povCharacterEntity.description || "No description."}</p>
+                    ) : null}
+                    <div className="context-actions">
+                      <button disabled={busy} onClick={() => setRightTab("codex")}>
+                        Open Codex Tab
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}

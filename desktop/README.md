@@ -6,7 +6,9 @@ Current UI slice:
 
 - Binder (scene list + create scene)
 - Editor (load/edit/save scene metadata + body)
+- Outliner (filter/search scene cards, open in editor)
 - Proposal Review (proposal create/list/apply/reject)
+- Context Lens (scene-linked proposal/codex/continuity context)
 - Codex Panel (entity create/list/edit)
 - Continuity Checks (run/list/jump to scene)
 
