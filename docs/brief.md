@@ -27,7 +27,8 @@ Build a superior alternative to Sudowrite/NovelCrafter for a power user who want
   - Scene-per-file markdown in `manuscript/scenes/`
   - Front matter metadata (title, POV, status, summary, timestamps)
 - Codex data model:
-  - Local SQLite storage for entities
+  - Local SQLite runtime storage for entities
+  - Deterministic `codex/codex.json` export for git snapshot/version history
   - Basic entity types (character/location/lore/item/faction/event)
 - Proposal workflow:
   - Proposal queue with status lifecycle (pending/applied/rejected)
@@ -47,7 +48,7 @@ Build a superior alternative to Sudowrite/NovelCrafter for a power user who want
 
 - Local-first core with clean adapter boundaries:
   - Manuscript store (markdown files)
-  - Codex store (SQLite now, swappable)
+  - Codex store (SQLite runtime + JSON snapshot artifact, swappable later)
   - AI provider layer (to be added)
   - Proposal engine (human-in-the-loop)
 - Keep AI orchestration independent from storage primitives.

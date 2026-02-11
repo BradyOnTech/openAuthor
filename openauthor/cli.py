@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, list_entities
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
-from .proposals import create_proposal, list_proposals, update_proposal_status
-from .scenes import add_scene, list_scenes
+from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
+from .scenes import add_scene, get_scene, list_scenes, update_scene
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,7 +28,19 @@ def build_parser() -> argparse.ArgumentParser:
   scene_add.add_argument("--pov", default="", help="POV character.")
   scene_add.add_argument("--status", default="draft", help="Scene status.")
   scene_add.add_argument("--body", default="", help="Initial body text.")
-  scene_sub.add_parser("list", help="List scenes.")
+  scene_list = scene_sub.add_parser("list", help="List scenes.")
+  scene_list.add_argument("--json", action="store_true", help="Output JSON.")
+  scene_get = scene_sub.add_parser("get", help="Get a scene by id.")
+  scene_get.add_argument("--id", required=True, help="Scene id.")
+  scene_get.add_argument("--json", action="store_true", help="Output JSON.")
+  scene_update = scene_sub.add_parser("update", help="Update scene fields.")
+  scene_update.add_argument("--id", required=True, help="Scene id.")
+  scene_update.add_argument("--title", default=None, help="New title.")
+  scene_update.add_argument("--summary", default=None, help="New summary.")
+  scene_update.add_argument("--pov", default=None, help="New POV.")
+  scene_update.add_argument("--status", default=None, help="New status.")
+  scene_update.add_argument("--body", default=None, help="New body content.")
+  scene_update.add_argument("--json", action="store_true", help="Output JSON.")
 
   codex_parser = subparsers.add_parser("codex", help="Manage codex entities.")
   codex_sub = codex_parser.add_subparsers(dest="codex_command", required=True)
@@ -44,14 +57,21 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_add.add_argument("--title", required=True, help="Proposal title.")
   proposal_add.add_argument("--instruction", required=True, help="Change instruction.")
   proposal_add.add_argument("--scene", default="", help="Associated scene id.")
+  proposal_add.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_list = proposal_sub.add_parser("list", help="List proposals.")
   proposal_list.add_argument("--status", choices=["pending", "applied", "rejected"], default=None)
+  proposal_list.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_get = proposal_sub.add_parser("get", help="Get proposal by id.")
+  proposal_get.add_argument("--id", required=True, help="Proposal id.")
+  proposal_get.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_apply = proposal_sub.add_parser("apply", help="Mark proposal as applied.")
   proposal_apply.add_argument("--id", required=True, help="Proposal id.")
   proposal_apply.add_argument("--notes", default="", help="Optional note.")
+  proposal_apply.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_reject = proposal_sub.add_parser("reject", help="Mark proposal as rejected.")
   proposal_reject.add_argument("--id", required=True, help="Proposal id.")
   proposal_reject.add_argument("--notes", default="", help="Optional note.")
+  proposal_reject.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -91,9 +111,43 @@ def _run(args: argparse.Namespace) -> int:
       print(f"Created scene {scene_file.relative_to(paths.root)}")
       return 0
 
-    for row in list_scenes(paths):
+    if args.scene_command == "list":
+      rows = list_scenes(paths)
+      if args.json:
+        print(json.dumps(rows))
+        return 0
+      for row in rows:
+        print(f"{row['id']}\t{row['status']}\t{row['title']}\t{row['path']}")
+      return 0
+
+    if args.scene_command == "get":
+      row = get_scene(paths, args.id)
+      if args.json:
+        print(json.dumps(row))
+        return 0
       print(f"{row['id']}\t{row['status']}\t{row['title']}\t{row['path']}")
-    return 0
+      return 0
+
+    if args.scene_command == "update":
+      if all(
+        value is None
+        for value in (args.title, args.summary, args.pov, args.status, args.body)
+      ):
+        raise OpenAuthorError("No updates provided. Supply at least one field.")
+      scene_file = update_scene(
+        paths,
+        scene_identifier=args.id,
+        title=args.title,
+        summary=args.summary,
+        pov=args.pov,
+        status=args.status,
+        body=args.body,
+      )
+      if args.json:
+        print(json.dumps(get_scene(paths, args.id)))
+        return 0
+      print(f"Updated scene {scene_file.relative_to(paths.root)}")
+      return 0
 
   if args.command == "codex":
     if args.codex_command == "add":
@@ -118,30 +172,51 @@ def _run(args: argparse.Namespace) -> int:
         instruction=args.instruction,
         scene_id=args.scene,
       )
+      if args.json:
+        print(json.dumps(get_proposal(paths, proposal_id)))
+        return 0
       print(f"Created proposal {proposal_id}")
       return 0
 
+    if args.proposal_command == "get":
+      row = get_proposal(paths, args.id)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"{row['id']}\t{row['status']}\t{row['title']}\t{row['scene_id']}")
+      return 0
+
     if args.proposal_command == "apply":
-      update_proposal_status(
+      row = update_proposal_status(
         paths,
         proposal_id=args.id,
         status="applied",
         notes=args.notes,
       )
+      if args.json:
+        print(json.dumps(row))
+        return 0
       print(f"Applied proposal {args.id}")
       return 0
 
     if args.proposal_command == "reject":
-      update_proposal_status(
+      row = update_proposal_status(
         paths,
         proposal_id=args.id,
         status="rejected",
         notes=args.notes,
       )
+      if args.json:
+        print(json.dumps(row))
+        return 0
       print(f"Rejected proposal {args.id}")
       return 0
 
-    for row in list_proposals(paths, status=args.status):
+    rows = list_proposals(paths, status=args.status)
+    if args.json:
+      print(json.dumps(rows))
+      return 0
+    for row in rows:
       print(f"{row['id']}\t{row['status']}\t{row['title']}\t{row['scene_id']}")
     return 0
 

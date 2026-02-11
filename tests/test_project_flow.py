@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -55,6 +57,31 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("scene-0001", out)
       self.assertIn("Opening Scene", out)
 
+      code, out, err = self.run_cli(["scene", "get", "--id", "scene-0001", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      scene = json.loads(out)
+      self.assertEqual(scene["id"], "scene-0001")
+      self.assertEqual(scene["title"], "Opening Scene")
+
+      code, out, err = self.run_cli(
+        [
+          "scene",
+          "update",
+          "--id",
+          "scene-0001",
+          "--summary",
+          "Opening is now tightened",
+          "--body",
+          "A tighter opening paragraph.",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      updated = json.loads(out)
+      self.assertEqual(updated["summary"], "Opening is now tightened")
+      self.assertIn("A tighter opening paragraph.", updated["body"])
+
       code, out, err = self.run_cli(
         [
           "codex",
@@ -102,6 +129,17 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(code, 0, msg=err)
       self.assertIn(proposal_id, out)
 
+      code, out, err = self.run_cli(["proposal", "get", "--id", proposal_id, "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      proposal = json.loads(out)
+      self.assertEqual(proposal["id"], proposal_id)
+      self.assertEqual(proposal["status"], "applied")
+
+      code, out, err = self.run_cli(["proposal", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      proposals = json.loads(out)
+      self.assertTrue(any(item["id"] == proposal_id for item in proposals))
+
   def test_snapshot_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -113,6 +151,7 @@ class OpenAuthorFlowTests(unittest.TestCase):
         root,
       )
       self.assertEqual(code, 0, msg=err)
+      (root / "notes.txt").write_text("do not snapshot me\n", encoding="utf-8")
 
       code, out, err = self.run_cli(
         ["snapshot", "create", "-m", "Create first scene snapshot"],
@@ -124,6 +163,16 @@ class OpenAuthorFlowTests(unittest.TestCase):
       code, out, err = self.run_cli(["snapshot", "log", "--limit", "1"], root)
       self.assertEqual(code, 0, msg=err)
       self.assertIn("Create first scene snapshot", out)
+
+      status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+      ).stdout
+      self.assertIn("?? notes.txt", status)
+      self.assertTrue((root / "codex" / "codex.json").exists())
 
 
 if __name__ == "__main__":

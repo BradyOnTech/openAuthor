@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import re
 from pathlib import Path
 
-from .project import ProjectPaths, next_scene_index, utc_now
+from .project import OpenAuthorError, ProjectPaths, next_scene_index, utc_now
 
 
 def slugify(value: str) -> str:
@@ -74,11 +75,16 @@ def add_scene(
 
 def parse_front_matter(scene_file: Path) -> dict[str, str]:
   text = scene_file.read_text(encoding="utf-8")
+  front_matter, _ = split_scene_text(text)
+  return front_matter
+
+
+def split_scene_text(text: str) -> tuple[dict[str, str], str]:
   if not text.startswith("---\n"):
-    return {}
+    return {}, text
   end = text.find("\n---\n", 4)
   if end == -1:
-    return {}
+    return {}, text
   block = text[4:end]
   parsed: dict[str, str] = {}
   for line in block.splitlines():
@@ -86,7 +92,8 @@ def parse_front_matter(scene_file: Path) -> dict[str, str]:
       continue
     key, value = line.split(":", 1)
     parsed[key.strip()] = value.strip()
-  return parsed
+  body = text[end + len("\n---\n") :].lstrip("\n")
+  return parsed, body
 
 
 def list_scenes(paths: ProjectPaths) -> list[dict[str, str]]:
@@ -102,3 +109,68 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, str]]:
       }
     )
   return rows
+
+
+def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
+  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+    front_matter = parse_front_matter(scene_file)
+    if front_matter.get("id") == scene_identifier:
+      return scene_file
+  raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
+
+
+def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, str]:
+  scene_file = find_scene_file(paths, scene_identifier)
+  text = scene_file.read_text(encoding="utf-8")
+  front_matter, body = split_scene_text(text)
+  return {
+    "id": front_matter.get("id", scene_identifier),
+    "title": front_matter.get("title", ""),
+    "summary": front_matter.get("summary", ""),
+    "pov": front_matter.get("pov", ""),
+    "status": front_matter.get("status", "draft"),
+    "created_at": front_matter.get("created_at", ""),
+    "updated_at": front_matter.get("updated_at", ""),
+    "path": str(scene_file.relative_to(paths.root)),
+    "body": body,
+  }
+
+
+def update_scene(
+  paths: ProjectPaths,
+  *,
+  scene_identifier: str,
+  title: str | None = None,
+  summary: str | None = None,
+  pov: str | None = None,
+  status: str | None = None,
+  body: str | None = None,
+) -> Path:
+  scene_file = find_scene_file(paths, scene_identifier)
+  current = get_scene(paths, scene_identifier)
+  updated = {
+    "id": current["id"],
+    "title": title if title is not None else current["title"],
+    "summary": summary if summary is not None else current["summary"],
+    "pov": pov if pov is not None else current["pov"],
+    "status": status if status is not None else current["status"],
+    "created_at": current["created_at"] or utc_now(),
+    "updated_at": datetime.now(UTC).isoformat(),
+    "body": body if body is not None else current["body"],
+  }
+
+  content = (
+    "---\n"
+    f"id: {updated['id']}\n"
+    f"title: {updated['title']}\n"
+    f"summary: {updated['summary']}\n"
+    f"pov: {updated['pov']}\n"
+    f"status: {updated['status']}\n"
+    f"created_at: {updated['created_at']}\n"
+    f"updated_at: {updated['updated_at']}\n"
+    "---\n\n"
+    f"# {updated['title']}\n\n"
+    f"{updated['body'].rstrip()}\n"
+  )
+  scene_file.write_text(content, encoding="utf-8")
+  return scene_file

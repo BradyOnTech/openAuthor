@@ -7,13 +7,30 @@ Local-first fiction authoring foundation with:
 - SQLite-backed codex entities
 - Proposal queue for AI-assisted edits
 
+Architecture note: desktop v1 will use `Tauri + React`, with Tauri invoking the existing Python core as a sidecar process. This keeps momentum while preserving a clean migration path later.
+
 ## Quick start
 
 ```bash
 make setup
 make check
 make test
+make test-desktop
+make test-all
 ```
+
+## Desktop shell
+
+`Tauri + React` scaffold lives in `desktop`.
+Current desktop slice: Binder + Editor + Proposal Review (scene list/create/load/save + proposal review queue).
+
+```bash
+cd desktop
+npm install
+npm run tauri:dev
+```
+
+See `desktop/README.md` and `docs/desktop-architecture.md`.
 
 ## CLI usage
 
@@ -26,6 +43,9 @@ python3 -m openauthor init .
 # add and list scenes
 python3 -m openauthor scene add --title "Opening Scene" --summary "Introduce protagonist" --pov "Elara"
 python3 -m openauthor scene list
+python3 -m openauthor scene list --json
+python3 -m openauthor scene get --id scene-0001 --json
+python3 -m openauthor scene update --id scene-0001 --summary "Tighter opening" --body "Updated body" --json
 
 # add and list codex entities
 python3 -m openauthor codex add --type character --name "Elara" --description "Main POV character"
@@ -41,18 +61,27 @@ python3 -m openauthor snapshot create -m "Draft scene and codex seed"
 python3 -m openauthor snapshot log
 ```
 
+`snapshot create` stages only authoring artifacts:
+
+- `manuscript/scenes/`
+- `.openauthor/project.json`
+- `.openauthor/proposals/`
+- `codex/codex.json` (exported from SQLite on snapshot)
+
 ## Repository layout
 
 ```text
 .
 ├── openauthor/             # core project engine + CLI
+├── desktop/                # Tauri + React shell
 ├── tests/                  # end-to-end CLI flow tests
 ├── manuscript/scenes/      # scene markdown files
-├── codex/codex.sqlite3     # codex database (created on init)
+├── codex/codex.sqlite3     # local runtime DB (ignored)
+├── codex/codex.json        # versionable codex snapshot artifact
 ├── .openauthor/            # project metadata + proposals
 └── docs/                   # brief + implementation plan
 ```
 
 ## Status
 
-Phase 0 and core Phase 1 scaffolding are complete. See `docs/plan.md`.
+Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Proposal Review implemented. See `docs/plan.md`.

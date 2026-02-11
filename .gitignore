@@ -37,7 +37,8 @@ venv/
 
 # openauthor runtime data
 codex/codex.sqlite3
-.openauthor/proposals/*.json
-manuscript/scenes/*.md
 !manuscript/scenes/.gitkeep
 !.openauthor/proposals/.gitkeep
+
+# rust / tauri
+target/

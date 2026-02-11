@@ -1,0 +1,188 @@
+import type {
+  CoreCommandResponse,
+  ProposalRecord,
+  ProjectStatus,
+  SceneDetail,
+  SceneSummary
+} from "./types";
+
+const ALLOWED = new Set(["init", "scene", "codex", "proposal", "snapshot"]);
+
+function ensureAllowed(args: string[]): void {
+  if (args.length === 0) {
+    throw new Error("No core command supplied.");
+  }
+  if (!ALLOWED.has(args[0])) {
+    throw new Error(`Unsupported command prefix: ${args[0]}`);
+  }
+}
+
+export async function getProjectStatus(projectRoot: string): Promise<ProjectStatus> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<ProjectStatus>("project_status", { projectRoot });
+}
+
+export async function runCoreCommand(
+  projectRoot: string,
+  args: string[]
+): Promise<CoreCommandResponse> {
+  ensureAllowed(args);
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<CoreCommandResponse>("core_command", { projectRoot, args });
+}
+
+function decodeJson<T>(response: CoreCommandResponse): T {
+  if (response.status !== 0) {
+    throw new Error(response.stderr || response.stdout || "Core command failed.");
+  }
+  try {
+    return JSON.parse(response.stdout) as T;
+  } catch (error) {
+    throw new Error(`Invalid JSON from core command: ${String(error)}`);
+  }
+}
+
+export async function listScenes(projectRoot: string): Promise<SceneSummary[]> {
+  const result = await runCoreCommand(projectRoot, ["scene", "list", "--json"]);
+  return decodeJson<SceneSummary[]>(result);
+}
+
+export async function getScene(projectRoot: string, sceneId: string): Promise<SceneDetail> {
+  const result = await runCoreCommand(projectRoot, [
+    "scene",
+    "get",
+    "--id",
+    sceneId,
+    "--json"
+  ]);
+  return decodeJson<SceneDetail>(result);
+}
+
+export async function addScene(
+  projectRoot: string,
+  payload: {
+    title: string;
+    summary: string;
+    pov: string;
+    status: string;
+    body: string;
+  }
+): Promise<void> {
+  const result = await runCoreCommand(projectRoot, [
+    "scene",
+    "add",
+    "--title",
+    payload.title,
+    "--summary",
+    payload.summary,
+    "--pov",
+    payload.pov,
+    "--status",
+    payload.status,
+    "--body",
+    payload.body
+  ]);
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout || "Unable to add scene.");
+  }
+}
+
+export async function updateScene(
+  projectRoot: string,
+  sceneId: string,
+  payload: {
+    title: string;
+    summary: string;
+    pov: string;
+    status: string;
+    body: string;
+  }
+): Promise<SceneDetail> {
+  const result = await runCoreCommand(projectRoot, [
+    "scene",
+    "update",
+    "--id",
+    sceneId,
+    "--title",
+    payload.title,
+    "--summary",
+    payload.summary,
+    "--pov",
+    payload.pov,
+    "--status",
+    payload.status,
+    "--body",
+    payload.body,
+    "--json"
+  ]);
+  return decodeJson<SceneDetail>(result);
+}
+
+export async function listProposals(
+  projectRoot: string,
+  status?: "pending" | "applied" | "rejected"
+): Promise<ProposalRecord[]> {
+  const args = ["proposal", "list"];
+  if (status) {
+    args.push("--status", status);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord[]>(result);
+}
+
+export async function createProposal(
+  projectRoot: string,
+  payload: {
+    title: string;
+    instruction: string;
+    sceneId: string;
+  }
+): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal",
+    "add",
+    "--title",
+    payload.title,
+    "--instruction",
+    payload.instruction,
+    "--scene",
+    payload.sceneId,
+    "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function applyProposal(
+  projectRoot: string,
+  proposalId: string,
+  notes = ""
+): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal",
+    "apply",
+    "--id",
+    proposalId,
+    "--notes",
+    notes,
+    "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function rejectProposal(
+  projectRoot: string,
+  proposalId: string,
+  notes = ""
+): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal",
+    "reject",
+    "--id",
+    proposalId,
+    "--notes",
+    notes,
+    "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}

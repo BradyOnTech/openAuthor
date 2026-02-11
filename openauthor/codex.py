@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 import uuid
+from pathlib import Path
 
 from .project import OpenAuthorError, ProjectPaths, utc_now
 
@@ -115,3 +117,55 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
     }
     for row in rows
   ]
+
+
+def export_codex_json(paths: ProjectPaths) -> Path:
+  ensure_codex(paths)
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    cursor = connection.cursor()
+    entity_rows = cursor.execute(
+      """
+      SELECT id, kind, name, description, created_at, updated_at
+      FROM entities
+      ORDER BY kind ASC, name ASC
+      """
+    ).fetchall()
+    relationship_rows = cursor.execute(
+      """
+      SELECT id, source_entity_id, target_entity_id, relation, notes, created_at
+      FROM relationships
+      ORDER BY source_entity_id ASC, target_entity_id ASC, relation ASC
+      """
+    ).fetchall()
+  finally:
+    connection.close()
+
+  payload = {
+    "entities": [
+      {
+        "id": row[0],
+        "type": row[1],
+        "name": row[2],
+        "description": row[3],
+        "created_at": row[4],
+        "updated_at": row[5],
+      }
+      for row in entity_rows
+    ],
+    "relationships": [
+      {
+        "id": row[0],
+        "source_entity_id": row[1],
+        "target_entity_id": row[2],
+        "relation": row[3],
+        "notes": row[4],
+        "created_at": row[5],
+      }
+      for row in relationship_rows
+    ],
+  }
+
+  snapshot_path = paths.root / "codex" / "codex.json"
+  snapshot_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  return snapshot_path

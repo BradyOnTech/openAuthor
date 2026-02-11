@@ -1,15 +1,21 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check test tree demo
+.PHONY: help setup check test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup  - Verify local toolchain availability"
 	@echo "  make check  - Run lightweight repository checks"
-	@echo "  make test   - Run local test suite"
+	@echo "  make test   - Run Python tests"
+	@echo "  make test-desktop - Run desktop unit tests (vitest)"
+	@echo "  make test-all - Run Python and desktop tests"
 	@echo "  make tree   - Print top-level structure"
 	@echo "  make demo   - Run a minimal CLI workflow in this repo"
+	@echo "  make desktop-web   - Run React web shell (no Rust required)"
+	@echo "  make desktop-tauri - Run Tauri desktop shell (Rust required)"
+	@echo "  make desktop-build - Compile desktop frontend"
+	@echo "  make tauri-check   - Compile-check Tauri backend"
 
 setup:
 	@echo "Checking local tooling..."
@@ -22,11 +28,19 @@ check:
 	@test -f README.md && echo "README.md: OK" || (echo "README.md missing" && exit 1)
 	@test -f docs/brief.md && echo "docs/brief.md: OK" || (echo "docs/brief.md missing" && exit 1)
 	@test -f docs/plan.md && echo "docs/plan.md: OK" || (echo "docs/plan.md missing" && exit 1)
+	@test -f docs/desktop-architecture.md && echo "docs/desktop-architecture.md: OK" || (echo "docs/desktop-architecture.md missing" && exit 1)
 	@test -f openauthor/cli.py && echo "openauthor CLI: OK" || (echo "openauthor/cli.py missing" && exit 1)
+	@test -f desktop/src/App.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
 
 test:
 	@echo "Running tests..."
 	@PYTHONPATH=$(PYTHONPATH) python3 -m unittest discover -s tests -p "test_*.py"
+
+test-desktop:
+	@echo "Running desktop tests..."
+	@cd desktop && npm run test
+
+test-all: test test-desktop
 
 tree:
 	@find . -maxdepth 2 -not -path '*/\.*' | sort
@@ -35,3 +49,15 @@ demo:
 	@PYTHONPATH=$(PYTHONPATH) python3 -m openauthor init .
 	@PYTHONPATH=$(PYTHONPATH) python3 -m openauthor scene add --title "Opening Scene" --summary "Initial setup"
 	@PYTHONPATH=$(PYTHONPATH) python3 -m openauthor scene list
+
+desktop-web:
+	@cd desktop && npm run dev
+
+desktop-tauri:
+	@cd desktop && npm run tauri:dev
+
+desktop-build:
+	@cd desktop && npm run build
+
+tauri-check:
+	@source "$$HOME/.cargo/env" && cargo check --manifest-path desktop/src-tauri/Cargo.toml

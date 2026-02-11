@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 
+from .codex import export_codex_json
 from .project import OpenAuthorError, ProjectPaths
 
 
@@ -16,14 +17,18 @@ def _git_env() -> dict[str, str]:
 
 
 def run_git(paths: ProjectPaths, args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-  return subprocess.run(
+  result = subprocess.run(
     ["git", *args],
     cwd=paths.root,
     capture_output=True,
     text=True,
-    check=check,
+    check=False,
     env=_git_env(),
   )
+  if check and result.returncode != 0:
+    stderr = result.stderr.strip() or result.stdout.strip() or "git command failed"
+    raise OpenAuthorError(stderr)
+  return result
 
 
 def ensure_git_repo(paths: ProjectPaths) -> None:
@@ -43,11 +48,18 @@ def initialize_git(paths: ProjectPaths) -> None:
 
 def create_snapshot(paths: ProjectPaths, message: str) -> str:
   ensure_git_repo(paths)
-  status = run_git(paths, ["status", "--porcelain"], check=True).stdout.strip()
+  export_codex_json(paths)
+  pathspec = [
+    "manuscript/scenes",
+    ".openauthor/project.json",
+    ".openauthor/proposals",
+    "codex/codex.json",
+  ]
+  status = run_git(paths, ["status", "--porcelain", "--", *pathspec], check=True).stdout.strip()
   if not status:
     return "No changes to snapshot."
 
-  run_git(paths, ["add", "-A"], check=True)
+  run_git(paths, ["add", "-A", "--", *pathspec], check=True)
   commit = run_git(paths, ["commit", "-m", message], check=False)
   if commit.returncode != 0:
     stderr = commit.stderr.strip() or "git commit failed"

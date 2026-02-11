@@ -42,6 +42,13 @@ def _read_proposal(proposal_file: Path) -> dict[str, str]:
   return json.loads(proposal_file.read_text(encoding="utf-8"))
 
 
+def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, str]:
+  proposal_path = _proposal_file(paths, proposal_id)
+  if not proposal_path.exists():
+    raise OpenAuthorError(f"Unknown proposal id '{proposal_id}'.")
+  return _read_proposal(proposal_path)
+
+
 def list_proposals(paths: ProjectPaths, *, status: str | None = None) -> list[dict[str, str]]:
   if status and status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
@@ -62,7 +69,7 @@ def update_proposal_status(
   proposal_id: str,
   status: str,
   notes: str = "",
-) -> None:
+) -> dict[str, str]:
   if status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
     raise OpenAuthorError(f"Invalid status '{status}'. Allowed: {allowed}.")
@@ -77,3 +84,4 @@ def update_proposal_status(
   if notes:
     payload["notes"] = notes
   file_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  return payload
