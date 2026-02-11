@@ -55,6 +55,7 @@ export type ProposalRecord = {
     input_tokens: number;
     output_tokens: number;
     latency_ms: number;
+    provider_attempts: number;
     estimated_cost_usd: number | null;
     log_path: string;
   };

@@ -1091,7 +1091,8 @@ export function App() {
                     <p className="proposal-meta">
                       Usage: in {selectedProposal.generation.input_tokens} / out{" "}
                       {selectedProposal.generation.output_tokens} tokens,{" "}
-                      {selectedProposal.generation.latency_ms} ms
+                      {selectedProposal.generation.latency_ms} ms,{" "}
+                      {selectedProposal.generation.provider_attempts} attempt(s)
                       {selectedProposal.generation.estimated_cost_usd !== null
                         ? `, est $${selectedProposal.generation.estimated_cost_usd.toFixed(6)}`
                         : ""}

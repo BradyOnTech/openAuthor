@@ -25,6 +25,7 @@
 - 2.1 Provider abstraction:
   - Provider interfaces (`openai`, `anthropic`, `local`) with real adapter calls are implemented in core. ✅
   - Local provider uses deterministic generation; remote providers fail closed without credentials. ✅
+  - Retry/backoff for transient provider failures and structured provider error categories are implemented. ✅
 - 2.2 Prompt/context packing:
   - Deterministic context packs from selected scene + neighbors + codex + continuity checks are implemented. ✅
   - Saved generation artifacts for reproducible runs are implemented under `.openauthor/generations/`. ✅

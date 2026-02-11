@@ -87,6 +87,7 @@ AI generation artifacts:
 
 - `.openauthor/generations/*.json` stores prompt/context/usage logs per run.
 - `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
+- Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 
 Generated proposal format is normalized to four sections for review consistency:
 
@@ -94,6 +95,11 @@ Generated proposal format is normalized to four sections for review consistency:
 - `Constraints`
 - `Edit Plan`
 - `Continuity Notes`
+
+Provider retry tuning (optional env vars):
+
+- `OPENAUTHOR_PROVIDER_MAX_RETRIES` (default `2`)
+- `OPENAUTHOR_PROVIDER_RETRY_BASE_MS` (default `350`)
 
 ## Repository layout
 

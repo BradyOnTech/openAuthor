@@ -23,6 +23,26 @@ DEFAULT_MODELS = {
   "anthropic": "claude-3-5-haiku-latest",
 }
 PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
+RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+
+class ProviderExecutionError(OpenAuthorError):
+  def __init__(
+    self,
+    message: str,
+    *,
+    category: str,
+    retriable: bool,
+    provider: str,
+    http_status: int | None = None,
+    attempts: int = 1,
+  ) -> None:
+    super().__init__(message)
+    self.category = category
+    self.retriable = retriable
+    self.provider = provider
+    self.http_status = http_status
+    self.attempts = attempts
 
 
 def _scene_number(scene_id: str) -> int:
@@ -46,30 +66,100 @@ def _estimate_tokens(value: str) -> int:
   return max(1, int(len(words) * 1.35))
 
 
-def _json_post(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
+def _env_int(name: str, default: int, *, minimum: int) -> int:
+  raw = os.getenv(name)
+  if raw is None:
+    return default
+  try:
+    value = int(raw)
+  except ValueError:
+    return default
+  return max(minimum, value)
+
+
+def _retry_settings() -> tuple[int, int]:
+  max_retries = _env_int("OPENAUTHOR_PROVIDER_MAX_RETRIES", 2, minimum=0)
+  base_ms = _env_int("OPENAUTHOR_PROVIDER_RETRY_BASE_MS", 350, minimum=1)
+  return max_retries, base_ms
+
+
+def _http_error_category(status_code: int, details: str) -> str:
+  lowered = details.lower()
+  if status_code == 429 or "rate limit" in lowered:
+    return "rate_limited"
+  if status_code in {401, 403}:
+    return "auth_error"
+  if status_code in {408, 504}:
+    return "timeout"
+  if 500 <= status_code <= 599:
+    return "provider_server_error"
+  return "provider_rejected"
+
+
+def _is_retryable_http_status(status_code: int) -> bool:
+  return status_code in RETRYABLE_HTTP_STATUSES
+
+
+def _json_post(
+  *,
+  provider: str,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+) -> tuple[dict[str, Any], int]:
+  max_retries, base_ms = _retry_settings()
   request = urllib.request.Request(
     url,
     data=json.dumps(payload).encode("utf-8"),
     headers={"Content-Type": "application/json", **headers},
     method="POST",
   )
-  try:
-    with urllib.request.urlopen(request, timeout=90) as response:
-      body = response.read().decode("utf-8")
-  except urllib.error.HTTPError as error:
-    details = error.read().decode("utf-8", errors="replace")
-    raise OpenAuthorError(
-      f"Provider request failed with HTTP {error.code}: {_truncate(details, 280)}"
-    ) from error
-  except urllib.error.URLError as error:
-    raise OpenAuthorError(f"Provider request failed: {error.reason}") from error
+  attempts = 0
+  while True:
+    attempts += 1
+    try:
+      with urllib.request.urlopen(request, timeout=90) as response:
+        body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as error:
+      details = error.read().decode("utf-8", errors="replace")
+      category = _http_error_category(error.code, details)
+      retriable = _is_retryable_http_status(error.code)
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider request failed with HTTP {error.code}: {_truncate(details, 280)}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        http_status=error.code,
+        attempts=attempts,
+      ) from error
+    except urllib.error.URLError as error:
+      reason = str(error.reason)
+      category = "timeout" if "timed out" in reason.lower() else "network_error"
+      retriable = True
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider request failed: {reason}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        attempts=attempts,
+      ) from error
 
-  try:
-    return json.loads(body)
-  except json.JSONDecodeError as error:
-    raise OpenAuthorError(
-      f"Provider returned non-JSON response: {_truncate(body, 220)}"
-    ) from error
+    try:
+      return json.loads(body), attempts
+    except json.JSONDecodeError as error:
+      raise ProviderExecutionError(
+        f"Provider returned non-JSON response: {_truncate(body, 220)}",
+        category="invalid_provider_response",
+        retriable=False,
+        provider=provider,
+        attempts=attempts,
+      ) from error
 
 
 def _load_pricing(paths: ProjectPaths) -> dict[str, Any]:
@@ -269,7 +359,12 @@ def _openai_chat_completion(
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENAI_API_KEY")
   if not api_key:
-    raise OpenAuthorError("OPENAI_API_KEY is required for provider 'openai'.")
+    raise ProviderExecutionError(
+      "OPENAI_API_KEY is required for provider 'openai'.",
+      category="missing_credentials",
+      retriable=False,
+      provider="openai",
+    )
   base_url = os.getenv("OPENAUTHOR_OPENAI_BASE_URL", "https://api.openai.com/v1")
   payload: dict[str, Any] = {
     "model": model,
@@ -280,7 +375,8 @@ def _openai_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  response = _json_post(
+  response, attempts = _json_post(
+    provider="openai",
     url=f"{base_url.rstrip('/')}/chat/completions",
     headers={"Authorization": f"Bearer {api_key}"},
     payload=payload,
@@ -302,6 +398,7 @@ def _openai_chat_completion(
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
+    "attempts": attempts,
   }
 
 
@@ -315,7 +412,12 @@ def _anthropic_message(
 ) -> dict[str, Any]:
   api_key = os.getenv("ANTHROPIC_API_KEY")
   if not api_key:
-    raise OpenAuthorError("ANTHROPIC_API_KEY is required for provider 'anthropic'.")
+    raise ProviderExecutionError(
+      "ANTHROPIC_API_KEY is required for provider 'anthropic'.",
+      category="missing_credentials",
+      retriable=False,
+      provider="anthropic",
+    )
   base_url = os.getenv("OPENAUTHOR_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
   payload: dict[str, Any] = {
     "model": model,
@@ -324,7 +426,8 @@ def _anthropic_message(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  response = _json_post(
+  response, attempts = _json_post(
+    provider="anthropic",
     url=f"{base_url.rstrip('/')}/messages",
     headers={
       "x-api-key": api_key,
@@ -344,6 +447,7 @@ def _anthropic_message(
     "input_tokens": int(usage.get("input_tokens", 0) or 0),
     "output_tokens": int(usage.get("output_tokens", 0) or 0),
     "raw_usage": usage,
+    "attempts": attempts,
   }
 
 
@@ -363,6 +467,7 @@ def _call_provider(
     text = _generate_local_text(context, instruction)
     input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
     output_tokens = _estimate_tokens(text)
+    attempts = 1
   elif provider == "openai":
     payload = _openai_chat_completion(
       model=model,
@@ -374,6 +479,7 @@ def _call_provider(
     text = payload["text"]
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
+    attempts = int(payload.get("attempts", 1) or 1)
   elif provider == "anthropic":
     payload = _anthropic_message(
       model=model,
@@ -385,6 +491,7 @@ def _call_provider(
     text = payload["text"]
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
+    attempts = int(payload.get("attempts", 1) or 1)
   else:
     raise OpenAuthorError(
       f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
@@ -392,13 +499,20 @@ def _call_provider(
 
   latency_ms = int((time.perf_counter() - start) * 1000)
   if not text.strip():
-    raise OpenAuthorError("Provider returned empty output.")
+    raise ProviderExecutionError(
+      "Provider returned empty output.",
+      category="invalid_provider_output",
+      retriable=False,
+      provider=provider,
+      attempts=attempts,
+    )
 
   return {
     "text": text.strip(),
     "input_tokens": int(input_tokens),
     "output_tokens": int(output_tokens),
     "latency_ms": latency_ms,
+    "attempts": attempts,
   }
 
 
@@ -514,6 +628,7 @@ def _write_generation_log(
   log_file = paths.generations_dir / f"{run_id}.json"
   payload = {
     "run_id": run_id,
+    "status": "succeeded",
     "created_at": utc_now(),
     "scene_id": scene_id,
     "provider": provider,
@@ -531,7 +646,49 @@ def _write_generation_log(
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
       "latency_ms": provider_result["latency_ms"],
+      "provider_attempts": provider_result["attempts"],
       "estimated_cost_usd": estimated_cost_usd,
+    },
+  }
+  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  return run_id, str(log_file.relative_to(paths.root))
+
+
+def _write_generation_failure_log(
+  paths: ProjectPaths,
+  *,
+  scene_id: str,
+  provider: str,
+  model: str,
+  instruction: str,
+  context: dict[str, Any],
+  system_prompt: str,
+  user_prompt: str,
+  error: ProviderExecutionError,
+) -> tuple[str, str]:
+  run_id = f"gen-{uuid.uuid4().hex[:12]}"
+  log_file = paths.generations_dir / f"{run_id}.json"
+  payload = {
+    "run_id": run_id,
+    "status": "failed",
+    "created_at": utc_now(),
+    "scene_id": scene_id,
+    "provider": provider,
+    "model": model,
+    "instruction": instruction,
+    "prompt_sha256": hashlib.sha256(
+      (system_prompt + "\n\n" + user_prompt).encode("utf-8")
+    ).hexdigest(),
+    "system_prompt": system_prompt,
+    "user_prompt": user_prompt,
+    "context": context,
+    "error": {
+      "message": str(error),
+      "category": error.category,
+      "retriable": error.retriable,
+      "http_status": error.http_status,
+      "attempts": error.attempts,
+      "provider": error.provider,
     },
   }
   log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -571,16 +728,32 @@ def generate_proposal(
     codex_limit=codex_limit,
   )
   system_prompt, user_prompt = _build_prompts(context, instruction)
-  provider_result = _call_provider(
-    provider=provider,
-    model=selected_model,
-    system_prompt=system_prompt,
-    user_prompt=user_prompt,
-    context=context,
-    instruction=instruction,
-    temperature=temperature,
-    max_output_tokens=max_output_tokens,
-  )
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=instruction,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except ProviderExecutionError as error:
+    _, failure_log_path = _write_generation_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Proposal generation failed ({error.category}). See {failure_log_path}."
+    ) from error
   raw_provider_text = provider_result["text"]
   provider_result["text"] = _normalize_proposal_text(
     raw_provider_text,
@@ -628,6 +801,7 @@ def generate_proposal(
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
       "latency_ms": provider_result["latency_ms"],
+      "provider_attempts": provider_result["attempts"],
       "estimated_cost_usd": estimated_cost_usd,
       "log_path": log_path,
     },
