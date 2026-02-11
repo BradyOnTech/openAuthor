@@ -2,6 +2,7 @@ import type {
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
+  ProposalProvider,
   ProposalRecord,
   ProjectStatus,
   SceneDetail,
@@ -152,6 +153,53 @@ export async function createProposal(
     payload.sceneId,
     "--json"
   ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function generateProposal(
+  projectRoot: string,
+  payload: {
+    sceneId: string;
+    instruction: string;
+    provider: ProposalProvider;
+    title?: string;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+    contextScenes?: number;
+    codexLimit?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = [
+    "proposal",
+    "generate",
+    "--scene",
+    payload.sceneId,
+    "--instruction",
+    payload.instruction,
+    "--provider",
+    payload.provider
+  ];
+  if (payload.title && payload.title.trim() !== "") {
+    args.push("--title", payload.title);
+  }
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  if (typeof payload.contextScenes === "number") {
+    args.push("--context-scenes", String(payload.contextScenes));
+  }
+  if (typeof payload.codexLimit === "number") {
+    args.push("--codex-limit", String(payload.codexLimit));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
 }
 

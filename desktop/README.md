@@ -8,6 +8,7 @@ Current UI slice:
 - Editor (load/edit/save scene metadata + body)
 - Outliner (filter/search scene cards, open in editor)
 - Proposal Review (proposal create/list/apply/reject)
+- Proposal Generate (provider-backed proposal generation from desktop)
 - Context Lens (scene-linked proposal/codex/continuity context)
 - Codex Panel (entity create/list/edit)
 - Continuity Checks (run/list/jump to scene)
@@ -40,3 +41,8 @@ npm run tauri:dev
 - Tauri invokes the Python core with:
   - `python3 -m openauthor ...`
 - `project_root` is passed by the UI and used as working directory.
+
+## AI provider credentials (for desktop generation)
+
+- OpenAI: set `OPENAI_API_KEY`
+- Anthropic: set `ANTHROPIC_API_KEY`

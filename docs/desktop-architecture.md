@@ -26,6 +26,7 @@
 
 - Proposal list: `proposal list --json`
 - Proposal create: `proposal add --title ... --instruction ... --scene ... --json`
+- Proposal generate: `proposal generate --scene ... --instruction ... --provider ... --json`
 - Proposal fetch: `proposal get --id <proposal-id> --json`
 - Proposal apply: `proposal apply --id <proposal-id> --json`
 - Proposal reject: `proposal reject --id <proposal-id> --json`

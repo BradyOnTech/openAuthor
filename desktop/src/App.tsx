@@ -4,6 +4,7 @@ import {
   addScene,
   applyProposal,
   createProposal,
+  generateProposal,
   getCodexEntity,
   getProjectStatus,
   getScene,
@@ -29,6 +30,7 @@ import {
 import type {
   CodexEntity,
   ContinuityIssue,
+  ProposalProvider,
   ProposalRecord,
   SceneDetail,
   SceneSummary
@@ -63,6 +65,18 @@ type DraftProposal = {
   sceneId: string;
 };
 
+type DraftGeneratedProposal = {
+  title: string;
+  instruction: string;
+  sceneId: string;
+  provider: ProposalProvider;
+  model: string;
+  temperature: number;
+  maxOutputTokens: number;
+  contextScenes: number;
+  codexLimit: number;
+};
+
 type DraftCodex = {
   type: CodexEntity["type"];
   name: string;
@@ -81,6 +95,24 @@ const EMPTY_DRAFT_PROPOSAL: DraftProposal = {
   title: "",
   instruction: "",
   sceneId: ""
+};
+
+const EMPTY_DRAFT_GENERATED_PROPOSAL: DraftGeneratedProposal = {
+  title: "",
+  instruction: "",
+  sceneId: "",
+  provider: "local",
+  model: "",
+  temperature: 0.2,
+  maxOutputTokens: 700,
+  contextScenes: 1,
+  codexLimit: 20
+};
+
+const PROVIDER_MODEL_HINTS: Record<ProposalProvider, string> = {
+  local: "heuristic-v1",
+  openai: "gpt-4.1-mini",
+  anthropic: "claude-3-5-haiku-latest"
 };
 
 const EMPTY_DRAFT_CODEX: DraftCodex = {
@@ -107,6 +139,9 @@ export function App() {
 
   const [proposals, setProposals] = useState<ProposalRecord[]>([]);
   const [proposalForm, setProposalForm] = useState<DraftProposal>(EMPTY_DRAFT_PROPOSAL);
+  const [proposalGenerateForm, setProposalGenerateForm] = useState<DraftGeneratedProposal>(
+    EMPTY_DRAFT_GENERATED_PROPOSAL
+  );
   const [selectedProposalId, setSelectedProposalId] = useState<string>("");
 
   const [codexEntities, setCodexEntities] = useState<CodexEntity[]>([]);
@@ -285,6 +320,8 @@ export function App() {
         setScene(null);
         setDraft(EMPTY_DRAFT_SCENE);
         setProposals([]);
+        setProposalForm(EMPTY_DRAFT_PROPOSAL);
+        setProposalGenerateForm(EMPTY_DRAFT_GENERATED_PROPOSAL);
         setSelectedProposalId("");
         setCodexEntities([]);
         setSelectedCodexEntityId("");
@@ -328,6 +365,10 @@ export function App() {
       .finally(() => setBusy(false));
 
     setProposalForm((prev) => ({
+      ...prev,
+      sceneId: prev.sceneId || selectedSceneId
+    }));
+    setProposalGenerateForm((prev) => ({
       ...prev,
       sceneId: prev.sceneId || selectedSceneId
     }));
@@ -403,6 +444,45 @@ export function App() {
         sceneId
       });
       setMessage("Proposal created.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGenerateProposal() {
+    if (proposalGenerateForm.instruction.trim() === "") return;
+    const sceneId = proposalGenerateForm.sceneId || selectedSceneId;
+    if (!sceneId) {
+      setError("Select a scene (or enter a scene id) before generating a proposal.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const generated = await generateProposal(projectRoot, {
+        sceneId,
+        instruction: proposalGenerateForm.instruction,
+        provider: proposalGenerateForm.provider,
+        title: proposalGenerateForm.title,
+        model: proposalGenerateForm.model,
+        temperature: proposalGenerateForm.temperature,
+        maxOutputTokens: proposalGenerateForm.maxOutputTokens,
+        contextScenes: proposalGenerateForm.contextScenes,
+        codexLimit: proposalGenerateForm.codexLimit
+      });
+      await refreshProposalList(generated.id);
+      setProposalGenerateForm((prev) => ({
+        ...prev,
+        title: "",
+        instruction: "",
+        sceneId
+      }));
+      const providerLabel = generated.generation?.provider ?? proposalGenerateForm.provider;
+      const modelLabel = generated.generation?.model ?? "default";
+      setMessage(`Proposal generated via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -801,7 +881,7 @@ export function App() {
           </div>
 
           {rightTab === "proposals" ? (
-            <div className="side-content context-content">
+            <div className="side-content">
               <div className="proposal-header">
                 <h2>Proposals</h2>
                 <span>
@@ -849,6 +929,134 @@ export function App() {
                 </button>
               </div>
 
+              <div className="generate-proposal-card">
+                <h3>Generate Proposal</h3>
+                <textarea
+                  className="proposal-instruction"
+                  value={proposalGenerateForm.instruction}
+                  onChange={(event) =>
+                    setProposalGenerateForm((prev) => ({
+                      ...prev,
+                      instruction: event.target.value
+                    }))
+                  }
+                  placeholder="What change should the model propose?"
+                />
+                <div className="row">
+                  <input
+                    value={proposalGenerateForm.sceneId}
+                    onChange={(event) =>
+                      setProposalGenerateForm((prev) => ({
+                        ...prev,
+                        sceneId: event.target.value
+                      }))
+                    }
+                    placeholder="Scene id"
+                  />
+                  <select
+                    value={proposalGenerateForm.provider}
+                    onChange={(event) =>
+                      setProposalGenerateForm((prev) => ({
+                        ...prev,
+                        provider: event.target.value as ProposalProvider
+                      }))
+                    }
+                  >
+                    <option value="local">local</option>
+                    <option value="openai">openai</option>
+                    <option value="anthropic">anthropic</option>
+                  </select>
+                </div>
+                <div className="row">
+                  <input
+                    value={proposalGenerateForm.title}
+                    onChange={(event) =>
+                      setProposalGenerateForm((prev) => ({
+                        ...prev,
+                        title: event.target.value
+                      }))
+                    }
+                    placeholder="Optional title override"
+                  />
+                  <input
+                    value={proposalGenerateForm.model}
+                    onChange={(event) =>
+                      setProposalGenerateForm((prev) => ({
+                        ...prev,
+                        model: event.target.value
+                      }))
+                    }
+                    placeholder={`Model (default: ${PROVIDER_MODEL_HINTS[proposalGenerateForm.provider]})`}
+                  />
+                </div>
+                <div className="generate-grid">
+                  <label>
+                    <span>Temperature</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      value={proposalGenerateForm.temperature}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          temperature: Number(event.target.value || 0)
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Max Tokens</span>
+                    <input
+                      type="number"
+                      min="64"
+                      value={proposalGenerateForm.maxOutputTokens}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          maxOutputTokens: Number(event.target.value || 64)
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Context Scenes</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={proposalGenerateForm.contextScenes}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          contextScenes: Number(event.target.value || 0)
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Codex Limit</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={proposalGenerateForm.codexLimit}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          codexLimit: Number(event.target.value || 1)
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <button
+                  disabled={busy || proposalGenerateForm.instruction.trim() === ""}
+                  onClick={handleGenerateProposal}
+                >
+                  Generate Proposal
+                </button>
+              </div>
+
               <div className="proposal-list">
                 {proposals.map((item) => (
                   <button
@@ -873,6 +1081,25 @@ export function App() {
                       ? `Scene: ${selectedProposal.scene_id}`
                       : "Scene: n/a"}
                   </p>
+                  <p className="proposal-meta">
+                    Source: {selectedProposal.source ?? "manual"}
+                    {selectedProposal.generation
+                      ? ` (${selectedProposal.generation.provider}/${selectedProposal.generation.model})`
+                      : ""}
+                  </p>
+                  {selectedProposal.generation ? (
+                    <p className="proposal-meta">
+                      Usage: in {selectedProposal.generation.input_tokens} / out{" "}
+                      {selectedProposal.generation.output_tokens} tokens,{" "}
+                      {selectedProposal.generation.latency_ms} ms
+                      {selectedProposal.generation.estimated_cost_usd !== null
+                        ? `, est $${selectedProposal.generation.estimated_cost_usd.toFixed(6)}`
+                        : ""}
+                    </p>
+                  ) : null}
+                  {selectedProposal.generation?.log_path ? (
+                    <p className="proposal-meta">Log: {selectedProposal.generation.log_path}</p>
+                  ) : null}
                   <div className="proposal-actions">
                     <button
                       disabled={busy || selectedProposal.status !== "pending"}
@@ -1060,7 +1287,7 @@ export function App() {
               )}
             </div>
           ) : (
-            <div className="side-content">
+            <div className="side-content context-content">
               <div className="context-header">
                 <h2>Context Lens</h2>
                 <span>{scene ? scene.id : "No scene selected"}</span>

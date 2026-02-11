@@ -4,6 +4,8 @@ export type CoreCommandResponse = {
   stderr: string;
 };
 
+export type ProposalProvider = "local" | "openai" | "anthropic";
+
 export type ProjectStatus = {
   found: boolean;
   project_root: string;
@@ -44,7 +46,7 @@ export type ProposalRecord = {
   source?: "manual" | "ai_generate";
   generation?: {
     id: string;
-    provider: string;
+    provider: ProposalProvider;
     model: string;
     temperature: number;
     max_output_tokens: number;

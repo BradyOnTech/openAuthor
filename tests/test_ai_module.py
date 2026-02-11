@@ -120,6 +120,14 @@ class AIModuleTests(unittest.TestCase):
           provider="openai",
         )
 
+      with self.assertRaises(OpenAuthorError):
+        generate_proposal(
+          paths,
+          scene_id="scene-0001",
+          instruction="test remote provider",
+          provider="anthropic",
+        )
+
 
 if __name__ == "__main__":
   unittest.main()

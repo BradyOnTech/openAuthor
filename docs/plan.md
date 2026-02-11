@@ -31,9 +31,11 @@
 - 2.3 Proposal generation:
   - `proposal generate` command persists generated proposals through existing proposal queue/storage. ✅
   - Provider/model and generation metadata are attached to proposal payloads. ✅
+  - Desktop proposal panel can invoke generation for `local`, `openai`, and `anthropic`. ✅
 - 2.4 Budget and observability:
   - Token usage + latency metadata are persisted per generation run. ✅
-  - Cost estimation is configurable via `.openauthor/provider_pricing.json`; next step is richer budget policy enforcement. ⏳
+  - Cost estimation is configurable via `.openauthor/provider_pricing.json`. ✅
+  - Budget policy enforcement (hard spend/token caps) is deferred to future TODO. 📝
 
 ## No-Mock Guardrails (active)
 
@@ -87,6 +89,12 @@
 - Experiment branches with guided merge UX.
 - Retrieval index and provenance/citation UI.
 - Voice-first commands and dictation mode.
+
+## Future TODO (deferred)
+
+- Budget policy enforcement:
+  - Per-run and per-project caps for spend/token budgets.
+  - Policy-driven failure behavior and operator controls.
 
 ## Definition of done for MVP
 
