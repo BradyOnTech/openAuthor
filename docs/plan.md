@@ -42,6 +42,7 @@
   - Normalization quality diagnostics are persisted per run and exposed in run detail views. ✅
   - Generation run quality tiers are filterable in CLI (`generation list --quality ...`) and desktop Runs. ✅
   - Prior runs can be replayed via `generation rerun --id ...` and desktop Runs re-run action. ✅
+  - Desktop run detail supports log JSON copy/download for direct audit/debug export. ✅
 
 ## No-Mock Guardrails (active)
 

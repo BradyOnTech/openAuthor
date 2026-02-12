@@ -100,6 +100,7 @@ AI generation artifacts:
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
+- Desktop Runs panel supports one-click re-run plus log JSON copy/download actions for audit/debug workflows.
 
 Generated proposal format is normalized to four sections for review consistency:
 

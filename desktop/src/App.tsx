@@ -33,6 +33,7 @@ import {
   orderProposalsForReview,
   proposalsForScene
 } from "./state";
+import { formatRunLogJson, generationRunLogFilename } from "./runLog";
 import type {
   CodexEntity,
   ContinuityIssue,
@@ -132,6 +133,41 @@ const EMPTY_DRAFT_CODEX: DraftCodex = {
   name: "",
   description: ""
 };
+
+async function copyTextToClipboard(value: string): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  if (typeof document !== "undefined") {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (copied) return;
+  }
+  throw new Error("Clipboard is unavailable in this environment.");
+}
+
+function downloadTextFile(filename: string, content: string): void {
+  if (typeof document === "undefined") {
+    throw new Error("Download is unavailable in this environment.");
+  }
+  const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
 
 export function App() {
   const [projectRoot, setProjectRoot] = useState(loadDefaultRoot);
@@ -752,6 +788,33 @@ export function App() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleCopyGenerationLog() {
+    if (!selectedGenerationRun) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunLogJson(selectedGenerationRun);
+      await copyTextToClipboard(payload);
+      setMessage(`Copied ${selectedGenerationRun.run_id} log JSON.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function handleDownloadGenerationLog() {
+    if (!selectedGenerationRun) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunLogJson(selectedGenerationRun);
+      const filename = generationRunLogFilename(selectedGenerationRun.run_id);
+      downloadTextFile(filename, payload);
+      setMessage(`Downloaded ${filename}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -1629,6 +1692,12 @@ export function App() {
                       onClick={() => void handleRerunGeneration(selectedGenerationRun.run_id)}
                     >
                       Re-run
+                    </button>
+                    <button disabled={busy} onClick={() => void handleCopyGenerationLog()}>
+                      Copy Log JSON
+                    </button>
+                    <button disabled={busy} onClick={handleDownloadGenerationLog}>
+                      Download Log JSON
                     </button>
                     <button
                       disabled={busy || !selectedGenerationRun.scene_id}

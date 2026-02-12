@@ -55,6 +55,7 @@
 - Run detail: `generation get --id <run-id> --json`
 - Run rerun: `generation rerun --id <run-id> --json`
 - Runtime config: `generation config --json`
+- Desktop run detail actions: re-run, copy log JSON, download log JSON
 
 ## Why sidecar-first
 
