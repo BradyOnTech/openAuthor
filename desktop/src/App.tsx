@@ -134,6 +134,27 @@ function loadDefaultTheme(): Theme {
   return "light";
 }
 
+const SIDEBAR_OPEN_STORAGE_KEY = "openauthor.sidebarOpen";
+const SIDEBAR_CONTENT_STORAGE_KEY = "openauthor.sidebarContent";
+
+function loadDefaultSidebarOpen(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_OPEN_STORAGE_KEY);
+    if (stored === "false") return false;
+  } catch {}
+  return true;
+}
+
+function loadDefaultSidebarContent(): SidebarContent {
+  if (typeof window === "undefined") return "scenes";
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_CONTENT_STORAGE_KEY);
+    if (stored === "scenes" || stored === "codex" || stored === "context") return stored;
+  } catch {}
+  return "scenes";
+}
+
 function loadDefaultRoot(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -378,8 +399,8 @@ export function App() {
   const [theme, setTheme] = useState<Theme>(loadDefaultTheme);
   const [rightTab, setRightTab] = useState<RightTab>("proposals");
   const [centerView, setCenterView] = useState<CenterView>("editor");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarContent, setSidebarContent] = useState<SidebarContent>("scenes");
+  const [sidebarOpen, setSidebarOpen] = useState(loadDefaultSidebarOpen);
+  const [sidebarContent, setSidebarContent] = useState<SidebarContent>(loadDefaultSidebarContent);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voiceDrawerOpen, setVoiceDrawerOpen] = useState(false);
   const [outlinerQuery, setOutlinerQuery] = useState("");
@@ -899,6 +920,39 @@ export function App() {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {}
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_OPEN_STORAGE_KEY, String(sidebarOpen));
+    } catch {}
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_CONTENT_STORAGE_KEY, sidebarContent);
+    } catch {}
+  }, [sidebarContent]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        const menus = document.querySelectorAll<HTMLElement>(".dropdown-menu");
+        let closedAny = false;
+        menus.forEach((el) => {
+          if (el.style.display === "block") {
+            el.style.display = "none";
+            closedAny = true;
+          }
+        });
+        if (!closedAny) {
+          if (settingsOpen) setSettingsOpen(false);
+          else if (voiceDrawerOpen) setVoiceDrawerOpen(false);
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [settingsOpen, voiceDrawerOpen]);
 
   function toggleTheme() {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -2870,6 +2924,8 @@ export function App() {
             className="topbar-icon-btn"
             onClick={() => setSidebarOpen((prev) => !prev)}
             title="Toggle sidebar (Cmd+B)"
+            aria-label="Toggle sidebar"
+            aria-expanded={sidebarOpen}
           >
             &#9776;
           </button>
@@ -2882,7 +2938,7 @@ export function App() {
         <div className="topbar-center">
           <div className="dropdown">
             <button
-              className="dropdown-trigger"
+              className="dropdown-trigger" aria-haspopup="true"
               onClick={() => {
                 const el = document.getElementById("viewmode-menu");
                 if (el) el.style.display = el.style.display === "block" ? "none" : "block";
@@ -2890,11 +2946,11 @@ export function App() {
             >
               {viewMode === "write" ? "Write" : viewMode === "plan" ? "Plan" : viewMode === "chat" ? "Chat" : "Review"}
             </button>
-            <div id="viewmode-menu" className="dropdown-menu" style={{ display: "none" }}>
+            <div id="viewmode-menu" className="dropdown-menu" role="menu" style={{ display: "none" }}>
               {(["write", "plan", "chat", "review"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
-                  className={`dropdown-item ${viewMode === mode ? "active" : ""}`}
+                  className={`dropdown-item ${viewMode === mode ? "active" : ""}`} role="menuitem"
                   onClick={() => {
                     setViewMode(mode);
                     const el = document.getElementById("viewmode-menu");
@@ -2912,7 +2968,7 @@ export function App() {
           {viewMode === "review" ? (
             <div className="dropdown">
               <button
-                className="dropdown-trigger"
+                className="dropdown-trigger" aria-haspopup="true"
                 onClick={() => {
                   const el = document.getElementById("review-menu");
                   if (el) el.style.display = el.style.display === "block" ? "none" : "block";
@@ -2920,11 +2976,11 @@ export function App() {
               >
                 {reviewSection === "proposals" ? "Proposals" : reviewSection === "runs" ? "Runs" : reviewSection === "checks" ? "Checks" : "Merge"}
               </button>
-              <div id="review-menu" className="dropdown-menu dropdown-menu-right" style={{ display: "none" }}>
+              <div id="review-menu" className="dropdown-menu dropdown-menu-right" role="menu" style={{ display: "none" }}>
                 {(["proposals", "runs", "checks", "merge"] as ReviewSection[]).map((section) => (
                   <button
                     key={section}
-                    className={`dropdown-item ${reviewSection === section ? "active" : ""}`}
+                    className={`dropdown-item ${reviewSection === section ? "active" : ""}`} role="menuitem"
                     onClick={() => {
                       setReviewSection(section);
                       const el = document.getElementById("review-menu");
@@ -2943,6 +2999,8 @@ export function App() {
               className={`topbar-icon-btn ${voiceDrawerOpen ? "active" : ""}`}
               onClick={() => { setVoiceDrawerOpen((prev) => !prev); setSettingsOpen(false); }}
               title="Voice workspace"
+              aria-label="Voice workspace"
+              aria-expanded={voiceDrawerOpen}
             >
               &#127908;
             </button>
@@ -2951,8 +3009,8 @@ export function App() {
                 <div className="popover-backdrop" onClick={() => setVoiceDrawerOpen(false)} />
                 <div className="voice-drawer">
                   <div className="voice-header">
-                    <h2 style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>Voice Workspace</h2>
-                    <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                    <h2>Voice Workspace</h2>
+                    <span>
                       {voiceSupported ? `${voiceProviderLabel}${voiceListening ? " / listening" : ""}` : "unsupported"}
                     </span>
                   </div>
@@ -3059,6 +3117,8 @@ export function App() {
               className={`topbar-icon-btn ${settingsOpen ? "active" : ""}`}
               onClick={() => { setSettingsOpen((prev) => !prev); setVoiceDrawerOpen(false); }}
               title="Settings"
+              aria-label="Settings"
+              aria-expanded={settingsOpen}
             >
               &#9881;
             </button>
@@ -3097,6 +3157,7 @@ export function App() {
             className="topbar-icon-btn"
             onClick={toggleTheme}
             title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
           >
             {theme === "light" ? "\u263D" : "\u2600"}
           </button>
@@ -3107,11 +3168,11 @@ export function App() {
       <div className="app-body">
 
         {/* ── Sidebar ──────────────────────────────────────── */}
-        <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`}>
+        <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`} role="navigation" aria-label="Sidebar" aria-hidden={!sidebarOpen}>
           <div className="sidebar-header">
             <div className="dropdown" style={{ width: "100%" }}>
               <button
-                className="dropdown-trigger"
+                className="dropdown-trigger" aria-haspopup="true"
                 style={{ width: "100%" }}
                 onClick={() => {
                   const el = document.getElementById("sidebar-menu");
@@ -3120,11 +3181,11 @@ export function App() {
               >
                 {sidebarContent === "scenes" ? "Scenes" : sidebarContent === "codex" ? "Codex" : "Context"}
               </button>
-              <div id="sidebar-menu" className="dropdown-menu" style={{ display: "none", width: "100%" }}>
+              <div id="sidebar-menu" className="dropdown-menu" role="menu" style={{ display: "none", width: "100%" }}>
                 {(["scenes", "codex", "context"] as SidebarContent[]).map((mode) => (
                   <button
                     key={mode}
-                    className={`dropdown-item ${sidebarContent === mode ? "active" : ""}`}
+                    className={`dropdown-item ${sidebarContent === mode ? "active" : ""}`} role="menuitem"
                     onClick={() => {
                       setSidebarContent(mode);
                       const el = document.getElementById("sidebar-menu");
@@ -3137,19 +3198,9 @@ export function App() {
               </div>
             </div>
 
-            {sidebarContent === "scenes" ? (
-              <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-                {scenes.length} scenes
-              </span>
-            ) : sidebarContent === "codex" ? (
-              <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-                {codexEntities.length} entities
-              </span>
-            ) : (
-              <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-                {scene ? scene.id : "No scene"}
-              </span>
-            )}
+            <span className="sidebar-count">
+              {sidebarContent === "scenes" ? `${scenes.length} scenes` : sidebarContent === "codex" ? `${codexEntities.length} entities` : (scene ? scene.id : "No scene")}
+            </span>
           </div>
 
           {/* Sidebar: Scenes */}
@@ -3378,7 +3429,7 @@ export function App() {
         </aside>
 
         {/* ── Content Area ─────────────────────────────────── */}
-        <main className="content-area">
+        <main className="content-area" role="main" aria-label="Content">
 
           {/* Write Mode: Scene Editor */}
           {viewMode === "write" ? (
@@ -4536,7 +4587,7 @@ export function App() {
       </div>
 
       {/* ── Status Bar ───────────────────────────────────────── */}
-      <footer className="status-bar">
+      <footer className="status-bar" role="status" aria-label="Status bar">
         <div className="status-bar-left">
           <span>{currentBranchName || "main"}</span>
           {scene ? <span>{scene.updated_at ? "saved" : "new"}</span> : null}

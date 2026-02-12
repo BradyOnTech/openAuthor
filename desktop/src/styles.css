@@ -275,6 +275,12 @@ code {
   box-shadow: var(--shadow-lg);
   padding: var(--space-1) 0;
   z-index: 100;
+  animation: dropdown-in var(--duration-fast) ease;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .dropdown-menu-right {
@@ -342,6 +348,11 @@ code {
   flex-direction: column;
   gap: var(--space-2);
   flex-shrink: 0;
+}
+
+.sidebar-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .sidebar-search {
@@ -427,6 +438,7 @@ code {
   z-index: 100;
   display: grid;
   gap: var(--space-3);
+  animation: popover-in var(--duration-normal) ease;
 }
 
 .settings-popover h3 {
@@ -452,6 +464,12 @@ code {
   gap: var(--space-2);
   max-height: 80vh;
   overflow: auto;
+  animation: popover-in var(--duration-normal) ease;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ── Popover Backdrop ─────────────────────────────────────────── */
@@ -2323,7 +2341,77 @@ button:disabled {
   color: var(--color-text-primary);
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ── Focus Visible ───────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.dropdown-trigger:focus-visible,
+.topbar-icon-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .sidebar {
+    transition: none;
+  }
+}
+
+/* ── Responsive: Narrow ──────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .topbar h1 {
+    display: none;
+  }
+
+  .topbar-left {
+    gap: var(--space-2);
+  }
+
+  .topbar-right {
+    gap: var(--space-1);
+  }
+
+  .voice-drawer,
+  .settings-popover {
+    width: calc(100vw - var(--space-8));
+    right: var(--space-4);
+  }
+
+  .status-bar {
+    font-size: 10px;
+    padding: var(--space-1) var(--space-2);
+  }
+}
+
+/* ── Responsive: Medium ──────────────────────────────────────── */
 
 @media (max-width: 980px) {
   .meta-grid {
