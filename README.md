@@ -101,7 +101,7 @@ AI generation artifacts:
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
-- Desktop Runs panel also supports baseline run selection (same scene) and compare-to-previous shortcuts with instruction/quality/usage/settings/outcome deltas.
+- Desktop Runs panel also supports baseline run selection (same scene) and compare-to-previous shortcuts with instruction/quality/usage/settings/outcome deltas, including copy/download export of comparison reports (JSON + Markdown).
 
 Generated proposal format is normalized to four sections for review consistency:
 

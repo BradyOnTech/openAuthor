@@ -44,7 +44,7 @@
   - Prior runs can be replayed via `generation rerun --id ...` and desktop Runs re-run action. ✅
   - Desktop run detail supports log JSON copy/download for direct audit/debug export. ✅
   - Desktop run replays support override controls (provider/model/temperature/token/context/codex). ✅
-  - Desktop run comparison supports selectable baseline-vs-current deltas (plus compare-to-previous shortcut) for instruction, quality, usage, settings, and outcome. ✅
+  - Desktop run comparison supports selectable baseline-vs-current deltas (plus compare-to-previous shortcut) for instruction, quality, usage, settings, and outcome, with JSON/Markdown export. ✅
 
 ## No-Mock Guardrails (active)
 

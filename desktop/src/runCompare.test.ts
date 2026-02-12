@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildRunComparison,
   formatNumericDelta,
+  formatRunComparisonJson,
+  formatRunComparisonMarkdown,
   pickPreviousRunId
 } from "./runCompare";
 import type { GenerationRunDetail } from "./types";
@@ -82,6 +84,21 @@ describe("buildRunComparison", () => {
     const comparison = buildRunComparison(baseline, current);
     expect(comparison.instructionChanged).toBe(false);
     expect(comparison.baselineInstruction).toBe("raw baseline");
+  });
+
+  it("exports JSON and Markdown comparison reports", () => {
+    const comparison = buildRunComparison(
+      makeRun({ run_id: "gen-base" }),
+      makeRun({ run_id: "gen-new", normalized_instruction: "Intent:\n- improved" })
+    );
+    const json = formatRunComparisonJson(comparison);
+    const markdown = formatRunComparisonMarkdown(comparison);
+    expect(json.endsWith("\n")).toBe(true);
+    expect(json).toContain('"baselineRunId": "gen-base"');
+    expect(markdown).toContain("# Run Comparison");
+    expect(markdown).toContain("## Metric Deltas");
+    expect(markdown).toContain("Baseline: gen-base");
+    expect(markdown).toContain("Current: gen-new");
   });
 });
 

@@ -27,6 +27,10 @@ export type RunComparison = {
   outcome: RunComparisonField[];
 };
 
+export function runComparisonBaseFilename(comparison: RunComparison): string {
+  return `run-comparison-${comparison.currentRunId}-vs-${comparison.baselineRunId}`;
+}
+
 export function pickPreviousRunId(
   runIdsOrderedNewestFirst: string[],
   currentRunId: string
@@ -124,4 +128,48 @@ export function buildRunComparison(
       fieldRow("Quality Tier", baseline.quality?.tier, current.quality?.tier)
     ]
   };
+}
+
+export function formatRunComparisonJson(comparison: RunComparison): string {
+  return `${JSON.stringify(comparison, null, 2)}\n`;
+}
+
+function markdownFieldRows(rows: RunComparisonField[]): string {
+  if (rows.length === 0) return "_none_\n";
+  return rows
+    .map((row) => `- ${row.label}: ${row.baseline} -> ${row.current}${row.changed ? " (changed)" : ""}`)
+    .join("\n");
+}
+
+function markdownMetricRows(rows: RunComparisonMetric[]): string {
+  if (rows.length === 0) return "_none_\n";
+  return rows
+    .map(
+      (row) =>
+        `- ${row.label}: baseline ${row.baseline ?? "n/a"} / current ${row.current ?? "n/a"} / delta ${formatNumericDelta(row.delta)}`
+    )
+    .join("\n");
+}
+
+export function formatRunComparisonMarkdown(comparison: RunComparison): string {
+  return (
+    `# Run Comparison\n\n` +
+    `- Baseline: ${comparison.baselineRunId}\n` +
+    `- Current: ${comparison.currentRunId}\n` +
+    `- Instruction changed: ${comparison.instructionChanged ? "yes" : "no"}\n\n` +
+    `## Baseline Instruction\n\n` +
+    "```text\n" +
+    `${comparison.baselineInstruction || "(empty)"}\n` +
+    "```\n\n" +
+    `## Current Instruction\n\n` +
+    "```text\n" +
+    `${comparison.currentInstruction || "(empty)"}\n` +
+    "```\n\n" +
+    `## Metric Deltas\n\n` +
+    `${markdownMetricRows(comparison.metrics)}\n\n` +
+    `## Settings\n\n` +
+    `${markdownFieldRows(comparison.settings)}\n\n` +
+    `## Outcome\n\n` +
+    `${markdownFieldRows(comparison.outcome)}\n`
+  );
 }

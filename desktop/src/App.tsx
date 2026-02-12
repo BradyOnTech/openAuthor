@@ -43,7 +43,10 @@ import { formatRunLogJson, generationRunLogFilename } from "./runLog";
 import {
   buildRunComparison,
   formatNumericDelta,
-  pickPreviousRunId
+  formatRunComparisonJson,
+  formatRunComparisonMarkdown,
+  pickPreviousRunId,
+  runComparisonBaseFilename
 } from "./runCompare";
 import type {
   CodexEntity,
@@ -165,11 +168,15 @@ async function copyTextToClipboard(value: string): Promise<void> {
   throw new Error("Clipboard is unavailable in this environment.");
 }
 
-function downloadTextFile(filename: string, content: string): void {
+function downloadTextFile(
+  filename: string,
+  content: string,
+  mimeType = "text/plain;charset=utf-8"
+): void {
   if (typeof document === "undefined") {
     throw new Error("Download is unavailable in this environment.");
   }
-  const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -921,7 +928,61 @@ export function App() {
     try {
       const payload = formatRunLogJson(selectedGenerationRun);
       const filename = generationRunLogFilename(selectedGenerationRun.run_id);
-      downloadTextFile(filename, payload);
+      downloadTextFile(filename, payload, "application/json;charset=utf-8");
+      setMessage(`Downloaded ${filename}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function handleCopyRunComparisonJson() {
+    if (!runComparison) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunComparisonJson(runComparison);
+      await copyTextToClipboard(payload);
+      setMessage("Copied comparison JSON.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function handleCopyRunComparisonMarkdown() {
+    if (!runComparison) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunComparisonMarkdown(runComparison);
+      await copyTextToClipboard(payload);
+      setMessage("Copied comparison Markdown.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function handleDownloadRunComparisonJson() {
+    if (!runComparison) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunComparisonJson(runComparison);
+      const filename = `${runComparisonBaseFilename(runComparison)}.json`;
+      downloadTextFile(filename, payload, "application/json;charset=utf-8");
+      setMessage(`Downloaded ${filename}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function handleDownloadRunComparisonMarkdown() {
+    if (!runComparison) return;
+    setError("");
+    setMessage("");
+    try {
+      const payload = formatRunComparisonMarkdown(runComparison);
+      const filename = `${runComparisonBaseFilename(runComparison)}.md`;
+      downloadTextFile(filename, payload, "text/markdown;charset=utf-8");
       setMessage(`Downloaded ${filename}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -2007,6 +2068,23 @@ export function App() {
                             {row.changed ? " (changed)" : ""}
                           </p>
                         ))}
+                      </div>
+                      <div className="proposal-actions">
+                        <button disabled={busy} onClick={() => void handleCopyRunComparisonJson()}>
+                          Copy Comparison JSON
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => void handleCopyRunComparisonMarkdown()}
+                        >
+                          Copy Comparison MD
+                        </button>
+                        <button disabled={busy} onClick={handleDownloadRunComparisonJson}>
+                          Download Comparison JSON
+                        </button>
+                        <button disabled={busy} onClick={handleDownloadRunComparisonMarkdown}>
+                          Download Comparison MD
+                        </button>
                       </div>
                     </div>
                   ) : null}
