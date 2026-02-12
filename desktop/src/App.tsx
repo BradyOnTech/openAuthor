@@ -33,6 +33,12 @@ import {
   orderProposalsForReview,
   proposalsForScene
 } from "./state";
+import {
+  EMPTY_RERUN_DRAFT,
+  buildRerunPayload,
+  draftRerunFromRun,
+  type RerunDraft
+} from "./rerun";
 import { formatRunLogJson, generationRunLogFilename } from "./runLog";
 import type {
   CodexEntity,
@@ -211,6 +217,7 @@ export function App() {
     useState<GenerationRunDetail | null>(null);
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
     useState<GenerationRuntimeConfig | null>(null);
+  const [rerunDraft, setRerunDraft] = useState<RerunDraft>(EMPTY_RERUN_DRAFT);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -522,6 +529,14 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGenerationRunId]);
 
+  useEffect(() => {
+    if (!selectedGenerationRun) {
+      setRerunDraft(EMPTY_RERUN_DRAFT);
+      return;
+    }
+    setRerunDraft(draftRerunFromRun(selectedGenerationRun));
+  }, [selectedGenerationRun]);
+
   async function handleCreateScene() {
     if (addForm.title.trim() === "") return;
     setBusy(true);
@@ -768,12 +783,16 @@ export function App() {
     }
   }
 
-  async function handleRerunGeneration(runId: string) {
+  async function handleRerunGeneration() {
+    if (!selectedGenerationRun) return;
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const regenerated = await rerunGeneration(projectRoot, { runId });
+      const regenerated = await rerunGeneration(
+        projectRoot,
+        buildRerunPayload(selectedGenerationRun.run_id, rerunDraft)
+      );
       await refreshProposalList(regenerated.id);
       const rerunRunId = regenerated.generation?.id;
       if (rerunRunId) {
@@ -1686,12 +1705,111 @@ export function App() {
                     </>
                   )}
                   <p className="run-meta">Log: {selectedGenerationRun.log_path}</p>
+                  <div className="run-rerun-card">
+                    <h4>Re-run Options</h4>
+                    <label>
+                      <span>Title Override</span>
+                      <input
+                        value={rerunDraft.title}
+                        onChange={(event) =>
+                          setRerunDraft((prev) => ({ ...prev, title: event.target.value }))
+                        }
+                        placeholder="Optional proposal title"
+                      />
+                    </label>
+                    <div className="generate-grid">
+                      <label>
+                        <span>Provider</span>
+                        <select
+                          value={rerunDraft.provider}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              provider: event.target.value as ProposalProvider
+                            }))
+                          }
+                        >
+                          <option value="local">local</option>
+                          <option value="openai">openai</option>
+                          <option value="anthropic">anthropic</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Model Override</span>
+                        <input
+                          value={rerunDraft.model}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({ ...prev, model: event.target.value }))
+                          }
+                          placeholder={`Model (default: ${PROVIDER_MODEL_HINTS[rerunDraft.provider]})`}
+                        />
+                      </label>
+                      <label>
+                        <span>Temperature</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="2"
+                          value={rerunDraft.temperature}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              temperature: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Max Tokens</span>
+                        <input
+                          type="number"
+                          min="64"
+                          value={rerunDraft.maxOutputTokens}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              maxOutputTokens: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Context Scenes</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={rerunDraft.contextScenes}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              contextScenes: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Codex Limit</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={rerunDraft.codexLimit}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              codexLimit: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                  </div>
                   <div className="proposal-actions">
                     <button
                       disabled={busy}
-                      onClick={() => void handleRerunGeneration(selectedGenerationRun.run_id)}
+                      onClick={() => void handleRerunGeneration()}
                     >
-                      Re-run
+                      Re-run With Settings
                     </button>
                     <button disabled={busy} onClick={() => void handleCopyGenerationLog()}>
                       Copy Log JSON

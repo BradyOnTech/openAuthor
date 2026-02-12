@@ -43,6 +43,7 @@
   - Generation run quality tiers are filterable in CLI (`generation list --quality ...`) and desktop Runs. ✅
   - Prior runs can be replayed via `generation rerun --id ...` and desktop Runs re-run action. ✅
   - Desktop run detail supports log JSON copy/download for direct audit/debug export. ✅
+  - Desktop run replays support override controls (provider/model/temperature/token/context/codex). ✅
 
 ## No-Mock Guardrails (active)
 
