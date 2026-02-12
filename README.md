@@ -22,6 +22,29 @@ make desktop-prereq
 make desktop-smoke
 ```
 
+## Local setup (blank machine -> first run)
+
+```bash
+# 1) install Python 3.11+, Node 20+, Rust stable
+# 2) clone and enter repository
+git clone <your-repo-url> openAuthor
+cd openAuthor
+
+# 3) install core + desktop dependencies
+python3 -m pip install --upgrade pip
+python3 -m pip install -e .
+cd desktop && npm install && cd ..
+
+# 4) verify toolchain/runtime contracts
+make desktop-prereq
+
+# 5) initialize a project in current folder
+python3 -m openauthor init .
+
+# 6) launch desktop app
+make desktop-tauri
+```
+
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
@@ -119,6 +142,11 @@ python3 -m openauthor check continuity --json
 - `.openauthor/proposals/`
 - `codex/codex.json` (exported from SQLite on snapshot)
 
+Codex synchronization behavior:
+
+- Codex mutations (`codex add/update`) now keep `codex/codex.json` in sync immediately.
+- Branch switch/merge operations resync runtime SQLite codex state from branch `codex/codex.json` to prevent cross-branch codex drift.
+
 AI generation artifacts:
 
 - `.openauthor/generations/*.json` stores prompt/context/usage logs per run.
@@ -170,7 +198,7 @@ Provider retry tuning (optional env vars):
 
 ## Status
 
-Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is complete with Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.
+Phase 0-3 are complete. Phase 4 is in progress with budget policy enforcement, guided merge workflows, retrieval index/query, retrieval-backed generation provenance, and desktop provenance surfaces completed. See `docs/plan.md` for remaining Phase 4 chunks.
 
 CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
 

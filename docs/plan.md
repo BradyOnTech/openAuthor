@@ -20,7 +20,7 @@
 - Scope snapshots to authoring artifacts only (avoid repo-wide `git add -A`). ✅
 - Export codex to deterministic JSON for version history (`codex/codex.json`). ✅
 
-## Phase 2: AI integration layer (completed with deferred budget policy)
+## Phase 2: AI integration layer (completed)
 
 - 2.1 Provider abstraction:
   - Provider interfaces (`openai`, `anthropic`, `local`) with real adapter calls are implemented in core. ✅
@@ -37,7 +37,7 @@
 - 2.4 Budget and observability:
   - Token usage + latency metadata are persisted per generation run. ✅
   - Cost estimation is configurable via `.openauthor/provider_pricing.json`. ✅
-  - Budget policy enforcement (hard spend/token caps) is deferred to future TODO. 📝
+  - Budget policy enforcement (hard spend/token caps) was delivered in Phase 4. ✅
   - Generation run history/failure inspection is available via CLI and desktop runs panel. ✅
   - Normalization quality diagnostics are persisted per run and exposed in run detail views. ✅
   - Generation run quality tiers are filterable in CLI (`generation list --quality ...`) and desktop Runs. ✅
@@ -58,12 +58,12 @@
 - [x] Preferred-run workflow is wired (pin/unpin/list + desktop navigation to preferred run/proposal).
 - [x] Desktop runs comparison is wired (baseline selection, profiles, recommendation hints, exports, persisted prefs).
 - [x] Regression gates are passing (`make check`, `make test`, `make test-desktop`, `make desktop-build`, `make tauri-check`).
-- [x] Closeout signoff: mark Phase 2 complete with budget policy explicitly deferred to backlog.
-- [x] Backlog hygiene: track budget-policy enforcement as a dedicated Phase 4 follow-on item with acceptance criteria.
+- [x] Closeout signoff: Phase 2 core AI integration completed with explicit backlog tracking that was later delivered in Phase 4.
+- [x] Backlog hygiene: Phase 2 carryover budget policy item was closed in Phase 4.
 
 Phase 2 exit condition:
-- All checklist items are checked except the intentional budget-policy deferral, and that deferral is explicitly accepted.
-- Status: exit condition satisfied; budget policy is now tracked in Phase 4.
+- All checklist items are checked and Phase 2 carryover budget-policy scope has been completed in Phase 4.
+- Status: exit condition satisfied.
 
 ## No-Mock Guardrails (active)
 
@@ -148,7 +148,7 @@ Phase 3 exit condition:
 - `npm run build` in `desktop/` for TypeScript + Vite.
 - `cargo check --manifest-path desktop/src-tauri/Cargo.toml` for Tauri backend integrity.
 
-## Phase 4: Advanced workflows (planned)
+## Phase 4: Advanced workflows (in progress)
 
 Phase 4 mission:
 - Add high-leverage authoring workflows on top of the stable Phase 3 shell without introducing mock paths:
@@ -163,7 +163,7 @@ Phase 4 execution principles:
 - Voice edits remain proposal-based by default; no silent direct manuscript mutations.
 - New workflows must degrade cleanly when optional dependencies are missing.
 
-## Phase 4 Execution Checklist (planned)
+## Phase 4 Execution Checklist (in progress)
 
 - 4.0 Budget policy enforcement (carried over)
   - [x] Add per-run hard caps (token and estimated cost) with fail-closed behavior.
@@ -204,9 +204,7 @@ Phase 4 exit condition:
 
 ## Future TODO (deferred)
 
-- Budget policy enforcement:
-  - Per-run and per-project caps for spend/token budgets.
-  - Policy-driven failure behavior and operator controls.
+- Additional policy controls (beyond current budget caps), including richer operator controls and policy presets.
 
 ## Definition of done for MVP
 

@@ -184,7 +184,7 @@ const EMPTY_DRAFT_GENERATED_PROPOSAL: DraftGeneratedProposal = {
   maxOutputTokens: 700,
   contextScenes: 1,
   codexLimit: 20,
-  retrievalMode: "off",
+  retrievalMode: "auto",
   retrievalLimit: 5,
   retrievalMinScore: 0,
   retrievalRequireFresh: false

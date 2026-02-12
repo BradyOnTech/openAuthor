@@ -38,6 +38,7 @@
 - Codex create: `codex add --type ... --name ... --description ... --json`
 - Codex fetch: `codex get --id <entity-id> --json`
 - Codex update: `codex update --id <entity-id> ... --json`
+- Runtime codex behavior: codex mutations keep `codex/codex.json` synchronized, and branch switch/merge syncs SQLite runtime state from branch snapshot.
 
 ## Implemented command usage (Continuity Checks)
 

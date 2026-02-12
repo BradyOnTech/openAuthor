@@ -25,7 +25,9 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
     "codex",
     "proposal",
     "snapshot",
+    "branch",
     "check",
+    "retrieval",
     "generation",
   ];
   if allowed.contains(&args[0].as_str()) {

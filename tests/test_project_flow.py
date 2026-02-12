@@ -563,6 +563,78 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertNotEqual(code, 0)
       self.assertIn("uncommitted changes", err.lower())
 
+  def test_branch_switch_resyncs_codex_runtime(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Codex Branch Sync"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "codex",
+          "add",
+          "--type",
+          "character",
+          "--name",
+          "Mainline Character",
+          "--description",
+          "Entity on base branch.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "baseline codex entity"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["branch", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      base_branch = next(row["name"] for row in json.loads(out) if row["current"])
+
+      code, _, err = self.run_cli(
+        ["branch", "create", "--name", "exp-codex", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        [
+          "codex",
+          "add",
+          "--type",
+          "item",
+          "--name",
+          "Branch Relic",
+          "--description",
+          "Entity only on exp-codex branch.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "exp codex entity"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["codex", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      exp_names = {row["name"] for row in json.loads(out)}
+      self.assertIn("Branch Relic", exp_names)
+      self.assertIn("Mainline Character", exp_names)
+
+      code, _, err = self.run_cli(
+        ["branch", "switch", "--name", base_branch, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, out, err = self.run_cli(["codex", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      base_names = {row["name"] for row in json.loads(out)}
+      self.assertIn("Mainline Character", base_names)
+      self.assertNotIn("Branch Relic", base_names)
+
   def test_snapshot_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

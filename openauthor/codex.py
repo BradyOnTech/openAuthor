@@ -4,6 +4,7 @@ import json
 import sqlite3
 import uuid
 from pathlib import Path
+from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, utc_now
 
@@ -49,6 +50,117 @@ def ensure_codex(paths: ProjectPaths) -> None:
   initialize_codex(str(paths.codex_db))
 
 
+def _codex_snapshot_path(paths: ProjectPaths) -> Path:
+  return paths.root / "codex" / "codex.json"
+
+
+def _validate_codex_snapshot(payload: Any, *, snapshot_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+  if not isinstance(payload, dict):
+    raise OpenAuthorError(f"Invalid codex snapshot payload at {snapshot_path}.")
+  entities = payload.get("entities", [])
+  relationships = payload.get("relationships", [])
+  if not isinstance(entities, list):
+    raise OpenAuthorError(f"Invalid codex snapshot entities at {snapshot_path}.")
+  if not isinstance(relationships, list):
+    raise OpenAuthorError(f"Invalid codex snapshot relationships at {snapshot_path}.")
+  entity_rows = [row for row in entities if isinstance(row, dict)]
+  relationship_rows = [row for row in relationships if isinstance(row, dict)]
+  return entity_rows, relationship_rows
+
+
+def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
+  ensure_codex(paths)
+  snapshot_path = _codex_snapshot_path(paths)
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM relationships")
+    cursor.execute("DELETE FROM entities")
+
+    if not snapshot_path.exists():
+      connection.commit()
+      return {
+        "source": "none",
+        "imported": True,
+        "entities": 0,
+        "relationships": 0,
+      }
+
+    try:
+      payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+      raise OpenAuthorError(f"Invalid codex snapshot JSON at {snapshot_path}.") from error
+
+    entity_rows, relationship_rows = _validate_codex_snapshot(
+      payload,
+      snapshot_path=snapshot_path,
+    )
+    now = utc_now()
+    entity_ids: set[str] = set()
+    for row in entity_rows:
+      entity_id = str(row.get("id", "")).strip()
+      kind = str(row.get("type", "")).strip()
+      name = str(row.get("name", "")).strip()
+      description = str(row.get("description", ""))
+      created_at = str(row.get("created_at", "")).strip() or now
+      updated_at = str(row.get("updated_at", "")).strip() or now
+      if entity_id == "" or kind == "" or name == "":
+        continue
+      cursor.execute(
+        """
+        INSERT INTO entities (id, kind, name, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (entity_id, kind, name, description, created_at, updated_at),
+      )
+      entity_ids.add(entity_id)
+
+    imported_relationships = 0
+    for row in relationship_rows:
+      relationship_id = str(row.get("id", "")).strip()
+      source_entity_id = str(row.get("source_entity_id", "")).strip()
+      target_entity_id = str(row.get("target_entity_id", "")).strip()
+      relation = str(row.get("relation", "")).strip()
+      notes = str(row.get("notes", ""))
+      created_at = str(row.get("created_at", "")).strip() or now
+      if (
+        relationship_id == ""
+        or source_entity_id == ""
+        or target_entity_id == ""
+        or relation == ""
+      ):
+        continue
+      if source_entity_id not in entity_ids or target_entity_id not in entity_ids:
+        continue
+      cursor.execute(
+        """
+        INSERT INTO relationships (
+          id, source_entity_id, target_entity_id, relation, notes, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+          relationship_id,
+          source_entity_id,
+          target_entity_id,
+          relation,
+          notes,
+          created_at,
+        ),
+      )
+      imported_relationships += 1
+    connection.commit()
+  finally:
+    connection.close()
+
+  return {
+    "source": "snapshot",
+    "imported": True,
+    "entities": len(entity_ids),
+    "relationships": imported_relationships,
+  }
+
+
 def add_entity(
   paths: ProjectPaths,
   *,
@@ -78,6 +190,7 @@ def add_entity(
     raise OpenAuthorError(f"Entity with name '{name}' already exists.") from error
   finally:
     connection.close()
+  export_codex_json(paths)
   return entity_id
 
 
@@ -184,7 +297,7 @@ def update_entity(
   finally:
     connection.close()
 
-  return {
+  updated = {
     "id": entity_id,
     "type": next_kind,
     "name": next_name,
@@ -192,6 +305,8 @@ def update_entity(
     "created_at": current["created_at"],
     "updated_at": next_updated_at,
   }
+  export_codex_json(paths)
+  return updated
 
 
 def export_codex_json(paths: ProjectPaths) -> Path:

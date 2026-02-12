@@ -15,7 +15,7 @@ check_cmd() {
 }
 
 echo "Checking desktop prerequisites for openAuthor..."
-check_cmd python3 "Install Python 3.10+ and ensure 'python3' is on PATH."
+check_cmd python3 "Install Python 3.11+ and ensure 'python3' is on PATH."
 check_cmd node "Install Node.js 20+."
 check_cmd npm "Install npm (bundled with Node.js)."
 check_cmd cargo "Install Rust toolchain via rustup."

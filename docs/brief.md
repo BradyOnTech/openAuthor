@@ -49,6 +49,6 @@ Build a superior alternative to Sudowrite/NovelCrafter for a power user who want
 - Local-first core with clean adapter boundaries:
   - Manuscript store (markdown files)
   - Codex store (SQLite runtime + JSON snapshot artifact, swappable later)
-  - AI provider layer (to be added)
+  - AI provider layer (`local`, `openai`, `anthropic`) with proposal-generation orchestration
   - Proposal engine (human-in-the-loop)
 - Keep AI orchestration independent from storage primitives.

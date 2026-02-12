@@ -9,7 +9,7 @@ Current UI slice:
 - Outliner (filter/search scene cards, open in editor)
 - Proposal Review (proposal create/list/apply/reject)
 - Proposal Generate (provider-backed proposal generation from desktop)
-- Proposal Generate now includes retrieval mode controls (`off/auto/required`, limit/min-score, require-fresh)
+- Proposal Generate now includes retrieval mode controls (`off/auto/required`, limit/min-score, require-fresh), with desktop default set to `auto`.
 - Generation Runs (history/errors with run detail inspection)
   - Includes retrieval provenance/citation panels (query, index freshness, source refs, score/coverage, excerpts)
   - Includes provider runtime config (credentials present/missing, retry settings)

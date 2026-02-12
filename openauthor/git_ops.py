@@ -4,7 +4,7 @@ import os
 import subprocess
 from typing import Any
 
-from .codex import export_codex_json
+from .codex import export_codex_json, replace_runtime_codex_from_snapshot
 from .project import OpenAuthorError, ProjectPaths
 
 AUTHORING_PATHSPEC = [
@@ -112,6 +112,15 @@ def _ensure_ref_exists(paths: ProjectPaths, ref: str) -> None:
     raise OpenAuthorError(f"Unknown git reference '{normalized}'.")
 
 
+def _sync_codex_runtime(paths: ProjectPaths) -> None:
+  try:
+    replace_runtime_codex_from_snapshot(paths)
+  except OpenAuthorError as error:
+    raise OpenAuthorError(
+      f"Codex runtime sync failed after git operation: {error}"
+    ) from error
+
+
 def current_branch(paths: ProjectPaths) -> str:
   ensure_git_repo(paths)
   result = run_git(paths, ["rev-parse", "--abbrev-ref", "HEAD"], check=True)
@@ -164,6 +173,7 @@ def create_branch(
   run_git(paths, args, check=True)
   if switch:
     run_git(paths, ["checkout", branch_name], check=True)
+    _sync_codex_runtime(paths)
   return {
     "name": branch_name,
     "current": current_branch(paths) == branch_name,
@@ -177,6 +187,7 @@ def switch_branch(paths: ProjectPaths, *, name: str) -> dict[str, Any]:
   _ensure_ref_exists(paths, branch_name)
   _ensure_clean_worktree(paths)
   run_git(paths, ["checkout", branch_name], check=True)
+  _sync_codex_runtime(paths)
   return {
     "name": branch_name,
     "current": current_branch(paths) == branch_name,
@@ -351,6 +362,7 @@ def merge_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, An
   starting_branch = current_branch(paths)
   if starting_branch != base_ref:
     run_git(paths, ["checkout", base_ref], check=True)
+    _sync_codex_runtime(paths)
 
   merge_result = run_git(
     paths,
@@ -366,6 +378,7 @@ def merge_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, An
     )
 
   merge_commit = run_git(paths, ["rev-parse", "HEAD"], check=True).stdout.strip()
+  _sync_codex_runtime(paths)
   current = current_branch(paths)
   output = merge_result.stdout.strip()
   return {
