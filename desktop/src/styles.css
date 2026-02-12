@@ -932,6 +932,35 @@ code {
   gap: 4px;
 }
 
+.run-recommendation {
+  font-weight: 700;
+}
+
+.run-recommendation.verdict-likely_better {
+  color: #165f2a;
+}
+
+.run-recommendation.verdict-likely_worse {
+  color: #8a3f15;
+}
+
+.run-recommendation.verdict-mixed {
+  color: #6b5726;
+}
+
+.run-recommendation.verdict-insufficient_data {
+  color: #495768;
+}
+
+.run-recommendation-reasons {
+  border: 1px solid #d7cfbc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+}
+
 .context-content {
   grid-template-rows: auto;
   overflow: auto;

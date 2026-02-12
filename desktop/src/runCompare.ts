@@ -16,6 +16,13 @@ export type RunComparisonField = {
   changed: boolean;
 };
 
+export type RunComparisonRecommendation = {
+  verdict: "likely_better" | "mixed" | "likely_worse" | "insufficient_data";
+  score: number;
+  summary: string;
+  reasons: string[];
+};
+
 export type RunComparison = {
   baselineRunId: string;
   currentRunId: string;
@@ -25,7 +32,17 @@ export type RunComparison = {
   metrics: RunComparisonMetric[];
   settings: RunComparisonField[];
   outcome: RunComparisonField[];
+  recommendation: RunComparisonRecommendation;
 };
+
+export function runComparisonVerdictLabel(
+  verdict: RunComparisonRecommendation["verdict"]
+): string {
+  if (verdict === "likely_better") return "Likely Better";
+  if (verdict === "likely_worse") return "Likely Worse";
+  if (verdict === "mixed") return "Mixed";
+  return "Insufficient Data";
+}
 
 export function runComparisonBaseFilename(comparison: RunComparison): string {
   return `run-comparison-${comparison.currentRunId}-vs-${comparison.baselineRunId}`;
@@ -78,6 +95,126 @@ function instructionText(run: GenerationRunDetail): string {
   return value.trim();
 }
 
+function recommendationSummary(
+  verdict: RunComparisonRecommendation["verdict"],
+  reasons: string[]
+): string {
+  if (verdict === "likely_better") {
+    return reasons[0] ?? "Current run looks better on key metrics.";
+  }
+  if (verdict === "likely_worse") {
+    return reasons[0] ?? "Current run looks worse on key metrics.";
+  }
+  if (verdict === "mixed") {
+    return "Current run has mixed tradeoffs across quality/cost/latency/outcome.";
+  }
+  return "Not enough overlapping metrics to suggest promotion confidence.";
+}
+
+function buildRecommendation(
+  baseline: GenerationRunDetail,
+  current: GenerationRunDetail
+): RunComparisonRecommendation {
+  let score = 0;
+  let evaluatedSignals = 0;
+  const reasons: string[] = [];
+
+  if (baseline.status !== current.status) {
+    evaluatedSignals += 1;
+    if (baseline.status !== "succeeded" && current.status === "succeeded") {
+      score += 3;
+      reasons.push("Current run succeeded while baseline did not.");
+    } else if (baseline.status === "succeeded" && current.status !== "succeeded") {
+      score -= 3;
+      reasons.push("Current run did not succeed while baseline did.");
+    }
+  }
+
+  const baselineQuality = asNumber(baseline.quality?.score);
+  const currentQuality = asNumber(current.quality?.score);
+  if (baselineQuality !== null && currentQuality !== null) {
+    evaluatedSignals += 1;
+    const delta = currentQuality - baselineQuality;
+    if (delta >= 5) {
+      score += 2;
+      reasons.push(`Quality score increased by ${delta}.`);
+    } else if (delta >= 2) {
+      score += 1;
+      reasons.push(`Quality score improved by ${delta}.`);
+    } else if (delta <= -5) {
+      score -= 2;
+      reasons.push(`Quality score decreased by ${Math.abs(delta)}.`);
+    } else if (delta <= -2) {
+      score -= 1;
+      reasons.push(`Quality score slipped by ${Math.abs(delta)}.`);
+    }
+  }
+
+  const baselineCost = asNumber(baseline.usage?.estimated_cost_usd ?? null);
+  const currentCost = asNumber(current.usage?.estimated_cost_usd ?? null);
+  if (baselineCost !== null && currentCost !== null) {
+    evaluatedSignals += 1;
+    const delta = currentCost - baselineCost;
+    if (delta <= -0.00001) {
+      score += 1;
+      reasons.push(`Estimated cost decreased by ${Math.abs(delta).toFixed(6)} USD.`);
+    } else if (delta >= 0.00001) {
+      score -= 1;
+      reasons.push(`Estimated cost increased by ${delta.toFixed(6)} USD.`);
+    }
+  }
+
+  const baselineLatency = asNumber(baseline.usage?.latency_ms);
+  const currentLatency = asNumber(current.usage?.latency_ms);
+  if (baselineLatency !== null && currentLatency !== null) {
+    evaluatedSignals += 1;
+    const delta = currentLatency - baselineLatency;
+    if (delta <= -100) {
+      score += 1;
+      reasons.push(`Latency improved by ${Math.abs(delta)} ms.`);
+    } else if (delta >= 100) {
+      score -= 1;
+      reasons.push(`Latency regressed by ${delta} ms.`);
+    }
+  }
+
+  const baselineAttempts = asNumber(
+    baseline.usage?.provider_attempts ?? baseline.error?.attempts
+  );
+  const currentAttempts = asNumber(
+    current.usage?.provider_attempts ?? current.error?.attempts
+  );
+  if (baselineAttempts !== null && currentAttempts !== null) {
+    evaluatedSignals += 1;
+    const delta = currentAttempts - baselineAttempts;
+    if (delta <= -1) {
+      score += 1;
+      reasons.push(`Provider attempts dropped by ${Math.abs(delta)}.`);
+    } else if (delta >= 1) {
+      score -= 1;
+      reasons.push(`Provider attempts increased by ${delta}.`);
+    }
+  }
+
+  if (evaluatedSignals === 0) {
+    return {
+      verdict: "insufficient_data",
+      score: 0,
+      summary: recommendationSummary("insufficient_data", reasons),
+      reasons
+    };
+  }
+
+  const verdict: RunComparisonRecommendation["verdict"] =
+    score >= 2 ? "likely_better" : score <= -2 ? "likely_worse" : "mixed";
+  return {
+    verdict,
+    score,
+    summary: recommendationSummary(verdict, reasons),
+    reasons
+  };
+}
+
 export function formatNumericDelta(delta: number | null): string {
   if (delta === null) return "n/a";
   if (delta === 0) return "0";
@@ -126,7 +263,8 @@ export function buildRunComparison(
       fieldRow("Error Category", baseline.error?.category, current.error?.category),
       fieldRow("Error Retriable", baseline.error?.retriable, current.error?.retriable),
       fieldRow("Quality Tier", baseline.quality?.tier, current.quality?.tier)
-    ]
+    ],
+    recommendation: buildRecommendation(baseline, current)
   };
 }
 
@@ -170,6 +308,15 @@ export function formatRunComparisonMarkdown(comparison: RunComparison): string {
     `## Settings\n\n` +
     `${markdownFieldRows(comparison.settings)}\n\n` +
     `## Outcome\n\n` +
-    `${markdownFieldRows(comparison.outcome)}\n`
+    `${markdownFieldRows(comparison.outcome)}\n\n` +
+    `## Recommendation\n\n` +
+    `- Verdict: ${comparison.recommendation.verdict}\n` +
+    `- Score: ${comparison.recommendation.score}\n` +
+    `- Summary: ${comparison.recommendation.summary}\n` +
+    `${
+      comparison.recommendation.reasons.length > 0
+        ? comparison.recommendation.reasons.map((reason) => `- Reason: ${reason}`).join("\n")
+        : "- Reason: n/a"
+    }\n`
   );
 }

@@ -55,7 +55,7 @@
 - Run detail: `generation get --id <run-id> --json`
 - Run rerun: `generation rerun --id <run-id> --json`
 - Runtime config: `generation config --json`
-- Desktop run detail actions: re-run with override controls, baseline run selection + compare-to-previous (same scene), copy/download log JSON, copy/download comparison reports (JSON + Markdown)
+- Desktop run detail actions: re-run with override controls, baseline run selection + compare-to-previous (same scene), comparison recommendation hints, copy/download log JSON, copy/download comparison reports (JSON + Markdown)
 
 ## Why sidecar-first
 

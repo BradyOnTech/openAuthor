@@ -46,7 +46,8 @@ import {
   formatRunComparisonJson,
   formatRunComparisonMarkdown,
   pickPreviousRunId,
-  runComparisonBaseFilename
+  runComparisonBaseFilename,
+  runComparisonVerdictLabel
 } from "./runCompare";
 import type {
   CodexEntity,
@@ -2028,6 +2029,23 @@ export function App() {
                       <p className="run-meta">
                         Instruction changed: {runComparison.instructionChanged ? "yes" : "no"}
                       </p>
+                      <p
+                        className={`run-meta run-recommendation verdict-${runComparison.recommendation.verdict}`}
+                      >
+                        Recommendation:{" "}
+                        {runComparisonVerdictLabel(runComparison.recommendation.verdict)} (score{" "}
+                        {runComparison.recommendation.score})
+                      </p>
+                      <p className="run-meta">{runComparison.recommendation.summary}</p>
+                      {runComparison.recommendation.reasons.length ? (
+                        <div className="run-recommendation-reasons">
+                          {runComparison.recommendation.reasons.map((reason, index) => (
+                            <p key={`${index}-${reason}`} className="run-meta">
+                              - {reason}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
                       <div className="run-compare-grid">
                         <article>
                           <h5>Baseline Instruction</h5>

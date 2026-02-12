@@ -4,7 +4,8 @@ import {
   formatNumericDelta,
   formatRunComparisonJson,
   formatRunComparisonMarkdown,
-  pickPreviousRunId
+  pickPreviousRunId,
+  runComparisonVerdictLabel
 } from "./runCompare";
 import type { GenerationRunDetail } from "./types";
 
@@ -54,7 +55,7 @@ describe("buildRunComparison", () => {
         input_tokens: 110,
         output_tokens: 70,
         latency_ms: 1000,
-        provider_attempts: 2,
+        provider_attempts: 1,
         estimated_cost_usd: 0.0015
       },
       quality: {
@@ -76,6 +77,8 @@ describe("buildRunComparison", () => {
     });
     expect(comparison.settings.find((row) => row.label === "Model")?.changed).toBe(true);
     expect(comparison.outcome.find((row) => row.label === "Quality Tier")?.changed).toBe(true);
+    expect(comparison.recommendation.verdict).toBe("likely_better");
+    expect(comparison.recommendation.score).toBeGreaterThan(0);
   });
 
   it("falls back to raw instruction if normalized text is missing", () => {
@@ -97,8 +100,18 @@ describe("buildRunComparison", () => {
     expect(json).toContain('"baselineRunId": "gen-base"');
     expect(markdown).toContain("# Run Comparison");
     expect(markdown).toContain("## Metric Deltas");
+    expect(markdown).toContain("## Recommendation");
     expect(markdown).toContain("Baseline: gen-base");
     expect(markdown).toContain("Current: gen-new");
+  });
+
+  it("returns likely_worse when status regresses from success to failure", () => {
+    const comparison = buildRunComparison(
+      makeRun({ run_id: "gen-base", status: "succeeded" }),
+      makeRun({ run_id: "gen-new", status: "failed", error: { category: "timeout" } })
+    );
+    expect(comparison.recommendation.verdict).toBe("likely_worse");
+    expect(comparison.recommendation.score).toBeLessThan(0);
   });
 });
 
@@ -123,5 +136,14 @@ describe("pickPreviousRunId", () => {
   it("returns null for newest/oldest missing position", () => {
     expect(pickPreviousRunId(["gen-0002", "gen-0001"], "gen-0001")).toBe(null);
     expect(pickPreviousRunId(["gen-0002", "gen-0001"], "gen-missing")).toBe(null);
+  });
+});
+
+describe("runComparisonVerdictLabel", () => {
+  it("maps verdicts to user-facing labels", () => {
+    expect(runComparisonVerdictLabel("likely_better")).toBe("Likely Better");
+    expect(runComparisonVerdictLabel("mixed")).toBe("Mixed");
+    expect(runComparisonVerdictLabel("likely_worse")).toBe("Likely Worse");
+    expect(runComparisonVerdictLabel("insufficient_data")).toBe("Insufficient Data");
   });
 });
