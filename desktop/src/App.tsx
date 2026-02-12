@@ -40,7 +40,11 @@ import {
   type RerunDraft
 } from "./rerun";
 import { formatRunLogJson, generationRunLogFilename } from "./runLog";
-import { buildRunComparison, formatNumericDelta } from "./runCompare";
+import {
+  buildRunComparison,
+  formatNumericDelta,
+  pickPreviousRunId
+} from "./runCompare";
 import type {
   CodexEntity,
   ContinuityIssue,
@@ -216,6 +220,10 @@ export function App() {
   const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
   const [selectedGenerationRun, setSelectedGenerationRun] =
     useState<GenerationRunDetail | null>(null);
+  const [comparisonSceneRuns, setComparisonSceneRuns] = useState<GenerationRunSummary[]>(
+    []
+  );
+  const [comparisonBaselineRunId, setComparisonBaselineRunId] = useState<string>("");
   const [comparisonBaselineRun, setComparisonBaselineRun] =
     useState<GenerationRunDetail | null>(null);
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
@@ -295,6 +303,19 @@ export function App() {
     if (!selectedGenerationRun || !comparisonBaselineRun) return null;
     return buildRunComparison(comparisonBaselineRun, selectedGenerationRun);
   }, [selectedGenerationRun, comparisonBaselineRun]);
+  const comparisonCandidateRuns = useMemo(() => {
+    if (!selectedGenerationRun) return [];
+    return comparisonSceneRuns.filter(
+      (row) => row.run_id !== selectedGenerationRun.run_id
+    );
+  }, [comparisonSceneRuns, selectedGenerationRun]);
+  const previousComparisonRunId = useMemo(() => {
+    if (!selectedGenerationRun) return null;
+    return pickPreviousRunId(
+      comparisonSceneRuns.map((row) => row.run_id),
+      selectedGenerationRun.run_id
+    );
+  }, [comparisonSceneRuns, selectedGenerationRun]);
   const povCharacterEntity = useMemo(() => {
     if (!scene?.pov) return null;
     const normalizedPov = scene.pov.trim().toLowerCase();
@@ -537,16 +558,34 @@ export function App() {
   }, [selectedGenerationRunId]);
 
   useEffect(() => {
-    setComparisonBaselineRun(null);
-  }, [selectedGenerationRunId]);
-
-  useEffect(() => {
     if (!selectedGenerationRun) {
       setRerunDraft(EMPTY_RERUN_DRAFT);
+      setComparisonSceneRuns([]);
+      setComparisonBaselineRunId("");
+      setComparisonBaselineRun(null);
       return;
     }
     setRerunDraft(draftRerunFromRun(selectedGenerationRun));
-  }, [selectedGenerationRun]);
+    setComparisonBaselineRunId("");
+    setComparisonBaselineRun(null);
+    let cancelled = false;
+    void listGenerationRuns(projectRoot, {
+      sceneId: selectedGenerationRun.scene_id,
+      limit: 100
+    })
+      .then((rows) => {
+        if (cancelled) return;
+        setComparisonSceneRuns(orderGenerationRuns(rows));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setComparisonSceneRuns([]);
+        setError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectRoot, selectedGenerationRun]);
 
   async function handleCreateScene() {
     if (addForm.title.trim() === "") return;
@@ -570,34 +609,45 @@ export function App() {
     }
   }
 
-  async function handleCompareToPreviousGenerationRun() {
-    if (!selectedGenerationRun?.scene_id) return;
+  async function handleSelectComparisonBaseline(runId: string) {
+    if (!selectedGenerationRun) return;
+    if (!runId) {
+      setComparisonBaselineRunId("");
+      setComparisonBaselineRun(null);
+      setMessage("Comparison cleared.");
+      setError("");
+      return;
+    }
+    if (runId === selectedGenerationRun.run_id) {
+      setError("Pick a different run as baseline.");
+      return;
+    }
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const sceneRuns = await listGenerationRuns(projectRoot, {
-        sceneId: selectedGenerationRun.scene_id,
-        limit: 100
-      });
-      const ordered = orderGenerationRuns(sceneRuns);
-      const currentIndex = ordered.findIndex(
-        (row) => row.run_id === selectedGenerationRun.run_id
-      );
-      if (currentIndex === -1 || currentIndex >= ordered.length - 1) {
-        setComparisonBaselineRun(null);
-        setMessage("No previous run found for this scene.");
-        return;
-      }
-      const baselineId = ordered[currentIndex + 1].run_id;
-      const baseline = await getGenerationRun(projectRoot, baselineId);
+      const baseline = await getGenerationRun(projectRoot, runId);
+      setComparisonBaselineRunId(runId);
       setComparisonBaselineRun(baseline);
-      setMessage(`Comparing ${selectedGenerationRun.run_id} against ${baseline.run_id}.`);
+      setMessage(`Comparing ${selectedGenerationRun.run_id} against ${runId}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleCompareToPreviousGenerationRun() {
+    if (!selectedGenerationRun?.scene_id) return;
+    const previousId = previousComparisonRunId;
+    if (!previousId) {
+      setComparisonBaselineRunId("");
+      setComparisonBaselineRun(null);
+      setMessage("No previous run found for this scene.");
+      setError("");
+      return;
+    }
+    await handleSelectComparisonBaseline(previousId);
   }
 
   async function handleSaveScene() {
@@ -1845,6 +1895,28 @@ export function App() {
                       </label>
                     </div>
                   </div>
+                  <div className="run-compare-select-card">
+                    <h4>Compare Baseline</h4>
+                    <label>
+                      <span>Baseline Run</span>
+                      <select
+                        value={comparisonBaselineRunId}
+                        onChange={(event) =>
+                          void handleSelectComparisonBaseline(event.target.value)
+                        }
+                      >
+                        <option value="">none selected</option>
+                        {comparisonCandidateRuns.map((run) => (
+                          <option key={run.run_id} value={run.run_id}>
+                            {run.run_id} | {run.status} | {run.provider}/{run.model}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <p className="run-meta">
+                      {comparisonCandidateRuns.length} candidate run(s) for this scene
+                    </p>
+                  </div>
                   <div className="proposal-actions">
                     <button
                       disabled={busy}
@@ -1853,7 +1925,7 @@ export function App() {
                       Re-run With Settings
                     </button>
                     <button
-                      disabled={busy || !selectedGenerationRun.scene_id}
+                      disabled={busy || !selectedGenerationRun.scene_id || !previousComparisonRunId}
                       onClick={() => void handleCompareToPreviousGenerationRun()}
                     >
                       Compare To Previous

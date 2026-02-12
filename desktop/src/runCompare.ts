@@ -27,6 +27,17 @@ export type RunComparison = {
   outcome: RunComparisonField[];
 };
 
+export function pickPreviousRunId(
+  runIdsOrderedNewestFirst: string[],
+  currentRunId: string
+): string | null {
+  const currentIndex = runIdsOrderedNewestFirst.findIndex((item) => item === currentRunId);
+  if (currentIndex === -1 || currentIndex >= runIdsOrderedNewestFirst.length - 1) {
+    return null;
+  }
+  return runIdsOrderedNewestFirst[currentIndex + 1];
+}
+
 function asNumber(value: NumericLike): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return value;

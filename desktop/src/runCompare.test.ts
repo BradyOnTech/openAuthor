@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildRunComparison, formatNumericDelta } from "./runCompare";
+import {
+  buildRunComparison,
+  formatNumericDelta,
+  pickPreviousRunId
+} from "./runCompare";
 import type { GenerationRunDetail } from "./types";
 
 function makeRun(overrides: Partial<GenerationRunDetail> = {}): GenerationRunDetail {
@@ -87,5 +91,20 @@ describe("formatNumericDelta", () => {
     expect(formatNumericDelta(-3)).toBe("-3");
     expect(formatNumericDelta(0)).toBe("0");
     expect(formatNumericDelta(null)).toBe("n/a");
+  });
+});
+
+describe("pickPreviousRunId", () => {
+  it("returns immediate previous run id from newest-first ordering", () => {
+    const picked = pickPreviousRunId(
+      ["gen-0004", "gen-0003", "gen-0002", "gen-0001"],
+      "gen-0003"
+    );
+    expect(picked).toBe("gen-0002");
+  });
+
+  it("returns null for newest/oldest missing position", () => {
+    expect(pickPreviousRunId(["gen-0002", "gen-0001"], "gen-0001")).toBe(null);
+    expect(pickPreviousRunId(["gen-0002", "gen-0001"], "gen-missing")).toBe(null);
   });
 });
