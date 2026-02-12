@@ -635,6 +635,55 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("Mainline Character", base_names)
       self.assertNotIn("Branch Relic", base_names)
 
+  def test_branch_switch_ignores_workspace_artifact_changes(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Branch Workspace Scope"], root)
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Scope Scene",
+          "--summary",
+          "scope test",
+          "--body",
+          "Initial body",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(["snapshot", "create", "-m", "baseline"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["branch", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      base_branch = next(row["name"] for row in json.loads(out) if row["current"])
+      code, _, err = self.run_cli(
+        ["branch", "create", "--name", "exp-workspace", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "proposal",
+          "add",
+          "--title",
+          "Workspace Only",
+          "--instruction",
+          "Do not block branch switch",
+          "--scene",
+          "scene-0001",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(["branch", "switch", "--name", base_branch], root)
+      self.assertEqual(code, 0, msg=err)
+
   def test_snapshot_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -854,6 +903,77 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("proposal_list", metric_names)
       self.assertIn("generation_list", metric_names)
       self.assertIn("retrieval_status", metric_names)
+
+  def test_chat_cli_flow(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Chat CLI"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Chat Scene",
+          "--summary",
+          "chat setup",
+          "--pov",
+          "narrator",
+          "--body",
+          "Scene body for chat command testing.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        [
+          "chat",
+          "thread",
+          "create",
+          "--title",
+          "General Chat",
+          "--provider",
+          "local",
+          "--mode",
+          "agent",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      thread = json.loads(out)
+      self.assertEqual(thread["title"], "General Chat")
+      thread_id = thread["id"]
+
+      code, out, err = self.run_cli(
+        [
+          "chat",
+          "send",
+          "--thread",
+          thread_id,
+          "--message",
+          "please list scenes",
+          "--current-scene",
+          "scene-0001",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      send_result = json.loads(out)
+      self.assertIn("assistant_message", send_result)
+      self.assertIn("pending_tool_calls", send_result)
+
+      code, out, err = self.run_cli(
+        ["chat", "message", "list", "--thread", thread_id, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      rows = json.loads(out)
+      self.assertTrue(any(row["role"] == "assistant" for row in rows))
+      self.assertTrue(any(row["role"] == "tool" for row in rows))
 
 
 if __name__ == "__main__":

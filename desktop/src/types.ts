@@ -39,11 +39,15 @@ export type ProposalRecord = {
   title: string;
   instruction: string;
   scene_id: string;
+  scene_digest?: string;
+  vcs_branch?: string;
+  vcs_base_commit?: string;
+  stale?: boolean;
   status: "pending" | "applied" | "rejected";
   created_at: string;
   updated_at: string;
   notes: string;
-  source?: "manual" | "ai_generate";
+  source?: "manual" | "ai_generate" | "chat_agent" | string;
   generation?: {
     id: string;
     provider: ProposalProvider;
@@ -94,6 +98,65 @@ export type ProposalRecord = {
     quality_flags?: string[];
     log_path: string;
   };
+};
+
+export type ChatThreadRecord = {
+  id: string;
+  title: string;
+  provider: ProposalProvider;
+  model: string;
+  mode: "chat" | "agent";
+  created_at: string;
+  updated_at: string;
+  context_profile: {
+    include_current_scene: boolean;
+    include_selection: boolean;
+    include_recent_scenes_radius: number;
+    include_codex: "off" | "explicit" | "auto" | "auto_and_explicit";
+    retrieval_mode: "off" | "auto" | "required";
+    retrieval_limit: number;
+    retrieval_min_score: number;
+    retrieval_require_fresh: boolean;
+    agent_auto_read_only: boolean;
+    agent_confirm_writes: boolean;
+  };
+  vcs_branch: string;
+  vcs_base_commit: string;
+};
+
+export type ChatToolCall = {
+  tool: string;
+  args: Record<string, unknown>;
+  classification: "read" | "write" | "risky" | string;
+  executed: boolean;
+  result_summary?: string;
+  error?: string;
+};
+
+export type ChatMessageRecord = {
+  id: string;
+  role: "user" | "assistant" | "tool";
+  created_at: string;
+  content: string;
+  context_used: Record<string, unknown>;
+  tool_calls: ChatToolCall[];
+  usage: {
+    input_tokens?: number;
+    output_tokens?: number;
+    latency_ms?: number;
+    provider_attempts?: number;
+    estimated_cost_usd?: number | null;
+    provider?: ProposalProvider | string;
+    model?: string;
+  };
+};
+
+export type ChatSendResult = {
+  thread: ChatThreadRecord;
+  user_message: ChatMessageRecord;
+  assistant_message: ChatMessageRecord;
+  tool_messages: ChatMessageRecord[];
+  pending_tool_calls: ChatToolCall[];
 };
 
 export type GenerationRunSummary = {

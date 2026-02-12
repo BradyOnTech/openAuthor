@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .budget import (
@@ -13,6 +14,16 @@ from .budget import (
   update_generation_budget_policy,
 )
 from .checks import run_continuity_checks
+from .chat import (
+  create_chat_thread,
+  execute_pending_tool_call,
+  get_chat_thread,
+  list_chat_messages,
+  list_chat_threads,
+  rename_chat_thread,
+  send_chat_message,
+  update_chat_thread,
+)
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
 from .generations import (
   clear_pinned_generation_run,
@@ -425,11 +436,222 @@ def build_parser() -> argparse.ArgumentParser:
   generation_config = generation_sub.add_parser("config", help="Show generation runtime config.")
   generation_config.add_argument("--json", action="store_true", help="Output JSON.")
 
+  chat_parser = subparsers.add_parser("chat", help="Chat threads and agent workflows.")
+  chat_sub = chat_parser.add_subparsers(dest="chat_command", required=True)
+
+  chat_thread = chat_sub.add_parser("thread", help="Manage chat threads.")
+  chat_thread_sub = chat_thread.add_subparsers(dest="chat_thread_command", required=True)
+  chat_thread_list = chat_thread_sub.add_parser("list", help="List chat threads.")
+  chat_thread_list.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_thread_get = chat_thread_sub.add_parser("get", help="Get thread by id.")
+  chat_thread_get.add_argument("--id", required=True, help="Thread id.")
+  chat_thread_get.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_thread_create = chat_thread_sub.add_parser("create", help="Create chat thread.")
+  chat_thread_create.add_argument("--title", required=True, help="Thread title.")
+  chat_thread_create.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default="local",
+    help="Thread provider.",
+  )
+  chat_thread_create.add_argument("--model", default="", help="Provider model override.")
+  chat_thread_create.add_argument(
+    "--mode",
+    choices=["chat", "agent"],
+    default="chat",
+    help="Thread mode.",
+  )
+  chat_thread_create.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_thread_rename = chat_thread_sub.add_parser("rename", help="Rename chat thread.")
+  chat_thread_rename.add_argument("--id", required=True, help="Thread id.")
+  chat_thread_rename.add_argument("--title", required=True, help="Thread title.")
+  chat_thread_rename.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_thread_update = chat_thread_sub.add_parser(
+    "update",
+    help="Update thread provider/model/mode/context profile.",
+  )
+  chat_thread_update.add_argument("--id", required=True, help="Thread id.")
+  chat_thread_update.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default=None,
+    help="Provider override.",
+  )
+  chat_thread_update.add_argument("--model", default=None, help="Model override.")
+  chat_thread_update.add_argument(
+    "--mode",
+    choices=["chat", "agent"],
+    default=None,
+    help="Thread mode override.",
+  )
+  chat_thread_update.add_argument(
+    "--include-current-scene",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--include-selection",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--include-recent-scenes-radius",
+    type=int,
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--include-codex",
+    choices=["off", "explicit", "auto", "auto_and_explicit"],
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--retrieval-mode",
+    choices=["off", "auto", "required"],
+    default=None,
+  )
+  chat_thread_update.add_argument("--retrieval-limit", type=int, default=None)
+  chat_thread_update.add_argument("--retrieval-min-score", type=float, default=None)
+  chat_thread_update.add_argument(
+    "--retrieval-require-fresh",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--agent-auto-read-only",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_thread_update.add_argument(
+    "--agent-confirm-writes",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_thread_update.add_argument("--json", action="store_true", help="Output JSON.")
+
+  chat_send = chat_sub.add_parser("send", help="Send a message to a chat thread.")
+  chat_send.add_argument("--thread", required=True, help="Thread id.")
+  chat_send.add_argument("--message", required=True, help="Message content.")
+  chat_send.add_argument("--current-scene", default="", help="Current scene id.")
+  chat_send.add_argument("--selected-text", default="", help="Selected editor text.")
+  chat_send.add_argument(
+    "--codex-id",
+    action="append",
+    default=None,
+    help="Explicit codex entity id. Repeatable.",
+  )
+  chat_send.add_argument(
+    "--include-current-scene",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_send.add_argument(
+    "--include-selection",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_send.add_argument(
+    "--include-recent-scenes-radius",
+    type=int,
+    default=None,
+  )
+  chat_send.add_argument(
+    "--include-codex",
+    choices=["off", "explicit", "auto", "auto_and_explicit"],
+    default=None,
+  )
+  chat_send.add_argument(
+    "--retrieval-mode",
+    choices=["off", "auto", "required"],
+    default=None,
+  )
+  chat_send.add_argument("--retrieval-limit", type=int, default=None)
+  chat_send.add_argument("--retrieval-min-score", type=float, default=None)
+  chat_send.add_argument(
+    "--retrieval-require-fresh",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_send.add_argument(
+    "--agent-auto-read-only",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_send.add_argument(
+    "--agent-confirm-writes",
+    choices=["true", "false"],
+    default=None,
+  )
+  chat_send.add_argument("--json", action="store_true", help="Output JSON.")
+
+  chat_message = chat_sub.add_parser("message", help="Manage chat messages.")
+  chat_message_sub = chat_message.add_subparsers(dest="chat_message_command", required=True)
+  chat_message_list = chat_message_sub.add_parser("list", help="List messages for a thread.")
+  chat_message_list.add_argument("--thread", required=True, help="Thread id.")
+  chat_message_list.add_argument("--limit", type=int, default=None, help="Optional max rows.")
+  chat_message_list.add_argument("--json", action="store_true", help="Output JSON.")
+
+  chat_tool = chat_sub.add_parser("tool", help="Execute pending agent tool calls.")
+  chat_tool_sub = chat_tool.add_subparsers(dest="chat_tool_command", required=True)
+  chat_tool_execute = chat_tool_sub.add_parser(
+    "execute",
+    help="Execute a pending tool call from an assistant message.",
+  )
+  chat_tool_execute.add_argument("--thread", required=True, help="Thread id.")
+  chat_tool_execute.add_argument("--message", required=True, help="Assistant message id.")
+  chat_tool_execute.add_argument("--index", type=int, required=True, help="Tool call index.")
+  chat_tool_execute.add_argument("--json", action="store_true", help="Output JSON.")
+
   return parser
 
 
 def _paths_from_cwd():
   return resolve_project(Path.cwd())
+
+
+def _optional_bool(raw: str | None) -> bool | None:
+  if raw is None:
+    return None
+  normalized = raw.strip().lower()
+  if normalized == "true":
+    return True
+  if normalized == "false":
+    return False
+  raise OpenAuthorError(f"Invalid boolean value '{raw}'. Use true or false.")
+
+
+def _chat_context_overrides(args: argparse.Namespace) -> dict[str, Any]:
+  overrides: dict[str, Any] = {}
+  include_current_scene = _optional_bool(getattr(args, "include_current_scene", None))
+  if include_current_scene is not None:
+    overrides["include_current_scene"] = include_current_scene
+  include_selection = _optional_bool(getattr(args, "include_selection", None))
+  if include_selection is not None:
+    overrides["include_selection"] = include_selection
+  include_recent_scenes_radius = getattr(args, "include_recent_scenes_radius", None)
+  if include_recent_scenes_radius is not None:
+    overrides["include_recent_scenes_radius"] = include_recent_scenes_radius
+  include_codex = getattr(args, "include_codex", None)
+  if include_codex is not None:
+    overrides["include_codex"] = include_codex
+  retrieval_mode = getattr(args, "retrieval_mode", None)
+  if retrieval_mode is not None:
+    overrides["retrieval_mode"] = retrieval_mode
+  retrieval_limit = getattr(args, "retrieval_limit", None)
+  if retrieval_limit is not None:
+    overrides["retrieval_limit"] = retrieval_limit
+  retrieval_min_score = getattr(args, "retrieval_min_score", None)
+  if retrieval_min_score is not None:
+    overrides["retrieval_min_score"] = retrieval_min_score
+  retrieval_require_fresh = _optional_bool(getattr(args, "retrieval_require_fresh", None))
+  if retrieval_require_fresh is not None:
+    overrides["retrieval_require_fresh"] = retrieval_require_fresh
+  agent_auto_read_only = _optional_bool(getattr(args, "agent_auto_read_only", None))
+  if agent_auto_read_only is not None:
+    overrides["agent_auto_read_only"] = agent_auto_read_only
+  agent_confirm_writes = _optional_bool(getattr(args, "agent_confirm_writes", None))
+  if agent_confirm_writes is not None:
+    overrides["agent_confirm_writes"] = agent_confirm_writes
+  return overrides
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -699,7 +921,7 @@ def _run(args: argparse.Namespace) -> int:
         f"safe_to_merge={row['safe_to_merge']}\toverlap_count={row['overlap_count']}"
       )
       overlap_by_category = row.get("overlap_by_category", {})
-      for category in ("scene", "proposal", "codex", "project", "budget", "other"):
+      for category in ("scene", "codex", "project", "budget", "other"):
         paths_in_category = overlap_by_category.get(category, [])
         if paths_in_category:
           print(f"{category}\t{len(paths_in_category)}")
@@ -813,6 +1035,140 @@ def _run(args: argparse.Namespace) -> int:
           f"{result.get('source_path')}"
         )
       return 0
+
+  if args.command == "chat":
+    if args.chat_command == "thread":
+      if args.chat_thread_command == "list":
+        rows = list_chat_threads(paths)
+        if args.json:
+          print(json.dumps(rows))
+          return 0
+        if not rows:
+          print("No chat threads.")
+          return 0
+        for row in rows:
+          print(
+            f"{row.get('id','')}\t{row.get('mode','')}\t{row.get('provider','')}\t"
+            f"{row.get('title','')}"
+          )
+        return 0
+
+      if args.chat_thread_command == "get":
+        row = get_chat_thread(paths, args.id)
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(
+          f"{row.get('id','')}\t{row.get('mode','')}\t{row.get('provider','')}\t"
+          f"{row.get('model','')}\t{row.get('title','')}"
+        )
+        return 0
+
+      if args.chat_thread_command == "create":
+        row = create_chat_thread(
+          paths,
+          title=args.title,
+          provider=args.provider,
+          model=args.model,
+          mode=args.mode,
+        )
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(
+          f"Created chat thread {row.get('id','')} "
+          f"({row.get('mode','')}, {row.get('provider','')}/{row.get('model','')})"
+        )
+        return 0
+
+      if args.chat_thread_command == "rename":
+        row = rename_chat_thread(paths, thread_id=args.id, title=args.title)
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(f"Renamed thread {row.get('id','')} to {row.get('title','')}")
+        return 0
+
+      if args.chat_thread_command == "update":
+        context_overrides = _chat_context_overrides(args)
+        row = update_chat_thread(
+          paths,
+          thread_id=args.id,
+          provider=args.provider,
+          model=args.model,
+          mode=args.mode,
+          context_profile=context_overrides if context_overrides else None,
+        )
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(
+          f"Updated thread {row.get('id','')} "
+          f"({row.get('mode','')}, {row.get('provider','')}/{row.get('model','')})"
+        )
+        return 0
+
+      raise OpenAuthorError(
+        f"Unsupported chat thread command: {args.chat_thread_command}"
+      )
+
+    if args.chat_command == "send":
+      context_overrides = _chat_context_overrides(args)
+      row = send_chat_message(
+        paths,
+        thread_id=args.thread,
+        message=args.message,
+        current_scene_id=args.current_scene,
+        selected_text=args.selected_text,
+        codex_ids=args.codex_id or [],
+        context_overrides=context_overrides if context_overrides else None,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      assistant = row.get("assistant_message", {})
+      pending = row.get("pending_tool_calls", [])
+      print(
+        f"Sent message to {args.thread}; assistant={assistant.get('id','')} "
+        f"pending_tool_calls={len(pending)}"
+      )
+      return 0
+
+    if args.chat_command == "message":
+      if args.chat_message_command != "list":
+        raise OpenAuthorError(
+          f"Unsupported chat message command: {args.chat_message_command}"
+        )
+      rows = list_chat_messages(paths, thread_id=args.thread, limit=args.limit)
+      if args.json:
+        print(json.dumps(rows))
+        return 0
+      if not rows:
+        print("No chat messages.")
+        return 0
+      for row in rows:
+        print(f"{row.get('id','')}\t{row.get('role','')}\t{row.get('created_at','')}")
+      return 0
+
+    if args.chat_command == "tool":
+      if args.chat_tool_command != "execute":
+        raise OpenAuthorError(f"Unsupported chat tool command: {args.chat_tool_command}")
+      row = execute_pending_tool_call(
+        paths,
+        thread_id=args.thread,
+        assistant_message_id=args.message,
+        tool_index=args.index,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(
+        f"Executed tool {row.get('tool','')} "
+        f"for message {row.get('assistant_message_id','')}"
+      )
+      return 0
+
+    raise OpenAuthorError(f"Unsupported chat command: {args.chat_command}")
 
   if args.command == "generation":
     if args.generation_command == "budget":

@@ -4,8 +4,10 @@ import {
   addScene,
   applyProposal,
   createBranch,
+  createChatThread,
   createProposal,
   diffBranches,
+  executeChatToolCall,
   generateProposal,
   getGenerationBudget,
   getGenerationRun,
@@ -14,6 +16,8 @@ import {
   getProjectStatus,
   getScene,
   listBranches,
+  listChatMessages,
+  listChatThreads,
   listCodexEntities,
   listGenerationPins,
   listGenerationRuns,
@@ -27,9 +31,11 @@ import {
   resetGenerationBudget,
   runContinuityChecks,
   runPerformanceBaseline,
+  sendChatMessage,
   runWorkspaceAudit,
   switchBranch,
   unpinGenerationRun,
+  updateChatThread,
   updateGenerationBudget,
   updateCodexEntity,
   updateScene
@@ -94,6 +100,9 @@ import type {
   BranchMergeResult,
   BranchPreflightReport,
   BranchSummary,
+  ChatMessageRecord,
+  ChatSendResult,
+  ChatThreadRecord,
   CodexEntity,
   ContinuityIssue,
   GenerationBudgetReport,
@@ -120,7 +129,7 @@ function loadDefaultRoot(): string {
 }
 
 type RightTab = "proposals" | "codex" | "checks" | "context" | "runs" | "merge";
-type CenterView = "editor" | "outliner";
+type CenterView = "editor" | "outliner" | "chat";
 type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
 type GenerationStatusFilter = "all" | "succeeded" | "failed";
 type GenerationQualityFilter = "all" | "high" | "medium" | "low";
@@ -171,6 +180,29 @@ type DraftCodex = {
   type: CodexEntity["type"];
   name: string;
   description: string;
+};
+
+type DraftChatThread = {
+  title: string;
+  provider: ProposalProvider;
+  model: string;
+  mode: "chat" | "agent";
+};
+
+type DraftChatComposer = {
+  message: string;
+  currentSceneId: string;
+  selectedText: string;
+  includeCurrentScene: boolean;
+  includeSelection: boolean;
+  includeRecentScenesRadius: number;
+  includeCodex: "off" | "explicit" | "auto" | "auto_and_explicit";
+  retrievalMode: "off" | "auto" | "required";
+  retrievalLimit: number;
+  retrievalMinScore: number;
+  retrievalRequireFresh: boolean;
+  agentAutoReadOnly: boolean;
+  agentConfirmWrites: boolean;
 };
 
 type VoiceInputMode = "command" | "dictation";
@@ -236,6 +268,29 @@ const EMPTY_DRAFT_CODEX: DraftCodex = {
   type: "character",
   name: "",
   description: ""
+};
+
+const EMPTY_DRAFT_CHAT_THREAD: DraftChatThread = {
+  title: "",
+  provider: "local",
+  model: "",
+  mode: "chat"
+};
+
+const EMPTY_DRAFT_CHAT_COMPOSER: DraftChatComposer = {
+  message: "",
+  currentSceneId: "",
+  selectedText: "",
+  includeCurrentScene: true,
+  includeSelection: true,
+  includeRecentScenesRadius: 1,
+  includeCodex: "auto_and_explicit",
+  retrievalMode: "off",
+  retrievalLimit: 5,
+  retrievalMinScore: 0,
+  retrievalRequireFresh: false,
+  agentAutoReadOnly: true,
+  agentConfirmWrites: true
 };
 
 const EMPTY_DRAFT_BRANCH_CREATE: DraftBranchCreate = {
@@ -377,6 +432,25 @@ export function App() {
   const [budgetDraft, setBudgetDraft] =
     useState<GenerationBudgetDraft>(EMPTY_BUDGET_DRAFT);
   const [rerunDraft, setRerunDraft] = useState<RerunDraft>(EMPTY_RERUN_DRAFT);
+  const [chatThreads, setChatThreads] = useState<ChatThreadRecord[]>([]);
+  const [selectedChatThreadId, setSelectedChatThreadId] = useState<string>("");
+  const [chatMessages, setChatMessages] = useState<ChatMessageRecord[]>([]);
+  const [chatThreadDraft, setChatThreadDraft] = useState<DraftChatThread>(
+    EMPTY_DRAFT_CHAT_THREAD
+  );
+  const [chatComposerDraft, setChatComposerDraft] = useState<DraftChatComposer>(
+    EMPTY_DRAFT_CHAT_COMPOSER
+  );
+  const [chatPendingToolCalls, setChatPendingToolCalls] = useState<
+    Array<{
+      assistantMessageId: string;
+      index: number;
+      tool: string;
+      classification: string;
+      summary: string;
+      error: string;
+    }>
+  >([]);
   const [selectedScenePinnedRunDetail, setSelectedScenePinnedRunDetail] =
     useState<GenerationRunDetail | null>(null);
   const [selectedScenePinnedRunStale, setSelectedScenePinnedRunStale] = useState(false);
@@ -908,6 +982,10 @@ export function App() {
     () => continuityIssues.find((item) => item.id === selectedContinuityIssueId) ?? null,
     [continuityIssues, selectedContinuityIssueId]
   );
+  const selectedChatThread = useMemo(
+    () => chatThreads.find((item) => item.id === selectedChatThreadId) ?? null,
+    [chatThreads, selectedChatThreadId]
+  );
   const contextProposals = useMemo(
     () => proposalsForScene(proposals, selectedSceneId),
     [proposals, selectedSceneId]
@@ -1103,6 +1181,60 @@ export function App() {
     setSelectedCodexEntityId(target);
   }
 
+  async function refreshChatThreads(nextSelectedThreadId?: string) {
+    const rows = await listChatThreads(projectRoot);
+    setChatThreads(rows);
+    if (rows.length === 0) {
+      setSelectedChatThreadId("");
+      setChatMessages([]);
+      setChatPendingToolCalls([]);
+      return;
+    }
+    const target =
+      nextSelectedThreadId && rows.some((item) => item.id === nextSelectedThreadId)
+        ? nextSelectedThreadId
+        : selectedChatThreadId && rows.some((item) => item.id === selectedChatThreadId)
+          ? selectedChatThreadId
+          : rows[0].id;
+    setSelectedChatThreadId(target);
+  }
+
+  async function refreshChatMessages(threadId: string) {
+    if (!threadId) {
+      setChatMessages([]);
+      setChatPendingToolCalls([]);
+      return;
+    }
+    const rows = await listChatMessages(projectRoot, { threadId, limit: 300 });
+    setChatMessages(rows);
+    const pending: Array<{
+      assistantMessageId: string;
+      index: number;
+      tool: string;
+      classification: string;
+      summary: string;
+      error: string;
+    }> = [];
+    for (const row of rows) {
+      if (row.role !== "assistant") continue;
+      const toolCalls = Array.isArray(row.tool_calls) ? row.tool_calls : [];
+      toolCalls.forEach((toolCall, index) => {
+        if (toolCall.executed) return;
+        const classification = String(toolCall.classification ?? "");
+        if (classification === "read") return;
+        pending.push({
+          assistantMessageId: row.id,
+          index,
+          tool: String(toolCall.tool ?? ""),
+          classification,
+          summary: String(toolCall.result_summary ?? ""),
+          error: String(toolCall.error ?? "")
+        });
+      });
+    }
+    setChatPendingToolCalls(pending);
+  }
+
   async function refreshBranches() {
     const rows = await listBranches(projectRoot);
     setBranches(rows);
@@ -1208,6 +1340,7 @@ export function App() {
       refreshSceneList(),
       refreshProposalList(),
       refreshCodexList(),
+      refreshChatThreads(),
       refreshBranches(),
       refreshGenerationRuns(),
       refreshGenerationPins(),
@@ -1227,6 +1360,9 @@ export function App() {
     setRunsListLimit(DEFAULT_LIST_LIMIT);
     try {
       const status = await getProjectStatus(projectRoot);
+      if (status.project_root && status.project_root !== projectRoot) {
+        setProjectRoot(status.project_root);
+      }
       setProjectFound(status.found);
       if (!status.found) {
         setScenes([]);
@@ -1257,12 +1393,24 @@ export function App() {
         setSelectedScenePinnedRunDetail(null);
         setSelectedScenePinnedRunStale(false);
         setGenerationRuntimeConfig(null);
+        setChatThreads([]);
+        setSelectedChatThreadId("");
+        setChatMessages([]);
+        setChatPendingToolCalls([]);
+        setChatThreadDraft(EMPTY_DRAFT_CHAT_THREAD);
+        setChatComposerDraft(EMPTY_DRAFT_CHAT_COMPOSER);
+        setMessage("");
+        setError(
+          `No openAuthor project found at '${status.project_root || projectRoot}'. ` +
+            "Choose a folder initialized with `openauthor init`."
+        );
         return;
       }
       await Promise.all([
         refreshSceneList(),
         refreshProposalList(),
         refreshCodexList(),
+        refreshChatThreads(),
         refreshBranches(),
         refreshGenerationRuns(),
         refreshGenerationPins(),
@@ -1413,6 +1561,10 @@ export function App() {
       ...prev,
       sceneId: prev.sceneId || selectedSceneId
     }));
+    setChatComposerDraft((prev) => ({
+      ...prev,
+      currentSceneId: prev.currentSceneId || selectedSceneId
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSceneId]);
 
@@ -1466,6 +1618,21 @@ export function App() {
       .finally(() => setBusy(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCodexEntityId]);
+
+  useEffect(() => {
+    if (!selectedChatThreadId) {
+      setChatMessages([]);
+      setChatPendingToolCalls([]);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    void refreshChatMessages(selectedChatThreadId)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setBusy(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChatThreadId]);
 
   useEffect(() => {
     if (projectFound !== true) return;
@@ -1816,6 +1983,128 @@ export function App() {
       setMessage("Codex entity created.");
     } catch (err) {
       reportError("Codex create failed", err, "Review fields and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCreateChatThread() {
+    if (chatThreadDraft.title.trim() === "") return;
+    setBusy(true);
+    setError("");
+    setMessage("Creating chat thread...");
+    try {
+      const created = await createChatThread(projectRoot, {
+        title: chatThreadDraft.title,
+        provider: chatThreadDraft.provider,
+        model: chatThreadDraft.model,
+        mode: chatThreadDraft.mode
+      });
+      await refreshChatThreads(created.id);
+      await refreshChatMessages(created.id);
+      setChatThreadDraft((prev) => ({
+        ...prev,
+        title: ""
+      }));
+      setCenterView("chat");
+      setMessage(`Chat thread created (${created.provider}/${created.model}).`);
+    } catch (err) {
+      reportError("Chat thread create failed", err, "Review thread settings and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendChatMessage() {
+    if (!selectedChatThreadId) {
+      setError("Create or select a chat thread first.");
+      return;
+    }
+    const messageText = chatComposerDraft.message.trim();
+    if (messageText === "") return;
+    setBusy(true);
+    setError("");
+    setMessage("Sending chat message...");
+    try {
+      const result: ChatSendResult = await sendChatMessage(projectRoot, {
+        threadId: selectedChatThreadId,
+        message: messageText,
+        currentSceneId: chatComposerDraft.currentSceneId.trim(),
+        selectedText: chatComposerDraft.selectedText,
+        includeCurrentScene: chatComposerDraft.includeCurrentScene,
+        includeSelection: chatComposerDraft.includeSelection,
+        includeRecentScenesRadius: chatComposerDraft.includeRecentScenesRadius,
+        includeCodex: chatComposerDraft.includeCodex,
+        retrievalMode: chatComposerDraft.retrievalMode,
+        retrievalLimit: chatComposerDraft.retrievalLimit,
+        retrievalMinScore: chatComposerDraft.retrievalMinScore,
+        retrievalRequireFresh: chatComposerDraft.retrievalRequireFresh,
+        agentAutoReadOnly: chatComposerDraft.agentAutoReadOnly,
+        agentConfirmWrites: chatComposerDraft.agentConfirmWrites
+      });
+      await refreshChatThreads(result.thread.id);
+      await refreshChatMessages(result.thread.id);
+      setChatComposerDraft((prev) => ({
+        ...prev,
+        message: "",
+        currentSceneId: prev.currentSceneId || selectedSceneId
+      }));
+      if (result.pending_tool_calls.length > 0) {
+        setMessage(
+          `Assistant responded with ${result.pending_tool_calls.length} pending tool call(s).`
+        );
+      } else {
+        setMessage("Chat response received.");
+      }
+    } catch (err) {
+      reportError("Chat send failed", err, "Check provider settings or prompt content and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExecutePendingChatTool(
+    assistantMessageId: string,
+    toolIndex: number
+  ) {
+    if (!selectedChatThreadId) return;
+    setBusy(true);
+    setError("");
+    setMessage("Executing pending chat tool...");
+    try {
+      const executed = await executeChatToolCall(projectRoot, {
+        threadId: selectedChatThreadId,
+        assistantMessageId,
+        index: toolIndex
+      });
+      await refreshChatMessages(selectedChatThreadId);
+      await refreshProposalList();
+      await refreshCodexList();
+      await refreshSceneList();
+      setMessage(
+        `Executed ${executed.tool} from message ${executed.assistant_message_id}.`
+      );
+    } catch (err) {
+      reportError("Chat tool execution failed", err, "Review pending tool call and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUpdateSelectedThreadMode(mode: "chat" | "agent") {
+    if (!selectedChatThreadId) return;
+    setBusy(true);
+    setError("");
+    setMessage("Updating thread mode...");
+    try {
+      await updateChatThread(projectRoot, {
+        id: selectedChatThreadId,
+        mode
+      });
+      await refreshChatThreads(selectedChatThreadId);
+      setMessage(`Thread mode set to ${mode}.`);
+    } catch (err) {
+      reportError("Thread update failed", err, "Retry mode change.");
     } finally {
       setBusy(false);
     }
@@ -2683,6 +2972,12 @@ export function App() {
               >
                 Outliner
               </button>
+              <button
+                className={centerView === "chat" ? "active" : ""}
+                onClick={() => setCenterView("chat")}
+              >
+                Chat
+              </button>
             </div>
             {centerView === "editor" ? (
               <button
@@ -2692,8 +2987,10 @@ export function App() {
               >
                 Save Scene
               </button>
-            ) : (
+            ) : centerView === "outliner" ? (
               <span className="outliner-count">{outlinerRows.length} scenes shown</span>
+            ) : (
+              <span className="outliner-count">{chatThreads.length} threads</span>
             )}
           </div>
 
@@ -2763,7 +3060,7 @@ export function App() {
                 </div>
               </div>
             )
-          ) : (
+          ) : centerView === "outliner" ? (
             <div className="outliner-view">
               <div className="outliner-controls">
                 <input
@@ -2829,6 +3126,310 @@ export function App() {
                   })
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="chat-view">
+              <section className="chat-thread-panel">
+                <div className="chat-thread-panel-header">
+                  <h3>Threads</h3>
+                  <span>{chatThreads.length}</span>
+                </div>
+                <div className="chat-thread-create">
+                  <input
+                    value={chatThreadDraft.title}
+                    onChange={(event) =>
+                      setChatThreadDraft((prev) => ({
+                        ...prev,
+                        title: event.target.value
+                      }))
+                    }
+                    placeholder="Thread title"
+                  />
+                  <div className="row">
+                    <select
+                      value={chatThreadDraft.provider}
+                      onChange={(event) =>
+                        setChatThreadDraft((prev) => ({
+                          ...prev,
+                          provider: event.target.value as ProposalProvider
+                        }))
+                      }
+                    >
+                      <option value="local">local</option>
+                      <option value="openai">openai</option>
+                      <option value="anthropic">anthropic</option>
+                    </select>
+                    <select
+                      value={chatThreadDraft.mode}
+                      onChange={(event) =>
+                        setChatThreadDraft((prev) => ({
+                          ...prev,
+                          mode: event.target.value as "chat" | "agent"
+                        }))
+                      }
+                    >
+                      <option value="chat">chat</option>
+                      <option value="agent">agent</option>
+                    </select>
+                  </div>
+                  <input
+                    value={chatThreadDraft.model}
+                    onChange={(event) =>
+                      setChatThreadDraft((prev) => ({
+                        ...prev,
+                        model: event.target.value
+                      }))
+                    }
+                    placeholder={`Model (default: ${PROVIDER_MODEL_HINTS[chatThreadDraft.provider]})`}
+                  />
+                  <button
+                    disabled={busy || chatThreadDraft.title.trim() === ""}
+                    onClick={() => void handleCreateChatThread()}
+                  >
+                    New Thread
+                  </button>
+                </div>
+                <div className="chat-thread-list">
+                  {chatThreads.map((thread) => (
+                    <button
+                      key={thread.id}
+                      className={`chat-thread-item ${
+                        selectedChatThreadId === thread.id ? "selected" : ""
+                      }`}
+                      onClick={() => setSelectedChatThreadId(thread.id)}
+                    >
+                      <strong>{thread.title}</strong>
+                      <span>
+                        {thread.mode} / {thread.provider}/{thread.model}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className="chat-main-panel">
+                {selectedChatThread ? (
+                  <>
+                    <div className="chat-main-header">
+                      <h3>{selectedChatThread.title}</h3>
+                      <div className="row">
+                        <button
+                          disabled={busy || selectedChatThread.mode === "chat"}
+                          onClick={() => void handleUpdateSelectedThreadMode("chat")}
+                        >
+                          Chat Mode
+                        </button>
+                        <button
+                          disabled={busy || selectedChatThread.mode === "agent"}
+                          onClick={() => void handleUpdateSelectedThreadMode("agent")}
+                        >
+                          Agent Mode
+                        </button>
+                      </div>
+                    </div>
+                    <div className="chat-message-list">
+                      {chatMessages.length === 0 ? (
+                        <div className="empty-state">
+                          <p>No messages yet.</p>
+                        </div>
+                      ) : (
+                        chatMessages.map((row) => (
+                          <article
+                            key={row.id}
+                            className={`chat-message chat-role-${row.role}`}
+                          >
+                            <div className="chat-message-meta">
+                              <strong>{row.role}</strong>
+                              <span>{new Date(row.created_at).toLocaleString()}</span>
+                            </div>
+                            <pre>{row.content}</pre>
+                          </article>
+                        ))
+                      )}
+                    </div>
+                    {chatPendingToolCalls.length > 0 ? (
+                      <div className="chat-pending-tools">
+                        <h4>Pending Tool Calls</h4>
+                        {chatPendingToolCalls.map((item) => (
+                          <div key={`${item.assistantMessageId}-${item.index}`} className="chat-tool-row">
+                            <div>
+                              <strong>{item.tool}</strong>
+                              <span>
+                                {" "}
+                                ({item.classification}) from {item.assistantMessageId}
+                              </span>
+                              {item.error ? <p>{item.error}</p> : null}
+                            </div>
+                            <button
+                              disabled={busy}
+                              onClick={() =>
+                                void handleExecutePendingChatTool(
+                                  item.assistantMessageId,
+                                  item.index
+                                )
+                              }
+                            >
+                              Execute
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                    <div className="chat-context-drawer">
+                      <h4>Context Drawer</h4>
+                      <div className="chat-context-grid">
+                        <label>
+                          <span>Current Scene</span>
+                          <select
+                            value={chatComposerDraft.includeCurrentScene ? "true" : "false"}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                includeCurrentScene: event.target.value === "true"
+                              }))
+                            }
+                          >
+                            <option value="true">on</option>
+                            <option value="false">off</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>Selection</span>
+                          <select
+                            value={chatComposerDraft.includeSelection ? "true" : "false"}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                includeSelection: event.target.value === "true"
+                              }))
+                            }
+                          >
+                            <option value="true">on</option>
+                            <option value="false">off</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>Recent Radius</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={chatComposerDraft.includeRecentScenesRadius}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                includeRecentScenesRadius: Math.max(
+                                  0,
+                                  Number(event.target.value || 0)
+                                )
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Codex Include</span>
+                          <select
+                            value={chatComposerDraft.includeCodex}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                includeCodex: event.target.value as DraftChatComposer["includeCodex"]
+                              }))
+                            }
+                          >
+                            <option value="off">off</option>
+                            <option value="explicit">explicit</option>
+                            <option value="auto">auto</option>
+                            <option value="auto_and_explicit">auto + explicit</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>Retrieval</span>
+                          <select
+                            value={chatComposerDraft.retrievalMode}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                retrievalMode: event.target.value as DraftChatComposer["retrievalMode"]
+                              }))
+                            }
+                          >
+                            <option value="off">off</option>
+                            <option value="auto">auto</option>
+                            <option value="required">required</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span>Retrieval Limit</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={chatComposerDraft.retrievalLimit}
+                            onChange={(event) =>
+                              setChatComposerDraft((prev) => ({
+                                ...prev,
+                                retrievalLimit: Math.max(
+                                  1,
+                                  Number(event.target.value || 1)
+                                )
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="chat-composer">
+                      <label>
+                        <span>Scene Id</span>
+                        <input
+                          value={chatComposerDraft.currentSceneId}
+                          onChange={(event) =>
+                            setChatComposerDraft((prev) => ({
+                              ...prev,
+                              currentSceneId: event.target.value
+                            }))
+                          }
+                          placeholder={selectedSceneId || "scene-0001"}
+                        />
+                      </label>
+                      <label>
+                        <span>Selected Text</span>
+                        <textarea
+                          value={chatComposerDraft.selectedText}
+                          onChange={(event) =>
+                            setChatComposerDraft((prev) => ({
+                              ...prev,
+                              selectedText: event.target.value
+                            }))
+                          }
+                          placeholder="Optional highlighted text context..."
+                        />
+                      </label>
+                      <label>
+                        <span>Message</span>
+                        <textarea
+                          value={chatComposerDraft.message}
+                          onChange={(event) =>
+                            setChatComposerDraft((prev) => ({
+                              ...prev,
+                              message: event.target.value
+                            }))
+                          }
+                          placeholder="Ask about plot, codex, revisions, or run agent tools."
+                        />
+                      </label>
+                      <button
+                        disabled={busy || chatComposerDraft.message.trim() === ""}
+                        onClick={() => void handleSendChatMessage()}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <p>Create a chat thread to start.</p>
+                  </div>
+                )}
+              </section>
             </div>
           )}
         </section>

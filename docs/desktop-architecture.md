@@ -54,6 +54,20 @@
 - Continuity context: derived from `check continuity --json`
 - Preferred pipeline context: derived from `generation pins --json` + `generation get --id <run-id> --json` + `proposal list --json`, including stale-pin detection and recovery actions.
 
+## Implemented command usage (Chat Workspace)
+
+- Thread list/create/get/rename/update:
+  - `chat thread list --json`
+  - `chat thread create --title ... --provider ... --model ... --mode chat|agent --json`
+  - `chat thread get --id ... --json`
+  - `chat thread rename --id ... --title ... --json`
+  - `chat thread update --id ... [context/profile flags] --json`
+- Message flow:
+  - `chat send --thread ... --message ... [context drawer flags] --json`
+  - `chat message list --thread ... [--limit ...] --json`
+- Agent pending tool execution:
+  - `chat tool execute --thread ... --message ... --index ... --json`
+
 ## Implemented command usage (Generation Runs)
 
 - Run list: `generation list --json` (supports status + provider + quality filters)

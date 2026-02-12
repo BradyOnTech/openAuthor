@@ -7,10 +7,9 @@ from typing import Any
 from .codex import export_codex_json, replace_runtime_codex_from_snapshot
 from .project import OpenAuthorError, ProjectPaths
 
-AUTHORING_PATHSPEC = [
+BOOKSTATE_PATHSPEC = [
   "manuscript/scenes",
   ".openauthor/project.json",
-  ".openauthor/proposals",
   ".openauthor/provider_pricing.json",
   ".openauthor/generation_budget_policy.json",
   "codex/codex.json",
@@ -59,7 +58,7 @@ def initialize_git(paths: ProjectPaths) -> None:
 def create_snapshot(paths: ProjectPaths, message: str) -> str:
   ensure_git_repo(paths)
   export_codex_json(paths)
-  pathspec = AUTHORING_PATHSPEC
+  pathspec = BOOKSTATE_PATHSPEC
   status = run_git(paths, ["status", "--porcelain", "--", *pathspec], check=True).stdout.strip()
   if not status:
     return "No changes to snapshot."
@@ -94,12 +93,12 @@ def _require_branch_name(name: str) -> str:
 def _ensure_clean_worktree(paths: ProjectPaths) -> None:
   status = run_git(
     paths,
-    ["status", "--porcelain", "--untracked-files=no"],
+    ["status", "--porcelain", "--untracked-files=no", "--", *BOOKSTATE_PATHSPEC],
     check=True,
   ).stdout.strip()
   if status:
     raise OpenAuthorError(
-      "Working tree has uncommitted changes. Create a snapshot before switching branches."
+      "Book state has uncommitted changes. Create a snapshot before switching branches."
     )
 
 
@@ -242,12 +241,12 @@ def diff_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, Any
 
   status_lines = run_git(
     paths,
-    ["diff", "--name-status", f"{base_ref}...{head_ref}", "--", *AUTHORING_PATHSPEC],
+    ["diff", "--name-status", f"{base_ref}...{head_ref}", "--", *BOOKSTATE_PATHSPEC],
     check=True,
   ).stdout.splitlines()
   numstat_lines = run_git(
     paths,
-    ["diff", "--numstat", f"{base_ref}...{head_ref}", "--", *AUTHORING_PATHSPEC],
+    ["diff", "--numstat", f"{base_ref}...{head_ref}", "--", *BOOKSTATE_PATHSPEC],
     check=True,
   ).stdout.splitlines()
 
@@ -295,8 +294,6 @@ def diff_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, Any
 def _classify_path(path: str) -> str:
   if path.startswith("manuscript/scenes/"):
     return "scene"
-  if path.startswith(".openauthor/proposals/"):
-    return "proposal"
   if path == "codex/codex.json":
     return "codex"
   if path == ".openauthor/project.json":
@@ -318,7 +315,7 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
     line.strip()
     for line in run_git(
       paths,
-      ["diff", "--name-only", f"{merge_base}..{base_ref}", "--", *AUTHORING_PATHSPEC],
+      ["diff", "--name-only", f"{merge_base}..{base_ref}", "--", *BOOKSTATE_PATHSPEC],
       check=True,
     ).stdout.splitlines()
     if line.strip()
@@ -327,7 +324,7 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
     line.strip()
     for line in run_git(
       paths,
-      ["diff", "--name-only", f"{merge_base}..{head_ref}", "--", *AUTHORING_PATHSPEC],
+      ["diff", "--name-only", f"{merge_base}..{head_ref}", "--", *BOOKSTATE_PATHSPEC],
       check=True,
     ).stdout.splitlines()
     if line.strip()
@@ -335,7 +332,6 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
   overlap_paths = sorted(base_changed.intersection(head_changed))
   overlap_by_category: dict[str, list[str]] = {
     "scene": [],
-    "proposal": [],
     "codex": [],
     "project": [],
     "budget": [],
@@ -369,11 +365,6 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
       recommendations.append(
         "Codex snapshot overlap detected. Re-export codex and re-run preflight after merge."
       )
-    if len(overlap_by_category["proposal"]) > 0:
-      recommendations.append(
-        "Proposal queue overlap detected. Re-validate pending/applied proposal states post-merge."
-      )
-
   return {
     "base": base_ref,
     "head": head_ref,

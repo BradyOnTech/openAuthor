@@ -3,6 +3,9 @@ import type {
   BranchMergeResult,
   BranchPreflightReport,
   BranchSummary,
+  ChatMessageRecord,
+  ChatSendResult,
+  ChatThreadRecord,
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
@@ -29,7 +32,8 @@ const ALLOWED = new Set([
   "branch",
   "check",
   "retrieval",
-  "generation"
+  "generation",
+  "chat"
 ]);
 
 function ensureAllowed(args: string[]): void {
@@ -272,6 +276,243 @@ export async function rejectProposal(
     "--json"
   ]);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function listChatThreads(projectRoot: string): Promise<ChatThreadRecord[]> {
+  const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
+  return decodeJson<ChatThreadRecord[]>(result);
+}
+
+export async function createChatThread(
+  projectRoot: string,
+  payload: {
+    title: string;
+    provider: ProposalProvider;
+    model?: string;
+    mode?: "chat" | "agent";
+  }
+): Promise<ChatThreadRecord> {
+  const args = [
+    "chat",
+    "thread",
+    "create",
+    "--title",
+    payload.title,
+    "--provider",
+    payload.provider
+  ];
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model.trim());
+  }
+  if (payload.mode) {
+    args.push("--mode", payload.mode);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ChatThreadRecord>(result);
+}
+
+export async function updateChatThread(
+  projectRoot: string,
+  payload: {
+    id: string;
+    title?: string;
+    provider?: ProposalProvider;
+    model?: string;
+    mode?: "chat" | "agent";
+    includeCurrentScene?: boolean;
+    includeSelection?: boolean;
+    includeRecentScenesRadius?: number;
+    includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
+    retrievalMode?: "off" | "auto" | "required";
+    retrievalLimit?: number;
+    retrievalMinScore?: number;
+    retrievalRequireFresh?: boolean;
+    agentAutoReadOnly?: boolean;
+    agentConfirmWrites?: boolean;
+  }
+): Promise<ChatThreadRecord> {
+  if (payload.title !== undefined) {
+    const result = await runCoreCommand(projectRoot, [
+      "chat",
+      "thread",
+      "rename",
+      "--id",
+      payload.id,
+      "--title",
+      payload.title,
+      "--json"
+    ]);
+    return decodeJson<ChatThreadRecord>(result);
+  }
+  const args = ["chat", "thread", "update", "--id", payload.id];
+  if (payload.provider) {
+    args.push("--provider", payload.provider);
+  }
+  if (payload.model !== undefined) {
+    args.push("--model", payload.model);
+  }
+  if (payload.mode) {
+    args.push("--mode", payload.mode);
+  }
+  if (typeof payload.includeCurrentScene === "boolean") {
+    args.push("--include-current-scene", payload.includeCurrentScene ? "true" : "false");
+  }
+  if (typeof payload.includeSelection === "boolean") {
+    args.push("--include-selection", payload.includeSelection ? "true" : "false");
+  }
+  if (typeof payload.includeRecentScenesRadius === "number") {
+    args.push("--include-recent-scenes-radius", String(payload.includeRecentScenesRadius));
+  }
+  if (payload.includeCodex) {
+    args.push("--include-codex", payload.includeCodex);
+  }
+  if (payload.retrievalMode) {
+    args.push("--retrieval-mode", payload.retrievalMode);
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    args.push("--retrieval-limit", String(payload.retrievalLimit));
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    args.push("--retrieval-min-score", String(payload.retrievalMinScore));
+  }
+  if (typeof payload.retrievalRequireFresh === "boolean") {
+    args.push("--retrieval-require-fresh", payload.retrievalRequireFresh ? "true" : "false");
+  }
+  if (typeof payload.agentAutoReadOnly === "boolean") {
+    args.push("--agent-auto-read-only", payload.agentAutoReadOnly ? "true" : "false");
+  }
+  if (typeof payload.agentConfirmWrites === "boolean") {
+    args.push("--agent-confirm-writes", payload.agentConfirmWrites ? "true" : "false");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ChatThreadRecord>(result);
+}
+
+export async function listChatMessages(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    limit?: number;
+  }
+): Promise<ChatMessageRecord[]> {
+  const args = ["chat", "message", "list", "--thread", payload.threadId];
+  if (typeof payload.limit === "number") {
+    args.push("--limit", String(payload.limit));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ChatMessageRecord[]>(result);
+}
+
+export async function sendChatMessage(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    message: string;
+    currentSceneId?: string;
+    selectedText?: string;
+    codexIds?: string[];
+    includeCurrentScene?: boolean;
+    includeSelection?: boolean;
+    includeRecentScenesRadius?: number;
+    includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
+    retrievalMode?: "off" | "auto" | "required";
+    retrievalLimit?: number;
+    retrievalMinScore?: number;
+    retrievalRequireFresh?: boolean;
+    agentAutoReadOnly?: boolean;
+    agentConfirmWrites?: boolean;
+  }
+): Promise<ChatSendResult> {
+  const args = [
+    "chat",
+    "send",
+    "--thread",
+    payload.threadId,
+    "--message",
+    payload.message
+  ];
+  if (payload.currentSceneId) {
+    args.push("--current-scene", payload.currentSceneId);
+  }
+  if (payload.selectedText) {
+    args.push("--selected-text", payload.selectedText);
+  }
+  for (const codexId of payload.codexIds ?? []) {
+    if (codexId.trim() !== "") {
+      args.push("--codex-id", codexId.trim());
+    }
+  }
+  if (typeof payload.includeCurrentScene === "boolean") {
+    args.push("--include-current-scene", payload.includeCurrentScene ? "true" : "false");
+  }
+  if (typeof payload.includeSelection === "boolean") {
+    args.push("--include-selection", payload.includeSelection ? "true" : "false");
+  }
+  if (typeof payload.includeRecentScenesRadius === "number") {
+    args.push("--include-recent-scenes-radius", String(payload.includeRecentScenesRadius));
+  }
+  if (payload.includeCodex) {
+    args.push("--include-codex", payload.includeCodex);
+  }
+  if (payload.retrievalMode) {
+    args.push("--retrieval-mode", payload.retrievalMode);
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    args.push("--retrieval-limit", String(payload.retrievalLimit));
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    args.push("--retrieval-min-score", String(payload.retrievalMinScore));
+  }
+  if (typeof payload.retrievalRequireFresh === "boolean") {
+    args.push("--retrieval-require-fresh", payload.retrievalRequireFresh ? "true" : "false");
+  }
+  if (typeof payload.agentAutoReadOnly === "boolean") {
+    args.push("--agent-auto-read-only", payload.agentAutoReadOnly ? "true" : "false");
+  }
+  if (typeof payload.agentConfirmWrites === "boolean") {
+    args.push("--agent-confirm-writes", payload.agentConfirmWrites ? "true" : "false");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ChatSendResult>(result);
+}
+
+export async function executeChatToolCall(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    assistantMessageId: string;
+    index: number;
+  }
+): Promise<{
+  assistant_message_id: string;
+  tool_index: number;
+  tool: string;
+  result: unknown;
+  tool_message: ChatMessageRecord;
+}> {
+  const result = await runCoreCommand(projectRoot, [
+    "chat",
+    "tool",
+    "execute",
+    "--thread",
+    payload.threadId,
+    "--message",
+    payload.assistantMessageId,
+    "--index",
+    String(payload.index),
+    "--json"
+  ]);
+  return decodeJson<{
+    assistant_message_id: string;
+    tool_index: number;
+    tool: string;
+    result: unknown;
+    tool_message: ChatMessageRecord;
+  }>(result);
 }
 
 export async function listCodexEntities(

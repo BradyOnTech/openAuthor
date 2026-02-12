@@ -12,3 +12,6 @@ readme = "README.md"
 
 [project.scripts]
 openauthor = "openauthor.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["openauthor*"]

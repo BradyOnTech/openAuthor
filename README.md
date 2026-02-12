@@ -146,8 +146,15 @@ python3 -m openauthor check performance --repeat 3 --json
 
 - `manuscript/scenes/`
 - `.openauthor/project.json`
-- `.openauthor/proposals/`
 - `codex/codex.json` (exported from SQLite on snapshot)
+- `.openauthor/provider_pricing.json`
+- `.openauthor/generation_budget_policy.json`
+
+Workspace artifacts (project-scoped but not snapshot-versioned by default):
+
+- `.openauthor/workspace/proposals/*.json`
+- `.openauthor/workspace/chats/threads.json`
+- `.openauthor/workspace/chats/threads/*.jsonl`
 
 Codex synchronization behavior:
 
@@ -160,7 +167,7 @@ AI generation artifacts:
 - `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
 - `.openauthor/generation_budget_policy.json` stores fail-closed budget limits for generation.
 - `.openauthor/retrieval/index.json` stores deterministic local retrieval chunks/term stats for provenance-backed querying.
-- Branch workspace merge preflight analyzes overlapping changes in authoring artifacts (scenes, proposals, codex snapshot, project/budget metadata).
+- Branch workspace merge preflight analyzes overlapping changes in book-state artifacts (scenes, codex snapshot, project/budget metadata).
 - Desktop Guided Merge panel supports branch create/switch, preflight risk analysis, branch diff review, and merge apply actions.
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).

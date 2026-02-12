@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+import shutil
 
 PROJECT_MARKER = ".openauthor/project.json"
 
@@ -17,13 +18,18 @@ class OpenAuthorError(RuntimeError):
 class ProjectPaths:
   root: Path
   project_dir: Path
+  workspace_dir: Path
   config_file: Path
   scenes_dir: Path
   codex_db: Path
+  legacy_proposals_dir: Path
   proposals_dir: Path
   generations_dir: Path
   retrieval_dir: Path
   retrieval_index_file: Path
+  chats_dir: Path
+  chat_threads_dir: Path
+  chat_threads_index_file: Path
   pricing_file: Path
   budget_policy_file: Path
 
@@ -34,16 +40,23 @@ def utc_now() -> str:
 
 def get_project_paths(root: Path) -> ProjectPaths:
   project_dir = root / ".openauthor"
+  workspace_dir = project_dir / "workspace"
+  chats_dir = workspace_dir / "chats"
   return ProjectPaths(
     root=root,
     project_dir=project_dir,
+    workspace_dir=workspace_dir,
     config_file=project_dir / "project.json",
     scenes_dir=root / "manuscript" / "scenes",
     codex_db=root / "codex" / "codex.sqlite3",
-    proposals_dir=project_dir / "proposals",
+    legacy_proposals_dir=project_dir / "proposals",
+    proposals_dir=workspace_dir / "proposals",
     generations_dir=project_dir / "generations",
     retrieval_dir=project_dir / "retrieval",
     retrieval_index_file=project_dir / "retrieval" / "index.json",
+    chats_dir=chats_dir,
+    chat_threads_dir=chats_dir / "threads",
+    chat_threads_index_file=chats_dir / "threads.json",
     pricing_file=project_dir / "provider_pricing.json",
     budget_policy_file=project_dir / "generation_budget_policy.json",
   )
@@ -63,7 +76,9 @@ def resolve_project(start: Path) -> ProjectPaths:
     raise OpenAuthorError(
       "Not inside an openAuthor project. Run `openauthor init` first."
     )
-  return get_project_paths(root)
+  paths = get_project_paths(root)
+  ensure_workspace_layout(paths)
+  return paths
 
 
 def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
@@ -72,7 +87,8 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
   paths.project_dir.mkdir(parents=True, exist_ok=True)
   paths.scenes_dir.mkdir(parents=True, exist_ok=True)
   paths.codex_db.parent.mkdir(parents=True, exist_ok=True)
-  paths.proposals_dir.mkdir(parents=True, exist_ok=True)
+  paths.legacy_proposals_dir.mkdir(parents=True, exist_ok=True)
+  ensure_workspace_layout(paths)
   paths.generations_dir.mkdir(parents=True, exist_ok=True)
   paths.retrieval_dir.mkdir(parents=True, exist_ok=True)
 
@@ -84,7 +100,8 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
       "storage": {
         "scene_format": "markdown-frontmatter",
         "codex": "sqlite",
-        "proposals": "json",
+        "proposals": "workspace-json",
+        "chats": "workspace-jsonl",
       },
     }
     paths.config_file.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
@@ -142,6 +159,27 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
     )
 
   return paths
+
+
+def ensure_workspace_layout(paths: ProjectPaths) -> None:
+  paths.workspace_dir.mkdir(parents=True, exist_ok=True)
+  paths.proposals_dir.mkdir(parents=True, exist_ok=True)
+  paths.chats_dir.mkdir(parents=True, exist_ok=True)
+  paths.chat_threads_dir.mkdir(parents=True, exist_ok=True)
+  if not paths.chat_threads_index_file.exists():
+    paths.chat_threads_index_file.write_text("[]\n", encoding="utf-8")
+  _migrate_legacy_proposals(paths)
+
+
+def _migrate_legacy_proposals(paths: ProjectPaths) -> None:
+  legacy_dir = paths.legacy_proposals_dir
+  if not legacy_dir.exists():
+    return
+  for legacy_file in sorted(legacy_dir.glob("*.json")):
+    target = paths.proposals_dir / legacy_file.name
+    if target.exists():
+      continue
+    shutil.move(str(legacy_file), str(target))
 
 
 def next_scene_index(paths: ProjectPaths) -> int:

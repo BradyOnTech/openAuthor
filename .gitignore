@@ -31,6 +31,7 @@ temp/
 # python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .venv/
 venv/
 .pytest_cache/
@@ -38,8 +39,13 @@ venv/
 # openauthor runtime data
 codex/codex.sqlite3
 .openauthor/retrieval/
+.openauthor/workspace/**
+!.openauthor/workspace/
+!.openauthor/workspace/proposals/
 !manuscript/scenes/.gitkeep
-!.openauthor/proposals/.gitkeep
+!.openauthor/workspace/proposals/.gitkeep
+!.openauthor/workspace/chats/
+!.openauthor/workspace/chats/.gitkeep
 
 # rust / tauri
 target/

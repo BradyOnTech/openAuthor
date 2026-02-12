@@ -202,9 +202,81 @@ Phase 4 exit condition:
 - Chunk 9: Dictation-to-proposal flow, transcript logging, confirmations/undo. ✅
 - Chunk 10: Phase 4 hardening pass (performance baselines, migrations, CI expansion). ✅
 
+## Phase 4 Closeout Slice (handoff to Phase 5)
+
+- [ ] Lock hardening baseline thresholds for `check performance` in docs/runbook.
+- [ ] Add large-project regression fixture (high scene/proposal/run volume) for scale checks.
+- [ ] Run release-candidate smoke across voice dictation/undo + drift audit/repair scenarios.
+
+## Phase 5: Productization + Authoring Intelligence (planned)
+
+Phase 5 mission:
+- Move from "advanced local workflows" to "installable, resilient product" while preserving local-first + proposal-based safety.
+- Remove developer-environment dependency for normal desktop usage.
+- Add higher-order authoring intelligence only where it remains inspectable and reversible.
+
+Phase 5 execution principles:
+- Packaging and reliability come before new UX breadth.
+- Every automated suggestion must be represented as a proposal artifact (never silent edits).
+- Startup health checks should fail usefully with guided recovery, not silently degrade.
+- New assistant features must include provenance, operator controls, and deterministic fallback paths.
+
+## Phase 5 Execution Checklist (planned)
+
+- 5.0 Runtime packaging + installability
+  - [ ] Bundle sidecar Python runtime/core with desktop app for default local usage.
+  - [ ] Add runtime bootstrap health checks + clear failure diagnostics in-app.
+  - [ ] Ensure clean-machine install can run without manual Python/pip setup.
+- 5.1 Startup integrity + guided recovery
+  - [ ] Run workspace drift audit automatically on project load (non-blocking by default).
+  - [ ] Add guided one-click repair path for safe fixes (stale pins/index drift).
+  - [ ] Persist latest audit summary for diagnostics and support traces.
+- 5.2 Semantic merge assistant (proposal-based)
+  - [ ] Add merge conflict suggestion engine that emits scene-level resolution proposals.
+  - [ ] Keep merge apply path human-reviewed (`apply/reject`) with no direct auto-merge content edits.
+  - [ ] Include conflict rationale/provenance metadata in merge suggestions.
+- 5.3 Voice copilot v2
+  - [ ] Add session-oriented voice loop (command + dictation + clarification turn).
+  - [ ] Add provider-adapter path for richer STT/TTS while retaining local fallback.
+  - [ ] Add explicit transcript retention/privacy controls in desktop settings.
+- 5.4 Release/distribution hardening
+  - [ ] Add signed/notarized macOS release path and documented distribution workflow.
+  - [ ] Add in-app diagnostics bundle export for support/debug.
+  - [ ] Add migration/upgrade regression tests for project metadata compatibility.
+- 5.5 Chat threads (ChatGPT-style, local-first)
+  - [ ] Add project-scoped chat thread store (local artifacts with deterministic serialization).
+  - [ ] Add per-thread model selection (at minimum: `local`, `openai`, `anthropic`) plus runtime credential diagnostics.
+  - [ ] Add context controls ("Context drawer"):
+    - [ ] Toggle inclusion of current scene / selected text / codex entities / recent scenes.
+    - [ ] Optional lexical retrieval citations (`retrieval_mode=auto|required`) using existing retrieval index.
+  - [ ] Persist provenance per assistant response (provider/model/settings + context summary + retrieval citations).
+  - [ ] Add "promote to proposal" actions so chat can feed the existing proposal review/apply workflow.
+  - [ ] Add deterministic regression tests for chat storage and context packing.
+
+Note on retrieval strategy:
+- While the application is still under active development, retrieval remains lexical (current `.openauthor/retrieval/index.json` TF-IDF style) for determinism, speed, and offline friendliness.
+- Semantic retrieval (embeddings + vector DB) remains a future upgrade and must preserve the same provenance + staleness guarantees.
+
+Phase 5 exit condition:
+- A non-developer can install and run desktop locally on a clean machine, recover from common project drift states in-app, and complete end-to-end authoring loops (scene -> proposal -> review/apply) with packaged runtime, deterministic diagnostics, and production-grade release artifacts.
+
+## Phase 5 Ordered Chunks (planning baseline)
+
+- Chunk 1: Packaged runtime delivery for desktop (sidecar/runtime bootstrap + clean-machine validation).
+- Chunk 2: Startup integrity checks and guided repair UX (auto-audit + safe fix actions).
+- Chunk 3: Distribution/release hardening (signing/notarization + diagnostics bundle + upgrade docs).
+- Chunk 4: Chat threads foundation (thread store + model selection + context drawer + provenance + promote-to-proposal).
+- Chunk 5: Semantic merge assistant foundation (conflict analyzer -> proposal artifacts + provenance).
+- Chunk 6: Voice copilot v2 foundation (session loop + provider-adapter STT/TTS + retention controls).
+- Chunk 7: Scale + migration regression expansion (large-project fixtures, metadata compatibility, CI additions).
+
 ## Future TODO (deferred)
 
 - Additional policy controls (beyond current budget caps), including richer operator controls and policy presets.
+- Semantic retrieval upgrade (embeddings):
+  - Evaluate LanceDB (or equivalent embedded vector DB) for per-project semantic retrieval.
+  - Treat embeddings/indexes as derived data (rebuildable) and scope them to project state (`git_head` and/or source digests) with fail-closed staleness checks.
+  - Preserve provenance UX: citations must remain linkable back to scene/codex sources.
 
 ## Definition of done for MVP
 

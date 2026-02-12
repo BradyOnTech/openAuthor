@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 import uuid
 from pathlib import Path
 
+from .git_ops import current_branch, run_git
 from .project import OpenAuthorError, ProjectPaths, utc_now
+from .scenes import get_scene
 
 STATUSES = {"pending", "applied", "rejected"}
 
@@ -24,11 +27,16 @@ def create_proposal(
   generation: dict[str, Any] | None = None,
 ) -> str:
   proposal_id = f"proposal-{uuid.uuid4().hex[:12]}"
+  vcs_branch, vcs_base_commit = _capture_vcs_anchor(paths)
+  scene_digest = _scene_digest(paths, scene_id) if scene_id.strip() else ""
   payload: dict[str, Any] = {
     "id": proposal_id,
     "title": title,
     "instruction": instruction,
     "scene_id": scene_id,
+    "scene_digest": scene_digest,
+    "vcs_branch": vcs_branch,
+    "vcs_base_commit": vcs_base_commit,
     "status": "pending",
     "created_at": utc_now(),
     "updated_at": utc_now(),
@@ -52,19 +60,30 @@ def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, Any]:
   proposal_path = _proposal_file(paths, proposal_id)
   if not proposal_path.exists():
     raise OpenAuthorError(f"Unknown proposal id '{proposal_id}'.")
-  return _read_proposal(proposal_path)
+  payload = _read_proposal(proposal_path)
+  payload["stale"] = _proposal_is_stale(paths, payload)
+  return payload
 
 
-def list_proposals(paths: ProjectPaths, *, status: str | None = None) -> list[dict[str, Any]]:
+def list_proposals(
+  paths: ProjectPaths,
+  *,
+  status: str | None = None,
+  vcs_branch: str | None = None,
+) -> list[dict[str, Any]]:
   if status and status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
     raise OpenAuthorError(f"Invalid status '{status}'. Allowed: {allowed}.")
 
+  normalized_vcs_branch = (vcs_branch or "").strip()
   rows: list[dict[str, Any]] = []
   for proposal_file in sorted(paths.proposals_dir.glob("*.json")):
     item = _read_proposal(proposal_file)
     if status and item.get("status") != status:
       continue
+    if normalized_vcs_branch and item.get("vcs_branch", "") != normalized_vcs_branch:
+      continue
+    item["stale"] = _proposal_is_stale(paths, item)
     rows.append(item)
   return rows
 
@@ -90,4 +109,44 @@ def update_proposal_status(
   if notes:
     payload["notes"] = notes
   file_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  payload["stale"] = _proposal_is_stale(paths, payload)
   return payload
+
+
+def _capture_vcs_anchor(paths: ProjectPaths) -> tuple[str, str]:
+  branch = ""
+  commit = ""
+  try:
+    branch = current_branch(paths)
+    commit = run_git(paths, ["rev-parse", "HEAD"], check=False).stdout.strip()
+  except OpenAuthorError:
+    return "", ""
+  return branch, commit
+
+
+def _scene_digest(paths: ProjectPaths, scene_id: str) -> str:
+  scene = get_scene(paths, scene_id)
+  payload = {
+    "id": scene.get("id", ""),
+    "title": scene.get("title", ""),
+    "summary": scene.get("summary", ""),
+    "pov": scene.get("pov", ""),
+    "status": scene.get("status", ""),
+    "body": scene.get("body", ""),
+  }
+  raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+  return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _proposal_is_stale(paths: ProjectPaths, proposal: dict[str, Any]) -> bool:
+  scene_id = str(proposal.get("scene_id", "")).strip()
+  if scene_id == "":
+    return False
+  expected = str(proposal.get("scene_digest", "")).strip()
+  if expected == "":
+    return False
+  try:
+    current = _scene_digest(paths, scene_id)
+  except OpenAuthorError:
+    return True
+  return current != expected

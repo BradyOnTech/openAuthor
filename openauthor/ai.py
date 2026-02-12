@@ -271,6 +271,38 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
   )
 
 
+def _generate_local_chat_text(user_prompt: str) -> str:
+  lowered = user_prompt.lower()
+  if "list scenes" in lowered:
+    return (
+      "I can help by listing scenes.\n"
+      "[[OA_TOOL_CALLS_BEGIN]]\n"
+      '[{"tool":"scene.list","args":{}}]\n'
+      "[[OA_TOOL_CALLS_END]]"
+    )
+  if "continuity" in lowered and "check" in lowered:
+    return (
+      "I can run continuity checks.\n"
+      "[[OA_TOOL_CALLS_BEGIN]]\n"
+      '[{"tool":"check.continuity","args":{}}]\n'
+      "[[OA_TOOL_CALLS_END]]"
+    )
+  if "create proposal" in lowered:
+    return (
+      "I can draft a proposal card.\n"
+      "[[OA_TOOL_CALLS_BEGIN]]\n"
+      '[{"tool":"proposal.add","args":{"title":"Agent Draft","instruction":"Intent:\\n- Refine scene beats.","scene_id":"scene-0001"}}]\n'
+      "[[OA_TOOL_CALLS_END]]"
+    )
+  return (
+    "I reviewed your request and context. "
+    "Here is a concise response:\n"
+    "- Clarify the specific scene goal.\n"
+    "- Keep character motivations explicit.\n"
+    "- Preserve established continuity anchors."
+  )
+
+
 def _normalize_header(value: str) -> str:
   lowered = value.strip().lower()
   aliases = {
@@ -568,7 +600,10 @@ def _call_provider(
 ) -> dict[str, Any]:
   start = time.perf_counter()
   if provider == "local":
-    text = _generate_local_text(context, instruction)
+    if context.get("chat_mode"):
+      text = _generate_local_chat_text(user_prompt)
+    else:
+      text = _generate_local_text(context, instruction)
     input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
     output_tokens = _estimate_tokens(text)
     attempts = 1
@@ -617,6 +652,50 @@ def _call_provider(
     "output_tokens": int(output_tokens),
     "latency_ms": latency_ms,
     "attempts": attempts,
+  }
+
+
+def complete_chat(
+  paths: ProjectPaths,
+  *,
+  provider: str,
+  model: str,
+  system_prompt: str,
+  user_prompt: str,
+  temperature: float = 0.2,
+  max_output_tokens: int = 900,
+  chat_mode: bool = True,
+) -> dict[str, Any]:
+  if provider not in SUPPORTED_PROVIDERS:
+    allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
+    raise OpenAuthorError(f"Invalid provider '{provider}'. Allowed: {allowed}.")
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+
+  provider_result = _call_provider(
+    provider=provider,
+    model=model or DEFAULT_MODELS[provider],
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    context={"chat_mode": bool(chat_mode)},
+    instruction=user_prompt,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+  )
+  estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=model or DEFAULT_MODELS[provider],
+    input_tokens=provider_result["input_tokens"],
+    output_tokens=provider_result["output_tokens"],
+  )
+  return {
+    "text": provider_result["text"],
+    "input_tokens": provider_result["input_tokens"],
+    "output_tokens": provider_result["output_tokens"],
+    "latency_ms": provider_result["latency_ms"],
+    "provider_attempts": provider_result["attempts"],
+    "estimated_cost_usd": estimated_cost_usd,
   }
 
 
