@@ -37,6 +37,17 @@ npm run test
 npm run tauri:dev
 ```
 
+From repo root, operator/release checks:
+
+```bash
+make desktop-prereq
+make desktop-smoke
+```
+
+Runbook:
+
+- `docs/desktop-runbook.md`
+
 ## Contract
 
 - UI invokes Tauri commands from `src-tauri/src/lib.rs`.

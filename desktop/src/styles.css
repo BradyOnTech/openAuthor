@@ -57,6 +57,11 @@ body {
   color: var(--muted);
 }
 
+.shortcut-hints {
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
 .status-pill {
   border-radius: 999px;
   font-size: 12px;
@@ -443,6 +448,28 @@ code {
   color: var(--muted);
 }
 
+.proposal-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px solid #d7cfbc;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fffaf0;
+}
+
+.proposal-filters label {
+  display: grid;
+  gap: 4px;
+}
+
+.proposal-filter-summary {
+  margin: 0;
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: #5f574f;
+}
+
 .new-proposal-card {
   border: 1px dashed #c7bda4;
   border-radius: 10px;
@@ -533,6 +560,14 @@ code {
   border-left: 4px solid #94601c;
 }
 
+.proposal-item.preferred-linked {
+  box-shadow: inset 0 0 0 1px #2a7a3e;
+}
+
+.proposal-item.scene-match {
+  background: #f2f7ff;
+}
+
 .proposal-review {
   border: 1px solid #d7cfbc;
   border-radius: 10px;
@@ -568,6 +603,7 @@ code {
 .proposal-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .reject-btn {
@@ -1049,9 +1085,54 @@ code {
   text-transform: lowercase;
 }
 
+.pipeline-health {
+  display: grid;
+  gap: 6px;
+}
+
+.pipeline-health-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.pipeline-health-badge.tone-ok {
+  background: #d9f3e2;
+  color: #184e2b;
+}
+
+.pipeline-health-badge.tone-info {
+  background: #e4efff;
+  color: #23486f;
+}
+
+.pipeline-health-badge.tone-warn {
+  background: #fff0d9;
+  color: #7a4f13;
+}
+
+.pipeline-health-badge.tone-error {
+  background: #fde4df;
+  color: #8d2f05;
+}
+
 .context-actions {
   display: flex;
   justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.list-load-more {
+  background: #efe8d5;
+  border-color: #c7bda4;
+  color: #4c4338;
 }
 
 .message-bar {
@@ -1060,6 +1141,10 @@ code {
 
 .message-bar p {
   margin: 0;
+}
+
+.busy {
+  color: #23486f;
 }
 
 .error {
@@ -1093,6 +1178,10 @@ code {
   }
 
   .generate-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-filters {
     grid-template-columns: 1fr;
   }
 

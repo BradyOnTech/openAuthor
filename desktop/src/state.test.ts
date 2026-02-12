@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   continuityIssuesForScene,
+  evaluatePreferredPipelineHealth,
   findPreferredProposalForScene,
   countGenerationRuns,
   countSceneStatuses,
@@ -11,6 +12,7 @@ import {
   orderCodexEntities,
   orderContinuityIssues,
   orderProposalsForReview,
+  selectProposalReviewRows,
   proposalsForScene
 } from "./state";
 import type {
@@ -73,6 +75,41 @@ describe("orderProposalsForReview", () => {
       "proposal-a",
       "proposal-c"
     ]);
+  });
+});
+
+describe("selectProposalReviewRows", () => {
+  it("prioritizes selected scene proposals when scene priority mode is active", () => {
+    const selected = selectProposalReviewRows(
+      rows,
+      "scene-0001",
+      new Set<string>(),
+      "scene_priority",
+      "all"
+    );
+    expect(selected[0]?.id).toBe("proposal-a");
+  });
+
+  it("supports preferred-only filtering", () => {
+    const selected = selectProposalReviewRows(
+      rows,
+      "",
+      new Set<string>(["proposal-c"]),
+      "preferred_only",
+      "all"
+    );
+    expect(selected.map((item) => item.id)).toEqual(["proposal-c"]);
+  });
+
+  it("combines status filter with preferred priority", () => {
+    const selected = selectProposalReviewRows(
+      rows,
+      "",
+      new Set<string>(["proposal-a"]),
+      "preferred_priority",
+      "applied"
+    );
+    expect(selected.map((item) => item.id)).toEqual(["proposal-a"]);
   });
 });
 
@@ -384,6 +421,32 @@ describe("findPreferredProposalForScene", () => {
   it("returns null when no pinned run or no matching proposal exists", () => {
     const preferred = findPreferredProposalForScene(rows, "scene-0001", {});
     expect(preferred).toBeNull();
+  });
+});
+
+describe("evaluatePreferredPipelineHealth", () => {
+  it("returns missing pin when no preferred run is set", () => {
+    const health = evaluatePreferredPipelineHealth("", false, null);
+    expect(health.code).toBe("missing_pin");
+    expect(health.tone).toBe("warn");
+  });
+
+  it("returns stale pin when preferred run does not resolve", () => {
+    const health = evaluatePreferredPipelineHealth("gen-stale", false, null);
+    expect(health.code).toBe("stale_pin");
+    expect(health.tone).toBe("error");
+  });
+
+  it("returns linked proposal states for pending/applied/rejected", () => {
+    expect(evaluatePreferredPipelineHealth("gen-1", true, "pending").code).toBe(
+      "linked_pending"
+    );
+    expect(evaluatePreferredPipelineHealth("gen-1", true, "applied").code).toBe(
+      "linked_applied"
+    );
+    expect(evaluatePreferredPipelineHealth("gen-1", true, "rejected").code).toBe(
+      "linked_rejected"
+    );
   });
 });
 

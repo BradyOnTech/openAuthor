@@ -281,6 +281,78 @@ class OpenAuthorFlowTests(unittest.TestCase):
       proposals = json.loads(out)
       self.assertTrue(any(item["id"] == proposal_id for item in proposals))
 
+  def test_generation_stale_pin_cleanup_and_unpin_idempotency(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Stale Pin"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Pin Scene",
+          "--summary",
+          "pin flow",
+          "--pov",
+          "narrator",
+          "--body",
+          "Scene body for generation pin cleanup checks.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        [
+          "proposal",
+          "generate",
+          "--scene",
+          "scene-0001",
+          "--instruction",
+          "tighten pacing",
+          "--provider",
+          "local",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      proposal = json.loads(out)
+      run_id = proposal["generation"]["id"]
+
+      code, _, err = self.run_cli(
+        ["generation", "pin", "--scene", "scene-0001", "--run", run_id, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      generation_log_path = root / ".openauthor" / "generations" / f"{run_id}.json"
+      generation_log_path.unlink()
+
+      code, _, err = self.run_cli(["generation", "get", "--id", run_id, "--json"], root)
+      self.assertNotEqual(code, 0)
+      self.assertIn("unknown generation run id", err.lower())
+
+      code, out, err = self.run_cli(
+        ["generation", "unpin", "--scene", "scene-0001", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      first_unpin = json.loads(out)
+      self.assertTrue(first_unpin["cleared"])
+      self.assertEqual(first_unpin["run_id"], run_id)
+
+      code, out, err = self.run_cli(
+        ["generation", "unpin", "--scene", "scene-0001", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      second_unpin = json.loads(out)
+      self.assertFalse(second_unpin["cleared"])
+      self.assertEqual(second_unpin["run_id"], "")
+
   def test_snapshot_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

@@ -18,6 +18,8 @@ make audit-no-mocks
 make test
 make test-desktop
 make test-all
+make desktop-prereq
+make desktop-smoke
 ```
 
 ## Desktop shell
@@ -31,7 +33,7 @@ npm install
 npm run tauri:dev
 ```
 
-See `desktop/README.md` and `docs/desktop-architecture.md`.
+See `desktop/README.md`, `docs/desktop-architecture.md`, and `docs/desktop-runbook.md`.
 
 ## CLI usage
 
@@ -107,7 +109,8 @@ AI generation artifacts:
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
 - Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.
 - Desktop Runs panel supports pin/unpin preferred run per scene; pinned runs are highlighted and can be opened quickly from both Runs and Proposal review (including direct jump to preferred proposal).
-- Context tab now includes a Preferred Pipeline card (scene -> pinned run -> linked proposal) with quick-open actions.
+- Proposal review supports triage queue modes (`all`, `selected scene first`, `preferred-linked first`, `preferred-linked only`) plus status filters.
+- Context tab includes a Preferred Pipeline card (scene -> pinned run -> linked proposal) with health badges (missing/stale pin, missing proposal, pending/applied/rejected), quick-open actions, and stale-reference recovery actions.
 
 Generated proposal format is normalized to four sections for review consistency:
 
@@ -137,4 +140,12 @@ Provider retry tuning (optional env vars):
 
 ## Status
 
-Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is in progress with Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.
+Phase 0 and Phase 1 are complete. Phase 3 (desktop UX) is complete with Binder + Editor + Outliner + Proposal Review + Context Lens + Codex Panel + Continuity Checks implemented. See `docs/plan.md`.
+
+CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
+
+- `make check`
+- `make test`
+- `make test-desktop`
+- `make desktop-build`
+- `make tauri-check`

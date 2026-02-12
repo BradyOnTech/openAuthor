@@ -1,7 +1,7 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check audit-no-mocks test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check
+.PHONY: help setup check audit-no-mocks test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check desktop-prereq desktop-smoke
 
 help:
 	@echo "Available targets:"
@@ -17,6 +17,8 @@ help:
 	@echo "  make desktop-tauri - Run Tauri desktop shell (Rust required)"
 	@echo "  make desktop-build - Compile desktop frontend"
 	@echo "  make tauri-check   - Compile-check Tauri backend"
+	@echo "  make desktop-prereq - Validate desktop runtime/toolchain prerequisites"
+	@echo "  make desktop-smoke  - Run desktop release smoke gates"
 
 setup:
 	@echo "Checking local tooling..."
@@ -30,6 +32,7 @@ check:
 	@test -f docs/brief.md && echo "docs/brief.md: OK" || (echo "docs/brief.md missing" && exit 1)
 	@test -f docs/plan.md && echo "docs/plan.md: OK" || (echo "docs/plan.md missing" && exit 1)
 	@test -f docs/desktop-architecture.md && echo "docs/desktop-architecture.md: OK" || (echo "docs/desktop-architecture.md missing" && exit 1)
+	@test -f docs/desktop-runbook.md && echo "docs/desktop-runbook.md: OK" || (echo "docs/desktop-runbook.md missing" && exit 1)
 	@test -f openauthor/cli.py && echo "openauthor CLI: OK" || (echo "openauthor/cli.py missing" && exit 1)
 	@test -f desktop/src/App.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
 	@$(MAKE) audit-no-mocks
@@ -69,3 +72,9 @@ desktop-build:
 
 tauri-check:
 	@source "$$HOME/.cargo/env" && cargo check --manifest-path desktop/src-tauri/Cargo.toml
+
+desktop-prereq:
+	@./scripts/desktop_prereq_check.sh
+
+desktop-smoke: desktop-prereq test-desktop desktop-build tauri-check
+	@echo "Desktop smoke gates passed."

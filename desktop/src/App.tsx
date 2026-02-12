@@ -25,6 +25,7 @@ import {
 } from "./api";
 import {
   continuityIssuesForScene,
+  evaluatePreferredPipelineHealth,
   findPreferredProposalForScene,
   countGenerationRuns,
   countContinuityIssues,
@@ -35,8 +36,10 @@ import {
   orderCodexEntities,
   orderContinuityIssues,
   orderProposalsForReview,
+  selectProposalReviewRows,
   proposalsForScene
 } from "./state";
+import { resolveShortcutAction } from "./shortcuts";
 import {
   EMPTY_RERUN_DRAFT,
   buildRerunPayload,
@@ -88,6 +91,12 @@ type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
 type GenerationStatusFilter = "all" | "succeeded" | "failed";
 type GenerationQualityFilter = "all" | "high" | "medium" | "low";
 type GenerationProviderFilter = "all" | ProposalProvider;
+type ProposalReviewMode =
+  | "all"
+  | "scene_priority"
+  | "preferred_priority"
+  | "preferred_only";
+type ProposalReviewStatusFilter = "all" | "pending" | "applied" | "rejected";
 
 type DraftScene = {
   title: string;
@@ -153,6 +162,9 @@ const PROVIDER_MODEL_HINTS: Record<ProposalProvider, string> = {
   anthropic: "claude-3-5-haiku-latest"
 };
 
+const DEFAULT_LIST_LIMIT = 120;
+const LIST_LIMIT_STEP = 120;
+
 const EMPTY_DRAFT_CODEX: DraftCodex = {
   type: "character",
   name: "",
@@ -198,6 +210,21 @@ function downloadTextFile(
   URL.revokeObjectURL(url);
 }
 
+function toUserErrorMessage(
+  err: unknown,
+  context: string,
+  nextStep?: string
+): string {
+  const detail =
+    err instanceof Error && err.message.trim() !== ""
+      ? err.message.trim()
+      : "Unexpected error.";
+  if (!nextStep) {
+    return `${context}: ${detail}`;
+  }
+  return `${context}: ${detail} ${nextStep}`;
+}
+
 export function App() {
   const [projectRoot, setProjectRoot] = useState(loadDefaultRoot);
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
@@ -213,6 +240,9 @@ export function App() {
     useState<GenerationQualityFilter>("all");
   const [generationProviderFilter, setGenerationProviderFilter] =
     useState<GenerationProviderFilter>("all");
+  const [sceneListLimit, setSceneListLimit] = useState(DEFAULT_LIST_LIMIT);
+  const [proposalListLimit, setProposalListLimit] = useState(DEFAULT_LIST_LIMIT);
+  const [runsListLimit, setRunsListLimit] = useState(DEFAULT_LIST_LIMIT);
 
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
@@ -221,6 +251,9 @@ export function App() {
   const [addForm, setAddForm] = useState<DraftScene>(EMPTY_DRAFT_SCENE);
 
   const [proposals, setProposals] = useState<ProposalRecord[]>([]);
+  const [proposalReviewMode, setProposalReviewMode] = useState<ProposalReviewMode>("all");
+  const [proposalReviewStatusFilter, setProposalReviewStatusFilter] =
+    useState<ProposalReviewStatusFilter>("all");
   const [proposalForm, setProposalForm] = useState<DraftProposal>(EMPTY_DRAFT_PROPOSAL);
   const [proposalGenerateForm, setProposalGenerateForm] = useState<DraftGeneratedProposal>(
     EMPTY_DRAFT_GENERATED_PROPOSAL
@@ -256,9 +289,17 @@ export function App() {
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
     useState<GenerationRuntimeConfig | null>(null);
   const [rerunDraft, setRerunDraft] = useState<RerunDraft>(EMPTY_RERUN_DRAFT);
+  const [selectedScenePinnedRunDetail, setSelectedScenePinnedRunDetail] =
+    useState<GenerationRunDetail | null>(null);
+  const [selectedScenePinnedRunStale, setSelectedScenePinnedRunStale] = useState(false);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  function reportError(context: string, err: unknown, nextStep?: string) {
+    setError(toUserErrorMessage(err, context, nextStep));
+    setMessage("");
+  }
 
   const canSaveScene = useMemo(() => {
     return Boolean(selectedSceneId && draft.title.trim() !== "");
@@ -269,6 +310,43 @@ export function App() {
   }, [selectedCodexEntityId, codexDraft.name]);
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
+  const preferredProposalIds = useMemo(() => {
+    const next = new Set<string>();
+    for (const proposal of proposals) {
+      if (!proposal.scene_id) continue;
+      const generationId = proposal.generation?.id;
+      if (!generationId) continue;
+      if (generationPins[proposal.scene_id] === generationId) {
+        next.add(proposal.id);
+      }
+    }
+    return next;
+  }, [proposals, generationPins]);
+  const proposalReviewRows = useMemo(() => {
+    return selectProposalReviewRows(
+      proposals,
+      selectedSceneId,
+      preferredProposalIds,
+      proposalReviewMode,
+      proposalReviewStatusFilter
+    );
+  }, [
+    proposals,
+    selectedSceneId,
+    preferredProposalIds,
+    proposalReviewMode,
+    proposalReviewStatusFilter
+  ]);
+  const proposalListRows = useMemo(() => {
+    const sliced = proposalReviewRows.slice(0, proposalListLimit);
+    if (!selectedProposalId || sliced.some((item) => item.id === selectedProposalId)) {
+      return sliced;
+    }
+    const selected = proposalReviewRows.find((item) => item.id === selectedProposalId);
+    if (!selected) return sliced;
+    return [...sliced, selected];
+  }, [proposalReviewRows, proposalListLimit, selectedProposalId]);
+  const hasMoreProposalRows = proposalReviewRows.length > proposalListLimit;
   const sceneStatusCounts = useMemo(() => countSceneStatuses(scenes), [scenes]);
   const generationRunCounts = useMemo(
     () => countGenerationRuns(generationRuns),
@@ -300,6 +378,16 @@ export function App() {
       return haystack.includes(query);
     });
   }, [scenes, outlinerQuery, outlinerStatusFilter]);
+  const sceneListRows = useMemo(() => {
+    const sliced = scenes.slice(0, sceneListLimit);
+    if (!selectedSceneId || sliced.some((item) => item.id === selectedSceneId)) {
+      return sliced;
+    }
+    const selected = scenes.find((item) => item.id === selectedSceneId);
+    if (!selected) return sliced;
+    return [...sliced, selected];
+  }, [scenes, sceneListLimit, selectedSceneId]);
+  const hasMoreSceneRows = scenes.length > sceneListLimit;
 
   const selectedProposal = useMemo(
     () => proposals.find((item) => item.id === selectedProposalId) ?? null,
@@ -339,6 +427,19 @@ export function App() {
     const match = comparisonProfiles.find((item) => item.id === comparisonProfileId);
     return match?.label ?? "Balanced";
   }, [comparisonProfiles, comparisonProfileId]);
+  const runComparisonActionHint = useMemo(() => {
+    if (!runComparison) return "";
+    if (runComparison.recommendation.verdict === "likely_better") {
+      return "Recommendation action: promote current run as preferred if instruction quality fits intent.";
+    }
+    if (runComparison.recommendation.verdict === "likely_worse") {
+      return "Recommendation action: keep baseline preferred, or promote baseline again.";
+    }
+    if (runComparison.recommendation.verdict === "mixed") {
+      return "Recommendation action: inspect instruction/output deltas before promoting either run.";
+    }
+    return "Recommendation action: insufficient evidence; collect more runs before deciding.";
+  }, [runComparison]);
   const selectedGenerationRunPinned = useMemo(() => {
     if (!selectedGenerationRun?.scene_id) return false;
     return generationPins[selectedGenerationRun.scene_id] === selectedGenerationRun.run_id;
@@ -361,6 +462,21 @@ export function App() {
       (row) => row.run_id !== selectedGenerationRun.run_id
     );
   }, [comparisonSceneRuns, selectedGenerationRun]);
+  const runsListRows = useMemo(() => {
+    const sliced = generationRuns.slice(0, runsListLimit);
+    if (
+      !selectedGenerationRunId ||
+      sliced.some((item) => item.run_id === selectedGenerationRunId)
+    ) {
+      return sliced;
+    }
+    const selected = generationRuns.find(
+      (item) => item.run_id === selectedGenerationRunId
+    );
+    if (!selected) return sliced;
+    return [...sliced, selected];
+  }, [generationRuns, runsListLimit, selectedGenerationRunId]);
+  const hasMoreRunsRows = generationRuns.length > runsListLimit;
   const selectedScenePinnedRunId = useMemo(() => {
     if (!selectedSceneId) return "";
     return generationPins[selectedSceneId] ?? "";
@@ -370,6 +486,36 @@ export function App() {
       findPreferredProposalForScene(proposals, selectedSceneId, generationPins),
     [proposals, selectedSceneId, generationPins]
   );
+  const selectedScenePinnedRunProposalId = useMemo(() => {
+    const proposalId = selectedScenePinnedRunDetail?.proposal_id;
+    if (typeof proposalId !== "string") return "";
+    return proposalId.trim();
+  }, [selectedScenePinnedRunDetail]);
+  const selectedSceneLinkedProposal = useMemo(() => {
+    if (!selectedSceneId) return null;
+    if (selectedScenePinnedRunProposalId) {
+      return (
+        proposals.find((item) => item.id === selectedScenePinnedRunProposalId) ?? null
+      );
+    }
+    return selectedScenePreferredProposal;
+  }, [
+    proposals,
+    selectedSceneId,
+    selectedScenePinnedRunProposalId,
+    selectedScenePreferredProposal
+  ]);
+  const preferredPipelineHealth = useMemo(() => {
+    return evaluatePreferredPipelineHealth(
+      selectedScenePinnedRunId,
+      selectedScenePinnedRunId !== "" && !selectedScenePinnedRunStale,
+      selectedSceneLinkedProposal?.status ?? null
+    );
+  }, [
+    selectedScenePinnedRunId,
+    selectedScenePinnedRunStale,
+    selectedSceneLinkedProposal
+  ]);
   const previousComparisonRunId = useMemo(() => {
     if (!selectedGenerationRun) return null;
     return pickPreviousRunId(
@@ -522,7 +668,10 @@ export function App() {
   async function checkProjectAndLoad() {
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Loading project...");
+    setSceneListLimit(DEFAULT_LIST_LIMIT);
+    setProposalListLimit(DEFAULT_LIST_LIMIT);
+    setRunsListLimit(DEFAULT_LIST_LIMIT);
     try {
       const status = await getProjectStatus(projectRoot);
       setProjectFound(status.found);
@@ -543,6 +692,8 @@ export function App() {
         setGenerationPins({});
         setSelectedGenerationRunId("");
         setSelectedGenerationRun(null);
+        setSelectedScenePinnedRunDetail(null);
+        setSelectedScenePinnedRunStale(false);
         setGenerationRuntimeConfig(null);
         return;
       }
@@ -558,7 +709,7 @@ export function App() {
       setSelectedContinuityIssueId("");
       setMessage("Project loaded.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Project load failed", err, "Verify the project root and retry.");
     } finally {
       setBusy(false);
     }
@@ -577,6 +728,65 @@ export function App() {
       // Ignore storage errors; path editing still works.
     }
   }, [projectRoot]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const action = resolveShortcutAction(event);
+      if (!action) return;
+
+      if (action === "save_scene") {
+        if (busy || centerView !== "editor" || !canSaveScene) return;
+        event.preventDefault();
+        void handleSaveScene();
+        return;
+      }
+
+      if (action === "generate_proposal") {
+        if (busy) return;
+        event.preventDefault();
+        setRightTab("proposals");
+        if (proposalGenerateForm.instruction.trim() === "") {
+          setMessage("Opened Proposals tab. Enter instruction, then trigger generate.");
+          setError("");
+          return;
+        }
+        void handleGenerateProposal();
+        return;
+      }
+
+      if (action === "run_continuity_checks") {
+        if (busy) return;
+        event.preventDefault();
+        setRightTab("checks");
+        if (!projectFound) {
+          setError("Load a project before running continuity checks.");
+          setMessage("");
+          return;
+        }
+        void handleRunContinuityChecks();
+        return;
+      }
+
+      if (action === "open_runs_tab") {
+        event.preventDefault();
+        setRightTab("runs");
+        setError("");
+        setMessage("Opened Runs tab.");
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [
+    busy,
+    centerView,
+    canSaveScene,
+    projectFound,
+    proposalGenerateForm.instruction
+  ]);
 
   useEffect(() => {
     if (!selectedSceneId) return;
@@ -599,6 +809,46 @@ export function App() {
   }, [selectedSceneId]);
 
   useEffect(() => {
+    if (proposalReviewRows.length === 0) {
+      setSelectedProposalId("");
+      return;
+    }
+    if (!proposalReviewRows.some((item) => item.id === selectedProposalId)) {
+      setSelectedProposalId(proposalReviewRows[0].id);
+    }
+  }, [proposalReviewRows, selectedProposalId]);
+
+  useEffect(() => {
+    if (!selectedSceneId) {
+      setSelectedScenePinnedRunDetail(null);
+      setSelectedScenePinnedRunStale(false);
+      return;
+    }
+    const pinnedRunId = generationPins[selectedSceneId];
+    if (!pinnedRunId) {
+      setSelectedScenePinnedRunDetail(null);
+      setSelectedScenePinnedRunStale(false);
+      return;
+    }
+    let cancelled = false;
+    setSelectedScenePinnedRunStale(false);
+    void getGenerationRun(projectRoot, pinnedRunId)
+      .then((row) => {
+        if (cancelled) return;
+        setSelectedScenePinnedRunDetail(row);
+        setSelectedScenePinnedRunStale(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSelectedScenePinnedRunDetail(null);
+        setSelectedScenePinnedRunStale(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectRoot, selectedSceneId, generationPins]);
+
+  useEffect(() => {
     if (!selectedCodexEntityId) return;
     setBusy(true);
     setError("");
@@ -618,6 +868,14 @@ export function App() {
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setBusy(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationStatusFilter, generationQualityFilter, generationProviderFilter]);
+
+  useEffect(() => {
+    setProposalListLimit(DEFAULT_LIST_LIMIT);
+  }, [proposalReviewMode, proposalReviewStatusFilter, selectedSceneId]);
+
+  useEffect(() => {
+    setRunsListLimit(DEFAULT_LIST_LIMIT);
   }, [generationStatusFilter, generationQualityFilter, generationProviderFilter]);
 
   useEffect(() => {
@@ -702,7 +960,7 @@ export function App() {
     if (addForm.title.trim() === "") return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Creating scene...");
     try {
       await addScene(projectRoot, addForm);
       await refreshSceneList();
@@ -714,7 +972,7 @@ export function App() {
       setAddForm(EMPTY_DRAFT_SCENE);
       setMessage("Scene created.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Scene create failed", err, "Check required fields and retry.");
     } finally {
       setBusy(false);
     }
@@ -735,14 +993,14 @@ export function App() {
     }
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Loading baseline run...");
     try {
       const baseline = await getGenerationRun(projectRoot, runId);
       setComparisonBaselineRunId(runId);
       setComparisonBaselineRun(baseline);
       setMessage(`Comparing ${selectedGenerationRun.run_id} against ${runId}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Baseline load failed", err, "Pick another run or refresh runs.");
     } finally {
       setBusy(false);
     }
@@ -761,18 +1019,56 @@ export function App() {
     await handleSelectComparisonBaseline(previousId);
   }
 
+  async function handlePinBaselineGenerationRun() {
+    if (!comparisonBaselineRun?.scene_id) return;
+    setBusy(true);
+    setError("");
+    setMessage("Pinning baseline as preferred...");
+    try {
+      await pinGenerationRun(projectRoot, {
+        sceneId: comparisonBaselineRun.scene_id,
+        runId: comparisonBaselineRun.run_id
+      });
+      await refreshGenerationPins();
+      setMessage(
+        `Pinned baseline ${comparisonBaselineRun.run_id} for ${comparisonBaselineRun.scene_id}.`
+      );
+    } catch (err) {
+      reportError("Pin baseline failed", err, "Refresh runs and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleOpenBaselineRun() {
+    if (!comparisonBaselineRun) return;
+    setSelectedGenerationRunId(comparisonBaselineRun.run_id);
+    setMessage(`Loaded baseline run ${comparisonBaselineRun.run_id}.`);
+    setError("");
+  }
+
+  async function handleOpenBaselineProposal() {
+    const proposalId = comparisonBaselineRun?.proposal_id?.trim() ?? "";
+    if (!proposalId) {
+      setError("Baseline run has no linked proposal.");
+      setMessage("");
+      return;
+    }
+    await handleOpenGenerationProposal(proposalId);
+  }
+
   async function handleSaveScene() {
     if (!selectedSceneId) return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Saving scene...");
     try {
       const saved = await updateScene(projectRoot, selectedSceneId, draft);
       setScene(saved);
       await refreshSceneList(saved.id);
       setMessage("Scene saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Scene save failed", err, "Review edits and retry.");
     } finally {
       setBusy(false);
     }
@@ -783,7 +1079,7 @@ export function App() {
     const sceneId = proposalForm.sceneId || selectedSceneId;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Creating proposal...");
     try {
       const created = await createProposal(projectRoot, {
         title: proposalForm.title,
@@ -798,7 +1094,7 @@ export function App() {
       });
       setMessage("Proposal created.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Proposal create failed", err, "Validate inputs and retry.");
     } finally {
       setBusy(false);
     }
@@ -813,7 +1109,7 @@ export function App() {
     }
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Generating proposal...");
     try {
       const generated = await generateProposal(projectRoot, {
         sceneId,
@@ -841,7 +1137,11 @@ export function App() {
       const modelLabel = generated.generation?.model ?? "default";
       setMessage(`Proposal generated via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError(
+        "Proposal generation failed",
+        err,
+        "Check provider credentials/settings and retry."
+      );
     } finally {
       setBusy(false);
     }
@@ -850,13 +1150,13 @@ export function App() {
   async function handleApplyProposal(proposalId: string) {
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Applying proposal...");
     try {
       const updated = await applyProposal(projectRoot, proposalId);
       await refreshProposalList(updated.id);
       setMessage("Proposal applied.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Proposal apply failed", err, "Reload proposals and retry.");
     } finally {
       setBusy(false);
     }
@@ -865,13 +1165,13 @@ export function App() {
   async function handleRejectProposal(proposalId: string) {
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Rejecting proposal...");
     try {
       const updated = await rejectProposal(projectRoot, proposalId);
       await refreshProposalList(updated.id);
       setMessage("Proposal rejected.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Proposal reject failed", err, "Reload proposals and retry.");
     } finally {
       setBusy(false);
     }
@@ -881,14 +1181,14 @@ export function App() {
     if (codexForm.name.trim() === "") return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Creating codex entity...");
     try {
       const created = await addCodexEntity(projectRoot, codexForm);
       await refreshCodexList(created.id);
       setCodexForm(EMPTY_DRAFT_CODEX);
       setMessage("Codex entity created.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Codex create failed", err, "Review fields and retry.");
     } finally {
       setBusy(false);
     }
@@ -898,13 +1198,13 @@ export function App() {
     if (!selectedCodexEntityId || codexDraft.name.trim() === "") return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Saving codex entity...");
     try {
       const updated = await updateCodexEntity(projectRoot, selectedCodexEntityId, codexDraft);
       await refreshCodexList(updated.id);
       setMessage("Codex entity saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Codex save failed", err, "Review edits and retry.");
     } finally {
       setBusy(false);
     }
@@ -913,7 +1213,7 @@ export function App() {
   async function handleRunContinuityChecks() {
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Running continuity checks...");
     try {
       const rows = await runContinuityChecks(projectRoot);
       const ordered = orderContinuityIssues(rows);
@@ -931,7 +1231,11 @@ export function App() {
         setMessage(`Continuity check found ${ordered.length} ${issueLabel}.`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError(
+        "Continuity check failed",
+        err,
+        "Confirm project integrity and run checks again."
+      );
     } finally {
       setBusy(false);
     }
@@ -972,30 +1276,48 @@ export function App() {
     if (!proposalId) return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Opening proposal...");
     try {
       await refreshProposalList(proposalId);
       setRightTab("proposals");
       setSelectedProposalId(proposalId);
       setMessage(`Loaded ${proposalId} in proposals.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Open proposal failed", err, "Refresh proposals and retry.");
     } finally {
       setBusy(false);
     }
   }
 
-  function handleOpenPinnedGenerationRun(sceneId: string) {
+  async function handleOpenPinnedGenerationRun(sceneId: string) {
     const pinnedRunId = generationPins[sceneId];
     if (!pinnedRunId) {
       setError(`No preferred run pinned for ${sceneId}.`);
       setMessage("");
       return;
     }
-    setRightTab("runs");
-    setSelectedGenerationRunId(pinnedRunId);
+    setBusy(true);
     setError("");
-    setMessage(`Loaded preferred run ${pinnedRunId} for ${sceneId}.`);
+    setMessage("Resolving preferred run...");
+    try {
+      const run = await getGenerationRun(projectRoot, pinnedRunId);
+      setSelectedScenePinnedRunDetail(run);
+      setSelectedScenePinnedRunStale(false);
+      setRightTab("runs");
+      setSelectedGenerationRunId(run.run_id);
+      setSelectedGenerationRun(run);
+      setMessage(`Loaded preferred run ${pinnedRunId} for ${sceneId}.`);
+    } catch (err) {
+      setSelectedScenePinnedRunDetail(null);
+      setSelectedScenePinnedRunStale(true);
+      reportError(
+        "Open preferred run failed",
+        err,
+        `Pinned run '${pinnedRunId}' for ${sceneId} is stale. Clear the pin to recover.`
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleOpenPinnedProposal(sceneId: string) {
@@ -1007,30 +1329,115 @@ export function App() {
     }
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Resolving preferred proposal...");
     try {
-      const run = await getGenerationRun(projectRoot, pinnedRunId);
+      let run: GenerationRunDetail;
+      try {
+        run = await getGenerationRun(projectRoot, pinnedRunId);
+      } catch {
+        setSelectedScenePinnedRunDetail(null);
+        setSelectedScenePinnedRunStale(true);
+        setError(
+          `Pinned run '${pinnedRunId}' for ${sceneId} is stale. Clear the pin to recover.`
+        );
+        setMessage("");
+        return;
+      }
+      setSelectedScenePinnedRunDetail(run);
+      setSelectedScenePinnedRunStale(false);
       const proposalId =
         typeof run.proposal_id === "string" ? run.proposal_id.trim() : "";
       if (!proposalId) {
-        throw new Error(`Pinned run ${pinnedRunId} has no linked proposal.`);
+        throw new Error(
+          `Pinned run ${pinnedRunId} has no linked proposal. Re-run or generate a new proposal.`
+        );
       }
-      await refreshProposalList(proposalId);
+      const rows = orderProposalsForReview(await listProposals(projectRoot));
+      setProposals(rows);
+      if (!rows.some((item) => item.id === proposalId)) {
+        throw new Error(
+          `Linked proposal '${proposalId}' was not found in the current queue.`
+        );
+      }
       setRightTab("proposals");
       setSelectedProposalId(proposalId);
       setMessage(`Loaded preferred proposal ${proposalId} for ${sceneId}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError(
+        "Open preferred proposal failed",
+        err,
+        "Refresh proposals or regenerate from preferred run."
+      );
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleClearPreferredPin(sceneId: string) {
+    if (!sceneId) return;
+    setBusy(true);
+    setError("");
+    setMessage("Clearing preferred pin...");
+    try {
+      const result = await unpinGenerationRun(projectRoot, sceneId);
+      await refreshGenerationPins();
+      setSelectedScenePinnedRunDetail(null);
+      setSelectedScenePinnedRunStale(false);
+      if (result.cleared) {
+        setMessage(`Cleared stale preferred pin for ${sceneId}.`);
+      } else {
+        setMessage(`No preferred pin was set for ${sceneId}.`);
+      }
+    } catch (err) {
+      reportError("Clear preferred pin failed", err, "Retry the unpin action.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRefreshProposalsForRecovery() {
+    setBusy(true);
+    setError("");
+    setMessage("Refreshing proposal queue...");
+    try {
+      await refreshProposalList();
+      setMessage("Proposal queue refreshed.");
+    } catch (err) {
+      reportError("Proposal refresh failed", err, "Retry refresh.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handlePrepareGenerateProposalForScene(sceneId: string) {
+    if (!sceneId) return;
+    setRightTab("proposals");
+    setProposalGenerateForm((prev) => ({
+      ...prev,
+      sceneId
+    }));
+    setMessage(`Generate form set to ${sceneId}.`);
+    setError("");
+  }
+
+  function handleFocusPreferredProposalQueue(sceneId: string) {
+    setRightTab("proposals");
+    setProposalReviewMode("preferred_priority");
+    if (sceneId) {
+      setSelectedSceneId(sceneId);
+    }
+    if (selectedSceneLinkedProposal) {
+      setSelectedProposalId(selectedSceneLinkedProposal.id);
+    }
+    setMessage("Focused proposal review on preferred-linked entries.");
+    setError("");
   }
 
   async function handleRerunGeneration() {
     if (!selectedGenerationRun) return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Re-running generation...");
     try {
       const regenerated = await rerunGeneration(
         projectRoot,
@@ -1047,7 +1454,11 @@ export function App() {
       const modelLabel = regenerated.generation?.model ?? "default";
       setMessage(`Re-ran generation via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError(
+        "Generation rerun failed",
+        err,
+        "Check provider settings and retry."
+      );
     } finally {
       setBusy(false);
     }
@@ -1057,7 +1468,7 @@ export function App() {
     if (!selectedGenerationRun?.scene_id) return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Pinning preferred run...");
     try {
       await pinGenerationRun(projectRoot, {
         sceneId: selectedGenerationRun.scene_id,
@@ -1068,7 +1479,7 @@ export function App() {
         `Pinned ${selectedGenerationRun.run_id} as preferred for ${selectedGenerationRun.scene_id}.`
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Pin preferred run failed", err, "Refresh runs and retry.");
     } finally {
       setBusy(false);
     }
@@ -1078,7 +1489,7 @@ export function App() {
     if (!selectedGenerationRun?.scene_id) return;
     setBusy(true);
     setError("");
-    setMessage("");
+    setMessage("Clearing preferred run...");
     try {
       const result = await unpinGenerationRun(projectRoot, selectedGenerationRun.scene_id);
       await refreshGenerationPins();
@@ -1088,7 +1499,7 @@ export function App() {
         setMessage(`No preferred run was set for ${selectedGenerationRun.scene_id}.`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      reportError("Unpin preferred run failed", err, "Retry unpin.");
     } finally {
       setBusy(false);
     }
@@ -1181,6 +1592,10 @@ export function App() {
         <div>
           <h1>openAuthor</h1>
           <p>Binder + Editor/Outliner + Proposal/Runs/Context/Codex/Checks desktop shell</p>
+          <p className="shortcut-hints">
+            Shortcuts: Cmd/Ctrl+S save scene, Cmd/Ctrl+Shift+G generate proposal,
+            Cmd/Ctrl+Shift+K run checks, Cmd/Ctrl+Shift+L open runs.
+          </p>
         </div>
         <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
           {projectFound ? "Project Ready" : "No Project"}
@@ -1249,7 +1664,7 @@ export function App() {
           </div>
 
           <div className="scene-list">
-            {scenes.map((item) => (
+            {sceneListRows.map((item) => (
               <button
                 key={item.id}
                 className={`scene-item ${item.id === selectedSceneId ? "selected" : ""}`}
@@ -1260,6 +1675,17 @@ export function App() {
                 <em>{item.status}</em>
               </button>
             ))}
+            {hasMoreSceneRows ? (
+              <button
+                className="list-load-more"
+                disabled={busy}
+                onClick={() =>
+                  setSceneListLimit((prev) => prev + LIST_LIMIT_STEP)
+                }
+              >
+                Load More Scenes
+              </button>
+            ) : null}
           </div>
         </aside>
 
@@ -1471,6 +1897,41 @@ export function App() {
                   {proposalCounts.rejected} rejected
                 </span>
               </div>
+              <div className="proposal-filters">
+                <label>
+                  <span>Queue Mode</span>
+                  <select
+                    value={proposalReviewMode}
+                    onChange={(event) =>
+                      setProposalReviewMode(event.target.value as ProposalReviewMode)
+                    }
+                  >
+                    <option value="all">all proposals</option>
+                    <option value="scene_priority">selected scene first</option>
+                    <option value="preferred_priority">preferred-linked first</option>
+                    <option value="preferred_only">preferred-linked only</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select
+                    value={proposalReviewStatusFilter}
+                    onChange={(event) =>
+                      setProposalReviewStatusFilter(
+                        event.target.value as ProposalReviewStatusFilter
+                      )
+                    }
+                  >
+                    <option value="all">all statuses</option>
+                    <option value="pending">pending</option>
+                    <option value="applied">applied</option>
+                    <option value="rejected">rejected</option>
+                  </select>
+                </label>
+                <p className="proposal-filter-summary">
+                  {proposalReviewRows.length} in review queue
+                </p>
+              </div>
 
               <div className="new-proposal-card">
                 <h3>New Proposal</h3>
@@ -1640,17 +2101,43 @@ export function App() {
               </div>
 
               <div className="proposal-list">
-                {proposals.map((item) => (
+                {proposalListRows.length === 0 ? (
+                  <div className="proposal-review empty-review">
+                    <p>No proposals match the current review filters.</p>
+                  </div>
+                ) : (
+                  proposalListRows.map((item) => {
+                    const isPreferredLinked = preferredProposalIds.has(item.id);
+                    const isSceneMatch =
+                      selectedSceneId !== "" && item.scene_id === selectedSceneId;
+                    return (
+                      <button
+                        key={item.id}
+                        className={`proposal-item ${isPreferredLinked ? "preferred-linked" : ""} ${isSceneMatch ? "scene-match" : ""} ${item.id === selectedProposalId ? "selected" : ""} status-${item.status}`}
+                        onClick={() => setSelectedProposalId(item.id)}
+                      >
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.scene_id || "global"}
+                          {isSceneMatch ? " / selected scene" : ""}
+                          {isPreferredLinked ? " / preferred-linked" : ""}
+                        </span>
+                        <em>{item.status}</em>
+                      </button>
+                    );
+                  })
+                )}
+                {hasMoreProposalRows ? (
                   <button
-                    key={item.id}
-                    className={`proposal-item ${item.id === selectedProposalId ? "selected" : ""} status-${item.status}`}
-                    onClick={() => setSelectedProposalId(item.id)}
+                    className="list-load-more"
+                    disabled={busy}
+                    onClick={() =>
+                      setProposalListLimit((prev) => prev + LIST_LIMIT_STEP)
+                    }
                   >
-                    <strong>{item.title}</strong>
-                    <span>{item.scene_id || "global"}</span>
-                    <em>{item.status}</em>
+                    Load More Proposals
                   </button>
-                ))}
+                ) : null}
               </div>
 
               {selectedProposal ? (
@@ -1707,7 +2194,9 @@ export function App() {
                     </button>
                     <button
                       disabled={busy || !selectedProposal.scene_id || !selectedProposalPinnedRunId}
-                      onClick={() => handleOpenPinnedGenerationRun(selectedProposal.scene_id)}
+                      onClick={() =>
+                        void handleOpenPinnedGenerationRun(selectedProposal.scene_id)
+                      }
                     >
                       Open Preferred Run
                     </button>
@@ -1978,7 +2467,7 @@ export function App() {
                     <p>No generation runs found for this filter.</p>
                   </div>
                 ) : (
-                  generationRuns.map((run) => {
+                  runsListRows.map((run) => {
                     const isPreferredForScene =
                       run.scene_id !== "" &&
                       generationPins[run.scene_id] === run.run_id;
@@ -1998,6 +2487,17 @@ export function App() {
                     );
                   })
                 )}
+                {hasMoreRunsRows ? (
+                  <button
+                    className="list-load-more"
+                    disabled={busy}
+                    onClick={() =>
+                      setRunsListLimit((prev) => prev + LIST_LIMIT_STEP)
+                    }
+                  >
+                    Load More Runs
+                  </button>
+                ) : null}
               </div>
 
               {selectedGenerationRun ? (
@@ -2246,7 +2746,7 @@ export function App() {
                         !selectedGenerationScenePinnedRunId
                       }
                       onClick={() =>
-                        handleOpenPinnedGenerationRun(selectedGenerationRun.scene_id)
+                        void handleOpenPinnedGenerationRun(selectedGenerationRun.scene_id)
                       }
                     >
                       Open Preferred For Scene
@@ -2308,6 +2808,7 @@ export function App() {
                         {runComparisonVerdictLabel(runComparison.recommendation.verdict)} (score{" "}
                         {runComparison.recommendation.score})
                       </p>
+                      <p className="run-meta">{runComparisonActionHint}</p>
                       <p className="run-meta">{runComparison.recommendation.summary}</p>
                       {runComparison.recommendation.reasons.length ? (
                         <div className="run-recommendation-reasons">
@@ -2360,6 +2861,41 @@ export function App() {
                         ))}
                       </div>
                       <div className="proposal-actions">
+                        <button
+                          disabled={
+                            busy ||
+                            !selectedGenerationRun.scene_id ||
+                            selectedGenerationRunPinned ||
+                            runComparison.recommendation.verdict !== "likely_better"
+                          }
+                          onClick={() => void handlePinPreferredGenerationRun()}
+                        >
+                          Promote Current
+                        </button>
+                        <button
+                          disabled={
+                            busy ||
+                            !comparisonBaselineRun?.scene_id ||
+                            runComparison.recommendation.verdict !== "likely_worse"
+                          }
+                          onClick={() => void handlePinBaselineGenerationRun()}
+                        >
+                          Promote Baseline
+                        </button>
+                        <button
+                          disabled={busy || !comparisonBaselineRun}
+                          onClick={handleOpenBaselineRun}
+                        >
+                          Open Baseline Run
+                        </button>
+                        <button
+                          disabled={
+                            busy || !(comparisonBaselineRun?.proposal_id ?? "").trim()
+                          }
+                          onClick={() => void handleOpenBaselineProposal()}
+                        >
+                          Open Baseline Proposal
+                        </button>
                         <button disabled={busy} onClick={() => void handleCopyRunComparisonJson()}>
                           Copy Comparison JSON
                         </button>
@@ -2428,16 +2964,27 @@ export function App() {
 
                   <div className="context-card">
                     <h3>Preferred Pipeline</h3>
+                    <div className="pipeline-health">
+                      <span className={`pipeline-health-badge tone-${preferredPipelineHealth.tone}`}>
+                        {preferredPipelineHealth.label}
+                      </span>
+                      <p className="context-sub">{preferredPipelineHealth.detail}</p>
+                    </div>
                     <p className="context-sub">
                       Pinned run: {selectedScenePinnedRunId || "none"}
                     </p>
-                    {selectedScenePreferredProposal ? (
+                    {selectedScenePinnedRunDetail ? (
+                      <p className="context-sub">
+                        Pinned run status: {selectedScenePinnedRunDetail.status}
+                      </p>
+                    ) : null}
+                    {selectedSceneLinkedProposal ? (
                       <>
                         <p className="context-sub">
-                          Linked proposal: {selectedScenePreferredProposal.id} (
-                          {selectedScenePreferredProposal.status})
+                          Linked proposal: {selectedSceneLinkedProposal.id} (
+                          {selectedSceneLinkedProposal.status})
                         </p>
-                        <p className="context-sub">{selectedScenePreferredProposal.title}</p>
+                        <p className="context-sub">{selectedSceneLinkedProposal.title}</p>
                       </>
                     ) : (
                       <p className="context-sub">
@@ -2447,7 +2994,7 @@ export function App() {
                     <div className="context-actions">
                       <button
                         disabled={busy || !scene.id || !selectedScenePinnedRunId}
-                        onClick={() => handleOpenPinnedGenerationRun(scene.id)}
+                        onClick={() => void handleOpenPinnedGenerationRun(scene.id)}
                       >
                         Open Preferred Run
                       </button>
@@ -2456,6 +3003,34 @@ export function App() {
                         onClick={() => void handleOpenPinnedProposal(scene.id)}
                       >
                         Open Preferred Proposal
+                      </button>
+                      <button
+                        disabled={busy || !scene.id}
+                        onClick={() => handleFocusPreferredProposalQueue(scene.id)}
+                      >
+                        Focus Preferred Queue
+                      </button>
+                      <button
+                        disabled={busy || !scene.id}
+                        onClick={() => handlePrepareGenerateProposalForScene(scene.id)}
+                      >
+                        Open Generate Form
+                      </button>
+                      <button
+                        disabled={busy}
+                        onClick={() => void handleRefreshProposalsForRecovery()}
+                      >
+                        Refresh Proposals
+                      </button>
+                      <button
+                        disabled={
+                          busy ||
+                          preferredPipelineHealth.code !== "stale_pin" ||
+                          !scene.id
+                        }
+                        onClick={() => void handleClearPreferredPin(scene.id)}
+                      >
+                        Clear Stale Pin
                       </button>
                     </div>
                   </div>
@@ -2511,6 +3086,7 @@ export function App() {
       </section>
 
       <footer className="message-bar">
+        {busy ? <p className="busy">Working...</p> : null}
         {error ? <p className="error">{error}</p> : null}
         {message ? <p>{message}</p> : null}
       </footer>

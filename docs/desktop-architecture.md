@@ -30,6 +30,7 @@
 - Proposal fetch: `proposal get --id <proposal-id> --json`
 - Proposal apply: `proposal apply --id <proposal-id> --json`
 - Proposal reject: `proposal reject --id <proposal-id> --json`
+- Proposal review triage (client-side): queue modes for selected-scene/prioritized preferred-linked/only preferred-linked plus status filtering; list rendering is windowed with explicit "load more" actions for larger queues.
 
 ## Implemented command usage (Codex Panel)
 
@@ -48,7 +49,7 @@
 - Proposal context: derived from `proposal list --json`
 - Codex context: derived from `codex list --json`
 - Continuity context: derived from `check continuity --json`
-- Preferred pipeline context: derived from `generation pins --json` + `proposal list --json`
+- Preferred pipeline context: derived from `generation pins --json` + `generation get --id <run-id> --json` + `proposal list --json`, including stale-pin detection and recovery actions.
 
 ## Implemented command usage (Generation Runs)
 
@@ -59,7 +60,7 @@
 - Run unpin: `generation unpin --scene <scene-id> --json`
 - Run pins list: `generation pins --json`
 - Runtime config: `generation config --json`
-- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), comparison recommendation hints with selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown); proposal review can jump directly to preferred proposal for a scene.
+- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), recommendation-guided promote actions (current vs baseline), selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown); proposal review can jump directly to preferred proposal for a scene.
 
 ## Why sidecar-first
 
@@ -70,3 +71,8 @@
 ## Migration path
 
 When the command surface is stable, move command-by-command from Python into Rust while preserving frontend request/response shapes.
+
+## Operations
+
+- Release/runbook and macOS smoke process live in `docs/desktop-runbook.md`.
+- Toolchain/runtime prerequisite validation is available via `make desktop-prereq`.

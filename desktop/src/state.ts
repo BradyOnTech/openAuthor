@@ -31,6 +31,31 @@ export type GenerationRunCounts = {
   other: number;
 };
 
+export type ProposalReviewMode =
+  | "all"
+  | "scene_priority"
+  | "preferred_priority"
+  | "preferred_only";
+
+export type ProposalStatusFilter = "all" | ProposalRecord["status"];
+
+export type PreferredPipelineHealthCode =
+  | "missing_pin"
+  | "stale_pin"
+  | "missing_linked_proposal"
+  | "linked_pending"
+  | "linked_applied"
+  | "linked_rejected";
+
+export type PreferredPipelineHealthTone = "warn" | "error" | "info" | "ok";
+
+export type PreferredPipelineHealth = {
+  code: PreferredPipelineHealthCode;
+  label: string;
+  detail: string;
+  tone: PreferredPipelineHealthTone;
+};
+
 function timestamp(value: string): number {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed;
@@ -47,6 +72,42 @@ export function orderProposalsForReview(rows: ProposalRecord[]): ProposalRecord[
     const rankDiff = rank(a.status) - rank(b.status);
     if (rankDiff !== 0) return rankDiff;
     return timestamp(b.updated_at) - timestamp(a.updated_at);
+  });
+}
+
+export function selectProposalReviewRows(
+  rows: ProposalRecord[],
+  selectedSceneId: string,
+  preferredProposalIds: Set<string>,
+  mode: ProposalReviewMode,
+  statusFilter: ProposalStatusFilter
+): ProposalRecord[] {
+  const base = orderProposalsForReview(rows);
+  const baseIndex = new Map(base.map((row, index) => [row.id, index]));
+  let filtered = base;
+
+  if (statusFilter !== "all") {
+    filtered = filtered.filter((row) => row.status === statusFilter);
+  }
+
+  if (mode === "preferred_only") {
+    filtered = filtered.filter((row) => preferredProposalIds.has(row.id));
+  }
+
+  const rank = (row: ProposalRecord): number => {
+    if (mode === "scene_priority" && selectedSceneId && row.scene_id === selectedSceneId) {
+      return -1;
+    }
+    if ((mode === "preferred_priority" || mode === "preferred_only") && preferredProposalIds.has(row.id)) {
+      return -1;
+    }
+    return 0;
+  };
+
+  return [...filtered].sort((a, b) => {
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return (baseIndex.get(a.id) ?? 0) - (baseIndex.get(b.id) ?? 0);
   });
 }
 
@@ -144,6 +205,64 @@ export function findPreferredProposalForScene(
       (row) => row.scene_id === sceneId && row.generation?.id === pinnedRunId
     ) ?? null
   );
+}
+
+export function evaluatePreferredPipelineHealth(
+  pinnedRunId: string,
+  pinnedRunExists: boolean,
+  linkedProposalStatus: ProposalRecord["status"] | null
+): PreferredPipelineHealth {
+  if (!pinnedRunId) {
+    return {
+      code: "missing_pin",
+      label: "Missing Pin",
+      detail: "No preferred generation run is pinned for this scene.",
+      tone: "warn"
+    };
+  }
+
+  if (!pinnedRunExists) {
+    return {
+      code: "stale_pin",
+      label: "Stale Pin",
+      detail: `Pinned run '${pinnedRunId}' is missing.`,
+      tone: "error"
+    };
+  }
+
+  if (!linkedProposalStatus) {
+    return {
+      code: "missing_linked_proposal",
+      label: "Missing Linked Proposal",
+      detail: "Pinned run exists but no linked proposal is available in the queue.",
+      tone: "warn"
+    };
+  }
+
+  if (linkedProposalStatus === "applied") {
+    return {
+      code: "linked_applied",
+      label: "Applied",
+      detail: "Linked proposal has already been applied.",
+      tone: "ok"
+    };
+  }
+
+  if (linkedProposalStatus === "rejected") {
+    return {
+      code: "linked_rejected",
+      label: "Rejected",
+      detail: "Linked proposal was rejected and should likely be re-generated.",
+      tone: "warn"
+    };
+  }
+
+  return {
+    code: "linked_pending",
+    label: "Pending Review",
+    detail: "Linked proposal is pending review.",
+    tone: "info"
+  };
 }
 
 export function continuityIssuesForScene(
