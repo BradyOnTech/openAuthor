@@ -15,9 +15,11 @@ from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .proposals import create_proposal, get_proposal
+from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
 SUPPORTED_PROVIDERS = {"local", "openai", "anthropic"}
+SUPPORTED_RETRIEVAL_MODES = {"off", "auto", "required"}
 DEFAULT_MODELS = {
   "local": "heuristic-v1",
   "openai": "gpt-4.1-mini",
@@ -694,6 +696,180 @@ def build_generation_context(
   }
 
 
+def _normalize_retrieval_mode(mode: str) -> str:
+  normalized = mode.strip().lower()
+  if normalized not in SUPPORTED_RETRIEVAL_MODES:
+    allowed = ", ".join(sorted(SUPPORTED_RETRIEVAL_MODES))
+    raise OpenAuthorError(
+      f"Invalid retrieval mode '{mode}'. Allowed: {allowed}."
+    )
+  return normalized
+
+
+def _build_retrieval_query_text(context: dict[str, Any], instruction: str) -> str:
+  scene = context.get("scene", {})
+  if not isinstance(scene, dict):
+    scene = {}
+  parts = [
+    str(instruction).strip(),
+    str(scene.get("title", "")).strip(),
+    str(scene.get("summary", "")).strip(),
+    str(scene.get("pov", "")).strip(),
+  ]
+  return " ".join(part for part in parts if part)
+
+
+def _resolve_retrieval_context(
+  paths: ProjectPaths,
+  *,
+  context: dict[str, Any],
+  instruction: str,
+  mode: str,
+  limit: int,
+  min_score: float,
+  require_fresh: bool,
+) -> dict[str, Any]:
+  retrieval_mode = _normalize_retrieval_mode(mode)
+  if limit < 1:
+    raise OpenAuthorError("retrieval_limit must be >= 1.")
+  if min_score < 0:
+    raise OpenAuthorError("retrieval_min_score must be >= 0.")
+
+  query_text = _build_retrieval_query_text(context, instruction)
+  base_payload = {
+    "mode": retrieval_mode,
+    "used": False,
+    "query": query_text,
+    "limit": limit,
+    "min_score": min_score,
+    "require_fresh": require_fresh,
+    "result_count": 0,
+    "citations": [],
+    "index": {
+      "path": "",
+      "stale": False,
+      "stale_reasons": [],
+      "chunk_count": 0,
+      "source_count": 0,
+      "git_head": "",
+      "indexed_git_head": "",
+    },
+    "degraded": False,
+    "error": "",
+  }
+  if retrieval_mode == "off":
+    return base_payload
+
+  try:
+    result = query_retrieval_index(
+      paths,
+      query=query_text,
+      limit=limit,
+      min_score=min_score,
+      require_fresh=require_fresh,
+    )
+  except OpenAuthorError as error:
+    if retrieval_mode == "required":
+      raise
+    status = get_retrieval_index_status(paths)
+    return {
+      **base_payload,
+      "index": {
+        "path": status.get("path", ""),
+        "stale": bool(status.get("stale")),
+        "stale_reasons": status.get("stale_reasons", []),
+        "chunk_count": status.get("chunk_count", 0),
+        "source_count": status.get("source_count", 0),
+        "git_head": status.get("git_head", ""),
+        "indexed_git_head": status.get("indexed_git_head", ""),
+      },
+      "degraded": True,
+      "error": str(error),
+    }
+
+  citations: list[dict[str, Any]] = []
+  for row in result.get("results", []):
+    if not isinstance(row, dict):
+      continue
+    citation = row.get("citation", {})
+    if not isinstance(citation, dict):
+      citation = {}
+    citations.append(
+      {
+        "source_type": citation.get("source_type", row.get("source_type", "")),
+        "source_ref": citation.get("source_ref", row.get("source_ref", "")),
+        "source_path": citation.get("source_path", row.get("source_path", "")),
+        "source_title": citation.get("source_title", row.get("source_title", "")),
+        "chunk_id": citation.get("chunk_id", row.get("chunk_id", "")),
+        "chunk_position": citation.get("chunk_position", row.get("chunk_position", 0)),
+        "score": row.get("score"),
+        "coverage": row.get("coverage"),
+        "matched_terms": row.get("matched_terms", []),
+        "excerpt": _truncate(str(row.get("text", "")), 320),
+      }
+    )
+
+  if retrieval_mode == "required" and not citations:
+    raise OpenAuthorError(
+      "Retrieval mode is 'required' but query returned no matching citations."
+    )
+
+  index_row = result.get("index", {})
+  if not isinstance(index_row, dict):
+    index_row = {}
+  return {
+    **base_payload,
+    "used": bool(citations),
+    "result_count": len(citations),
+    "citations": citations,
+    "index": {
+      "path": index_row.get("path", ""),
+      "stale": bool(index_row.get("stale")),
+      "stale_reasons": index_row.get("stale_reasons", []),
+      "chunk_count": index_row.get("chunk_count", 0),
+      "source_count": index_row.get("source_count", 0),
+      "git_head": index_row.get("git_head", ""),
+      "indexed_git_head": index_row.get("indexed_git_head", ""),
+    },
+  }
+
+
+def _with_retrieval_prompt_context(
+  context: dict[str, Any],
+  retrieval: dict[str, Any],
+) -> dict[str, Any]:
+  if not retrieval.get("used"):
+    return context
+
+  citations = retrieval.get("citations", [])
+  prompt_citations: list[dict[str, Any]] = []
+  for row in citations:
+    if not isinstance(row, dict):
+      continue
+    prompt_citations.append(
+      {
+        "source_type": row.get("source_type", ""),
+        "source_ref": row.get("source_ref", ""),
+        "source_title": row.get("source_title", ""),
+        "source_path": row.get("source_path", ""),
+        "chunk_id": row.get("chunk_id", ""),
+        "score": row.get("score"),
+        "coverage": row.get("coverage"),
+        "matched_terms": row.get("matched_terms", []),
+        "excerpt": row.get("excerpt", ""),
+      }
+    )
+
+  return {
+    **context,
+    "retrieval": {
+      "query": retrieval.get("query", ""),
+      "result_count": retrieval.get("result_count", 0),
+      "citations": prompt_citations,
+    },
+  }
+
+
 def _build_prompts(context: dict[str, Any], instruction: str) -> tuple[str, str]:
   system_prompt = (
     "You are an editorial assistant for a fiction project. "
@@ -722,6 +898,7 @@ def _write_generation_log(
   max_output_tokens: int,
   context_scene_radius: int,
   codex_limit: int,
+  retrieval: dict[str, Any],
   instruction: str,
   context: dict[str, Any],
   system_prompt: str,
@@ -745,6 +922,7 @@ def _write_generation_log(
     "max_output_tokens": max_output_tokens,
     "context_scene_radius": context_scene_radius,
     "codex_limit": codex_limit,
+    "retrieval": retrieval,
     "instruction": instruction,
     "prompt_sha256": hashlib.sha256(
       (system_prompt + "\n\n" + user_prompt).encode("utf-8")
@@ -778,6 +956,7 @@ def _write_generation_failure_log(
   max_output_tokens: int,
   context_scene_radius: int,
   codex_limit: int,
+  retrieval: dict[str, Any],
   instruction: str,
   context: dict[str, Any],
   system_prompt: str,
@@ -797,6 +976,7 @@ def _write_generation_failure_log(
     "max_output_tokens": max_output_tokens,
     "context_scene_radius": context_scene_radius,
     "codex_limit": codex_limit,
+    "retrieval": retrieval,
     "instruction": instruction,
     "prompt_sha256": hashlib.sha256(
       (system_prompt + "\n\n" + user_prompt).encode("utf-8")
@@ -827,6 +1007,7 @@ def _write_generation_budget_failure_log(
   max_output_tokens: int,
   context_scene_radius: int,
   codex_limit: int,
+  retrieval: dict[str, Any],
   instruction: str,
   context: dict[str, Any],
   system_prompt: str,
@@ -846,6 +1027,7 @@ def _write_generation_budget_failure_log(
     "max_output_tokens": max_output_tokens,
     "context_scene_radius": context_scene_radius,
     "codex_limit": codex_limit,
+    "retrieval": retrieval,
     "instruction": instruction,
     "prompt_sha256": hashlib.sha256(
       (system_prompt + "\n\n" + user_prompt).encode("utf-8")
@@ -901,6 +1083,10 @@ def generate_proposal(
   max_output_tokens: int = 700,
   context_scene_radius: int = 1,
   codex_limit: int = 20,
+  retrieval_mode: str = "off",
+  retrieval_limit: int = 5,
+  retrieval_min_score: float = 0.0,
+  retrieval_require_fresh: bool = False,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     raise OpenAuthorError(
@@ -908,14 +1094,28 @@ def generate_proposal(
     )
   if max_output_tokens < 64:
     raise OpenAuthorError("max_output_tokens must be >= 64.")
+  if retrieval_limit < 1:
+    raise OpenAuthorError("retrieval_limit must be >= 1.")
+  if retrieval_min_score < 0:
+    raise OpenAuthorError("retrieval_min_score must be >= 0.")
 
   selected_model = model or DEFAULT_MODELS[provider]
-  context = build_generation_context(
+  base_context = build_generation_context(
     paths,
     scene_id=scene_id,
     context_scene_radius=context_scene_radius,
     codex_limit=codex_limit,
   )
+  retrieval = _resolve_retrieval_context(
+    paths,
+    context=base_context,
+    instruction=instruction,
+    mode=retrieval_mode,
+    limit=retrieval_limit,
+    min_score=retrieval_min_score,
+    require_fresh=retrieval_require_fresh,
+  )
+  context = _with_retrieval_prompt_context(base_context, retrieval)
   system_prompt, user_prompt = _build_prompts(context, instruction)
   projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
   projected_output_tokens = max_output_tokens
@@ -943,6 +1143,7 @@ def generate_proposal(
       max_output_tokens=max_output_tokens,
       context_scene_radius=context_scene_radius,
       codex_limit=codex_limit,
+      retrieval=retrieval,
       instruction=instruction,
       context=context,
       system_prompt=system_prompt,
@@ -973,6 +1174,7 @@ def generate_proposal(
       max_output_tokens=max_output_tokens,
       context_scene_radius=context_scene_radius,
       codex_limit=codex_limit,
+      retrieval=retrieval,
       instruction=instruction,
       context=context,
       system_prompt=system_prompt,
@@ -1008,6 +1210,7 @@ def generate_proposal(
     max_output_tokens=max_output_tokens,
     context_scene_radius=context_scene_radius,
     codex_limit=codex_limit,
+    retrieval=retrieval,
     instruction=instruction,
     context=context,
     system_prompt=system_prompt,
@@ -1034,6 +1237,7 @@ def generate_proposal(
       "max_output_tokens": max_output_tokens,
       "context_scene_radius": context_scene_radius,
       "codex_limit": codex_limit,
+      "retrieval": retrieval,
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
       "latency_ms": provider_result["latency_ms"],

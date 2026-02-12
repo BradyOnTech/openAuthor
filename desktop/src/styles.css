@@ -1062,6 +1062,25 @@ code {
   gap: 4px;
 }
 
+.provenance-card h5 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.provenance-list {
+  display: grid;
+  gap: 6px;
+}
+
+.provenance-item {
+  border: 1px solid #d7cfbc;
+  border-radius: 8px;
+  background: #fffcf6;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+}
+
 .run-recommendation {
   font-weight: 700;
 }

@@ -60,7 +60,9 @@ make desktop-tauri
 
 5. Validate AI run workflow:
 - Generate proposal from desktop (`local` provider minimum).
+- Optionally set retrieval mode to `required` after `openauthor retrieval build --json`.
 - Open `Runs`, inspect run detail, rerun with overrides.
+- Confirm retrieval provenance panel shows query/index/citation metadata for retrieval-enabled runs.
 - Pin/unpin preferred run.
 
 6. Validate preferred pipeline triage:
@@ -82,6 +84,10 @@ make desktop-tauri
   - Inspect policy/usage with `openauthor generation budget --json`.
   - Adjust limits with `openauthor generation budget --max-... --daily-... --weekly-... --json`.
   - Reset limits with `openauthor generation budget --reset --json`.
+- `Proposal generation failed: Retrieval ...`
+  - If retrieval mode is `required`, ensure index exists and is fresh:
+    - `openauthor retrieval status --json`
+    - `openauthor retrieval build --json`
 - `Pinned run ... is stale. Clear the pin to recover.`
   - Use `Clear Stale Pin` in Context tab or `generation unpin`.
 - `Retrieval index is stale for current project state. Rebuild before querying.`

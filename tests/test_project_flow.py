@@ -683,6 +683,29 @@ class OpenAuthorFlowTests(unittest.TestCase):
         any(result["source_ref"] == "scene-0001" for result in query_row["results"])
       )
 
+      code, out, err = self.run_cli(
+        [
+          "proposal",
+          "generate",
+          "--scene",
+          "scene-0001",
+          "--instruction",
+          "tighten ember cipher logic and route clarity",
+          "--provider",
+          "local",
+          "--retrieval-mode",
+          "required",
+          "--retrieval-limit",
+          "3",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      generated = json.loads(out)
+      self.assertEqual(generated["generation"]["retrieval"]["mode"], "required")
+      self.assertGreaterEqual(generated["generation"]["retrieval"]["result_count"], 1)
+
       code, _, err = self.run_cli(
         [
           "scene",

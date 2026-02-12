@@ -13,6 +13,7 @@ from openauthor.ai import build_generation_context, generate_proposal
 from openauthor.budget import update_generation_budget_policy
 from openauthor.codex import add_entity
 from openauthor.project import OpenAuthorError, initialize_project
+from openauthor.retrieval import build_retrieval_index
 from openauthor.scenes import add_scene
 
 
@@ -271,6 +272,102 @@ class AIModuleTests(unittest.TestCase):
       self.assertEqual(payload["status"], "failed")
       self.assertEqual(payload["error"]["category"], "budget_policy_violation")
       self.assertIn("violations", payload["error"])
+
+  def test_generation_with_required_retrieval_attaches_citations(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Retrieval Required")
+      add_scene(
+        paths,
+        title="Dockside Signals",
+        summary="Neris tracks encoded shipping signals.",
+        pov="Neris",
+        status="draft",
+        body=(
+          "Neris tracked ember cipher markers through the dockside manifests "
+          "and mapped each route to a hidden vault."
+        ),
+      )
+      add_entity(
+        paths,
+        kind="item",
+        name="Ember Cipher",
+        description="Marker key used for vault route manifests.",
+      )
+      build_retrieval_index(paths)
+
+      proposal = generate_proposal(
+        paths,
+        scene_id="scene-0001",
+        instruction="tighten ember cipher reasoning and route logic",
+        provider="local",
+        retrieval_mode="required",
+        retrieval_limit=4,
+      )
+
+      retrieval = proposal["generation"]["retrieval"]
+      self.assertEqual(retrieval["mode"], "required")
+      self.assertTrue(retrieval["used"])
+      self.assertGreaterEqual(retrieval["result_count"], 1)
+      self.assertGreaterEqual(len(retrieval["citations"]), 1)
+      first_citation = retrieval["citations"][0]
+      self.assertIn("source_type", first_citation)
+      self.assertIn("chunk_id", first_citation)
+      self.assertIn("excerpt", first_citation)
+
+      log_path = root / proposal["generation"]["log_path"]
+      log_payload = json.loads(log_path.read_text(encoding="utf-8"))
+      self.assertIn("retrieval", log_payload)
+      self.assertEqual(log_payload["retrieval"]["mode"], "required")
+      self.assertTrue(log_payload["retrieval"]["used"])
+      self.assertIn("retrieval", log_payload["context"])
+
+  def test_generation_with_auto_retrieval_degrades_when_index_missing(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Retrieval Auto")
+      add_scene(
+        paths,
+        title="Fallback Scene",
+        summary="",
+        pov="",
+        status="draft",
+        body="Fallback generation should proceed without retrieval index.",
+      )
+
+      proposal = generate_proposal(
+        paths,
+        scene_id="scene-0001",
+        instruction="tighten pacing with fallback retrieval behavior",
+        provider="local",
+        retrieval_mode="auto",
+      )
+      retrieval = proposal["generation"]["retrieval"]
+      self.assertEqual(retrieval["mode"], "auto")
+      self.assertFalse(retrieval["used"])
+      self.assertTrue(retrieval["degraded"])
+      self.assertIn("Retrieval index not found", retrieval["error"])
+
+  def test_generation_with_required_retrieval_fails_without_index(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Retrieval Required Failure")
+      add_scene(
+        paths,
+        title="No Index",
+        summary="",
+        pov="",
+        status="draft",
+        body="Required retrieval should fail without an index.",
+      )
+      with self.assertRaises(OpenAuthorError):
+        generate_proposal(
+          paths,
+          scene_id="scene-0001",
+          instruction="tighten this scene",
+          provider="local",
+          retrieval_mode="required",
+        )
 
 
 if __name__ == "__main__":

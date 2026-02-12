@@ -75,6 +75,11 @@ def _summary(
     else {}
   )
   quality = payload.get("quality", {}) if isinstance(payload.get("quality"), dict) else {}
+  retrieval = (
+    payload.get("retrieval", {})
+    if isinstance(payload.get("retrieval"), dict)
+    else {}
+  )
   scene_id = payload.get("scene_id", "")
   run_id = payload.get("run_id", log_file.stem)
   preferred_for_scene = (
@@ -104,6 +109,9 @@ def _summary(
     "quality_score": quality.get("score"),
     "quality_tier": quality.get("tier"),
     "quality_flags": quality.get("flags", []),
+    "retrieval_mode": retrieval.get("mode", "off"),
+    "retrieval_used": retrieval.get("used", False),
+    "retrieval_result_count": retrieval.get("result_count", 0),
     "preferred_for_scene": preferred_for_scene,
     "log_path": str(log_file.relative_to(paths.root)),
   }
@@ -261,6 +269,18 @@ def _coerce_int(value: Any, *, default: int, minimum: int) -> int:
   return default
 
 
+def _coerce_bool(value: Any, *, default: bool) -> bool:
+  if isinstance(value, bool):
+    return value
+  if isinstance(value, str):
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+      return True
+    if normalized in {"0", "false", "no", "off"}:
+      return False
+  return default
+
+
 def rerun_generation(
   paths: ProjectPaths,
   *,
@@ -272,6 +292,10 @@ def rerun_generation(
   max_output_tokens: int | None = None,
   context_scene_radius: int | None = None,
   codex_limit: int | None = None,
+  retrieval_mode: str | None = None,
+  retrieval_limit: int | None = None,
+  retrieval_min_score: float | None = None,
+  retrieval_require_fresh: bool | None = None,
 ) -> dict[str, Any]:
   payload = get_generation_run(paths, run_id)
   scene_id = str(payload.get("scene_id", "")).strip()
@@ -314,6 +338,31 @@ def rerun_generation(
     if codex_limit is not None
     else _coerce_int(payload.get("codex_limit"), default=20, minimum=1)
   )
+  retrieval_payload = (
+    payload.get("retrieval", {})
+    if isinstance(payload.get("retrieval"), dict)
+    else {}
+  )
+  selected_retrieval_mode = (
+    retrieval_mode
+    if retrieval_mode is not None
+    else str(retrieval_payload.get("mode", "off"))
+  )
+  selected_retrieval_limit = (
+    retrieval_limit
+    if retrieval_limit is not None
+    else _coerce_int(retrieval_payload.get("limit"), default=5, minimum=1)
+  )
+  selected_retrieval_min_score = (
+    retrieval_min_score
+    if retrieval_min_score is not None
+    else _coerce_float(retrieval_payload.get("min_score"), default=0.0)
+  )
+  selected_retrieval_require_fresh = (
+    retrieval_require_fresh
+    if retrieval_require_fresh is not None
+    else _coerce_bool(retrieval_payload.get("require_fresh"), default=False)
+  )
 
   return generate_proposal(
     paths,
@@ -326,4 +375,8 @@ def rerun_generation(
     max_output_tokens=selected_max_output_tokens,
     context_scene_radius=selected_context_scene_radius,
     codex_limit=selected_codex_limit,
+    retrieval_mode=selected_retrieval_mode,
+    retrieval_limit=selected_retrieval_limit,
+    retrieval_min_score=selected_retrieval_min_score,
+    retrieval_require_fresh=selected_retrieval_require_fresh,
   )

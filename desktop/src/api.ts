@@ -187,6 +187,10 @@ export async function generateProposal(
     maxOutputTokens?: number;
     contextScenes?: number;
     codexLimit?: number;
+    retrievalMode?: "off" | "auto" | "required";
+    retrievalLimit?: number;
+    retrievalMinScore?: number;
+    retrievalRequireFresh?: boolean;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -216,6 +220,18 @@ export async function generateProposal(
   }
   if (typeof payload.codexLimit === "number") {
     args.push("--codex-limit", String(payload.codexLimit));
+  }
+  if (payload.retrievalMode) {
+    args.push("--retrieval-mode", payload.retrievalMode);
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    args.push("--retrieval-limit", String(payload.retrievalLimit));
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    args.push("--retrieval-min-score", String(payload.retrievalMinScore));
+  }
+  if (payload.retrievalRequireFresh) {
+    args.push("--retrieval-require-fresh");
   }
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
@@ -391,6 +407,10 @@ export async function rerunGeneration(
     maxOutputTokens?: number;
     contextScenes?: number;
     codexLimit?: number;
+    retrievalMode?: "off" | "auto" | "required";
+    retrievalLimit?: number;
+    retrievalMinScore?: number;
+    retrievalRequireFresh?: boolean;
   }
 ): Promise<ProposalRecord> {
   const args = ["generation", "rerun", "--id", payload.runId];
@@ -414,6 +434,18 @@ export async function rerunGeneration(
   }
   if (typeof payload.codexLimit === "number") {
     args.push("--codex-limit", String(payload.codexLimit));
+  }
+  if (payload.retrievalMode) {
+    args.push("--retrieval-mode", payload.retrievalMode);
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    args.push("--retrieval-limit", String(payload.retrievalLimit));
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    args.push("--retrieval-min-score", String(payload.retrievalMinScore));
+  }
+  if (typeof payload.retrievalRequireFresh === "boolean") {
+    args.push(payload.retrievalRequireFresh ? "--retrieval-require-fresh" : "--retrieval-allow-stale");
   }
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);

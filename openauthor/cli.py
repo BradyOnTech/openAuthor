@@ -155,6 +155,29 @@ def build_parser() -> argparse.ArgumentParser:
     default=20,
     help="Maximum codex entities in packed context.",
   )
+  proposal_generate.add_argument(
+    "--retrieval-mode",
+    choices=["off", "auto", "required"],
+    default="off",
+    help="Retrieval mode for citation-backed context.",
+  )
+  proposal_generate.add_argument(
+    "--retrieval-limit",
+    type=int,
+    default=5,
+    help="Maximum retrieval citations to include when enabled.",
+  )
+  proposal_generate.add_argument(
+    "--retrieval-min-score",
+    type=float,
+    default=0.0,
+    help="Minimum retrieval score threshold.",
+  )
+  proposal_generate.add_argument(
+    "--retrieval-require-fresh",
+    action="store_true",
+    help="Require retrieval index freshness when retrieval mode is enabled.",
+  )
   proposal_generate.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
@@ -305,6 +328,34 @@ def build_parser() -> argparse.ArgumentParser:
     type=int,
     default=None,
     help="Codex limit override.",
+  )
+  generation_rerun.add_argument(
+    "--retrieval-mode",
+    choices=["off", "auto", "required"],
+    default=None,
+    help="Retrieval mode override (defaults to original run retrieval mode).",
+  )
+  generation_rerun.add_argument(
+    "--retrieval-limit",
+    type=int,
+    default=None,
+    help="Retrieval limit override.",
+  )
+  generation_rerun.add_argument(
+    "--retrieval-min-score",
+    type=float,
+    default=None,
+    help="Retrieval min score override.",
+  )
+  generation_rerun.add_argument(
+    "--retrieval-require-fresh",
+    action="store_true",
+    help="Force retrieval freshness for rerun.",
+  )
+  generation_rerun.add_argument(
+    "--retrieval-allow-stale",
+    action="store_true",
+    help="Allow stale retrieval index for rerun.",
   )
   generation_rerun.add_argument("--json", action="store_true", help="Output JSON.")
   generation_pin = generation_sub.add_parser(
@@ -522,6 +573,10 @@ def _run(args: argparse.Namespace) -> int:
         max_output_tokens=args.max_output_tokens,
         context_scene_radius=args.context_scenes,
         codex_limit=args.codex_limit,
+        retrieval_mode=args.retrieval_mode,
+        retrieval_limit=args.retrieval_limit,
+        retrieval_min_score=args.retrieval_min_score,
+        retrieval_require_fresh=args.retrieval_require_fresh,
       )
       if args.json:
         print(json.dumps(row))
@@ -838,6 +893,15 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.generation_command == "rerun":
+      if args.retrieval_require_fresh and args.retrieval_allow_stale:
+        raise OpenAuthorError(
+          "Cannot combine --retrieval-require-fresh with --retrieval-allow-stale."
+        )
+      retrieval_require_fresh: bool | None = None
+      if args.retrieval_require_fresh:
+        retrieval_require_fresh = True
+      elif args.retrieval_allow_stale:
+        retrieval_require_fresh = False
       row = rerun_generation(
         paths,
         run_id=args.id,
@@ -848,6 +912,10 @@ def _run(args: argparse.Namespace) -> int:
         max_output_tokens=args.max_output_tokens,
         context_scene_radius=args.context_scenes,
         codex_limit=args.codex_limit,
+        retrieval_mode=args.retrieval_mode,
+        retrieval_limit=args.retrieval_limit,
+        retrieval_min_score=args.retrieval_min_score,
+        retrieval_require_fresh=retrieval_require_fresh,
       )
       if args.json:
         print(json.dumps(row))

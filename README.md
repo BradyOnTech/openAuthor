@@ -65,6 +65,10 @@ python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx
 # generate proposal using local provider (real deterministic adapter)
 python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --json
 
+# retrieval-backed generation (requires built retrieval index)
+python3 -m openauthor retrieval build --json
+python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --retrieval-mode required --retrieval-limit 5 --json
+
 # generate proposal using OpenAI or Anthropic (requires API keys)
 OPENAI_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Improve dialogue clarity" --provider openai --model gpt-4.1-mini --json
 ANTHROPIC_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Increase tension" --provider anthropic --json
@@ -76,6 +80,7 @@ python3 -m openauthor generation list --provider openai --json
 python3 -m openauthor generation list --quality low --json
 python3 -m openauthor generation get --id gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation rerun --id gen-xxxxxxxxxxxx --json
+python3 -m openauthor generation rerun --id gen-xxxxxxxxxxxx --retrieval-mode required --retrieval-require-fresh --json
 python3 -m openauthor generation pin --scene scene-0001 --run gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation pins --json
 python3 -m openauthor generation unpin --scene scene-0001 --json
@@ -125,9 +130,11 @@ AI generation artifacts:
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
+- Retrieval-backed generations attach provenance metadata (`retrieval` query/mode/index state + citation chunks) to both generation logs and proposal generation payloads.
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
 - Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
 - Desktop Runs panel now includes budget policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
+- Desktop Proposal Review and Runs surfaces now show retrieval provenance (query/mode/index freshness/citations with score+coverage excerpts), and generation/rerun forms include retrieval mode controls.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
 - Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.

@@ -15,6 +15,7 @@ from openauthor.generations import (
   set_pinned_generation_run,
 )
 from openauthor.project import OpenAuthorError, initialize_project
+from openauthor.retrieval import build_retrieval_index
 from openauthor.scenes import add_scene
 
 
@@ -59,6 +60,9 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertIn("quality_score", rows[0])
       self.assertIn("quality_tier", rows[0])
       self.assertIn("quality_flags", rows[0])
+      self.assertIn("retrieval_mode", rows[0])
+      self.assertIn("retrieval_used", rows[0])
+      self.assertIn("retrieval_result_count", rows[0])
       self.assertFalse(rows[0]["preferred_for_scene"])
 
       filtered = list_generation_runs(paths, status="succeeded", scene_id="scene-0001")
@@ -114,12 +118,14 @@ class GenerationsModuleTests(unittest.TestCase):
         status="draft",
         body="Scene one body with enough words for generation context checks.",
       )
+      build_retrieval_index(paths)
 
       first = generate_proposal(
         paths,
         scene_id="scene-0001",
         instruction="tighten pacing",
         provider="local",
+        retrieval_mode="required",
       )
       rerun = rerun_generation(paths, run_id=first["generation"]["id"])
 
@@ -128,6 +134,7 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertEqual(rerun["source"], "ai_generate")
       self.assertEqual(rerun["generation"]["provider"], "local")
       self.assertNotEqual(first["generation"]["id"], rerun["generation"]["id"])
+      self.assertEqual(rerun["generation"]["retrieval"]["mode"], "required")
 
   def test_pin_generation_run_for_scene(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

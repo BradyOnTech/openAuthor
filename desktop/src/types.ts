@@ -52,6 +52,38 @@ export type ProposalRecord = {
     max_output_tokens: number;
     context_scene_radius: number;
     codex_limit: number;
+    retrieval?: {
+      mode: "off" | "auto" | "required" | string;
+      used: boolean;
+      query: string;
+      limit: number;
+      min_score: number;
+      require_fresh: boolean;
+      result_count: number;
+      citations: Array<{
+        source_type: string;
+        source_ref: string;
+        source_path: string;
+        source_title: string;
+        chunk_id: string;
+        chunk_position: number;
+        score: number | null;
+        coverage: number | null;
+        matched_terms: string[];
+        excerpt: string;
+      }>;
+      index: {
+        path: string;
+        stale: boolean;
+        stale_reasons: string[];
+        chunk_count: number;
+        source_count: number;
+        git_head: string;
+        indexed_git_head: string;
+      };
+      degraded: boolean;
+      error: string;
+    };
     input_tokens: number;
     output_tokens: number;
     latency_ms: number;
@@ -84,6 +116,9 @@ export type GenerationRunSummary = {
   quality_score: number | null;
   quality_tier: "high" | "medium" | "low" | string | null;
   quality_flags: string[];
+  retrieval_mode?: "off" | "auto" | "required" | string;
+  retrieval_used?: boolean;
+  retrieval_result_count?: number;
   preferred_for_scene?: boolean;
   log_path: string;
 };
@@ -120,6 +155,38 @@ export type GenerationRunDetail = {
     score?: number;
     tier?: "high" | "medium" | "low" | string;
     flags?: string[];
+  };
+  retrieval?: {
+    mode?: "off" | "auto" | "required" | string;
+    used?: boolean;
+    query?: string;
+    limit?: number;
+    min_score?: number;
+    require_fresh?: boolean;
+    result_count?: number;
+    citations?: Array<{
+      source_type?: string;
+      source_ref?: string;
+      source_path?: string;
+      source_title?: string;
+      chunk_id?: string;
+      chunk_position?: number;
+      score?: number | null;
+      coverage?: number | null;
+      matched_terms?: string[];
+      excerpt?: string;
+    }>;
+    index?: {
+      path?: string;
+      stale?: boolean;
+      stale_reasons?: string[];
+      chunk_count?: number;
+      source_count?: number;
+      git_head?: string;
+      indexed_git_head?: string;
+    };
+    degraded?: boolean;
+    error?: string;
   };
   usage?: {
     input_tokens?: number;

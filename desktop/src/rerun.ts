@@ -8,6 +8,10 @@ export type RerunDraft = {
   maxOutputTokens: string;
   contextScenes: string;
   codexLimit: string;
+  retrievalMode: "off" | "auto" | "required";
+  retrievalLimit: string;
+  retrievalMinScore: string;
+  retrievalRequireFresh: boolean;
 };
 
 export type RerunPayload = {
@@ -19,6 +23,10 @@ export type RerunPayload = {
   maxOutputTokens?: number;
   contextScenes?: number;
   codexLimit?: number;
+  retrievalMode?: "off" | "auto" | "required";
+  retrievalLimit?: number;
+  retrievalMinScore?: number;
+  retrievalRequireFresh?: boolean;
 };
 
 export const EMPTY_RERUN_DRAFT: RerunDraft = {
@@ -28,7 +36,11 @@ export const EMPTY_RERUN_DRAFT: RerunDraft = {
   temperature: "",
   maxOutputTokens: "",
   contextScenes: "",
-  codexLimit: ""
+  codexLimit: "",
+  retrievalMode: "off",
+  retrievalLimit: "",
+  retrievalMinScore: "",
+  retrievalRequireFresh: false
 };
 
 function asProposalProvider(value: unknown): ProposalProvider | null {
@@ -36,6 +48,13 @@ function asProposalProvider(value: unknown): ProposalProvider | null {
     return value;
   }
   return null;
+}
+
+function asRetrievalMode(value: unknown): "off" | "auto" | "required" {
+  if (value === "off" || value === "auto" || value === "required") {
+    return value;
+  }
+  return "off";
 }
 
 function numberString(value: unknown): string {
@@ -67,7 +86,11 @@ export function draftRerunFromRun(run: GenerationRunDetail): RerunDraft {
     temperature: numberString(run.temperature),
     maxOutputTokens: numberString(run.max_output_tokens),
     contextScenes: numberString(run.context_scene_radius),
-    codexLimit: numberString(run.codex_limit)
+    codexLimit: numberString(run.codex_limit),
+    retrievalMode: asRetrievalMode(run.retrieval?.mode),
+    retrievalLimit: numberString(run.retrieval?.limit),
+    retrievalMinScore: numberString(run.retrieval?.min_score),
+    retrievalRequireFresh: Boolean(run.retrieval?.require_fresh)
   };
 }
 
@@ -82,6 +105,10 @@ export function buildRerunPayload(runId: string, draft: RerunDraft): RerunPayloa
     temperature: parseFloatOrUndefined(draft.temperature),
     maxOutputTokens: parseIntOrUndefined(draft.maxOutputTokens),
     contextScenes: parseIntOrUndefined(draft.contextScenes),
-    codexLimit: parseIntOrUndefined(draft.codexLimit)
+    codexLimit: parseIntOrUndefined(draft.codexLimit),
+    retrievalMode: draft.retrievalMode,
+    retrievalLimit: parseIntOrUndefined(draft.retrievalLimit),
+    retrievalMinScore: parseFloatOrUndefined(draft.retrievalMinScore),
+    retrievalRequireFresh: draft.retrievalRequireFresh
   };
 }

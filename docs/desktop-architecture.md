@@ -55,13 +55,14 @@
 
 - Run list: `generation list --json` (supports status + provider + quality filters)
 - Run detail: `generation get --id <run-id> --json`
-- Run rerun: `generation rerun --id <run-id> --json`
+- Run rerun: `generation rerun --id <run-id> [--retrieval-mode ... --retrieval-limit ... --retrieval-min-score ... --retrieval-require-fresh|--retrieval-allow-stale] --json`
 - Run pin: `generation pin --scene <scene-id> --run <run-id> --json`
 - Run unpin: `generation unpin --scene <scene-id> --json`
 - Run pins list: `generation pins --json`
 - Runtime config: `generation config --json`
 - Budget policy inspection/update: `generation budget [--reset|--max-...|--daily-...|--weekly-...] --json`
-- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), recommendation-guided promote actions (current vs baseline), selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown), and generation budget policy view/update/reset controls with daily/weekly usage readout; proposal review can jump directly to preferred proposal for a scene.
+- Proposal generation supports retrieval-backed mode (`--retrieval-mode off|auto|required`) and writes citation provenance into run/proposal generation payloads.
+- Desktop run detail actions: pin/unpin preferred run, re-run with override controls (including retrieval overrides), baseline run selection + compare-to-previous (same scene), recommendation-guided promote actions (current vs baseline), selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown), generation budget policy view/update/reset controls with daily/weekly usage readout, and retrieval provenance viewer panels (query/index/citations). Proposal review also surfaces generation-level retrieval citations and can jump directly to preferred proposal for a scene.
 
 ## Implemented command usage (Branch Workspace CLI primitives)
 

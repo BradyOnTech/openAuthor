@@ -148,6 +148,10 @@ type DraftGeneratedProposal = {
   maxOutputTokens: number;
   contextScenes: number;
   codexLimit: number;
+  retrievalMode: "off" | "auto" | "required";
+  retrievalLimit: number;
+  retrievalMinScore: number;
+  retrievalRequireFresh: boolean;
 };
 
 type DraftCodex = {
@@ -179,7 +183,11 @@ const EMPTY_DRAFT_GENERATED_PROPOSAL: DraftGeneratedProposal = {
   temperature: 0.2,
   maxOutputTokens: 700,
   contextScenes: 1,
-  codexLimit: 20
+  codexLimit: 20,
+  retrievalMode: "off",
+  retrievalLimit: 5,
+  retrievalMinScore: 0,
+  retrievalRequireFresh: false
 };
 
 const PROVIDER_MODEL_HINTS: Record<ProposalProvider, string> = {
@@ -1235,7 +1243,11 @@ export function App() {
         temperature: proposalGenerateForm.temperature,
         maxOutputTokens: proposalGenerateForm.maxOutputTokens,
         contextScenes: proposalGenerateForm.contextScenes,
-        codexLimit: proposalGenerateForm.codexLimit
+        codexLimit: proposalGenerateForm.codexLimit,
+        retrievalMode: proposalGenerateForm.retrievalMode,
+        retrievalLimit: proposalGenerateForm.retrievalLimit,
+        retrievalMinScore: proposalGenerateForm.retrievalMinScore,
+        retrievalRequireFresh: proposalGenerateForm.retrievalRequireFresh
       });
       await refreshProposalList(generated.id);
       const generatedRunId = generated.generation?.id;
@@ -1254,12 +1266,15 @@ export function App() {
     } catch (err) {
       const details = err instanceof Error ? err.message : String(err);
       const budgetBlocked = details.toLowerCase().includes("budget policy");
+      const retrievalBlocked = details.toLowerCase().includes("retrieval");
       reportError(
         "Proposal generation failed",
         err,
         budgetBlocked
           ? "Open Runs and adjust generation budget policy, then retry."
-          : "Check provider credentials/settings and retry."
+          : retrievalBlocked
+            ? "Build or refresh retrieval index and retry."
+            : "Check provider credentials/settings and retry."
       );
     } finally {
       setBusy(false);
@@ -1739,12 +1754,15 @@ export function App() {
     } catch (err) {
       const details = err instanceof Error ? err.message : String(err);
       const budgetBlocked = details.toLowerCase().includes("budget policy");
+      const retrievalBlocked = details.toLowerCase().includes("retrieval");
       reportError(
         "Generation rerun failed",
         err,
         budgetBlocked
           ? "Open Runs and adjust generation budget policy, then retry."
-          : "Check provider settings and retry."
+          : retrievalBlocked
+            ? "Build or refresh retrieval index and retry."
+            : "Check provider settings and retry."
       );
     } finally {
       setBusy(false);
@@ -2384,7 +2402,65 @@ export function App() {
                       }
                     />
                   </label>
+                  <label>
+                    <span>Retrieval Mode</span>
+                    <select
+                      value={proposalGenerateForm.retrievalMode}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          retrievalMode: event.target.value as "off" | "auto" | "required"
+                        }))
+                      }
+                    >
+                      <option value="off">off</option>
+                      <option value="auto">auto</option>
+                      <option value="required">required</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Retrieval Limit</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={proposalGenerateForm.retrievalLimit}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          retrievalLimit: Number(event.target.value || 1)
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Retrieval Min Score</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.05"
+                      value={proposalGenerateForm.retrievalMinScore}
+                      onChange={(event) =>
+                        setProposalGenerateForm((prev) => ({
+                          ...prev,
+                          retrievalMinScore: Number(event.target.value || 0)
+                        }))
+                      }
+                    />
+                  </label>
                 </div>
+                <label className="run-compare-toggle">
+                  <input
+                    type="checkbox"
+                    checked={proposalGenerateForm.retrievalRequireFresh}
+                    onChange={(event) =>
+                      setProposalGenerateForm((prev) => ({
+                        ...prev,
+                        retrievalRequireFresh: event.target.checked
+                      }))
+                    }
+                  />
+                  <span>Require fresh retrieval index</span>
+                </label>
                 <button
                   disabled={busy || proposalGenerateForm.instruction.trim() === ""}
                   onClick={handleGenerateProposal}
@@ -2459,6 +2535,46 @@ export function App() {
                         ? `, est $${selectedProposal.generation.estimated_cost_usd.toFixed(6)}`
                         : ""}
                     </p>
+                  ) : null}
+                  {selectedProposal.generation?.retrieval ? (
+                    <div className="run-compare-table provenance-card">
+                      <h5>Retrieval Provenance</h5>
+                      <p className="proposal-meta">
+                        Mode: {selectedProposal.generation.retrieval.mode} / used:{" "}
+                        {selectedProposal.generation.retrieval.used ? "yes" : "no"} / results:{" "}
+                        {selectedProposal.generation.retrieval.result_count}
+                      </p>
+                      <p className="proposal-meta">
+                        Query: {selectedProposal.generation.retrieval.query || "n/a"}
+                      </p>
+                      {selectedProposal.generation.retrieval.degraded ? (
+                        <p className="proposal-meta">
+                          Retrieval degraded: {selectedProposal.generation.retrieval.error}
+                        </p>
+                      ) : null}
+                      {selectedProposal.generation.retrieval.citations?.length ? (
+                        <div className="provenance-list">
+                          {selectedProposal.generation.retrieval.citations
+                            .slice(0, 4)
+                            .map((row) => (
+                              <div key={row.chunk_id} className="provenance-item">
+                                <p className="proposal-meta">
+                                  {row.source_type}/{row.source_ref} ({row.source_title})
+                                </p>
+                                <p className="proposal-meta">
+                                  score {row.score ?? "n/a"} / coverage {row.coverage ?? "n/a"}
+                                </p>
+                                <p className="proposal-meta">
+                                  terms: {row.matched_terms.join(", ") || "n/a"}
+                                </p>
+                                <p className="proposal-meta">{row.excerpt}</p>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="proposal-meta">No citations attached.</p>
+                      )}
+                    </div>
                   ) : null}
                   {selectedProposalGenerationPinned ? (
                     <p className="proposal-meta">Preferred generation for this scene.</p>
@@ -2927,6 +3043,9 @@ export function App() {
                         <strong>{run.run_id}</strong>
                         <span>
                           {run.provider || "unknown provider"} / {run.quality_tier || "n/a"}
+                          {run.retrieval_mode && run.retrieval_mode !== "off"
+                            ? ` / retrieval ${run.retrieval_result_count ?? 0}`
+                            : ""}
                           {isPreferredForScene ? " / preferred" : ""}
                         </span>
                         <em>{run.status}</em>
@@ -3024,6 +3143,52 @@ export function App() {
                       </p>
                     </>
                   )}
+                  {selectedGenerationRun.retrieval ? (
+                    <div className="run-compare-table provenance-card">
+                      <h5>Retrieval Provenance</h5>
+                      <p className="run-meta">
+                        Mode: {selectedGenerationRun.retrieval.mode || "off"} / used:{" "}
+                        {selectedGenerationRun.retrieval.used ? "yes" : "no"} / results:{" "}
+                        {selectedGenerationRun.retrieval.result_count ?? 0}
+                      </p>
+                      <p className="run-meta">
+                        Query: {selectedGenerationRun.retrieval.query || "n/a"}
+                      </p>
+                      <p className="run-meta">
+                        Index: {selectedGenerationRun.retrieval.index?.path || "n/a"} / stale:{" "}
+                        {selectedGenerationRun.retrieval.index?.stale ? "yes" : "no"}
+                      </p>
+                      {selectedGenerationRun.retrieval.degraded ? (
+                        <p className="run-meta">
+                          Retrieval degraded: {selectedGenerationRun.retrieval.error || "unknown"}
+                        </p>
+                      ) : null}
+                      {selectedGenerationRun.retrieval.citations?.length ? (
+                        <div className="provenance-list">
+                          {selectedGenerationRun.retrieval.citations.slice(0, 6).map((row) => (
+                            <div
+                              key={`${row.chunk_id || "chunk"}-${row.source_ref || "source"}`}
+                              className="provenance-item"
+                            >
+                              <p className="run-meta">
+                                {row.source_type || "unknown"}/{row.source_ref || "n/a"} (
+                                {row.source_title || "untitled"})
+                              </p>
+                              <p className="run-meta">
+                                score {row.score ?? "n/a"} / coverage {row.coverage ?? "n/a"}
+                              </p>
+                              <p className="run-meta">
+                                terms: {row.matched_terms?.join(", ") || "n/a"}
+                              </p>
+                              <p className="run-meta">{row.excerpt || ""}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="run-meta">No citations attached.</p>
+                      )}
+                    </div>
+                  ) : null}
                   <p className="run-meta">Log: {selectedGenerationRun.log_path}</p>
                   <div className="run-rerun-card">
                     <h4>Re-run Options</h4>
@@ -3122,7 +3287,65 @@ export function App() {
                           }
                         />
                       </label>
+                      <label>
+                        <span>Retrieval Mode</span>
+                        <select
+                          value={rerunDraft.retrievalMode}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              retrievalMode: event.target.value as "off" | "auto" | "required"
+                            }))
+                          }
+                        >
+                          <option value="off">off</option>
+                          <option value="auto">auto</option>
+                          <option value="required">required</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Retrieval Limit</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={rerunDraft.retrievalLimit}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              retrievalLimit: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Retrieval Min Score</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.05"
+                          value={rerunDraft.retrievalMinScore}
+                          onChange={(event) =>
+                            setRerunDraft((prev) => ({
+                              ...prev,
+                              retrievalMinScore: event.target.value
+                            }))
+                          }
+                        />
+                      </label>
                     </div>
+                    <label className="run-compare-toggle">
+                      <input
+                        type="checkbox"
+                        checked={rerunDraft.retrievalRequireFresh}
+                        onChange={(event) =>
+                          setRerunDraft((prev) => ({
+                            ...prev,
+                            retrievalRequireFresh: event.target.checked
+                          }))
+                        }
+                      />
+                      <span>Require fresh retrieval index</span>
+                    </label>
                   </div>
                   <div className="run-compare-select-card">
                     <h4>Compare Baseline</h4>

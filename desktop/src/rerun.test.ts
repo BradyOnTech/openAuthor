@@ -31,7 +31,13 @@ describe("draftRerunFromRun", () => {
         temperature: 0.3,
         max_output_tokens: 800,
         context_scene_radius: 2,
-        codex_limit: 25
+        codex_limit: 25,
+        retrieval: {
+          mode: "required",
+          limit: 6,
+          min_score: 0.42,
+          require_fresh: true
+        }
       })
     );
     expect(draft.provider).toBe("openai");
@@ -40,6 +46,10 @@ describe("draftRerunFromRun", () => {
     expect(draft.maxOutputTokens).toBe("800");
     expect(draft.contextScenes).toBe("2");
     expect(draft.codexLimit).toBe("25");
+    expect(draft.retrievalMode).toBe("required");
+    expect(draft.retrievalLimit).toBe("6");
+    expect(draft.retrievalMinScore).toBe("0.42");
+    expect(draft.retrievalRequireFresh).toBe(true);
   });
 
   it("falls back to local provider for unknown run provider", () => {
@@ -58,7 +68,11 @@ describe("buildRerunPayload", () => {
       temperature: "0.6",
       maxOutputTokens: "900",
       contextScenes: "3",
-      codexLimit: "15"
+      codexLimit: "15",
+      retrievalMode: "auto",
+      retrievalLimit: "7",
+      retrievalMinScore: "0.2",
+      retrievalRequireFresh: true
     });
     expect(payload).toEqual({
       runId: "gen-abc123",
@@ -68,7 +82,11 @@ describe("buildRerunPayload", () => {
       temperature: 0.6,
       maxOutputTokens: 900,
       contextScenes: 3,
-      codexLimit: 15
+      codexLimit: 15,
+      retrievalMode: "auto",
+      retrievalLimit: 7,
+      retrievalMinScore: 0.2,
+      retrievalRequireFresh: true
     });
   });
 
@@ -85,5 +103,7 @@ describe("buildRerunPayload", () => {
     expect(payload.maxOutputTokens).toBeUndefined();
     expect(payload.contextScenes).toBeUndefined();
     expect(payload.codexLimit).toBeUndefined();
+    expect(payload.retrievalLimit).toBeUndefined();
+    expect(payload.retrievalMinScore).toBeUndefined();
   });
 });

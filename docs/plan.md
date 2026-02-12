@@ -175,8 +175,8 @@ Phase 4 execution principles:
   - [x] Add guided merge UI path in desktop with conflict-classified recommendations.
 - 4.2 Retrieval index + provenance/citation UI
   - [x] Build local retrieval index scoped to commit/project state.
-  - [ ] Add retrieval-backed generation mode with citation payloads attached to runs/proposals.
-  - [ ] Add provenance viewer in desktop (source chunks, scene/codex refs, confidence/coverage).
+  - [x] Add retrieval-backed generation mode with citation payloads attached to runs/proposals.
+  - [x] Add provenance viewer in desktop (source chunks, scene/codex refs, confidence/coverage).
 - 4.3 Voice-first commands + dictation mode
   - [ ] Add push-to-talk command channel for high-frequency actions (navigate/generate/check/review).
   - [ ] Add scene dictation capture mode that emits proposals (not direct edits by default).
@@ -196,8 +196,8 @@ Phase 4 exit condition:
 - Chunk 3: Branch workspace primitives (create/switch/diff/preflight) with CLI tests. ✅
 - Chunk 4: Guided merge desktop flow with conflict categories and apply path. ✅
 - Chunk 5: Retrieval index builder + query API + deterministic fixtures. ✅
-- Chunk 6: Retrieval-backed generation with run/proposal provenance payloads.
-- Chunk 7: Provenance/citation panels in desktop generation + review surfaces.
+- Chunk 6: Retrieval-backed generation with run/proposal provenance payloads. ✅
+- Chunk 7: Provenance/citation panels in desktop generation + review surfaces. ✅
 - Chunk 8: Voice command substrate (push-to-talk, command grammar, action routing).
 - Chunk 9: Dictation-to-proposal flow, transcript logging, confirmations/undo.
 - Chunk 10: Phase 4 hardening pass (performance baselines, migrations, CI expansion).
