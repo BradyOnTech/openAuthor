@@ -118,6 +118,21 @@ import type {
 } from "./types";
 
 const PROJECT_ROOT_STORAGE_KEY = "openauthor.projectRoot";
+const THEME_STORAGE_KEY = "openauthor.theme";
+
+type Theme = "light" | "dark";
+
+function loadDefaultTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {}
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+  return "light";
+}
 
 function loadDefaultRoot(): string {
   if (typeof window === "undefined") return "";
@@ -357,6 +372,7 @@ export function App() {
   const [projectRoot, setProjectRoot] = useState(loadDefaultRoot);
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [theme, setTheme] = useState<Theme>(loadDefaultTheme);
   const [rightTab, setRightTab] = useState<RightTab>("proposals");
   const [centerView, setCenterView] = useState<CenterView>("editor");
   const [outlinerQuery, setOutlinerQuery] = useState("");
@@ -870,6 +886,16 @@ export function App() {
   useEffect(() => {
     submitVoiceTranscriptRef.current = submitVoiceTranscript;
   }, [submitVoiceTranscript]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {}
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  }
 
   const canSaveScene = useMemo(() => {
     return Boolean(selectedSceneId && draft.title.trim() !== "");
@@ -2755,6 +2781,7 @@ export function App() {
   }
 
   return (
+    <div className="app-shell" data-theme={theme}>
     <main className="workspace">
       <header className="topbar">
         <div>
@@ -2765,8 +2792,13 @@ export function App() {
             Cmd/Ctrl+Shift+K run checks, Cmd/Ctrl+Shift+L open runs.
           </p>
         </div>
-        <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
-          {projectFound ? "Project Ready" : "No Project"}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <button className="theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}>
+            {theme === "light" ? "\u263D" : "\u2600"}
+          </button>
+          <div className={`status-pill ${projectFound ? "ok" : "warn"}`}>
+            {projectFound ? "Project Ready" : "No Project"}
+          </div>
         </div>
       </header>
 
@@ -5339,5 +5371,6 @@ export function App() {
         {message ? <p>{message}</p> : null}
       </footer>
     </main>
+    </div>
   );
 }
