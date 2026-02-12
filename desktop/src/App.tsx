@@ -2993,12 +2993,14 @@ export function App() {
                       }
                     />
                     <button
+                      className="btn-accent"
                       disabled={busy || voiceDraftTranscript.trim() === ""}
                       onClick={handleSubmitVoiceDraft}
                     >
                       {voiceInputMode === "dictation" ? "Capture" : "Run"}
                     </button>
                     <button
+                      className="btn-accent"
                       disabled={busy || !voiceSupported || voiceListening}
                       onClick={handleStartVoiceCapture}
                     >
@@ -3020,10 +3022,10 @@ export function App() {
                         Pending: {voicePendingAction.summary} ({voicePendingAction.source})
                       </p>
                       <div className="proposal-actions">
-                        <button disabled={busy} onClick={() => void handleConfirmVoicePendingAction()}>
+                        <button className="btn-accent" disabled={busy} onClick={() => void handleConfirmVoicePendingAction()}>
                           Confirm
                         </button>
-                        <button disabled={busy} onClick={handleDiscardVoicePendingAction}>
+                        <button className="btn-danger" disabled={busy} onClick={handleDiscardVoicePendingAction}>
                           Discard
                         </button>
                       </div>
@@ -3073,7 +3075,7 @@ export function App() {
                       placeholder="/path/to/project"
                     />
                   </label>
-                  <button disabled={busy} onClick={() => { checkProjectAndLoad(); setSettingsOpen(false); }}>
+                  <button className="btn-accent" disabled={busy} onClick={() => { checkProjectAndLoad(); setSettingsOpen(false); }}>
                     Reload Project
                   </button>
                   {workspaceAuditReport ? (
@@ -3203,7 +3205,7 @@ export function App() {
                       <option value="final">final</option>
                     </select>
                   </div>
-                  <button disabled={busy || addForm.title.trim() === ""} onClick={handleCreateScene}>
+                  <button className="btn-accent" disabled={busy || addForm.title.trim() === ""} onClick={handleCreateScene}>
                     Add Scene
                   </button>
                 </div>
@@ -3403,6 +3405,7 @@ export function App() {
                     </div>
                   </div>
                   <button
+                    className="btn-accent"
                     disabled={busy || !canSaveScene}
                     onClick={handleSaveScene}
                   >
@@ -3578,6 +3581,7 @@ export function App() {
                     placeholder={`Model (default: ${PROVIDER_MODEL_HINTS[chatThreadDraft.provider]})`}
                   />
                   <button
+                    className="btn-accent"
                     disabled={busy || chatThreadDraft.title.trim() === ""}
                     onClick={() => void handleCreateChatThread()}
                   >
@@ -3808,6 +3812,7 @@ export function App() {
                         />
                       </label>
                       <button
+                        className="btn-accent"
                         disabled={busy || chatComposerDraft.message.trim() === ""}
                         onClick={() => void handleSendChatMessage()}
                       >
@@ -4019,6 +4024,7 @@ export function App() {
                       <span>Require fresh retrieval index</span>
                     </label>
                     <button
+                      className="btn-accent"
                       disabled={busy || proposalGenerateForm.instruction.trim() === ""}
                       onClick={handleGenerateProposal}
                     >
@@ -4128,8 +4134,8 @@ export function App() {
                         <p className="proposal-meta">Log: {selectedProposal.generation.log_path}</p>
                       ) : null}
                       <div className="proposal-actions">
-                        <button disabled={busy || selectedProposal.status !== "pending"} onClick={() => handleApplyProposal(selectedProposal.id)}>Apply</button>
-                        <button className="reject-btn" disabled={busy || selectedProposal.status !== "pending"} onClick={() => handleRejectProposal(selectedProposal.id)}>Reject</button>
+                        <button className="btn-accent" disabled={busy || selectedProposal.status !== "pending"} onClick={() => handleApplyProposal(selectedProposal.id)}>Apply</button>
+                        <button className="btn-danger" disabled={busy || selectedProposal.status !== "pending"} onClick={() => handleRejectProposal(selectedProposal.id)}>Reject</button>
                         <button disabled={busy || !selectedProposal.scene_id || !selectedProposalPinnedRunId} onClick={() => void handleOpenPinnedGenerationRun(selectedProposal.scene_id)}>Open Preferred Run</button>
                         <button disabled={busy || !selectedProposal.scene_id || !selectedProposalPinnedRunId} onClick={() => void handleOpenPinnedProposal(selectedProposal.scene_id)}>Open Preferred Proposal</button>
                       </div>
@@ -4149,7 +4155,7 @@ export function App() {
                     <span>{continuityCounts.error} error / {continuityCounts.warning} warning / {continuityCounts.info} info</span>
                   </div>
                   <div className="checks-actions">
-                    <button disabled={busy || !projectFound} onClick={handleRunContinuityChecks}>Run Continuity Check</button>
+                    <button className="btn-accent" disabled={busy || !projectFound} onClick={handleRunContinuityChecks}>Run Continuity Check</button>
                   </div>
                   <div className="checks-list">
                     {continuityIssues.length === 0 ? (
@@ -4237,8 +4243,8 @@ export function App() {
                           <label><span>Weekly Cost (USD)</span><input value={budgetDraft.weeklyEstimatedCostUsd} onChange={(event) => setBudgetDraft((prev) => ({ ...prev, weeklyEstimatedCostUsd: event.target.value }))} placeholder="none" /></label>
                         </div>
                         <div className="proposal-actions">
-                          <button disabled={busy || !canSaveBudgetPolicy} onClick={() => void handleSaveBudgetPolicy()}>Save Budget Policy</button>
-                          <button disabled={busy} onClick={() => void handleResetBudgetPolicy()}>Reset Budget Policy</button>
+                          <button className="btn-accent" disabled={busy || !canSaveBudgetPolicy} onClick={() => void handleSaveBudgetPolicy()}>Save Budget Policy</button>
+                          <button className="btn-danger" disabled={busy} onClick={() => void handleResetBudgetPolicy()}>Reset Budget Policy</button>
                         </div>
                       </div>
                     ) : (<p className="run-meta">Budget policy unavailable.</p>)}
@@ -4377,7 +4383,7 @@ export function App() {
                         <label className="run-compare-toggle"><input type="checkbox" checked={comparisonAutoPrevious} onChange={(event) => setComparisonAutoPrevious(event.target.checked)} /><span>Auto-select previous baseline</span></label>
                       </div>
                       <div className="proposal-actions">
-                        <button disabled={busy || !selectedGenerationRun.scene_id || selectedGenerationRunPinned} onClick={() => void handlePinPreferredGenerationRun()}>Pin As Preferred</button>
+                        <button className="btn-accent" disabled={busy || !selectedGenerationRun.scene_id || selectedGenerationRunPinned} onClick={() => void handlePinPreferredGenerationRun()}>Pin As Preferred</button>
                         <button disabled={busy || !selectedGenerationRun.scene_id} onClick={() => void handleUnpinPreferredGenerationRun()}>Unpin Preferred</button>
                         <button disabled={busy || !selectedGenerationRun.scene_id || !selectedGenerationScenePinnedRunId} onClick={() => void handleOpenPinnedGenerationRun(selectedGenerationRun.scene_id)}>Open Preferred</button>
                         <button disabled={busy} onClick={() => void handleRerunGeneration()}>Re-run</button>
@@ -4419,8 +4425,8 @@ export function App() {
                             {runComparison.outcome.map((row) => (<p key={row.label} className="run-meta">{row.label}: {row.baseline} → {row.current}{row.changed ? " (changed)" : ""}</p>))}
                           </div>
                           <div className="proposal-actions">
-                            <button disabled={busy || !selectedGenerationRun.scene_id || selectedGenerationRunPinned || runComparison.recommendation.verdict !== "likely_better"} onClick={() => void handlePinPreferredGenerationRun()}>Promote Current</button>
-                            <button disabled={busy || !comparisonBaselineRun?.scene_id || runComparison.recommendation.verdict !== "likely_worse"} onClick={() => void handlePinBaselineGenerationRun()}>Promote Baseline</button>
+                            <button className="btn-accent" disabled={busy || !selectedGenerationRun.scene_id || selectedGenerationRunPinned || runComparison.recommendation.verdict !== "likely_better"} onClick={() => void handlePinPreferredGenerationRun()}>Promote Current</button>
+                            <button className="btn-accent" disabled={busy || !comparisonBaselineRun?.scene_id || runComparison.recommendation.verdict !== "likely_worse"} onClick={() => void handlePinBaselineGenerationRun()}>Promote Baseline</button>
                             <button disabled={busy || !comparisonBaselineRun} onClick={handleOpenBaselineRun}>Open Baseline Run</button>
                             <button disabled={busy || !(comparisonBaselineRun?.proposal_id ?? "").trim()} onClick={() => void handleOpenBaselineProposal()}>Open Baseline Proposal</button>
                             <button disabled={busy} onClick={() => void handleCopyRunComparisonJson()}>Copy JSON</button>
@@ -4450,13 +4456,13 @@ export function App() {
                       <input value={branchCreateDraft.fromRef} onChange={(event) => setBranchCreateDraft((prev) => ({ ...prev, fromRef: event.target.value }))} placeholder="from ref (default current)" />
                     </div>
                     <label className="run-compare-toggle"><input type="checkbox" checked={branchCreateDraft.noSwitch} onChange={(event) => setBranchCreateDraft((prev) => ({ ...prev, noSwitch: event.target.checked }))} /><span>Create without switching</span></label>
-                    <button disabled={busy || branchCreateDraft.name.trim() === ""} onClick={() => void handleCreateBranchWorkspace()}>Create Branch</button>
+                    <button className="btn-accent" disabled={busy || branchCreateDraft.name.trim() === ""} onClick={() => void handleCreateBranchWorkspace()}>Create Branch</button>
                   </div>
                   <div className="merge-controls">
                     <label><span>Base Branch</span><select value={mergeBaseBranch} onChange={(event) => setMergeBaseBranch(event.target.value)}><option value="">select base</option>{branches.map((branch) => (<option key={`base-${branch.name}`} value={branch.name}>{branch.name}{branch.current ? " (current)" : ""}</option>))}</select></label>
                     <label><span>Head Branch</span><select value={mergeHeadBranch} onChange={(event) => setMergeHeadBranch(event.target.value)}><option value="">select head</option>{branches.map((branch) => (<option key={`head-${branch.name}`} value={branch.name}>{branch.name}{branch.current ? " (current)" : ""}</option>))}</select></label>
                     <button disabled={busy || !projectFound} onClick={() => void refreshBranches()}>Refresh Branches</button>
-                    <button disabled={busy || !mergeBaseBranch || !mergeHeadBranch} onClick={() => void handleAnalyzeMergePlan()}>Analyze Merge</button>
+                    <button className="btn-accent" disabled={busy || !mergeBaseBranch || !mergeHeadBranch} onClick={() => void handleAnalyzeMergePlan()}>Analyze Merge</button>
                   </div>
                   <div className={`merge-guidance tone-${mergeGuidance.tone}`}>
                     <strong>{mergeGuidance.label}</strong>
@@ -4489,7 +4495,7 @@ export function App() {
                     </div>
                   ) : null}
                   <div className="proposal-actions">
-                    <button disabled={busy || !mergeGuidance.canApply} onClick={() => void handleApplyMergePlan()}>Apply Merge</button>
+                    <button className="btn-accent" disabled={busy || !mergeGuidance.canApply} onClick={() => void handleApplyMergePlan()}>Apply Merge</button>
                     <button disabled={busy || !mergeBaseBranch} onClick={() => void handleSwitchBranchWorkspace(mergeBaseBranch)}>Switch To Base</button>
                     <button disabled={busy || !mergeHeadBranch} onClick={() => void handleSwitchBranchWorkspace(mergeHeadBranch)}>Switch To Head</button>
                   </div>
@@ -4523,7 +4529,7 @@ export function App() {
               </div>
               <textarea className="codex-description-input" value={codexDraft.description}
                 onChange={(event) => setCodexDraft((prev) => ({ ...prev, description: event.target.value }))} />
-              <button disabled={busy || !canSaveCodex} onClick={handleSaveCodex}>Save Entity</button>
+              <button className="btn-accent" disabled={busy || !canSaveCodex} onClick={handleSaveCodex}>Save Entity</button>
             </div>
           ) : null}
         </main>
