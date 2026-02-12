@@ -40,6 +40,7 @@
   - Budget policy enforcement (hard spend/token caps) is deferred to future TODO. 📝
   - Generation run history/failure inspection is available via CLI and desktop runs panel. ✅
   - Normalization quality diagnostics are persisted per run and exposed in run detail views. ✅
+  - Generation run quality tiers are filterable in CLI (`generation list --quality ...`) and desktop Runs. ✅
 
 ## No-Mock Guardrails (active)
 

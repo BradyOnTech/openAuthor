@@ -187,6 +187,18 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(code, 0, msg=err)
       generation_rows = json.loads(out)
       self.assertTrue(any(row["run_id"] == run_id for row in generation_rows))
+      run_summary = next(row for row in generation_rows if row["run_id"] == run_id)
+      self.assertIn("quality_score", run_summary)
+      self.assertIn("quality_tier", run_summary)
+      self.assertIn("quality_flags", run_summary)
+
+      code, out, err = self.run_cli(
+        ["generation", "list", "--quality", run_summary["quality_tier"], "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      quality_filtered_rows = json.loads(out)
+      self.assertTrue(any(row["run_id"] == run_id for row in quality_filtered_rows))
 
       code, out, err = self.run_cli(["generation", "get", "--id", run_id, "--json"], root)
       self.assertEqual(code, 0, msg=err)

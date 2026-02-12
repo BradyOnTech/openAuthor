@@ -8,6 +8,7 @@ from .ai import get_provider_runtime_config
 from .project import OpenAuthorError, ProjectPaths
 
 STATUSES = {"succeeded", "failed"}
+QUALITY_TIERS = {"high", "medium", "low"}
 
 
 def _generation_file(paths: ProjectPaths, run_id: str) -> Path:
@@ -32,6 +33,7 @@ def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) ->
     if isinstance(payload.get("normalization"), dict)
     else {}
   )
+  quality = payload.get("quality", {}) if isinstance(payload.get("quality"), dict) else {}
 
   return {
     "run_id": payload.get("run_id", log_file.stem),
@@ -50,6 +52,9 @@ def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) ->
     "error_retriable": error.get("retriable"),
     "normalization_changed": normalization.get("normalization_changed"),
     "missing_sections_filled": normalization.get("missing_sections_filled", []),
+    "quality_score": quality.get("score"),
+    "quality_tier": quality.get("tier"),
+    "quality_flags": quality.get("flags", []),
     "log_path": str(log_file.relative_to(paths.root)),
   }
 
@@ -69,11 +74,17 @@ def list_generation_runs(
   status: str | None = None,
   scene_id: str | None = None,
   provider: str | None = None,
+  quality_tier: str | None = None,
   limit: int | None = None,
 ) -> list[dict[str, Any]]:
   if status is not None and status not in STATUSES:
     allowed = ", ".join(sorted(STATUSES))
     raise OpenAuthorError(f"Invalid generation status '{status}'. Allowed: {allowed}.")
+  if quality_tier is not None and quality_tier not in QUALITY_TIERS:
+    allowed = ", ".join(sorted(QUALITY_TIERS))
+    raise OpenAuthorError(
+      f"Invalid quality tier '{quality_tier}'. Allowed: {allowed}."
+    )
   if limit is not None and limit < 1:
     raise OpenAuthorError("limit must be >= 1.")
 
@@ -86,7 +97,10 @@ def list_generation_runs(
       continue
     if provider is not None and payload.get("provider") != provider:
       continue
-    rows.append(_summary(payload, log_file=log_file, paths=paths))
+    summary = _summary(payload, log_file=log_file, paths=paths)
+    if quality_tier is not None and summary.get("quality_tier") != quality_tier:
+      continue
+    rows.append(summary)
 
   rows.sort(key=lambda row: row.get("created_at", ""), reverse=True)
   if limit is not None:

@@ -70,6 +70,8 @@ ANTHROPIC_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001
 # inspect generation runs and failures
 python3 -m openauthor generation list --json
 python3 -m openauthor generation list --status failed --json
+python3 -m openauthor generation list --provider openai --json
+python3 -m openauthor generation list --quality low --json
 python3 -m openauthor generation get --id gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation config --json
 
@@ -95,6 +97,7 @@ AI generation artifacts:
 - `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
+- Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
 
 Generated proposal format is normalized to four sections for review consistency:
 

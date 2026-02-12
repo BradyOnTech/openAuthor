@@ -52,10 +52,19 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertEqual(rows[0]["proposal_id"], proposal["id"])
       self.assertIn("normalization_changed", rows[0])
       self.assertIn("missing_sections_filled", rows[0])
+      self.assertIn("quality_score", rows[0])
+      self.assertIn("quality_tier", rows[0])
+      self.assertIn("quality_flags", rows[0])
 
       filtered = list_generation_runs(paths, status="succeeded", scene_id="scene-0001")
       self.assertEqual(len(filtered), 1)
       self.assertEqual(filtered[0]["run_id"], run_id)
+      quality_filtered = list_generation_runs(
+        paths,
+        quality_tier=rows[0]["quality_tier"],
+      )
+      self.assertEqual(len(quality_filtered), 1)
+      self.assertEqual(quality_filtered[0]["run_id"], run_id)
 
       details = get_generation_run(paths, run_id)
       self.assertEqual(details["run_id"], run_id)
@@ -63,6 +72,7 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertEqual(details["proposal_id"], proposal["id"])
       self.assertIn("normalized_instruction", details)
       self.assertIn("normalization", details)
+      self.assertIn("quality", details)
 
   def test_generation_run_errors(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -74,6 +84,8 @@ class GenerationsModuleTests(unittest.TestCase):
 
       with self.assertRaises(OpenAuthorError):
         list_generation_runs(paths, status="invalid")
+      with self.assertRaises(OpenAuthorError):
+        list_generation_runs(paths, quality_tier="invalid")
 
       runtime = get_generation_runtime_config(paths)
       self.assertIn("retry", runtime)

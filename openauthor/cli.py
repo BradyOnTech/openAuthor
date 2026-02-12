@@ -160,6 +160,12 @@ def build_parser() -> argparse.ArgumentParser:
     default=None,
     help="Filter by provider.",
   )
+  generation_list.add_argument(
+    "--quality",
+    choices=["high", "medium", "low"],
+    default=None,
+    help="Filter by quality tier.",
+  )
   generation_list.add_argument("--limit", type=int, default=None, help="Max rows.")
   generation_list.add_argument("--json", action="store_true", help="Output JSON.")
   generation_get = generation_sub.add_parser("get", help="Get generation run by id.")
@@ -422,6 +428,7 @@ def _run(args: argparse.Namespace) -> int:
       status=args.status,
       scene_id=args.scene,
       provider=args.provider,
+      quality_tier=args.quality,
       limit=args.limit,
     )
     if args.json:

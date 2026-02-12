@@ -57,6 +57,9 @@ export type ProposalRecord = {
     latency_ms: number;
     provider_attempts: number;
     estimated_cost_usd: number | null;
+    quality_score?: number | null;
+    quality_tier?: "high" | "medium" | "low" | string;
+    quality_flags?: string[];
     log_path: string;
   };
 };
@@ -78,6 +81,9 @@ export type GenerationRunSummary = {
   error_retriable: boolean | null;
   normalization_changed: boolean | null;
   missing_sections_filled: string[];
+  quality_score: number | null;
+  quality_tier: "high" | "medium" | "low" | string | null;
+  quality_flags: string[];
   log_path: string;
 };
 
@@ -104,6 +110,11 @@ export type GenerationRunDetail = {
     missing_sections_filled?: string[];
     normalization_changed?: boolean;
     section_item_counts?: Record<string, number>;
+  };
+  quality?: {
+    score?: number;
+    tier?: "high" | "medium" | "low" | string;
+    flags?: string[];
   };
   usage?: {
     input_tokens?: number;

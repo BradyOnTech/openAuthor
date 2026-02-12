@@ -364,6 +364,9 @@ describe("orderGenerationRuns", () => {
         error_retriable: null,
         normalization_changed: true,
         missing_sections_filled: [],
+        quality_score: 92,
+        quality_tier: "high",
+        quality_flags: [],
         log_path: ".openauthor/generations/gen-a.json"
       },
       {
@@ -383,6 +386,9 @@ describe("orderGenerationRuns", () => {
         error_retriable: true,
         normalization_changed: null,
         missing_sections_filled: [],
+        quality_score: null,
+        quality_tier: null,
+        quality_flags: [],
         log_path: ".openauthor/generations/gen-b.json"
       }
     ];
@@ -411,6 +417,9 @@ describe("countGenerationRuns", () => {
         error_retriable: null,
         normalization_changed: false,
         missing_sections_filled: [],
+        quality_score: 85,
+        quality_tier: "high",
+        quality_flags: [],
         log_path: ""
       },
       {
@@ -430,6 +439,9 @@ describe("countGenerationRuns", () => {
         error_retriable: true,
         normalization_changed: null,
         missing_sections_filled: [],
+        quality_score: null,
+        quality_tier: null,
+        quality_flags: [],
         log_path: ""
       },
       {
@@ -449,6 +461,9 @@ describe("countGenerationRuns", () => {
         error_retriable: null,
         normalization_changed: false,
         missing_sections_filled: [],
+        quality_score: 58,
+        quality_tier: "low",
+        quality_flags: ["missing_sections_filled"],
         log_path: ""
       }
     ]);

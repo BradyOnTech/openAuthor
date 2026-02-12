@@ -59,6 +59,8 @@ type RightTab = "proposals" | "codex" | "checks" | "context" | "runs";
 type CenterView = "editor" | "outliner";
 type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
 type GenerationStatusFilter = "all" | "succeeded" | "failed";
+type GenerationQualityFilter = "all" | "high" | "medium" | "low";
+type GenerationProviderFilter = "all" | ProposalProvider;
 
 type DraftScene = {
   title: string;
@@ -141,6 +143,10 @@ export function App() {
     useState<OutlinerStatusFilter>("all");
   const [generationStatusFilter, setGenerationStatusFilter] =
     useState<GenerationStatusFilter>("all");
+  const [generationQualityFilter, setGenerationQualityFilter] =
+    useState<GenerationQualityFilter>("all");
+  const [generationProviderFilter, setGenerationProviderFilter] =
+    useState<GenerationProviderFilter>("all");
 
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
@@ -311,8 +317,14 @@ export function App() {
   async function refreshGenerationRuns(nextSelectedRunId?: string) {
     const status =
       generationStatusFilter === "all" ? undefined : generationStatusFilter;
+    const quality =
+      generationQualityFilter === "all" ? undefined : generationQualityFilter;
+    const provider =
+      generationProviderFilter === "all" ? undefined : generationProviderFilter;
     const rows = await listGenerationRuns(projectRoot, {
       status,
+      quality,
+      provider,
       limit: 50
     });
     const ordered = orderGenerationRuns(rows);
@@ -460,7 +472,7 @@ export function App() {
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setBusy(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [generationStatusFilter]);
+  }, [generationStatusFilter, generationQualityFilter, generationProviderFilter]);
 
   useEffect(() => {
     if (!selectedGenerationRunId) return;
@@ -1434,6 +1446,28 @@ export function App() {
                   <option value="succeeded">succeeded</option>
                   <option value="failed">failed</option>
                 </select>
+                <select
+                  value={generationProviderFilter}
+                  onChange={(event) =>
+                    setGenerationProviderFilter(event.target.value as GenerationProviderFilter)
+                  }
+                >
+                  <option value="all">all providers</option>
+                  <option value="local">local</option>
+                  <option value="openai">openai</option>
+                  <option value="anthropic">anthropic</option>
+                </select>
+                <select
+                  value={generationQualityFilter}
+                  onChange={(event) =>
+                    setGenerationQualityFilter(event.target.value as GenerationQualityFilter)
+                  }
+                >
+                  <option value="all">all quality</option>
+                  <option value="high">high</option>
+                  <option value="medium">medium</option>
+                  <option value="low">low</option>
+                </select>
                 <button
                   disabled={busy || !projectFound}
                   onClick={() =>
@@ -1486,7 +1520,9 @@ export function App() {
                       onClick={() => setSelectedGenerationRunId(run.run_id)}
                     >
                       <strong>{run.run_id}</strong>
-                      <span>{run.provider || "unknown provider"}</span>
+                      <span>
+                        {run.provider || "unknown provider"} / {run.quality_tier || "n/a"}
+                      </span>
                       <em>{run.status}</em>
                     </button>
                   ))
@@ -1513,6 +1549,17 @@ export function App() {
                           : ""}
                       </p>
                       <p className="run-meta">Proposal: {selectedGenerationRun.proposal_id || "n/a"}</p>
+                      <p className="run-meta">
+                        Quality: {selectedGenerationRun.quality?.tier || "n/a"} /{" "}
+                        {typeof selectedGenerationRun.quality?.score === "number"
+                          ? selectedGenerationRun.quality?.score
+                          : "n/a"}
+                      </p>
+                      {selectedGenerationRun.quality?.flags?.length ? (
+                        <p className="run-meta">
+                          Quality flags: {selectedGenerationRun.quality.flags.join(", ")}
+                        </p>
+                      ) : null}
                       <p className="run-meta">
                         Normalization changed:{" "}
                         {selectedGenerationRun.normalization?.normalization_changed

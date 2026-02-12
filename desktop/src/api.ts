@@ -331,6 +331,7 @@ export async function listGenerationRuns(
   projectRoot: string,
   filters?: {
     status?: "succeeded" | "failed";
+    quality?: "high" | "medium" | "low";
     sceneId?: string;
     provider?: ProposalProvider;
     limit?: number;
@@ -345,6 +346,9 @@ export async function listGenerationRuns(
   }
   if (filters?.provider) {
     args.push("--provider", filters.provider);
+  }
+  if (filters?.quality) {
+    args.push("--quality", filters.quality);
   }
   if (typeof filters?.limit === "number") {
     args.push("--limit", String(filters.limit));

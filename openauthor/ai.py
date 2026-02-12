@@ -403,6 +403,53 @@ def _normalize_proposal_text(
   return normalized_text, diagnostics
 
 
+def _quality_from_normalization(diagnostics: dict[str, Any]) -> dict[str, Any]:
+  score = 100
+  flags: list[str] = []
+
+  missing_sections = diagnostics.get("missing_sections_filled", [])
+  if isinstance(missing_sections, list):
+    missing_count = len(missing_sections)
+  else:
+    missing_count = 0
+  if missing_count > 0:
+    score -= min(60, 15 * missing_count)
+    flags.append("missing_sections_filled")
+
+  detected_headers = diagnostics.get("detected_headers", [])
+  if isinstance(detected_headers, list) and len(detected_headers) == 0:
+    score -= 15
+    flags.append("no_headers_detected")
+
+  preamble_line_count = diagnostics.get("preamble_line_count", 0)
+  if isinstance(preamble_line_count, int) and preamble_line_count > 3:
+    score -= min(15, (preamble_line_count - 3) * 2)
+    flags.append("high_unstructured_preamble")
+
+  raw_nonempty_line_count = diagnostics.get("raw_nonempty_line_count", 0)
+  if isinstance(raw_nonempty_line_count, int) and raw_nonempty_line_count < 4:
+    score -= 20
+    flags.append("very_short_raw_output")
+
+  if diagnostics.get("normalization_changed"):
+    score -= 5
+    flags.append("normalized_output_changed")
+
+  score = max(0, min(100, score))
+  if score >= 85:
+    tier = "high"
+  elif score >= 60:
+    tier = "medium"
+  else:
+    tier = "low"
+
+  return {
+    "score": score,
+    "tier": tier,
+    "flags": flags,
+  }
+
+
 def _openai_chat_completion(
   *,
   model: str,
@@ -677,6 +724,7 @@ def _write_generation_log(
   provider_result: dict[str, Any],
   raw_provider_text: str,
   normalization: dict[str, Any],
+  quality: dict[str, Any],
   estimated_cost_usd: float | None,
 ) -> tuple[str, str]:
   run_id = f"gen-{uuid.uuid4().hex[:12]}"
@@ -698,6 +746,7 @@ def _write_generation_log(
     "raw_response_text": raw_provider_text,
     "normalized_instruction": provider_result["text"],
     "normalization": normalization,
+    "quality": quality,
     "usage": {
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
@@ -830,6 +879,7 @@ def generate_proposal(
     instruction=instruction,
     context=context,
   )
+  quality = _quality_from_normalization(normalization_diagnostics)
   provider_result["text"] = normalized_text
 
   estimated_cost_usd = _estimate_cost_usd(
@@ -852,6 +902,7 @@ def generate_proposal(
     provider_result=provider_result,
     raw_provider_text=raw_provider_text,
     normalization=normalization_diagnostics,
+    quality=quality,
     estimated_cost_usd=estimated_cost_usd,
   )
 
@@ -875,6 +926,9 @@ def generate_proposal(
       "latency_ms": provider_result["latency_ms"],
       "provider_attempts": provider_result["attempts"],
       "estimated_cost_usd": estimated_cost_usd,
+      "quality_score": quality["score"],
+      "quality_tier": quality["tier"],
+      "quality_flags": quality["flags"],
       "log_path": log_path,
     },
   )

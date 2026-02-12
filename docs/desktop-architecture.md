@@ -51,7 +51,7 @@
 
 ## Implemented command usage (Generation Runs)
 
-- Run list: `generation list --json`
+- Run list: `generation list --json` (supports status + provider + quality filters)
 - Run detail: `generation get --id <run-id> --json`
 - Runtime config: `generation config --json`
 
