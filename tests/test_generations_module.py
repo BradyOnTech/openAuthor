@@ -99,6 +99,7 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertIn("retry", runtime)
       self.assertIn("providers", runtime)
       self.assertIn("openai", runtime["providers"])
+      self.assertIn("budget", runtime)
 
   def test_rerun_generation_from_existing_run(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

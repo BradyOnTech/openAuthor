@@ -60,7 +60,24 @@
 - Run unpin: `generation unpin --scene <scene-id> --json`
 - Run pins list: `generation pins --json`
 - Runtime config: `generation config --json`
-- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), recommendation-guided promote actions (current vs baseline), selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown); proposal review can jump directly to preferred proposal for a scene.
+- Budget policy inspection/update: `generation budget [--reset|--max-...|--daily-...|--weekly-...] --json`
+- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), recommendation-guided promote actions (current vs baseline), selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown), and generation budget policy view/update/reset controls with daily/weekly usage readout; proposal review can jump directly to preferred proposal for a scene.
+
+## Implemented command usage (Branch Workspace CLI primitives)
+
+- Branch list: `branch list --json`
+- Branch create/switch: `branch create --name ... [--from ...] --json`, `branch switch --name ... --json`
+- Branch diff: `branch diff --base ... --head ... --json`
+- Merge preflight: `branch preflight --base ... --head ... --json` (overlap/risk classification for scene/proposal/codex/project/budget artifacts)
+- Merge apply: `branch merge --base ... --head ... --json` (auto-aborts on conflict and reports failure)
+- Desktop Guided Merge panel uses the same branch list/create/switch/diff/preflight/merge command boundary.
+
+## Implemented command usage (Retrieval Core)
+
+- Retrieval index status: `retrieval status --json`
+- Retrieval index build: `retrieval build [--chunk-words ... --overlap-words ...] --json`
+- Retrieval query: `retrieval query --text ... [--limit ... --min-score ... --require-fresh] --json`
+- Retrieval index metadata is commit/source scoped (`git_head` + `source_digest`) so stale indexes are explicit and query callers can fail closed with `--require-fresh`.
 
 ## Why sidecar-first
 

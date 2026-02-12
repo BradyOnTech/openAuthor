@@ -25,7 +25,7 @@ make desktop-smoke
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Context Lens + Codex Panel + Continuity Checks.
+Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks.
 
 ```bash
 cd desktop
@@ -79,11 +79,28 @@ python3 -m openauthor generation rerun --id gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation pin --scene scene-0001 --run gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation pins --json
 python3 -m openauthor generation unpin --scene scene-0001 --json
+python3 -m openauthor generation budget --json
+python3 -m openauthor generation budget --max-output-tokens 700 --daily-tokens 120000 --json
+python3 -m openauthor generation budget --reset --json
 python3 -m openauthor generation config --json
 
 # create git snapshot
 python3 -m openauthor snapshot create -m "Draft scene and codex seed"
 python3 -m openauthor snapshot log
+
+# branch workspace primitives
+python3 -m openauthor branch list --json
+python3 -m openauthor branch create --name exp-arc-a --json
+python3 -m openauthor branch switch --name main --json
+python3 -m openauthor branch diff --base main --head exp-arc-a --json
+python3 -m openauthor branch preflight --base main --head exp-arc-a --json
+python3 -m openauthor branch merge --base main --head exp-arc-a --json
+
+# retrieval index + query
+python3 -m openauthor retrieval status --json
+python3 -m openauthor retrieval build --json
+python3 -m openauthor retrieval query --text "ember cipher vault routes" --limit 5 --json
+python3 -m openauthor retrieval query --text "ember cipher" --require-fresh --json
 
 # run continuity checks
 python3 -m openauthor check continuity
@@ -101,10 +118,16 @@ AI generation artifacts:
 
 - `.openauthor/generations/*.json` stores prompt/context/usage logs per run.
 - `.openauthor/provider_pricing.json` controls model pricing for cost estimation metadata.
+- `.openauthor/generation_budget_policy.json` stores fail-closed budget limits for generation.
+- `.openauthor/retrieval/index.json` stores deterministic local retrieval chunks/term stats for provenance-backed querying.
+- Branch workspace merge preflight analyzes overlapping changes in authoring artifacts (scenes, proposals, codex snapshot, project/budget metadata).
+- Desktop Guided Merge panel supports branch create/switch, preflight risk analysis, branch diff review, and merge apply actions.
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
+- Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
+- Desktop Runs panel now includes budget policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
 - Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.

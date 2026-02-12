@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .ai import SUPPORTED_PROVIDERS, generate_proposal, get_provider_runtime_config
+from .budget import get_generation_budget_report
 from .project import OpenAuthorError, ProjectPaths
 
 STATUSES = {"succeeded", "failed"}
@@ -166,8 +167,9 @@ def list_generation_runs(
 
 
 def get_generation_runtime_config(paths: ProjectPaths) -> dict[str, Any]:
-  del paths
-  return get_provider_runtime_config()
+  runtime = get_provider_runtime_config()
+  runtime["budget"] = get_generation_budget_report(paths)
+  return runtime
 
 
 def list_pinned_generation_runs(

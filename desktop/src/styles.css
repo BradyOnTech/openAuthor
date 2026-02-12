@@ -829,6 +829,80 @@ code {
   font-size: 14px;
 }
 
+.run-budget-card {
+  border: 1px dashed #c7bda4;
+  border-radius: 8px;
+  background: #fffaf0;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.run-budget-card h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.merge-content {
+  grid-template-rows: auto;
+  align-content: start;
+  overflow: auto;
+}
+
+.merge-create-card,
+.merge-preflight-card,
+.merge-diff-card,
+.merge-result-card {
+  border: 1px solid #d7cfbc;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fffdf8;
+  display: grid;
+  gap: 8px;
+}
+
+.merge-create-card h3,
+.merge-preflight-card h3,
+.merge-diff-card h3,
+.merge-result-card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.merge-controls {
+  border: 1px dashed #c7bda4;
+  border-radius: 10px;
+  padding: 10px;
+  background: #edf5ff;
+  display: grid;
+  gap: 8px;
+}
+
+.merge-guidance {
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.merge-guidance.tone-ok {
+  background: #d9f3e2;
+}
+
+.merge-guidance.tone-warn {
+  background: #fff0d9;
+}
+
+.merge-guidance.tone-risk {
+  background: #fde4df;
+}
+
+.merge-diff-list {
+  max-height: 180px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
 .run-item {
   text-align: left;
   border: 1px solid #d7cfbc;

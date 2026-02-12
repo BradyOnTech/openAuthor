@@ -1,7 +1,12 @@
 import type {
+  BranchDiffReport,
+  BranchMergeResult,
+  BranchPreflightReport,
+  BranchSummary,
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
+  GenerationBudgetReport,
   GenerationPin,
   GenerationRunDetail,
   GenerationRuntimeConfig,
@@ -19,7 +24,9 @@ const ALLOWED = new Set([
   "codex",
   "proposal",
   "snapshot",
+  "branch",
   "check",
+  "retrieval",
   "generation"
 ]);
 
@@ -418,6 +425,151 @@ export async function getGenerationRuntimeConfig(
 ): Promise<GenerationRuntimeConfig> {
   const result = await runCoreCommand(projectRoot, ["generation", "config", "--json"]);
   return decodeJson<GenerationRuntimeConfig>(result);
+}
+
+export async function getGenerationBudget(
+  projectRoot: string
+): Promise<GenerationBudgetReport> {
+  const result = await runCoreCommand(projectRoot, ["generation", "budget", "--json"]);
+  return decodeJson<GenerationBudgetReport>(result);
+}
+
+export async function updateGenerationBudget(
+  projectRoot: string,
+  payload: {
+    maxInputTokens?: number;
+    maxOutputTokens?: number;
+    maxTotalTokens?: number;
+    maxEstimatedCostUsd?: number;
+    dailyTokens?: number;
+    dailyEstimatedCostUsd?: number;
+    weeklyTokens?: number;
+    weeklyEstimatedCostUsd?: number;
+  }
+): Promise<GenerationBudgetReport> {
+  const args = ["generation", "budget"];
+  if (typeof payload.maxInputTokens === "number") {
+    args.push("--max-input-tokens", String(payload.maxInputTokens));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  if (typeof payload.maxTotalTokens === "number") {
+    args.push("--max-total-tokens", String(payload.maxTotalTokens));
+  }
+  if (typeof payload.maxEstimatedCostUsd === "number") {
+    args.push("--max-estimated-cost-usd", String(payload.maxEstimatedCostUsd));
+  }
+  if (typeof payload.dailyTokens === "number") {
+    args.push("--daily-tokens", String(payload.dailyTokens));
+  }
+  if (typeof payload.dailyEstimatedCostUsd === "number") {
+    args.push("--daily-estimated-cost-usd", String(payload.dailyEstimatedCostUsd));
+  }
+  if (typeof payload.weeklyTokens === "number") {
+    args.push("--weekly-tokens", String(payload.weeklyTokens));
+  }
+  if (typeof payload.weeklyEstimatedCostUsd === "number") {
+    args.push("--weekly-estimated-cost-usd", String(payload.weeklyEstimatedCostUsd));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<GenerationBudgetReport>(result);
+}
+
+export async function resetGenerationBudget(
+  projectRoot: string
+): Promise<GenerationBudgetReport> {
+  const result = await runCoreCommand(projectRoot, [
+    "generation",
+    "budget",
+    "--reset",
+    "--json"
+  ]);
+  return decodeJson<GenerationBudgetReport>(result);
+}
+
+export async function listBranches(projectRoot: string): Promise<BranchSummary[]> {
+  const result = await runCoreCommand(projectRoot, ["branch", "list", "--json"]);
+  return decodeJson<BranchSummary[]>(result);
+}
+
+export async function createBranch(
+  projectRoot: string,
+  payload: { name: string; fromRef?: string; noSwitch?: boolean }
+): Promise<{ name: string; current: boolean; from_ref: string }> {
+  const args = ["branch", "create", "--name", payload.name];
+  if (payload.fromRef && payload.fromRef.trim() !== "") {
+    args.push("--from", payload.fromRef.trim());
+  }
+  if (payload.noSwitch) {
+    args.push("--no-switch");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<{ name: string; current: boolean; from_ref: string }>(result);
+}
+
+export async function switchBranch(
+  projectRoot: string,
+  branchName: string
+): Promise<{ name: string; current: boolean }> {
+  const result = await runCoreCommand(projectRoot, [
+    "branch",
+    "switch",
+    "--name",
+    branchName,
+    "--json"
+  ]);
+  return decodeJson<{ name: string; current: boolean }>(result);
+}
+
+export async function diffBranches(
+  projectRoot: string,
+  payload: { base: string; head: string }
+): Promise<BranchDiffReport> {
+  const result = await runCoreCommand(projectRoot, [
+    "branch",
+    "diff",
+    "--base",
+    payload.base,
+    "--head",
+    payload.head,
+    "--json"
+  ]);
+  return decodeJson<BranchDiffReport>(result);
+}
+
+export async function preflightMerge(
+  projectRoot: string,
+  payload: { base: string; head: string }
+): Promise<BranchPreflightReport> {
+  const result = await runCoreCommand(projectRoot, [
+    "branch",
+    "preflight",
+    "--base",
+    payload.base,
+    "--head",
+    payload.head,
+    "--json"
+  ]);
+  return decodeJson<BranchPreflightReport>(result);
+}
+
+export async function mergeBranches(
+  projectRoot: string,
+  payload: { base: string; head: string }
+): Promise<BranchMergeResult> {
+  const result = await runCoreCommand(projectRoot, [
+    "branch",
+    "merge",
+    "--base",
+    payload.base,
+    "--head",
+    payload.head,
+    "--json"
+  ]);
+  return decodeJson<BranchMergeResult>(result);
 }
 
 export async function listGenerationPins(

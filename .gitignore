@@ -37,6 +37,7 @@ venv/
 
 # openauthor runtime data
 codex/codex.sqlite3
+.openauthor/retrieval/
 !manuscript/scenes/.gitkeep
 !.openauthor/proposals/.gitkeep
 

@@ -166,6 +166,44 @@ export type GenerationRuntimeConfig = {
       base_url: string;
     };
   };
+  budget?: GenerationBudgetReport;
+};
+
+export type GenerationBudgetPolicy = {
+  schema_version: number;
+  enforcement: "fail_closed" | string;
+  per_run: {
+    max_input_tokens: number | null;
+    max_output_tokens: number | null;
+    max_total_tokens: number | null;
+    max_estimated_cost_usd: number | null;
+  };
+  rolling: {
+    daily_tokens: number | null;
+    daily_estimated_cost_usd: number | null;
+    weekly_tokens: number | null;
+    weekly_estimated_cost_usd: number | null;
+  };
+};
+
+export type GenerationBudgetUsageWindow = {
+  runs: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd: number;
+  unknown_cost_runs: number;
+  since?: string;
+};
+
+export type GenerationBudgetReport = {
+  policy: GenerationBudgetPolicy;
+  usage: {
+    as_of: string;
+    daily: GenerationBudgetUsageWindow;
+    weekly: GenerationBudgetUsageWindow;
+    lifetime: GenerationBudgetUsageWindow;
+  };
 };
 
 export type CodexEntity = {
@@ -185,4 +223,47 @@ export type ContinuityIssue = {
   message: string;
   scene_id: string;
   path: string;
+};
+
+export type BranchSummary = {
+  name: string;
+  current: boolean;
+  upstream: string;
+};
+
+export type BranchDiffFile = {
+  status: string;
+  path: string;
+  added: number | null;
+  deleted: number | null;
+};
+
+export type BranchDiffReport = {
+  base: string;
+  head: string;
+  ahead_by: number;
+  behind_by: number;
+  files: BranchDiffFile[];
+};
+
+export type BranchPreflightReport = {
+  base: string;
+  head: string;
+  merge_base: string;
+  base_changed_count: number;
+  head_changed_count: number;
+  overlap_count: number;
+  overlap_by_category: Record<string, string[]>;
+  safe_to_merge: boolean;
+  risk_level: "low" | "medium" | "high" | string;
+  recommendations: string[];
+};
+
+export type BranchMergeResult = {
+  base: string;
+  head: string;
+  merged: boolean;
+  merge_commit: string;
+  current_branch: string;
+  merge_output: string;
 };

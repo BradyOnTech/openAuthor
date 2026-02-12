@@ -10,6 +10,7 @@ from unittest.mock import patch
 import urllib.error
 
 from openauthor.ai import build_generation_context, generate_proposal
+from openauthor.budget import update_generation_budget_policy
 from openauthor.codex import add_entity
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene
@@ -240,6 +241,36 @@ class AIModuleTests(unittest.TestCase):
       self.assertIn("Constraints:", proposal["instruction"])
       self.assertIn("Edit Plan:", proposal["instruction"])
       self.assertIn("Continuity Notes:", proposal["instruction"])
+
+  def test_budget_policy_blocks_generation_and_logs_failure(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Budget Block")
+      add_scene(
+        paths,
+        title="Budget Scene",
+        summary="",
+        pov="",
+        status="draft",
+        body="Body text for budget policy enforcement checks.",
+      )
+      update_generation_budget_policy(paths, max_output_tokens=64)
+
+      with self.assertRaises(OpenAuthorError):
+        generate_proposal(
+          paths,
+          scene_id="scene-0001",
+          instruction="tighten this scene with stronger transitions",
+          provider="local",
+          max_output_tokens=128,
+        )
+
+      logs = sorted((root / ".openauthor" / "generations").glob("gen-*.json"))
+      self.assertGreaterEqual(len(logs), 1)
+      payload = json.loads(logs[-1].read_text(encoding="utf-8"))
+      self.assertEqual(payload["status"], "failed")
+      self.assertEqual(payload["error"]["category"], "budget_policy_violation")
+      self.assertIn("violations", payload["error"])
 
 
 if __name__ == "__main__":

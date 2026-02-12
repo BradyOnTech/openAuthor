@@ -3,23 +3,32 @@ import {
   addCodexEntity,
   addScene,
   applyProposal,
+  createBranch,
   createProposal,
+  diffBranches,
   generateProposal,
+  getGenerationBudget,
   getGenerationRun,
   getGenerationRuntimeConfig,
   getCodexEntity,
   getProjectStatus,
   getScene,
+  listBranches,
   listCodexEntities,
   listGenerationPins,
   listGenerationRuns,
   listProposals,
   listScenes,
+  mergeBranches,
   pinGenerationRun,
+  preflightMerge,
   rejectProposal,
   rerunGeneration,
+  resetGenerationBudget,
   runContinuityChecks,
+  switchBranch,
   unpinGenerationRun,
+  updateGenerationBudget,
   updateCodexEntity,
   updateScene
 } from "./api";
@@ -62,9 +71,21 @@ import {
   loadRunComparisonPrefs,
   saveRunComparisonPrefs
 } from "./runComparePrefs";
+import { mergeGuidanceFromPreflight } from "./merge";
+import {
+  buildBudgetUpdatePayload,
+  draftFromBudgetPolicy,
+  EMPTY_BUDGET_DRAFT,
+  type GenerationBudgetDraft
+} from "./budget";
 import type {
+  BranchDiffReport,
+  BranchMergeResult,
+  BranchPreflightReport,
+  BranchSummary,
   CodexEntity,
   ContinuityIssue,
+  GenerationBudgetReport,
   GenerationRunDetail,
   GenerationRuntimeConfig,
   GenerationRunSummary,
@@ -85,7 +106,7 @@ function loadDefaultRoot(): string {
   }
 }
 
-type RightTab = "proposals" | "codex" | "checks" | "context" | "runs";
+type RightTab = "proposals" | "codex" | "checks" | "context" | "runs" | "merge";
 type CenterView = "editor" | "outliner";
 type OutlinerStatusFilter = "all" | "draft" | "revised" | "final";
 type GenerationStatusFilter = "all" | "succeeded" | "failed";
@@ -97,6 +118,11 @@ type ProposalReviewMode =
   | "preferred_priority"
   | "preferred_only";
 type ProposalReviewStatusFilter = "all" | "pending" | "applied" | "rejected";
+type DraftBranchCreate = {
+  name: string;
+  fromRef: string;
+  noSwitch: boolean;
+};
 
 type DraftScene = {
   title: string;
@@ -169,6 +195,12 @@ const EMPTY_DRAFT_CODEX: DraftCodex = {
   type: "character",
   name: "",
   description: ""
+};
+
+const EMPTY_DRAFT_BRANCH_CREATE: DraftBranchCreate = {
+  name: "",
+  fromRef: "",
+  noSwitch: false
 };
 
 async function copyTextToClipboard(value: string): Promise<void> {
@@ -267,6 +299,17 @@ export function App() {
 
   const [continuityIssues, setContinuityIssues] = useState<ContinuityIssue[]>([]);
   const [selectedContinuityIssueId, setSelectedContinuityIssueId] = useState<string>("");
+  const [branches, setBranches] = useState<BranchSummary[]>([]);
+  const [mergeBaseBranch, setMergeBaseBranch] = useState<string>("");
+  const [mergeHeadBranch, setMergeHeadBranch] = useState<string>("");
+  const [branchCreateDraft, setBranchCreateDraft] =
+    useState<DraftBranchCreate>(EMPTY_DRAFT_BRANCH_CREATE);
+  const [branchDiffReport, setBranchDiffReport] = useState<BranchDiffReport | null>(null);
+  const [branchPreflightReport, setBranchPreflightReport] =
+    useState<BranchPreflightReport | null>(null);
+  const [branchMergeResult, setBranchMergeResult] = useState<BranchMergeResult | null>(
+    null
+  );
   const [generationRuns, setGenerationRuns] = useState<GenerationRunSummary[]>([]);
   const [generationPins, setGenerationPins] = useState<Record<string, string>>({});
   const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
@@ -288,6 +331,10 @@ export function App() {
     useState<GenerationRunDetail | null>(null);
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
     useState<GenerationRuntimeConfig | null>(null);
+  const [generationBudget, setGenerationBudget] =
+    useState<GenerationBudgetReport | null>(null);
+  const [budgetDraft, setBudgetDraft] =
+    useState<GenerationBudgetDraft>(EMPTY_BUDGET_DRAFT);
   const [rerunDraft, setRerunDraft] = useState<RerunDraft>(EMPTY_RERUN_DRAFT);
   const [selectedScenePinnedRunDetail, setSelectedScenePinnedRunDetail] =
     useState<GenerationRunDetail | null>(null);
@@ -308,6 +355,20 @@ export function App() {
   const canSaveCodex = useMemo(() => {
     return Boolean(selectedCodexEntityId && codexDraft.name.trim() !== "");
   }, [selectedCodexEntityId, codexDraft.name]);
+  const budgetDraftPayload = useMemo(
+    () => buildBudgetUpdatePayload(budgetDraft),
+    [budgetDraft]
+  );
+  const canSaveBudgetPolicy = useMemo(() => {
+    return Object.values(budgetDraftPayload).some((value) => typeof value === "number");
+  }, [budgetDraftPayload]);
+  const currentBranchName = useMemo(() => {
+    return branches.find((item) => item.current)?.name ?? "";
+  }, [branches]);
+  const mergeGuidance = useMemo(
+    () => mergeGuidanceFromPreflight(branchPreflightReport),
+    [branchPreflightReport]
+  );
 
   const proposalCounts = useMemo(() => countProposals(proposals), [proposals]);
   const preferredProposalIds = useMemo(() => {
@@ -593,6 +654,28 @@ export function App() {
     setSelectedCodexEntityId(target);
   }
 
+  async function refreshBranches() {
+    const rows = await listBranches(projectRoot);
+    setBranches(rows);
+    if (rows.length === 0) {
+      setMergeBaseBranch("");
+      setMergeHeadBranch("");
+      return;
+    }
+    const current = rows.find((item) => item.current)?.name ?? rows[0].name;
+    if (!rows.some((item) => item.name === mergeBaseBranch)) {
+      setMergeBaseBranch(current);
+    }
+    const nonBase = rows.find((item) => item.name !== current)?.name ?? current;
+    if (!rows.some((item) => item.name === mergeHeadBranch)) {
+      setMergeHeadBranch(nonBase);
+    }
+    setBranchCreateDraft((prev) => ({
+      ...prev,
+      fromRef: prev.fromRef || current
+    }));
+  }
+
   async function refreshGenerationRuns(nextSelectedRunId?: string) {
     const status =
       generationStatusFilter === "all" ? undefined : generationStatusFilter;
@@ -665,6 +748,27 @@ export function App() {
     setGenerationRuntimeConfig(row);
   }
 
+  async function refreshGenerationBudget() {
+    const row = await getGenerationBudget(projectRoot);
+    setGenerationBudget(row);
+    setBudgetDraft(draftFromBudgetPolicy(row.policy));
+  }
+
+  async function refreshProjectDataAfterBranchChange() {
+    await Promise.all([
+      refreshSceneList(),
+      refreshProposalList(),
+      refreshCodexList(),
+      refreshBranches(),
+      refreshGenerationRuns(),
+      refreshGenerationPins(),
+      refreshGenerationRuntimeConfig(),
+      refreshGenerationBudget()
+    ]);
+    setContinuityIssues([]);
+    setSelectedContinuityIssueId("");
+  }
+
   async function checkProjectAndLoad() {
     setBusy(true);
     setError("");
@@ -688,10 +792,19 @@ export function App() {
         setCodexDraft(EMPTY_DRAFT_CODEX);
         setContinuityIssues([]);
         setSelectedContinuityIssueId("");
+        setBranches([]);
+        setMergeBaseBranch("");
+        setMergeHeadBranch("");
+        setBranchCreateDraft(EMPTY_DRAFT_BRANCH_CREATE);
+        setBranchDiffReport(null);
+        setBranchPreflightReport(null);
+        setBranchMergeResult(null);
         setGenerationRuns([]);
         setGenerationPins({});
         setSelectedGenerationRunId("");
         setSelectedGenerationRun(null);
+        setGenerationBudget(null);
+        setBudgetDraft(EMPTY_BUDGET_DRAFT);
         setSelectedScenePinnedRunDetail(null);
         setSelectedScenePinnedRunStale(false);
         setGenerationRuntimeConfig(null);
@@ -701,9 +814,11 @@ export function App() {
         refreshSceneList(),
         refreshProposalList(),
         refreshCodexList(),
+        refreshBranches(),
         refreshGenerationRuns(),
         refreshGenerationPins(),
-        refreshGenerationRuntimeConfig()
+        refreshGenerationRuntimeConfig(),
+        refreshGenerationBudget()
       ]);
       setContinuityIssues([]);
       setSelectedContinuityIssueId("");
@@ -1137,10 +1252,14 @@ export function App() {
       const modelLabel = generated.generation?.model ?? "default";
       setMessage(`Proposal generated via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
+      const details = err instanceof Error ? err.message : String(err);
+      const budgetBlocked = details.toLowerCase().includes("budget policy");
       reportError(
         "Proposal generation failed",
         err,
-        "Check provider credentials/settings and retry."
+        budgetBlocked
+          ? "Open Runs and adjust generation budget policy, then retry."
+          : "Check provider credentials/settings and retry."
       );
     } finally {
       setBusy(false);
@@ -1409,6 +1528,170 @@ export function App() {
     }
   }
 
+  async function handleSaveBudgetPolicy() {
+    if (!canSaveBudgetPolicy) {
+      setError("Enter at least one budget value before saving.");
+      setMessage("");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("Saving generation budget policy...");
+    try {
+      const row = await updateGenerationBudget(projectRoot, budgetDraftPayload);
+      setGenerationBudget(row);
+      setBudgetDraft(draftFromBudgetPolicy(row.policy));
+      await refreshGenerationRuntimeConfig();
+      setMessage("Generation budget policy updated.");
+    } catch (err) {
+      reportError("Budget policy update failed", err, "Review values and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResetBudgetPolicy() {
+    setBusy(true);
+    setError("");
+    setMessage("Resetting generation budget policy...");
+    try {
+      const row = await resetGenerationBudget(projectRoot);
+      setGenerationBudget(row);
+      setBudgetDraft(draftFromBudgetPolicy(row.policy));
+      await refreshGenerationRuntimeConfig();
+      setMessage("Generation budget policy reset.");
+    } catch (err) {
+      reportError("Budget policy reset failed", err, "Retry reset.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCreateBranchWorkspace() {
+    if (branchCreateDraft.name.trim() === "") {
+      setError("Enter a branch name.");
+      setMessage("");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("Creating branch workspace...");
+    try {
+      const created = await createBranch(projectRoot, {
+        name: branchCreateDraft.name.trim(),
+        fromRef: branchCreateDraft.fromRef.trim() || undefined,
+        noSwitch: branchCreateDraft.noSwitch
+      });
+      await refreshProjectDataAfterBranchChange();
+      setBranchCreateDraft((prev) => ({
+        ...prev,
+        name: "",
+        noSwitch: false
+      }));
+      setBranchDiffReport(null);
+      setBranchPreflightReport(null);
+      setBranchMergeResult(null);
+      setMessage(
+        created.current
+          ? `Created and switched to ${created.name}.`
+          : `Created branch ${created.name}.`
+      );
+    } catch (err) {
+      reportError("Branch create failed", err, "Resolve branch naming/state issues and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSwitchBranchWorkspace(branchName: string) {
+    if (!branchName) return;
+    setBusy(true);
+    setError("");
+    setMessage("Switching branch workspace...");
+    try {
+      await switchBranch(projectRoot, branchName);
+      await refreshProjectDataAfterBranchChange();
+      setBranchDiffReport(null);
+      setBranchPreflightReport(null);
+      setBranchMergeResult(null);
+      setMessage(`Switched to branch ${branchName}.`);
+    } catch (err) {
+      reportError(
+        "Branch switch failed",
+        err,
+        "Create a snapshot or clean branch state before switching."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAnalyzeMergePlan() {
+    if (!mergeBaseBranch || !mergeHeadBranch) {
+      setError("Select both base and head branches.");
+      setMessage("");
+      return;
+    }
+    if (mergeBaseBranch === mergeHeadBranch) {
+      setError("Base and head branches must differ.");
+      setMessage("");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("Analyzing merge preflight...");
+    try {
+      const [diff, preflight] = await Promise.all([
+        diffBranches(projectRoot, { base: mergeBaseBranch, head: mergeHeadBranch }),
+        preflightMerge(projectRoot, { base: mergeBaseBranch, head: mergeHeadBranch })
+      ]);
+      setBranchDiffReport(diff);
+      setBranchPreflightReport(preflight);
+      setBranchMergeResult(null);
+      setMessage(
+        `Preflight complete: risk ${preflight.risk_level}, overlap ${preflight.overlap_count}.`
+      );
+    } catch (err) {
+      reportError("Merge analysis failed", err, "Refresh branches and retry.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleApplyMergePlan() {
+    if (!mergeBaseBranch || !mergeHeadBranch) {
+      setError("Select both base and head branches.");
+      setMessage("");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("Applying branch merge...");
+    try {
+      const row = await mergeBranches(projectRoot, {
+        base: mergeBaseBranch,
+        head: mergeHeadBranch
+      });
+      setBranchMergeResult(row);
+      await refreshProjectDataAfterBranchChange();
+      const [diff, preflight] = await Promise.all([
+        diffBranches(projectRoot, { base: mergeBaseBranch, head: mergeHeadBranch }),
+        preflightMerge(projectRoot, { base: mergeBaseBranch, head: mergeHeadBranch })
+      ]);
+      setBranchDiffReport(diff);
+      setBranchPreflightReport(preflight);
+      setMessage(`Merged ${row.head} into ${row.base} at ${row.merge_commit}.`);
+    } catch (err) {
+      reportError(
+        "Merge apply failed",
+        err,
+        "Run preflight, resolve overlap risk, and retry."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function handlePrepareGenerateProposalForScene(sceneId: string) {
     if (!sceneId) return;
     setRightTab("proposals");
@@ -1454,10 +1737,14 @@ export function App() {
       const modelLabel = regenerated.generation?.model ?? "default";
       setMessage(`Re-ran generation via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
+      const details = err instanceof Error ? err.message : String(err);
+      const budgetBlocked = details.toLowerCase().includes("budget policy");
       reportError(
         "Generation rerun failed",
         err,
-        "Check provider settings and retry."
+        budgetBlocked
+          ? "Open Runs and adjust generation budget policy, then retry."
+          : "Check provider settings and retry."
       );
     } finally {
       setBusy(false);
@@ -1885,6 +2172,12 @@ export function App() {
               onClick={() => setRightTab("runs")}
             >
               Runs
+            </button>
+            <button
+              className={rightTab === "merge" ? "active" : ""}
+              onClick={() => setRightTab("merge")}
+            >
+              Merge
             </button>
           </div>
 
@@ -2427,7 +2720,8 @@ export function App() {
                     void Promise.all([
                       refreshGenerationRuns(),
                       refreshGenerationPins(),
-                      refreshGenerationRuntimeConfig()
+                      refreshGenerationRuntimeConfig(),
+                      refreshGenerationBudget()
                     ])
                   }
                 >
@@ -2455,9 +2749,162 @@ export function App() {
                         ? "present"
                         : "missing"}
                     </p>
+                    <p className="run-meta">
+                      Budget enforcement:{" "}
+                      {generationBudget?.policy.enforcement ?? "fail_closed"}
+                    </p>
                   </>
                 ) : (
                   <p className="run-meta">Config unavailable.</p>
+                )}
+                {generationBudget ? (
+                  <div className="run-budget-card">
+                    <h4>Budget Policy</h4>
+                    <p className="run-meta">
+                      Per-run caps: in {generationBudget.policy.per_run.max_input_tokens ?? "none"} / out{" "}
+                      {generationBudget.policy.per_run.max_output_tokens ?? "none"} / total{" "}
+                      {generationBudget.policy.per_run.max_total_tokens ?? "none"} / cost{" "}
+                      {generationBudget.policy.per_run.max_estimated_cost_usd ?? "none"}
+                    </p>
+                    <p className="run-meta">
+                      Rolling caps: daily tokens {generationBudget.policy.rolling.daily_tokens ?? "none"} / daily cost{" "}
+                      {generationBudget.policy.rolling.daily_estimated_cost_usd ?? "none"} / weekly tokens{" "}
+                      {generationBudget.policy.rolling.weekly_tokens ?? "none"} / weekly cost{" "}
+                      {generationBudget.policy.rolling.weekly_estimated_cost_usd ?? "none"}
+                    </p>
+                    <p className="run-meta">
+                      Usage daily: {generationBudget.usage.daily.total_tokens} tokens / $
+                      {generationBudget.usage.daily.estimated_cost_usd} (unknown cost runs:{" "}
+                      {generationBudget.usage.daily.unknown_cost_runs})
+                    </p>
+                    <p className="run-meta">
+                      Usage weekly: {generationBudget.usage.weekly.total_tokens} tokens / $
+                      {generationBudget.usage.weekly.estimated_cost_usd} (unknown cost runs:{" "}
+                      {generationBudget.usage.weekly.unknown_cost_runs})
+                    </p>
+                    <div className="generate-grid">
+                      <label>
+                        <span>Max Input Tokens</span>
+                        <input
+                          value={budgetDraft.maxInputTokens}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              maxInputTokens: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Max Output Tokens</span>
+                        <input
+                          value={budgetDraft.maxOutputTokens}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              maxOutputTokens: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Max Total Tokens</span>
+                        <input
+                          value={budgetDraft.maxTotalTokens}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              maxTotalTokens: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Max Cost (USD)</span>
+                        <input
+                          value={budgetDraft.maxEstimatedCostUsd}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              maxEstimatedCostUsd: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Daily Tokens</span>
+                        <input
+                          value={budgetDraft.dailyTokens}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              dailyTokens: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Daily Cost (USD)</span>
+                        <input
+                          value={budgetDraft.dailyEstimatedCostUsd}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              dailyEstimatedCostUsd: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Weekly Tokens</span>
+                        <input
+                          value={budgetDraft.weeklyTokens}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              weeklyTokens: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                      <label>
+                        <span>Weekly Cost (USD)</span>
+                        <input
+                          value={budgetDraft.weeklyEstimatedCostUsd}
+                          onChange={(event) =>
+                            setBudgetDraft((prev) => ({
+                              ...prev,
+                              weeklyEstimatedCostUsd: event.target.value
+                            }))
+                          }
+                          placeholder="none"
+                        />
+                      </label>
+                    </div>
+                    <div className="proposal-actions">
+                      <button
+                        disabled={busy || !canSaveBudgetPolicy}
+                        onClick={() => void handleSaveBudgetPolicy()}
+                      >
+                        Save Budget Policy
+                      </button>
+                      <button
+                        disabled={busy}
+                        onClick={() => void handleResetBudgetPolicy()}
+                      >
+                        Reset Budget Policy
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="run-meta">Budget policy unavailable.</p>
                 )}
               </div>
 
@@ -2920,6 +3367,199 @@ export function App() {
                   <p>Select a run to inspect details.</p>
                 </div>
               )}
+            </div>
+          ) : rightTab === "merge" ? (
+            <div className="side-content merge-content">
+              <div className="runs-header">
+                <h2>Guided Merge</h2>
+                <span>current: {currentBranchName || "n/a"}</span>
+              </div>
+
+              <div className="merge-create-card">
+                <h3>Create Branch</h3>
+                <div className="row">
+                  <input
+                    value={branchCreateDraft.name}
+                    onChange={(event) =>
+                      setBranchCreateDraft((prev) => ({
+                        ...prev,
+                        name: event.target.value
+                      }))
+                    }
+                    placeholder="branch name"
+                  />
+                  <input
+                    value={branchCreateDraft.fromRef}
+                    onChange={(event) =>
+                      setBranchCreateDraft((prev) => ({
+                        ...prev,
+                        fromRef: event.target.value
+                      }))
+                    }
+                    placeholder="from ref (default current)"
+                  />
+                </div>
+                <label className="run-compare-toggle">
+                  <input
+                    type="checkbox"
+                    checked={branchCreateDraft.noSwitch}
+                    onChange={(event) =>
+                      setBranchCreateDraft((prev) => ({
+                        ...prev,
+                        noSwitch: event.target.checked
+                      }))
+                    }
+                  />
+                  <span>Create without switching</span>
+                </label>
+                <button
+                  disabled={busy || branchCreateDraft.name.trim() === ""}
+                  onClick={() => void handleCreateBranchWorkspace()}
+                >
+                  Create Branch
+                </button>
+              </div>
+
+              <div className="merge-controls">
+                <label>
+                  <span>Base Branch</span>
+                  <select
+                    value={mergeBaseBranch}
+                    onChange={(event) => setMergeBaseBranch(event.target.value)}
+                  >
+                    <option value="">select base</option>
+                    {branches.map((branch) => (
+                      <option key={`base-${branch.name}`} value={branch.name}>
+                        {branch.name}
+                        {branch.current ? " (current)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Head Branch</span>
+                  <select
+                    value={mergeHeadBranch}
+                    onChange={(event) => setMergeHeadBranch(event.target.value)}
+                  >
+                    <option value="">select head</option>
+                    {branches.map((branch) => (
+                      <option key={`head-${branch.name}`} value={branch.name}>
+                        {branch.name}
+                        {branch.current ? " (current)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button disabled={busy || !projectFound} onClick={() => void refreshBranches()}>
+                  Refresh Branches
+                </button>
+                <button
+                  disabled={busy || !mergeBaseBranch || !mergeHeadBranch}
+                  onClick={() => void handleAnalyzeMergePlan()}
+                >
+                  Analyze Merge
+                </button>
+              </div>
+
+              <div className={`merge-guidance tone-${mergeGuidance.tone}`}>
+                <strong>{mergeGuidance.label}</strong>
+                <p className="run-meta">{mergeGuidance.detail}</p>
+              </div>
+
+              {branchPreflightReport ? (
+                <div className="merge-preflight-card">
+                  <h3>Preflight</h3>
+                  <p className="run-meta">
+                    merge-base: {branchPreflightReport.merge_base}
+                  </p>
+                  <p className="run-meta">
+                    base changed: {branchPreflightReport.base_changed_count} / head changed:{" "}
+                    {branchPreflightReport.head_changed_count} / overlap:{" "}
+                    {branchPreflightReport.overlap_count}
+                  </p>
+                  <p className="run-meta">
+                    safe_to_merge: {branchPreflightReport.safe_to_merge ? "yes" : "no"} / risk:{" "}
+                    {branchPreflightReport.risk_level}
+                  </p>
+                  <div className="run-compare-table">
+                    <h5>Overlap Categories</h5>
+                    {Object.entries(branchPreflightReport.overlap_by_category).map(
+                      ([category, rows]) =>
+                        rows.length ? (
+                          <p key={category} className="run-meta">
+                            {category}: {rows.length}
+                          </p>
+                        ) : null
+                    )}
+                  </div>
+                  {branchPreflightReport.recommendations.length ? (
+                    <div className="run-recommendation-reasons">
+                      {branchPreflightReport.recommendations.map((row, index) => (
+                        <p key={`${index}-${row}`} className="run-meta">
+                          - {row}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="merge-preflight-card empty-review">
+                  <p>Run merge analysis to view preflight risk.</p>
+                </div>
+              )}
+
+              {branchDiffReport ? (
+                <div className="merge-diff-card">
+                  <h3>Branch Diff</h3>
+                  <p className="run-meta">
+                    {branchDiffReport.base}...{branchDiffReport.head} / ahead{" "}
+                    {branchDiffReport.ahead_by} / behind {branchDiffReport.behind_by}
+                  </p>
+                  <div className="merge-diff-list">
+                    {branchDiffReport.files.length === 0 ? (
+                      <p className="run-meta">No authoring file changes.</p>
+                    ) : (
+                      branchDiffReport.files.slice(0, 40).map((file) => (
+                        <p key={`${file.status}-${file.path}`} className="run-meta">
+                          {file.status} {file.path} (+{file.added ?? "n/a"} / -{file.deleted ?? "n/a"})
+                        </p>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="proposal-actions">
+                <button
+                  disabled={busy || !mergeGuidance.canApply}
+                  onClick={() => void handleApplyMergePlan()}
+                >
+                  Apply Merge
+                </button>
+                <button
+                  disabled={busy || !mergeBaseBranch}
+                  onClick={() => void handleSwitchBranchWorkspace(mergeBaseBranch)}
+                >
+                  Switch To Base
+                </button>
+                <button
+                  disabled={busy || !mergeHeadBranch}
+                  onClick={() => void handleSwitchBranchWorkspace(mergeHeadBranch)}
+                >
+                  Switch To Head
+                </button>
+              </div>
+
+              {branchMergeResult ? (
+                <div className="merge-result-card">
+                  <h3>Last Merge Result</h3>
+                  <p className="run-meta">
+                    merged {branchMergeResult.head} into {branchMergeResult.base}
+                  </p>
+                  <p className="run-meta">commit: {branchMergeResult.merge_commit}</p>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="side-content context-content">

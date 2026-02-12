@@ -261,6 +261,30 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("retry", generation_config)
       self.assertIn("providers", generation_config)
       self.assertIn("openai", generation_config["providers"])
+      self.assertIn("budget", generation_config)
+
+      code, out, err = self.run_cli(["generation", "budget", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      budget_report = json.loads(out)
+      self.assertIn("policy", budget_report)
+      self.assertIn("usage", budget_report)
+
+      code, out, err = self.run_cli(
+        [
+          "generation",
+          "budget",
+          "--max-output-tokens",
+          "700",
+          "--daily-tokens",
+          "200000",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      updated_budget = json.loads(out)
+      self.assertEqual(updated_budget["policy"]["per_run"]["max_output_tokens"], 700)
+      self.assertEqual(updated_budget["policy"]["rolling"]["daily_tokens"], 200000)
 
       code, out, err = self.run_cli(["proposal", "apply", "--id", proposal_id], root)
       self.assertEqual(code, 0, msg=err)
@@ -353,6 +377,192 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertFalse(second_unpin["cleared"])
       self.assertEqual(second_unpin["run_id"], "")
 
+  def test_branch_workspace_flow_with_diff_and_preflight(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Branch Demo"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Branch Scene",
+          "--summary",
+          "branch testing",
+          "--pov",
+          "narrator",
+          "--body",
+          "Initial branch scene body for branch flow checks.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "baseline snapshot"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["branch", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      branch_rows = json.loads(out)
+      current_row = next(row for row in branch_rows if row["current"])
+      base_branch = current_row["name"]
+
+      code, out, err = self.run_cli(
+        ["branch", "create", "--name", "exp-one", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      created_one = json.loads(out)
+      self.assertEqual(created_one["name"], "exp-one")
+      self.assertTrue(created_one["current"])
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "update",
+          "--id",
+          "scene-0001",
+          "--body",
+          "Branch one edits scene body for overlap checks.",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "exp-one scene edit"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        ["branch", "switch", "--name", base_branch, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        ["branch", "create", "--name", "exp-two", "--from", base_branch, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      created_two = json.loads(out)
+      self.assertEqual(created_two["name"], "exp-two")
+      self.assertTrue(created_two["current"])
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "update",
+          "--id",
+          "scene-0001",
+          "--body",
+          "Branch two also edits scene body for conflict preflight.",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "exp-two scene edit"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        ["branch", "diff", "--base", base_branch, "--head", "exp-one", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      diff_row = json.loads(out)
+      self.assertEqual(diff_row["base"], base_branch)
+      self.assertEqual(diff_row["head"], "exp-one")
+      self.assertTrue(any(item["path"].startswith("manuscript/scenes/") for item in diff_row["files"]))
+
+      code, out, err = self.run_cli(
+        ["branch", "preflight", "--base", "exp-one", "--head", "exp-two", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      preflight = json.loads(out)
+      self.assertFalse(preflight["safe_to_merge"])
+      self.assertEqual(preflight["risk_level"], "high")
+      self.assertGreaterEqual(len(preflight["overlap_by_category"]["scene"]), 1)
+
+      code, _, err = self.run_cli(
+        ["branch", "merge", "--base", "exp-one", "--head", "exp-two", "--json"],
+        root,
+      )
+      self.assertNotEqual(code, 0)
+      self.assertIn("aborted", err.lower())
+
+      code, _, err = self.run_cli(
+        ["branch", "switch", "--name", base_branch, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        ["branch", "create", "--name", "exp-clean", "--from", base_branch, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Branch Clean Scene",
+          "--summary",
+          "clean merge path",
+          "--pov",
+          "narrator",
+          "--body",
+          "New scene only on clean branch.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["snapshot", "create", "-m", "exp-clean adds new scene"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        ["branch", "preflight", "--base", base_branch, "--head", "exp-clean", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      preflight_clean = json.loads(out)
+      self.assertTrue(preflight_clean["safe_to_merge"])
+      self.assertEqual(preflight_clean["risk_level"], "low")
+
+      code, out, err = self.run_cli(
+        ["branch", "merge", "--base", base_branch, "--head", "exp-clean", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      merge_row = json.loads(out)
+      self.assertTrue(merge_row["merged"])
+      self.assertEqual(merge_row["base"], base_branch)
+      self.assertEqual(merge_row["head"], "exp-clean")
+      self.assertTrue(merge_row["merge_commit"])
+
+      scene_file = next((root / "manuscript" / "scenes").glob("*.md"))
+      scene_file.write_text(
+        scene_file.read_text(encoding="utf-8") + "\nUncommitted line.\n",
+        encoding="utf-8",
+      )
+      code, _, err = self.run_cli(["branch", "switch", "--name", base_branch], root)
+      self.assertNotEqual(code, 0)
+      self.assertIn("uncommitted changes", err.lower())
+
   def test_snapshot_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -387,6 +597,125 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("?? notes.txt", status)
       self.assertTrue((root / "codex" / "codex.json").exists())
       self.assertTrue((root / ".openauthor" / "provider_pricing.json").exists())
+      self.assertTrue((root / ".openauthor" / "generation_budget_policy.json").exists())
+
+  def test_retrieval_cli_flow(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Retrieval CLI"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Signal Vault",
+          "--summary",
+          "Crack the hidden signal key.",
+          "--pov",
+          "Neris",
+          "--body",
+          (
+            "Neris mapped the ember cipher and tracked vault routes "
+            "through the signal archive."
+          ),
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "codex",
+          "add",
+          "--type",
+          "item",
+          "--name",
+          "Signal Key",
+          "--description",
+          "Reference key for archive routes.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["retrieval", "status", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      status_before = json.loads(out)
+      self.assertFalse(status_before["present"])
+
+      code, out, err = self.run_cli(
+        [
+          "retrieval",
+          "build",
+          "--chunk-words",
+          "60",
+          "--overlap-words",
+          "10",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      build_row = json.loads(out)
+      self.assertTrue(build_row["present"])
+      self.assertFalse(build_row["stale"])
+      self.assertGreaterEqual(build_row["source_count"], 2)
+      self.assertGreaterEqual(build_row["chunk_count"], 2)
+
+      code, out, err = self.run_cli(
+        [
+          "retrieval",
+          "query",
+          "--text",
+          "ember cipher vault routes",
+          "--limit",
+          "2",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      query_row = json.loads(out)
+      self.assertEqual(query_row["result_count"], 2)
+      self.assertTrue(
+        any(result["source_ref"] == "scene-0001" for result in query_row["results"])
+      )
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "update",
+          "--id",
+          "scene-0001",
+          "--summary",
+          "Summary changed post-index",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["retrieval", "status", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      status_after = json.loads(out)
+      self.assertTrue(status_after["stale"])
+      self.assertIn("source_digest_changed", status_after["stale_reasons"])
+
+      code, _, err = self.run_cli(
+        [
+          "retrieval",
+          "query",
+          "--text",
+          "ember cipher",
+          "--require-fresh",
+          "--json",
+        ],
+        root,
+      )
+      self.assertNotEqual(code, 0)
+      self.assertIn("stale", err.lower())
 
 
 if __name__ == "__main__":

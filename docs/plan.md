@@ -20,7 +20,7 @@
 - Scope snapshots to authoring artifacts only (avoid repo-wide `git add -A`). ✅
 - Export codex to deterministic JSON for version history (`codex/codex.json`). ✅
 
-## Phase 2: AI integration layer (closeout in progress)
+## Phase 2: AI integration layer (completed with deferred budget policy)
 
 - 2.1 Provider abstraction:
   - Provider interfaces (`openai`, `anthropic`, `local`) with real adapter calls are implemented in core. ✅
@@ -49,7 +49,7 @@
   - Proposal review can jump directly to the preferred proposal linked from a scene’s pinned run. ✅
   - Context lens includes Preferred Pipeline card for scene-level pinned run and linked proposal navigation. ✅
 
-## Phase 2 Closeout Checklist (active)
+## Phase 2 Closeout Checklist (completed)
 
 - [x] Provider adapters and retry/error handling are real (local/openai/anthropic).
 - [x] Prompt/context packing and generation artifact logging are reproducible and inspectable.
@@ -58,11 +58,12 @@
 - [x] Preferred-run workflow is wired (pin/unpin/list + desktop navigation to preferred run/proposal).
 - [x] Desktop runs comparison is wired (baseline selection, profiles, recommendation hints, exports, persisted prefs).
 - [x] Regression gates are passing (`make check`, `make test`, `make test-desktop`, `make desktop-build`, `make tauri-check`).
-- [ ] Closeout signoff: mark Phase 2 complete with budget policy explicitly deferred to backlog.
-- [ ] Backlog hygiene: track budget-policy enforcement as a dedicated Phase 4 follow-on item with acceptance criteria.
+- [x] Closeout signoff: mark Phase 2 complete with budget policy explicitly deferred to backlog.
+- [x] Backlog hygiene: track budget-policy enforcement as a dedicated Phase 4 follow-on item with acceptance criteria.
 
 Phase 2 exit condition:
 - All checklist items are checked except the intentional budget-policy deferral, and that deferral is explicitly accepted.
+- Status: exit condition satisfied; budget policy is now tracked in Phase 4.
 
 ## No-Mock Guardrails (active)
 
@@ -147,11 +148,59 @@ Phase 3 exit condition:
 - `npm run build` in `desktop/` for TypeScript + Vite.
 - `cargo check --manifest-path desktop/src-tauri/Cargo.toml` for Tauri backend integrity.
 
-## Phase 4: Advanced workflows (pending)
+## Phase 4: Advanced workflows (planned)
 
-- Experiment branches with guided merge UX.
-- Retrieval index and provenance/citation UI.
-- Voice-first commands and dictation mode.
+Phase 4 mission:
+- Add high-leverage authoring workflows on top of the stable Phase 3 shell without introducing mock paths:
+  - experiment branches with guided merge UX
+  - retrieval index + provenance/citation surfaces
+  - voice-first command and dictation workflows
+  - budget-policy enforcement carried forward from Phase 2 backlog
+
+Phase 4 execution principles:
+- Every UI action must route to a real persisted core capability (CLI contract first).
+- Provenance is required for retrieval-assisted outputs (what was used, where it came from, why selected).
+- Voice edits remain proposal-based by default; no silent direct manuscript mutations.
+- New workflows must degrade cleanly when optional dependencies are missing.
+
+## Phase 4 Execution Checklist (planned)
+
+- 4.0 Budget policy enforcement (carried over)
+  - [x] Add per-run hard caps (token and estimated cost) with fail-closed behavior.
+  - [x] Add per-project rolling budget windows (daily/weekly) and CLI inspection.
+  - [x] Surface policy violations in desktop generation UX with actionable recovery options.
+- 4.1 Experiment branches + guided merge
+  - [x] Add branch-oriented authoring commands (create/list/switch/compare) backed by git.
+  - [x] Add merge-preflight analyzer for scene/proposal/codex conflicts.
+  - [x] Add guided merge UI path in desktop with conflict-classified recommendations.
+- 4.2 Retrieval index + provenance/citation UI
+  - [x] Build local retrieval index scoped to commit/project state.
+  - [ ] Add retrieval-backed generation mode with citation payloads attached to runs/proposals.
+  - [ ] Add provenance viewer in desktop (source chunks, scene/codex refs, confidence/coverage).
+- 4.3 Voice-first commands + dictation mode
+  - [ ] Add push-to-talk command channel for high-frequency actions (navigate/generate/check/review).
+  - [ ] Add scene dictation capture mode that emits proposals (not direct edits by default).
+  - [ ] Add command confirmation/undo affordances and transcript audit log.
+- 4.4 Hardening + scale behavior
+  - [ ] Add performance baselines for larger projects (scene count, proposal volume, run history volume).
+  - [ ] Add recovery and migration checks for index/branch metadata drift.
+  - [ ] Expand test gates and CI to include new Phase 4 workflows.
+
+Phase 4 exit condition:
+- Advanced workflows are real, observable, and reversible; high-frequency writing loops (branch, retrieve, voice) are production-usable locally with deterministic tests and release gates.
+
+## Phase 4 Ordered Chunks (planning baseline)
+
+- Chunk 1: Budget policy core contracts (CLI + persistence + error model). ✅
+- Chunk 2: Desktop budget controls/violations UX and regression coverage. ✅
+- Chunk 3: Branch workspace primitives (create/switch/diff/preflight) with CLI tests. ✅
+- Chunk 4: Guided merge desktop flow with conflict categories and apply path. ✅
+- Chunk 5: Retrieval index builder + query API + deterministic fixtures. ✅
+- Chunk 6: Retrieval-backed generation with run/proposal provenance payloads.
+- Chunk 7: Provenance/citation panels in desktop generation + review surfaces.
+- Chunk 8: Voice command substrate (push-to-talk, command grammar, action routing).
+- Chunk 9: Dictation-to-proposal flow, transcript logging, confirmations/undo.
+- Chunk 10: Phase 4 hardening pass (performance baselines, migrations, CI expansion).
 
 ## Future TODO (deferred)
 

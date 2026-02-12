@@ -12,6 +12,7 @@ import uuid
 
 from .checks import run_continuity_checks
 from .codex import list_entities
+from .budget import BudgetPolicyError, enforce_generation_budget
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .proposals import create_proposal, get_proposal
 from .scenes import get_scene, list_scenes
@@ -816,6 +817,59 @@ def _write_generation_failure_log(
   return run_id, str(log_file.relative_to(paths.root))
 
 
+def _write_generation_budget_failure_log(
+  paths: ProjectPaths,
+  *,
+  scene_id: str,
+  provider: str,
+  model: str,
+  temperature: float,
+  max_output_tokens: int,
+  context_scene_radius: int,
+  codex_limit: int,
+  instruction: str,
+  context: dict[str, Any],
+  system_prompt: str,
+  user_prompt: str,
+  error: BudgetPolicyError,
+) -> tuple[str, str]:
+  run_id = f"gen-{uuid.uuid4().hex[:12]}"
+  log_file = paths.generations_dir / f"{run_id}.json"
+  payload = {
+    "run_id": run_id,
+    "status": "failed",
+    "created_at": utc_now(),
+    "scene_id": scene_id,
+    "provider": provider,
+    "model": model,
+    "temperature": temperature,
+    "max_output_tokens": max_output_tokens,
+    "context_scene_radius": context_scene_radius,
+    "codex_limit": codex_limit,
+    "instruction": instruction,
+    "prompt_sha256": hashlib.sha256(
+      (system_prompt + "\n\n" + user_prompt).encode("utf-8")
+    ).hexdigest(),
+    "system_prompt": system_prompt,
+    "user_prompt": user_prompt,
+    "context": context,
+    "error": {
+      "message": str(error),
+      "category": error.category,
+      "retriable": False,
+      "http_status": None,
+      "attempts": 0,
+      "provider": provider,
+      "violations": error.violations,
+      "budget_policy": error.policy,
+      "budget_usage": error.usage,
+      "budget_projected": error.projected,
+    },
+  }
+  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  return run_id, str(log_file.relative_to(paths.root))
+
+
 def _attach_proposal_to_generation_log(
   paths: ProjectPaths,
   *,
@@ -863,6 +917,41 @@ def generate_proposal(
     codex_limit=codex_limit,
   )
   system_prompt, user_prompt = _build_prompts(context, instruction)
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_output_tokens = max_output_tokens
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=projected_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=projected_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, failure_log_path = _write_generation_budget_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=context_scene_radius,
+      codex_limit=codex_limit,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Proposal generation blocked by budget policy. See {failure_log_path}."
+    ) from error
   try:
     provider_result = _call_provider(
       provider=provider,

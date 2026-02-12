@@ -22,7 +22,10 @@ class ProjectPaths:
   codex_db: Path
   proposals_dir: Path
   generations_dir: Path
+  retrieval_dir: Path
+  retrieval_index_file: Path
   pricing_file: Path
+  budget_policy_file: Path
 
 
 def utc_now() -> str:
@@ -39,7 +42,10 @@ def get_project_paths(root: Path) -> ProjectPaths:
     codex_db=root / "codex" / "codex.sqlite3",
     proposals_dir=project_dir / "proposals",
     generations_dir=project_dir / "generations",
+    retrieval_dir=project_dir / "retrieval",
+    retrieval_index_file=project_dir / "retrieval" / "index.json",
     pricing_file=project_dir / "provider_pricing.json",
+    budget_policy_file=project_dir / "generation_budget_policy.json",
   )
 
 
@@ -68,6 +74,7 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
   paths.codex_db.parent.mkdir(parents=True, exist_ok=True)
   paths.proposals_dir.mkdir(parents=True, exist_ok=True)
   paths.generations_dir.mkdir(parents=True, exist_ok=True)
+  paths.retrieval_dir.mkdir(parents=True, exist_ok=True)
 
   if not paths.config_file.exists():
     project_name = name or root.name
@@ -101,6 +108,31 @@ def initialize_project(root: Path, name: str | None = None) -> ProjectPaths:
               "input_per_million": 0.0,
               "output_per_million": 0.0,
             }
+          },
+        },
+        indent=2,
+      )
+      + "\n",
+      encoding="utf-8",
+    )
+
+  if not paths.budget_policy_file.exists():
+    paths.budget_policy_file.write_text(
+      json.dumps(
+        {
+          "schema_version": 1,
+          "enforcement": "fail_closed",
+          "per_run": {
+            "max_input_tokens": None,
+            "max_output_tokens": None,
+            "max_total_tokens": None,
+            "max_estimated_cost_usd": None,
+          },
+          "rolling": {
+            "daily_tokens": None,
+            "daily_estimated_cost_usd": None,
+            "weekly_tokens": None,
+            "weekly_estimated_cost_usd": None,
           },
         },
         indent=2,

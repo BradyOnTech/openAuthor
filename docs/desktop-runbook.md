@@ -78,8 +78,16 @@ make desktop-tauri
   - Check path exists and contains `.openauthor/project.json`.
 - `Proposal generation failed: ... Check provider credentials/settings and retry.`
   - Validate `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` as needed.
+- `Proposal generation blocked by budget policy.`
+  - Inspect policy/usage with `openauthor generation budget --json`.
+  - Adjust limits with `openauthor generation budget --max-... --daily-... --weekly-... --json`.
+  - Reset limits with `openauthor generation budget --reset --json`.
 - `Pinned run ... is stale. Clear the pin to recover.`
   - Use `Clear Stale Pin` in Context tab or `generation unpin`.
+- `Retrieval index is stale for current project state. Rebuild before querying.`
+  - Inspect index state: `openauthor retrieval status --json`.
+  - Rebuild index: `openauthor retrieval build --json`.
+  - Re-run query with fail-closed mode: `openauthor retrieval query --text "..." --require-fresh --json`.
 - Tauri startup failure (Rust/toolchain):
   - Re-run `make desktop-prereq`.
   - Re-run `make tauri-check` for compile diagnostics.
