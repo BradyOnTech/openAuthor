@@ -94,6 +94,10 @@ export type GenerationRunDetail = {
   scene_id: string;
   provider: ProposalProvider | string;
   model: string;
+  temperature?: number;
+  max_output_tokens?: number;
+  context_scene_radius?: number;
+  codex_limit?: number;
   instruction: string;
   prompt_sha256: string;
   system_prompt: string;

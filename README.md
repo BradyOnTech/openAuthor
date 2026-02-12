@@ -73,6 +73,7 @@ python3 -m openauthor generation list --status failed --json
 python3 -m openauthor generation list --provider openai --json
 python3 -m openauthor generation list --quality low --json
 python3 -m openauthor generation get --id gen-xxxxxxxxxxxx --json
+python3 -m openauthor generation rerun --id gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation config --json
 
 # create git snapshot
@@ -98,6 +99,7 @@ AI generation artifacts:
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
+- Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
 
 Generated proposal format is normalized to four sections for review consistency:
 

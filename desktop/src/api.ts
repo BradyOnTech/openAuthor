@@ -372,6 +372,46 @@ export async function getGenerationRun(
   return decodeJson<GenerationRunDetail>(result);
 }
 
+export async function rerunGeneration(
+  projectRoot: string,
+  payload: {
+    runId: string;
+    title?: string;
+    provider?: ProposalProvider;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+    contextScenes?: number;
+    codexLimit?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = ["generation", "rerun", "--id", payload.runId];
+  if (payload.title && payload.title.trim() !== "") {
+    args.push("--title", payload.title);
+  }
+  if (payload.provider) {
+    args.push("--provider", payload.provider);
+  }
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  if (typeof payload.contextScenes === "number") {
+    args.push("--context-scenes", String(payload.contextScenes));
+  }
+  if (typeof payload.codexLimit === "number") {
+    args.push("--codex-limit", String(payload.codexLimit));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
+}
+
 export async function getGenerationRuntimeConfig(
   projectRoot: string
 ): Promise<GenerationRuntimeConfig> {

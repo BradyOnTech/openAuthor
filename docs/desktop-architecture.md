@@ -53,6 +53,7 @@
 
 - Run list: `generation list --json` (supports status + provider + quality filters)
 - Run detail: `generation get --id <run-id> --json`
+- Run rerun: `generation rerun --id <run-id> --json`
 - Runtime config: `generation config --json`
 
 ## Why sidecar-first

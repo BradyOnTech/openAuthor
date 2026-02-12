@@ -87,6 +87,10 @@ class AIModuleTests(unittest.TestCase):
       self.assertEqual(log_payload["scene_id"], "scene-0002")
       self.assertEqual(log_payload["provider"], "local")
       self.assertEqual(log_payload["context"]["scene"]["id"], "scene-0002")
+      self.assertEqual(log_payload["temperature"], 0.2)
+      self.assertEqual(log_payload["max_output_tokens"], 700)
+      self.assertEqual(log_payload["context_scene_radius"], 1)
+      self.assertEqual(log_payload["codex_limit"], 5)
       self.assertIn("raw_response_text", log_payload)
       self.assertIn("normalized_instruction", log_payload)
       self.assertIn("Intent:", log_payload["normalized_instruction"])
@@ -162,6 +166,9 @@ class AIModuleTests(unittest.TestCase):
           item.get("error", {}).get("category") == "missing_credentials"
           for item in payloads
         )
+      )
+      self.assertTrue(
+        all("temperature" in item and "max_output_tokens" in item for item in payloads)
       )
 
   def test_openai_retry_succeeds_after_rate_limit(self) -> None:

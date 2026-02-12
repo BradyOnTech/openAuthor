@@ -206,6 +206,20 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(generation_run["run_id"], run_id)
       self.assertEqual(generation_run["status"], "succeeded")
       self.assertEqual(generation_run["proposal_id"], generated_proposal["id"])
+      self.assertEqual(generation_run["temperature"], 0.2)
+      self.assertEqual(generation_run["max_output_tokens"], 700)
+      self.assertEqual(generation_run["context_scene_radius"], 1)
+      self.assertEqual(generation_run["codex_limit"], 20)
+
+      code, out, err = self.run_cli(["generation", "rerun", "--id", run_id, "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      rerun_proposal = json.loads(out)
+      self.assertEqual(rerun_proposal["scene_id"], "scene-0001")
+      self.assertEqual(rerun_proposal["source"], "ai_generate")
+      self.assertNotEqual(rerun_proposal["id"], generated_proposal["id"])
+      self.assertNotEqual(
+        rerun_proposal["generation"]["id"], generated_proposal["generation"]["id"]
+      )
 
       code, out, err = self.run_cli(["generation", "config", "--json"], root)
       self.assertEqual(code, 0, msg=err)

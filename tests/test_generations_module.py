@@ -9,6 +9,7 @@ from openauthor.generations import (
   get_generation_run,
   get_generation_runtime_config,
   list_generation_runs,
+  rerun_generation,
 )
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene
@@ -81,6 +82,8 @@ class GenerationsModuleTests(unittest.TestCase):
 
       with self.assertRaises(OpenAuthorError):
         get_generation_run(paths, "gen-missing")
+      with self.assertRaises(OpenAuthorError):
+        rerun_generation(paths, run_id="gen-missing")
 
       with self.assertRaises(OpenAuthorError):
         list_generation_runs(paths, status="invalid")
@@ -91,6 +94,34 @@ class GenerationsModuleTests(unittest.TestCase):
       self.assertIn("retry", runtime)
       self.assertIn("providers", runtime)
       self.assertIn("openai", runtime["providers"])
+
+  def test_rerun_generation_from_existing_run(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Generations Rerun")
+
+      add_scene(
+        paths,
+        title="One",
+        summary="",
+        pov="",
+        status="draft",
+        body="Scene one body with enough words for generation context checks.",
+      )
+
+      first = generate_proposal(
+        paths,
+        scene_id="scene-0001",
+        instruction="tighten pacing",
+        provider="local",
+      )
+      rerun = rerun_generation(paths, run_id=first["generation"]["id"])
+
+      self.assertNotEqual(first["id"], rerun["id"])
+      self.assertEqual(rerun["scene_id"], "scene-0001")
+      self.assertEqual(rerun["source"], "ai_generate")
+      self.assertEqual(rerun["generation"]["provider"], "local")
+      self.assertNotEqual(first["generation"]["id"], rerun["generation"]["id"])
 
 
 if __name__ == "__main__":

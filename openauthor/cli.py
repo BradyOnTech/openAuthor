@@ -8,7 +8,12 @@ from pathlib import Path
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
-from .generations import get_generation_run, get_generation_runtime_config, list_generation_runs
+from .generations import (
+  get_generation_run,
+  get_generation_runtime_config,
+  list_generation_runs,
+  rerun_generation,
+)
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
 from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
@@ -171,6 +176,48 @@ def build_parser() -> argparse.ArgumentParser:
   generation_get = generation_sub.add_parser("get", help="Get generation run by id.")
   generation_get.add_argument("--id", required=True, help="Generation run id.")
   generation_get.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_rerun = generation_sub.add_parser(
+    "rerun",
+    help="Rerun a prior generation using its stored scene/instruction.",
+  )
+  generation_rerun.add_argument("--id", required=True, help="Generation run id.")
+  generation_rerun.add_argument("--title", default="", help="Optional proposal title override.")
+  generation_rerun.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default=None,
+    help="Provider override (defaults to original run provider).",
+  )
+  generation_rerun.add_argument(
+    "--model",
+    default=None,
+    help="Model override (defaults to original run model).",
+  )
+  generation_rerun.add_argument(
+    "--temperature",
+    type=float,
+    default=None,
+    help="Temperature override.",
+  )
+  generation_rerun.add_argument(
+    "--max-output-tokens",
+    type=int,
+    default=None,
+    help="Max output tokens override.",
+  )
+  generation_rerun.add_argument(
+    "--context-scenes",
+    type=int,
+    default=None,
+    help="Context scene radius override.",
+  )
+  generation_rerun.add_argument(
+    "--codex-limit",
+    type=int,
+    default=None,
+    help="Codex limit override.",
+  )
+  generation_rerun.add_argument("--json", action="store_true", help="Output JSON.")
   generation_config = generation_sub.add_parser("config", help="Show generation runtime config.")
   generation_config.add_argument("--json", action="store_true", help="Output JSON.")
 
@@ -421,6 +468,27 @@ def _run(args: argparse.Namespace) -> int:
         f"{row.get('run_id','')}\t{row.get('status','')}\t{row.get('provider','')}\t"
         f"{row.get('scene_id','')}\t{row.get('log_path','')}"
       )
+      return 0
+
+    if args.generation_command == "rerun":
+      row = rerun_generation(
+        paths,
+        run_id=args.id,
+        title=args.title,
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
+        context_scene_radius=args.context_scenes,
+        codex_limit=args.codex_limit,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      generation = row.get("generation", {})
+      provider = generation.get("provider", "unknown")
+      model = generation.get("model", "unknown")
+      print(f"Re-ran generation as proposal {row['id']} via {provider}/{model}")
       return 0
 
     rows = list_generation_runs(

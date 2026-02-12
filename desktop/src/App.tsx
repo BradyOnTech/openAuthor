@@ -15,6 +15,7 @@ import {
   listProposals,
   listScenes,
   rejectProposal,
+  rerunGeneration,
   runContinuityChecks,
   updateCodexEntity,
   updateScene
@@ -724,6 +725,29 @@ export function App() {
       setRightTab("proposals");
       setSelectedProposalId(proposalId);
       setMessage(`Loaded ${proposalId} in proposals.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRerunGeneration(runId: string) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const regenerated = await rerunGeneration(projectRoot, { runId });
+      await refreshProposalList(regenerated.id);
+      const rerunRunId = regenerated.generation?.id;
+      if (rerunRunId) {
+        await refreshGenerationRuns(rerunRunId);
+      }
+      setRightTab("proposals");
+      setSelectedProposalId(regenerated.id);
+      const providerLabel = regenerated.generation?.provider ?? "unknown";
+      const modelLabel = regenerated.generation?.model ?? "default";
+      setMessage(`Re-ran generation via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -1535,6 +1559,12 @@ export function App() {
                   <p className="run-meta">
                     {selectedGenerationRun.provider}/{selectedGenerationRun.model}
                   </p>
+                  <p className="run-meta">
+                    Settings: temp {selectedGenerationRun.temperature ?? "n/a"} / max{" "}
+                    {selectedGenerationRun.max_output_tokens ?? "n/a"} / context{" "}
+                    {selectedGenerationRun.context_scene_radius ?? "n/a"} / codex{" "}
+                    {selectedGenerationRun.codex_limit ?? "n/a"}
+                  </p>
                   <p className="run-meta">Scene: {selectedGenerationRun.scene_id || "n/a"}</p>
                   <p className="run-meta">Status: {selectedGenerationRun.status}</p>
                   {selectedGenerationRun.status === "succeeded" ? (
@@ -1594,6 +1624,12 @@ export function App() {
                   )}
                   <p className="run-meta">Log: {selectedGenerationRun.log_path}</p>
                   <div className="proposal-actions">
+                    <button
+                      disabled={busy}
+                      onClick={() => void handleRerunGeneration(selectedGenerationRun.run_id)}
+                    >
+                      Re-run
+                    </button>
                     <button
                       disabled={busy || !selectedGenerationRun.scene_id}
                       onClick={() => handleOpenGenerationScene(selectedGenerationRun.scene_id)}

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .ai import get_provider_runtime_config
+from .ai import SUPPORTED_PROVIDERS, generate_proposal, get_provider_runtime_config
 from .project import OpenAuthorError, ProjectPaths
 
 STATUSES = {"succeeded", "failed"}
@@ -111,3 +111,97 @@ def list_generation_runs(
 def get_generation_runtime_config(paths: ProjectPaths) -> dict[str, Any]:
   del paths
   return get_provider_runtime_config()
+
+
+def _coerce_float(value: Any, *, default: float) -> float:
+  if isinstance(value, (int, float)):
+    return float(value)
+  if isinstance(value, str):
+    try:
+      return float(value.strip())
+    except ValueError:
+      return default
+  return default
+
+
+def _coerce_int(value: Any, *, default: int, minimum: int) -> int:
+  if isinstance(value, bool):
+    return default
+  if isinstance(value, int):
+    return max(minimum, value)
+  if isinstance(value, float):
+    return max(minimum, int(value))
+  if isinstance(value, str):
+    try:
+      return max(minimum, int(value.strip()))
+    except ValueError:
+      return default
+  return default
+
+
+def rerun_generation(
+  paths: ProjectPaths,
+  *,
+  run_id: str,
+  title: str = "",
+  provider: str | None = None,
+  model: str | None = None,
+  temperature: float | None = None,
+  max_output_tokens: int | None = None,
+  context_scene_radius: int | None = None,
+  codex_limit: int | None = None,
+) -> dict[str, Any]:
+  payload = get_generation_run(paths, run_id)
+  scene_id = str(payload.get("scene_id", "")).strip()
+  instruction = str(payload.get("instruction", "")).strip()
+  if scene_id == "":
+    raise OpenAuthorError(f"Generation run '{run_id}' is missing scene_id.")
+  if instruction == "":
+    raise OpenAuthorError(f"Generation run '{run_id}' is missing instruction.")
+
+  selected_provider = provider or str(payload.get("provider", "")).strip()
+  if selected_provider not in SUPPORTED_PROVIDERS:
+    allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
+    raise OpenAuthorError(
+      f"Invalid provider '{selected_provider}' for rerun. Allowed: {allowed}."
+    )
+
+  selected_model = model
+  if selected_model is None:
+    model_from_log = payload.get("model")
+    if isinstance(model_from_log, str) and model_from_log.strip() != "":
+      selected_model = model_from_log.strip()
+
+  selected_temperature = (
+    temperature
+    if temperature is not None
+    else _coerce_float(payload.get("temperature"), default=0.2)
+  )
+  selected_max_output_tokens = (
+    max_output_tokens
+    if max_output_tokens is not None
+    else _coerce_int(payload.get("max_output_tokens"), default=700, minimum=64)
+  )
+  selected_context_scene_radius = (
+    context_scene_radius
+    if context_scene_radius is not None
+    else _coerce_int(payload.get("context_scene_radius"), default=1, minimum=0)
+  )
+  selected_codex_limit = (
+    codex_limit
+    if codex_limit is not None
+    else _coerce_int(payload.get("codex_limit"), default=20, minimum=1)
+  )
+
+  return generate_proposal(
+    paths,
+    scene_id=scene_id,
+    instruction=instruction,
+    title=title,
+    provider=selected_provider,
+    model=selected_model,
+    temperature=selected_temperature,
+    max_output_tokens=selected_max_output_tokens,
+    context_scene_radius=selected_context_scene_radius,
+    codex_limit=selected_codex_limit,
+  )
