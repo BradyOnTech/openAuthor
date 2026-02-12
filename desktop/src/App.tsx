@@ -40,6 +40,7 @@ import {
   type RerunDraft
 } from "./rerun";
 import { formatRunLogJson, generationRunLogFilename } from "./runLog";
+import { buildRunComparison, formatNumericDelta } from "./runCompare";
 import type {
   CodexEntity,
   ContinuityIssue,
@@ -215,6 +216,8 @@ export function App() {
   const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
   const [selectedGenerationRun, setSelectedGenerationRun] =
     useState<GenerationRunDetail | null>(null);
+  const [comparisonBaselineRun, setComparisonBaselineRun] =
+    useState<GenerationRunDetail | null>(null);
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
     useState<GenerationRuntimeConfig | null>(null);
   const [rerunDraft, setRerunDraft] = useState<RerunDraft>(EMPTY_RERUN_DRAFT);
@@ -288,6 +291,10 @@ export function App() {
     () => countContinuityIssues(contextContinuityIssues),
     [contextContinuityIssues]
   );
+  const runComparison = useMemo(() => {
+    if (!selectedGenerationRun || !comparisonBaselineRun) return null;
+    return buildRunComparison(comparisonBaselineRun, selectedGenerationRun);
+  }, [selectedGenerationRun, comparisonBaselineRun]);
   const povCharacterEntity = useMemo(() => {
     if (!scene?.pov) return null;
     const normalizedPov = scene.pov.trim().toLowerCase();
@@ -530,6 +537,10 @@ export function App() {
   }, [selectedGenerationRunId]);
 
   useEffect(() => {
+    setComparisonBaselineRun(null);
+  }, [selectedGenerationRunId]);
+
+  useEffect(() => {
     if (!selectedGenerationRun) {
       setRerunDraft(EMPTY_RERUN_DRAFT);
       return;
@@ -552,6 +563,36 @@ export function App() {
       }
       setAddForm(EMPTY_DRAFT_SCENE);
       setMessage("Scene created.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCompareToPreviousGenerationRun() {
+    if (!selectedGenerationRun?.scene_id) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const sceneRuns = await listGenerationRuns(projectRoot, {
+        sceneId: selectedGenerationRun.scene_id,
+        limit: 100
+      });
+      const ordered = orderGenerationRuns(sceneRuns);
+      const currentIndex = ordered.findIndex(
+        (row) => row.run_id === selectedGenerationRun.run_id
+      );
+      if (currentIndex === -1 || currentIndex >= ordered.length - 1) {
+        setComparisonBaselineRun(null);
+        setMessage("No previous run found for this scene.");
+        return;
+      }
+      const baselineId = ordered[currentIndex + 1].run_id;
+      const baseline = await getGenerationRun(projectRoot, baselineId);
+      setComparisonBaselineRun(baseline);
+      setMessage(`Comparing ${selectedGenerationRun.run_id} against ${baseline.run_id}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -1811,6 +1852,18 @@ export function App() {
                     >
                       Re-run With Settings
                     </button>
+                    <button
+                      disabled={busy || !selectedGenerationRun.scene_id}
+                      onClick={() => void handleCompareToPreviousGenerationRun()}
+                    >
+                      Compare To Previous
+                    </button>
+                    <button
+                      disabled={busy || !comparisonBaselineRun}
+                      onClick={() => setComparisonBaselineRun(null)}
+                    >
+                      Clear Comparison
+                    </button>
                     <button disabled={busy} onClick={() => void handleCopyGenerationLog()}>
                       Copy Log JSON
                     </button>
@@ -1832,6 +1885,59 @@ export function App() {
                       Open Proposal
                     </button>
                   </div>
+                  {runComparison ? (
+                    <div className="run-compare-card">
+                      <h4>Run Comparison</h4>
+                      <p className="run-meta">
+                        Baseline: {runComparison.baselineRunId} / Current:{" "}
+                        {runComparison.currentRunId}
+                      </p>
+                      <p className="run-meta">
+                        Instruction changed: {runComparison.instructionChanged ? "yes" : "no"}
+                      </p>
+                      <div className="run-compare-grid">
+                        <article>
+                          <h5>Baseline Instruction</h5>
+                          <pre className="run-compare-text">
+                            {runComparison.baselineInstruction || "(empty)"}
+                          </pre>
+                        </article>
+                        <article>
+                          <h5>Current Instruction</h5>
+                          <pre className="run-compare-text">
+                            {runComparison.currentInstruction || "(empty)"}
+                          </pre>
+                        </article>
+                      </div>
+                      <div className="run-compare-table">
+                        <h5>Metric Deltas</h5>
+                        {runComparison.metrics.map((row) => (
+                          <p key={row.label} className="run-meta">
+                            {row.label}: baseline {row.baseline ?? "n/a"} / current{" "}
+                            {row.current ?? "n/a"} / delta {formatNumericDelta(row.delta)}
+                          </p>
+                        ))}
+                      </div>
+                      <div className="run-compare-table">
+                        <h5>Settings</h5>
+                        {runComparison.settings.map((row) => (
+                          <p key={row.label} className="run-meta">
+                            {row.label}: {row.baseline} → {row.current}
+                            {row.changed ? " (changed)" : ""}
+                          </p>
+                        ))}
+                      </div>
+                      <div className="run-compare-table">
+                        <h5>Outcome</h5>
+                        {runComparison.outcome.map((row) => (
+                          <p key={row.label} className="run-meta">
+                            {row.label}: {row.baseline} → {row.current}
+                            {row.changed ? " (changed)" : ""}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="run-detail empty-review">
