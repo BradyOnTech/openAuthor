@@ -81,6 +81,13 @@
 - Retrieval query: `retrieval query --text ... [--limit ... --min-score ... --require-fresh] --json`
 - Retrieval index metadata is commit/source scoped (`git_head` + `source_digest`) so stale indexes are explicit and query callers can fail closed with `--require-fresh`.
 
+## Implemented workflow (Voice Command Substrate)
+
+- Push-to-talk command capture uses browser SpeechRecognition when available (graceful fallback when unavailable).
+- Manual transcript command input is available as fallback and shares the same parser/router path.
+- Command grammar routes high-frequency intents to existing app actions (save scene, generate proposal, run checks, open tabs/views, open scene by id).
+- Transcript audit log is persisted per project root in desktop local storage for operator review/replay.
+
 ## Why sidecar-first
 
 - Reuses the already-tested Python core immediately.

@@ -48,7 +48,7 @@ make desktop-tauri
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks.
+Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks + Voice Command bar (push-to-talk + transcript command fallback).
 
 ```bash
 cd desktop
@@ -163,6 +163,7 @@ AI generation artifacts:
 - Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
 - Desktop Runs panel now includes budget policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
 - Desktop Proposal Review and Runs surfaces now show retrieval provenance (query/mode/index freshness/citations with score+coverage excerpts), and generation/rerun forms include retrieval mode controls.
+- Desktop Voice Command bar supports push-to-talk (Web Speech API when available) plus manual transcript command execution, with per-project transcript audit log in desktop local storage.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
 - Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.

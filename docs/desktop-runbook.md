@@ -74,6 +74,11 @@ make desktop-tauri
 - Run continuity checks.
 - Jump to scene from checks and context actions.
 
+8. Validate voice command substrate:
+- In Voice Command bar, run a manual transcript command (`open runs`, `run continuity checks`, `save scene`).
+- If SpeechRecognition is available, start/stop listening and confirm final transcript commands execute.
+- Confirm recent voice command audit rows appear in the log.
+
 ## Failure diagnostics
 
 - `Project load failed: ... Verify the project root and retry.`
@@ -94,6 +99,9 @@ make desktop-tauri
   - Inspect index state: `openauthor retrieval status --json`.
   - Rebuild index: `openauthor retrieval build --json`.
   - Re-run query with fail-closed mode: `openauthor retrieval query --text "..." --require-fresh --json`.
+- `Voice capture unavailable in this runtime.`
+  - Use manual transcript command input in Voice Command bar.
+  - On macOS, ensure microphone permission is granted to the app runtime when using push-to-talk.
 - Tauri startup failure (Rust/toolchain):
   - Re-run `make desktop-prereq`.
   - Re-run `make tauri-check` for compile diagnostics.

@@ -90,6 +90,68 @@ body {
   align-items: end;
 }
 
+.voice-bar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.voice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.voice-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.voice-header span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.voice-controls {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) repeat(4, auto);
+  gap: 8px;
+}
+
+.voice-interim {
+  margin: 0;
+  font-size: 12px;
+  color: #23486f;
+}
+
+.voice-log {
+  display: grid;
+  gap: 4px;
+}
+
+.voice-log-empty {
+  margin: 0;
+  font-size: 12px;
+  color: #615c53;
+}
+
+.voice-log-item {
+  margin: 0;
+  font-size: 11px;
+  color: #5f574f;
+}
+
+.voice-log-item.status-executed {
+  color: #165f2a;
+}
+
+.voice-log-item.status-failed {
+  color: #8d2f05;
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -1254,6 +1316,10 @@ code {
   }
 
   .project-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-controls {
     grid-template-columns: 1fr;
   }
 

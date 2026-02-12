@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addCodexEntity,
   addScene,
@@ -78,6 +78,14 @@ import {
   EMPTY_BUDGET_DRAFT,
   type GenerationBudgetDraft
 } from "./budget";
+import { createBrowserVoiceStt } from "./voiceStt";
+import { parseVoiceCommand, type VoiceIntent } from "./voice";
+import {
+  appendVoiceCommandLog,
+  clearVoiceCommandLog,
+  listVoiceCommandLog,
+  type VoiceCommandLogEntry
+} from "./voiceLog";
 import type {
   BranchDiffReport,
   BranchMergeResult,
@@ -347,6 +355,13 @@ export function App() {
   const [selectedScenePinnedRunDetail, setSelectedScenePinnedRunDetail] =
     useState<GenerationRunDetail | null>(null);
   const [selectedScenePinnedRunStale, setSelectedScenePinnedRunStale] = useState(false);
+  const voiceSttRef = useRef<ReturnType<typeof createBrowserVoiceStt> | null>(null);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [voiceProviderLabel, setVoiceProviderLabel] = useState("none");
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceInterimTranscript, setVoiceInterimTranscript] = useState("");
+  const [voiceDraftTranscript, setVoiceDraftTranscript] = useState("");
+  const [voiceLogRows, setVoiceLogRows] = useState<VoiceCommandLogEntry[]>([]);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -354,6 +369,218 @@ export function App() {
   function reportError(context: string, err: unknown, nextStep?: string) {
     setError(toUserErrorMessage(err, context, nextStep));
     setMessage("");
+  }
+
+  function refreshVoiceLog(limit = 8) {
+    setVoiceLogRows(listVoiceCommandLog(projectRoot, limit));
+  }
+
+  function recordVoiceCommand(row: {
+    source: "stt" | "manual";
+    transcript: string;
+    normalized: string;
+    confidence: number;
+    status: "executed" | "rejected" | "failed" | "ignored";
+    intent: VoiceIntent | null;
+    detail: string;
+  }) {
+    appendVoiceCommandLog(projectRoot, row);
+    refreshVoiceLog();
+  }
+
+  async function executeVoiceIntent(
+    intent: VoiceIntent,
+    transcript: string,
+    normalized: string,
+    confidence: number,
+    source: "stt" | "manual"
+  ) {
+    if (intent.kind === "open_tab") {
+      setRightTab(intent.tab);
+      setError("");
+      const detail = `Opened ${intent.tab} tab.`;
+      setMessage(detail);
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail
+      });
+      return;
+    }
+
+    if (intent.kind === "open_view") {
+      setCenterView(intent.view);
+      setError("");
+      const detail = `Opened ${intent.view} view.`;
+      setMessage(detail);
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail
+      });
+      return;
+    }
+
+    if (intent.kind === "open_scene") {
+      handleOpenGenerationScene(intent.sceneId);
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail: `Loaded ${intent.sceneId}.`
+      });
+      return;
+    }
+
+    if (intent.kind === "save_scene") {
+      if (busy || centerView !== "editor" || !canSaveScene) {
+        const detail = "Cannot save scene in current state.";
+        recordVoiceCommand({
+          source,
+          transcript,
+          normalized,
+          confidence,
+          status: "rejected",
+          intent,
+          detail
+        });
+        setError(detail);
+        return;
+      }
+      await handleSaveScene();
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail: "Saved current scene."
+      });
+      return;
+    }
+
+    if (intent.kind === "run_continuity_checks") {
+      if (busy || !projectFound) {
+        const detail = "Cannot run continuity checks before project load.";
+        recordVoiceCommand({
+          source,
+          transcript,
+          normalized,
+          confidence,
+          status: "rejected",
+          intent,
+          detail
+        });
+        setError(detail);
+        return;
+      }
+      setRightTab("checks");
+      await handleRunContinuityChecks();
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail: "Ran continuity checks."
+      });
+      return;
+    }
+
+    if (intent.kind === "generate_proposal") {
+      const nextDraft: DraftGeneratedProposal = {
+        ...proposalGenerateForm,
+        sceneId:
+          intent.sceneId ||
+          proposalGenerateForm.sceneId ||
+          selectedSceneId,
+        instruction:
+          intent.instruction && intent.instruction.trim() !== ""
+            ? intent.instruction.trim()
+            : proposalGenerateForm.instruction
+      };
+      setRightTab("proposals");
+      setProposalGenerateForm(nextDraft);
+      if (nextDraft.sceneId === "" || nextDraft.instruction.trim() === "") {
+        const detail =
+          "Prepared proposal generate form from voice command; provide missing scene/instruction.";
+        recordVoiceCommand({
+          source,
+          transcript,
+          normalized,
+          confidence,
+          status: "rejected",
+          intent,
+          detail
+        });
+        setMessage(detail);
+        setError("");
+        return;
+      }
+      await generateProposalFromDraft(nextDraft);
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized,
+        confidence,
+        status: "executed",
+        intent,
+        detail: "Generated proposal from voice command."
+      });
+    }
+  }
+
+  async function submitVoiceTranscript(transcript: string, source: "stt" | "manual") {
+    const parsed = parseVoiceCommand(transcript);
+    if (!parsed.intent) {
+      const detail = `Voice command not recognized: ${parsed.reason}`;
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized: parsed.normalized,
+        confidence: parsed.confidence,
+        status: "ignored",
+        intent: null,
+        detail
+      });
+      setError(detail);
+      setMessage("");
+      return;
+    }
+    try {
+      await executeVoiceIntent(
+        parsed.intent,
+        transcript,
+        parsed.normalized,
+        parsed.confidence,
+        source
+      );
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      recordVoiceCommand({
+        source,
+        transcript,
+        normalized: parsed.normalized,
+        confidence: parsed.confidence,
+        status: "failed",
+        intent: parsed.intent,
+        detail
+      });
+      reportError("Voice command failed", err, "Review transcript and retry.");
+    }
   }
 
   const canSaveScene = useMemo(() => {
@@ -853,6 +1080,45 @@ export function App() {
   }, [projectRoot]);
 
   useEffect(() => {
+    refreshVoiceLog();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectRoot]);
+
+  useEffect(() => {
+    const controller = createBrowserVoiceStt({
+      onStart: () => {
+        setVoiceListening(true);
+        setVoiceInterimTranscript("");
+      },
+      onResult: (row) => {
+        if (!row.transcript) return;
+        if (row.isFinal) {
+          setVoiceInterimTranscript("");
+          setVoiceDraftTranscript(row.transcript);
+          void submitVoiceTranscript(row.transcript, "stt");
+        } else {
+          setVoiceInterimTranscript(row.transcript);
+        }
+      },
+      onError: (messageText) => {
+        setVoiceListening(false);
+        setError(`Voice capture error: ${messageText}`);
+      },
+      onEnd: () => {
+        setVoiceListening(false);
+      }
+    });
+    voiceSttRef.current = controller;
+    setVoiceSupported(controller.supported);
+    setVoiceProviderLabel(controller.provider);
+    return () => {
+      voiceSttRef.current?.stop();
+      voiceSttRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const onKeyDown = (event: KeyboardEvent) => {
       const action = resolveShortcutAction(event);
@@ -1223,9 +1489,9 @@ export function App() {
     }
   }
 
-  async function handleGenerateProposal() {
-    if (proposalGenerateForm.instruction.trim() === "") return;
-    const sceneId = proposalGenerateForm.sceneId || selectedSceneId;
+  async function generateProposalFromDraft(input: DraftGeneratedProposal) {
+    if (input.instruction.trim() === "") return;
+    const sceneId = input.sceneId || selectedSceneId;
     if (!sceneId) {
       setError("Select a scene (or enter a scene id) before generating a proposal.");
       return;
@@ -1236,18 +1502,18 @@ export function App() {
     try {
       const generated = await generateProposal(projectRoot, {
         sceneId,
-        instruction: proposalGenerateForm.instruction,
-        provider: proposalGenerateForm.provider,
-        title: proposalGenerateForm.title,
-        model: proposalGenerateForm.model,
-        temperature: proposalGenerateForm.temperature,
-        maxOutputTokens: proposalGenerateForm.maxOutputTokens,
-        contextScenes: proposalGenerateForm.contextScenes,
-        codexLimit: proposalGenerateForm.codexLimit,
-        retrievalMode: proposalGenerateForm.retrievalMode,
-        retrievalLimit: proposalGenerateForm.retrievalLimit,
-        retrievalMinScore: proposalGenerateForm.retrievalMinScore,
-        retrievalRequireFresh: proposalGenerateForm.retrievalRequireFresh
+        instruction: input.instruction,
+        provider: input.provider,
+        title: input.title,
+        model: input.model,
+        temperature: input.temperature,
+        maxOutputTokens: input.maxOutputTokens,
+        contextScenes: input.contextScenes,
+        codexLimit: input.codexLimit,
+        retrievalMode: input.retrievalMode,
+        retrievalLimit: input.retrievalLimit,
+        retrievalMinScore: input.retrievalMinScore,
+        retrievalRequireFresh: input.retrievalRequireFresh
       });
       await refreshProposalList(generated.id);
       const generatedRunId = generated.generation?.id;
@@ -1260,7 +1526,7 @@ export function App() {
         instruction: "",
         sceneId
       }));
-      const providerLabel = generated.generation?.provider ?? proposalGenerateForm.provider;
+      const providerLabel = generated.generation?.provider ?? input.provider;
       const modelLabel = generated.generation?.model ?? "default";
       setMessage(`Proposal generated via ${providerLabel}/${modelLabel}.`);
     } catch (err) {
@@ -1279,6 +1545,10 @@ export function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleGenerateProposal() {
+    await generateProposalFromDraft(proposalGenerateForm);
   }
 
   async function handleApplyProposal(proposalId: string) {
@@ -1731,6 +2001,36 @@ export function App() {
     setError("");
   }
 
+  function handleStartVoiceCapture() {
+    const controller = voiceSttRef.current;
+    if (!controller || !controller.supported) {
+      setError("Voice capture unavailable in this runtime.");
+      setMessage("");
+      return;
+    }
+    setError("");
+    setMessage("Listening for voice command...");
+    controller.start();
+  }
+
+  function handleStopVoiceCapture() {
+    voiceSttRef.current?.stop();
+    setMessage("Stopped listening.");
+    setError("");
+  }
+
+  function handleSubmitVoiceDraft() {
+    if (voiceDraftTranscript.trim() === "") return;
+    void submitVoiceTranscript(voiceDraftTranscript.trim(), "manual");
+  }
+
+  function handleClearVoiceLog() {
+    clearVoiceCommandLog(projectRoot);
+    refreshVoiceLog();
+    setMessage("Cleared voice transcript log.");
+    setError("");
+  }
+
   async function handleRerunGeneration() {
     if (!selectedGenerationRun) return;
     setBusy(true);
@@ -1919,6 +2219,58 @@ export function App() {
         <button disabled={busy} onClick={checkProjectAndLoad}>
           Reload Project
         </button>
+      </section>
+
+      <section className="voice-bar">
+        <div className="voice-header">
+          <h2>Voice Command</h2>
+          <span>
+            {voiceSupported ? `${voiceProviderLabel}${voiceListening ? " / listening" : ""}` : "unsupported"}
+          </span>
+        </div>
+        <div className="voice-controls">
+          <input
+            value={voiceDraftTranscript}
+            onChange={(event) => setVoiceDraftTranscript(event.target.value)}
+            placeholder="Voice command transcript (manual fallback)"
+          />
+          <button
+            disabled={busy || voiceDraftTranscript.trim() === ""}
+            onClick={handleSubmitVoiceDraft}
+          >
+            Run Command
+          </button>
+          <button
+            disabled={busy || !voiceSupported || voiceListening}
+            onClick={handleStartVoiceCapture}
+          >
+            Start Listening
+          </button>
+          <button
+            disabled={busy || !voiceListening}
+            onClick={handleStopVoiceCapture}
+          >
+            Stop Listening
+          </button>
+          <button disabled={busy || voiceLogRows.length === 0} onClick={handleClearVoiceLog}>
+            Clear Log
+          </button>
+        </div>
+        {voiceInterimTranscript ? (
+          <p className="voice-interim">Interim: {voiceInterimTranscript}</p>
+        ) : null}
+        <div className="voice-log">
+          {voiceLogRows.length === 0 ? (
+            <p className="voice-log-empty">No voice commands logged yet.</p>
+          ) : (
+            voiceLogRows.slice(0, 6).map((row) => (
+              <p key={row.id} className={`voice-log-item status-${row.status}`}>
+                {new Date(row.timestamp).toLocaleTimeString()} [{row.source}] {row.intentLabel} -{" "}
+                {row.status}
+              </p>
+            ))
+          )}
+        </div>
       </section>
 
       <section className="canvas">

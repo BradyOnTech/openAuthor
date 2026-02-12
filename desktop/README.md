@@ -14,6 +14,7 @@ Current UI slice:
   - Includes retrieval provenance/citation panels (query, index freshness, source refs, score/coverage, excerpts)
   - Includes provider runtime config (credentials present/missing, retry settings)
 - Guided Merge (branch create/switch, diff/preflight, merge apply)
+- Voice Command Bar (push-to-talk command capture + manual transcript command execution + transcript log)
 - Context Lens (scene-linked proposal/codex/continuity context)
 - Codex Panel (entity create/list/edit)
 - Continuity Checks (run/list/jump to scene)
