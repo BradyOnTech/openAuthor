@@ -1,6 +1,52 @@
 import type { GenerationRunDetail } from "./types";
 
 type NumericLike = number | null | undefined;
+export type RunComparisonProfileId =
+  | "balanced"
+  | "quality_first"
+  | "cost_first"
+  | "speed_first"
+  | "reliability_first";
+
+type RunComparisonProfile = {
+  id: RunComparisonProfileId;
+  label: string;
+  weights: {
+    status: number;
+    quality: number;
+    cost: number;
+    latency: number;
+    attempts: number;
+  };
+};
+
+const COMPARISON_PROFILES: Record<RunComparisonProfileId, RunComparisonProfile> = {
+  balanced: {
+    id: "balanced",
+    label: "Balanced",
+    weights: { status: 2, quality: 1, cost: 1, latency: 1, attempts: 1 }
+  },
+  quality_first: {
+    id: "quality_first",
+    label: "Quality First",
+    weights: { status: 2, quality: 2, cost: 0.75, latency: 0.75, attempts: 1 }
+  },
+  cost_first: {
+    id: "cost_first",
+    label: "Cost First",
+    weights: { status: 1.5, quality: 1, cost: 2, latency: 1, attempts: 1 }
+  },
+  speed_first: {
+    id: "speed_first",
+    label: "Speed First",
+    weights: { status: 1.5, quality: 1, cost: 1, latency: 2, attempts: 1 }
+  },
+  reliability_first: {
+    id: "reliability_first",
+    label: "Reliability First",
+    weights: { status: 3, quality: 1, cost: 0.75, latency: 1, attempts: 2 }
+  }
+};
 
 export type RunComparisonMetric = {
   label: string;
@@ -24,6 +70,7 @@ export type RunComparisonRecommendation = {
 };
 
 export type RunComparison = {
+  profileId: RunComparisonProfileId;
   baselineRunId: string;
   currentRunId: string;
   baselineInstruction: string;
@@ -46,6 +93,12 @@ export function runComparisonVerdictLabel(
 
 export function runComparisonBaseFilename(comparison: RunComparison): string {
   return `run-comparison-${comparison.currentRunId}-vs-${comparison.baselineRunId}`;
+}
+
+export function listRunComparisonProfiles(): Array<{ id: RunComparisonProfileId; label: string }> {
+  return (
+    Object.values(COMPARISON_PROFILES) as RunComparisonProfile[]
+  ).map((profile) => ({ id: profile.id, label: profile.label }));
 }
 
 export function pickPreviousRunId(
@@ -113,19 +166,22 @@ function recommendationSummary(
 
 function buildRecommendation(
   baseline: GenerationRunDetail,
-  current: GenerationRunDetail
+  current: GenerationRunDetail,
+  profile: RunComparisonProfile
 ): RunComparisonRecommendation {
   let score = 0;
   let evaluatedSignals = 0;
   const reasons: string[] = [];
 
+  const applySignal = (points: number, weight: number): number => points * weight;
+
   if (baseline.status !== current.status) {
     evaluatedSignals += 1;
     if (baseline.status !== "succeeded" && current.status === "succeeded") {
-      score += 3;
+      score += applySignal(3, profile.weights.status);
       reasons.push("Current run succeeded while baseline did not.");
     } else if (baseline.status === "succeeded" && current.status !== "succeeded") {
-      score -= 3;
+      score -= applySignal(3, profile.weights.status);
       reasons.push("Current run did not succeed while baseline did.");
     }
   }
@@ -136,16 +192,16 @@ function buildRecommendation(
     evaluatedSignals += 1;
     const delta = currentQuality - baselineQuality;
     if (delta >= 5) {
-      score += 2;
+      score += applySignal(2, profile.weights.quality);
       reasons.push(`Quality score increased by ${delta}.`);
     } else if (delta >= 2) {
-      score += 1;
+      score += applySignal(1, profile.weights.quality);
       reasons.push(`Quality score improved by ${delta}.`);
     } else if (delta <= -5) {
-      score -= 2;
+      score -= applySignal(2, profile.weights.quality);
       reasons.push(`Quality score decreased by ${Math.abs(delta)}.`);
     } else if (delta <= -2) {
-      score -= 1;
+      score -= applySignal(1, profile.weights.quality);
       reasons.push(`Quality score slipped by ${Math.abs(delta)}.`);
     }
   }
@@ -156,10 +212,10 @@ function buildRecommendation(
     evaluatedSignals += 1;
     const delta = currentCost - baselineCost;
     if (delta <= -0.00001) {
-      score += 1;
+      score += applySignal(1, profile.weights.cost);
       reasons.push(`Estimated cost decreased by ${Math.abs(delta).toFixed(6)} USD.`);
     } else if (delta >= 0.00001) {
-      score -= 1;
+      score -= applySignal(1, profile.weights.cost);
       reasons.push(`Estimated cost increased by ${delta.toFixed(6)} USD.`);
     }
   }
@@ -170,10 +226,10 @@ function buildRecommendation(
     evaluatedSignals += 1;
     const delta = currentLatency - baselineLatency;
     if (delta <= -100) {
-      score += 1;
+      score += applySignal(1, profile.weights.latency);
       reasons.push(`Latency improved by ${Math.abs(delta)} ms.`);
     } else if (delta >= 100) {
-      score -= 1;
+      score -= applySignal(1, profile.weights.latency);
       reasons.push(`Latency regressed by ${delta} ms.`);
     }
   }
@@ -188,10 +244,10 @@ function buildRecommendation(
     evaluatedSignals += 1;
     const delta = currentAttempts - baselineAttempts;
     if (delta <= -1) {
-      score += 1;
+      score += applySignal(1, profile.weights.attempts);
       reasons.push(`Provider attempts dropped by ${Math.abs(delta)}.`);
     } else if (delta >= 1) {
-      score -= 1;
+      score -= applySignal(1, profile.weights.attempts);
       reasons.push(`Provider attempts increased by ${delta}.`);
     }
   }
@@ -223,12 +279,15 @@ export function formatNumericDelta(delta: number | null): string {
 
 export function buildRunComparison(
   baseline: GenerationRunDetail,
-  current: GenerationRunDetail
+  current: GenerationRunDetail,
+  profileId: RunComparisonProfileId = "balanced"
 ): RunComparison {
+  const profile = COMPARISON_PROFILES[profileId] ?? COMPARISON_PROFILES.balanced;
   const baselineInstruction = instructionText(baseline);
   const currentInstruction = instructionText(current);
 
   return {
+    profileId: profile.id,
     baselineRunId: baseline.run_id,
     currentRunId: current.run_id,
     baselineInstruction,
@@ -264,7 +323,7 @@ export function buildRunComparison(
       fieldRow("Error Retriable", baseline.error?.retriable, current.error?.retriable),
       fieldRow("Quality Tier", baseline.quality?.tier, current.quality?.tier)
     ],
-    recommendation: buildRecommendation(baseline, current)
+    recommendation: buildRecommendation(baseline, current, profile)
   };
 }
 
@@ -290,8 +349,10 @@ function markdownMetricRows(rows: RunComparisonMetric[]): string {
 }
 
 export function formatRunComparisonMarkdown(comparison: RunComparison): string {
+  const profile = COMPARISON_PROFILES[comparison.profileId] ?? COMPARISON_PROFILES.balanced;
   return (
     `# Run Comparison\n\n` +
+    `- Profile: ${profile.label}\n` +
     `- Baseline: ${comparison.baselineRunId}\n` +
     `- Current: ${comparison.currentRunId}\n` +
     `- Instruction changed: ${comparison.instructionChanged ? "yes" : "no"}\n\n` +

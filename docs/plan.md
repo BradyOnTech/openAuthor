@@ -44,7 +44,10 @@
   - Prior runs can be replayed via `generation rerun --id ...` and desktop Runs re-run action. ✅
   - Desktop run detail supports log JSON copy/download for direct audit/debug export. ✅
   - Desktop run replays support override controls (provider/model/temperature/token/context/codex). ✅
-  - Desktop run comparison supports selectable baseline-vs-current deltas (plus compare-to-previous shortcut) for instruction, quality, usage, settings, and outcome, with rule-based recommendation hints and JSON/Markdown export. ✅
+  - Desktop run comparison supports selectable baseline-vs-current deltas (plus compare-to-previous shortcut) for instruction, quality, usage, settings, and outcome, with weighting profiles, rule-based recommendation hints, persisted per-project comparison prefs, and JSON/Markdown export. ✅
+  - Preferred generation runs can be pinned per scene (CLI + desktop) and surfaced in run/proposal review. ✅
+  - Proposal review can jump directly to the preferred proposal linked from a scene’s pinned run. ✅
+  - Context lens includes Preferred Pipeline card for scene-level pinned run and linked proposal navigation. ✅
 
 ## No-Mock Guardrails (active)
 

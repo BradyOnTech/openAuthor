@@ -131,6 +131,21 @@ export function proposalsForScene(
   return rows.filter((row) => row.scene_id === sceneId || row.scene_id === "");
 }
 
+export function findPreferredProposalForScene(
+  rows: ProposalRecord[],
+  sceneId: string,
+  pinnedRunByScene: Record<string, string>
+): ProposalRecord | null {
+  if (!sceneId) return null;
+  const pinnedRunId = pinnedRunByScene[sceneId];
+  if (!pinnedRunId) return null;
+  return (
+    rows.find(
+      (row) => row.scene_id === sceneId && row.generation?.id === pinnedRunId
+    ) ?? null
+  );
+}
+
 export function continuityIssuesForScene(
   rows: ContinuityIssue[],
   sceneId: string

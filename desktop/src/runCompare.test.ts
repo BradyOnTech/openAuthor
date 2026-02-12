@@ -4,6 +4,7 @@ import {
   formatNumericDelta,
   formatRunComparisonJson,
   formatRunComparisonMarkdown,
+  listRunComparisonProfiles,
   pickPreviousRunId,
   runComparisonVerdictLabel
 } from "./runCompare";
@@ -66,6 +67,7 @@ describe("buildRunComparison", () => {
     });
 
     const comparison = buildRunComparison(baseline, current);
+    expect(comparison.profileId).toBe("balanced");
     expect(comparison.baselineRunId).toBe("gen-base");
     expect(comparison.currentRunId).toBe("gen-new");
     expect(comparison.instructionChanged).toBe(true);
@@ -113,6 +115,34 @@ describe("buildRunComparison", () => {
     expect(comparison.recommendation.verdict).toBe("likely_worse");
     expect(comparison.recommendation.score).toBeLessThan(0);
   });
+
+  it("supports weighting profiles for recommendation scoring", () => {
+    const baseline = makeRun({
+      run_id: "gen-base",
+      usage: {
+        input_tokens: 100,
+        output_tokens: 60,
+        latency_ms: 1200,
+        provider_attempts: 1,
+        estimated_cost_usd: 0.001
+      },
+      quality: { score: 80, tier: "medium", flags: [] }
+    });
+    const current = makeRun({
+      run_id: "gen-new",
+      usage: {
+        input_tokens: 110,
+        output_tokens: 70,
+        latency_ms: 950,
+        provider_attempts: 1,
+        estimated_cost_usd: 0.002
+      },
+      quality: { score: 92, tier: "high", flags: [] }
+    });
+    const qualityFirst = buildRunComparison(baseline, current, "quality_first");
+    const costFirst = buildRunComparison(baseline, current, "cost_first");
+    expect(qualityFirst.recommendation.score).toBeGreaterThan(costFirst.recommendation.score);
+  });
 });
 
 describe("formatNumericDelta", () => {
@@ -145,5 +175,18 @@ describe("runComparisonVerdictLabel", () => {
     expect(runComparisonVerdictLabel("mixed")).toBe("Mixed");
     expect(runComparisonVerdictLabel("likely_worse")).toBe("Likely Worse");
     expect(runComparisonVerdictLabel("insufficient_data")).toBe("Insufficient Data");
+  });
+});
+
+describe("listRunComparisonProfiles", () => {
+  it("returns all supported profile ids and labels", () => {
+    const profiles = listRunComparisonProfiles();
+    expect(profiles.map((item) => item.id)).toEqual([
+      "balanced",
+      "quality_first",
+      "cost_first",
+      "speed_first",
+      "reliability_first"
+    ]);
   });
 });

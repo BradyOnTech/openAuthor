@@ -2,6 +2,7 @@ import type {
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
+  GenerationPin,
   GenerationRunDetail,
   GenerationRuntimeConfig,
   GenerationRunSummary,
@@ -417,4 +418,47 @@ export async function getGenerationRuntimeConfig(
 ): Promise<GenerationRuntimeConfig> {
   const result = await runCoreCommand(projectRoot, ["generation", "config", "--json"]);
   return decodeJson<GenerationRuntimeConfig>(result);
+}
+
+export async function listGenerationPins(
+  projectRoot: string,
+  sceneId?: string
+): Promise<GenerationPin[]> {
+  const args = ["generation", "pins"];
+  if (sceneId && sceneId.trim() !== "") {
+    args.push("--scene", sceneId);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<GenerationPin[]>(result);
+}
+
+export async function pinGenerationRun(
+  projectRoot: string,
+  payload: { sceneId: string; runId: string }
+): Promise<GenerationPin> {
+  const result = await runCoreCommand(projectRoot, [
+    "generation",
+    "pin",
+    "--scene",
+    payload.sceneId,
+    "--run",
+    payload.runId,
+    "--json"
+  ]);
+  return decodeJson<GenerationPin>(result);
+}
+
+export async function unpinGenerationRun(
+  projectRoot: string,
+  sceneId: string
+): Promise<{ scene_id: string; run_id: string; cleared: boolean }> {
+  const result = await runCoreCommand(projectRoot, [
+    "generation",
+    "unpin",
+    "--scene",
+    sceneId,
+    "--json"
+  ]);
+  return decodeJson<{ scene_id: string; run_id: string; cleared: boolean }>(result);
 }

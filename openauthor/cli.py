@@ -9,10 +9,13 @@ from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
 from .checks import run_continuity_checks
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
 from .generations import (
+  clear_pinned_generation_run,
   get_generation_run,
   get_generation_runtime_config,
   list_generation_runs,
+  list_pinned_generation_runs,
   rerun_generation,
+  set_pinned_generation_run,
 )
 from .git_ops import create_snapshot, initialize_git, list_snapshots
 from .project import OpenAuthorError, initialize_project, resolve_project
@@ -218,6 +221,25 @@ def build_parser() -> argparse.ArgumentParser:
     help="Codex limit override.",
   )
   generation_rerun.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_pin = generation_sub.add_parser(
+    "pin",
+    help="Pin preferred generation run for a scene.",
+  )
+  generation_pin.add_argument("--scene", required=True, help="Scene id.")
+  generation_pin.add_argument("--run", required=True, help="Generation run id.")
+  generation_pin.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_unpin = generation_sub.add_parser(
+    "unpin",
+    help="Clear preferred generation run for a scene.",
+  )
+  generation_unpin.add_argument("--scene", required=True, help="Scene id.")
+  generation_unpin.add_argument("--json", action="store_true", help="Output JSON.")
+  generation_pins = generation_sub.add_parser(
+    "pins",
+    help="List pinned generation runs.",
+  )
+  generation_pins.add_argument("--scene", default=None, help="Optional scene id filter.")
+  generation_pins.add_argument("--json", action="store_true", help="Output JSON.")
   generation_config = generation_sub.add_parser("config", help="Show generation runtime config.")
   generation_config.add_argument("--json", action="store_true", help="Output JSON.")
 
@@ -489,6 +511,41 @@ def _run(args: argparse.Namespace) -> int:
       provider = generation.get("provider", "unknown")
       model = generation.get("model", "unknown")
       print(f"Re-ran generation as proposal {row['id']} via {provider}/{model}")
+      return 0
+
+    if args.generation_command == "pin":
+      row = set_pinned_generation_run(
+        paths,
+        scene_id=args.scene,
+        run_id=args.run,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"Pinned scene {row['scene_id']} to run {row['run_id']}")
+      return 0
+
+    if args.generation_command == "unpin":
+      row = clear_pinned_generation_run(paths, scene_id=args.scene)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      if row.get("cleared"):
+        print(f"Unpinned scene {row['scene_id']} (was {row.get('run_id','')})")
+      else:
+        print(f"Scene {row['scene_id']} had no pinned run.")
+      return 0
+
+    if args.generation_command == "pins":
+      rows = list_pinned_generation_runs(paths, scene_id=args.scene)
+      if args.json:
+        print(json.dumps(rows))
+        return 0
+      if not rows:
+        print("No pinned generation runs.")
+        return 0
+      for row in rows:
+        print(f"{row['scene_id']}\t{row['run_id']}")
       return 0
 
     rows = list_generation_runs(

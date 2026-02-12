@@ -74,6 +74,9 @@ python3 -m openauthor generation list --provider openai --json
 python3 -m openauthor generation list --quality low --json
 python3 -m openauthor generation get --id gen-xxxxxxxxxxxx --json
 python3 -m openauthor generation rerun --id gen-xxxxxxxxxxxx --json
+python3 -m openauthor generation pin --scene scene-0001 --run gen-xxxxxxxxxxxx --json
+python3 -m openauthor generation pins --json
+python3 -m openauthor generation unpin --scene scene-0001 --json
 python3 -m openauthor generation config --json
 
 # create git snapshot
@@ -100,8 +103,11 @@ AI generation artifacts:
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
+- Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
-- Desktop Runs panel also supports baseline run selection (same scene) and compare-to-previous shortcuts with instruction/quality/usage/settings/outcome deltas, rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown).
+- Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.
+- Desktop Runs panel supports pin/unpin preferred run per scene; pinned runs are highlighted and can be opened quickly from both Runs and Proposal review (including direct jump to preferred proposal).
+- Context tab now includes a Preferred Pipeline card (scene -> pinned run -> linked proposal) with quick-open actions.
 
 Generated proposal format is normalized to four sections for review consistency:
 

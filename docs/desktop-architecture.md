@@ -48,14 +48,18 @@
 - Proposal context: derived from `proposal list --json`
 - Codex context: derived from `codex list --json`
 - Continuity context: derived from `check continuity --json`
+- Preferred pipeline context: derived from `generation pins --json` + `proposal list --json`
 
 ## Implemented command usage (Generation Runs)
 
 - Run list: `generation list --json` (supports status + provider + quality filters)
 - Run detail: `generation get --id <run-id> --json`
 - Run rerun: `generation rerun --id <run-id> --json`
+- Run pin: `generation pin --scene <scene-id> --run <run-id> --json`
+- Run unpin: `generation unpin --scene <scene-id> --json`
+- Run pins list: `generation pins --json`
 - Runtime config: `generation config --json`
-- Desktop run detail actions: re-run with override controls, baseline run selection + compare-to-previous (same scene), comparison recommendation hints, copy/download log JSON, copy/download comparison reports (JSON + Markdown)
+- Desktop run detail actions: pin/unpin preferred run, re-run with override controls, baseline run selection + compare-to-previous (same scene), comparison recommendation hints with selectable weighting profiles, persisted comparison preferences per project root, copy/download log JSON, copy/download comparison reports (JSON + Markdown); proposal review can jump directly to preferred proposal for a scene.
 
 ## Why sidecar-first
 

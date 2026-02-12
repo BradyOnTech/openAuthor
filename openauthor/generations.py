@@ -15,6 +15,40 @@ def _generation_file(paths: ProjectPaths, run_id: str) -> Path:
   return paths.generations_dir / f"{run_id}.json"
 
 
+def _pins_file(paths: ProjectPaths) -> Path:
+  return paths.project_dir / "generation_pins.json"
+
+
+def _read_pins(paths: ProjectPaths) -> dict[str, str]:
+  pins_file = _pins_file(paths)
+  if not pins_file.exists():
+    return {}
+  try:
+    payload = json.loads(pins_file.read_text(encoding="utf-8"))
+  except json.JSONDecodeError as error:
+    raise OpenAuthorError(f"Invalid generation pins JSON: {pins_file}") from error
+  if not isinstance(payload, dict):
+    raise OpenAuthorError(f"Invalid generation pins shape: {pins_file}")
+  rows: dict[str, str] = {}
+  for scene_id, run_id in payload.items():
+    if isinstance(scene_id, str) and isinstance(run_id, str):
+      normalized_scene = scene_id.strip()
+      normalized_run = run_id.strip()
+      if normalized_scene and normalized_run:
+        rows[normalized_scene] = normalized_run
+  return rows
+
+
+def _write_pins(paths: ProjectPaths, pins: dict[str, str]) -> None:
+  pins_file = _pins_file(paths)
+  payload = {
+    scene_id: run_id
+    for scene_id, run_id in sorted(pins.items())
+    if scene_id.strip() and run_id.strip()
+  }
+  pins_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def _read_generation(log_file: Path) -> dict[str, Any]:
   try:
     payload = json.loads(log_file.read_text(encoding="utf-8"))
@@ -25,7 +59,13 @@ def _read_generation(log_file: Path) -> dict[str, Any]:
   return payload
 
 
-def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) -> dict[str, Any]:
+def _summary(
+  payload: dict[str, Any],
+  *,
+  log_file: Path,
+  paths: ProjectPaths,
+  pins: dict[str, str] | None = None,
+) -> dict[str, Any]:
   usage = payload.get("usage", {}) if isinstance(payload.get("usage"), dict) else {}
   error = payload.get("error", {}) if isinstance(payload.get("error"), dict) else {}
   normalization = (
@@ -34,12 +74,20 @@ def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) ->
     else {}
   )
   quality = payload.get("quality", {}) if isinstance(payload.get("quality"), dict) else {}
+  scene_id = payload.get("scene_id", "")
+  run_id = payload.get("run_id", log_file.stem)
+  preferred_for_scene = (
+    isinstance(scene_id, str)
+    and scene_id.strip() != ""
+    and isinstance(run_id, str)
+    and (pins or {}).get(scene_id.strip()) == run_id
+  )
 
   return {
-    "run_id": payload.get("run_id", log_file.stem),
+    "run_id": run_id,
     "status": payload.get("status", "unknown"),
     "created_at": payload.get("created_at", ""),
-    "scene_id": payload.get("scene_id", ""),
+    "scene_id": scene_id,
     "provider": payload.get("provider", ""),
     "model": payload.get("model", ""),
     "proposal_id": payload.get("proposal_id", ""),
@@ -55,6 +103,7 @@ def _summary(payload: dict[str, Any], *, log_file: Path, paths: ProjectPaths) ->
     "quality_score": quality.get("score"),
     "quality_tier": quality.get("tier"),
     "quality_flags": quality.get("flags", []),
+    "preferred_for_scene": preferred_for_scene,
     "log_path": str(log_file.relative_to(paths.root)),
   }
 
@@ -64,6 +113,13 @@ def get_generation_run(paths: ProjectPaths, run_id: str) -> dict[str, Any]:
   if not log_file.exists():
     raise OpenAuthorError(f"Unknown generation run id '{run_id}'.")
   payload = _read_generation(log_file)
+  scene_id = payload.get("scene_id")
+  pins = _read_pins(paths)
+  payload["preferred_for_scene"] = (
+    isinstance(scene_id, str)
+    and scene_id.strip() != ""
+    and pins.get(scene_id.strip()) == payload.get("run_id", log_file.stem)
+  )
   payload["log_path"] = str(log_file.relative_to(paths.root))
   return payload
 
@@ -88,6 +144,7 @@ def list_generation_runs(
   if limit is not None and limit < 1:
     raise OpenAuthorError("limit must be >= 1.")
 
+  pins = _read_pins(paths)
   rows: list[dict[str, Any]] = []
   for log_file in sorted(paths.generations_dir.glob("gen-*.json")):
     payload = _read_generation(log_file)
@@ -97,7 +154,7 @@ def list_generation_runs(
       continue
     if provider is not None and payload.get("provider") != provider:
       continue
-    summary = _summary(payload, log_file=log_file, paths=paths)
+    summary = _summary(payload, log_file=log_file, paths=paths, pins=pins)
     if quality_tier is not None and summary.get("quality_tier") != quality_tier:
       continue
     rows.append(summary)
@@ -111,6 +168,69 @@ def list_generation_runs(
 def get_generation_runtime_config(paths: ProjectPaths) -> dict[str, Any]:
   del paths
   return get_provider_runtime_config()
+
+
+def list_pinned_generation_runs(
+  paths: ProjectPaths,
+  *,
+  scene_id: str | None = None,
+) -> list[dict[str, str]]:
+  pins = _read_pins(paths)
+  if scene_id is not None:
+    normalized = scene_id.strip()
+    if normalized == "":
+      raise OpenAuthorError("scene_id cannot be empty.")
+    run_id = pins.get(normalized)
+    if run_id is None:
+      return []
+    return [{"scene_id": normalized, "run_id": run_id}]
+  return [
+    {"scene_id": row_scene_id, "run_id": row_run_id}
+    for row_scene_id, row_run_id in sorted(pins.items())
+  ]
+
+
+def set_pinned_generation_run(
+  paths: ProjectPaths,
+  *,
+  scene_id: str,
+  run_id: str,
+) -> dict[str, str]:
+  normalized_scene = scene_id.strip()
+  normalized_run = run_id.strip()
+  if normalized_scene == "":
+    raise OpenAuthorError("scene_id cannot be empty.")
+  if normalized_run == "":
+    raise OpenAuthorError("run_id cannot be empty.")
+  run_payload = get_generation_run(paths, normalized_run)
+  run_scene_id = str(run_payload.get("scene_id", "")).strip()
+  if run_scene_id != normalized_scene:
+    raise OpenAuthorError(
+      f"Run '{normalized_run}' belongs to scene '{run_scene_id}', "
+      f"not '{normalized_scene}'."
+    )
+  pins = _read_pins(paths)
+  pins[normalized_scene] = normalized_run
+  _write_pins(paths, pins)
+  return {"scene_id": normalized_scene, "run_id": normalized_run}
+
+
+def clear_pinned_generation_run(
+  paths: ProjectPaths,
+  *,
+  scene_id: str,
+) -> dict[str, Any]:
+  normalized_scene = scene_id.strip()
+  if normalized_scene == "":
+    raise OpenAuthorError("scene_id cannot be empty.")
+  pins = _read_pins(paths)
+  removed = pins.pop(normalized_scene, None)
+  _write_pins(paths, pins)
+  return {
+    "scene_id": normalized_scene,
+    "run_id": removed or "",
+    "cleared": removed is not None,
+  }
 
 
 def _coerce_float(value: Any, *, default: float) -> float:

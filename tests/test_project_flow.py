@@ -191,6 +191,8 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("quality_score", run_summary)
       self.assertIn("quality_tier", run_summary)
       self.assertIn("quality_flags", run_summary)
+      self.assertIn("preferred_for_scene", run_summary)
+      self.assertFalse(run_summary["preferred_for_scene"])
 
       code, out, err = self.run_cli(
         ["generation", "list", "--quality", run_summary["quality_tier"], "--json"],
@@ -210,6 +212,25 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(generation_run["max_output_tokens"], 700)
       self.assertEqual(generation_run["context_scene_radius"], 1)
       self.assertEqual(generation_run["codex_limit"], 20)
+      self.assertFalse(generation_run["preferred_for_scene"])
+
+      code, out, err = self.run_cli(
+        ["generation", "pin", "--scene", "scene-0001", "--run", run_id, "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      pin_row = json.loads(out)
+      self.assertEqual(pin_row, {"scene_id": "scene-0001", "run_id": run_id})
+
+      code, out, err = self.run_cli(["generation", "pins", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      pin_rows = json.loads(out)
+      self.assertEqual(pin_rows, [{"scene_id": "scene-0001", "run_id": run_id}])
+
+      code, out, err = self.run_cli(["generation", "get", "--id", run_id, "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      pinned_run = json.loads(out)
+      self.assertTrue(pinned_run["preferred_for_scene"])
 
       code, out, err = self.run_cli(["generation", "rerun", "--id", run_id, "--json"], root)
       self.assertEqual(code, 0, msg=err)
@@ -220,6 +241,19 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertNotEqual(
         rerun_proposal["generation"]["id"], generated_proposal["generation"]["id"]
       )
+
+      code, out, err = self.run_cli(["generation", "unpin", "--scene", "scene-0001", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      unpin_row = json.loads(out)
+      self.assertTrue(unpin_row["cleared"])
+      self.assertEqual(unpin_row["scene_id"], "scene-0001")
+
+      code, out, err = self.run_cli(
+        ["generation", "pins", "--scene", "scene-0001", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      self.assertEqual(json.loads(out), [])
 
       code, out, err = self.run_cli(["generation", "config", "--json"], root)
       self.assertEqual(code, 0, msg=err)

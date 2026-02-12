@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   continuityIssuesForScene,
+  findPreferredProposalForScene,
   countGenerationRuns,
   countSceneStatuses,
   countContinuityIssues,
@@ -315,6 +316,74 @@ describe("proposalsForScene", () => {
     ];
     const mixedRows = proposalsForScene(mixed, "scene-0001");
     expect(mixedRows.map((item) => item.id)).toEqual(["proposal-a", "proposal-global"]);
+  });
+});
+
+describe("findPreferredProposalForScene", () => {
+  it("returns linked proposal for pinned run in scene", () => {
+    const proposals: ProposalRecord[] = [
+      {
+        id: "proposal-a",
+        title: "A",
+        instruction: "A",
+        scene_id: "scene-0001",
+        status: "pending",
+        created_at: "",
+        updated_at: "",
+        notes: "",
+        source: "ai_generate",
+        generation: {
+          id: "gen-1",
+          provider: "openai",
+          model: "gpt-4.1-mini",
+          temperature: 0.2,
+          max_output_tokens: 700,
+          context_scene_radius: 1,
+          codex_limit: 20,
+          input_tokens: 10,
+          output_tokens: 20,
+          latency_ms: 1000,
+          provider_attempts: 1,
+          estimated_cost_usd: 0.001,
+          log_path: ".openauthor/generations/gen-1.json"
+        }
+      },
+      {
+        id: "proposal-b",
+        title: "B",
+        instruction: "B",
+        scene_id: "scene-0001",
+        status: "pending",
+        created_at: "",
+        updated_at: "",
+        notes: "",
+        source: "ai_generate",
+        generation: {
+          id: "gen-2",
+          provider: "openai",
+          model: "gpt-4.1-mini",
+          temperature: 0.2,
+          max_output_tokens: 700,
+          context_scene_radius: 1,
+          codex_limit: 20,
+          input_tokens: 10,
+          output_tokens: 20,
+          latency_ms: 1000,
+          provider_attempts: 1,
+          estimated_cost_usd: 0.001,
+          log_path: ".openauthor/generations/gen-2.json"
+        }
+      }
+    ];
+    const preferred = findPreferredProposalForScene(proposals, "scene-0001", {
+      "scene-0001": "gen-2"
+    });
+    expect(preferred?.id).toBe("proposal-b");
+  });
+
+  it("returns null when no pinned run or no matching proposal exists", () => {
+    const preferred = findPreferredProposalForScene(rows, "scene-0001", {});
+    expect(preferred).toBeNull();
   });
 });
 

@@ -84,6 +84,7 @@ export type GenerationRunSummary = {
   quality_score: number | null;
   quality_tier: "high" | "medium" | "low" | string | null;
   quality_flags: string[];
+  preferred_for_scene?: boolean;
   log_path: string;
 };
 
@@ -135,7 +136,13 @@ export type GenerationRunDetail = {
     attempts?: number;
     provider?: string;
   };
+  preferred_for_scene?: boolean;
   log_path: string;
+};
+
+export type GenerationPin = {
+  scene_id: string;
+  run_id: string;
 };
 
 export type GenerationRuntimeConfig = {

@@ -11,17 +11,21 @@ import {
   getProjectStatus,
   getScene,
   listCodexEntities,
+  listGenerationPins,
   listGenerationRuns,
   listProposals,
   listScenes,
+  pinGenerationRun,
   rejectProposal,
   rerunGeneration,
   runContinuityChecks,
+  unpinGenerationRun,
   updateCodexEntity,
   updateScene
 } from "./api";
 import {
   continuityIssuesForScene,
+  findPreferredProposalForScene,
   countGenerationRuns,
   countContinuityIssues,
   countProposals,
@@ -45,10 +49,16 @@ import {
   formatNumericDelta,
   formatRunComparisonJson,
   formatRunComparisonMarkdown,
+  listRunComparisonProfiles,
   pickPreviousRunId,
   runComparisonBaseFilename,
-  runComparisonVerdictLabel
+  runComparisonVerdictLabel,
+  type RunComparisonProfileId
 } from "./runCompare";
+import {
+  loadRunComparisonPrefs,
+  saveRunComparisonPrefs
+} from "./runComparePrefs";
 import type {
   CodexEntity,
   ContinuityIssue,
@@ -225,6 +235,7 @@ export function App() {
   const [continuityIssues, setContinuityIssues] = useState<ContinuityIssue[]>([]);
   const [selectedContinuityIssueId, setSelectedContinuityIssueId] = useState<string>("");
   const [generationRuns, setGenerationRuns] = useState<GenerationRunSummary[]>([]);
+  const [generationPins, setGenerationPins] = useState<Record<string, string>>({});
   const [selectedGenerationRunId, setSelectedGenerationRunId] = useState<string>("");
   const [selectedGenerationRun, setSelectedGenerationRun] =
     useState<GenerationRunDetail | null>(null);
@@ -232,6 +243,14 @@ export function App() {
     []
   );
   const [comparisonBaselineRunId, setComparisonBaselineRunId] = useState<string>("");
+  const [comparisonProfileId, setComparisonProfileId] =
+    useState<RunComparisonProfileId>(
+      () => loadRunComparisonPrefs(loadDefaultRoot()).profileId
+    );
+  const [comparisonAutoPrevious, setComparisonAutoPrevious] = useState<boolean>(
+    () => loadRunComparisonPrefs(loadDefaultRoot()).autoComparePrevious
+  );
+  const [comparisonPrefsRoot, setComparisonPrefsRoot] = useState<string>(loadDefaultRoot);
   const [comparisonBaselineRun, setComparisonBaselineRun] =
     useState<GenerationRunDetail | null>(null);
   const [generationRuntimeConfig, setGenerationRuntimeConfig] =
@@ -307,16 +326,50 @@ export function App() {
     () => countContinuityIssues(contextContinuityIssues),
     [contextContinuityIssues]
   );
+  const comparisonProfiles = useMemo(() => listRunComparisonProfiles(), []);
   const runComparison = useMemo(() => {
     if (!selectedGenerationRun || !comparisonBaselineRun) return null;
-    return buildRunComparison(comparisonBaselineRun, selectedGenerationRun);
-  }, [selectedGenerationRun, comparisonBaselineRun]);
+    return buildRunComparison(
+      comparisonBaselineRun,
+      selectedGenerationRun,
+      comparisonProfileId
+    );
+  }, [selectedGenerationRun, comparisonBaselineRun, comparisonProfileId]);
+  const comparisonProfileLabel = useMemo(() => {
+    const match = comparisonProfiles.find((item) => item.id === comparisonProfileId);
+    return match?.label ?? "Balanced";
+  }, [comparisonProfiles, comparisonProfileId]);
+  const selectedGenerationRunPinned = useMemo(() => {
+    if (!selectedGenerationRun?.scene_id) return false;
+    return generationPins[selectedGenerationRun.scene_id] === selectedGenerationRun.run_id;
+  }, [generationPins, selectedGenerationRun]);
+  const selectedProposalGenerationPinned = useMemo(() => {
+    if (!selectedProposal?.scene_id || !selectedProposal.generation?.id) return false;
+    return generationPins[selectedProposal.scene_id] === selectedProposal.generation.id;
+  }, [generationPins, selectedProposal]);
+  const selectedProposalPinnedRunId = useMemo(() => {
+    if (!selectedProposal?.scene_id) return "";
+    return generationPins[selectedProposal.scene_id] ?? "";
+  }, [generationPins, selectedProposal]);
+  const selectedGenerationScenePinnedRunId = useMemo(() => {
+    if (!selectedGenerationRun?.scene_id) return "";
+    return generationPins[selectedGenerationRun.scene_id] ?? "";
+  }, [generationPins, selectedGenerationRun]);
   const comparisonCandidateRuns = useMemo(() => {
     if (!selectedGenerationRun) return [];
     return comparisonSceneRuns.filter(
       (row) => row.run_id !== selectedGenerationRun.run_id
     );
   }, [comparisonSceneRuns, selectedGenerationRun]);
+  const selectedScenePinnedRunId = useMemo(() => {
+    if (!selectedSceneId) return "";
+    return generationPins[selectedSceneId] ?? "";
+  }, [generationPins, selectedSceneId]);
+  const selectedScenePreferredProposal = useMemo(
+    () =>
+      findPreferredProposalForScene(proposals, selectedSceneId, generationPins),
+    [proposals, selectedSceneId, generationPins]
+  );
   const previousComparisonRunId = useMemo(() => {
     if (!selectedGenerationRun) return null;
     return pickPreviousRunId(
@@ -424,6 +477,17 @@ export function App() {
     setSelectedGenerationRunId(target);
   }
 
+  async function refreshGenerationPins() {
+    const rows = await listGenerationPins(projectRoot);
+    const next: Record<string, string> = {};
+    for (const row of rows) {
+      if (row.scene_id && row.run_id) {
+        next[row.scene_id] = row.run_id;
+      }
+    }
+    setGenerationPins(next);
+  }
+
   async function loadSelectedScene(sceneId: string) {
     const row = await getScene(projectRoot, sceneId);
     setScene(row);
@@ -476,6 +540,7 @@ export function App() {
         setContinuityIssues([]);
         setSelectedContinuityIssueId("");
         setGenerationRuns([]);
+        setGenerationPins({});
         setSelectedGenerationRunId("");
         setSelectedGenerationRun(null);
         setGenerationRuntimeConfig(null);
@@ -486,6 +551,7 @@ export function App() {
         refreshProposalList(),
         refreshCodexList(),
         refreshGenerationRuns(),
+        refreshGenerationPins(),
         refreshGenerationRuntimeConfig()
       ]);
       setContinuityIssues([]);
@@ -566,6 +632,26 @@ export function App() {
   }, [selectedGenerationRunId]);
 
   useEffect(() => {
+    const prefs = loadRunComparisonPrefs(projectRoot);
+    setComparisonProfileId(prefs.profileId);
+    setComparisonAutoPrevious(prefs.autoComparePrevious);
+    setComparisonPrefsRoot(projectRoot);
+  }, [projectRoot]);
+
+  useEffect(() => {
+    if (comparisonPrefsRoot !== projectRoot) return;
+    saveRunComparisonPrefs(projectRoot, {
+      profileId: comparisonProfileId,
+      autoComparePrevious: comparisonAutoPrevious
+    });
+  }, [
+    projectRoot,
+    comparisonPrefsRoot,
+    comparisonProfileId,
+    comparisonAutoPrevious
+  ]);
+
+  useEffect(() => {
     if (!selectedGenerationRun) {
       setRerunDraft(EMPTY_RERUN_DRAFT);
       setComparisonSceneRuns([]);
@@ -583,7 +669,24 @@ export function App() {
     })
       .then((rows) => {
         if (cancelled) return;
-        setComparisonSceneRuns(orderGenerationRuns(rows));
+        const ordered = orderGenerationRuns(rows);
+        setComparisonSceneRuns(ordered);
+        if (!comparisonAutoPrevious) return;
+        const previousId = pickPreviousRunId(
+          ordered.map((row) => row.run_id),
+          selectedGenerationRun.run_id
+        );
+        if (!previousId) return;
+        void getGenerationRun(projectRoot, previousId)
+          .then((baseline) => {
+            if (cancelled) return;
+            setComparisonBaselineRunId(previousId);
+            setComparisonBaselineRun(baseline);
+          })
+          .catch((err) => {
+            if (cancelled) return;
+            setError(err instanceof Error ? err.message : String(err));
+          });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -593,7 +696,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [projectRoot, selectedGenerationRun]);
+  }, [projectRoot, selectedGenerationRun, comparisonAutoPrevious]);
 
   async function handleCreateScene() {
     if (addForm.title.trim() === "") return;
@@ -882,6 +985,47 @@ export function App() {
     }
   }
 
+  function handleOpenPinnedGenerationRun(sceneId: string) {
+    const pinnedRunId = generationPins[sceneId];
+    if (!pinnedRunId) {
+      setError(`No preferred run pinned for ${sceneId}.`);
+      setMessage("");
+      return;
+    }
+    setRightTab("runs");
+    setSelectedGenerationRunId(pinnedRunId);
+    setError("");
+    setMessage(`Loaded preferred run ${pinnedRunId} for ${sceneId}.`);
+  }
+
+  async function handleOpenPinnedProposal(sceneId: string) {
+    const pinnedRunId = generationPins[sceneId];
+    if (!pinnedRunId) {
+      setError(`No preferred run pinned for ${sceneId}.`);
+      setMessage("");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const run = await getGenerationRun(projectRoot, pinnedRunId);
+      const proposalId =
+        typeof run.proposal_id === "string" ? run.proposal_id.trim() : "";
+      if (!proposalId) {
+        throw new Error(`Pinned run ${pinnedRunId} has no linked proposal.`);
+      }
+      await refreshProposalList(proposalId);
+      setRightTab("proposals");
+      setSelectedProposalId(proposalId);
+      setMessage(`Loaded preferred proposal ${proposalId} for ${sceneId}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleRerunGeneration() {
     if (!selectedGenerationRun) return;
     setBusy(true);
@@ -902,6 +1046,47 @@ export function App() {
       const providerLabel = regenerated.generation?.provider ?? "unknown";
       const modelLabel = regenerated.generation?.model ?? "default";
       setMessage(`Re-ran generation via ${providerLabel}/${modelLabel}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePinPreferredGenerationRun() {
+    if (!selectedGenerationRun?.scene_id) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await pinGenerationRun(projectRoot, {
+        sceneId: selectedGenerationRun.scene_id,
+        runId: selectedGenerationRun.run_id
+      });
+      await refreshGenerationPins();
+      setMessage(
+        `Pinned ${selectedGenerationRun.run_id} as preferred for ${selectedGenerationRun.scene_id}.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUnpinPreferredGenerationRun() {
+    if (!selectedGenerationRun?.scene_id) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await unpinGenerationRun(projectRoot, selectedGenerationRun.scene_id);
+      await refreshGenerationPins();
+      if (result.cleared) {
+        setMessage(`Cleared preferred run for ${selectedGenerationRun.scene_id}.`);
+      } else {
+        setMessage(`No preferred run was set for ${selectedGenerationRun.scene_id}.`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -1495,6 +1680,14 @@ export function App() {
                         : ""}
                     </p>
                   ) : null}
+                  {selectedProposalGenerationPinned ? (
+                    <p className="proposal-meta">Preferred generation for this scene.</p>
+                  ) : null}
+                  {selectedProposalPinnedRunId ? (
+                    <p className="proposal-meta">
+                      Preferred run id: {selectedProposalPinnedRunId}
+                    </p>
+                  ) : null}
                   {selectedProposal.generation?.log_path ? (
                     <p className="proposal-meta">Log: {selectedProposal.generation.log_path}</p>
                   ) : null}
@@ -1511,6 +1704,18 @@ export function App() {
                       onClick={() => handleRejectProposal(selectedProposal.id)}
                     >
                       Reject
+                    </button>
+                    <button
+                      disabled={busy || !selectedProposal.scene_id || !selectedProposalPinnedRunId}
+                      onClick={() => handleOpenPinnedGenerationRun(selectedProposal.scene_id)}
+                    >
+                      Open Preferred Run
+                    </button>
+                    <button
+                      disabled={busy || !selectedProposal.scene_id || !selectedProposalPinnedRunId}
+                      onClick={() => void handleOpenPinnedProposal(selectedProposal.scene_id)}
+                    >
+                      Open Preferred Proposal
                     </button>
                   </div>
                 </div>
@@ -1732,6 +1937,7 @@ export function App() {
                   onClick={() =>
                     void Promise.all([
                       refreshGenerationRuns(),
+                      refreshGenerationPins(),
                       refreshGenerationRuntimeConfig()
                     ])
                   }
@@ -1772,19 +1978,25 @@ export function App() {
                     <p>No generation runs found for this filter.</p>
                   </div>
                 ) : (
-                  generationRuns.map((run) => (
-                    <button
-                      key={run.run_id}
-                      className={`run-item ${run.run_id === selectedGenerationRunId ? "selected" : ""} status-${run.status}`}
-                      onClick={() => setSelectedGenerationRunId(run.run_id)}
-                    >
-                      <strong>{run.run_id}</strong>
-                      <span>
-                        {run.provider || "unknown provider"} / {run.quality_tier || "n/a"}
-                      </span>
-                      <em>{run.status}</em>
-                    </button>
-                  ))
+                  generationRuns.map((run) => {
+                    const isPreferredForScene =
+                      run.scene_id !== "" &&
+                      generationPins[run.scene_id] === run.run_id;
+                    return (
+                      <button
+                        key={run.run_id}
+                        className={`run-item ${isPreferredForScene ? "preferred" : ""} ${run.run_id === selectedGenerationRunId ? "selected" : ""} status-${run.status}`}
+                        onClick={() => setSelectedGenerationRunId(run.run_id)}
+                      >
+                        <strong>{run.run_id}</strong>
+                        <span>
+                          {run.provider || "unknown provider"} / {run.quality_tier || "n/a"}
+                          {isPreferredForScene ? " / preferred" : ""}
+                        </span>
+                        <em>{run.status}</em>
+                      </button>
+                    );
+                  })
                 )}
               </div>
 
@@ -1801,6 +2013,14 @@ export function App() {
                     {selectedGenerationRun.codex_limit ?? "n/a"}
                   </p>
                   <p className="run-meta">Scene: {selectedGenerationRun.scene_id || "n/a"}</p>
+                  <p className="run-meta">
+                    Preferred for scene: {selectedGenerationRunPinned ? "yes" : "no"}
+                  </p>
+                  {selectedGenerationScenePinnedRunId ? (
+                    <p className="run-meta">
+                      Preferred run id: {selectedGenerationScenePinnedRunId}
+                    </p>
+                  ) : null}
                   <p className="run-meta">Status: {selectedGenerationRun.status}</p>
                   {selectedGenerationRun.status === "succeeded" ? (
                     <>
@@ -1978,8 +2198,59 @@ export function App() {
                     <p className="run-meta">
                       {comparisonCandidateRuns.length} candidate run(s) for this scene
                     </p>
+                    <label>
+                      <span>Recommendation Profile</span>
+                      <select
+                        value={comparisonProfileId}
+                        onChange={(event) =>
+                          setComparisonProfileId(event.target.value as RunComparisonProfileId)
+                        }
+                      >
+                        {comparisonProfiles.map((profile) => (
+                          <option key={profile.id} value={profile.id}>
+                            {profile.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="run-compare-toggle">
+                      <input
+                        type="checkbox"
+                        checked={comparisonAutoPrevious}
+                        onChange={(event) => setComparisonAutoPrevious(event.target.checked)}
+                      />
+                      <span>Auto-select previous baseline</span>
+                    </label>
                   </div>
                   <div className="proposal-actions">
+                    <button
+                      disabled={
+                        busy ||
+                        !selectedGenerationRun.scene_id ||
+                        selectedGenerationRunPinned
+                      }
+                      onClick={() => void handlePinPreferredGenerationRun()}
+                    >
+                      Pin As Preferred
+                    </button>
+                    <button
+                      disabled={busy || !selectedGenerationRun.scene_id}
+                      onClick={() => void handleUnpinPreferredGenerationRun()}
+                    >
+                      Unpin Preferred
+                    </button>
+                    <button
+                      disabled={
+                        busy ||
+                        !selectedGenerationRun.scene_id ||
+                        !selectedGenerationScenePinnedRunId
+                      }
+                      onClick={() =>
+                        handleOpenPinnedGenerationRun(selectedGenerationRun.scene_id)
+                      }
+                    >
+                      Open Preferred For Scene
+                    </button>
                     <button
                       disabled={busy}
                       onClick={() => void handleRerunGeneration()}
@@ -2026,6 +2297,7 @@ export function App() {
                         Baseline: {runComparison.baselineRunId} / Current:{" "}
                         {runComparison.currentRunId}
                       </p>
+                      <p className="run-meta">Profile: {comparisonProfileLabel}</p>
                       <p className="run-meta">
                         Instruction changed: {runComparison.instructionChanged ? "yes" : "no"}
                       </p>
@@ -2151,6 +2423,40 @@ export function App() {
                           </div>
                         ))
                       )}
+                    </div>
+                  </div>
+
+                  <div className="context-card">
+                    <h3>Preferred Pipeline</h3>
+                    <p className="context-sub">
+                      Pinned run: {selectedScenePinnedRunId || "none"}
+                    </p>
+                    {selectedScenePreferredProposal ? (
+                      <>
+                        <p className="context-sub">
+                          Linked proposal: {selectedScenePreferredProposal.id} (
+                          {selectedScenePreferredProposal.status})
+                        </p>
+                        <p className="context-sub">{selectedScenePreferredProposal.title}</p>
+                      </>
+                    ) : (
+                      <p className="context-sub">
+                        Linked proposal: {selectedScenePinnedRunId ? "not found" : "n/a"}
+                      </p>
+                    )}
+                    <div className="context-actions">
+                      <button
+                        disabled={busy || !scene.id || !selectedScenePinnedRunId}
+                        onClick={() => handleOpenPinnedGenerationRun(scene.id)}
+                      >
+                        Open Preferred Run
+                      </button>
+                      <button
+                        disabled={busy || !scene.id || !selectedScenePinnedRunId}
+                        onClick={() => void handleOpenPinnedProposal(scene.id)}
+                      >
+                        Open Preferred Proposal
+                      </button>
                     </div>
                   </div>
 
