@@ -4,7 +4,8 @@ export type VoiceIntent =
   | { kind: "run_continuity_checks" }
   | { kind: "open_tab"; tab: "proposals" | "codex" | "checks" | "context" | "runs" | "merge" }
   | { kind: "open_view"; view: "editor" | "outliner" }
-  | { kind: "open_scene"; sceneId: string };
+  | { kind: "open_scene"; sceneId: string }
+  | { kind: "dictate_scene"; sceneId: string; transcript: string };
 
 export type VoiceParseResult = {
   intent: VoiceIntent | null;
@@ -171,5 +172,6 @@ export function describeVoiceIntent(intent: VoiceIntent): string {
   if (intent.kind === "run_continuity_checks") return "run continuity checks";
   if (intent.kind === "open_tab") return `open ${intent.tab} tab`;
   if (intent.kind === "open_view") return `open ${intent.view} view`;
+  if (intent.kind === "dictate_scene") return `dictation proposal for ${intent.sceneId}`;
   return `open ${intent.sceneId}`;
 }

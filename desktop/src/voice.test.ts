@@ -50,5 +50,12 @@ describe("describeVoiceIntent", () => {
         instruction: "tighten pacing"
       })
     ).toContain("scene-0002");
+    expect(
+      describeVoiceIntent({
+        kind: "dictate_scene",
+        sceneId: "scene-0003",
+        transcript: "dictated line"
+      })
+    ).toContain("scene-0003");
   });
 });

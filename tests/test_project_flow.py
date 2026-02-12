@@ -812,6 +812,49 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertNotEqual(code, 0)
       self.assertIn("stale", err.lower())
 
+  def test_check_workspace_and_performance_cli_flow(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Hardening CLI"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Hardening Scene",
+          "--summary",
+          "hardening setup",
+          "--pov",
+          "narrator",
+          "--body",
+          "Scene body for workspace audit + performance CLI checks.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["check", "workspace", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      workspace_report = json.loads(out)
+      self.assertIn("issues", workspace_report)
+      self.assertIn("retrieval", workspace_report)
+      self.assertIn("generation_pins", workspace_report)
+
+      code, out, err = self.run_cli(
+        ["check", "performance", "--repeat", "2", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      perf_report = json.loads(out)
+      self.assertEqual(perf_report["repeat"], 2)
+      metric_names = {row["name"] for row in perf_report["metrics"]}
+      self.assertIn("scene_list", metric_names)
+      self.assertIn("proposal_list", metric_names)
+      self.assertIn("generation_list", metric_names)
+      self.assertIn("retrieval_status", metric_names)
+
 
 if __name__ == "__main__":
   unittest.main()

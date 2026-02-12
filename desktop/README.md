@@ -13,8 +13,9 @@ Current UI slice:
 - Generation Runs (history/errors with run detail inspection)
   - Includes retrieval provenance/citation panels (query, index freshness, source refs, score/coverage, excerpts)
   - Includes provider runtime config (credentials present/missing, retry settings)
+  - Includes hardening tools: workspace drift audit/repair and performance baseline metrics
 - Guided Merge (branch create/switch, diff/preflight, merge apply)
-- Voice Command Bar (push-to-talk command capture + manual transcript command execution + transcript log)
+- Voice Workspace (push-to-talk/manual command capture + dictation-to-proposal mode + confirmation/undo + transcript log)
 - Context Lens (scene-linked proposal/codex/continuity context)
 - Codex Panel (entity create/list/edit)
 - Continuity Checks (run/list/jump to scene)

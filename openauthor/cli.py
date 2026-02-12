@@ -23,6 +23,12 @@ from .generations import (
   rerun_generation,
   set_pinned_generation_run,
 )
+from .hardening import (
+  audit_workspace_metadata,
+  collect_performance_baseline,
+  format_performance_baseline_text,
+  format_workspace_audit_text,
+)
 from .git_ops import (
   create_branch,
   create_snapshot,
@@ -223,6 +229,27 @@ def build_parser() -> argparse.ArgumentParser:
   check_sub = check_parser.add_subparsers(dest="check_command", required=True)
   check_continuity = check_sub.add_parser("continuity", help="Run continuity checks.")
   check_continuity.add_argument("--json", action="store_true", help="Output JSON.")
+  check_workspace = check_sub.add_parser(
+    "workspace",
+    help="Audit branch/retrieval/pin drift with optional safe repair actions.",
+  )
+  check_workspace.add_argument(
+    "--repair",
+    action="store_true",
+    help="Apply safe repairs (clear stale pins, reset invalid pins JSON).",
+  )
+  check_workspace.add_argument("--json", action="store_true", help="Output JSON.")
+  check_performance = check_sub.add_parser(
+    "performance",
+    help="Collect local list/query performance baseline metrics.",
+  )
+  check_performance.add_argument(
+    "--repeat",
+    type=int,
+    default=3,
+    help="Number of timing samples per metric.",
+  )
+  check_performance.add_argument("--json", action="store_true", help="Output JSON.")
 
   retrieval_parser = subparsers.add_parser(
     "retrieval",
@@ -693,20 +720,37 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
   if args.command == "check":
-    if args.check_command != "continuity":
-      raise OpenAuthorError(f"Unsupported check command: {args.check_command}")
-    rows = run_continuity_checks(paths)
-    if args.json:
-      print(json.dumps(rows))
+    if args.check_command == "continuity":
+      rows = run_continuity_checks(paths)
+      if args.json:
+        print(json.dumps(rows))
+        return 0
+      if not rows:
+        print("No continuity issues found.")
+        return 0
+      for row in rows:
+        print(
+          f"{row['severity']}\t{row['code']}\t{row['scene_id']}\t{row['title']}\t{row['path']}"
+        )
       return 0
-    if not rows:
-      print("No continuity issues found.")
+
+    if args.check_command == "workspace":
+      report = audit_workspace_metadata(paths, repair=args.repair)
+      if args.json:
+        print(json.dumps(report))
+        return 0
+      print(format_workspace_audit_text(report))
       return 0
-    for row in rows:
-      print(
-        f"{row['severity']}\t{row['code']}\t{row['scene_id']}\t{row['title']}\t{row['path']}"
-      )
-    return 0
+
+    if args.check_command == "performance":
+      report = collect_performance_baseline(paths, repeat=args.repeat)
+      if args.json:
+        print(json.dumps(report))
+        return 0
+      print(format_performance_baseline_text(report))
+      return 0
+
+    raise OpenAuthorError(f"Unsupported check command: {args.check_command}")
 
   if args.command == "retrieval":
     if args.retrieval_command == "build":

@@ -48,7 +48,7 @@ make desktop-tauri
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks + Voice Command bar (push-to-talk + transcript command fallback).
+Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks + Voice workspace (push-to-talk/manual command + dictation-to-proposal + confirmation/undo).
 
 ```bash
 cd desktop
@@ -133,6 +133,13 @@ python3 -m openauthor retrieval query --text "ember cipher" --require-fresh --js
 # run continuity checks
 python3 -m openauthor check continuity
 python3 -m openauthor check continuity --json
+
+# workspace drift/migration audit + safe repair
+python3 -m openauthor check workspace --json
+python3 -m openauthor check workspace --repair --json
+
+# performance baselines for scenes/proposals/runs/retrieval status
+python3 -m openauthor check performance --repeat 3 --json
 ```
 
 `snapshot create` stages only authoring artifacts:
@@ -163,11 +170,12 @@ AI generation artifacts:
 - Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
 - Desktop Runs panel now includes budget policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
 - Desktop Proposal Review and Runs surfaces now show retrieval provenance (query/mode/index freshness/citations with score+coverage excerpts), and generation/rerun forms include retrieval mode controls.
-- Desktop Voice Command bar supports push-to-talk (Web Speech API when available) plus manual transcript command execution, with per-project transcript audit log in desktop local storage.
+- Desktop Voice Workspace supports push-to-talk/manual command capture, dictation-to-proposal capture mode, confirmation-before-execution, undo affordances, and per-project transcript audit log in desktop local storage.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
 - Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.
 - Desktop Runs panel supports pin/unpin preferred run per scene; pinned runs are highlighted and can be opened quickly from both Runs and Proposal review (including direct jump to preferred proposal).
+- Desktop Runs panel includes hardening controls for `check workspace` (drift audit + optional repair) and `check performance` baseline metrics.
 - Proposal review supports triage queue modes (`all`, `selected scene first`, `preferred-linked first`, `preferred-linked only`) plus status filters.
 - Context tab includes a Preferred Pipeline card (scene -> pinned run -> linked proposal) with health badges (missing/stale pin, missing proposal, pending/applied/rejected), quick-open actions, and stale-reference recovery actions.
 
@@ -199,12 +207,13 @@ Provider retry tuning (optional env vars):
 
 ## Status
 
-Phase 0-3 are complete. Phase 4 is in progress with budget policy enforcement, guided merge workflows, retrieval index/query, retrieval-backed generation provenance, and desktop provenance surfaces completed. See `docs/plan.md` for remaining Phase 4 chunks.
+Phase 0-4 are complete. Phase 4 closeout includes budget policy enforcement, guided merge workflows, retrieval provenance, voice dictation/confirm/undo workflows, and hardening checks (drift audit + performance baselines). Phase 5 planning can build from this baseline.
 
 CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
 
 - `make check`
 - `make test`
+- Phase 4 hardening CLI smoke (`check workspace`, `check performance`)
 - `make test-desktop`
 - `make desktop-build`
 - `make tauri-check`

@@ -26,6 +26,8 @@ import {
   rerunGeneration,
   resetGenerationBudget,
   runContinuityChecks,
+  runPerformanceBaseline,
+  runWorkspaceAudit,
   switchBranch,
   unpinGenerationRun,
   updateGenerationBudget,
@@ -86,6 +88,7 @@ import {
   listVoiceCommandLog,
   type VoiceCommandLogEntry
 } from "./voiceLog";
+import { buildDictationProposalDraft } from "./voiceDictation";
 import type {
   BranchDiffReport,
   BranchMergeResult,
@@ -97,10 +100,12 @@ import type {
   GenerationRunDetail,
   GenerationRuntimeConfig,
   GenerationRunSummary,
+  PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
   SceneDetail,
-  SceneSummary
+  SceneSummary,
+  WorkspaceAuditReport
 } from "./types";
 
 const PROJECT_ROOT_STORAGE_KEY = "openauthor.projectRoot";
@@ -166,6 +171,26 @@ type DraftCodex = {
   type: CodexEntity["type"];
   name: string;
   description: string;
+};
+
+type VoiceInputMode = "command" | "dictation";
+type VoiceActionKind = "intent" | "dictation";
+
+type VoicePendingAction = {
+  id: string;
+  createdAt: string;
+  source: "stt" | "manual";
+  transcript: string;
+  normalized: string;
+  confidence: number;
+  kind: VoiceActionKind;
+  intent: VoiceIntent;
+  summary: string;
+};
+
+type VoiceUndoAction = {
+  label: string;
+  run: () => Promise<void>;
 };
 
 const EMPTY_DRAFT_SCENE: DraftScene = {
@@ -356,12 +381,28 @@ export function App() {
     useState<GenerationRunDetail | null>(null);
   const [selectedScenePinnedRunStale, setSelectedScenePinnedRunStale] = useState(false);
   const voiceSttRef = useRef<ReturnType<typeof createBrowserVoiceStt> | null>(null);
+  const submitVoiceTranscriptRef = useRef<
+    (transcript: string, source: "stt" | "manual") => Promise<void> | void
+  >(() => undefined);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [voiceProviderLabel, setVoiceProviderLabel] = useState("none");
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceInterimTranscript, setVoiceInterimTranscript] = useState("");
   const [voiceDraftTranscript, setVoiceDraftTranscript] = useState("");
   const [voiceLogRows, setVoiceLogRows] = useState<VoiceCommandLogEntry[]>([]);
+  const [voiceInputMode, setVoiceInputMode] = useState<VoiceInputMode>("command");
+  const [voiceRequireConfirmation, setVoiceRequireConfirmation] = useState(true);
+  const [voicePendingAction, setVoicePendingAction] = useState<VoicePendingAction | null>(null);
+  const [voiceLastUndoAction, setVoiceLastUndoAction] = useState<VoiceUndoAction | null>(
+    null
+  );
+  const [voiceLastUndoLabel, setVoiceLastUndoLabel] = useState("");
+  const [voiceUndoBusy, setVoiceUndoBusy] = useState(false);
+  const [workspaceAuditReport, setWorkspaceAuditReport] =
+    useState<WorkspaceAuditReport | null>(null);
+  const [performanceBaselineReport, setPerformanceBaselineReport] =
+    useState<PerformanceBaselineReport | null>(null);
+  const [performanceBaselineRepeat, setPerformanceBaselineRepeat] = useState("3");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -388,125 +429,133 @@ export function App() {
     refreshVoiceLog();
   }
 
-  async function executeVoiceIntent(
-    intent: VoiceIntent,
-    transcript: string,
-    normalized: string,
-    confidence: number,
-    source: "stt" | "manual"
-  ) {
+  type VoiceExecutionResult = {
+    status: "executed" | "rejected";
+    detail: string;
+    undo?: VoiceUndoAction;
+  };
+
+  function normalizeTranscriptForLog(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function queueVoicePendingAction(action: Omit<VoicePendingAction, "id" | "createdAt">) {
+    const queued: VoicePendingAction = {
+      ...action,
+      id: `voice-pending-${Math.random().toString(16).slice(2, 10)}`,
+      createdAt: new Date().toISOString()
+    };
+    setVoicePendingAction(queued);
+    setMessage(`Queued voice action: ${queued.summary}. Confirm or discard.`);
+    setError("");
+  }
+
+  async function executeVoiceIntent(intent: VoiceIntent): Promise<VoiceExecutionResult> {
     if (intent.kind === "open_tab") {
+      const previousTab = rightTab;
       setRightTab(intent.tab);
-      setError("");
       const detail = `Opened ${intent.tab} tab.`;
-      setMessage(detail);
-      recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
+      return {
         status: "executed",
-        intent,
-        detail
-      });
-      return;
+        detail,
+        undo:
+          previousTab !== intent.tab
+            ? {
+                label: `Restore ${previousTab} tab`,
+                run: async () => {
+                  setRightTab(previousTab);
+                  setMessage(`Restored ${previousTab} tab.`);
+                  setError("");
+                }
+              }
+            : undefined
+      };
     }
 
     if (intent.kind === "open_view") {
+      const previousView = centerView;
       setCenterView(intent.view);
-      setError("");
       const detail = `Opened ${intent.view} view.`;
-      setMessage(detail);
-      recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
+      return {
         status: "executed",
-        intent,
-        detail
-      });
-      return;
+        detail,
+        undo:
+          previousView !== intent.view
+            ? {
+                label: `Restore ${previousView} view`,
+                run: async () => {
+                  setCenterView(previousView);
+                  setMessage(`Restored ${previousView} view.`);
+                  setError("");
+                }
+              }
+            : undefined
+      };
     }
 
     if (intent.kind === "open_scene") {
+      if (!scenes.some((item) => item.id === intent.sceneId)) {
+        return {
+          status: "rejected",
+          detail: `Scene '${intent.sceneId}' no longer exists in this project.`
+        };
+      }
+      const previousSceneId = selectedSceneId;
+      const previousView = centerView;
       handleOpenGenerationScene(intent.sceneId);
-      recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
+      return {
         status: "executed",
-        intent,
-        detail: `Loaded ${intent.sceneId}.`
-      });
-      return;
+        detail: `Loaded ${intent.sceneId}.`,
+        undo: {
+          label: "Restore prior scene focus",
+          run: async () => {
+            setCenterView(previousView);
+            setSelectedSceneId(previousSceneId);
+            setMessage("Restored previous scene focus.");
+            setError("");
+          }
+        }
+      };
     }
 
     if (intent.kind === "save_scene") {
       if (busy || centerView !== "editor" || !canSaveScene) {
-        const detail = "Cannot save scene in current state.";
-        recordVoiceCommand({
-          source,
-          transcript,
-          normalized,
-          confidence,
+        return {
           status: "rejected",
-          intent,
-          detail
-        });
-        setError(detail);
-        return;
+          detail: "Cannot save scene in current state."
+        };
       }
       await handleSaveScene();
-      recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
+      return {
         status: "executed",
-        intent,
         detail: "Saved current scene."
-      });
-      return;
+      };
     }
 
     if (intent.kind === "run_continuity_checks") {
       if (busy || !projectFound) {
-        const detail = "Cannot run continuity checks before project load.";
-        recordVoiceCommand({
-          source,
-          transcript,
-          normalized,
-          confidence,
+        return {
           status: "rejected",
-          intent,
-          detail
-        });
-        setError(detail);
-        return;
+          detail: "Cannot run continuity checks before project load."
+        };
       }
       setRightTab("checks");
       await handleRunContinuityChecks();
-      recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
+      return {
         status: "executed",
-        intent,
         detail: "Ran continuity checks."
-      });
-      return;
+      };
     }
 
     if (intent.kind === "generate_proposal") {
       const nextDraft: DraftGeneratedProposal = {
         ...proposalGenerateForm,
-        sceneId:
-          intent.sceneId ||
-          proposalGenerateForm.sceneId ||
-          selectedSceneId,
+        sceneId: intent.sceneId || proposalGenerateForm.sceneId || selectedSceneId,
         instruction:
           intent.instruction && intent.instruction.trim() !== ""
             ? intent.instruction.trim()
@@ -515,41 +564,159 @@ export function App() {
       setRightTab("proposals");
       setProposalGenerateForm(nextDraft);
       if (nextDraft.sceneId === "" || nextDraft.instruction.trim() === "") {
-        const detail =
-          "Prepared proposal generate form from voice command; provide missing scene/instruction.";
-        recordVoiceCommand({
-          source,
-          transcript,
-          normalized,
-          confidence,
+        return {
           status: "rejected",
-          intent,
-          detail
-        });
-        setMessage(detail);
-        setError("");
+          detail:
+            "Prepared proposal generate form from voice command; provide missing scene/instruction."
+        };
+      }
+      const generated = await generateProposalFromDraft(nextDraft);
+      const generatedId = generated?.id?.trim() ?? "";
+      return {
+        status: "executed",
+        detail: generatedId
+          ? `Generated proposal ${generatedId} from voice command.`
+          : "Generated proposal from voice command.",
+        undo: generatedId
+          ? {
+              label: `Reject ${generatedId}`,
+              run: async () => {
+                await handleRejectProposal(generatedId);
+                setRightTab("proposals");
+                setSelectedProposalId(generatedId);
+                setMessage(`Undo complete. Rejected ${generatedId}.`);
+                setError("");
+              }
+            }
+          : undefined
+      };
+    }
+
+    if (!scenes.some((item) => item.id === intent.sceneId)) {
+      return {
+        status: "rejected",
+        detail: `Scene '${intent.sceneId}' no longer exists in this project.`
+      };
+    }
+    const dictationDraft = buildDictationProposalDraft(intent.sceneId, intent.transcript);
+    setBusy(true);
+    try {
+      const created = await createProposal(projectRoot, {
+        title: dictationDraft.title,
+        instruction: dictationDraft.instruction,
+        sceneId: dictationDraft.sceneId
+      });
+      await refreshProposalList(created.id);
+      setRightTab("proposals");
+      setSelectedProposalId(created.id);
+      return {
+        status: "executed",
+        detail: `Created dictation proposal ${created.id} for ${intent.sceneId}.`,
+        undo: {
+          label: `Reject ${created.id}`,
+          run: async () => {
+            await handleRejectProposal(created.id);
+            setRightTab("proposals");
+            setSelectedProposalId(created.id);
+            setMessage(`Undo complete. Rejected ${created.id}.`);
+            setError("");
+          }
+        }
+      };
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function executeVoiceAction(action: VoicePendingAction) {
+    try {
+      const result = await executeVoiceIntent(action.intent);
+      recordVoiceCommand({
+        source: action.source,
+        transcript: action.transcript,
+        normalized: action.normalized,
+        confidence: action.confidence,
+        status: result.status,
+        intent: action.intent,
+        detail: result.detail
+      });
+      if (result.status === "rejected") {
+        setError(result.detail);
+        setMessage("");
         return;
       }
-      await generateProposalFromDraft(nextDraft);
+      setVoiceLastUndoAction(result.undo ?? null);
+      setVoiceLastUndoLabel(result.undo?.label ?? "");
+      setError("");
+      setMessage(result.detail);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
       recordVoiceCommand({
-        source,
-        transcript,
-        normalized,
-        confidence,
-        status: "executed",
-        intent,
-        detail: "Generated proposal from voice command."
+        source: action.source,
+        transcript: action.transcript,
+        normalized: action.normalized,
+        confidence: action.confidence,
+        status: "failed",
+        intent: action.intent,
+        detail
       });
+      reportError("Voice command failed", err, "Review transcript and retry.");
     }
   }
 
   async function submitVoiceTranscript(transcript: string, source: "stt" | "manual") {
-    const parsed = parseVoiceCommand(transcript);
+    const trimmed = transcript.trim();
+    if (!trimmed) return;
+
+    if (voiceInputMode === "dictation") {
+      const targetSceneId = (selectedSceneId || proposalGenerateForm.sceneId || "").trim();
+      if (!targetSceneId) {
+        const detail = "Dictation mode requires a selected scene.";
+        recordVoiceCommand({
+          source,
+          transcript: trimmed,
+          normalized: normalizeTranscriptForLog(trimmed),
+          confidence: 1,
+          status: "rejected",
+          intent: null,
+          detail
+        });
+        setError(detail);
+        setMessage("");
+        return;
+      }
+      const intent: VoiceIntent = {
+        kind: "dictate_scene",
+        sceneId: targetSceneId,
+        transcript: trimmed
+      };
+      const pending: Omit<VoicePendingAction, "id" | "createdAt"> = {
+        source,
+        transcript: trimmed,
+        normalized: normalizeTranscriptForLog(trimmed),
+        confidence: 1,
+        kind: "dictation",
+        intent,
+        summary: `Create dictation proposal for ${targetSceneId}`
+      };
+      if (voiceRequireConfirmation) {
+        queueVoicePendingAction(pending);
+        return;
+      }
+      await executeVoiceAction({
+        ...pending,
+        id: "voice-immediate",
+        createdAt: new Date().toISOString()
+      });
+      return;
+    }
+
+    const parsed = parseVoiceCommand(trimmed);
     if (!parsed.intent) {
       const detail = `Voice command not recognized: ${parsed.reason}`;
       recordVoiceCommand({
         source,
-        transcript,
+        transcript: trimmed,
         normalized: parsed.normalized,
         confidence: parsed.confidence,
         status: "ignored",
@@ -560,28 +727,75 @@ export function App() {
       setMessage("");
       return;
     }
+    const pending: Omit<VoicePendingAction, "id" | "createdAt"> = {
+      source,
+      transcript: trimmed,
+      normalized: parsed.normalized,
+      confidence: parsed.confidence,
+      kind: "intent",
+      intent: parsed.intent,
+      summary: `Run ${parsed.intent.kind.replace(/_/g, " ")}`
+    };
+    if (voiceRequireConfirmation) {
+      queueVoicePendingAction(pending);
+      return;
+    }
+    await executeVoiceAction({
+      ...pending,
+      id: "voice-immediate",
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  async function handleConfirmVoicePendingAction() {
+    if (!voicePendingAction) return;
+    const action = voicePendingAction;
+    setVoicePendingAction(null);
+    await executeVoiceAction(action);
+  }
+
+  function handleDiscardVoicePendingAction() {
+    if (!voicePendingAction) return;
+    recordVoiceCommand({
+      source: voicePendingAction.source,
+      transcript: voicePendingAction.transcript,
+      normalized: voicePendingAction.normalized,
+      confidence: voicePendingAction.confidence,
+      status: "ignored",
+      intent: voicePendingAction.intent,
+      detail: "Discarded pending voice action."
+    });
+    setVoicePendingAction(null);
+    setMessage("Discarded pending voice action.");
+    setError("");
+  }
+
+  async function handleUndoVoiceAction() {
+    if (!voiceLastUndoAction) return;
+    setVoiceUndoBusy(true);
     try {
-      await executeVoiceIntent(
-        parsed.intent,
-        transcript,
-        parsed.normalized,
-        parsed.confidence,
-        source
-      );
-    } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      await voiceLastUndoAction.run();
       recordVoiceCommand({
-        source,
-        transcript,
-        normalized: parsed.normalized,
-        confidence: parsed.confidence,
-        status: "failed",
-        intent: parsed.intent,
-        detail
+        source: "manual",
+        transcript: "undo voice action",
+        normalized: "undo voice action",
+        confidence: 1,
+        status: "executed",
+        intent: null,
+        detail: `Undo completed: ${voiceLastUndoLabel || "previous voice action"}.`
       });
-      reportError("Voice command failed", err, "Review transcript and retry.");
+      setVoiceLastUndoAction(null);
+      setVoiceLastUndoLabel("");
+    } catch (err) {
+      reportError("Voice undo failed", err, "Retry undo or resolve manually in proposals.");
+    } finally {
+      setVoiceUndoBusy(false);
     }
   }
+
+  useEffect(() => {
+    submitVoiceTranscriptRef.current = submitVoiceTranscript;
+  }, [submitVoiceTranscript]);
 
   const canSaveScene = useMemo(() => {
     return Boolean(selectedSceneId && draft.title.trim() !== "");
@@ -1081,6 +1295,11 @@ export function App() {
 
   useEffect(() => {
     refreshVoiceLog();
+    setVoicePendingAction(null);
+    setVoiceLastUndoAction(null);
+    setVoiceLastUndoLabel("");
+    setWorkspaceAuditReport(null);
+    setPerformanceBaselineReport(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectRoot]);
 
@@ -1095,7 +1314,7 @@ export function App() {
         if (row.isFinal) {
           setVoiceInterimTranscript("");
           setVoiceDraftTranscript(row.transcript);
-          void submitVoiceTranscript(row.transcript, "stt");
+          void submitVoiceTranscriptRef.current(row.transcript, "stt");
         } else {
           setVoiceInterimTranscript(row.transcript);
         }
@@ -1489,12 +1708,14 @@ export function App() {
     }
   }
 
-  async function generateProposalFromDraft(input: DraftGeneratedProposal) {
-    if (input.instruction.trim() === "") return;
+  async function generateProposalFromDraft(
+    input: DraftGeneratedProposal
+  ): Promise<ProposalRecord | null> {
+    if (input.instruction.trim() === "") return null;
     const sceneId = input.sceneId || selectedSceneId;
     if (!sceneId) {
       setError("Select a scene (or enter a scene id) before generating a proposal.");
-      return;
+      return null;
     }
     setBusy(true);
     setError("");
@@ -1529,6 +1750,7 @@ export function App() {
       const providerLabel = generated.generation?.provider ?? input.provider;
       const modelLabel = generated.generation?.model ?? "default";
       setMessage(`Proposal generated via ${providerLabel}/${modelLabel}.`);
+      return generated;
     } catch (err) {
       const details = err instanceof Error ? err.message : String(err);
       const budgetBlocked = details.toLowerCase().includes("budget policy");
@@ -1542,6 +1764,7 @@ export function App() {
             ? "Build or refresh retrieval index and retry."
             : "Check provider credentials/settings and retry."
       );
+      return null;
     } finally {
       setBusy(false);
     }
@@ -2009,7 +2232,11 @@ export function App() {
       return;
     }
     setError("");
-    setMessage("Listening for voice command...");
+    setMessage(
+      voiceInputMode === "dictation"
+        ? "Listening for dictation transcript..."
+        : "Listening for voice command..."
+    );
     controller.start();
   }
 
@@ -2029,6 +2256,53 @@ export function App() {
     refreshVoiceLog();
     setMessage("Cleared voice transcript log.");
     setError("");
+  }
+
+  async function handleRunWorkspaceAudit(repair: boolean) {
+    setBusy(true);
+    setError("");
+    setMessage(repair ? "Running workspace drift audit with repair..." : "Running workspace drift audit...");
+    try {
+      const report = await runWorkspaceAudit(projectRoot, repair);
+      setWorkspaceAuditReport(report);
+      if (repair) {
+        await Promise.all([
+          refreshGenerationPins(),
+          refreshGenerationRuns(),
+          refreshProposalList()
+        ]);
+      }
+      if (report.ok) {
+        setMessage("Workspace audit passed with no drift issues.");
+      } else {
+        setMessage(
+          `Workspace audit found ${report.issues.length} issue(s)${
+            report.repair_applied ? "; safe repairs applied." : "."
+          }`
+        );
+      }
+    } catch (err) {
+      reportError("Workspace audit failed", err, "Retry audit or inspect CLI diagnostics.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRunPerformanceBaseline() {
+    const repeat = Number.parseInt(performanceBaselineRepeat, 10);
+    const normalizedRepeat = Number.isFinite(repeat) && repeat > 0 ? repeat : 3;
+    setBusy(true);
+    setError("");
+    setMessage("Collecting performance baseline...");
+    try {
+      const report = await runPerformanceBaseline(projectRoot, normalizedRepeat);
+      setPerformanceBaselineReport(report);
+      setMessage("Collected performance baseline.");
+    } catch (err) {
+      reportError("Performance baseline failed", err, "Retry baseline with a smaller repeat count.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleRerunGeneration() {
@@ -2223,22 +2497,52 @@ export function App() {
 
       <section className="voice-bar">
         <div className="voice-header">
-          <h2>Voice Command</h2>
+          <h2>Voice Workspace</h2>
           <span>
             {voiceSupported ? `${voiceProviderLabel}${voiceListening ? " / listening" : ""}` : "unsupported"}
           </span>
+        </div>
+        <div className="voice-options">
+          <label>
+            <span>Mode</span>
+            <select
+              value={voiceInputMode}
+              onChange={(event) => setVoiceInputMode(event.target.value as VoiceInputMode)}
+            >
+              <option value="command">command</option>
+              <option value="dictation">dictation - proposal</option>
+            </select>
+          </label>
+          <label className="run-compare-toggle">
+            <input
+              type="checkbox"
+              checked={voiceRequireConfirmation}
+              onChange={(event) => setVoiceRequireConfirmation(event.target.checked)}
+            />
+            <span>Require confirmation before execute</span>
+          </label>
+          <button
+            disabled={busy || voiceUndoBusy || !voiceLastUndoAction}
+            onClick={() => void handleUndoVoiceAction()}
+          >
+            Undo Last
+          </button>
         </div>
         <div className="voice-controls">
           <input
             value={voiceDraftTranscript}
             onChange={(event) => setVoiceDraftTranscript(event.target.value)}
-            placeholder="Voice command transcript (manual fallback)"
+            placeholder={
+              voiceInputMode === "dictation"
+                ? "Dictation transcript (creates proposal for selected scene)"
+                : "Voice command transcript (manual fallback)"
+            }
           />
           <button
             disabled={busy || voiceDraftTranscript.trim() === ""}
             onClick={handleSubmitVoiceDraft}
           >
-            Run Command
+            {voiceInputMode === "dictation" ? "Capture Dictation" : "Run Command"}
           </button>
           <button
             disabled={busy || !voiceSupported || voiceListening}
@@ -2256,6 +2560,24 @@ export function App() {
             Clear Log
           </button>
         </div>
+        {voicePendingAction ? (
+          <div className="voice-pending">
+            <p>
+              Pending: {voicePendingAction.summary} ({voicePendingAction.source})
+            </p>
+            <div className="proposal-actions">
+              <button disabled={busy} onClick={() => void handleConfirmVoicePendingAction()}>
+                Confirm
+              </button>
+              <button disabled={busy} onClick={handleDiscardVoicePendingAction}>
+                Discard
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {voiceLastUndoLabel ? (
+          <p className="voice-last-undo">Undo available: {voiceLastUndoLabel}</p>
+        ) : null}
         {voiceInterimTranscript ? (
           <p className="voice-interim">Interim: {voiceInterimTranscript}</p>
         ) : null}
@@ -3373,6 +3695,116 @@ export function App() {
                   </div>
                 ) : (
                   <p className="run-meta">Budget policy unavailable.</p>
+                )}
+              </div>
+
+              <div className="run-hardening-card">
+                <h3>Workspace Hardening</h3>
+                <div className="proposal-actions">
+                  <button
+                    disabled={busy || !projectFound}
+                    onClick={() => void handleRunWorkspaceAudit(false)}
+                  >
+                    Run Drift Audit
+                  </button>
+                  <button
+                    disabled={busy || !projectFound}
+                    onClick={() => void handleRunWorkspaceAudit(true)}
+                  >
+                    Audit + Repair
+                  </button>
+                </div>
+                {workspaceAuditReport ? (
+                  <>
+                    <p className="run-meta">
+                      checked: {new Date(workspaceAuditReport.checked_at).toLocaleString()}
+                    </p>
+                    <p className="run-meta">
+                      issues: {workspaceAuditReport.issues.length} / ok:{" "}
+                      {workspaceAuditReport.ok ? "yes" : "no"} / repair applied:{" "}
+                      {workspaceAuditReport.repair_applied ? "yes" : "no"}
+                    </p>
+                    <p className="run-meta">
+                      branch: {workspaceAuditReport.branch.current_branch || "n/a"} / detached:{" "}
+                      {workspaceAuditReport.branch.detached_head ? "yes" : "no"}
+                    </p>
+                    <p className="run-meta">
+                      retrieval present:{" "}
+                      {workspaceAuditReport.retrieval.present ? "yes" : "no"} / stale:{" "}
+                      {workspaceAuditReport.retrieval.stale ? "yes" : "no"}
+                    </p>
+                    <p className="run-meta">
+                      pins total: {workspaceAuditReport.generation_pins.total} / stale:{" "}
+                      {workspaceAuditReport.generation_pins.stale} / repaired:{" "}
+                      {workspaceAuditReport.generation_pins.repaired_count}
+                    </p>
+                    {workspaceAuditReport.issues.length ? (
+                      <div className="run-recommendation-reasons">
+                        {workspaceAuditReport.issues.slice(0, 5).map((issue) => (
+                          <p key={`${issue.code}-${issue.message}`} className="run-meta">
+                            [{issue.severity}] {issue.code}: {issue.message}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {workspaceAuditReport.recovery_actions.length ? (
+                      <div className="run-recommendation-reasons">
+                        {workspaceAuditReport.recovery_actions.slice(0, 4).map((action) => (
+                          <p key={action} className="run-meta">
+                            recovery: {action}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="run-meta">
+                    Run drift audit to validate branch/retrieval/pin metadata health.
+                  </p>
+                )}
+              </div>
+
+              <div className="run-hardening-card">
+                <h3>Performance Baseline</h3>
+                <div className="row">
+                  <label>
+                    <span>Samples Per Metric</span>
+                    <input
+                      value={performanceBaselineRepeat}
+                      onChange={(event) => setPerformanceBaselineRepeat(event.target.value)}
+                      placeholder="3"
+                    />
+                  </label>
+                  <button
+                    disabled={busy || !projectFound}
+                    onClick={() => void handleRunPerformanceBaseline()}
+                  >
+                    Run Baseline
+                  </button>
+                </div>
+                {performanceBaselineReport ? (
+                  <>
+                    <p className="run-meta">
+                      checked: {new Date(performanceBaselineReport.checked_at).toLocaleString()}
+                    </p>
+                    <p className="run-meta">
+                      counts: scenes {performanceBaselineReport.counts.scenes} / proposals{" "}
+                      {performanceBaselineReport.counts.proposals} / runs{" "}
+                      {performanceBaselineReport.counts.generation_runs}
+                    </p>
+                    <div className="run-recommendation-reasons">
+                      {performanceBaselineReport.metrics.map((metric) => (
+                        <p key={metric.name} className="run-meta">
+                          {metric.name}: min {metric.min_ms}ms / avg {metric.avg_ms}ms / max{" "}
+                          {metric.max_ms}ms
+                        </p>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="run-meta">
+                    Capture baseline timings for scene/proposal/run list operations.
+                  </p>
                 )}
               </div>
 

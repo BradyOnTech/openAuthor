@@ -11,11 +11,13 @@ import type {
   GenerationRunDetail,
   GenerationRuntimeConfig,
   GenerationRunSummary,
+  PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
   ProjectStatus,
   SceneDetail,
-  SceneSummary
+  SceneSummary,
+  WorkspaceAuditReport
 } from "./types";
 
 const ALLOWED = new Set([
@@ -349,6 +351,34 @@ export async function updateCodexEntity(
 export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
   const result = await runCoreCommand(projectRoot, ["check", "continuity", "--json"]);
   return decodeJson<ContinuityIssue[]>(result);
+}
+
+export async function runWorkspaceAudit(
+  projectRoot: string,
+  repair = false
+): Promise<WorkspaceAuditReport> {
+  const args = ["check", "workspace"];
+  if (repair) {
+    args.push("--repair");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<WorkspaceAuditReport>(result);
+}
+
+export async function runPerformanceBaseline(
+  projectRoot: string,
+  repeat = 3
+): Promise<PerformanceBaselineReport> {
+  const normalizedRepeat = Number.isFinite(repeat) ? Math.max(1, Math.round(repeat)) : 3;
+  const result = await runCoreCommand(projectRoot, [
+    "check",
+    "performance",
+    "--repeat",
+    String(normalizedRepeat),
+    "--json"
+  ]);
+  return decodeJson<PerformanceBaselineReport>(result);
 }
 
 export async function listGenerationRuns(

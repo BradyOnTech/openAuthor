@@ -127,6 +127,45 @@ def current_branch(paths: ProjectPaths) -> str:
   return result.stdout.strip()
 
 
+def get_branch_workspace_status(paths: ProjectPaths) -> dict[str, Any]:
+  current = current_branch(paths)
+  branches = list_branches(paths)
+  current_marked = [row for row in branches if row.get("current")]
+  detached_head = current == "HEAD"
+  known_current_branch = any(row.get("name") == current for row in branches)
+
+  drift_reasons: list[str] = []
+  if detached_head:
+    drift_reasons.append("detached_head")
+  if not detached_head and not known_current_branch:
+    drift_reasons.append("current_branch_not_listed")
+  if len(current_marked) > 1:
+    drift_reasons.append("multiple_current_markers")
+  if not detached_head and len(current_marked) == 0:
+    drift_reasons.append("missing_current_marker")
+
+  recommendations: list[str] = []
+  if detached_head:
+    recommendations.append(
+      "Switch to a local branch (`openauthor branch switch --name <branch>`)."
+    )
+  if "current_branch_not_listed" in drift_reasons:
+    recommendations.append("Refresh local branch refs (`git fetch --all --prune`).")
+  if "multiple_current_markers" in drift_reasons:
+    recommendations.append("Inspect repository refs for branch metadata corruption.")
+
+  return {
+    "current_branch": current,
+    "detached_head": detached_head,
+    "local_branch_count": len(branches),
+    "current_marked_count": len(current_marked),
+    "known_current_branch": known_current_branch,
+    "drift_detected": len(drift_reasons) > 0,
+    "drift_reasons": drift_reasons,
+    "recommendations": recommendations,
+  }
+
+
 def list_branches(paths: ProjectPaths) -> list[dict[str, Any]]:
   ensure_git_repo(paths)
   rows = run_git(

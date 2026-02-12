@@ -7,6 +7,7 @@ from typing import Any
 from .ai import SUPPORTED_PROVIDERS, generate_proposal, get_provider_runtime_config
 from .budget import get_generation_budget_report
 from .project import OpenAuthorError, ProjectPaths
+from .scenes import list_scenes
 
 STATUSES = {"succeeded", "failed"}
 QUALITY_TIERS = {"high", "medium", "low"}
@@ -240,6 +241,67 @@ def clear_pinned_generation_run(
     "scene_id": normalized_scene,
     "run_id": removed or "",
     "cleared": removed is not None,
+  }
+
+
+def audit_generation_pins(
+  paths: ProjectPaths,
+  *,
+  repair: bool = False,
+) -> dict[str, Any]:
+  pins = _read_pins(paths)
+  known_scene_ids = {
+    str(row.get("id", "")).strip()
+    for row in list_scenes(paths)
+    if str(row.get("id", "")).strip()
+  }
+  issues: list[dict[str, str]] = []
+  valid_pins: dict[str, str] = {}
+
+  for scene_id, run_id in sorted(pins.items()):
+    issue_code = ""
+    issue_detail = ""
+    if scene_id not in known_scene_ids:
+      issue_code = "scene_missing"
+      issue_detail = f"Scene '{scene_id}' does not exist."
+    else:
+      generation_log = _generation_file(paths, run_id)
+      if not generation_log.exists():
+        issue_code = "run_missing"
+        issue_detail = f"Run '{run_id}' does not exist."
+      else:
+        run_payload = _read_generation(generation_log)
+        run_scene_id = str(run_payload.get("scene_id", "")).strip()
+        if run_scene_id != scene_id:
+          issue_code = "run_scene_mismatch"
+          issue_detail = (
+            f"Run '{run_id}' belongs to '{run_scene_id or 'unknown'}', not '{scene_id}'."
+          )
+
+    if issue_code:
+      issues.append(
+        {
+          "scene_id": scene_id,
+          "run_id": run_id,
+          "code": issue_code,
+          "detail": issue_detail,
+        }
+      )
+    else:
+      valid_pins[scene_id] = run_id
+
+  repaired_count = 0
+  if repair and issues:
+    _write_pins(paths, valid_pins)
+    repaired_count = len(issues)
+
+  return {
+    "total": len(pins),
+    "valid": len(valid_pins),
+    "stale": len(issues),
+    "repair_applied": repaired_count > 0,
+    "repaired_count": repaired_count,
+    "issues": issues,
   }
 
 

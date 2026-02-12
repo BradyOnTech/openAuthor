@@ -39,6 +39,15 @@ jobs:
       - name: Run Python tests
         run: make test
 
+      - name: Phase 4 hardening CLI smoke
+        run: |
+          tmpdir="$(mktemp -d)"
+          python -m openauthor init "$tmpdir"
+          cd "$tmpdir"
+          python -m openauthor scene add --title "CI Scene" --summary "phase4 smoke"
+          python -m openauthor check workspace --json
+          python -m openauthor check performance --repeat 2 --json
+
       - name: Run desktop tests
         run: make test-desktop
 

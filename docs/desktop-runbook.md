@@ -74,10 +74,21 @@ make desktop-tauri
 - Run continuity checks.
 - Jump to scene from checks and context actions.
 
-8. Validate voice command substrate:
-- In Voice Command bar, run a manual transcript command (`open runs`, `run continuity checks`, `save scene`).
-- If SpeechRecognition is available, start/stop listening and confirm final transcript commands execute.
-- Confirm recent voice command audit rows appear in the log.
+8. Validate voice command + dictation workflow:
+- In Voice Workspace, keep mode=`command` and run manual transcript commands (`open runs`, `run continuity checks`, `save scene`).
+- Confirm command enters pending state when confirmation is enabled; use `Confirm` then `Undo Last` for reversible actions.
+- Switch mode=`dictation`, select a scene, capture transcript, confirm execution, and verify a new proposal appears for that scene (no direct scene mutation).
+- If SpeechRecognition is available, start/stop listening and confirm final transcripts queue/execute correctly.
+- Confirm recent voice audit rows appear in the log.
+
+9. Validate hardening workflows:
+- In `Runs`, open Workspace Hardening and run `Run Drift Audit`.
+- Optionally run `Audit + Repair` and confirm stale pin metadata is repaired when present.
+- Run `Performance Baseline` with repeat=`2` or `3` and confirm metric rows populate.
+- CLI parity check (same project root):
+  - `openauthor check workspace --json`
+  - `openauthor check workspace --repair --json`
+  - `openauthor check performance --repeat 3 --json`
 
 ## Failure diagnostics
 
@@ -102,6 +113,10 @@ make desktop-tauri
 - `Voice capture unavailable in this runtime.`
   - Use manual transcript command input in Voice Command bar.
   - On macOS, ensure microphone permission is granted to the app runtime when using push-to-talk.
+- `Workspace audit found retrieval index stale/missing/invalid`
+  - Run `openauthor retrieval build --json`.
+- `Workspace audit found stale generation pins`
+  - Run `openauthor check workspace --repair --json` or manually unpin per scene.
 - Tauri startup failure (Rust/toolchain):
   - Re-run `make desktop-prereq`.
   - Re-run `make tauri-check` for compile diagnostics.

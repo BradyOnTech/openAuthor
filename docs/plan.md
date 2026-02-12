@@ -148,7 +148,7 @@ Phase 3 exit condition:
 - `npm run build` in `desktop/` for TypeScript + Vite.
 - `cargo check --manifest-path desktop/src-tauri/Cargo.toml` for Tauri backend integrity.
 
-## Phase 4: Advanced workflows (in progress)
+## Phase 4: Advanced workflows (complete)
 
 Phase 4 mission:
 - Add high-leverage authoring workflows on top of the stable Phase 3 shell without introducing mock paths:
@@ -163,7 +163,7 @@ Phase 4 execution principles:
 - Voice edits remain proposal-based by default; no silent direct manuscript mutations.
 - New workflows must degrade cleanly when optional dependencies are missing.
 
-## Phase 4 Execution Checklist (in progress)
+## Phase 4 Execution Checklist (complete)
 
 - 4.0 Budget policy enforcement (carried over)
   - [x] Add per-run hard caps (token and estimated cost) with fail-closed behavior.
@@ -179,12 +179,12 @@ Phase 4 execution principles:
   - [x] Add provenance viewer in desktop (source chunks, scene/codex refs, confidence/coverage).
 - 4.3 Voice-first commands + dictation mode
   - [x] Add push-to-talk command channel for high-frequency actions (navigate/generate/check/review).
-  - [ ] Add scene dictation capture mode that emits proposals (not direct edits by default).
-  - [ ] Add command confirmation/undo affordances and transcript audit log.
+  - [x] Add scene dictation capture mode that emits proposals (not direct edits by default).
+  - [x] Add command confirmation/undo affordances and transcript audit log.
 - 4.4 Hardening + scale behavior
-  - [ ] Add performance baselines for larger projects (scene count, proposal volume, run history volume).
-  - [ ] Add recovery and migration checks for index/branch metadata drift.
-  - [ ] Expand test gates and CI to include new Phase 4 workflows.
+  - [x] Add performance baselines for larger projects (scene count, proposal volume, run history volume).
+  - [x] Add recovery and migration checks for index/branch metadata drift.
+  - [x] Expand test gates and CI to include new Phase 4 workflows.
 
 Phase 4 exit condition:
 - Advanced workflows are real, observable, and reversible; high-frequency writing loops (branch, retrieve, voice) are production-usable locally with deterministic tests and release gates.
@@ -199,8 +199,8 @@ Phase 4 exit condition:
 - Chunk 6: Retrieval-backed generation with run/proposal provenance payloads. ✅
 - Chunk 7: Provenance/citation panels in desktop generation + review surfaces. ✅
 - Chunk 8: Voice command substrate (push-to-talk, command grammar, action routing). ✅
-- Chunk 9: Dictation-to-proposal flow, transcript logging, confirmations/undo.
-- Chunk 10: Phase 4 hardening pass (performance baselines, migrations, CI expansion).
+- Chunk 9: Dictation-to-proposal flow, transcript logging, confirmations/undo. ✅
+- Chunk 10: Phase 4 hardening pass (performance baselines, migrations, CI expansion). ✅
 
 ## Future TODO (deferred)
 

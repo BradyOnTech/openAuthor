@@ -43,6 +43,8 @@
 ## Implemented command usage (Continuity Checks)
 
 - Continuity scan: `check continuity --json`
+- Workspace drift audit: `check workspace [--repair] --json`
+- Performance baseline: `check performance [--repeat ...] --json`
 
 ## Implemented command usage (Context Lens)
 
@@ -81,12 +83,22 @@
 - Retrieval query: `retrieval query --text ... [--limit ... --min-score ... --require-fresh] --json`
 - Retrieval index metadata is commit/source scoped (`git_head` + `source_digest`) so stale indexes are explicit and query callers can fail closed with `--require-fresh`.
 
-## Implemented workflow (Voice Command Substrate)
+## Implemented workflow (Voice Command + Dictation)
 
 - Push-to-talk command capture uses browser SpeechRecognition when available (graceful fallback when unavailable).
 - Manual transcript command input is available as fallback and shares the same parser/router path.
 - Command grammar routes high-frequency intents to existing app actions (save scene, generate proposal, run checks, open tabs/views, open scene by id).
-- Transcript audit log is persisted per project root in desktop local storage for operator review/replay.
+- Voice mode includes command mode and dictation mode:
+  - Command mode supports confirmation-before-execute and undo affordances for reversible actions.
+  - Dictation mode captures transcript for a selected scene and emits a proposal artifact (never direct scene mutation).
+- Transcript audit log is persisted per project root in desktop local storage for operator review/replay, including confirm/discard outcomes.
+
+## Implemented workflow (Hardening + Scale)
+
+- Runs panel hardening tools call core checks directly:
+  - Workspace drift audit (`check workspace`) reports branch drift, retrieval freshness/schema issues, and stale generation pin references.
+  - Optional safe repair (`check workspace --repair`) clears stale pin references / resets invalid pin metadata.
+  - Performance baseline (`check performance`) captures repeatable timing samples for scene/proposal/run list workloads plus retrieval status.
 
 ## Why sidecar-first
 

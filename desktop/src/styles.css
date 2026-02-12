@@ -121,10 +121,42 @@ body {
   gap: 8px;
 }
 
+.voice-options {
+  display: grid;
+  grid-template-columns: minmax(190px, 220px) 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.voice-options label {
+  margin: 0;
+}
+
 .voice-interim {
   margin: 0;
   font-size: 12px;
   color: #23486f;
+}
+
+.voice-pending {
+  border: 1px dashed #c7bda4;
+  border-radius: 10px;
+  background: #fff8ee;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.voice-pending p {
+  margin: 0;
+  font-size: 12px;
+  color: #5f574f;
+}
+
+.voice-last-undo {
+  margin: 0;
+  font-size: 12px;
+  color: #184e2b;
 }
 
 .voice-log {
@@ -150,6 +182,14 @@ body {
 
 .voice-log-item.status-failed {
   color: #8d2f05;
+}
+
+.voice-log-item.status-rejected {
+  color: #8a3f15;
+}
+
+.voice-log-item.status-ignored {
+  color: #625c53;
 }
 
 label {
@@ -905,6 +945,20 @@ code {
   font-size: 13px;
 }
 
+.run-hardening-card {
+  border: 1px dashed #c7bda4;
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  background: #eef6ff;
+}
+
+.run-hardening-card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
 .merge-content {
   grid-template-rows: auto;
   align-content: start;
@@ -1320,6 +1374,10 @@ code {
   }
 
   .voice-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-options {
     grid-template-columns: 1fr;
   }
 

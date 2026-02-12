@@ -334,3 +334,81 @@ export type BranchMergeResult = {
   current_branch: string;
   merge_output: string;
 };
+
+export type WorkspaceAuditIssue = {
+  code: string;
+  severity: "warning" | "error" | "info" | string;
+  message: string;
+  recovery: string;
+};
+
+export type WorkspacePinIssue = {
+  scene_id: string;
+  run_id: string;
+  code: string;
+  detail: string;
+};
+
+export type WorkspaceAuditReport = {
+  checked_at: string;
+  repair_requested: boolean;
+  repair_applied: boolean;
+  ok: boolean;
+  branch: {
+    current_branch?: string;
+    detached_head?: boolean;
+    local_branch_count?: number;
+    current_marked_count?: number;
+    known_current_branch?: boolean;
+    drift_detected?: boolean;
+    drift_reasons?: string[];
+    recommendations?: string[];
+    error?: string;
+  };
+  retrieval: {
+    present?: boolean;
+    stale?: boolean;
+    stale_reasons?: string[];
+    schema_version?: number;
+    chunk_count?: number;
+    source_count?: number;
+    error?: string;
+  };
+  generation_pins: {
+    total: number;
+    valid: number;
+    stale: number;
+    repair_applied: boolean;
+    repaired_count: number;
+    issues: WorkspacePinIssue[];
+    error?: string;
+    repair_note?: string;
+  };
+  issues: WorkspaceAuditIssue[];
+  recovery_actions: string[];
+};
+
+export type PerformanceBaselineMetric = {
+  name: string;
+  samples_ms: number[];
+  min_ms: number;
+  avg_ms: number;
+  max_ms: number;
+};
+
+export type PerformanceBaselineReport = {
+  checked_at: string;
+  repeat: number;
+  counts: {
+    scenes: number;
+    proposals: number;
+    generation_runs: number;
+  };
+  metrics: PerformanceBaselineMetric[];
+  retrieval?: {
+    present?: boolean;
+    stale?: boolean;
+    chunk_count?: number;
+    source_count?: number;
+  };
+};
