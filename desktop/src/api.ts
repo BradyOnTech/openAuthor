@@ -33,7 +33,8 @@ const ALLOWED = new Set([
   "check",
   "retrieval",
   "generation",
-  "chat"
+  "chat",
+  "auth"
 ]);
 
 function ensureAllowed(args: string[]): void {
@@ -412,6 +413,7 @@ export async function sendChatMessage(
     threadId: string;
     message: string;
     currentSceneId?: string;
+    sceneIds?: string[];
     selectedText?: string;
     codexIds?: string[];
     includeCurrentScene?: boolean;
@@ -436,6 +438,11 @@ export async function sendChatMessage(
   ];
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
+  }
+  for (const sceneId of payload.sceneIds ?? []) {
+    if (sceneId.trim() !== "") {
+      args.push("--scene-id", sceneId.trim());
+    }
   }
   if (payload.selectedText) {
     args.push("--selected-text", payload.selectedText);
@@ -916,4 +923,42 @@ export async function unpinGenerationRun(
     "--json"
   ]);
   return decodeJson<{ scene_id: string; run_id: string; cleared: boolean }>(result);
+}
+
+
+// ── Auth ──────────────────────────────────────────────────────
+
+export type AuthStatus = Record<string, {
+  authenticated: boolean;
+  email?: string;
+  expires_at?: string;
+}>;
+
+export async function authLogin(
+  projectRoot: string,
+  provider: string
+): Promise<{ provider: string; authenticated: boolean; message: string }> {
+  const result = await runCoreCommand(projectRoot, [
+    "auth", "login", "--provider", provider, "--json"
+  ]);
+  return decodeJson<{ provider: string; authenticated: boolean; message: string }>(result);
+}
+
+export async function authLogout(
+  projectRoot: string,
+  provider: string
+): Promise<{ provider: string; removed: boolean }> {
+  const result = await runCoreCommand(projectRoot, [
+    "auth", "logout", "--provider", provider, "--json"
+  ]);
+  return decodeJson<{ provider: string; removed: boolean }>(result);
+}
+
+export async function authStatus(
+  projectRoot: string,
+): Promise<AuthStatus> {
+  const result = await runCoreCommand(projectRoot, [
+    "auth", "status", "--json"
+  ]);
+  return decodeJson<AuthStatus>(result);
 }

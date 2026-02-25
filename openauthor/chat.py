@@ -344,6 +344,7 @@ def _resolve_context(
   thread: dict[str, Any],
   message: str,
   current_scene_id: str,
+  explicit_scene_ids: list[str],
   selected_text: str,
   explicit_codex_ids: list[str],
   context_overrides: dict[str, Any] | None,
@@ -366,9 +367,16 @@ def _resolve_context(
   selected_scene_ids: list[str] = []
   selected_scene_rows: list[dict[str, Any]] = []
   normalized_scene_id = current_scene_id.strip()
+  requested_scene_ids: list[str] = []
   if include_current_scene and normalized_scene_id:
-    scene = get_scene(paths, normalized_scene_id)
-    selected_scene_ids.append(normalized_scene_id)
+    requested_scene_ids.append(normalized_scene_id)
+  for item in explicit_scene_ids:
+    scene_id = item.strip()
+    if scene_id and scene_id not in requested_scene_ids:
+      requested_scene_ids.append(scene_id)
+  for scene_id in requested_scene_ids:
+    scene = get_scene(paths, scene_id)
+    selected_scene_ids.append(scene_id)
     selected_scene_rows.append(scene)
 
   nearby_scene_ids: list[str] = []
@@ -645,6 +653,7 @@ def send_chat_message(
   thread_id: str,
   message: str,
   current_scene_id: str = "",
+  scene_ids: list[str] | None = None,
   selected_text: str = "",
   codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
@@ -659,6 +668,7 @@ def send_chat_message(
     thread=thread,
     message=content,
     current_scene_id=current_scene_id,
+    explicit_scene_ids=scene_ids or [],
     selected_text=selected_text,
     explicit_codex_ids=codex_ids or [],
     context_overrides=context_overrides,

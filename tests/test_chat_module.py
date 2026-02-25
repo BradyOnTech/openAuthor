@@ -104,6 +104,39 @@ class ChatModuleTests(unittest.TestCase):
       messages = list_chat_messages(paths, thread_id=thread["id"])
       self.assertTrue(any(row["role"] == "tool" for row in messages))
 
+  def test_chat_send_includes_explicit_scene_mentions_in_context(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat Scene Mentions")
+      add_scene(
+        paths,
+        title="Scene One",
+        summary="Opening",
+        pov="narrator",
+        status="draft",
+        body="Body one",
+      )
+      add_scene(
+        paths,
+        title="Scene Two",
+        summary="Follow up",
+        pov="narrator",
+        status="draft",
+        body="Body two",
+      )
+      thread = create_chat_thread(paths, title="Context Thread", provider="local", mode="agent")
+
+      result = send_chat_message(
+        paths,
+        thread_id=thread["id"],
+        message="Use both scenes for this suggestion.",
+        current_scene_id="scene-0001",
+        scene_ids=["scene-0002"],
+      )
+
+      context_used = result["user_message"]["context_used"]
+      self.assertEqual(context_used["scene_ids"], ["scene-0001", "scene-0002"])
+
 
 if __name__ == "__main__":
   unittest.main()

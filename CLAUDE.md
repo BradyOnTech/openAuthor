@@ -13,12 +13,16 @@ PYTHONPATH=. python3 -m unittest tests/test_scenes.py  # single test file
 # Desktop (Tauri + React)
 cd desktop && npm install           # install deps
 make test-desktop                   # vitest suite
+cd desktop && npx vitest run src/budget.test.ts  # single test file
 make desktop-web                    # Vite dev server (no Rust needed)
 make desktop-tauri                  # full Tauri desktop app
 
 # Combined
 make test-all                       # Python + desktop tests
 make desktop-smoke                  # full release gates (prereqs + tests + build + tauri-check)
+
+# Quick validation
+make demo                           # minimal CLI workflow (init + add scene + list)
 
 # Quality
 make check                          # repo integrity + no-mock audit
@@ -40,6 +44,19 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 - Generation logs: `.openauthor/generations/*.json` (full provenance)
 - Retrieval index: `.openauthor/retrieval/index.json` (gitignored)
 
+**Python module map**:
+- `cli.py` — argument parsing, command dispatch
+- `scenes.py` — scene CRUD, frontmatter parsing
+- `codex.py` — entity store (SQLite + JSON sync)
+- `proposals.py` — proposal queue lifecycle
+- `ai.py` — provider abstraction (local/openai/anthropic), retry/backoff
+- `generations.py` — generation run logging, quality scoring, pinning
+- `budget.py` — fail-closed token/cost budget enforcement
+- `retrieval.py` — local retrieval index (TF-IDF chunks)
+- `git_ops.py` — snapshot commits, branch ops, merge
+- `chat.py` — chat thread persistence
+- `checks.py` / `hardening.py` — continuity checks, workspace drift audit, perf baselines
+
 **AI provider abstraction** (`openauthor/ai.py`): Pluggable `local` (deterministic, used in tests), `openai`, `anthropic` providers with retry/backoff and fail-closed budget enforcement.
 
 **Proposal-based edits**: AI never silently mutates content. All AI output goes through a proposal queue (add → review → apply/reject). Generated proposals are normalized to four sections: Intent, Constraints, Edit Plan, Continuity Notes.
@@ -55,7 +72,7 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 ## Desktop Notes
 
-- `desktop/src/App.tsx` is the monolithic React component (large file ~5K lines)
+- `desktop/src/App.tsx` is the monolithic React component (very large file)
 - `desktop/src/api.ts` wraps Tauri commands that call into Python
 - `desktop/src/types.ts` has shared TypeScript interfaces
 - Voice workspace: push-to-talk STT + dictation-to-proposal pipeline

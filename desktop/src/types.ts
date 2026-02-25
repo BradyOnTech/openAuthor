@@ -4,7 +4,7 @@ export type CoreCommandResponse = {
   stderr: string;
 };
 
-export type ProposalProvider = "local" | "openai" | "anthropic";
+export type ProposalProvider = "local" | "openai" | "anthropic" | "openrouter" | "openai-codex";
 
 export type ProjectStatus = {
   found: boolean;
@@ -294,6 +294,16 @@ export type GenerationRuntimeConfig = {
       default_model: string;
       credential_present: boolean;
       base_url: string;
+    };
+    openrouter: {
+      default_model: string;
+      credential_present: boolean;
+      base_url: string;
+    };
+    "openai-codex": {
+      default_model: string;
+      credential_present: boolean;
+      auth_type: string;
     };
   };
   budget?: GenerationBudgetReport;

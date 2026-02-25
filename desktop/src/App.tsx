@@ -297,7 +297,9 @@ const EMPTY_DRAFT_GENERATED_PROPOSAL: DraftGeneratedProposal = {
 const PROVIDER_MODEL_HINTS: Record<ProposalProvider, string> = {
   local: "heuristic-v1",
   openai: "gpt-4.1-mini",
-  anthropic: "claude-3-5-haiku-latest"
+  anthropic: "claude-3-5-haiku-latest",
+  openrouter: "openai/gpt-4.1-mini",
+  "openai-codex": "codex-mini-latest",
 };
 
 const DEFAULT_LIST_LIMIT = 120;

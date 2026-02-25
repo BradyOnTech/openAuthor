@@ -399,7 +399,6 @@ class OpenAuthorFlowTests(unittest.TestCase):
         root,
       )
       self.assertEqual(code, 0, msg=err)
-
       code, _, err = self.run_cli(
         ["snapshot", "create", "-m", "baseline snapshot"],
         root,
@@ -926,6 +925,22 @@ class OpenAuthorFlowTests(unittest.TestCase):
         root,
       )
       self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        [
+          "scene",
+          "add",
+          "--title",
+          "Chat Scene Two",
+          "--summary",
+          "chat setup two",
+          "--pov",
+          "narrator",
+          "--body",
+          "Second scene body for explicit scene mentions.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
 
       code, out, err = self.run_cli(
         [
@@ -957,6 +972,8 @@ class OpenAuthorFlowTests(unittest.TestCase):
           "please list scenes",
           "--current-scene",
           "scene-0001",
+          "--scene-id",
+          "scene-0002",
           "--json",
         ],
         root,
@@ -965,6 +982,10 @@ class OpenAuthorFlowTests(unittest.TestCase):
       send_result = json.loads(out)
       self.assertIn("assistant_message", send_result)
       self.assertIn("pending_tool_calls", send_result)
+      self.assertEqual(
+        send_result["user_message"]["context_used"]["scene_ids"],
+        ["scene-0001", "scene-0002"],
+      )
 
       code, out, err = self.run_cli(
         ["chat", "message", "list", "--thread", thread_id, "--json"],

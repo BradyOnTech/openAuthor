@@ -13,17 +13,20 @@ import uuid
 from .checks import run_continuity_checks
 from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
+from .auth import get_access_token, get_auth_status
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .proposals import create_proposal, get_proposal
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
-SUPPORTED_PROVIDERS = {"local", "openai", "anthropic"}
+SUPPORTED_PROVIDERS = {"local", "openai", "anthropic", "openrouter", "openai-codex"}
 SUPPORTED_RETRIEVAL_MODES = {"off", "auto", "required"}
 DEFAULT_MODELS = {
   "local": "heuristic-v1",
   "openai": "gpt-4.1-mini",
   "anthropic": "claude-3-5-haiku-latest",
+  "openrouter": "openai/gpt-4.1-mini",
+  "openai-codex": "codex-mini-latest",
 }
 PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}
@@ -110,6 +113,19 @@ def get_provider_runtime_config() -> dict[str, Any]:
           "OPENAUTHOR_ANTHROPIC_BASE_URL",
           "https://api.anthropic.com/v1",
         ),
+      },
+      "openrouter": {
+        "default_model": DEFAULT_MODELS["openrouter"],
+        "credential_present": bool(os.getenv("OPENROUTER_API_KEY")),
+        "base_url": os.getenv(
+          "OPENAUTHOR_OPENROUTER_BASE_URL",
+          "https://openrouter.ai/api/v1",
+        ),
+      },
+      "openai-codex": {
+        "default_model": DEFAULT_MODELS["openai-codex"],
+        "credential_present": get_auth_status().get("openai-codex", {}).get("authenticated", False),
+        "auth_type": "oauth",
       },
     },
   }
@@ -587,6 +603,117 @@ def _anthropic_message(
   }
 
 
+def _openrouter_chat_completion(
+  *,
+  model: str,
+  system_prompt: str,
+  user_prompt: str,
+  temperature: float,
+  max_output_tokens: int,
+) -> dict[str, Any]:
+  api_key = os.getenv("OPENROUTER_API_KEY")
+  if not api_key:
+    raise ProviderExecutionError(
+      "OPENROUTER_API_KEY is required for provider 'openrouter'.",
+      category="missing_credentials",
+      retriable=False,
+      provider="openrouter",
+    )
+  base_url = os.getenv("OPENAUTHOR_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+  payload: dict[str, Any] = {
+    "model": model,
+    "messages": [
+      {"role": "system", "content": system_prompt},
+      {"role": "user", "content": user_prompt},
+    ],
+    "temperature": temperature,
+    "max_tokens": max_output_tokens,
+  }
+  response, attempts = _json_post(
+    provider="openrouter",
+    url=f"{base_url.rstrip('/')}/chat/completions",
+    headers={
+      "Authorization": f"Bearer {api_key}",
+      "HTTP-Referer": "https://openauthor.dev",
+      "X-Title": "openAuthor",
+    },
+    payload=payload,
+  )
+  choice = (response.get("choices") or [{}])[0]
+  message = choice.get("message", {})
+  content = message.get("content", "")
+  if isinstance(content, list):
+    text = "\n".join(
+      part.get("text", "") if isinstance(part, dict) else str(part)
+      for part in content
+    ).strip()
+  else:
+    text = str(content).strip()
+
+  usage = response.get("usage", {})
+  return {
+    "text": text,
+    "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
+    "output_tokens": int(usage.get("completion_tokens", 0) or 0),
+    "raw_usage": usage,
+    "attempts": attempts,
+  }
+
+
+def _openai_codex_chat_completion(
+  *,
+  model: str,
+  system_prompt: str,
+  user_prompt: str,
+  temperature: float,
+  max_output_tokens: int,
+) -> dict[str, Any]:
+  access_token = get_access_token("openai-codex")
+  if not access_token:
+    raise ProviderExecutionError(
+      "Not authenticated with ChatGPT subscription. "
+      "Run 'openauthor auth login --provider openai-codex' to sign in.",
+      category="missing_credentials",
+      retriable=False,
+      provider="openai-codex",
+    )
+  base_url = "https://api.openai.com/v1"
+  payload: dict[str, Any] = {
+    "model": model,
+    "messages": [
+      {"role": "system", "content": system_prompt},
+      {"role": "user", "content": user_prompt},
+    ],
+    "temperature": temperature,
+    "max_tokens": max_output_tokens,
+  }
+  response, attempts = _json_post(
+    provider="openai-codex",
+    url=f"{base_url}/chat/completions",
+    headers={"Authorization": f"Bearer {access_token}"},
+    payload=payload,
+  )
+  choice = (response.get("choices") or [{}])[0]
+  message = choice.get("message", {})
+  content = message.get("content", "")
+  if isinstance(content, list):
+    text = "\n".join(
+      part.get("text", "") if isinstance(part, dict) else str(part)
+      for part in content
+    ).strip()
+  else:
+    text = str(content).strip()
+
+  usage = response.get("usage", {})
+  return {
+    "text": text,
+    "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
+    "output_tokens": int(usage.get("completion_tokens", 0) or 0),
+    "raw_usage": usage,
+    "attempts": attempts,
+  }
+
+
 def _call_provider(
   *,
   provider: str,
@@ -621,6 +748,30 @@ def _call_provider(
     attempts = int(payload.get("attempts", 1) or 1)
   elif provider == "anthropic":
     payload = _anthropic_message(
+      model=model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+    text = payload["text"]
+    input_tokens = payload["input_tokens"]
+    output_tokens = payload["output_tokens"]
+    attempts = int(payload.get("attempts", 1) or 1)
+  elif provider == "openrouter":
+    payload = _openrouter_chat_completion(
+      model=model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+    text = payload["text"]
+    input_tokens = payload["input_tokens"]
+    output_tokens = payload["output_tokens"]
+    attempts = int(payload.get("attempts", 1) or 1)
+  elif provider == "openai-codex":
+    payload = _openai_codex_chat_completion(
       model=model,
       system_prompt=system_prompt,
       user_prompt=user_prompt,

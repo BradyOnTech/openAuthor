@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
+from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .budget import (
   get_generation_budget_report,
   reset_generation_budget_policy,
@@ -64,6 +65,17 @@ def build_parser() -> argparse.ArgumentParser:
   init_parser = subparsers.add_parser("init", help="Initialize an openAuthor project.")
   init_parser.add_argument("path", nargs="?", default=".", help="Project directory (default: current directory).")
   init_parser.add_argument("--name", default=None, help="Project name override.")
+
+  auth_parser = subparsers.add_parser("auth", help="Manage provider authentication.")
+  auth_sub = auth_parser.add_subparsers(dest="auth_command", required=True)
+  auth_login_parser = auth_sub.add_parser("login", help="Sign in with a provider subscription.")
+  auth_login_parser.add_argument("--provider", required=True, choices=sorted(SUPPORTED_AUTH_PROVIDERS), help="Auth provider.")
+  auth_login_parser.add_argument("--json", action="store_true")
+  auth_logout_parser = auth_sub.add_parser("logout", help="Sign out from a provider.")
+  auth_logout_parser.add_argument("--provider", required=True, choices=sorted(SUPPORTED_AUTH_PROVIDERS), help="Auth provider.")
+  auth_logout_parser.add_argument("--json", action="store_true")
+  auth_status_parser = auth_sub.add_parser("status", help="Show authentication status.")
+  auth_status_parser.add_argument("--json", action="store_true")
 
   scene_parser = subparsers.add_parser("scene", help="Manage scene files.")
   scene_sub = scene_parser.add_subparsers(dest="scene_command", required=True)
@@ -532,6 +544,12 @@ def build_parser() -> argparse.ArgumentParser:
   chat_send.add_argument("--thread", required=True, help="Thread id.")
   chat_send.add_argument("--message", required=True, help="Message content.")
   chat_send.add_argument("--current-scene", default="", help="Current scene id.")
+  chat_send.add_argument(
+    "--scene-id",
+    action="append",
+    default=None,
+    help="Explicit scene id to include in context. Repeatable.",
+  )
   chat_send.add_argument("--selected-text", default="", help="Selected editor text.")
   chat_send.add_argument(
     "--codex-id",
@@ -662,6 +680,42 @@ def _run(args: argparse.Namespace) -> int:
     initialize_git(paths)
     print(f"Initialized openAuthor project at {paths.root}")
     return 0
+
+  if args.command == "auth":
+    if args.auth_command == "login":
+      result = auth_login(args.provider)
+      if args.json:
+        print(json.dumps(result))
+        return 0
+      print(result.get("message", f"Authenticated with {args.provider}."))
+      return 0
+
+    if args.auth_command == "logout":
+      result = auth_logout(args.provider)
+      if args.json:
+        print(json.dumps(result))
+        return 0
+      if result.get("removed"):
+        print(f"Signed out from {args.provider}.")
+      else:
+        print(f"No active session for {args.provider}.")
+      return 0
+
+    if args.auth_command == "status":
+      status = get_auth_status()
+      if args.json:
+        print(json.dumps(status))
+        return 0
+      for provider, info in status.items():
+        if info.get("authenticated"):
+          email = info.get("email", "")
+          email_str = f" ({email})" if email else ""
+          print(f"{provider}: authenticated{email_str}")
+        else:
+          print(f"{provider}: not authenticated")
+      return 0
+
+    raise OpenAuthorError(f"Unsupported auth command: {args.auth_command}")
 
   paths = _paths_from_cwd()
 
@@ -1119,6 +1173,7 @@ def _run(args: argparse.Namespace) -> int:
         thread_id=args.thread,
         message=args.message,
         current_scene_id=args.current_scene,
+        scene_ids=args.scene_id or [],
         selected_text=args.selected_text,
         codex_ids=args.codex_id or [],
         context_overrides=context_overrides if context_overrides else None,
@@ -1263,7 +1318,7 @@ def _run(args: argparse.Namespace) -> int:
         f"retry.max_retries={retry.get('max_retries')} "
         f"retry.base_delay_ms={retry.get('base_delay_ms')}"
       )
-      for name in ("local", "openai", "anthropic"):
+      for name in ("local", "openai", "anthropic", "openrouter", "openai-codex"):
         provider = providers.get(name, {})
         print(
           f"{name}\tdefault_model={provider.get('default_model','')}\t"
