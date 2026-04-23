@@ -3,12 +3,12 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 export function StatusBar() {
   const { theme, toggleTheme } = useUI();
-  const { projectRoot, projectFound, scenes, branches, budget } = useWorkspace();
+  const { projectRoot, projectFound, scenes, branches, budget, closeProject } = useWorkspace();
 
   const projectName = projectRoot ? projectRoot.split("/").pop() || "Project" : "No Project";
   const sceneCount = scenes.length;
   const wordCount = 0; // will be computed from scene data later
-  const currentBranch = branches.find((b) => b.current)?.name ?? "—";
+  const currentBranch = branches.find((b) => b.current)?.name ?? "\u2014";
 
   const dailyTokensUsed = budget?.usage?.daily?.total_tokens ?? 0;
   const dailyTokensLimit = budget?.policy?.rolling?.daily_tokens ?? null;
@@ -16,6 +16,14 @@ export function StatusBar() {
   return (
     <div className="status-bar">
       <div className="status-bar__left">
+        <span
+          className="status-bar__item status-bar__item--clickable"
+          onClick={closeProject}
+          title="Return to welcome screen (Cmd/Ctrl+Shift+O)"
+        >
+          Projects
+        </span>
+        <span className="status-bar__divider" />
         <span className="status-bar__item">
           {projectFound === true
             ? projectName

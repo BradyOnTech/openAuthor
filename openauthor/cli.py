@@ -52,7 +52,15 @@ from .git_ops import (
   preflight_merge,
   switch_branch,
 )
-from .project import OpenAuthorError, initialize_project, resolve_project
+from .project import (
+  OpenAuthorError,
+  ensure_project_identity,
+  initialize_project,
+  initialize_project_from_folder,
+  initialize_project_from_zip,
+  inspect_project,
+  resolve_project,
+)
 from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
 from .retrieval import build_retrieval_index, get_retrieval_index_status, query_retrieval_index
 from .scenes import add_scene, get_scene, list_scenes, update_scene
@@ -65,6 +73,21 @@ def build_parser() -> argparse.ArgumentParser:
   init_parser = subparsers.add_parser("init", help="Initialize an openAuthor project.")
   init_parser.add_argument("path", nargs="?", default=".", help="Project directory (default: current directory).")
   init_parser.add_argument("--name", default=None, help="Project name override.")
+  init_parser.add_argument("--project-id", default=None, help="Optional explicit project id.")
+  init_parser.add_argument("--from-zip", default=None, help="Optional zip archive to scaffold/import.")
+  init_parser.add_argument("--from-folder", default=None, help="Optional folder source to scaffold/import.")
+  init_parser.add_argument("--json", action="store_true", help="Output JSON.")
+
+  project_parser = subparsers.add_parser("project", help="Inspect and manage project identity metadata.")
+  project_sub = project_parser.add_subparsers(dest="project_command", required=True)
+  project_inspect = project_sub.add_parser("inspect", help="Inspect project metadata and identity.")
+  project_inspect.add_argument("--json", action="store_true", help="Output JSON.")
+  project_ensure_id = project_sub.add_parser(
+    "ensure-id",
+    help="Ensure project has a persistent project_id; optionally enforce expected id.",
+  )
+  project_ensure_id.add_argument("--id", dest="expected_id", default=None, help="Expected project id.")
+  project_ensure_id.add_argument("--json", action="store_true", help="Output JSON.")
 
   auth_parser = subparsers.add_parser("auth", help="Manage provider authentication.")
   auth_sub = auth_parser.add_subparsers(dest="auth_command", required=True)
@@ -675,9 +698,33 @@ def _chat_context_overrides(args: argparse.Namespace) -> dict[str, Any]:
 def _run(args: argparse.Namespace) -> int:
   if args.command == "init":
     root = Path(args.path).resolve()
-    paths = initialize_project(root, name=args.name)
+    import_summary = None
+    if args.from_zip and args.from_folder:
+      raise OpenAuthorError("Use either --from-zip or --from-folder, not both.")
+    if args.from_zip:
+      paths, import_summary = initialize_project_from_zip(
+        Path(args.from_zip),
+        root,
+        name=args.name,
+        project_id=args.project_id,
+      )
+    elif args.from_folder:
+      paths, import_summary = initialize_project_from_folder(
+        Path(args.from_folder),
+        root,
+        name=args.name,
+        project_id=args.project_id,
+      )
+    else:
+      paths = initialize_project(root, name=args.name, project_id=args.project_id)
     ensure_codex(paths)
     initialize_git(paths)
+    if args.json:
+      row = inspect_project(paths)
+      row["initialized"] = True
+      row["import_summary"] = import_summary
+      print(json.dumps(row))
+      return 0
     print(f"Initialized openAuthor project at {paths.root}")
     return 0
 
@@ -718,6 +765,33 @@ def _run(args: argparse.Namespace) -> int:
     raise OpenAuthorError(f"Unsupported auth command: {args.auth_command}")
 
   paths = _paths_from_cwd()
+
+  if args.command == "project":
+    if args.project_command == "inspect":
+      row = inspect_project(paths)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(
+        f"{row.get('project_id','')}\t{row.get('name','')}\t{row.get('project_root','')}"
+      )
+      return 0
+
+    if args.project_command == "ensure-id":
+      config = ensure_project_identity(paths, expected_project_id=args.expected_id)
+      row = {
+        "project_id": config.get("project_id"),
+        "name": config.get("name", ""),
+        "created_at": config.get("created_at", ""),
+        "project_root": str(paths.root),
+      }
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"{row['project_id']}\t{row['name']}\t{row['project_root']}")
+      return 0
+
+    raise OpenAuthorError(f"Unsupported project command: {args.project_command}")
 
   if args.command == "scene":
     if args.scene_command == "add":

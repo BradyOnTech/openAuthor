@@ -44,6 +44,19 @@ fn resolve_project_root(input: &str) -> PathBuf {
   expanded
 }
 
+fn repo_root() -> Option<PathBuf> {
+  let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+  manifest_dir.parent()?.parent().map(|path| path.to_path_buf())
+}
+
+fn path_separator() -> &'static str {
+  if cfg!(windows) {
+    ";"
+  } else {
+    ":"
+  }
+}
+
 fn python_candidates(project_root: &PathBuf) -> Vec<String> {
   let mut candidates: Vec<String> = Vec::new();
 
@@ -66,6 +79,13 @@ fn python_candidates(project_root: &PathBuf) -> Vec<String> {
     candidates.push(project_venv.to_string_lossy().to_string());
   }
 
+  if let Some(root) = repo_root() {
+    let repo_venv = root.join(".venv").join("bin").join("python3");
+    if repo_venv.exists() {
+      candidates.push(repo_venv.to_string_lossy().to_string());
+    }
+  }
+
   candidates.push("python3".to_string());
   candidates.push("python".to_string());
   candidates.dedup();
@@ -77,11 +97,25 @@ fn run_core_with_python(
   project_root: &PathBuf,
   args: &[String],
 ) -> Result<CoreCommandResponse, String> {
-  let output = Command::new(python_bin)
+  let mut command = Command::new(python_bin);
+  command
     .arg("-m")
     .arg("openauthor")
     .args(args)
-    .current_dir(project_root)
+    .current_dir(project_root);
+
+  if let Some(root) = repo_root() {
+    let root_str = root.to_string_lossy().to_string();
+    let combined_pythonpath = match env::var("PYTHONPATH") {
+      Ok(existing) if !existing.trim().is_empty() => {
+        format!("{}{}{}", root_str, path_separator(), existing)
+      }
+      _ => root_str,
+    };
+    command.env("PYTHONPATH", combined_pythonpath);
+  }
+
+  let output = command
     .output()
     .map_err(|error| format!("Failed to execute python core via '{python_bin}': {error}"))?;
 
@@ -106,6 +140,7 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
   }
   let allowed = [
     "init",
+    "project",
     "scene",
     "codex",
     "proposal",
@@ -115,12 +150,46 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
     "retrieval",
     "generation",
     "chat",
+    "auth",
   ];
   if allowed.contains(&args[0].as_str()) {
     Ok(())
   } else {
     Err(format!("Unsupported command root: {}", args[0]))
   }
+}
+
+#[tauri::command]
+fn pick_folder(starting_path: Option<String>) -> Result<Option<String>, String> {
+  let mut dialog = rfd::FileDialog::new();
+  if let Some(raw_starting_path) = starting_path {
+    let resolved = resolve_project_root(&raw_starting_path);
+    if resolved.exists() {
+      dialog = dialog.set_directory(resolved);
+    }
+  }
+  Ok(dialog
+    .pick_folder()
+    .map(|path| path.to_string_lossy().to_string()))
+}
+
+#[tauri::command]
+fn pick_zip_file(starting_path: Option<String>) -> Result<Option<String>, String> {
+  let mut dialog = rfd::FileDialog::new().add_filter("Zip Archive", &["zip"]);
+  if let Some(raw_starting_path) = starting_path {
+    let resolved = resolve_project_root(&raw_starting_path);
+    if resolved.exists() {
+      let directory = if resolved.is_dir() {
+        resolved
+      } else {
+        resolved.parent().map_or(resolved.clone(), |parent| parent.to_path_buf())
+      };
+      dialog = dialog.set_directory(directory);
+    }
+  }
+  Ok(dialog
+    .pick_file()
+    .map(|path| path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
@@ -175,7 +244,12 @@ fn core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandRe
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![project_status, core_command])
+    .invoke_handler(tauri::generate_handler![
+      project_status,
+      core_command,
+      pick_folder,
+      pick_zip_file
+    ])
     .run(tauri::generate_context!())
     .expect("error while running openAuthor desktop");
 }

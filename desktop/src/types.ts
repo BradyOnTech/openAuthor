@@ -11,6 +11,89 @@ export type ProjectStatus = {
   project_root: string;
 };
 
+export type ProjectIdentity = {
+  project_id: string;
+  name: string;
+  created_at: string;
+  project_root: string;
+  config_path?: string;
+  storage?: Record<string, unknown>;
+};
+
+export type InitProjectResult = ProjectIdentity & {
+  initialized: boolean;
+  import_summary?: {
+    mode: "project" | "scaffold";
+    archive_path?: string;
+    source_path?: string;
+    source_root: string;
+    project_id: string;
+    imported: {
+      manuscript: boolean;
+      codex_sqlite: boolean;
+      codex_snapshot: boolean;
+      project_marker: boolean;
+      codex_folder?: boolean;
+      codex_folder_entities?: number;
+    };
+  } | null;
+};
+
+export type WorkspaceRole = "owner" | "editor" | "viewer";
+export type ProjectStatusValue = "active" | "archived";
+export type ProjectKind = "book";
+
+export type Workspace = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Project = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  slug: string;
+  kind: ProjectKind;
+  status: ProjectStatusValue;
+  settings: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkspaceMember = {
+  workspaceId: string;
+  userId: string;
+  role: WorkspaceRole;
+};
+
+export type ProjectActivityEvent = {
+  id: string;
+  projectId: string;
+  actorUserId: string;
+  eventType: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type WorkspaceUserState = {
+  workspaceId: string;
+  userId: string;
+  activeProjectId: string;
+  recentProjectIds: string[];
+  updatedAt: string;
+};
+
+export type DesktopProjectBinding = {
+  projectId: string;
+  localPath: string;
+  machineId: string;
+  lastVerifiedAt: string;
+};
+
 export type SceneSummary = {
   id: string;
   title: string;

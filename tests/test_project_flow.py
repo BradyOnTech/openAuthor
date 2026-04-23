@@ -7,6 +7,7 @@ import re
 import subprocess
 import tempfile
 import unittest
+import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -26,6 +27,252 @@ class OpenAuthorFlowTests(unittest.TestCase):
       os.chdir(old_cwd)
     return code, stdout.getvalue(), stderr.getvalue()
 
+  def test_init_supports_explicit_project_id(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      project_root = root / "book-alpha"
+      project_id = "project-explicit-001"
+
+      code, out, err = self.run_cli(
+        [
+          "init",
+          str(project_root),
+          "--name",
+          "Book Alpha",
+          "--project-id",
+          project_id,
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      payload = json.loads(out)
+      self.assertEqual(payload["project_id"], project_id)
+      self.assertEqual(payload["name"], "Book Alpha")
+      self.assertTrue(payload["initialized"])
+      self.assertIsNone(payload["import_summary"])
+
+  def test_init_from_zip_imports_scaffold_and_codex_snapshot(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      archive_input = root / "archive-input"
+      archive_input.mkdir(parents=True, exist_ok=True)
+      (archive_input / "scenes").mkdir(parents=True, exist_ok=True)
+      (archive_input / "scenes" / "0001-opening.md").write_text(
+        "---\n"
+        "id: scene-0001\n"
+        "title: Opening\n"
+        "summary: Imported scene\n"
+        "pov: Maia\n"
+        "status: draft\n"
+        "created_at: 2026-02-26T00:00:00+00:00\n"
+        "updated_at: 2026-02-26T00:00:00+00:00\n"
+        "---\n\n"
+        "Imported manuscript body.\n",
+        encoding="utf-8",
+      )
+      (archive_input / "codex").mkdir(parents=True, exist_ok=True)
+      (archive_input / "codex" / "codex.json").write_text(
+        json.dumps(
+          {
+            "entities": [
+              {
+                "id": "entity-hero",
+                "type": "character",
+                "name": "Maia",
+                "description": "Imported protagonist.",
+              }
+            ],
+            "relationships": [],
+          }
+        ),
+        encoding="utf-8",
+      )
+
+      archive_path = root / "import-source.zip"
+      with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for source in archive_input.rglob("*"):
+          if not source.is_file():
+            continue
+          archive.write(source, source.relative_to(archive_input).as_posix())
+
+      destination_root = root / "book-imported"
+      code, out, err = self.run_cli(
+        [
+          "init",
+          str(destination_root),
+          "--name",
+          "Imported Book",
+          "--from-zip",
+          str(archive_path),
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      payload = json.loads(out)
+      self.assertTrue(payload["initialized"])
+      self.assertEqual(payload["name"], "Imported Book")
+      self.assertEqual(payload["import_summary"]["mode"], "scaffold")
+      self.assertTrue(payload["import_summary"]["imported"]["manuscript"])
+      self.assertTrue(payload["import_summary"]["imported"]["codex_snapshot"])
+
+      code, out, err = self.run_cli(["scene", "list", "--json"], destination_root)
+      self.assertEqual(code, 0, msg=err)
+      scene_rows = json.loads(out)
+      self.assertEqual(scene_rows[0]["id"], "scene-0001")
+
+      code, out, err = self.run_cli(["codex", "list", "--json"], destination_root)
+      self.assertEqual(code, 0, msg=err)
+      codex_rows = json.loads(out)
+      self.assertTrue(any(row["name"] == "Maia" for row in codex_rows))
+
+  def test_init_from_zip_imports_folder_codex_directories(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      archive_input = root / "archive-codex-folders"
+      (archive_input / "characters").mkdir(parents=True, exist_ok=True)
+      (archive_input / "locations").mkdir(parents=True, exist_ok=True)
+      (archive_input / "lore").mkdir(parents=True, exist_ok=True)
+
+      (archive_input / "characters" / "rowan.md").write_text(
+        "Rowan is a former navigator with a scarred map memory.",
+        encoding="utf-8",
+      )
+      (archive_input / "locations" / "glass-harbor.txt").write_text(
+        "Glass Harbor is a storm-lit trade city built on mirrored cliffs.",
+        encoding="utf-8",
+      )
+      (archive_input / "lore" / "customs.json").write_text(
+        json.dumps(
+          [
+            {
+              "name": "Ash Oath",
+              "description": "An oath sworn over ceremonial ash before departures.",
+            }
+          ]
+        ),
+        encoding="utf-8",
+      )
+
+      archive_path = root / "import-codex-folders.zip"
+      with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for source in archive_input.rglob("*"):
+          if source.is_file():
+            archive.write(source, source.relative_to(archive_input).as_posix())
+
+      destination_root = root / "book-codex-import"
+      code, out, err = self.run_cli(
+        [
+          "init",
+          str(destination_root),
+          "--name",
+          "Folder Codex Import",
+          "--from-zip",
+          str(archive_path),
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      payload = json.loads(out)
+      self.assertTrue(payload["initialized"])
+      self.assertTrue(payload["import_summary"]["imported"]["codex_folder"])
+      self.assertGreaterEqual(payload["import_summary"]["imported"]["codex_folder_entities"], 3)
+
+      code, out, err = self.run_cli(["codex", "list", "--json"], destination_root)
+      self.assertEqual(code, 0, msg=err)
+      codex_rows = json.loads(out)
+      names = {row["name"] for row in codex_rows}
+      self.assertIn("rowan", {name.lower() for name in names})
+      self.assertIn("glass harbor", {name.lower() for name in names})
+      self.assertIn("ash oath", {name.lower() for name in names})
+
+  def test_init_from_zip_ignores_macosx_wrapper_folder(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      archive_path = root / "macosx-wrapper.zip"
+      with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("__MACOSX/._test-book", "")
+        archive.writestr(
+          "test-book/characters/rowan.md",
+          "Rowan is a former navigator with a scarred map memory.\n",
+        )
+        archive.writestr(
+          "test-book/locations/glass-harbor.txt",
+          "Glass Harbor is a storm-lit trade city built on mirrored cliffs.\n",
+        )
+
+      destination_root = root / "book-codex-import-macosx"
+      code, out, err = self.run_cli(
+        [
+          "init",
+          str(destination_root),
+          "--name",
+          "Folder Codex Import",
+          "--from-zip",
+          str(archive_path),
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      payload = json.loads(out)
+      self.assertTrue(payload["initialized"])
+      self.assertTrue(payload["import_summary"]["imported"]["codex_folder"])
+      self.assertGreaterEqual(payload["import_summary"]["imported"]["codex_folder_entities"], 2)
+
+      code, out, err = self.run_cli(["codex", "list", "--json"], destination_root)
+      self.assertEqual(code, 0, msg=err)
+      codex_rows = json.loads(out)
+      names = {row["name"].lower() for row in codex_rows}
+      self.assertIn("rowan", names)
+      self.assertIn("glass harbor", names)
+
+  def test_init_from_folder_imports_in_place(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      source = root / "folder-source"
+      source.mkdir(parents=True, exist_ok=True)
+      (source / "scenes").mkdir(parents=True, exist_ok=True)
+      (source / "scenes" / "0001-arrival.md").write_text(
+        "---\n"
+        "id: scene-0001\n"
+        "title: Arrival\n"
+        "summary: Imported from folder\n"
+        "pov: Rowan\n"
+        "status: draft\n"
+        "created_at: 2026-02-26T00:00:00+00:00\n"
+        "updated_at: 2026-02-26T00:00:00+00:00\n"
+        "---\n\n"
+        "Arrival scene body.\n",
+        encoding="utf-8",
+      )
+
+      code, out, err = self.run_cli(
+        [
+          "init",
+          str(source),
+          "--name",
+          "Folder Imported",
+          "--from-folder",
+          str(source),
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      payload = json.loads(out)
+      self.assertTrue(payload["initialized"])
+      self.assertEqual(payload["name"], "Folder Imported")
+      self.assertEqual(payload["import_summary"]["mode"], "scaffold")
+      self.assertTrue(payload["import_summary"]["imported"]["manuscript"])
+
+      code, out, err = self.run_cli(["scene", "list", "--json"], source)
+      self.assertEqual(code, 0, msg=err)
+      scene_rows = json.loads(out)
+      self.assertEqual(scene_rows[0]["id"], "scene-0001")
+
   def test_init_scene_codex_proposal_flow(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -35,6 +282,26 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertIn("Initialized openAuthor project", out)
       self.assertTrue((root / ".openauthor" / "project.json").exists())
       self.assertTrue((root / "codex" / "codex.sqlite3").exists())
+
+      code, out, err = self.run_cli(["project", "inspect", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      project_metadata = json.loads(out)
+      self.assertIn("project_id", project_metadata)
+      self.assertEqual(project_metadata["name"], "Demo")
+
+      code, out, err = self.run_cli(
+        [
+          "project",
+          "ensure-id",
+          "--id",
+          project_metadata["project_id"],
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      ensured = json.loads(out)
+      self.assertEqual(ensured["project_id"], project_metadata["project_id"])
 
       code, out, err = self.run_cli(
         [

@@ -14,9 +14,11 @@ import type {
   GenerationRunDetail,
   GenerationRuntimeConfig,
   GenerationRunSummary,
+  InitProjectResult,
   PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
+  ProjectIdentity,
   ProjectStatus,
   SceneDetail,
   SceneSummary,
@@ -25,6 +27,7 @@ import type {
 
 const ALLOWED = new Set([
   "init",
+  "project",
   "scene",
   "codex",
   "proposal",
@@ -46,9 +49,41 @@ function ensureAllowed(args: string[]): void {
   }
 }
 
-export async function getProjectStatus(projectRoot: string): Promise<ProjectStatus> {
+function isTauriRuntime(): boolean {
+  if (typeof window === "undefined") return false;
+  return typeof (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ !== "undefined";
+}
+
+async function tauriInvoke<T>(command: string, payload: Record<string, unknown>): Promise<T> {
+  if (!isTauriRuntime()) {
+    throw new Error("Desktop runtime required for local project operations.");
+  }
   const { invoke } = await import("@tauri-apps/api/core");
-  return invoke<ProjectStatus>("project_status", { projectRoot });
+  return invoke<T>(command, payload);
+}
+
+export async function getProjectStatus(projectRoot: string): Promise<ProjectStatus> {
+  if (!isTauriRuntime()) {
+    return {
+      found: false,
+      project_root: projectRoot,
+    };
+  }
+  return tauriInvoke<ProjectStatus>("project_status", { projectRoot });
+}
+
+export async function pickFolder(startingPath?: string): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return tauriInvoke<string | null>("pick_folder", {
+    startingPath: startingPath?.trim() ? startingPath.trim() : null,
+  });
+}
+
+export async function pickZipFile(startingPath?: string): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return tauriInvoke<string | null>("pick_zip_file", {
+    startingPath: startingPath?.trim() ? startingPath.trim() : null,
+  });
 }
 
 export async function runCoreCommand(
@@ -56,8 +91,58 @@ export async function runCoreCommand(
   args: string[]
 ): Promise<CoreCommandResponse> {
   ensureAllowed(args);
-  const { invoke } = await import("@tauri-apps/api/core");
-  return invoke<CoreCommandResponse>("core_command", { projectRoot, args });
+  return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
+}
+
+export async function projectInspect(projectRoot: string): Promise<ProjectIdentity> {
+  const result = await runCoreCommand(projectRoot, ["project", "inspect", "--json"]);
+  return decodeJson<ProjectIdentity>(result);
+}
+
+export async function projectEnsureId(
+  projectRoot: string,
+  expectedProjectId?: string
+): Promise<ProjectIdentity> {
+  const args = ["project", "ensure-id"];
+  if (expectedProjectId && expectedProjectId.trim() !== "") {
+    args.push("--id", expectedProjectId.trim());
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProjectIdentity>(result);
+}
+
+const CONTROL_PROJECT_ROOT = ".";
+
+export async function initializeLocalProject(
+  targetPath: string,
+  payload?: {
+    name?: string;
+    projectId?: string;
+    fromZip?: string;
+    fromFolder?: string;
+  }
+): Promise<InitProjectResult> {
+  const normalizedTarget = targetPath.trim();
+  if (!normalizedTarget) {
+    throw new Error("Target path is required.");
+  }
+  const args = ["init", normalizedTarget];
+  if (payload?.name && payload.name.trim() !== "") {
+    args.push("--name", payload.name.trim());
+  }
+  if (payload?.projectId && payload.projectId.trim() !== "") {
+    args.push("--project-id", payload.projectId.trim());
+  }
+  if (payload?.fromZip && payload.fromZip.trim() !== "") {
+    args.push("--from-zip", payload.fromZip.trim());
+  }
+  if (payload?.fromFolder && payload.fromFolder.trim() !== "") {
+    args.push("--from-folder", payload.fromFolder.trim());
+  }
+  args.push("--json");
+  const result = await runCoreCommand(CONTROL_PROJECT_ROOT, args);
+  return decodeJson<InitProjectResult>(result);
 }
 
 function decodeJson<T>(response: CoreCommandResponse): T {
