@@ -200,6 +200,7 @@ export type ChatThreadRecord = {
     retrieval_limit: number;
     retrieval_min_score: number;
     retrieval_require_fresh: boolean;
+    history_token_budget?: number;
     agent_auto_read_only: boolean;
     agent_confirm_writes: boolean;
   };
@@ -231,6 +232,7 @@ export type ChatMessageRecord = {
     estimated_cost_usd?: number | null;
     provider?: ProposalProvider | string;
     model?: string;
+    generation_id?: string;
   };
 };
 
@@ -244,9 +246,11 @@ export type ChatSendResult = {
 
 export type GenerationRunSummary = {
   run_id: string;
+  kind?: "proposal" | "chat" | string;
   status: "succeeded" | "failed" | string;
   created_at: string;
   scene_id: string;
+  thread_id?: string;
   provider: ProposalProvider | string;
   model: string;
   proposal_id: string;

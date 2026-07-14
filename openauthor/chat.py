@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, complete_chat
+from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, _estimate_tokens, complete_chat
 from .checks import run_continuity_checks
 from .codex import add_entity, get_entity, list_entities, update_entity
 from .git_ops import (
@@ -45,6 +45,7 @@ def _default_context_profile() -> dict[str, Any]:
     "retrieval_limit": 5,
     "retrieval_min_score": 0.0,
     "retrieval_require_fresh": False,
+    "history_token_budget": 4000,
     "agent_auto_read_only": True,
     "agent_confirm_writes": True,
   }
@@ -148,6 +149,13 @@ def _normalize_context_profile(
     )
   except (TypeError, ValueError):
     raise OpenAuthorError("retrieval_min_score must be a number >= 0.")
+  try:
+    merged["history_token_budget"] = max(
+      0,
+      int(merged.get("history_token_budget", 4000)),
+    )
+  except (TypeError, ValueError):
+    raise OpenAuthorError("history_token_budget must be an integer >= 0.")
   return merged
 
 
@@ -322,6 +330,55 @@ def _append_chat_message(
   return row
 
 
+def _history_entry(row: dict[str, Any]) -> dict[str, str] | None:
+  role = str(row.get("role", ""))
+  content = str(row.get("content", ""))
+  if content.strip() == "":
+    return None
+  if role in {"user", "assistant"}:
+    return {"role": role, "content": content}
+  if role == "tool":
+    clipped = content if len(content) <= 2000 else content[:1997] + "..."
+    return {"role": "user", "content": f"Tool result:\n{clipped}"}
+  return None
+
+
+def _build_provider_history(
+  rows: list[dict[str, Any]],
+  *,
+  token_budget: int,
+) -> list[dict[str, str]]:
+  if token_budget <= 0:
+    return []
+  selected: list[dict[str, str]] = []
+  used_tokens = 0
+  for row in reversed(rows):
+    entry = _history_entry(row)
+    if entry is None:
+      continue
+    entry_tokens = _estimate_tokens(entry["content"])
+    if used_tokens + entry_tokens > token_budget:
+      break
+    selected.append(entry)
+    used_tokens += entry_tokens
+  selected.reverse()
+
+  # Providers such as Anthropic require alternating roles starting with the
+  # user, so merge consecutive same-role entries and drop a leading assistant.
+  merged: list[dict[str, str]] = []
+  for entry in selected:
+    if merged and merged[-1]["role"] == entry["role"]:
+      merged[-1] = {
+        "role": entry["role"],
+        "content": merged[-1]["content"] + "\n\n" + entry["content"],
+      }
+    else:
+      merged.append(dict(entry))
+  while merged and merged[0]["role"] == "assistant":
+    merged.pop(0)
+  return merged
+
+
 def _resolve_nearby_scene_ids(
   paths: ProjectPaths,
   *,
@@ -341,24 +398,13 @@ def _resolve_nearby_scene_ids(
 def _resolve_context(
   paths: ProjectPaths,
   *,
-  thread: dict[str, Any],
+  profile: dict[str, Any],
   message: str,
   current_scene_id: str,
   explicit_scene_ids: list[str],
   selected_text: str,
   explicit_codex_ids: list[str],
-  context_overrides: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-  profile = _normalize_context_profile(
-    (
-      {
-        **(thread.get("context_profile", {}) if isinstance(thread.get("context_profile", {}), dict) else {}),
-        **(context_overrides if isinstance(context_overrides, dict) else {}),
-      }
-      if context_overrides is not None
-      else thread.get("context_profile", {})
-    )
-  )
   include_current_scene = bool(profile.get("include_current_scene", True))
   include_selection = bool(profile.get("include_selection", True))
   radius = int(profile.get("include_recent_scenes_radius", 1))
@@ -663,15 +709,24 @@ def send_chat_message(
   if content == "":
     raise OpenAuthorError("message cannot be empty.")
 
+  thread_profile = thread.get("context_profile", {})
+  merged_profile = dict(thread_profile) if isinstance(thread_profile, dict) else {}
+  if isinstance(context_overrides, dict):
+    merged_profile.update(context_overrides)
+  profile = _normalize_context_profile(merged_profile)
+
   prompt_context, context_used = _resolve_context(
     paths,
-    thread=thread,
+    profile=profile,
     message=content,
     current_scene_id=current_scene_id,
     explicit_scene_ids=scene_ids or [],
     selected_text=selected_text,
     explicit_codex_ids=codex_ids or [],
-    context_overrides=context_overrides,
+  )
+  history = _build_provider_history(
+    list_chat_messages(paths, thread_id=thread_id),
+    token_budget=int(profile.get("history_token_budget", 4000)),
   )
 
   user_message = _append_chat_message(
@@ -701,22 +756,14 @@ def send_chat_message(
     model=model,
     system_prompt=system_prompt,
     user_prompt=user_prompt,
+    history=history,
     temperature=0.2,
     max_output_tokens=900,
-    chat_mode=thread.get("mode") == "agent",
+    chat_mode=True,
+    thread_id=thread_id,
   )
   assistant_text = completion.get("text", "")
   clean_text, raw_tool_calls = _parse_tool_calls(assistant_text)
-  profile = _normalize_context_profile(
-    (
-      {
-        **(thread.get("context_profile", {}) if isinstance(thread.get("context_profile", {}), dict) else {}),
-        **(context_overrides if isinstance(context_overrides, dict) else {}),
-      }
-      if context_overrides is not None
-      else thread.get("context_profile", {})
-    )
-  )
   agent_auto_read_only = bool(profile.get("agent_auto_read_only", True))
   pending_tool_calls: list[dict[str, Any]] = []
   recorded_tool_calls: list[dict[str, Any]] = []
@@ -773,6 +820,7 @@ def send_chat_message(
       "estimated_cost_usd": completion.get("estimated_cost_usd"),
       "provider": provider,
       "model": model,
+      "generation_id": completion.get("generation_id", ""),
     },
   )
 

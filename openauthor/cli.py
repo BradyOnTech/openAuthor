@@ -551,6 +551,7 @@ def build_parser() -> argparse.ArgumentParser:
     choices=["true", "false"],
     default=None,
   )
+  chat_thread_update.add_argument("--history-token-budget", type=int, default=None)
   chat_thread_update.add_argument(
     "--agent-auto-read-only",
     choices=["true", "false"],
@@ -612,6 +613,7 @@ def build_parser() -> argparse.ArgumentParser:
     choices=["true", "false"],
     default=None,
   )
+  chat_send.add_argument("--history-token-budget", type=int, default=None)
   chat_send.add_argument(
     "--agent-auto-read-only",
     choices=["true", "false"],
@@ -686,6 +688,9 @@ def _chat_context_overrides(args: argparse.Namespace) -> dict[str, Any]:
   retrieval_require_fresh = _optional_bool(getattr(args, "retrieval_require_fresh", None))
   if retrieval_require_fresh is not None:
     overrides["retrieval_require_fresh"] = retrieval_require_fresh
+  history_token_budget = getattr(args, "history_token_budget", None)
+  if history_token_budget is not None:
+    overrides["history_token_budget"] = history_token_budget
   agent_auto_read_only = _optional_bool(getattr(args, "agent_auto_read_only", None))
   if agent_auto_read_only is not None:
     overrides["agent_auto_read_only"] = agent_auto_read_only

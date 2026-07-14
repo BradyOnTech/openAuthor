@@ -501,10 +501,39 @@ def _quality_from_normalization(diagnostics: dict[str, Any]) -> dict[str, Any]:
   }
 
 
+def _chat_completion_messages(
+  *,
+  system_prompt: str,
+  history: list[dict[str, str]],
+  user_prompt: str,
+) -> list[dict[str, str]]:
+  return [
+    {"role": "system", "content": system_prompt},
+    *history,
+    {"role": "user", "content": user_prompt},
+  ]
+
+
+def _normalize_chat_history(
+  history: list[dict[str, Any]] | None,
+) -> list[dict[str, str]]:
+  rows: list[dict[str, str]] = []
+  for item in history or []:
+    if not isinstance(item, dict):
+      continue
+    role = str(item.get("role", "")).strip()
+    content = str(item.get("content", ""))
+    if role not in {"user", "assistant"} or content.strip() == "":
+      continue
+    rows.append({"role": role, "content": content})
+  return rows
+
+
 def _openai_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
@@ -520,10 +549,11 @@ def _openai_chat_completion(
   base_url = os.getenv("OPENAUTHOR_OPENAI_BASE_URL", "https://api.openai.com/v1")
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
@@ -558,6 +588,7 @@ def _anthropic_message(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
@@ -571,10 +602,22 @@ def _anthropic_message(
       provider="anthropic",
     )
   base_url = os.getenv("OPENAUTHOR_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+  # The Messages API requires alternating roles, so fold consecutive
+  # same-role entries (e.g. a trailing tool-result note plus the new user
+  # message) into one message.
+  messages: list[dict[str, str]] = []
+  for entry in [*history, {"role": "user", "content": user_prompt}]:
+    if messages and messages[-1]["role"] == entry["role"]:
+      messages[-1] = {
+        "role": entry["role"],
+        "content": messages[-1]["content"] + "\n\n" + entry["content"],
+      }
+    else:
+      messages.append(dict(entry))
   payload: dict[str, Any] = {
     "model": model,
     "system": system_prompt,
-    "messages": [{"role": "user", "content": user_prompt}],
+    "messages": messages,
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
@@ -607,6 +650,7 @@ def _openrouter_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
@@ -620,23 +664,25 @@ def _openrouter_chat_completion(
       provider="openrouter",
     )
   base_url = os.getenv("OPENAUTHOR_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+  headers = {
+    "Authorization": f"Bearer {api_key}",
+    "HTTP-Referer": "https://openauthor.dev",
+    "X-Title": "openAuthor",
+  }
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
   response, attempts = _json_post(
     provider="openrouter",
     url=f"{base_url.rstrip('/')}/chat/completions",
-    headers={
-      "Authorization": f"Bearer {api_key}",
-      "HTTP-Referer": "https://openauthor.dev",
-      "X-Title": "openAuthor",
-    },
+    headers=headers,
     payload=payload,
   )
   choice = (response.get("choices") or [{}])[0]
@@ -664,6 +710,7 @@ def _openai_codex_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
@@ -680,10 +727,11 @@ def _openai_codex_chat_completion(
   base_url = "https://api.openai.com/v1"
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
@@ -724,20 +772,26 @@ def _call_provider(
   instruction: str,
   temperature: float,
   max_output_tokens: int,
+  history: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
+  chat_history = _normalize_chat_history(history)
   start = time.perf_counter()
   if provider == "local":
     if context.get("chat_mode"):
       text = _generate_local_chat_text(user_prompt)
     else:
       text = _generate_local_text(context, instruction)
-    input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+    history_text = "\n".join(row["content"] for row in chat_history)
+    input_tokens = _estimate_tokens(
+      system_prompt + "\n" + history_text + "\n" + user_prompt
+    )
     output_tokens = _estimate_tokens(text)
     attempts = 1
   elif provider == "openai":
     payload = _openai_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
@@ -750,6 +804,7 @@ def _call_provider(
     payload = _anthropic_message(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
@@ -762,6 +817,7 @@ def _call_provider(
     payload = _openrouter_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
@@ -774,6 +830,7 @@ def _call_provider(
     payload = _openai_codex_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
@@ -806,6 +863,57 @@ def _call_provider(
   }
 
 
+def _write_chat_generation_log(
+  paths: ProjectPaths,
+  *,
+  status: str,
+  thread_id: str,
+  provider: str,
+  model: str,
+  temperature: float,
+  max_output_tokens: int,
+  system_prompt: str,
+  user_prompt: str,
+  history_message_count: int,
+  provider_result: dict[str, Any] | None = None,
+  estimated_cost_usd: float | None = None,
+  error: dict[str, Any] | None = None,
+) -> tuple[str, str]:
+  run_id = f"gen-{uuid.uuid4().hex[:12]}"
+  log_file = paths.generations_dir / f"{run_id}.json"
+  payload: dict[str, Any] = {
+    "run_id": run_id,
+    "kind": "chat",
+    "status": status,
+    "created_at": utc_now(),
+    "thread_id": thread_id,
+    "scene_id": "",
+    "provider": provider,
+    "model": model,
+    "temperature": temperature,
+    "max_output_tokens": max_output_tokens,
+    "history_message_count": history_message_count,
+    "prompt_sha256": hashlib.sha256(
+      (system_prompt + "\n\n" + user_prompt).encode("utf-8")
+    ).hexdigest(),
+    "system_prompt": system_prompt,
+    "user_prompt": user_prompt,
+  }
+  if provider_result is not None:
+    payload["response_text"] = provider_result["text"]
+    payload["usage"] = {
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "provider_attempts": provider_result["attempts"],
+      "estimated_cost_usd": estimated_cost_usd,
+    }
+  if error is not None:
+    payload["error"] = error
+  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  return run_id, str(log_file.relative_to(paths.root))
+
+
 def complete_chat(
   paths: ProjectPaths,
   *,
@@ -813,9 +921,11 @@ def complete_chat(
   model: str,
   system_prompt: str,
   user_prompt: str,
+  history: list[dict[str, Any]] | None = None,
   temperature: float = 0.2,
   max_output_tokens: int = 900,
   chat_mode: bool = True,
+  thread_id: str = "",
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -823,22 +933,112 @@ def complete_chat(
   if max_output_tokens < 64:
     raise OpenAuthorError("max_output_tokens must be >= 64.")
 
-  provider_result = _call_provider(
-    provider=provider,
-    model=model or DEFAULT_MODELS[provider],
-    system_prompt=system_prompt,
-    user_prompt=user_prompt,
-    context={"chat_mode": bool(chat_mode)},
-    instruction=user_prompt,
-    temperature=temperature,
-    max_output_tokens=max_output_tokens,
+  selected_model = model or DEFAULT_MODELS[provider]
+  chat_history = _normalize_chat_history(history)
+  history_text = "\n".join(row["content"] for row in chat_history)
+  projected_input_tokens = _estimate_tokens(
+    system_prompt + "\n" + history_text + "\n" + user_prompt
   )
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, log_path = _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": str(error),
+        "category": error.category,
+        "retriable": False,
+        "http_status": None,
+        "attempts": 0,
+        "provider": provider,
+        "violations": error.violations,
+        "budget_policy": error.policy,
+        "budget_usage": error.usage,
+        "budget_projected": error.projected,
+      },
+    )
+    raise OpenAuthorError(
+      f"Chat completion blocked by budget policy. See {log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context={"chat_mode": bool(chat_mode)},
+      instruction=user_prompt,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      history=chat_history,
+    )
+  except ProviderExecutionError as error:
+    _, log_path = _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": str(error),
+        "category": error.category,
+        "retriable": error.retriable,
+        "http_status": error.http_status,
+        "attempts": error.attempts,
+        "provider": error.provider,
+      },
+    )
+    raise OpenAuthorError(
+      f"Chat completion failed ({error.category}). See {log_path}."
+    ) from error
+
   estimated_cost_usd = _estimate_cost_usd(
     paths,
     provider=provider,
-    model=model or DEFAULT_MODELS[provider],
+    model=selected_model,
     input_tokens=provider_result["input_tokens"],
     output_tokens=provider_result["output_tokens"],
+  )
+  generation_id, log_path = _write_chat_generation_log(
+    paths,
+    status="succeeded",
+    thread_id=thread_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    history_message_count=len(chat_history),
+    provider_result=provider_result,
+    estimated_cost_usd=estimated_cost_usd,
   )
   return {
     "text": provider_result["text"],
@@ -847,6 +1047,8 @@ def complete_chat(
     "latency_ms": provider_result["latency_ms"],
     "provider_attempts": provider_result["attempts"],
     "estimated_cost_usd": estimated_cost_usd,
+    "generation_id": generation_id,
+    "log_path": log_path,
   }
 
 

@@ -92,9 +92,11 @@ def _summary(
 
   return {
     "run_id": run_id,
+    "kind": payload.get("kind", "proposal"),
     "status": payload.get("status", "unknown"),
     "created_at": payload.get("created_at", ""),
     "scene_id": scene_id,
+    "thread_id": payload.get("thread_id", ""),
     "provider": payload.get("provider", ""),
     "model": payload.get("model", ""),
     "proposal_id": payload.get("proposal_id", ""),
