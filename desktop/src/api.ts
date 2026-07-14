@@ -366,8 +366,20 @@ export async function rejectProposal(
 }
 
 export async function listChatThreads(projectRoot: string): Promise<ChatThreadRecord[]> {
-  const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
-  return decodeJson<ChatThreadRecord[]>(result);
+  // Prefer the warm sidecar; fall back to a one-shot CLI invocation if it
+  // is unavailable (e.g. first call racing a failed spawn).
+  try {
+    return await sidecarRequest<ChatThreadRecord[]>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.threads",
+      {},
+      15_000
+    );
+  } catch {
+    const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
+    return decodeJson<ChatThreadRecord[]>(result);
+  }
 }
 
 export async function createChatThread(
@@ -484,13 +496,26 @@ export async function listChatMessages(
     limit?: number;
   }
 ): Promise<ChatMessageRecord[]> {
-  const args = ["chat", "message", "list", "--thread", payload.threadId];
-  if (typeof payload.limit === "number") {
-    args.push("--limit", String(payload.limit));
+  try {
+    return await sidecarRequest<ChatMessageRecord[]>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.messages",
+      {
+        thread_id: payload.threadId,
+        limit: typeof payload.limit === "number" ? payload.limit : null,
+      },
+      15_000
+    );
+  } catch {
+    const args = ["chat", "message", "list", "--thread", payload.threadId];
+    if (typeof payload.limit === "number") {
+      args.push("--limit", String(payload.limit));
+    }
+    args.push("--json");
+    const result = await runCoreCommand(projectRoot, args);
+    return decodeJson<ChatMessageRecord[]>(result);
   }
-  args.push("--json");
-  const result = await runCoreCommand(projectRoot, args);
-  return decodeJson<ChatMessageRecord[]>(result);
 }
 
 export type ChatSendPayload = {

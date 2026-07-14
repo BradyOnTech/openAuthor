@@ -22,7 +22,7 @@ import threading
 from typing import Any, TextIO
 
 from .ai import ChatInterrupted
-from .chat import send_chat_message
+from .chat import list_chat_messages, list_chat_threads, send_chat_message
 from .project import OpenAuthorError, ProjectPaths
 
 PROTOCOL_VERSION = 1
@@ -107,6 +107,21 @@ class ChatSidecarServer:
         result={"ok": True, "protocol_version": PROTOCOL_VERSION},
       )
       return
+    if method == "chat.threads":
+      self._respond_call(request_id, lambda: list_chat_threads(self._paths))
+      return
+    if method == "chat.messages":
+      raw_limit = params.get("limit")
+      limit = int(raw_limit) if isinstance(raw_limit, (int, float)) and raw_limit else None
+      self._respond_call(
+        request_id,
+        lambda: list_chat_messages(
+          self._paths,
+          thread_id=str(params.get("thread_id", "")).strip(),
+          limit=limit,
+        ),
+      )
+      return
     if method == "chat.interrupt":
       target = str(params.get("request_id", "")).strip()
       if target == "":
@@ -132,6 +147,18 @@ class ChatSidecarServer:
       request_id,
       error={"message": f"Unknown method '{method}'.", "category": "unknown_method"},
     )
+
+  def _respond_call(self, request_id: Any, operation: Any) -> None:
+    try:
+      self._writer.respond(request_id, result=operation())
+    except OpenAuthorError as error:
+      self._writer.respond(
+        request_id,
+        error={
+          "message": str(error),
+          "category": str(getattr(error, "category", "core_error")),
+        },
+      )
 
   def _cancel_flag(self, request_key: str) -> threading.Event:
     with self._cancel_lock:

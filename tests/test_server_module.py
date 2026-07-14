@@ -80,6 +80,48 @@ class ServerModuleTests(unittest.TestCase):
       streamed_text = "".join(frame["payload"]["text"] for frame in deltas)
       self.assertEqual(streamed_text.strip(), assistant["content"])
 
+  def test_thread_and_message_list_methods(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Sidecar Reads")
+      thread = create_chat_thread(paths, title="Read Thread", provider="local", mode="chat")
+      _run_requests(
+        paths,
+        [
+          {
+            "id": "req-1",
+            "method": "chat.send",
+            "params": {"thread_id": thread["id"], "message": "Hello there."},
+          }
+        ],
+      )
+      # Reads dispatch inline (not on a worker thread), so run them in a
+      # second server pass after the send has fully settled.
+      frames = _run_requests(
+        paths,
+        [
+          {"id": "req-2", "method": "chat.threads", "params": {}},
+          {
+            "id": "req-3",
+            "method": "chat.messages",
+            "params": {"thread_id": thread["id"], "limit": 10},
+          },
+          {
+            "id": "req-4",
+            "method": "chat.messages",
+            "params": {"thread_id": "chat-missing"},
+          },
+        ],
+      )
+      threads = _response_for(frames, "req-2")["result"]
+      self.assertEqual([row["id"] for row in threads], [thread["id"]])
+
+      messages = _response_for(frames, "req-3")["result"]
+      self.assertEqual([row["role"] for row in messages], ["user", "assistant"])
+
+      missing = _response_for(frames, "req-4")
+      self.assertIn("error", missing)
+      self.assertEqual(missing["error"]["category"], "core_error")
+
   def test_interrupt_before_send_aborts_turn(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Sidecar Interrupt")
