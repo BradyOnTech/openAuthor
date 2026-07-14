@@ -89,4 +89,7 @@ implementation from earlier phases.)
   message (`chat message truncate` / sidecar `chat.truncate`) and resends it;
   generation logs for discarded turns are kept, so spend history stays
   immutable.
-- Remaining idea: edit-a-past-message (truncate plus composer prefill).
+- Edit-a-past-message: ✎ Edit on any user message prefills the composer
+  (banner shows how many messages sending will replace; Cancel backs out
+  without touching the thread). Sending truncates from the edited message
+  and resends the new text. All four phases and their follow-ups are done.

@@ -46,6 +46,7 @@ export function ChatPanel() {
   } = useWorkspace();
   const { tabs, activeTabId, openTab } = useEditor();
   const [stream, setStream] = useState<ChatStream | null>(null);
+  const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
 
   if (!projectFound) {
     return (
@@ -124,8 +125,33 @@ export function ChatPanel() {
     }
   }
 
+  function handleStartEdit(message: ChatMessageRecord) {
+    if (chatSending) return;
+    setEditing({ messageId: message.id, text: message.content });
+  }
+
+  async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[]) {
+    if (!activeChatThreadId || !text.trim()) return;
+    if (editing) {
+      const target = editing;
+      setEditing(null);
+      try {
+        await truncateChatMessages(projectRoot, {
+          threadId: activeChatThreadId,
+          fromMessageId: target.messageId,
+        });
+        await refreshChatMessages();
+      } catch (e) {
+        setError(`Edit failed: ${e instanceof Error ? e.message : String(e)}`);
+        return;
+      }
+    }
+    await performSend(text, sceneIds, codexIds);
+  }
+
   async function handleRegenerate() {
     if (!activeChatThreadId || chatSending) return;
+    setEditing(null);
     const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
     if (!lastUser) return;
     try {
@@ -141,6 +167,10 @@ export function ChatPanel() {
     const mentions = extractMentionIds(lastUser.content, scenes, codexEntities);
     await performSend(lastUser.content, mentions.sceneIds, mentions.codexIds);
   }
+
+  const editDiscardCount = editing
+    ? chatMessages.length - chatMessages.findIndex((m) => m.id === editing.messageId)
+    : 0;
 
   return (
     <div className="chat-panel">
@@ -172,6 +202,7 @@ export function ChatPanel() {
           setMessage("Proposal queued for review.");
         }}
         onRegenerate={handleRegenerate}
+        onEditMessage={handleStartEdit}
         setError={setError}
       />
       <Composer
@@ -183,7 +214,10 @@ export function ChatPanel() {
         activeThread={activeThread}
         currentSceneId={currentSceneId}
         onInterrupt={handleInterrupt}
-        onSend={performSend}
+        onSend={handleComposerSend}
+        editing={editing}
+        editDiscardCount={editDiscardCount}
+        onCancelEdit={() => setEditing(null)}
       />
     </div>
   );
@@ -448,6 +482,7 @@ function MessageList({
   onOpenCitation,
   onProposalQueued,
   onRegenerate,
+  onEditMessage,
   setError,
 }: {
   messages: ChatMessageRecord[];
@@ -460,6 +495,7 @@ function MessageList({
   onOpenCitation: (citation: ChatRetrievalCitation) => void;
   onProposalQueued: () => void;
   onRegenerate: () => void;
+  onEditMessage: (message: ChatMessageRecord) => void;
   setError: (e: string) => void;
 }) {
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
@@ -503,10 +539,12 @@ function MessageList({
           threadId={threadId}
           currentSceneId={currentSceneId}
           canRegenerate={msg.id === lastAssistantId && !sending}
+          canEdit={msg.role === "user" && !sending}
           onToolExecuted={onToolExecuted}
           onOpenCitation={onOpenCitation}
           onProposalQueued={onProposalQueued}
           onRegenerate={onRegenerate}
+          onEdit={() => onEditMessage(msg)}
           setError={setError}
         />
       ))}
@@ -567,10 +605,12 @@ function ChatMessage({
   threadId,
   currentSceneId,
   canRegenerate,
+  canEdit,
   onToolExecuted,
   onOpenCitation,
   onProposalQueued,
   onRegenerate,
+  onEdit,
   setError,
 }: {
   message: ChatMessageRecord;
@@ -578,10 +618,12 @@ function ChatMessage({
   threadId: string;
   currentSceneId?: string;
   canRegenerate: boolean;
+  canEdit: boolean;
   onToolExecuted: () => void;
   onOpenCitation: (citation: ChatRetrievalCitation) => void;
   onProposalQueued: () => void;
   onRegenerate: () => void;
+  onEdit: () => void;
   setError: (e: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -690,6 +732,18 @@ function ChatMessage({
               setError={setError}
             />
           ))}
+        </div>
+      )}
+
+      {canEdit && (
+        <div className="chat-message__actions">
+          <button
+            className="chat-action-btn"
+            onClick={onEdit}
+            title="Edit this message and resend — it and all later messages will be replaced."
+          >
+            ✎ Edit
+          </button>
         </div>
       )}
 
@@ -861,6 +915,9 @@ function Composer({
   currentSceneId,
   onSend,
   onInterrupt,
+  editing,
+  editDiscardCount,
+  onCancelEdit,
 }: {
   threadId: string;
   sending: boolean;
@@ -871,11 +928,27 @@ function Composer({
   currentSceneId?: string;
   onSend: (text: string, sceneIds: string[], codexIds: string[]) => Promise<void>;
   onInterrupt: () => void;
+  editing: { messageId: string; text: string } | null;
+  editDiscardCount: number;
+  onCancelEdit: () => void;
 }) {
   const [text, setText] = useState("");
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    setText(editing.text);
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.style.height = "auto";
+      ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+  }, [editing]);
 
   const mentionResults = useMemo(() => {
     if (mentionQuery === null) return [];
@@ -998,6 +1071,23 @@ function Composer({
 
   return (
     <div className="chat-composer-wrap">
+      {editing && (
+        <div className="chat-edit-banner">
+          <span>
+            Editing an earlier message {"—"} sending replaces {editDiscardCount}{" "}
+            message{editDiscardCount === 1 ? "" : "s"}.
+          </span>
+          <button
+            className="chat-action-btn"
+            onClick={() => {
+              onCancelEdit();
+              setText("");
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       {contextHints.length > 0 && (
         <div className="chat-context-hints">
           {contextHints.map((h) => (
