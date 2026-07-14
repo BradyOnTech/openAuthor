@@ -32,6 +32,10 @@ PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}
 
 
+class ChatInterrupted(OpenAuthorError):
+  """Raised from an on_delta callback to abort an in-flight chat turn."""
+
+
 class ProviderExecutionError(OpenAuthorError):
   def __init__(
     self,
@@ -208,6 +212,202 @@ def _json_post(
         provider=provider,
         attempts=attempts,
       ) from error
+
+
+def _sse_data_lines(response: Any) -> Any:
+  for raw_line in response:
+    line = raw_line.decode("utf-8", errors="replace").strip()
+    if not line.startswith("data:"):
+      continue
+    data = line[len("data:") :].strip()
+    if data == "" or data == "[DONE]":
+      continue
+    try:
+      yield json.loads(data)
+    except json.JSONDecodeError:
+      continue
+
+
+def _stream_post(
+  *,
+  provider: str,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  consume: Any,
+) -> tuple[dict[str, Any], int]:
+  """POST an SSE request; `consume` reads parsed data frames and returns the
+  final result. Connection failures retry like `_json_post`, but only while
+  no stream data has been consumed (a partial stream is never replayed)."""
+  max_retries, base_ms = _retry_settings()
+  request = urllib.request.Request(
+    url,
+    data=json.dumps(payload).encode("utf-8"),
+    headers={
+      "Content-Type": "application/json",
+      "Accept": "text/event-stream",
+      **headers,
+    },
+    method="POST",
+  )
+  attempts = 0
+  while True:
+    attempts += 1
+    started = {"value": False}
+
+    def _frames(response: Any) -> Any:
+      for frame in _sse_data_lines(response):
+        started["value"] = True
+        yield frame
+
+    try:
+      with urllib.request.urlopen(request, timeout=90) as response:
+        return consume(_frames(response)), attempts
+    except urllib.error.HTTPError as error:
+      details = error.read().decode("utf-8", errors="replace")
+      category = _http_error_category(error.code, details)
+      retriable = _is_retryable_http_status(error.code) and not started["value"]
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider stream failed with HTTP {error.code}: {_truncate(details, 280)}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        http_status=error.code,
+        attempts=attempts,
+      ) from error
+    except urllib.error.URLError as error:
+      reason = str(error.reason)
+      category = "timeout" if "timed out" in reason.lower() else "network_error"
+      retriable = not started["value"]
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider stream failed: {reason}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        attempts=attempts,
+      ) from error
+
+
+def _openai_style_stream(
+  *,
+  provider: str,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  on_delta: Any,
+) -> dict[str, Any]:
+  request_payload = {
+    **payload,
+    "stream": True,
+    "stream_options": {"include_usage": True},
+  }
+
+  def consume(frames: Any) -> dict[str, Any]:
+    parts: list[str] = []
+    usage: dict[str, Any] = {}
+    for frame in frames:
+      if not isinstance(frame, dict):
+        continue
+      frame_usage = frame.get("usage")
+      if isinstance(frame_usage, dict):
+        usage = frame_usage
+      choices = frame.get("choices") or []
+      if not choices or not isinstance(choices[0], dict):
+        continue
+      delta = choices[0].get("delta", {})
+      content = delta.get("content") if isinstance(delta, dict) else None
+      if isinstance(content, str) and content != "":
+        parts.append(content)
+        on_delta(content)
+    return {"text": "".join(parts).strip(), "usage": usage}
+
+  result, attempts = _stream_post(
+    provider=provider,
+    url=url,
+    headers=headers,
+    payload=request_payload,
+    consume=consume,
+  )
+  usage = result["usage"]
+  return {
+    "text": result["text"],
+    "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
+    "output_tokens": int(usage.get("completion_tokens", 0) or 0),
+    "raw_usage": usage,
+    "attempts": attempts,
+  }
+
+
+def _anthropic_stream(
+  *,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  on_delta: Any,
+) -> dict[str, Any]:
+  request_payload = {**payload, "stream": True}
+
+  def consume(frames: Any) -> dict[str, Any]:
+    parts: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    for frame in frames:
+      if not isinstance(frame, dict):
+        continue
+      frame_type = frame.get("type", "")
+      if frame_type == "message_start":
+        message_usage = frame.get("message", {}).get("usage", {})
+        if isinstance(message_usage, dict):
+          input_tokens = int(message_usage.get("input_tokens", 0) or 0)
+      elif frame_type == "content_block_delta":
+        delta = frame.get("delta", {})
+        text = delta.get("text") if isinstance(delta, dict) else None
+        if isinstance(text, str) and text != "":
+          parts.append(text)
+          on_delta(text)
+      elif frame_type == "message_delta":
+        delta_usage = frame.get("usage", {})
+        if isinstance(delta_usage, dict):
+          output_tokens = int(delta_usage.get("output_tokens", 0) or 0)
+    return {
+      "text": "".join(parts).strip(),
+      "input_tokens": input_tokens,
+      "output_tokens": output_tokens,
+    }
+
+  result, attempts = _stream_post(
+    provider="anthropic",
+    url=url,
+    headers=headers,
+    payload=request_payload,
+    consume=consume,
+  )
+  return {
+    "text": result["text"],
+    "input_tokens": result["input_tokens"],
+    "output_tokens": result["output_tokens"],
+    "raw_usage": {
+      "input_tokens": result["input_tokens"],
+      "output_tokens": result["output_tokens"],
+    },
+    "attempts": attempts,
+  }
+
+
+def _stream_local_text(text: str, on_delta: Any) -> None:
+  words = text.split(" ")
+  chunk_size = 6
+  for start in range(0, len(words), chunk_size):
+    chunk = " ".join(words[start : start + chunk_size])
+    if start + chunk_size < len(words):
+      chunk += " "
+    on_delta(chunk)
 
 
 def _load_pricing(paths: ProjectPaths) -> dict[str, Any]:
@@ -537,6 +737,7 @@ def _openai_chat_completion(
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENAI_API_KEY")
   if not api_key:
@@ -557,6 +758,14 @@ def _openai_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if on_delta is not None:
+    return _openai_style_stream(
+      provider="openai",
+      url=f"{base_url.rstrip('/')}/chat/completions",
+      headers={"Authorization": f"Bearer {api_key}"},
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openai",
     url=f"{base_url.rstrip('/')}/chat/completions",
@@ -592,6 +801,7 @@ def _anthropic_message(
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("ANTHROPIC_API_KEY")
   if not api_key:
@@ -621,6 +831,16 @@ def _anthropic_message(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if on_delta is not None:
+    return _anthropic_stream(
+      url=f"{base_url.rstrip('/')}/messages",
+      headers={
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+      },
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="anthropic",
     url=f"{base_url.rstrip('/')}/messages",
@@ -654,6 +874,7 @@ def _openrouter_chat_completion(
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENROUTER_API_KEY")
   if not api_key:
@@ -679,6 +900,14 @@ def _openrouter_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if on_delta is not None:
+    return _openai_style_stream(
+      provider="openrouter",
+      url=f"{base_url.rstrip('/')}/chat/completions",
+      headers=headers,
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openrouter",
     url=f"{base_url.rstrip('/')}/chat/completions",
@@ -714,6 +943,7 @@ def _openai_codex_chat_completion(
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   access_token = get_access_token("openai-codex")
   if not access_token:
@@ -735,6 +965,14 @@ def _openai_codex_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if on_delta is not None:
+    return _openai_style_stream(
+      provider="openai-codex",
+      url=f"{base_url}/chat/completions",
+      headers={"Authorization": f"Bearer {access_token}"},
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openai-codex",
     url=f"{base_url}/chat/completions",
@@ -773,6 +1011,7 @@ def _call_provider(
   temperature: float,
   max_output_tokens: int,
   history: list[dict[str, str]] | None = None,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   chat_history = _normalize_chat_history(history)
   start = time.perf_counter()
@@ -781,6 +1020,8 @@ def _call_provider(
       text = _generate_local_chat_text(user_prompt)
     else:
       text = _generate_local_text(context, instruction)
+    if on_delta is not None:
+      _stream_local_text(text, on_delta)
     history_text = "\n".join(row["content"] for row in chat_history)
     input_tokens = _estimate_tokens(
       system_prompt + "\n" + history_text + "\n" + user_prompt
@@ -795,6 +1036,7 @@ def _call_provider(
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
     )
     text = payload["text"]
     input_tokens = payload["input_tokens"]
@@ -808,6 +1050,7 @@ def _call_provider(
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
     )
     text = payload["text"]
     input_tokens = payload["input_tokens"]
@@ -821,6 +1064,7 @@ def _call_provider(
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
     )
     text = payload["text"]
     input_tokens = payload["input_tokens"]
@@ -834,6 +1078,7 @@ def _call_provider(
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
     )
     text = payload["text"]
     input_tokens = payload["input_tokens"]
@@ -926,6 +1171,7 @@ def complete_chat(
   max_output_tokens: int = 900,
   chat_mode: bool = True,
   thread_id: str = "",
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -993,7 +1239,30 @@ def complete_chat(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
       history=chat_history,
+      on_delta=on_delta,
     )
+  except ChatInterrupted:
+    _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": "Chat turn interrupted by user.",
+        "category": "interrupted",
+        "retriable": False,
+        "http_status": None,
+        "attempts": 1,
+        "provider": provider,
+      },
+    )
+    raise
   except ProviderExecutionError as error:
     _, log_path = _write_chat_generation_log(
       paths,

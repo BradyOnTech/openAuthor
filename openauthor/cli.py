@@ -644,6 +644,11 @@ def build_parser() -> argparse.ArgumentParser:
   chat_tool_execute.add_argument("--index", type=int, required=True, help="Tool call index.")
   chat_tool_execute.add_argument("--json", action="store_true", help="Output JSON.")
 
+  subparsers.add_parser(
+    "serve",
+    help="Run the persistent JSON-RPC sidecar over stdin/stdout.",
+  )
+
   return parser
 
 
@@ -1514,6 +1519,12 @@ def _run(args: argparse.Namespace) -> int:
         f"{row.get('run_id','')}\t{row.get('status','')}\t{row.get('provider','')}\t"
         f"{row.get('scene_id','')}\t{row.get('proposal_id','')}\t{row.get('log_path','')}"
       )
+    return 0
+
+  if args.command == "serve":
+    from .server import run_server
+
+    run_server(_paths_from_cwd())
     return 0
 
   raise OpenAuthorError(f"Unsupported command: {args.command}")

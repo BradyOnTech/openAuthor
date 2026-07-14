@@ -492,26 +492,28 @@ export async function listChatMessages(
   return decodeJson<ChatMessageRecord[]>(result);
 }
 
+export type ChatSendPayload = {
+  threadId: string;
+  message: string;
+  currentSceneId?: string;
+  sceneIds?: string[];
+  selectedText?: string;
+  codexIds?: string[];
+  includeCurrentScene?: boolean;
+  includeSelection?: boolean;
+  includeRecentScenesRadius?: number;
+  includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
+  retrievalMode?: "off" | "auto" | "required";
+  retrievalLimit?: number;
+  retrievalMinScore?: number;
+  retrievalRequireFresh?: boolean;
+  agentAutoReadOnly?: boolean;
+  agentConfirmWrites?: boolean;
+};
+
 export async function sendChatMessage(
   projectRoot: string,
-  payload: {
-    threadId: string;
-    message: string;
-    currentSceneId?: string;
-    sceneIds?: string[];
-    selectedText?: string;
-    codexIds?: string[];
-    includeCurrentScene?: boolean;
-    includeSelection?: boolean;
-    includeRecentScenesRadius?: number;
-    includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
-    retrievalMode?: "off" | "auto" | "required";
-    retrievalLimit?: number;
-    retrievalMinScore?: number;
-    retrievalRequireFresh?: boolean;
-    agentAutoReadOnly?: boolean;
-    agentConfirmWrites?: boolean;
-  }
+  payload: ChatSendPayload
 ): Promise<ChatSendResult> {
   const args = [
     "chat",
@@ -570,6 +572,133 @@ export async function sendChatMessage(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ChatSendResult>(result);
+}
+
+type SidecarFrame = {
+  id?: string | number;
+  result?: unknown;
+  error?: { message?: string; category?: string };
+  event?: string;
+  sequence?: number;
+  payload?: Record<string, unknown>;
+};
+
+type SidecarEventEnvelope = {
+  projectRoot: string;
+  frame: SidecarFrame;
+};
+
+const SIDECAR_EVENT_CHANNEL = "openauthor://sidecar-event";
+
+let sidecarRequestCounter = 0;
+
+function nextSidecarRequestId(): string {
+  sidecarRequestCounter += 1;
+  return `req-${Date.now()}-${sidecarRequestCounter}`;
+}
+
+async function sidecarRequest<T>(
+  projectRoot: string,
+  requestId: string,
+  method: string,
+  params: Record<string, unknown>,
+  timeoutMs?: number
+): Promise<T> {
+  const frame = await tauriInvoke<SidecarFrame>("sidecar_request", {
+    projectRoot,
+    request: { id: requestId, method, params },
+    timeoutMs: timeoutMs ?? null,
+  });
+  if (frame.error) {
+    const category = frame.error.category ? ` [${frame.error.category}]` : "";
+    throw new Error(`${frame.error.message ?? "Sidecar request failed."}${category}`);
+  }
+  return frame.result as T;
+}
+
+function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
+  const contextOverrides: Record<string, unknown> = {};
+  if (typeof payload.includeCurrentScene === "boolean") {
+    contextOverrides.include_current_scene = payload.includeCurrentScene;
+  }
+  if (typeof payload.includeSelection === "boolean") {
+    contextOverrides.include_selection = payload.includeSelection;
+  }
+  if (typeof payload.includeRecentScenesRadius === "number") {
+    contextOverrides.include_recent_scenes_radius = payload.includeRecentScenesRadius;
+  }
+  if (payload.includeCodex) {
+    contextOverrides.include_codex = payload.includeCodex;
+  }
+  if (payload.retrievalMode) {
+    contextOverrides.retrieval_mode = payload.retrievalMode;
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    contextOverrides.retrieval_limit = payload.retrievalLimit;
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    contextOverrides.retrieval_min_score = payload.retrievalMinScore;
+  }
+  if (typeof payload.retrievalRequireFresh === "boolean") {
+    contextOverrides.retrieval_require_fresh = payload.retrievalRequireFresh;
+  }
+  if (typeof payload.agentAutoReadOnly === "boolean") {
+    contextOverrides.agent_auto_read_only = payload.agentAutoReadOnly;
+  }
+  if (typeof payload.agentConfirmWrites === "boolean") {
+    contextOverrides.agent_confirm_writes = payload.agentConfirmWrites;
+  }
+  return {
+    thread_id: payload.threadId,
+    message: payload.message,
+    current_scene_id: payload.currentSceneId ?? "",
+    scene_ids: (payload.sceneIds ?? []).filter((item) => item.trim() !== ""),
+    selected_text: payload.selectedText ?? "",
+    codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
+    context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
+  };
+}
+
+export async function sendChatMessageStreamed(
+  projectRoot: string,
+  payload: ChatSendPayload,
+  handlers: {
+    onDelta: (text: string) => void;
+    onStart?: (requestId: string) => void;
+  }
+): Promise<ChatSendResult> {
+  const requestId = nextSidecarRequestId();
+  handlers.onStart?.(requestId);
+  const { listen } = await import("@tauri-apps/api/event");
+  const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
+    const frame = event.payload.frame;
+    if (frame.event !== "chat.delta" || !frame.payload) return;
+    if (frame.payload.request_id !== requestId) return;
+    handlers.onDelta(String(frame.payload.text ?? ""));
+  });
+  try {
+    return await sidecarRequest<ChatSendResult>(
+      projectRoot,
+      requestId,
+      "chat.send",
+      chatSendParams(payload)
+    );
+  } finally {
+    unlisten();
+  }
+}
+
+export async function interruptChatTurn(
+  projectRoot: string,
+  requestId: string
+): Promise<void> {
+  await sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "chat.interrupt",
+    { request_id: requestId },
+    10_000
+  );
 }
 
 export async function executeChatToolCall(

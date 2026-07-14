@@ -703,6 +703,7 @@ def send_chat_message(
   selected_text: str = "",
   codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
+  on_delta: Any = None,
 ) -> dict[str, Any]:
   thread = get_chat_thread(paths, thread_id)
   content = message.strip()
@@ -761,6 +762,7 @@ def send_chat_message(
     max_output_tokens=900,
     chat_mode=True,
     thread_id=thread_id,
+    on_delta=on_delta,
   )
   assistant_text = completion.get("text", "")
   clean_text, raw_tool_calls = _parse_tool_calls(assistant_text)

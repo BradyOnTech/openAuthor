@@ -31,7 +31,8 @@ import {
   resetGenerationBudget,
   runContinuityChecks,
   runPerformanceBaseline,
-  sendChatMessage,
+  sendChatMessageStreamed,
+  interruptChatTurn,
   runWorkspaceAudit,
   switchBranch,
   unpinGenerationRun,
@@ -487,6 +488,12 @@ export function App() {
   const [chatComposerDraft, setChatComposerDraft] = useState<DraftChatComposer>(
     EMPTY_DRAFT_CHAT_COMPOSER
   );
+  const [chatStream, setChatStream] = useState<{
+    requestId: string;
+    threadId: string;
+    userText: string;
+    text: string;
+  } | null>(null);
   const [chatPendingToolCalls, setChatPendingToolCalls] = useState<
     Array<{
       assistantMessageId: string;
@@ -2184,26 +2191,38 @@ export function App() {
     }
     const messageText = chatComposerDraft.message.trim();
     if (messageText === "") return;
+    const threadId = selectedChatThreadId;
     setBusy(true);
     setError("");
     setMessage("Sending chat message...");
     try {
-      const result: ChatSendResult = await sendChatMessage(projectRoot, {
-        threadId: selectedChatThreadId,
-        message: messageText,
-        currentSceneId: chatComposerDraft.currentSceneId.trim(),
-        selectedText: chatComposerDraft.selectedText,
-        includeCurrentScene: chatComposerDraft.includeCurrentScene,
-        includeSelection: chatComposerDraft.includeSelection,
-        includeRecentScenesRadius: chatComposerDraft.includeRecentScenesRadius,
-        includeCodex: chatComposerDraft.includeCodex,
-        retrievalMode: chatComposerDraft.retrievalMode,
-        retrievalLimit: chatComposerDraft.retrievalLimit,
-        retrievalMinScore: chatComposerDraft.retrievalMinScore,
-        retrievalRequireFresh: chatComposerDraft.retrievalRequireFresh,
-        agentAutoReadOnly: chatComposerDraft.agentAutoReadOnly,
-        agentConfirmWrites: chatComposerDraft.agentConfirmWrites
-      });
+      const result: ChatSendResult = await sendChatMessageStreamed(
+        projectRoot,
+        {
+          threadId,
+          message: messageText,
+          currentSceneId: chatComposerDraft.currentSceneId.trim(),
+          selectedText: chatComposerDraft.selectedText,
+          includeCurrentScene: chatComposerDraft.includeCurrentScene,
+          includeSelection: chatComposerDraft.includeSelection,
+          includeRecentScenesRadius: chatComposerDraft.includeRecentScenesRadius,
+          includeCodex: chatComposerDraft.includeCodex,
+          retrievalMode: chatComposerDraft.retrievalMode,
+          retrievalLimit: chatComposerDraft.retrievalLimit,
+          retrievalMinScore: chatComposerDraft.retrievalMinScore,
+          retrievalRequireFresh: chatComposerDraft.retrievalRequireFresh,
+          agentAutoReadOnly: chatComposerDraft.agentAutoReadOnly,
+          agentConfirmWrites: chatComposerDraft.agentConfirmWrites
+        },
+        {
+          onStart: (requestId) =>
+            setChatStream({ requestId, threadId, userText: messageText, text: "" }),
+          onDelta: (text) =>
+            setChatStream((prev) =>
+              prev ? { ...prev, text: prev.text + text } : prev
+            )
+        }
+      );
       await refreshChatThreads(result.thread.id);
       await refreshChatMessages(result.thread.id);
       setChatComposerDraft((prev) => ({
@@ -2219,9 +2238,21 @@ export function App() {
         setMessage("Chat response received.");
       }
     } catch (err) {
+      await refreshChatMessages(threadId);
       reportError("Chat send failed", err, "Check provider settings or prompt content and retry.");
     } finally {
+      setChatStream(null);
       setBusy(false);
+    }
+  }
+
+  async function handleInterruptChatTurn() {
+    if (!chatStream) return;
+    try {
+      await interruptChatTurn(projectRoot, chatStream.requestId);
+      setMessage("Interrupt requested.");
+    } catch (err) {
+      reportError("Chat interrupt failed", err, "The turn may already be finishing.");
     }
   }
 
@@ -3679,7 +3710,7 @@ export function App() {
                       </div>
                     </div>
                     <div className="chat-message-list">
-                      {chatMessages.length === 0 ? (
+                      {chatMessages.length === 0 && !chatStream ? (
                         <div className="empty-state">
                           <p>No messages yet.</p>
                         </div>
@@ -3697,6 +3728,24 @@ export function App() {
                           </article>
                         ))
                       )}
+                      {chatStream && chatStream.threadId === selectedChatThreadId ? (
+                        <>
+                          <article className="chat-message chat-role-user">
+                            <div className="chat-message-meta">
+                              <strong>user</strong>
+                              <span>sending…</span>
+                            </div>
+                            <pre>{chatStream.userText}</pre>
+                          </article>
+                          <article className="chat-message chat-role-assistant chat-message-streaming">
+                            <div className="chat-message-meta">
+                              <strong>assistant</strong>
+                              <span>{chatStream.text === "" ? "thinking…" : "streaming…"}</span>
+                            </div>
+                            <pre>{chatStream.text === "" ? "…" : chatStream.text}</pre>
+                          </article>
+                        </>
+                      ) : null}
                     </div>
                     {chatPendingToolCalls.length > 0 ? (
                       <div className="chat-pending-tools">
@@ -3864,13 +3913,19 @@ export function App() {
                           style={{ minHeight: "72px" }}
                         />
                       </label>
-                      <button
-                        className="btn-accent"
-                        disabled={busy || chatComposerDraft.message.trim() === ""}
-                        onClick={() => void handleSendChatMessage()}
-                      >
-                        Send
-                      </button>
+                      {chatStream ? (
+                        <button onClick={() => void handleInterruptChatTurn()}>
+                          Stop
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-accent"
+                          disabled={busy || chatComposerDraft.message.trim() === ""}
+                          onClick={() => void handleSendChatMessage()}
+                        >
+                          Send
+                        </button>
+                      )}
                     </div>
                   </>
                 ) : (
