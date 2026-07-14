@@ -9,7 +9,13 @@ from pathlib import Path
 from unittest.mock import patch
 import urllib.error
 
-from openauthor.ai import build_generation_context, generate_proposal
+from openauthor.ai import (
+  _anthropic_content_blocks,
+  _chat_completion_messages,
+  _normalize_chat_history,
+  build_generation_context,
+  generate_proposal,
+)
 from openauthor.budget import update_generation_budget_policy
 from openauthor.codex import add_entity
 from openauthor.project import OpenAuthorError, initialize_project
@@ -368,6 +374,74 @@ class AIModuleTests(unittest.TestCase):
           provider="local",
           retrieval_mode="required",
         )
+
+  def test_normalize_chat_history_keeps_structured_tool_entries(self) -> None:
+    history = [
+      {"role": "user", "content": "Check the scenes."},
+      {
+        "role": "assistant",
+        "content": "Looking now.",
+        "tool_calls": [{"id": "call-1", "name": "scene_list", "args": {}}],
+      },
+      {"role": "tool", "tool_call_id": "call-1", "name": "scene_list", "content": "{}"},
+      {"role": "tool", "tool_call_id": "", "content": "dropped: no id"},
+      {"role": "assistant", "content": ""},
+    ]
+    rows = _normalize_chat_history(history)
+    self.assertEqual(len(rows), 3)
+    self.assertEqual(rows[1]["tool_calls"][0]["id"], "call-1")
+    self.assertEqual(rows[2]["role"], "tool")
+
+  def test_chat_completion_messages_translate_tool_entries(self) -> None:
+    history = _normalize_chat_history(
+      [
+        {"role": "user", "content": "Check the scenes."},
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [{"id": "call-1", "name": "scene_list", "args": {"a": 1}}],
+        },
+        {"role": "tool", "tool_call_id": "call-1", "name": "scene_list", "content": "{}"},
+      ]
+    )
+    messages = _chat_completion_messages(
+      system_prompt="sys",
+      history=history,
+      user_prompt="",
+    )
+    self.assertEqual(messages[0], {"role": "system", "content": "sys"})
+    assistant = messages[2]
+    self.assertIsNone(assistant["content"])
+    self.assertEqual(assistant["tool_calls"][0]["function"]["name"], "scene_list")
+    self.assertEqual(
+      json.loads(assistant["tool_calls"][0]["function"]["arguments"]),
+      {"a": 1},
+    )
+    tool = messages[3]
+    self.assertEqual(tool["role"], "tool")
+    self.assertEqual(tool["tool_call_id"], "call-1")
+    # Empty user prompt (a tool-loop continuation) appends no user message.
+    self.assertEqual(messages[-1]["role"], "tool")
+
+  def test_anthropic_content_blocks_translate_tool_entries(self) -> None:
+    role, blocks = _anthropic_content_blocks(
+      {
+        "role": "assistant",
+        "content": "Looking now.",
+        "tool_calls": [{"id": "toolu-1", "name": "scene_list", "args": {}}],
+      }
+    )
+    self.assertEqual(role, "assistant")
+    self.assertEqual(blocks[0], {"type": "text", "text": "Looking now."})
+    self.assertEqual(blocks[1]["type"], "tool_use")
+    self.assertEqual(blocks[1]["id"], "toolu-1")
+
+    role, blocks = _anthropic_content_blocks(
+      {"role": "tool", "tool_call_id": "toolu-1", "name": "scene_list", "content": "{}"}
+    )
+    self.assertEqual(role, "user")
+    self.assertEqual(blocks[0]["type"], "tool_result")
+    self.assertEqual(blocks[0]["tool_use_id"], "toolu-1")
 
 
 if __name__ == "__main__":

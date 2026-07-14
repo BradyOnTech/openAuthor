@@ -6,6 +6,7 @@ import type {
   ChatMessageRecord,
   ChatSendResult,
   ChatThreadRecord,
+  ChatTurnDiff,
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
@@ -15,6 +16,7 @@ import type {
   GenerationRuntimeConfig,
   GenerationRunSummary,
   InitProjectResult,
+  MergeConflictScan,
   PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
@@ -333,17 +335,40 @@ export async function generateProposal(
 export async function applyProposal(
   projectRoot: string,
   proposalId: string,
-  notes = ""
+  notes = "",
+  force = false
 ): Promise<ProposalRecord> {
-  const result = await runCoreCommand(projectRoot, [
-    "proposal",
-    "apply",
-    "--id",
-    proposalId,
-    "--notes",
-    notes,
-    "--json"
-  ]);
+  const args = ["proposal", "apply", "--id", proposalId, "--notes", notes];
+  if (force) {
+    args.push("--force");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function draftProposal(
+  projectRoot: string,
+  payload: {
+    proposalId: string;
+    provider: ProposalProvider;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
 }
 
@@ -365,8 +390,21 @@ export async function rejectProposal(
 }
 
 export async function listChatThreads(projectRoot: string): Promise<ChatThreadRecord[]> {
-  const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
-  return decodeJson<ChatThreadRecord[]>(result);
+  // Prefer the warm sidecar; fall back to a one-shot CLI invocation if it
+  // is unavailable (e.g. first call racing a failed spawn).
+  try {
+    return await sidecarRequest<ChatThreadRecord[]>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.threads",
+      {},
+      15_000
+    );
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
+    return decodeJson<ChatThreadRecord[]>(result);
+  }
 }
 
 export async function createChatThread(
@@ -483,35 +521,51 @@ export async function listChatMessages(
     limit?: number;
   }
 ): Promise<ChatMessageRecord[]> {
-  const args = ["chat", "message", "list", "--thread", payload.threadId];
-  if (typeof payload.limit === "number") {
-    args.push("--limit", String(payload.limit));
+  try {
+    return await sidecarRequest<ChatMessageRecord[]>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.messages",
+      {
+        thread_id: payload.threadId,
+        limit: typeof payload.limit === "number" ? payload.limit : null,
+      },
+      15_000
+    );
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    const args = ["chat", "message", "list", "--thread", payload.threadId];
+    if (typeof payload.limit === "number") {
+      args.push("--limit", String(payload.limit));
+    }
+    args.push("--json");
+    const result = await runCoreCommand(projectRoot, args);
+    return decodeJson<ChatMessageRecord[]>(result);
   }
-  args.push("--json");
-  const result = await runCoreCommand(projectRoot, args);
-  return decodeJson<ChatMessageRecord[]>(result);
 }
+
+export type ChatSendPayload = {
+  threadId: string;
+  message: string;
+  currentSceneId?: string;
+  sceneIds?: string[];
+  selectedText?: string;
+  codexIds?: string[];
+  includeCurrentScene?: boolean;
+  includeSelection?: boolean;
+  includeRecentScenesRadius?: number;
+  includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
+  retrievalMode?: "off" | "auto" | "required";
+  retrievalLimit?: number;
+  retrievalMinScore?: number;
+  retrievalRequireFresh?: boolean;
+  agentAutoReadOnly?: boolean;
+  agentConfirmWrites?: boolean;
+};
 
 export async function sendChatMessage(
   projectRoot: string,
-  payload: {
-    threadId: string;
-    message: string;
-    currentSceneId?: string;
-    sceneIds?: string[];
-    selectedText?: string;
-    codexIds?: string[];
-    includeCurrentScene?: boolean;
-    includeSelection?: boolean;
-    includeRecentScenesRadius?: number;
-    includeCodex?: "off" | "explicit" | "auto" | "auto_and_explicit";
-    retrievalMode?: "off" | "auto" | "required";
-    retrievalLimit?: number;
-    retrievalMinScore?: number;
-    retrievalRequireFresh?: boolean;
-    agentAutoReadOnly?: boolean;
-    agentConfirmWrites?: boolean;
-  }
+  payload: ChatSendPayload
 ): Promise<ChatSendResult> {
   const args = [
     "chat",
@@ -570,6 +624,208 @@ export async function sendChatMessage(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ChatSendResult>(result);
+}
+
+type SidecarFrame = {
+  id?: string | number;
+  result?: unknown;
+  error?: { message?: string; category?: string };
+  event?: string;
+  sequence?: number;
+  payload?: Record<string, unknown>;
+};
+
+type SidecarEventEnvelope = {
+  projectRoot: string;
+  frame: SidecarFrame;
+};
+
+const SIDECAR_EVENT_CHANNEL = "openauthor://sidecar-event";
+
+let sidecarRequestCounter = 0;
+
+function nextSidecarRequestId(): string {
+  sidecarRequestCounter += 1;
+  return `req-${Date.now()}-${sidecarRequestCounter}`;
+}
+
+export class SidecarDomainError extends Error {
+  readonly category: string;
+
+  constructor(message: string, category: string) {
+    super(message);
+    this.name = "SidecarDomainError";
+    this.category = category;
+  }
+}
+
+async function sidecarRequest<T>(
+  projectRoot: string,
+  requestId: string,
+  method: string,
+  params: Record<string, unknown>,
+  timeoutMs?: number
+): Promise<T> {
+  const frame = await tauriInvoke<SidecarFrame>("sidecar_request", {
+    projectRoot,
+    request: { id: requestId, method, params },
+    timeoutMs: timeoutMs ?? null,
+  });
+  if (frame.error) {
+    // The sidecar ran and rejected the request — a real answer, not a
+    // transport failure, so callers must not retry over the CLI.
+    throw new SidecarDomainError(
+      frame.error.message ?? "Sidecar request failed.",
+      frame.error.category ?? "core_error"
+    );
+  }
+  return frame.result as T;
+}
+
+function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
+  const contextOverrides: Record<string, unknown> = {};
+  if (typeof payload.includeCurrentScene === "boolean") {
+    contextOverrides.include_current_scene = payload.includeCurrentScene;
+  }
+  if (typeof payload.includeSelection === "boolean") {
+    contextOverrides.include_selection = payload.includeSelection;
+  }
+  if (typeof payload.includeRecentScenesRadius === "number") {
+    contextOverrides.include_recent_scenes_radius = payload.includeRecentScenesRadius;
+  }
+  if (payload.includeCodex) {
+    contextOverrides.include_codex = payload.includeCodex;
+  }
+  if (payload.retrievalMode) {
+    contextOverrides.retrieval_mode = payload.retrievalMode;
+  }
+  if (typeof payload.retrievalLimit === "number") {
+    contextOverrides.retrieval_limit = payload.retrievalLimit;
+  }
+  if (typeof payload.retrievalMinScore === "number") {
+    contextOverrides.retrieval_min_score = payload.retrievalMinScore;
+  }
+  if (typeof payload.retrievalRequireFresh === "boolean") {
+    contextOverrides.retrieval_require_fresh = payload.retrievalRequireFresh;
+  }
+  if (typeof payload.agentAutoReadOnly === "boolean") {
+    contextOverrides.agent_auto_read_only = payload.agentAutoReadOnly;
+  }
+  if (typeof payload.agentConfirmWrites === "boolean") {
+    contextOverrides.agent_confirm_writes = payload.agentConfirmWrites;
+  }
+  return {
+    thread_id: payload.threadId,
+    message: payload.message,
+    current_scene_id: payload.currentSceneId ?? "",
+    scene_ids: (payload.sceneIds ?? []).filter((item) => item.trim() !== ""),
+    selected_text: payload.selectedText ?? "",
+    codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
+    context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
+  };
+}
+
+export async function sendChatMessageStreamed(
+  projectRoot: string,
+  payload: ChatSendPayload,
+  handlers: {
+    onDelta: (text: string) => void;
+    onStart?: (requestId: string) => void;
+  }
+): Promise<ChatSendResult> {
+  const requestId = nextSidecarRequestId();
+  handlers.onStart?.(requestId);
+  const { listen } = await import("@tauri-apps/api/event");
+  const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
+    const frame = event.payload.frame;
+    if (frame.event !== "chat.delta" || !frame.payload) return;
+    if (frame.payload.request_id !== requestId) return;
+    handlers.onDelta(String(frame.payload.text ?? ""));
+  });
+  try {
+    return await sidecarRequest<ChatSendResult>(
+      projectRoot,
+      requestId,
+      "chat.send",
+      chatSendParams(payload)
+    );
+  } finally {
+    unlisten();
+  }
+}
+
+export async function interruptChatTurn(
+  projectRoot: string,
+  requestId: string
+): Promise<void> {
+  await sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "chat.interrupt",
+    { request_id: requestId },
+    10_000
+  );
+}
+
+export type ChatTruncateResult = {
+  thread_id: string;
+  from_message_id: string;
+  removed_count: number;
+  remaining_count: number;
+  removed_ids: string[];
+};
+
+export async function truncateChatMessages(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    fromMessageId: string;
+  }
+): Promise<ChatTruncateResult> {
+  try {
+    return await sidecarRequest<ChatTruncateResult>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.truncate",
+      {
+        thread_id: payload.threadId,
+        from_message_id: payload.fromMessageId,
+      },
+      15_000
+    );
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    const result = await runCoreCommand(projectRoot, [
+      "chat",
+      "message",
+      "truncate",
+      "--thread",
+      payload.threadId,
+      "--from-message",
+      payload.fromMessageId,
+      "--json"
+    ]);
+    return decodeJson<ChatTruncateResult>(result);
+  }
+}
+
+export async function getChatTurnDiff(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    messageId: string;
+  }
+): Promise<ChatTurnDiff> {
+  const result = await runCoreCommand(projectRoot, [
+    "chat",
+    "diff",
+    "--thread",
+    payload.threadId,
+    "--message",
+    payload.messageId,
+    "--json"
+  ]);
+  return decodeJson<ChatTurnDiff>(result);
 }
 
 export async function executeChatToolCall(
@@ -953,18 +1209,69 @@ export async function preflightMerge(
 
 export async function mergeBranches(
   projectRoot: string,
-  payload: { base: string; head: string }
+  payload: { base: string; head: string; resolutionIds?: string[] }
 ): Promise<BranchMergeResult> {
+  const args = ["branch", "merge", "--base", payload.base, "--head", payload.head];
+  for (const id of payload.resolutionIds ?? []) {
+    args.push("--resolution", id);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<BranchMergeResult>(result);
+}
+
+export async function scanMergeConflicts(
+  projectRoot: string,
+  payload: { base: string; head: string }
+): Promise<MergeConflictScan> {
   const result = await runCoreCommand(projectRoot, [
     "branch",
-    "merge",
+    "conflicts",
     "--base",
     payload.base,
     "--head",
     payload.head,
     "--json"
   ]);
-  return decodeJson<BranchMergeResult>(result);
+  return decodeJson<MergeConflictScan>(result);
+}
+
+export async function resolveMergeConflict(
+  projectRoot: string,
+  payload: {
+    base: string;
+    head: string;
+    path: string;
+    provider: ProposalProvider;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = [
+    "branch",
+    "resolve",
+    "--base",
+    payload.base,
+    "--head",
+    payload.head,
+    "--path",
+    payload.path,
+    "--provider",
+    payload.provider
+  ];
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
 }
 
 export async function listGenerationPins(

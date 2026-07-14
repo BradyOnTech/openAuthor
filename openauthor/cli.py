@@ -6,7 +6,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, generate_proposal
+from .ai import (
+  DEFAULT_MODELS,
+  SUPPORTED_PROVIDERS,
+  generate_merge_resolution,
+  generate_proposal,
+  generate_proposal_draft,
+)
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .budget import (
   get_generation_budget_report,
@@ -19,10 +25,12 @@ from .chat import (
   create_chat_thread,
   execute_pending_tool_call,
   get_chat_thread,
+  get_chat_turn_diff,
   list_chat_messages,
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  truncate_chat_messages,
   update_chat_thread,
 )
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
@@ -50,6 +58,7 @@ from .git_ops import (
   list_snapshots,
   merge_branches,
   preflight_merge,
+  scan_merge_conflicts,
   switch_branch,
 )
 from .project import (
@@ -61,7 +70,13 @@ from .project import (
   inspect_project,
   resolve_project,
 )
-from .proposals import create_proposal, get_proposal, list_proposals, update_proposal_status
+from .proposals import (
+  apply_proposal,
+  create_proposal,
+  get_proposal,
+  list_proposals,
+  update_proposal_status,
+)
 from .retrieval import build_retrieval_index, get_retrieval_index_status, query_retrieval_index
 from .scenes import add_scene, get_scene, list_scenes, update_scene
 
@@ -155,10 +170,43 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_get = proposal_sub.add_parser("get", help="Get proposal by id.")
   proposal_get.add_argument("--id", required=True, help="Proposal id.")
   proposal_get.add_argument("--json", action="store_true", help="Output JSON.")
-  proposal_apply = proposal_sub.add_parser("apply", help="Mark proposal as applied.")
+  proposal_apply = proposal_sub.add_parser(
+    "apply",
+    help="Apply proposal (writes the drafted scene body when present).",
+  )
   proposal_apply.add_argument("--id", required=True, help="Proposal id.")
   proposal_apply.add_argument("--notes", default="", help="Optional note.")
+  proposal_apply.add_argument(
+    "--force",
+    action="store_true",
+    help="Apply the drafted body even if the scene changed since drafting.",
+  )
   proposal_apply.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_draft = proposal_sub.add_parser(
+    "draft",
+    help="Generate the full revised scene body for a pending proposal.",
+  )
+  proposal_draft.add_argument("--id", required=True, help="Proposal id.")
+  proposal_draft.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default="local",
+    help="AI provider (default: local).",
+  )
+  proposal_draft.add_argument("--model", default=None, help="Model override.")
+  proposal_draft.add_argument(
+    "--temperature",
+    type=float,
+    default=0.3,
+    help="Sampling temperature (default: 0.3).",
+  )
+  proposal_draft.add_argument(
+    "--max-output-tokens",
+    type=int,
+    default=2000,
+    help="Max output tokens (default: 2000).",
+  )
+  proposal_draft.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_reject = proposal_sub.add_parser("reject", help="Mark proposal as rejected.")
   proposal_reject.add_argument("--id", required=True, help="Proposal id.")
   proposal_reject.add_argument("--notes", default="", help="Optional note.")
@@ -269,7 +317,44 @@ def build_parser() -> argparse.ArgumentParser:
   branch_merge = branch_sub.add_parser("merge", help="Merge head branch into base branch.")
   branch_merge.add_argument("--base", required=True, help="Base branch/ref.")
   branch_merge.add_argument("--head", required=True, help="Head branch/ref.")
+  branch_merge.add_argument(
+    "--resolution",
+    action="append",
+    default=[],
+    metavar="PROPOSAL_ID",
+    help="Merge-resolution proposal id to resolve a conflicted scene (repeatable).",
+  )
   branch_merge.add_argument("--json", action="store_true", help="Output JSON.")
+  branch_conflicts = branch_sub.add_parser(
+    "conflicts",
+    help="Scan for merge conflicts between two branches without touching the worktree.",
+  )
+  branch_conflicts.add_argument("--base", required=True, help="Base branch/ref.")
+  branch_conflicts.add_argument("--head", required=True, help="Head branch/ref.")
+  branch_conflicts.add_argument("--json", action="store_true", help="Output JSON.")
+  branch_resolve = branch_sub.add_parser(
+    "resolve",
+    help="Draft an AI-reconciled version of a conflicted scene as a proposal.",
+  )
+  branch_resolve.add_argument("--base", required=True, help="Base branch/ref.")
+  branch_resolve.add_argument("--head", required=True, help="Head branch/ref.")
+  branch_resolve.add_argument(
+    "--path", required=True, help="Conflicted scene path (manuscript/scenes/...)."
+  )
+  branch_resolve.add_argument(
+    "--provider",
+    choices=sorted(SUPPORTED_PROVIDERS),
+    default="local",
+    help="AI provider (default: local).",
+  )
+  branch_resolve.add_argument("--model", default=None, help="Model override.")
+  branch_resolve.add_argument(
+    "--temperature", type=float, default=0.3, help="Sampling temperature (default: 0.3)."
+  )
+  branch_resolve.add_argument(
+    "--max-output-tokens", type=int, default=3000, help="Max output tokens (default: 3000)."
+  )
+  branch_resolve.add_argument("--json", action="store_true", help="Output JSON.")
 
   check_parser = subparsers.add_parser("check", help="Run repository quality checks.")
   check_sub = check_parser.add_subparsers(dest="check_command", required=True)
@@ -551,6 +636,7 @@ def build_parser() -> argparse.ArgumentParser:
     choices=["true", "false"],
     default=None,
   )
+  chat_thread_update.add_argument("--history-token-budget", type=int, default=None)
   chat_thread_update.add_argument(
     "--agent-auto-read-only",
     choices=["true", "false"],
@@ -612,6 +698,7 @@ def build_parser() -> argparse.ArgumentParser:
     choices=["true", "false"],
     default=None,
   )
+  chat_send.add_argument("--history-token-budget", type=int, default=None)
   chat_send.add_argument(
     "--agent-auto-read-only",
     choices=["true", "false"],
@@ -630,6 +717,17 @@ def build_parser() -> argparse.ArgumentParser:
   chat_message_list.add_argument("--thread", required=True, help="Thread id.")
   chat_message_list.add_argument("--limit", type=int, default=None, help="Optional max rows.")
   chat_message_list.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_message_truncate = chat_message_sub.add_parser(
+    "truncate",
+    help="Remove a message and everything after it (used by regenerate).",
+  )
+  chat_message_truncate.add_argument("--thread", required=True, help="Thread id.")
+  chat_message_truncate.add_argument(
+    "--from-message",
+    required=True,
+    help="Message id to remove, along with all later messages.",
+  )
+  chat_message_truncate.add_argument("--json", action="store_true", help="Output JSON.")
 
   chat_tool = chat_sub.add_parser("tool", help="Execute pending agent tool calls.")
   chat_tool_sub = chat_tool.add_subparsers(dest="chat_tool_command", required=True)
@@ -641,6 +739,19 @@ def build_parser() -> argparse.ArgumentParser:
   chat_tool_execute.add_argument("--message", required=True, help="Assistant message id.")
   chat_tool_execute.add_argument("--index", type=int, required=True, help="Tool call index.")
   chat_tool_execute.add_argument("--json", action="store_true", help="Output JSON.")
+
+  chat_diff = chat_sub.add_parser(
+    "diff",
+    help="Diff authoring artifacts between a chat turn's VCS anchor and HEAD.",
+  )
+  chat_diff.add_argument("--thread", required=True, help="Thread id.")
+  chat_diff.add_argument("--message", required=True, help="Message id with a VCS anchor.")
+  chat_diff.add_argument("--json", action="store_true", help="Output JSON.")
+
+  subparsers.add_parser(
+    "serve",
+    help="Run the persistent JSON-RPC sidecar over stdin/stdout.",
+  )
 
   return parser
 
@@ -686,6 +797,9 @@ def _chat_context_overrides(args: argparse.Namespace) -> dict[str, Any]:
   retrieval_require_fresh = _optional_bool(getattr(args, "retrieval_require_fresh", None))
   if retrieval_require_fresh is not None:
     overrides["retrieval_require_fresh"] = retrieval_require_fresh
+  history_token_budget = getattr(args, "history_token_budget", None)
+  if history_token_budget is not None:
+    overrides["history_token_budget"] = history_token_budget
   agent_auto_read_only = _optional_bool(getattr(args, "agent_auto_read_only", None))
   if agent_auto_read_only is not None:
     overrides["agent_auto_read_only"] = agent_auto_read_only
@@ -913,16 +1027,38 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.proposal_command == "apply":
-      row = update_proposal_status(
+      row = apply_proposal(
         paths,
         proposal_id=args.id,
-        status="applied",
         notes=args.notes,
+        force=args.force,
       )
       if args.json:
         print(json.dumps(row))
         return 0
-      print(f"Applied proposal {args.id}")
+      if row.get("applied_changes"):
+        print(f"Applied proposal {args.id} (scene {row.get('scene_id', '')} updated)")
+      else:
+        print(f"Applied proposal {args.id} (status only; no drafted body)")
+      return 0
+
+    if args.proposal_command == "draft":
+      row = generate_proposal_draft(
+        paths,
+        proposal_id=args.id,
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      draft = row.get("draft", {})
+      print(
+        f"Drafted proposal {args.id} via "
+        f"{draft.get('provider', 'unknown')}/{draft.get('model', 'unknown')}"
+      )
       return 0
 
     if args.proposal_command == "reject":
@@ -1060,12 +1196,86 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.branch_command == "merge":
-      row = merge_branches(paths, base=args.base, head=args.head)
+      resolutions: dict[str, str] = {}
+      resolution_proposal_ids: list[str] = []
+      for resolution_id in args.resolution:
+        proposal = get_proposal(paths, resolution_id)
+        merge_meta = proposal.get("merge") or {}
+        if proposal.get("source") != "merge_resolution" or not merge_meta.get("path"):
+          raise OpenAuthorError(
+            f"Proposal '{resolution_id}' is not a merge-resolution proposal."
+          )
+        if proposal.get("status") != "pending":
+          raise OpenAuthorError(
+            f"Merge-resolution proposal '{resolution_id}' is not pending."
+          )
+        if merge_meta.get("base") != args.base or merge_meta.get("head") != args.head:
+          raise OpenAuthorError(
+            f"Proposal '{resolution_id}' was drafted for merge "
+            f"{merge_meta.get('base')} <- {merge_meta.get('head')}, "
+            f"not {args.base} <- {args.head}."
+          )
+        resolutions[str(merge_meta["path"])] = str(merge_meta.get("file_content", ""))
+        resolution_proposal_ids.append(resolution_id)
+      row = merge_branches(
+        paths,
+        base=args.base,
+        head=args.head,
+        resolutions=resolutions or None,
+      )
+      for resolution_id in resolution_proposal_ids:
+        update_proposal_status(
+          paths,
+          proposal_id=resolution_id,
+          status="applied",
+          notes=f"Applied as merge resolution in {row.get('merge_commit', '')}",
+        )
       if args.json:
+        row["applied_resolutions"] = resolution_proposal_ids
         print(json.dumps(row))
         return 0
       print(
         f"Merged {row['head']} into {row['base']} at {row['merge_commit']}"
+      )
+      if resolution_proposal_ids:
+        print(f"Applied resolutions: {', '.join(resolution_proposal_ids)}")
+      return 0
+
+    if args.branch_command == "conflicts":
+      row = scan_merge_conflicts(paths, base=args.base, head=args.head)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(
+        f"{row['base']}...{row['head']}\tconflicts={row['conflict_count']}\t"
+        f"auto-mergeable={len(row['auto_mergeable'])}"
+      )
+      for conflict in row["conflicts"]:
+        print(
+          f"conflict\t{conflict['path']}\t{conflict['category']}\t{conflict['kind']}"
+        )
+      for path in row["auto_mergeable"]:
+        print(f"auto\t{path}")
+      return 0
+
+    if args.branch_command == "resolve":
+      row = generate_merge_resolution(
+        paths,
+        base=args.base,
+        head=args.head,
+        scene_path=args.path,
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(
+        f"Drafted merge resolution {row['id']} for {args.path} "
+        f"({args.base} <- {args.head}). Review it, then merge with "
+        f"--resolution {row['id']}."
       )
       return 0
 
@@ -1264,6 +1474,20 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.chat_command == "message":
+      if args.chat_message_command == "truncate":
+        row = truncate_chat_messages(
+          paths,
+          thread_id=args.thread,
+          from_message_id=args.from_message,
+        )
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(
+          f"Removed {row.get('removed_count', 0)} message(s); "
+          f"{row.get('remaining_count', 0)} remain."
+        )
+        return 0
       if args.chat_message_command != "list":
         raise OpenAuthorError(
           f"Unsupported chat message command: {args.chat_message_command}"
@@ -1295,6 +1519,23 @@ def _run(args: argparse.Namespace) -> int:
         f"Executed tool {row.get('tool','')} "
         f"for message {row.get('assistant_message_id','')}"
       )
+      return 0
+
+    if args.chat_command == "diff":
+      row = get_chat_turn_diff(
+        paths,
+        thread_id=args.thread,
+        message_id=args.message,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      files = row.get("files", [])
+      if not files:
+        print("No authoring changes since this turn.")
+        return 0
+      for item in files:
+        print(f"{item.get('status','')}\t{item.get('path','')}")
       return 0
 
     raise OpenAuthorError(f"Unsupported chat command: {args.chat_command}")
@@ -1509,6 +1750,12 @@ def _run(args: argparse.Namespace) -> int:
         f"{row.get('run_id','')}\t{row.get('status','')}\t{row.get('provider','')}\t"
         f"{row.get('scene_id','')}\t{row.get('proposal_id','')}\t{row.get('log_path','')}"
       )
+    return 0
+
+  if args.command == "serve":
+    from .server import run_server
+
+    run_server(_paths_from_cwd())
     return 0
 
   raise OpenAuthorError(f"Unsupported command: {args.command}")

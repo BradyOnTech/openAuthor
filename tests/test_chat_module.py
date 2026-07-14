@@ -3,18 +3,39 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from openauthor.budget import update_generation_budget_policy
 from openauthor.chat import (
+  _build_provider_history,
   create_chat_thread,
   execute_pending_tool_call,
+  get_chat_turn_diff,
   list_chat_messages,
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  truncate_chat_messages,
   update_chat_thread,
 )
-from openauthor.project import initialize_project
+from openauthor.generations import list_generation_runs
+from openauthor.git_ops import create_snapshot, initialize_git
+from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene
+
+
+def _completion(text: str, tool_calls: list | None = None) -> dict:
+  return {
+    "text": text,
+    "tool_calls": tool_calls or [],
+    "input_tokens": 12,
+    "output_tokens": 8,
+    "latency_ms": 3,
+    "provider_attempts": 1,
+    "estimated_cost_usd": None,
+    "generation_id": "gen-000000000000",
+    "log_path": "",
+  }
 
 
 class ChatModuleTests(unittest.TestCase):
@@ -136,6 +157,256 @@ class ChatModuleTests(unittest.TestCase):
 
       context_used = result["user_message"]["context_used"]
       self.assertEqual(context_used["scene_ids"], ["scene-0001", "scene-0002"])
+
+  def test_build_provider_history_maps_roles_and_windows_by_tokens(self) -> None:
+    rows = [
+      {"role": "user", "content": "First question."},
+      {"role": "assistant", "content": "First answer."},
+      {"role": "tool", "content": '{"tool":"scene.list","result":[]}'},
+    ]
+    history = _build_provider_history(rows, token_budget=4000)
+    self.assertEqual(
+      [entry["role"] for entry in history],
+      ["user", "assistant", "user"],
+    )
+    self.assertEqual(history[0]["content"], "First question.")
+    self.assertTrue(history[2]["content"].startswith("Tool result:"))
+
+    self.assertEqual(_build_provider_history(rows, token_budget=0), [])
+
+    old_row = {"role": "user", "content": "old words " * 100}
+    new_row = {"role": "user", "content": "keep this recent question"}
+    windowed = _build_provider_history([old_row, new_row], token_budget=20)
+    self.assertEqual(len(windowed), 1)
+    self.assertEqual(windowed[0]["content"], "keep this recent question")
+
+    # A window that starts mid-conversation must not lead with an assistant
+    # turn, and consecutive same-role entries collapse into one.
+    dangling = _build_provider_history(
+      [
+        {"role": "assistant", "content": "Orphaned answer."},
+        {"role": "user", "content": "Follow-up one."},
+        {"role": "user", "content": "Follow-up two."},
+      ],
+      token_budget=4000,
+    )
+    self.assertEqual(len(dangling), 1)
+    self.assertEqual(dangling[0]["role"], "user")
+    self.assertIn("Follow-up one.", dangling[0]["content"])
+    self.assertIn("Follow-up two.", dangling[0]["content"])
+
+  def test_chat_send_passes_thread_history_to_provider(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat History")
+      thread = create_chat_thread(paths, title="History Thread", provider="local", mode="chat")
+
+      completion = {
+        "text": "Reply one.",
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "latency_ms": 4,
+        "provider_attempts": 1,
+        "estimated_cost_usd": None,
+        "generation_id": "gen-000000000000",
+        "log_path": "",
+      }
+      with patch("openauthor.chat.complete_chat", return_value=completion) as fake:
+        send_chat_message(paths, thread_id=thread["id"], message="First question.")
+        first_history = fake.call_args.kwargs["history"]
+        self.assertEqual(first_history, [])
+
+        send_chat_message(paths, thread_id=thread["id"], message="Second question.")
+        second_history = fake.call_args.kwargs["history"]
+        self.assertEqual(
+          [entry["role"] for entry in second_history],
+          ["user", "assistant"],
+        )
+        self.assertEqual(second_history[0]["content"], "First question.")
+        self.assertEqual(second_history[1]["content"], "Reply one.")
+        self.assertEqual(fake.call_args.kwargs["thread_id"], thread["id"])
+
+  def test_chat_send_writes_generation_log_with_thread_provenance(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat Provenance")
+      thread = create_chat_thread(paths, title="Logged Thread", provider="local", mode="chat")
+
+      result = send_chat_message(
+        paths,
+        thread_id=thread["id"],
+        message="What should happen in the next scene?",
+      )
+      generation_id = result["assistant_message"]["usage"]["generation_id"]
+      self.assertTrue(generation_id.startswith("gen-"))
+
+      runs = list_generation_runs(paths)
+      row = next(item for item in runs if item["run_id"] == generation_id)
+      self.assertEqual(row["kind"], "chat")
+      self.assertEqual(row["thread_id"], thread["id"])
+      self.assertEqual(row["status"], "succeeded")
+      self.assertIsNotNone(row["input_tokens"])
+      self.assertIsNotNone(row["output_tokens"])
+
+  def test_chat_send_blocked_by_budget_policy_fails_closed(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat Budget")
+      thread = create_chat_thread(paths, title="Budget Thread", provider="local", mode="chat")
+      update_generation_budget_policy(paths, max_output_tokens=64)
+
+      with self.assertRaises(OpenAuthorError) as context:
+        send_chat_message(paths, thread_id=thread["id"], message="Hello there.")
+      self.assertIn("budget", str(context.exception).lower())
+
+      runs = list_generation_runs(paths, status="failed")
+      self.assertTrue(
+        any(
+          row["kind"] == "chat"
+          and row["thread_id"] == thread["id"]
+          and row["error_category"] == "budget_policy_violation"
+          for row in runs
+        )
+      )
+      messages = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual([row["role"] for row in messages], ["user"])
+
+  def test_truncate_chat_messages_rewinds_thread(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat Truncate")
+      thread = create_chat_thread(paths, title="Rewind Thread", provider="local", mode="chat")
+      send_chat_message(paths, thread_id=thread["id"], message="First question.")
+      second = send_chat_message(paths, thread_id=thread["id"], message="Second question.")
+
+      before = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual(len(before), 4)
+
+      result = truncate_chat_messages(
+        paths,
+        thread_id=thread["id"],
+        from_message_id=second["user_message"]["id"],
+      )
+      self.assertEqual(result["removed_count"], 2)
+      self.assertEqual(result["remaining_count"], 2)
+      self.assertIn(second["assistant_message"]["id"], result["removed_ids"])
+
+      after = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual([row["id"] for row in after], [row["id"] for row in before[:2]])
+
+      with self.assertRaises(OpenAuthorError):
+        truncate_chat_messages(
+          paths,
+          thread_id=thread["id"],
+          from_message_id="msg-does-not-exist",
+        )
+
+  def test_agent_tool_loop_feeds_results_back_to_provider(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Tool Loop")
+      add_scene(
+        paths,
+        title="Scene One",
+        summary="Opening",
+        pov="narrator",
+        status="draft",
+        body="Opening scene body.",
+      )
+      thread = create_chat_thread(paths, title="Loop Thread", provider="local", mode="agent")
+
+      rounds = [
+        _completion(
+          "Let me check the scene list.",
+          [{"id": "call-1", "name": "scene_list", "args": {}}],
+        ),
+        _completion("You have one scene: Scene One."),
+      ]
+      with patch("openauthor.chat.complete_chat", side_effect=rounds) as fake:
+        result = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="What scenes exist?",
+        )
+
+      self.assertEqual(fake.call_count, 2)
+      continuation = fake.call_args_list[1].kwargs
+      self.assertEqual(continuation["user_prompt"], "")
+      assistant_entry = continuation["history"][-2]
+      tool_entry = continuation["history"][-1]
+      self.assertEqual(assistant_entry["role"], "assistant")
+      self.assertEqual(assistant_entry["tool_calls"][0]["name"], "scene_list")
+      self.assertEqual(tool_entry["role"], "tool")
+      self.assertEqual(tool_entry["tool_call_id"], "call-1")
+      self.assertIn("Scene One", tool_entry["content"])
+
+      self.assertEqual(result["assistant_message"]["content"], "You have one scene: Scene One.")
+      self.assertEqual(len(result["tool_messages"]), 1)
+      self.assertEqual(result["pending_tool_calls"], [])
+      roles = [row["role"] for row in list_chat_messages(paths, thread_id=thread["id"])]
+      self.assertEqual(roles.count("assistant"), 2)
+      self.assertEqual(roles.count("tool"), 1)
+
+  def test_pending_write_execution_snapshots_and_turn_diff(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Turn Checkpoints")
+      initialize_git(paths)
+      add_scene(
+        paths,
+        title="Scene One",
+        summary="Opening",
+        pov="narrator",
+        status="draft",
+        body="Opening scene body.",
+      )
+      create_snapshot(paths, "initial state")
+      thread = create_chat_thread(paths, title="Checkpoint Thread", provider="local", mode="agent")
+
+      queued = _completion(
+        "I will queue a codex entry for approval.",
+        [
+          {
+            "id": "call-9",
+            "name": "codex_add",
+            "args": {"type": "character", "name": "Mira", "description": "Sky captain."},
+          }
+        ],
+      )
+      with patch("openauthor.chat.complete_chat", return_value=queued):
+        result = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="Add Mira to the codex.",
+        )
+      pending = result["pending_tool_calls"]
+      self.assertEqual(len(pending), 1)
+      self.assertEqual(pending[0]["tool"], "codex.add")
+      self.assertEqual(pending[0]["classification"], "write")
+
+      assistant_vcs = result["assistant_message"]["context_used"]["vcs"]
+      self.assertNotEqual(assistant_vcs["base_commit"], "")
+
+      executed = execute_pending_tool_call(
+        paths,
+        thread_id=thread["id"],
+        assistant_message_id=result["assistant_message"]["id"],
+        tool_index=0,
+      )
+      self.assertTrue(executed["vcs"]["changed"])
+      self.assertNotIn("Snapshot failed", executed["vcs"]["snapshot"])
+      self.assertNotEqual(
+        executed["vcs"]["before_commit"],
+        executed["vcs"]["after_commit"],
+      )
+
+      diff = get_chat_turn_diff(
+        paths,
+        thread_id=thread["id"],
+        message_id=result["assistant_message"]["id"],
+      )
+      changed_paths = [item["path"] for item in diff["files"]]
+      self.assertIn("codex/codex.json", changed_paths)
 
 
 if __name__ == "__main__":

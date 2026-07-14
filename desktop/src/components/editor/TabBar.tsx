@@ -40,7 +40,7 @@ export function TabBar() {
               closeTab(tab.id);
             }}
           >
-            \u00D7
+            {"\u00D7"}
           </span>
         </div>
       ))}

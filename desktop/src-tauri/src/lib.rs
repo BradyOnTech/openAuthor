@@ -1,7 +1,14 @@
 use serde::Serialize;
+use serde_json::Value;
+use std::collections::HashMap;
 use std::env;
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{ChildStdin, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc, Mutex};
+use std::time::Duration;
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Serialize)]
 struct CoreCommandResponse {
@@ -159,6 +166,205 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
   }
 }
 
+const SIDECAR_EVENT_CHANNEL: &str = "openauthor://sidecar-event";
+const SIDECAR_DEFAULT_TIMEOUT_MS: u64 = 300_000;
+
+struct SidecarHandle {
+  stdin: Mutex<ChildStdin>,
+  pending: Arc<Mutex<HashMap<String, mpsc::Sender<Value>>>>,
+  alive: Arc<AtomicBool>,
+}
+
+#[derive(Default)]
+struct SidecarRegistry(Mutex<HashMap<String, Arc<SidecarHandle>>>);
+
+fn combined_pythonpath() -> Option<String> {
+  let root = repo_root()?;
+  let root_str = root.to_string_lossy().to_string();
+  Some(match env::var("PYTHONPATH") {
+    Ok(existing) if !existing.trim().is_empty() => {
+      format!("{}{}{}", root_str, path_separator(), existing)
+    }
+    _ => root_str,
+  })
+}
+
+fn resolve_sidecar_python(project_root: &PathBuf) -> Result<String, String> {
+  for candidate in python_candidates(project_root) {
+    let mut probe = Command::new(&candidate);
+    probe
+      .arg("-c")
+      .arg("import openauthor")
+      .current_dir(project_root)
+      .stdout(Stdio::null())
+      .stderr(Stdio::null());
+    if let Some(pythonpath) = combined_pythonpath() {
+      probe.env("PYTHONPATH", pythonpath);
+    }
+    if let Ok(status) = probe.status() {
+      if status.success() {
+        return Ok(candidate);
+      }
+    }
+  }
+  Err("No python interpreter with the openauthor module was found.".to_string())
+}
+
+fn frame_id_key(id: &Value) -> String {
+  match id {
+    Value::String(text) => text.clone(),
+    other => other.to_string(),
+  }
+}
+
+fn spawn_sidecar(
+  app: AppHandle,
+  project_root: &PathBuf,
+  registry_key: String,
+) -> Result<Arc<SidecarHandle>, String> {
+  let python_bin = resolve_sidecar_python(project_root)?;
+  let mut command = Command::new(&python_bin);
+  command
+    .arg("-m")
+    .arg("openauthor")
+    .arg("serve")
+    .current_dir(project_root)
+    .stdin(Stdio::piped())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::null());
+  if let Some(pythonpath) = combined_pythonpath() {
+    command.env("PYTHONPATH", pythonpath);
+  }
+  let mut child = command
+    .spawn()
+    .map_err(|error| format!("Failed to spawn sidecar via '{python_bin}': {error}"))?;
+
+  let stdin = child
+    .stdin
+    .take()
+    .ok_or_else(|| "Sidecar stdin unavailable.".to_string())?;
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| "Sidecar stdout unavailable.".to_string())?;
+
+  let handle = Arc::new(SidecarHandle {
+    stdin: Mutex::new(stdin),
+    pending: Arc::new(Mutex::new(HashMap::new())),
+    alive: Arc::new(AtomicBool::new(true)),
+  });
+
+  let reader_handle = handle.clone();
+  std::thread::spawn(move || {
+    let mut lines = BufReader::new(stdout).lines();
+    while let Some(Ok(line)) = lines.next() {
+      let trimmed = line.trim();
+      if trimmed.is_empty() {
+        continue;
+      }
+      let frame: Value = match serde_json::from_str(trimmed) {
+        Ok(value) => value,
+        Err(_) => continue,
+      };
+      if frame.get("event").is_some() {
+        let _ = app.emit(
+          SIDECAR_EVENT_CHANNEL,
+          serde_json::json!({ "projectRoot": registry_key, "frame": frame }),
+        );
+        continue;
+      }
+      if let Some(id) = frame.get("id") {
+        let id_key = frame_id_key(id);
+        let sender = reader_handle.pending.lock().unwrap().remove(&id_key);
+        if let Some(sender) = sender {
+          let _ = sender.send(frame);
+        }
+      }
+    }
+    reader_handle.alive.store(false, Ordering::SeqCst);
+    reader_handle.pending.lock().unwrap().clear();
+    let registry = app.state::<SidecarRegistry>();
+    let mut map = registry.0.lock().unwrap();
+    if let Some(current) = map.get(&registry_key) {
+      if Arc::ptr_eq(current, &reader_handle) {
+        map.remove(&registry_key);
+      }
+    }
+    drop(map);
+    let _ = child.wait();
+  });
+
+  Ok(handle)
+}
+
+#[tauri::command]
+async fn sidecar_request(
+  app: AppHandle,
+  registry: State<'_, SidecarRegistry>,
+  project_root: String,
+  request: Value,
+  timeout_ms: Option<u64>,
+) -> Result<Value, String> {
+  let root = resolve_project_root(&project_root);
+  if !root.exists() {
+    return Err(format!(
+      "Project root does not exist: {}",
+      root.to_string_lossy()
+    ));
+  }
+  let id = request
+    .get("id")
+    .ok_or_else(|| "Sidecar request frame requires an id.".to_string())?;
+  let id_key = frame_id_key(id);
+  let registry_key = root.to_string_lossy().to_string();
+
+  let handle = {
+    let mut map = registry.0.lock().unwrap();
+    match map.get(&registry_key) {
+      Some(existing) if existing.alive.load(Ordering::SeqCst) => existing.clone(),
+      _ => {
+        let spawned = spawn_sidecar(app.clone(), &root, registry_key.clone())?;
+        map.insert(registry_key.clone(), spawned.clone());
+        spawned
+      }
+    }
+  };
+
+  let (sender, receiver) = mpsc::channel::<Value>();
+  handle.pending.lock().unwrap().insert(id_key.clone(), sender);
+
+  let line = serde_json::to_string(&request)
+    .map_err(|error| format!("Failed to encode sidecar request: {error}"))?;
+  {
+    let mut stdin = handle.stdin.lock().unwrap();
+    if let Err(error) = stdin
+      .write_all(line.as_bytes())
+      .and_then(|_| stdin.write_all(b"\n"))
+      .and_then(|_| stdin.flush())
+    {
+      handle.pending.lock().unwrap().remove(&id_key);
+      handle.alive.store(false, Ordering::SeqCst);
+      return Err(format!("Failed to write to sidecar: {error}"));
+    }
+  }
+
+  let timeout = Duration::from_millis(timeout_ms.unwrap_or(SIDECAR_DEFAULT_TIMEOUT_MS));
+  let outcome =
+    tauri::async_runtime::spawn_blocking(move || receiver.recv_timeout(timeout))
+      .await
+      .map_err(|error| format!("Sidecar wait failed: {error}"))?;
+  match outcome {
+    Ok(frame) => Ok(frame),
+    Err(mpsc::RecvTimeoutError::Timeout) => {
+      handle.pending.lock().unwrap().remove(&id_key);
+      Err("Sidecar request timed out.".to_string())
+    }
+    Err(mpsc::RecvTimeoutError::Disconnected) => {
+      Err("Sidecar exited before responding.".to_string())
+    }
+  }
+}
+
 #[tauri::command]
 fn pick_folder(starting_path: Option<String>) -> Result<Option<String>, String> {
   let mut dialog = rfd::FileDialog::new();
@@ -244,9 +450,11 @@ fn core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandRe
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .manage(SidecarRegistry::default())
     .invoke_handler(tauri::generate_handler![
       project_status,
       core_command,
+      sidecar_request,
       pick_folder,
       pick_zip_file
     ])

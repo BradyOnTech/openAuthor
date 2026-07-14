@@ -7,7 +7,7 @@ export function StatusBar() {
 
   const projectName = projectRoot ? projectRoot.split("/").pop() || "Project" : "No Project";
   const sceneCount = scenes.length;
-  const wordCount = 0; // will be computed from scene data later
+  const wordCount = scenes.reduce((sum, s) => sum + (s.word_count ?? 0), 0);
   const currentBranch = branches.find((b) => b.current)?.name ?? "\u2014";
 
   const dailyTokensUsed = budget?.usage?.daily?.total_tokens ?? 0;

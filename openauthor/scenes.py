@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import json
+import os
 import re
 from pathlib import Path
+from typing import Any
 
-from .project import OpenAuthorError, ProjectPaths, next_scene_index, utc_now
+from .project import OpenAuthorError, ProjectPaths, atomic_write_text, next_scene_index, utc_now
 
 
 def slugify(value: str) -> str:
@@ -22,6 +25,55 @@ def scene_id(index: int) -> str:
   return f"scene-{index:04d}"
 
 
+def _serialize_front_matter_value(value: str) -> str:
+  # Multi-line or quote-leading values are JSON-encoded so they cannot break
+  # the line-oriented frontmatter block (e.g. inject a `---` terminator).
+  if "\n" in value or "\r" in value or value != value.strip() or value.startswith('"'):
+    return json.dumps(value, ensure_ascii=False)
+  return value
+
+
+def _parse_front_matter_value(raw: str) -> str:
+  stripped = raw.strip()
+  if stripped.startswith('"') and stripped.endswith('"') and len(stripped) >= 2:
+    try:
+      decoded = json.loads(stripped)
+    except json.JSONDecodeError:
+      return stripped
+    if isinstance(decoded, str):
+      return decoded
+  return stripped
+
+
+def _heading_text(title: str) -> str:
+  return " ".join(title.split()) or "Untitled Scene"
+
+
+def render_scene_markdown(
+  *,
+  scene_identifier: str,
+  title: str,
+  summary: str,
+  pov: str,
+  status: str,
+  created_at: str,
+  updated_at: str,
+  body: str,
+) -> str:
+  return (
+    "---\n"
+    f"id: {_serialize_front_matter_value(scene_identifier)}\n"
+    f"title: {_serialize_front_matter_value(title)}\n"
+    f"summary: {_serialize_front_matter_value(summary)}\n"
+    f"pov: {_serialize_front_matter_value(pov)}\n"
+    f"status: {_serialize_front_matter_value(status)}\n"
+    f"created_at: {_serialize_front_matter_value(created_at)}\n"
+    f"updated_at: {_serialize_front_matter_value(updated_at)}\n"
+    "---\n\n"
+    f"{body.rstrip()}\n"
+  )
+
+
 def build_scene_markdown(
   *,
   scene_identifier: str,
@@ -32,18 +84,16 @@ def build_scene_markdown(
   body: str,
 ) -> str:
   timestamp = utc_now()
-  return (
-    "---\n"
-    f"id: {scene_identifier}\n"
-    f"title: {title}\n"
-    f"summary: {summary}\n"
-    f"pov: {pov}\n"
-    f"status: {status}\n"
-    f"created_at: {timestamp}\n"
-    f"updated_at: {timestamp}\n"
-    "---\n\n"
-    f"# {title}\n\n"
-    f"{body.rstrip()}\n"
+  initial_body = f"# {_heading_text(title)}\n\n{body.rstrip()}"
+  return render_scene_markdown(
+    scene_identifier=scene_identifier,
+    title=title,
+    summary=summary,
+    pov=pov,
+    status=status,
+    created_at=timestamp,
+    updated_at=timestamp,
+    body=initial_body,
   )
 
 
@@ -57,20 +107,32 @@ def add_scene(
   body: str = "",
 ) -> Path:
   index = next_scene_index(paths)
-  filename = scene_filename(index, title)
-  file_path = paths.scenes_dir / filename
-  file_path.write_text(
-    build_scene_markdown(
-      scene_identifier=scene_id(index),
-      title=title,
-      summary=summary,
-      pov=pov,
-      status=status,
-      body=body,
-    ),
-    encoding="utf-8",
-  )
-  return file_path
+  for _ in range(10_000):
+    filename = scene_filename(index, title)
+    file_path = paths.scenes_dir / filename
+    # Exclusive create so concurrent adds cannot silently overwrite each other;
+    # an index already claimed under a different slug also forces a bump.
+    if any(paths.scenes_dir.glob(f"{index:04d}-*.md")):
+      index += 1
+      continue
+    try:
+      fd = os.open(file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+      index += 1
+      continue
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+      handle.write(
+        build_scene_markdown(
+          scene_identifier=scene_id(index),
+          title=title,
+          summary=summary,
+          pov=pov,
+          status=status,
+          body=body,
+        )
+      )
+    return file_path
+  raise OpenAuthorError("Unable to allocate a scene index.")
 
 
 def parse_front_matter(scene_file: Path) -> dict[str, str]:
@@ -91,15 +153,16 @@ def split_scene_text(text: str) -> tuple[dict[str, str], str]:
     if ":" not in line:
       continue
     key, value = line.split(":", 1)
-    parsed[key.strip()] = value.strip()
+    parsed[key.strip()] = _parse_front_matter_value(value)
   body = text[end + len("\n---\n") :].lstrip("\n")
   return parsed, body
 
 
-def list_scenes(paths: ProjectPaths) -> list[dict[str, str]]:
-  rows: list[dict[str, str]] = []
+def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
+  rows: list[dict[str, Any]] = []
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
-    front_matter = parse_front_matter(scene_file)
+    text = scene_file.read_text(encoding="utf-8")
+    front_matter, body = split_scene_text(text)
     rows.append(
       {
         "id": front_matter.get("id", scene_file.stem),
@@ -110,6 +173,7 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, str]]:
         "created_at": front_matter.get("created_at", ""),
         "updated_at": front_matter.get("updated_at", ""),
         "path": str(scene_file.relative_to(paths.root)),
+        "word_count": len(body.split()),
       }
     )
   return rows
@@ -163,18 +227,15 @@ def update_scene(
     "body": body if body is not None else current["body"],
   }
 
-  content = (
-    "---\n"
-    f"id: {updated['id']}\n"
-    f"title: {updated['title']}\n"
-    f"summary: {updated['summary']}\n"
-    f"pov: {updated['pov']}\n"
-    f"status: {updated['status']}\n"
-    f"created_at: {updated['created_at']}\n"
-    f"updated_at: {updated['updated_at']}\n"
-    "---\n\n"
-    f"# {updated['title']}\n\n"
-    f"{updated['body'].rstrip()}\n"
+  content = render_scene_markdown(
+    scene_identifier=updated["id"],
+    title=updated["title"],
+    summary=updated["summary"],
+    pov=updated["pov"],
+    status=updated["status"],
+    created_at=updated["created_at"],
+    updated_at=updated["updated_at"],
+    body=updated["body"],
   )
-  scene_file.write_text(content, encoding="utf-8")
+  atomic_write_text(scene_file, content)
   return scene_file

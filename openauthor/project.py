@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -55,6 +56,31 @@ class ProjectPaths:
 
 def utc_now() -> str:
   return datetime.now(UTC).isoformat()
+
+
+def atomic_write_text(path: Path, content: str) -> None:
+  path.parent.mkdir(parents=True, exist_ok=True)
+  fd, temp_name = tempfile.mkstemp(
+    prefix=f".{path.name}.",
+    suffix=".tmp",
+    dir=path.parent,
+  )
+  try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+      handle.write(content)
+      handle.flush()
+      os.fsync(handle.fileno())
+    os.replace(temp_name, path)
+  except BaseException:
+    try:
+      os.unlink(temp_name)
+    except FileNotFoundError:
+      pass
+    raise
+
+
+def atomic_write_json(path: Path, payload: Any) -> None:
+  atomic_write_text(path, json.dumps(payload, indent=2) + "\n")
 
 
 def get_project_paths(root: Path) -> ProjectPaths:
@@ -129,7 +155,7 @@ def initialize_project(
         "chats": "workspace-jsonl",
       },
     }
-    paths.config_file.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    atomic_write_json(paths.config_file, config)
 
   manuscript_readme = paths.root / "manuscript" / "README.md"
   if not manuscript_readme.exists():
@@ -231,7 +257,7 @@ def read_project_config(paths: ProjectPaths) -> dict:
 
 
 def write_project_config(paths: ProjectPaths, config: dict) -> None:
-  paths.config_file.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(paths.config_file, config)
 
 
 def ensure_project_identity(paths: ProjectPaths, expected_project_id: str | None = None) -> dict:

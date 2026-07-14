@@ -103,6 +103,7 @@ export type SceneSummary = {
   created_at: string;
   updated_at: string;
   path: string;
+  word_count?: number;
 };
 
 export type SceneDetail = {
@@ -130,7 +131,32 @@ export type ProposalRecord = {
   created_at: string;
   updated_at: string;
   notes: string;
-  source?: "manual" | "ai_generate" | "chat_agent" | string;
+  source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
+  proposed_body?: string;
+  applied_changes?: boolean;
+  applied_at?: string;
+  pre_apply_snapshot?: string;
+  draft?: {
+    generation_id: string;
+    provider: string;
+    model: string;
+    temperature: number;
+    max_output_tokens: number;
+    input_tokens: number;
+    output_tokens: number;
+    latency_ms: number;
+    estimated_cost_usd: number | null;
+    changed: boolean;
+    log_path: string;
+    created_at: string;
+  };
+  merge?: {
+    base: string;
+    head: string;
+    merge_base: string;
+    path: string;
+    file_content: string;
+  };
   generation?: {
     id: string;
     provider: ProposalProvider;
@@ -200,6 +226,7 @@ export type ChatThreadRecord = {
     retrieval_limit: number;
     retrieval_min_score: number;
     retrieval_require_fresh: boolean;
+    history_token_budget?: number;
     agent_auto_read_only: boolean;
     agent_confirm_writes: boolean;
   };
@@ -208,6 +235,7 @@ export type ChatThreadRecord = {
 };
 
 export type ChatToolCall = {
+  id?: string;
   tool: string;
   args: Record<string, unknown>;
   classification: "read" | "write" | "risky" | string;
@@ -231,6 +259,7 @@ export type ChatMessageRecord = {
     estimated_cost_usd?: number | null;
     provider?: ProposalProvider | string;
     model?: string;
+    generation_id?: string;
   };
 };
 
@@ -242,11 +271,49 @@ export type ChatSendResult = {
   pending_tool_calls: ChatToolCall[];
 };
 
+export type ChatRetrievalCitation = {
+  source_type: "scene" | "codex" | string;
+  source_ref: string;
+  source_title?: string;
+  source_path?: string;
+  chunk_id?: string;
+  score?: number | null;
+  excerpt?: string;
+};
+
+export type ChatTurnVcs = {
+  branch?: string;
+  base_commit?: string;
+  before_commit?: string;
+  after_commit?: string;
+  changed?: boolean;
+  snapshot?: string;
+};
+
+export type ChatTurnDiffFile = {
+  status: string;
+  path: string;
+  added: number | null;
+  deleted: number | null;
+};
+
+export type ChatTurnDiff = {
+  thread_id: string;
+  message_id: string;
+  base: string;
+  head: string;
+  ahead_by: number;
+  behind_by: number;
+  files: ChatTurnDiffFile[];
+};
+
 export type GenerationRunSummary = {
   run_id: string;
+  kind?: "proposal" | "chat" | string;
   status: "succeeded" | "failed" | string;
   created_at: string;
   scene_id: string;
+  thread_id?: string;
   provider: ProposalProvider | string;
   model: string;
   proposal_id: string;
@@ -489,6 +556,29 @@ export type BranchMergeResult = {
   merge_commit: string;
   current_branch: string;
   merge_output: string;
+  resolved_paths?: string[];
+  applied_resolutions?: string[];
+};
+
+export type MergeConflict = {
+  path: string;
+  category: "scene" | "codex" | "project" | "budget" | "other" | string;
+  kind: "content" | "delete_modify" | string;
+  conflict_count: number;
+  ours_text: string | null;
+  theirs_text: string | null;
+  ancestor_text: string;
+  merged_with_markers?: string;
+};
+
+export type MergeConflictScan = {
+  base: string;
+  head: string;
+  merge_base: string;
+  overlap_count: number;
+  auto_mergeable: string[];
+  conflicts: MergeConflict[];
+  conflict_count: number;
 };
 
 export type WorkspaceAuditIssue = {

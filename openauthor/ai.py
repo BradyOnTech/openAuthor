@@ -14,8 +14,8 @@ from .checks import run_continuity_checks
 from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
 from .auth import get_access_token, get_auth_status
-from .project import OpenAuthorError, ProjectPaths, utc_now
-from .proposals import create_proposal, get_proposal
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
+from .proposals import create_proposal, get_proposal, set_proposal_draft
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
@@ -24,12 +24,16 @@ SUPPORTED_RETRIEVAL_MODES = {"off", "auto", "required"}
 DEFAULT_MODELS = {
   "local": "heuristic-v1",
   "openai": "gpt-4.1-mini",
-  "anthropic": "claude-3-5-haiku-latest",
+  "anthropic": "claude-haiku-4-5",
   "openrouter": "openai/gpt-4.1-mini",
   "openai-codex": "codex-mini-latest",
 }
 PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+
+class ChatInterrupted(OpenAuthorError):
+  """Raised from an on_delta callback to abort an in-flight chat turn."""
 
 
 class ProviderExecutionError(OpenAuthorError):
@@ -210,6 +214,202 @@ def _json_post(
       ) from error
 
 
+def _sse_data_lines(response: Any) -> Any:
+  for raw_line in response:
+    line = raw_line.decode("utf-8", errors="replace").strip()
+    if not line.startswith("data:"):
+      continue
+    data = line[len("data:") :].strip()
+    if data == "" or data == "[DONE]":
+      continue
+    try:
+      yield json.loads(data)
+    except json.JSONDecodeError:
+      continue
+
+
+def _stream_post(
+  *,
+  provider: str,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  consume: Any,
+) -> tuple[dict[str, Any], int]:
+  """POST an SSE request; `consume` reads parsed data frames and returns the
+  final result. Connection failures retry like `_json_post`, but only while
+  no stream data has been consumed (a partial stream is never replayed)."""
+  max_retries, base_ms = _retry_settings()
+  request = urllib.request.Request(
+    url,
+    data=json.dumps(payload).encode("utf-8"),
+    headers={
+      "Content-Type": "application/json",
+      "Accept": "text/event-stream",
+      **headers,
+    },
+    method="POST",
+  )
+  attempts = 0
+  while True:
+    attempts += 1
+    started = {"value": False}
+
+    def _frames(response: Any) -> Any:
+      for frame in _sse_data_lines(response):
+        started["value"] = True
+        yield frame
+
+    try:
+      with urllib.request.urlopen(request, timeout=90) as response:
+        return consume(_frames(response)), attempts
+    except urllib.error.HTTPError as error:
+      details = error.read().decode("utf-8", errors="replace")
+      category = _http_error_category(error.code, details)
+      retriable = _is_retryable_http_status(error.code) and not started["value"]
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider stream failed with HTTP {error.code}: {_truncate(details, 280)}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        http_status=error.code,
+        attempts=attempts,
+      ) from error
+    except urllib.error.URLError as error:
+      reason = str(error.reason)
+      category = "timeout" if "timed out" in reason.lower() else "network_error"
+      retriable = not started["value"]
+      if retriable and attempts <= max_retries:
+        time.sleep((base_ms * (2 ** (attempts - 1))) / 1000.0)
+        continue
+      raise ProviderExecutionError(
+        f"Provider stream failed: {reason}",
+        category=category,
+        retriable=retriable,
+        provider=provider,
+        attempts=attempts,
+      ) from error
+
+
+def _openai_style_stream(
+  *,
+  provider: str,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  on_delta: Any,
+) -> dict[str, Any]:
+  request_payload = {
+    **payload,
+    "stream": True,
+    "stream_options": {"include_usage": True},
+  }
+
+  def consume(frames: Any) -> dict[str, Any]:
+    parts: list[str] = []
+    usage: dict[str, Any] = {}
+    for frame in frames:
+      if not isinstance(frame, dict):
+        continue
+      frame_usage = frame.get("usage")
+      if isinstance(frame_usage, dict):
+        usage = frame_usage
+      choices = frame.get("choices") or []
+      if not choices or not isinstance(choices[0], dict):
+        continue
+      delta = choices[0].get("delta", {})
+      content = delta.get("content") if isinstance(delta, dict) else None
+      if isinstance(content, str) and content != "":
+        parts.append(content)
+        on_delta(content)
+    return {"text": "".join(parts).strip(), "usage": usage}
+
+  result, attempts = _stream_post(
+    provider=provider,
+    url=url,
+    headers=headers,
+    payload=request_payload,
+    consume=consume,
+  )
+  usage = result["usage"]
+  return {
+    "text": result["text"],
+    "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
+    "output_tokens": int(usage.get("completion_tokens", 0) or 0),
+    "raw_usage": usage,
+    "attempts": attempts,
+  }
+
+
+def _anthropic_stream(
+  *,
+  url: str,
+  headers: dict[str, str],
+  payload: dict[str, Any],
+  on_delta: Any,
+) -> dict[str, Any]:
+  request_payload = {**payload, "stream": True}
+
+  def consume(frames: Any) -> dict[str, Any]:
+    parts: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    for frame in frames:
+      if not isinstance(frame, dict):
+        continue
+      frame_type = frame.get("type", "")
+      if frame_type == "message_start":
+        message_usage = frame.get("message", {}).get("usage", {})
+        if isinstance(message_usage, dict):
+          input_tokens = int(message_usage.get("input_tokens", 0) or 0)
+      elif frame_type == "content_block_delta":
+        delta = frame.get("delta", {})
+        text = delta.get("text") if isinstance(delta, dict) else None
+        if isinstance(text, str) and text != "":
+          parts.append(text)
+          on_delta(text)
+      elif frame_type == "message_delta":
+        delta_usage = frame.get("usage", {})
+        if isinstance(delta_usage, dict):
+          output_tokens = int(delta_usage.get("output_tokens", 0) or 0)
+    return {
+      "text": "".join(parts).strip(),
+      "input_tokens": input_tokens,
+      "output_tokens": output_tokens,
+    }
+
+  result, attempts = _stream_post(
+    provider="anthropic",
+    url=url,
+    headers=headers,
+    payload=request_payload,
+    consume=consume,
+  )
+  return {
+    "text": result["text"],
+    "input_tokens": result["input_tokens"],
+    "output_tokens": result["output_tokens"],
+    "raw_usage": {
+      "input_tokens": result["input_tokens"],
+      "output_tokens": result["output_tokens"],
+    },
+    "attempts": attempts,
+  }
+
+
+def _stream_local_text(text: str, on_delta: Any) -> None:
+  words = text.split(" ")
+  chunk_size = 6
+  for start in range(0, len(words), chunk_size):
+    chunk = " ".join(words[start : start + chunk_size])
+    if start + chunk_size < len(words):
+      chunk += " "
+    on_delta(chunk)
+
+
 def _load_pricing(paths: ProjectPaths) -> dict[str, Any]:
   try:
     return json.loads(paths.pricing_file.read_text(encoding="utf-8"))
@@ -287,35 +487,72 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
   )
 
 
-def _generate_local_chat_text(user_prompt: str) -> str:
+def _generate_local_draft_text(context: dict[str, Any], instruction: str) -> str:
+  scene = context.get("scene", {})
+  body = str(scene.get("body", "")).rstrip()
+  directive = " ".join(str(instruction).split())
+  if len(directive) > 160:
+    directive = directive[:157] + "..."
+  revised = f"{body}\n\n(Revised per: {directive})" if body else f"(Revised per: {directive})"
+  return revised.strip()
+
+
+def _generate_local_merge_text(context: dict[str, Any], instruction: str) -> str:
+  ours = str(context.get("ours_body", "")).strip()
+  theirs = str(context.get("theirs_body", "")).strip()
+  base = str(context.get("merge_base_label", "base"))
+  head = str(context.get("merge_head_label", "head"))
+  parts = [part for part in (ours, theirs) if part]
+  combined = "\n\n".join(parts)
+  return f"{combined}\n\n(Reconciled '{base}' and '{head}' revisions.)".strip()
+
+
+def _generate_local_chat_result(
+  user_prompt: str,
+  *,
+  tools_enabled: bool,
+) -> tuple[str, list[dict[str, Any]]]:
   lowered = user_prompt.lower()
-  if "list scenes" in lowered:
-    return (
-      "I can help by listing scenes.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"scene.list","args":{}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
-  if "continuity" in lowered and "check" in lowered:
-    return (
-      "I can run continuity checks.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"check.continuity","args":{}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
-  if "create proposal" in lowered:
-    return (
-      "I can draft a proposal card.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"proposal.add","args":{"title":"Agent Draft","instruction":"Intent:\\n- Refine scene beats.","scene_id":"scene-0001"}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
+  if tools_enabled:
+    if user_prompt.strip() == "":
+      return (
+        "I reviewed the tool results and folded them into my guidance:\n"
+        "- Keep motivations and continuity anchors explicit.\n"
+        "- Flag any conflicts for review before drafting.",
+        [],
+      )
+    if "list scenes" in lowered:
+      return (
+        "I can help by listing scenes.",
+        [{"id": "local-call-1", "name": "scene_list", "args": {}}],
+      )
+    if "continuity" in lowered and "check" in lowered:
+      return (
+        "I can run continuity checks.",
+        [{"id": "local-call-1", "name": "check_continuity", "args": {}}],
+      )
+    if "create proposal" in lowered:
+      return (
+        "I can draft a proposal card.",
+        [
+          {
+            "id": "local-call-1",
+            "name": "proposal_add",
+            "args": {
+              "title": "Agent Draft",
+              "instruction": "Intent:\n- Refine scene beats.",
+              "scene_id": "scene-0001",
+            },
+          }
+        ],
+      )
   return (
     "I reviewed your request and context. "
     "Here is a concise response:\n"
     "- Clarify the specific scene goal.\n"
     "- Keep character motivations explicit.\n"
-    "- Preserve established continuity anchors."
+    "- Preserve established continuity anchors.",
+    [],
   )
 
 
@@ -501,13 +738,151 @@ def _quality_from_normalization(diagnostics: dict[str, Any]) -> dict[str, Any]:
   }
 
 
+def _chat_completion_messages(
+  *,
+  system_prompt: str,
+  history: list[dict[str, Any]],
+  user_prompt: str,
+) -> list[dict[str, Any]]:
+  messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
+  for entry in history:
+    role = entry["role"]
+    if role == "tool":
+      messages.append(
+        {
+          "role": "tool",
+          "tool_call_id": entry["tool_call_id"],
+          "content": entry["content"],
+        }
+      )
+      continue
+    tool_calls = entry.get("tool_calls") or []
+    if role == "assistant" and tool_calls:
+      messages.append(
+        {
+          "role": "assistant",
+          "content": entry.get("content") or None,
+          "tool_calls": [
+            {
+              "id": call["id"],
+              "type": "function",
+              "function": {
+                "name": call["name"],
+                "arguments": json.dumps(call["args"]),
+              },
+            }
+            for call in tool_calls
+          ],
+        }
+      )
+      continue
+    messages.append({"role": role, "content": entry["content"]})
+  if user_prompt.strip() != "":
+    messages.append({"role": "user", "content": user_prompt})
+  return messages
+
+
+def _normalize_chat_history(
+  history: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+  rows: list[dict[str, Any]] = []
+  for item in history or []:
+    if not isinstance(item, dict):
+      continue
+    role = str(item.get("role", "")).strip()
+    content = str(item.get("content", ""))
+    if role == "tool":
+      tool_call_id = str(item.get("tool_call_id", "")).strip()
+      if tool_call_id == "" or content.strip() == "":
+        continue
+      rows.append(
+        {
+          "role": "tool",
+          "tool_call_id": tool_call_id,
+          "name": str(item.get("name", "")).strip(),
+          "content": content,
+        }
+      )
+      continue
+    if role not in {"user", "assistant"}:
+      continue
+    raw_tool_calls = item.get("tool_calls")
+    tool_calls: list[dict[str, Any]] = []
+    if role == "assistant" and isinstance(raw_tool_calls, list):
+      for call in raw_tool_calls:
+        if not isinstance(call, dict):
+          continue
+        name = str(call.get("name", "")).strip()
+        args = call.get("args", {})
+        if name == "" or not isinstance(args, dict):
+          continue
+        tool_calls.append(
+          {
+            "id": str(call.get("id", "")).strip() or f"call-{len(tool_calls) + 1}",
+            "name": name,
+            "args": args,
+          }
+        )
+    if tool_calls:
+      rows.append({"role": "assistant", "content": content, "tool_calls": tool_calls})
+      continue
+    if content.strip() == "":
+      continue
+    rows.append({"role": role, "content": content})
+  return rows
+
+
+def _openai_tools_payload(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  return [
+    {
+      "type": "function",
+      "function": {
+        "name": tool["name"],
+        "description": tool["description"],
+        "parameters": tool["parameters"],
+      },
+    }
+    for tool in tools
+  ]
+
+
+def _parse_openai_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
+  rows: list[dict[str, Any]] = []
+  for item in message.get("tool_calls") or []:
+    if not isinstance(item, dict):
+      continue
+    function = item.get("function", {})
+    if not isinstance(function, dict):
+      continue
+    name = str(function.get("name", "")).strip()
+    if name == "":
+      continue
+    try:
+      args = json.loads(function.get("arguments") or "{}")
+    except json.JSONDecodeError:
+      args = {}
+    if not isinstance(args, dict):
+      args = {}
+    rows.append(
+      {
+        "id": str(item.get("id", "")) or f"call-{len(rows) + 1}",
+        "name": name,
+        "args": args,
+      }
+    )
+  return rows
+
+
 def _openai_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENAI_API_KEY")
   if not api_key:
@@ -520,13 +895,24 @@ def _openai_chat_completion(
   base_url = os.getenv("OPENAUTHOR_OPENAI_BASE_URL", "https://api.openai.com/v1")
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
+    return _openai_style_stream(
+      provider="openai",
+      url=f"{base_url.rstrip('/')}/chat/completions",
+      headers={"Authorization": f"Bearer {api_key}"},
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openai",
     url=f"{base_url.rstrip('/')}/chat/completions",
@@ -547,6 +933,7 @@ def _openai_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -554,13 +941,71 @@ def _openai_chat_completion(
   }
 
 
+def _anthropic_tools_payload(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  return [
+    {
+      "name": tool["name"],
+      "description": tool["description"],
+      "input_schema": tool["parameters"],
+    }
+    for tool in tools
+  ]
+
+
+def _anthropic_content_blocks(entry: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+  if entry["role"] == "tool":
+    return (
+      "user",
+      [
+        {
+          "type": "tool_result",
+          "tool_use_id": entry["tool_call_id"],
+          "content": entry["content"],
+        }
+      ],
+    )
+  tool_calls = entry.get("tool_calls") or []
+  if entry["role"] == "assistant" and tool_calls:
+    blocks: list[dict[str, Any]] = []
+    if str(entry.get("content", "")).strip():
+      blocks.append({"type": "text", "text": entry["content"]})
+    blocks.extend(
+      {
+        "type": "tool_use",
+        "id": call["id"],
+        "name": call["name"],
+        "input": call["args"],
+      }
+      for call in tool_calls
+    )
+    return ("assistant", blocks)
+  return (entry["role"], [{"type": "text", "text": entry["content"]}])
+
+
+def _anthropic_model_accepts_temperature(model: str) -> bool:
+  # Sampling params were removed on newer Anthropic models (Opus 4.7+,
+  # Sonnet 5, Fable 5) and sending temperature returns a 400.
+  normalized = model.lower()
+  rejecting_prefixes = (
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-sonnet-5",
+    "claude-fable-5",
+    "claude-mythos-5",
+  )
+  return not normalized.startswith(rejecting_prefixes)
+
+
 def _anthropic_message(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, Any]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("ANTHROPIC_API_KEY")
   if not api_key:
@@ -571,13 +1016,39 @@ def _anthropic_message(
       provider="anthropic",
     )
   base_url = os.getenv("OPENAUTHOR_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+  entries: list[dict[str, Any]] = list(history)
+  if user_prompt.strip() != "":
+    entries.append({"role": "user", "content": user_prompt})
+  # The Messages API requires alternating roles, so fold consecutive
+  # same-role entries (e.g. a trailing tool-result plus the new user
+  # message) into one message by concatenating their content blocks.
+  messages: list[dict[str, Any]] = []
+  for entry in entries:
+    role, blocks = _anthropic_content_blocks(entry)
+    if messages and messages[-1]["role"] == role:
+      messages[-1]["content"].extend(blocks)
+    else:
+      messages.append({"role": role, "content": blocks})
   payload: dict[str, Any] = {
     "model": model,
     "system": system_prompt,
-    "messages": [{"role": "user", "content": user_prompt}],
-    "temperature": temperature,
+    "messages": messages,
     "max_tokens": max_output_tokens,
   }
+  if _anthropic_model_accepts_temperature(model):
+    payload["temperature"] = temperature
+  if tools:
+    payload["tools"] = _anthropic_tools_payload(tools)
+  if on_delta is not None and not tools:
+    return _anthropic_stream(
+      url=f"{base_url.rstrip('/')}/messages",
+      headers={
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+      },
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="anthropic",
     url=f"{base_url.rstrip('/')}/messages",
@@ -593,9 +1064,19 @@ def _anthropic_message(
     for part in content
     if isinstance(part, dict) and part.get("type") == "text"
   ]
+  tool_calls = [
+    {
+      "id": str(part.get("id", "")) or f"call-{index + 1}",
+      "name": str(part.get("name", "")).strip(),
+      "args": part.get("input", {}) if isinstance(part.get("input", {}), dict) else {},
+    }
+    for index, part in enumerate(content)
+    if isinstance(part, dict) and part.get("type") == "tool_use" and str(part.get("name", "")).strip()
+  ]
   usage = response.get("usage", {})
   return {
     "text": "\n".join(text_parts).strip(),
+    "tool_calls": tool_calls,
     "input_tokens": int(usage.get("input_tokens", 0) or 0),
     "output_tokens": int(usage.get("output_tokens", 0) or 0),
     "raw_usage": usage,
@@ -607,9 +1088,12 @@ def _openrouter_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENROUTER_API_KEY")
   if not api_key:
@@ -620,23 +1104,35 @@ def _openrouter_chat_completion(
       provider="openrouter",
     )
   base_url = os.getenv("OPENAUTHOR_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+  headers = {
+    "Authorization": f"Bearer {api_key}",
+    "HTTP-Referer": "https://openauthor.dev",
+    "X-Title": "openAuthor",
+  }
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
+    return _openai_style_stream(
+      provider="openrouter",
+      url=f"{base_url.rstrip('/')}/chat/completions",
+      headers=headers,
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openrouter",
     url=f"{base_url.rstrip('/')}/chat/completions",
-    headers={
-      "Authorization": f"Bearer {api_key}",
-      "HTTP-Referer": "https://openauthor.dev",
-      "X-Title": "openAuthor",
-    },
+    headers=headers,
     payload=payload,
   )
   choice = (response.get("choices") or [{}])[0]
@@ -653,6 +1149,7 @@ def _openrouter_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -664,9 +1161,12 @@ def _openai_codex_chat_completion(
   *,
   model: str,
   system_prompt: str,
+  history: list[dict[str, str]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   access_token = get_access_token("openai-codex")
   if not access_token:
@@ -680,13 +1180,24 @@ def _openai_codex_chat_completion(
   base_url = "https://api.openai.com/v1"
   payload: dict[str, Any] = {
     "model": model,
-    "messages": [
-      {"role": "system", "content": system_prompt},
-      {"role": "user", "content": user_prompt},
-    ],
+    "messages": _chat_completion_messages(
+      system_prompt=system_prompt,
+      history=history,
+      user_prompt=user_prompt,
+    ),
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
+    return _openai_style_stream(
+      provider="openai-codex",
+      url=f"{base_url}/chat/completions",
+      headers={"Authorization": f"Bearer {access_token}"},
+      payload=payload,
+      on_delta=on_delta,
+    )
   response, attempts = _json_post(
     provider="openai-codex",
     url=f"{base_url}/chat/completions",
@@ -707,6 +1218,7 @@ def _openai_codex_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -724,25 +1236,46 @@ def _call_provider(
   instruction: str,
   temperature: float,
   max_output_tokens: int,
+  history: list[dict[str, Any]] | None = None,
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+  chat_history = _normalize_chat_history(history)
+  tool_calls: list[dict[str, Any]] = []
   start = time.perf_counter()
   if provider == "local":
     if context.get("chat_mode"):
-      text = _generate_local_chat_text(user_prompt)
+      text, tool_calls = _generate_local_chat_result(
+        user_prompt,
+        tools_enabled=bool(tools),
+      )
+    elif context.get("merge_mode"):
+      text = _generate_local_merge_text(context, instruction)
+    elif context.get("draft_mode"):
+      text = _generate_local_draft_text(context, instruction)
     else:
       text = _generate_local_text(context, instruction)
-    input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+    if on_delta is not None and not tools:
+      _stream_local_text(text, on_delta)
+    history_text = "\n".join(str(row.get("content", "")) for row in chat_history)
+    input_tokens = _estimate_tokens(
+      system_prompt + "\n" + history_text + "\n" + user_prompt
+    )
     output_tokens = _estimate_tokens(text)
     attempts = 1
   elif provider == "openai":
     payload = _openai_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -750,11 +1283,15 @@ def _call_provider(
     payload = _anthropic_message(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -762,11 +1299,15 @@ def _call_provider(
     payload = _openrouter_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -774,11 +1315,15 @@ def _call_provider(
     payload = _openai_codex_chat_completion(
       model=model,
       system_prompt=system_prompt,
+      history=chat_history,
       user_prompt=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
+      on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -788,7 +1333,7 @@ def _call_provider(
     )
 
   latency_ms = int((time.perf_counter() - start) * 1000)
-  if not text.strip():
+  if not text.strip() and not tool_calls:
     raise ProviderExecutionError(
       "Provider returned empty output.",
       category="invalid_provider_output",
@@ -799,11 +1344,64 @@ def _call_provider(
 
   return {
     "text": text.strip(),
+    "tool_calls": tool_calls,
     "input_tokens": int(input_tokens),
     "output_tokens": int(output_tokens),
     "latency_ms": latency_ms,
     "attempts": attempts,
   }
+
+
+def _write_chat_generation_log(
+  paths: ProjectPaths,
+  *,
+  status: str,
+  thread_id: str,
+  provider: str,
+  model: str,
+  temperature: float,
+  max_output_tokens: int,
+  system_prompt: str,
+  user_prompt: str,
+  history_message_count: int,
+  provider_result: dict[str, Any] | None = None,
+  estimated_cost_usd: float | None = None,
+  error: dict[str, Any] | None = None,
+) -> tuple[str, str]:
+  run_id = f"gen-{uuid.uuid4().hex[:12]}"
+  log_file = paths.generations_dir / f"{run_id}.json"
+  payload: dict[str, Any] = {
+    "run_id": run_id,
+    "kind": "chat",
+    "status": status,
+    "created_at": utc_now(),
+    "thread_id": thread_id,
+    "scene_id": "",
+    "provider": provider,
+    "model": model,
+    "temperature": temperature,
+    "max_output_tokens": max_output_tokens,
+    "history_message_count": history_message_count,
+    "prompt_sha256": hashlib.sha256(
+      (system_prompt + "\n\n" + user_prompt).encode("utf-8")
+    ).hexdigest(),
+    "system_prompt": system_prompt,
+    "user_prompt": user_prompt,
+  }
+  if provider_result is not None:
+    payload["response_text"] = provider_result["text"]
+    payload["tool_calls"] = provider_result.get("tool_calls", [])
+    payload["usage"] = {
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "provider_attempts": provider_result["attempts"],
+      "estimated_cost_usd": estimated_cost_usd,
+    }
+  if error is not None:
+    payload["error"] = error
+  atomic_write_json(log_file, payload)
+  return run_id, str(log_file.relative_to(paths.root))
 
 
 def complete_chat(
@@ -813,9 +1411,13 @@ def complete_chat(
   model: str,
   system_prompt: str,
   user_prompt: str,
+  history: list[dict[str, Any]] | None = None,
   temperature: float = 0.2,
   max_output_tokens: int = 900,
   chat_mode: bool = True,
+  thread_id: str = "",
+  on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -823,30 +1425,152 @@ def complete_chat(
   if max_output_tokens < 64:
     raise OpenAuthorError("max_output_tokens must be >= 64.")
 
-  provider_result = _call_provider(
-    provider=provider,
-    model=model or DEFAULT_MODELS[provider],
-    system_prompt=system_prompt,
-    user_prompt=user_prompt,
-    context={"chat_mode": bool(chat_mode)},
-    instruction=user_prompt,
-    temperature=temperature,
-    max_output_tokens=max_output_tokens,
+  selected_model = model or DEFAULT_MODELS[provider]
+  chat_history = _normalize_chat_history(history)
+  history_text = "\n".join(str(row.get("content", "")) for row in chat_history)
+  projected_input_tokens = _estimate_tokens(
+    system_prompt + "\n" + history_text + "\n" + user_prompt
   )
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, log_path = _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": str(error),
+        "category": error.category,
+        "retriable": False,
+        "http_status": None,
+        "attempts": 0,
+        "provider": provider,
+        "violations": error.violations,
+        "budget_policy": error.policy,
+        "budget_usage": error.usage,
+        "budget_projected": error.projected,
+      },
+    )
+    raise OpenAuthorError(
+      f"Chat completion blocked by budget policy. See {log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context={"chat_mode": bool(chat_mode)},
+      instruction=user_prompt,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      history=chat_history,
+      on_delta=on_delta,
+      tools=tools,
+    )
+  except ChatInterrupted:
+    _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": "Chat turn interrupted by user.",
+        "category": "interrupted",
+        "retriable": False,
+        "http_status": None,
+        "attempts": 1,
+        "provider": provider,
+      },
+    )
+    raise
+  except ProviderExecutionError as error:
+    _, log_path = _write_chat_generation_log(
+      paths,
+      status="failed",
+      thread_id=thread_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      history_message_count=len(chat_history),
+      error={
+        "message": str(error),
+        "category": error.category,
+        "retriable": error.retriable,
+        "http_status": error.http_status,
+        "attempts": error.attempts,
+        "provider": error.provider,
+      },
+    )
+    raise OpenAuthorError(
+      f"Chat completion failed ({error.category}). See {log_path}."
+    ) from error
+
   estimated_cost_usd = _estimate_cost_usd(
     paths,
     provider=provider,
-    model=model or DEFAULT_MODELS[provider],
+    model=selected_model,
     input_tokens=provider_result["input_tokens"],
     output_tokens=provider_result["output_tokens"],
   )
+  generation_id, log_path = _write_chat_generation_log(
+    paths,
+    status="succeeded",
+    thread_id=thread_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    history_message_count=len(chat_history),
+    provider_result=provider_result,
+    estimated_cost_usd=estimated_cost_usd,
+  )
+  # Tool-enabled turns run buffered (no provider streaming), so surface the
+  # round's text through on_delta once the spend is logged; an interrupt
+  # raised here aborts the turn between tool rounds.
+  if tools and on_delta is not None and provider_result["text"].strip():
+    on_delta(provider_result["text"] + "\n\n")
   return {
     "text": provider_result["text"],
+    "tool_calls": provider_result.get("tool_calls", []),
     "input_tokens": provider_result["input_tokens"],
     "output_tokens": provider_result["output_tokens"],
     "latency_ms": provider_result["latency_ms"],
     "provider_attempts": provider_result["attempts"],
     "estimated_cost_usd": estimated_cost_usd,
+    "generation_id": generation_id,
+    "log_path": log_path,
   }
 
 
@@ -1172,7 +1896,7 @@ def _write_generation_log(
       "estimated_cost_usd": estimated_cost_usd,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1223,7 +1947,7 @@ def _write_generation_failure_log(
       "provider": error.provider,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1278,7 +2002,7 @@ def _write_generation_budget_failure_log(
       "budget_projected": error.projected,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1293,7 +2017,7 @@ def _attach_proposal_to_generation_log(
     raise OpenAuthorError(f"Missing generation log for run '{run_id}'.")
   payload = json.loads(log_file.read_text(encoding="utf-8"))
   payload["proposal_id"] = proposal_id
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
 
 
 def _default_title(scene_title: str, instruction: str) -> str:
@@ -1477,6 +2201,458 @@ def generate_proposal(
       "quality_tier": quality["tier"],
       "quality_flags": quality["flags"],
       "log_path": log_path,
+    },
+  )
+  _attach_proposal_to_generation_log(
+    paths,
+    run_id=generation_id,
+    proposal_id=proposal_id,
+  )
+  return get_proposal(paths, proposal_id)
+
+
+DRAFT_SYSTEM_PROMPT = (
+  "You are a careful fiction line editor. Rewrite the provided scene body, "
+  "applying the edit plan faithfully while preserving the author's voice, POV, "
+  "and continuity. Return ONLY the complete revised scene body as Markdown "
+  "prose. Do not include YAML frontmatter, section headers about your process, "
+  "code fences, or commentary."
+)
+
+
+def _strip_code_fence(text: str) -> str:
+  stripped = text.strip()
+  if not stripped.startswith("```"):
+    return stripped
+  lines = stripped.splitlines()
+  if len(lines) >= 2 and lines[-1].strip().startswith("```"):
+    return "\n".join(lines[1:-1]).strip()
+  return stripped
+
+
+def generate_proposal_draft(
+  paths: ProjectPaths,
+  *,
+  proposal_id: str,
+  provider: str = "local",
+  model: str | None = None,
+  temperature: float = 0.3,
+  max_output_tokens: int = 2000,
+) -> dict[str, Any]:
+  if provider not in SUPPORTED_PROVIDERS:
+    raise OpenAuthorError(
+      f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
+    )
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+
+  proposal = get_proposal(paths, proposal_id)
+  if proposal.get("status") != "pending":
+    raise OpenAuthorError(
+      f"Proposal '{proposal_id}' is not pending; cannot draft."
+    )
+  scene_id = str(proposal.get("scene_id", "")).strip()
+  if scene_id == "":
+    raise OpenAuthorError(
+      f"Proposal '{proposal_id}' has no target scene; cannot draft."
+    )
+  scene = get_scene(paths, scene_id)
+  instruction = str(proposal.get("instruction", ""))
+
+  selected_model = model or DEFAULT_MODELS[provider]
+  context: dict[str, Any] = {
+    "draft_mode": True,
+    "scene": scene,
+    "proposal": {
+      "id": proposal_id,
+      "title": proposal.get("title", ""),
+      "instruction": instruction,
+    },
+  }
+  system_prompt = DRAFT_SYSTEM_PROMPT
+  user_prompt = (
+    "Edit plan (apply to the scene below):\n"
+    f"{instruction}\n\n"
+    "Scene metadata:\n"
+    + json.dumps(
+      {
+        "id": scene.get("id", ""),
+        "title": scene.get("title", ""),
+        "summary": scene.get("summary", ""),
+        "pov": scene.get("pov", ""),
+      },
+      ensure_ascii=False,
+    )
+    + "\n\nCurrent scene body:\n"
+    + str(scene.get("body", ""))
+  )
+  retrieval = {"mode": "off", "used": False}
+
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, failure_log_path = _write_generation_budget_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Draft generation blocked by budget policy. See {failure_log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=instruction,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except ProviderExecutionError as error:
+    _, failure_log_path = _write_generation_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Draft generation failed ({error.category}). See {failure_log_path}."
+    ) from error
+
+  raw_provider_text = provider_result["text"]
+  proposed_body = _strip_code_fence(raw_provider_text)
+  if proposed_body == "":
+    raise OpenAuthorError("Draft generation produced an empty scene body.")
+  provider_result["text"] = proposed_body
+
+  estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=provider_result["input_tokens"],
+    output_tokens=provider_result["output_tokens"],
+  )
+  changed = proposed_body.strip() != str(scene.get("body", "")).strip()
+  generation_id, log_path = _write_generation_log(
+    paths,
+    scene_id=scene_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    context_scene_radius=0,
+    codex_limit=0,
+    retrieval=retrieval,
+    instruction=instruction,
+    context=context,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    provider_result=provider_result,
+    raw_provider_text=raw_provider_text,
+    normalization={"draft_mode": True, "changed": changed},
+    quality={"score": None, "tier": "draft", "flags": [] if changed else ["draft_unchanged"]},
+    estimated_cost_usd=estimated_cost_usd,
+  )
+  _attach_proposal_to_generation_log(
+    paths,
+    run_id=generation_id,
+    proposal_id=proposal_id,
+  )
+
+  return set_proposal_draft(
+    paths,
+    proposal_id=proposal_id,
+    proposed_body=proposed_body,
+    draft={
+      "generation_id": generation_id,
+      "provider": provider,
+      "model": selected_model,
+      "temperature": temperature,
+      "max_output_tokens": max_output_tokens,
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "estimated_cost_usd": estimated_cost_usd,
+      "changed": changed,
+      "log_path": log_path,
+      "created_at": utc_now(),
+    },
+  )
+
+
+MERGE_SYSTEM_PROMPT = (
+  "You are a fiction editor reconciling two divergent revisions of the same "
+  "scene from different storyline branches. Produce a single coherent scene "
+  "body that preserves the narrative intent of both revisions where "
+  "compatible, resolves contradictions in favor of continuity, and keeps the "
+  "author's voice and POV. Return ONLY the complete reconciled scene body as "
+  "Markdown prose. Do not include YAML frontmatter, conflict markers, code "
+  "fences, or commentary."
+)
+
+
+def generate_merge_resolution(
+  paths: ProjectPaths,
+  *,
+  base: str,
+  head: str,
+  scene_path: str,
+  provider: str = "local",
+  model: str | None = None,
+  temperature: float = 0.3,
+  max_output_tokens: int = 3000,
+) -> dict[str, Any]:
+  from .git_ops import run_git, show_file_at_ref
+  from .scenes import render_scene_markdown, split_scene_text
+
+  if provider not in SUPPORTED_PROVIDERS:
+    raise OpenAuthorError(
+      f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
+    )
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+  normalized_path = scene_path.strip()
+  if not normalized_path.startswith("manuscript/scenes/"):
+    raise OpenAuthorError(
+      "AI merge resolution supports scene files under manuscript/scenes/ only."
+    )
+
+  base_ref = base.strip()
+  head_ref = head.strip()
+  merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
+  ours_file = show_file_at_ref(paths, base_ref, normalized_path)
+  theirs_file = show_file_at_ref(paths, head_ref, normalized_path)
+  ancestor_file = show_file_at_ref(paths, merge_base, normalized_path) or ""
+  if ours_file is None or theirs_file is None:
+    raise OpenAuthorError(
+      f"Scene '{normalized_path}' is missing on one side of the merge; "
+      "resolve delete/modify conflicts manually."
+    )
+
+  ours_meta, ours_body = split_scene_text(ours_file)
+  _, theirs_body = split_scene_text(theirs_file)
+  _, ancestor_body = split_scene_text(ancestor_file)
+  scene_id = ours_meta.get("id", "")
+
+  selected_model = model or DEFAULT_MODELS[provider]
+  instruction = (
+    f"Reconcile the two revisions of scene '{scene_id or normalized_path}' "
+    f"from branches '{base_ref}' and '{head_ref}'."
+  )
+  context: dict[str, Any] = {
+    "merge_mode": True,
+    "scene": {
+      "id": scene_id,
+      "title": ours_meta.get("title", ""),
+      "summary": ours_meta.get("summary", ""),
+      "pov": ours_meta.get("pov", ""),
+      "body": ours_body,
+    },
+    "ours_body": ours_body,
+    "theirs_body": theirs_body,
+    "ancestor_body": ancestor_body,
+    "merge_base_label": base_ref,
+    "merge_head_label": head_ref,
+  }
+  system_prompt = MERGE_SYSTEM_PROMPT
+  user_prompt = (
+    "Scene metadata:\n"
+    + json.dumps(
+      {
+        "id": scene_id,
+        "title": ours_meta.get("title", ""),
+        "summary": ours_meta.get("summary", ""),
+        "pov": ours_meta.get("pov", ""),
+        "base_branch": base_ref,
+        "head_branch": head_ref,
+      },
+      ensure_ascii=False,
+    )
+    + "\n\nCommon-ancestor version of the scene body:\n"
+    + (ancestor_body or "(scene did not exist at the merge base)")
+    + f"\n\nRevision from branch '{base_ref}':\n"
+    + ours_body
+    + f"\n\nRevision from branch '{head_ref}':\n"
+    + theirs_body
+  )
+  retrieval = {"mode": "off", "used": False}
+
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, failure_log_path = _write_generation_budget_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Merge resolution blocked by budget policy. See {failure_log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=instruction,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except ProviderExecutionError as error:
+    _, failure_log_path = _write_generation_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Merge resolution failed ({error.category}). See {failure_log_path}."
+    ) from error
+
+  raw_provider_text = provider_result["text"]
+  reconciled_body = _strip_code_fence(raw_provider_text)
+  if reconciled_body == "":
+    raise OpenAuthorError("Merge resolution produced an empty scene body.")
+  provider_result["text"] = reconciled_body
+
+  file_content = render_scene_markdown(
+    scene_identifier=scene_id or normalized_path,
+    title=ours_meta.get("title", ""),
+    summary=ours_meta.get("summary", ""),
+    pov=ours_meta.get("pov", ""),
+    status=ours_meta.get("status", "draft"),
+    created_at=ours_meta.get("created_at", "") or utc_now(),
+    updated_at=utc_now(),
+    body=reconciled_body,
+  )
+
+  estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=provider_result["input_tokens"],
+    output_tokens=provider_result["output_tokens"],
+  )
+  generation_id, log_path = _write_generation_log(
+    paths,
+    scene_id=scene_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    context_scene_radius=0,
+    codex_limit=0,
+    retrieval=retrieval,
+    instruction=instruction,
+    context=context,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    provider_result=provider_result,
+    raw_provider_text=raw_provider_text,
+    normalization={"merge_mode": True},
+    quality={"score": None, "tier": "merge_resolution", "flags": []},
+    estimated_cost_usd=estimated_cost_usd,
+  )
+
+  title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
+  proposal_id = create_proposal(
+    paths,
+    title=title,
+    instruction=instruction,
+    scene_id=scene_id,
+    source="merge_resolution",
+    proposed_body=reconciled_body,
+    generation={
+      "id": generation_id,
+      "provider": provider,
+      "model": selected_model,
+      "temperature": temperature,
+      "max_output_tokens": max_output_tokens,
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "estimated_cost_usd": estimated_cost_usd,
+      "log_path": log_path,
+    },
+    merge={
+      "base": base_ref,
+      "head": head_ref,
+      "merge_base": merge_base,
+      "path": normalized_path,
+      "file_content": file_content,
     },
   )
   _attach_proposal_to_generation_log(

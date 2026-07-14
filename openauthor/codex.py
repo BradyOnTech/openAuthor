@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .project import OpenAuthorError, ProjectPaths, utc_now
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 
 ENTITY_TYPES = {"character", "location", "lore", "item", "faction", "event"}
 CODEX_DIRECTORY_KIND_MAP = {
@@ -110,6 +110,7 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
     )
     now = utc_now()
     entity_ids: set[str] = set()
+    seen_names: set[str] = set()
     for row in entity_rows:
       entity_id = str(row.get("id", "")).strip()
       kind = str(row.get("type", "")).strip()
@@ -119,6 +120,15 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
       updated_at = str(row.get("updated_at", "")).strip() or now
       if entity_id == "" or kind == "" or name == "":
         continue
+      if kind not in ENTITY_TYPES:
+        raise OpenAuthorError(
+          f"Invalid entity type '{kind}' in codex snapshot {snapshot_path}."
+        )
+      if entity_id in entity_ids or name in seen_names:
+        raise OpenAuthorError(
+          f"Duplicate entity id or name '{entity_id}'/'{name}' in codex snapshot {snapshot_path}."
+        )
+      seen_names.add(name)
       cursor.execute(
         """
         INSERT INTO entities (id, kind, name, description, created_at, updated_at)
@@ -370,7 +380,7 @@ def export_codex_json(paths: ProjectPaths) -> Path:
   }
 
   snapshot_path = paths.root / "codex" / "codex.json"
-  snapshot_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(snapshot_path, payload)
   return snapshot_path
 
 

@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .project import OpenAuthorError, ProjectPaths
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json
 
 DEFAULT_GENERATION_BUDGET_POLICY: dict[str, Any] = {
   "schema_version": 1,
@@ -147,7 +147,7 @@ def load_generation_budget_policy(paths: ProjectPaths) -> dict[str, Any]:
 def save_generation_budget_policy(paths: ProjectPaths, policy: dict[str, Any]) -> dict[str, Any]:
   normalized = _normalize_policy(policy)
   file_path = _policy_file(paths)
-  file_path.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(file_path, normalized)
   return normalized
 
 

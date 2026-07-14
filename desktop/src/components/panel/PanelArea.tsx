@@ -1,4 +1,6 @@
 import { useUI } from "../../contexts/UIContext";
+import { BudgetPanel } from "./BudgetPanel";
+import { MergePanel } from "./MergePanel";
 import { RunsPanel } from "./RunsPanel";
 
 const TABS = [
@@ -27,25 +29,9 @@ export function PanelArea() {
       </div>
       <div className="panel-area__content">
         {panelTab === "runs" && <RunsPanel />}
-        {panelTab === "merge" && <MergePlaceholder />}
-        {panelTab === "budget" && <BudgetPlaceholder />}
+        {panelTab === "merge" && <MergePanel />}
+        {panelTab === "budget" && <BudgetPanel />}
       </div>
-    </div>
-  );
-}
-
-function MergePlaceholder() {
-  return (
-    <div style={{ padding: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-sm)" }}>
-      Merge operations will be ported in Phase 4.
-    </div>
-  );
-}
-
-function BudgetPlaceholder() {
-  return (
-    <div style={{ padding: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-sm)" }}>
-      Budget management will be ported in Phase 4.
     </div>
   );
 }
