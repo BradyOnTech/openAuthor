@@ -122,6 +122,29 @@ class ServerModuleTests(unittest.TestCase):
       self.assertIn("error", missing)
       self.assertEqual(missing["error"]["category"], "core_error")
 
+      messages = _response_for(frames, "req-3")["result"]
+      truncate_frames = _run_requests(
+        paths,
+        [
+          {
+            "id": "req-5",
+            "method": "chat.truncate",
+            "params": {
+              "thread_id": thread["id"],
+              "from_message_id": messages[0]["id"],
+            },
+          },
+          {
+            "id": "req-6",
+            "method": "chat.messages",
+            "params": {"thread_id": thread["id"]},
+          },
+        ],
+      )
+      truncated = _response_for(truncate_frames, "req-5")["result"]
+      self.assertEqual(truncated["removed_count"], 2)
+      self.assertEqual(_response_for(truncate_frames, "req-6")["result"], [])
+
   def test_interrupt_before_send_aborts_turn(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Sidecar Interrupt")

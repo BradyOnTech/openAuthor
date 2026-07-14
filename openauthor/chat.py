@@ -480,6 +480,47 @@ def list_chat_messages(
   return rows
 
 
+def truncate_chat_messages(
+  paths: ProjectPaths,
+  *,
+  thread_id: str,
+  from_message_id: str,
+) -> dict[str, Any]:
+  """Remove a message and everything after it from a thread.
+
+  Used by regenerate: rewind the thread to just before a turn and send the
+  turn again. Generation logs for the removed turns are kept — spend history
+  is immutable even when the conversation is rewound.
+  """
+  normalized_id = from_message_id.strip()
+  if normalized_id == "":
+    raise OpenAuthorError("from_message_id cannot be empty.")
+  messages = list_chat_messages(paths, thread_id=thread_id)
+  index = next(
+    (position for position, row in enumerate(messages) if row.get("id") == normalized_id),
+    None,
+  )
+  if index is None:
+    raise OpenAuthorError(
+      f"Message '{normalized_id}' not found in thread '{thread_id}'."
+    )
+  kept = messages[:index]
+  removed = messages[index:]
+  message_path = _thread_messages_path(paths, thread_id)
+  message_path.write_text(
+    "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in kept),
+    encoding="utf-8",
+  )
+  _touch_thread(paths, thread_id)
+  return {
+    "thread_id": thread_id,
+    "from_message_id": normalized_id,
+    "removed_count": len(removed),
+    "remaining_count": len(kept),
+    "removed_ids": [str(row.get("id", "")) for row in removed],
+  }
+
+
 def _append_chat_message(
   paths: ProjectPaths,
   *,

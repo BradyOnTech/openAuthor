@@ -376,7 +376,8 @@ export async function listChatThreads(projectRoot: string): Promise<ChatThreadRe
       {},
       15_000
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
     const result = await runCoreCommand(projectRoot, ["chat", "thread", "list", "--json"]);
     return decodeJson<ChatThreadRecord[]>(result);
   }
@@ -507,7 +508,8 @@ export async function listChatMessages(
       },
       15_000
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
     const args = ["chat", "message", "list", "--thread", payload.threadId];
     if (typeof payload.limit === "number") {
       args.push("--limit", String(payload.limit));
@@ -623,6 +625,16 @@ function nextSidecarRequestId(): string {
   return `req-${Date.now()}-${sidecarRequestCounter}`;
 }
 
+export class SidecarDomainError extends Error {
+  readonly category: string;
+
+  constructor(message: string, category: string) {
+    super(message);
+    this.name = "SidecarDomainError";
+    this.category = category;
+  }
+}
+
 async function sidecarRequest<T>(
   projectRoot: string,
   requestId: string,
@@ -636,8 +648,12 @@ async function sidecarRequest<T>(
     timeoutMs: timeoutMs ?? null,
   });
   if (frame.error) {
-    const category = frame.error.category ? ` [${frame.error.category}]` : "";
-    throw new Error(`${frame.error.message ?? "Sidecar request failed."}${category}`);
+    // The sidecar ran and rejected the request — a real answer, not a
+    // transport failure, so callers must not retry over the CLI.
+    throw new SidecarDomainError(
+      frame.error.message ?? "Sidecar request failed.",
+      frame.error.category ?? "core_error"
+    );
   }
   return frame.result as T;
 }
@@ -725,6 +741,48 @@ export async function interruptChatTurn(
     { request_id: requestId },
     10_000
   );
+}
+
+export type ChatTruncateResult = {
+  thread_id: string;
+  from_message_id: string;
+  removed_count: number;
+  remaining_count: number;
+  removed_ids: string[];
+};
+
+export async function truncateChatMessages(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    fromMessageId: string;
+  }
+): Promise<ChatTruncateResult> {
+  try {
+    return await sidecarRequest<ChatTruncateResult>(
+      projectRoot,
+      nextSidecarRequestId(),
+      "chat.truncate",
+      {
+        thread_id: payload.threadId,
+        from_message_id: payload.fromMessageId,
+      },
+      15_000
+    );
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    const result = await runCoreCommand(projectRoot, [
+      "chat",
+      "message",
+      "truncate",
+      "--thread",
+      payload.threadId,
+      "--from-message",
+      payload.fromMessageId,
+      "--json"
+    ]);
+    return decodeJson<ChatTruncateResult>(result);
+  }
 }
 
 export async function getChatTurnDiff(

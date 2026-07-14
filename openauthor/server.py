@@ -22,7 +22,12 @@ import threading
 from typing import Any, TextIO
 
 from .ai import ChatInterrupted
-from .chat import list_chat_messages, list_chat_threads, send_chat_message
+from .chat import (
+  list_chat_messages,
+  list_chat_threads,
+  send_chat_message,
+  truncate_chat_messages,
+)
 from .project import OpenAuthorError, ProjectPaths
 
 PROTOCOL_VERSION = 1
@@ -119,6 +124,16 @@ class ChatSidecarServer:
           self._paths,
           thread_id=str(params.get("thread_id", "")).strip(),
           limit=limit,
+        ),
+      )
+      return
+    if method == "chat.truncate":
+      self._respond_call(
+        request_id,
+        lambda: truncate_chat_messages(
+          self._paths,
+          thread_id=str(params.get("thread_id", "")).strip(),
+          from_message_id=str(params.get("from_message_id", "")).strip(),
         ),
       )
       return

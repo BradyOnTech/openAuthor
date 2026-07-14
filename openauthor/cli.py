@@ -24,6 +24,7 @@ from .chat import (
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  truncate_chat_messages,
   update_chat_thread,
 )
 from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
@@ -633,6 +634,17 @@ def build_parser() -> argparse.ArgumentParser:
   chat_message_list.add_argument("--thread", required=True, help="Thread id.")
   chat_message_list.add_argument("--limit", type=int, default=None, help="Optional max rows.")
   chat_message_list.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_message_truncate = chat_message_sub.add_parser(
+    "truncate",
+    help="Remove a message and everything after it (used by regenerate).",
+  )
+  chat_message_truncate.add_argument("--thread", required=True, help="Thread id.")
+  chat_message_truncate.add_argument(
+    "--from-message",
+    required=True,
+    help="Message id to remove, along with all later messages.",
+  )
+  chat_message_truncate.add_argument("--json", action="store_true", help="Output JSON.")
 
   chat_tool = chat_sub.add_parser("tool", help="Execute pending agent tool calls.")
   chat_tool_sub = chat_tool.add_subparsers(dest="chat_tool_command", required=True)
@@ -1283,6 +1295,20 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.chat_command == "message":
+      if args.chat_message_command == "truncate":
+        row = truncate_chat_messages(
+          paths,
+          thread_id=args.thread,
+          from_message_id=args.from_message,
+        )
+        if args.json:
+          print(json.dumps(row))
+          return 0
+        print(
+          f"Removed {row.get('removed_count', 0)} message(s); "
+          f"{row.get('remaining_count', 0)} remain."
+        )
+        return 0
       if args.chat_message_command != "list":
         raise OpenAuthorError(
           f"Unsupported chat message command: {args.chat_message_command}"

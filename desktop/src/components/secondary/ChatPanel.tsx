@@ -11,6 +11,7 @@ import {
   getChatTurnDiff,
   getScene,
   getCodexEntity,
+  truncateChatMessages,
 } from "../../api";
 import { parseChatMarkdown, type ChatBlock, type ChatInlineSpan } from "../../chatMarkdown";
 import type {
@@ -92,6 +93,55 @@ export function ChatPanel() {
     }
   }
 
+  async function performSend(text: string, sceneIds: string[], codexIds: string[]) {
+    if (!activeChatThreadId || !text.trim()) return;
+    setChatSending(true);
+    try {
+      await sendChatMessageStreamed(
+        projectRoot,
+        {
+          threadId: activeChatThreadId,
+          message: text,
+          currentSceneId,
+          sceneIds,
+          codexIds,
+        },
+        {
+          onStart: (requestId) =>
+            setStream({ requestId, userText: text, text: "" }),
+          onDelta: (delta) =>
+            setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
+        }
+      );
+      await refreshChatMessages();
+      await refreshChatThreads();
+    } catch (e) {
+      await refreshChatMessages();
+      setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setStream(null);
+      setChatSending(false);
+    }
+  }
+
+  async function handleRegenerate() {
+    if (!activeChatThreadId || chatSending) return;
+    const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
+    if (!lastUser) return;
+    try {
+      await truncateChatMessages(projectRoot, {
+        threadId: activeChatThreadId,
+        fromMessageId: lastUser.id,
+      });
+      await refreshChatMessages();
+    } catch (e) {
+      setError(`Regenerate failed: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    const mentions = extractMentionIds(lastUser.content, scenes, codexEntities);
+    await performSend(lastUser.content, mentions.sceneIds, mentions.codexIds);
+  }
+
   return (
     <div className="chat-panel">
       <ThreadHeader
@@ -121,6 +171,7 @@ export function ChatPanel() {
           refreshProposals();
           setMessage("Proposal queued for review.");
         }}
+        onRegenerate={handleRegenerate}
         setError={setError}
       />
       <Composer
@@ -132,39 +183,36 @@ export function ChatPanel() {
         activeThread={activeThread}
         currentSceneId={currentSceneId}
         onInterrupt={handleInterrupt}
-        onSend={async (text, mentionedSceneIds, mentionedCodexIds) => {
-          if (!activeChatThreadId || !text.trim()) return;
-          setChatSending(true);
-          try {
-            await sendChatMessageStreamed(
-              projectRoot,
-              {
-                threadId: activeChatThreadId,
-                message: text,
-                currentSceneId,
-                sceneIds: mentionedSceneIds,
-                codexIds: mentionedCodexIds,
-              },
-              {
-                onStart: (requestId) =>
-                  setStream({ requestId, userText: text, text: "" }),
-                onDelta: (delta) =>
-                  setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
-              }
-            );
-            await refreshChatMessages();
-            await refreshChatThreads();
-          } catch (e) {
-            await refreshChatMessages();
-            setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
-          } finally {
-            setStream(null);
-            setChatSending(false);
-          }
-        }}
+        onSend={performSend}
       />
     </div>
   );
+}
+
+
+/* ── Mentions ───────────────────────────────────────────────────── */
+
+function extractMentionIds(
+  text: string,
+  scenes: SceneSummary[],
+  codexEntities: CodexEntity[]
+): { sceneIds: string[]; codexIds: string[] } {
+  const sceneIds = new Set<string>();
+  const codexIds = new Set<string>();
+  const mentionRe = /@(scene|codex):([^\s]+)/g;
+  let match;
+  while ((match = mentionRe.exec(text)) !== null) {
+    const kind = match[1];
+    const token = match[2];
+    if (kind === "scene") {
+      const s = scenes.find((s) => s.id === token || s.title === token);
+      if (s) sceneIds.add(s.id);
+    } else if (kind === "codex") {
+      const e = codexEntities.find((e) => e.id === token || e.name === token);
+      if (e) codexIds.add(e.id);
+    }
+  }
+  return { sceneIds: [...sceneIds], codexIds: [...codexIds] };
 }
 
 
@@ -399,6 +447,7 @@ function MessageList({
   onToolExecuted,
   onOpenCitation,
   onProposalQueued,
+  onRegenerate,
   setError,
 }: {
   messages: ChatMessageRecord[];
@@ -410,8 +459,10 @@ function MessageList({
   onToolExecuted: () => void;
   onOpenCitation: (citation: ChatRetrievalCitation) => void;
   onProposalQueued: () => void;
+  onRegenerate: () => void;
   setError: (e: string) => void;
 }) {
+  const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -451,9 +502,11 @@ function MessageList({
           projectRoot={projectRoot}
           threadId={threadId}
           currentSceneId={currentSceneId}
+          canRegenerate={msg.id === lastAssistantId && !sending}
           onToolExecuted={onToolExecuted}
           onOpenCitation={onOpenCitation}
           onProposalQueued={onProposalQueued}
+          onRegenerate={onRegenerate}
           setError={setError}
         />
       ))}
@@ -513,18 +566,22 @@ function ChatMessage({
   projectRoot,
   threadId,
   currentSceneId,
+  canRegenerate,
   onToolExecuted,
   onOpenCitation,
   onProposalQueued,
+  onRegenerate,
   setError,
 }: {
   message: ChatMessageRecord;
   projectRoot: string;
   threadId: string;
   currentSceneId?: string;
+  canRegenerate: boolean;
   onToolExecuted: () => void;
   onOpenCitation: (citation: ChatRetrievalCitation) => void;
   onProposalQueued: () => void;
+  onRegenerate: () => void;
   setError: (e: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -636,11 +693,20 @@ function ChatMessage({
         </div>
       )}
 
-      {isAssistant && message.content.trim() !== "" && (
+      {isAssistant && (message.content.trim() !== "" || canRegenerate) && (
         <div className="chat-message__actions">
           <button className="chat-action-btn" onClick={handleCopy} title="Copy message text">
             {copied ? "✓ Copied" : "Copy"}
           </button>
+          {canRegenerate && (
+            <button
+              className="chat-action-btn"
+              onClick={onRegenerate}
+              title="Rewind this turn and generate a fresh reply. Spend logs for the discarded turn are kept."
+            >
+              ↻ Regenerate
+            </button>
+          )}
           <button
             className="chat-action-btn"
             onClick={handleQueueProposal}
@@ -908,29 +974,13 @@ function Composer({
   async function handleSend() {
     if (!text.trim() || sending || !threadId) return;
 
-    // Extract @mentions
-    const sceneIds = new Set<string>();
-    const codexIds = new Set<string>();
-    const mentionRe = /@(scene|codex):([^\s]+)/g;
-    let match;
-    while ((match = mentionRe.exec(text)) !== null) {
-      const kind = match[1];
-      const token = match[2];
-      if (kind === "scene") {
-        const s = scenes.find((s) => s.id === token || s.title === token);
-        if (s) sceneIds.add(s.id);
-      } else if (kind === "codex") {
-        const e = codexEntities.find((e) => e.id === token || e.name === token);
-        if (e) codexIds.add(e.id);
-      }
-    }
-
+    const mentions = extractMentionIds(text, scenes, codexEntities);
     const msg = text;
     setText("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-    await onSend(msg, [...sceneIds], [...codexIds]);
+    await onSend(msg, mentions.sceneIds, mentions.codexIds);
   }
 
   const contextHints: string[] = [];

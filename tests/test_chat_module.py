@@ -15,6 +15,7 @@ from openauthor.chat import (
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  truncate_chat_messages,
   update_chat_thread,
 )
 from openauthor.generations import list_generation_runs
@@ -269,6 +270,36 @@ class ChatModuleTests(unittest.TestCase):
       )
       messages = list_chat_messages(paths, thread_id=thread["id"])
       self.assertEqual([row["role"] for row in messages], ["user"])
+
+  def test_truncate_chat_messages_rewinds_thread(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Chat Truncate")
+      thread = create_chat_thread(paths, title="Rewind Thread", provider="local", mode="chat")
+      send_chat_message(paths, thread_id=thread["id"], message="First question.")
+      second = send_chat_message(paths, thread_id=thread["id"], message="Second question.")
+
+      before = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual(len(before), 4)
+
+      result = truncate_chat_messages(
+        paths,
+        thread_id=thread["id"],
+        from_message_id=second["user_message"]["id"],
+      )
+      self.assertEqual(result["removed_count"], 2)
+      self.assertEqual(result["remaining_count"], 2)
+      self.assertIn(second["assistant_message"]["id"], result["removed_ids"])
+
+      after = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual([row["id"] for row in after], [row["id"] for row in before[:2]])
+
+      with self.assertRaises(OpenAuthorError):
+        truncate_chat_messages(
+          paths,
+          thread_id=thread["id"],
+          from_message_id="msg-does-not-exist",
+        )
 
   def test_agent_tool_loop_feeds_results_back_to_provider(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

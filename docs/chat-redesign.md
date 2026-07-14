@@ -82,6 +82,11 @@ implementation from earlier phases.)
 - Per-thread spend badge in the header (total tokens, estimated cost).
 - "Changes" on anchored turns opens the per-turn manuscript diff (chat diff).
 - Copy button on assistant replies.
-- Remaining ideas: regenerate/edit-message (needs a message deletion API in
-  the Python core), markdown links, migrating thread/message list reads onto
-  the sidecar.
+- Follow-ups, since landed: markdown links (http/https only), thread/message
+  list reads served by the warm sidecar (`chat.threads`/`chat.messages`, CLI
+  fallback on transport failure only), and Regenerate on the last assistant
+  reply — `truncate_chat_messages` rewinds the thread to the last user
+  message (`chat message truncate` / sidecar `chat.truncate`) and resends it;
+  generation logs for discarded turns are kept, so spend history stays
+  immutable.
+- Remaining idea: edit-a-past-message (truncate plus composer prefill).
