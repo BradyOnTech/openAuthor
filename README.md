@@ -80,10 +80,11 @@ python3 -m openauthor codex list --json
 python3 -m openauthor codex get --id entity-xxxxxxxxxxxx --json
 python3 -m openauthor codex update --id entity-xxxxxxxxxxxx --description "Updated profile" --json
 
-# create and apply proposal cards
+# create, draft, and apply proposal cards
 python3 -m openauthor proposal add --title "Tighten prose" --instruction "Make paragraph one more direct" --scene scene-0001
 python3 -m openauthor proposal list --status pending
-python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx
+python3 -m openauthor proposal draft --id proposal-xxxxxxxxxxxx --provider local --json   # generate the full revised scene body
+python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx                            # writes the drafted body (pre-apply snapshot; refuses stale drafts unless --force)
 
 # generate proposal using local provider (real deterministic adapter)
 python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --json
@@ -123,6 +124,11 @@ python3 -m openauthor branch switch --name main --json
 python3 -m openauthor branch diff --base main --head exp-arc-a --json
 python3 -m openauthor branch preflight --base main --head exp-arc-a --json
 python3 -m openauthor branch merge --base main --head exp-arc-a --json
+
+# merge-conflict workflow (scan -> AI reconciliation -> merge with resolutions)
+python3 -m openauthor branch conflicts --base main --head exp-arc-a --json
+python3 -m openauthor branch resolve --base main --head exp-arc-a --path manuscript/scenes/0001-opening-scene.md --provider local --json
+python3 -m openauthor branch merge --base main --head exp-arc-a --resolution proposal-xxxxxxxxxxxx --json
 
 # retrieval index + query
 python3 -m openauthor retrieval status --json
@@ -168,7 +174,7 @@ AI generation artifacts:
 - `.openauthor/generation_budget_policy.json` stores fail-closed budget limits for generation.
 - `.openauthor/retrieval/index.json` stores deterministic local retrieval chunks/term stats for provenance-backed querying.
 - Branch workspace merge preflight analyzes overlapping changes in book-state artifacts (scenes, codex snapshot, project/budget metadata).
-- Desktop Guided Merge panel supports branch create/switch, preflight risk analysis, branch diff review, and merge apply actions.
+- Desktop Merge panel supports storyline create/switch, compatibility checks (preflight + conflict scan), per-scene AI reconciliation drafts routed through the proposal queue, and merge apply with resolutions.
 - Failed provider calls are also logged to `.openauthor/generations/*.json` with error category metadata.
 - Logs include normalization diagnostics (detected headers, filled sections, changed/unchanged normalization).
 - Logs and summaries include quality scoring metadata (`quality_score`, `quality_tier`, `quality_flags`).

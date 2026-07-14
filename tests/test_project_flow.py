@@ -1263,6 +1263,117 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertTrue(any(row["role"] == "assistant" for row in rows))
       self.assertTrue(any(row["role"] == "tool" for row in rows))
 
+  def test_merge_conflict_scan_resolve_and_guided_merge(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      code, _, err = self.run_cli(["init", "--name", "Conflict Demo"], root)
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        [
+          "scene", "add",
+          "--title", "Vault",
+          "--summary", "heist",
+          "--pov", "Elara",
+          "--body", "Elara studied the vault door.",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(["snapshot", "create", "-m", "seed"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(["branch", "list", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      base_branch = next(row for row in json.loads(out) if row["current"])["name"]
+
+      code, _, err = self.run_cli(
+        ["branch", "create", "--name", "storyline-b", "--json"], root
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["scene", "update", "--id", "scene-0001", "--body", "She chose betrayal."],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(["snapshot", "create", "-m", "storyline b"], root)
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["branch", "switch", "--name", base_branch, "--json"], root
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(
+        ["scene", "update", "--id", "scene-0001", "--body", "She chose loyalty."],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      code, _, err = self.run_cli(["snapshot", "create", "-m", "base revision"], root)
+      self.assertEqual(code, 0, msg=err)
+
+      code, out, err = self.run_cli(
+        ["branch", "conflicts", "--base", base_branch, "--head", "storyline-b", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      scan = json.loads(out)
+      self.assertEqual(scan["conflict_count"], 1)
+      conflict = scan["conflicts"][0]
+      self.assertEqual(conflict["category"], "scene")
+      self.assertIn("loyalty", conflict["ours_text"])
+      self.assertIn("betrayal", conflict["theirs_text"])
+
+      code, _, err = self.run_cli(
+        ["branch", "merge", "--base", base_branch, "--head", "storyline-b"],
+        root,
+      )
+      self.assertNotEqual(code, 0)
+      self.assertIn("aborted", err.lower())
+
+      code, out, err = self.run_cli(
+        [
+          "branch", "resolve",
+          "--base", base_branch,
+          "--head", "storyline-b",
+          "--path", conflict["path"],
+          "--provider", "local",
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      resolution = json.loads(out)
+      self.assertEqual(resolution["source"], "merge_resolution")
+      self.assertIn("loyalty", resolution["proposed_body"])
+      self.assertIn("betrayal", resolution["proposed_body"])
+      self.assertEqual(resolution["merge"]["path"], conflict["path"])
+
+      code, out, err = self.run_cli(
+        [
+          "branch", "merge",
+          "--base", base_branch,
+          "--head", "storyline-b",
+          "--resolution", resolution["id"],
+          "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      merged = json.loads(out)
+      self.assertTrue(merged["merged"])
+      self.assertEqual(merged["resolved_paths"], [conflict["path"]])
+      self.assertEqual(merged["applied_resolutions"], [resolution["id"]])
+
+      code, out, err = self.run_cli(["scene", "get", "--id", "scene-0001", "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      body = json.loads(out)["body"]
+      self.assertIn("loyalty", body)
+      self.assertIn("betrayal", body)
+
+      code, out, err = self.run_cli(
+        ["proposal", "get", "--id", resolution["id"], "--json"], root
+      )
+      self.assertEqual(code, 0, msg=err)
+      self.assertEqual(json.loads(out)["status"], "applied")
+
 
 if __name__ == "__main__":
   unittest.main()

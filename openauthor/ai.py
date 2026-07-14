@@ -14,8 +14,8 @@ from .checks import run_continuity_checks
 from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
 from .auth import get_access_token, get_auth_status
-from .project import OpenAuthorError, ProjectPaths, utc_now
-from .proposals import create_proposal, get_proposal
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
+from .proposals import create_proposal, get_proposal, set_proposal_draft
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
@@ -24,7 +24,7 @@ SUPPORTED_RETRIEVAL_MODES = {"off", "auto", "required"}
 DEFAULT_MODELS = {
   "local": "heuristic-v1",
   "openai": "gpt-4.1-mini",
-  "anthropic": "claude-3-5-haiku-latest",
+  "anthropic": "claude-haiku-4-5",
   "openrouter": "openai/gpt-4.1-mini",
   "openai-codex": "codex-mini-latest",
 }
@@ -485,6 +485,26 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
     "Continuity Notes:\n"
     + "\n".join(f"- {line}" for line in continuity_lines)
   )
+
+
+def _generate_local_draft_text(context: dict[str, Any], instruction: str) -> str:
+  scene = context.get("scene", {})
+  body = str(scene.get("body", "")).rstrip()
+  directive = " ".join(str(instruction).split())
+  if len(directive) > 160:
+    directive = directive[:157] + "..."
+  revised = f"{body}\n\n(Revised per: {directive})" if body else f"(Revised per: {directive})"
+  return revised.strip()
+
+
+def _generate_local_merge_text(context: dict[str, Any], instruction: str) -> str:
+  ours = str(context.get("ours_body", "")).strip()
+  theirs = str(context.get("theirs_body", "")).strip()
+  base = str(context.get("merge_base_label", "base"))
+  head = str(context.get("merge_head_label", "head"))
+  parts = [part for part in (ours, theirs) if part]
+  combined = "\n\n".join(parts)
+  return f"{combined}\n\n(Reconciled '{base}' and '{head}' revisions.)".strip()
 
 
 def _generate_local_chat_result(
@@ -962,6 +982,20 @@ def _anthropic_content_blocks(entry: dict[str, Any]) -> tuple[str, list[dict[str
   return (entry["role"], [{"type": "text", "text": entry["content"]}])
 
 
+def _anthropic_model_accepts_temperature(model: str) -> bool:
+  # Sampling params were removed on newer Anthropic models (Opus 4.7+,
+  # Sonnet 5, Fable 5) and sending temperature returns a 400.
+  normalized = model.lower()
+  rejecting_prefixes = (
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-sonnet-5",
+    "claude-fable-5",
+    "claude-mythos-5",
+  )
+  return not normalized.startswith(rejecting_prefixes)
+
+
 def _anthropic_message(
   *,
   model: str,
@@ -999,9 +1033,10 @@ def _anthropic_message(
     "model": model,
     "system": system_prompt,
     "messages": messages,
-    "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
+  if _anthropic_model_accepts_temperature(model):
+    payload["temperature"] = temperature
   if tools:
     payload["tools"] = _anthropic_tools_payload(tools)
   if on_delta is not None and not tools:
@@ -1214,6 +1249,10 @@ def _call_provider(
         user_prompt,
         tools_enabled=bool(tools),
       )
+    elif context.get("merge_mode"):
+      text = _generate_local_merge_text(context, instruction)
+    elif context.get("draft_mode"):
+      text = _generate_local_draft_text(context, instruction)
     else:
       text = _generate_local_text(context, instruction)
     if on_delta is not None and not tools:
@@ -1361,7 +1400,7 @@ def _write_chat_generation_log(
     }
   if error is not None:
     payload["error"] = error
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1857,7 +1896,7 @@ def _write_generation_log(
       "estimated_cost_usd": estimated_cost_usd,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1908,7 +1947,7 @@ def _write_generation_failure_log(
       "provider": error.provider,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1963,7 +2002,7 @@ def _write_generation_budget_failure_log(
       "budget_projected": error.projected,
     },
   }
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
 
@@ -1978,7 +2017,7 @@ def _attach_proposal_to_generation_log(
     raise OpenAuthorError(f"Missing generation log for run '{run_id}'.")
   payload = json.loads(log_file.read_text(encoding="utf-8"))
   payload["proposal_id"] = proposal_id
-  log_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(log_file, payload)
 
 
 def _default_title(scene_title: str, instruction: str) -> str:
@@ -2162,6 +2201,458 @@ def generate_proposal(
       "quality_tier": quality["tier"],
       "quality_flags": quality["flags"],
       "log_path": log_path,
+    },
+  )
+  _attach_proposal_to_generation_log(
+    paths,
+    run_id=generation_id,
+    proposal_id=proposal_id,
+  )
+  return get_proposal(paths, proposal_id)
+
+
+DRAFT_SYSTEM_PROMPT = (
+  "You are a careful fiction line editor. Rewrite the provided scene body, "
+  "applying the edit plan faithfully while preserving the author's voice, POV, "
+  "and continuity. Return ONLY the complete revised scene body as Markdown "
+  "prose. Do not include YAML frontmatter, section headers about your process, "
+  "code fences, or commentary."
+)
+
+
+def _strip_code_fence(text: str) -> str:
+  stripped = text.strip()
+  if not stripped.startswith("```"):
+    return stripped
+  lines = stripped.splitlines()
+  if len(lines) >= 2 and lines[-1].strip().startswith("```"):
+    return "\n".join(lines[1:-1]).strip()
+  return stripped
+
+
+def generate_proposal_draft(
+  paths: ProjectPaths,
+  *,
+  proposal_id: str,
+  provider: str = "local",
+  model: str | None = None,
+  temperature: float = 0.3,
+  max_output_tokens: int = 2000,
+) -> dict[str, Any]:
+  if provider not in SUPPORTED_PROVIDERS:
+    raise OpenAuthorError(
+      f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
+    )
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+
+  proposal = get_proposal(paths, proposal_id)
+  if proposal.get("status") != "pending":
+    raise OpenAuthorError(
+      f"Proposal '{proposal_id}' is not pending; cannot draft."
+    )
+  scene_id = str(proposal.get("scene_id", "")).strip()
+  if scene_id == "":
+    raise OpenAuthorError(
+      f"Proposal '{proposal_id}' has no target scene; cannot draft."
+    )
+  scene = get_scene(paths, scene_id)
+  instruction = str(proposal.get("instruction", ""))
+
+  selected_model = model or DEFAULT_MODELS[provider]
+  context: dict[str, Any] = {
+    "draft_mode": True,
+    "scene": scene,
+    "proposal": {
+      "id": proposal_id,
+      "title": proposal.get("title", ""),
+      "instruction": instruction,
+    },
+  }
+  system_prompt = DRAFT_SYSTEM_PROMPT
+  user_prompt = (
+    "Edit plan (apply to the scene below):\n"
+    f"{instruction}\n\n"
+    "Scene metadata:\n"
+    + json.dumps(
+      {
+        "id": scene.get("id", ""),
+        "title": scene.get("title", ""),
+        "summary": scene.get("summary", ""),
+        "pov": scene.get("pov", ""),
+      },
+      ensure_ascii=False,
+    )
+    + "\n\nCurrent scene body:\n"
+    + str(scene.get("body", ""))
+  )
+  retrieval = {"mode": "off", "used": False}
+
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, failure_log_path = _write_generation_budget_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Draft generation blocked by budget policy. See {failure_log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=instruction,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except ProviderExecutionError as error:
+    _, failure_log_path = _write_generation_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Draft generation failed ({error.category}). See {failure_log_path}."
+    ) from error
+
+  raw_provider_text = provider_result["text"]
+  proposed_body = _strip_code_fence(raw_provider_text)
+  if proposed_body == "":
+    raise OpenAuthorError("Draft generation produced an empty scene body.")
+  provider_result["text"] = proposed_body
+
+  estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=provider_result["input_tokens"],
+    output_tokens=provider_result["output_tokens"],
+  )
+  changed = proposed_body.strip() != str(scene.get("body", "")).strip()
+  generation_id, log_path = _write_generation_log(
+    paths,
+    scene_id=scene_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    context_scene_radius=0,
+    codex_limit=0,
+    retrieval=retrieval,
+    instruction=instruction,
+    context=context,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    provider_result=provider_result,
+    raw_provider_text=raw_provider_text,
+    normalization={"draft_mode": True, "changed": changed},
+    quality={"score": None, "tier": "draft", "flags": [] if changed else ["draft_unchanged"]},
+    estimated_cost_usd=estimated_cost_usd,
+  )
+  _attach_proposal_to_generation_log(
+    paths,
+    run_id=generation_id,
+    proposal_id=proposal_id,
+  )
+
+  return set_proposal_draft(
+    paths,
+    proposal_id=proposal_id,
+    proposed_body=proposed_body,
+    draft={
+      "generation_id": generation_id,
+      "provider": provider,
+      "model": selected_model,
+      "temperature": temperature,
+      "max_output_tokens": max_output_tokens,
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "estimated_cost_usd": estimated_cost_usd,
+      "changed": changed,
+      "log_path": log_path,
+      "created_at": utc_now(),
+    },
+  )
+
+
+MERGE_SYSTEM_PROMPT = (
+  "You are a fiction editor reconciling two divergent revisions of the same "
+  "scene from different storyline branches. Produce a single coherent scene "
+  "body that preserves the narrative intent of both revisions where "
+  "compatible, resolves contradictions in favor of continuity, and keeps the "
+  "author's voice and POV. Return ONLY the complete reconciled scene body as "
+  "Markdown prose. Do not include YAML frontmatter, conflict markers, code "
+  "fences, or commentary."
+)
+
+
+def generate_merge_resolution(
+  paths: ProjectPaths,
+  *,
+  base: str,
+  head: str,
+  scene_path: str,
+  provider: str = "local",
+  model: str | None = None,
+  temperature: float = 0.3,
+  max_output_tokens: int = 3000,
+) -> dict[str, Any]:
+  from .git_ops import run_git, show_file_at_ref
+  from .scenes import render_scene_markdown, split_scene_text
+
+  if provider not in SUPPORTED_PROVIDERS:
+    raise OpenAuthorError(
+      f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
+    )
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+  normalized_path = scene_path.strip()
+  if not normalized_path.startswith("manuscript/scenes/"):
+    raise OpenAuthorError(
+      "AI merge resolution supports scene files under manuscript/scenes/ only."
+    )
+
+  base_ref = base.strip()
+  head_ref = head.strip()
+  merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
+  ours_file = show_file_at_ref(paths, base_ref, normalized_path)
+  theirs_file = show_file_at_ref(paths, head_ref, normalized_path)
+  ancestor_file = show_file_at_ref(paths, merge_base, normalized_path) or ""
+  if ours_file is None or theirs_file is None:
+    raise OpenAuthorError(
+      f"Scene '{normalized_path}' is missing on one side of the merge; "
+      "resolve delete/modify conflicts manually."
+    )
+
+  ours_meta, ours_body = split_scene_text(ours_file)
+  _, theirs_body = split_scene_text(theirs_file)
+  _, ancestor_body = split_scene_text(ancestor_file)
+  scene_id = ours_meta.get("id", "")
+
+  selected_model = model or DEFAULT_MODELS[provider]
+  instruction = (
+    f"Reconcile the two revisions of scene '{scene_id or normalized_path}' "
+    f"from branches '{base_ref}' and '{head_ref}'."
+  )
+  context: dict[str, Any] = {
+    "merge_mode": True,
+    "scene": {
+      "id": scene_id,
+      "title": ours_meta.get("title", ""),
+      "summary": ours_meta.get("summary", ""),
+      "pov": ours_meta.get("pov", ""),
+      "body": ours_body,
+    },
+    "ours_body": ours_body,
+    "theirs_body": theirs_body,
+    "ancestor_body": ancestor_body,
+    "merge_base_label": base_ref,
+    "merge_head_label": head_ref,
+  }
+  system_prompt = MERGE_SYSTEM_PROMPT
+  user_prompt = (
+    "Scene metadata:\n"
+    + json.dumps(
+      {
+        "id": scene_id,
+        "title": ours_meta.get("title", ""),
+        "summary": ours_meta.get("summary", ""),
+        "pov": ours_meta.get("pov", ""),
+        "base_branch": base_ref,
+        "head_branch": head_ref,
+      },
+      ensure_ascii=False,
+    )
+    + "\n\nCommon-ancestor version of the scene body:\n"
+    + (ancestor_body or "(scene did not exist at the merge base)")
+    + f"\n\nRevision from branch '{base_ref}':\n"
+    + ours_body
+    + f"\n\nRevision from branch '{head_ref}':\n"
+    + theirs_body
+  )
+  retrieval = {"mode": "off", "used": False}
+
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_estimated_cost_usd,
+    )
+  except BudgetPolicyError as error:
+    _, failure_log_path = _write_generation_budget_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Merge resolution blocked by budget policy. See {failure_log_path}."
+    ) from error
+
+  try:
+    provider_result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=instruction,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except ProviderExecutionError as error:
+    _, failure_log_path = _write_generation_failure_log(
+      paths,
+      scene_id=scene_id,
+      provider=provider,
+      model=selected_model,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+      context_scene_radius=0,
+      codex_limit=0,
+      retrieval=retrieval,
+      instruction=instruction,
+      context=context,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      error=error,
+    )
+    raise OpenAuthorError(
+      f"Merge resolution failed ({error.category}). See {failure_log_path}."
+    ) from error
+
+  raw_provider_text = provider_result["text"]
+  reconciled_body = _strip_code_fence(raw_provider_text)
+  if reconciled_body == "":
+    raise OpenAuthorError("Merge resolution produced an empty scene body.")
+  provider_result["text"] = reconciled_body
+
+  file_content = render_scene_markdown(
+    scene_identifier=scene_id or normalized_path,
+    title=ours_meta.get("title", ""),
+    summary=ours_meta.get("summary", ""),
+    pov=ours_meta.get("pov", ""),
+    status=ours_meta.get("status", "draft"),
+    created_at=ours_meta.get("created_at", "") or utc_now(),
+    updated_at=utc_now(),
+    body=reconciled_body,
+  )
+
+  estimated_cost_usd = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=provider_result["input_tokens"],
+    output_tokens=provider_result["output_tokens"],
+  )
+  generation_id, log_path = _write_generation_log(
+    paths,
+    scene_id=scene_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    context_scene_radius=0,
+    codex_limit=0,
+    retrieval=retrieval,
+    instruction=instruction,
+    context=context,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    provider_result=provider_result,
+    raw_provider_text=raw_provider_text,
+    normalization={"merge_mode": True},
+    quality={"score": None, "tier": "merge_resolution", "flags": []},
+    estimated_cost_usd=estimated_cost_usd,
+  )
+
+  title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
+  proposal_id = create_proposal(
+    paths,
+    title=title,
+    instruction=instruction,
+    scene_id=scene_id,
+    source="merge_resolution",
+    proposed_body=reconciled_body,
+    generation={
+      "id": generation_id,
+      "provider": provider,
+      "model": selected_model,
+      "temperature": temperature,
+      "max_output_tokens": max_output_tokens,
+      "input_tokens": provider_result["input_tokens"],
+      "output_tokens": provider_result["output_tokens"],
+      "latency_ms": provider_result["latency_ms"],
+      "estimated_cost_usd": estimated_cost_usd,
+      "log_path": log_path,
+    },
+    merge={
+      "base": base_ref,
+      "head": head_ref,
+      "merge_base": merge_base,
+      "path": normalized_path,
+      "file_content": file_content,
     },
   )
   _attach_proposal_to_generation_log(

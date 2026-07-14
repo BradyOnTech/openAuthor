@@ -34,7 +34,7 @@ check:
 	@test -f docs/desktop-architecture.md && echo "docs/desktop-architecture.md: OK" || (echo "docs/desktop-architecture.md missing" && exit 1)
 	@test -f docs/desktop-runbook.md && echo "docs/desktop-runbook.md: OK" || (echo "docs/desktop-runbook.md missing" && exit 1)
 	@test -f openauthor/cli.py && echo "openauthor CLI: OK" || (echo "openauthor/cli.py missing" && exit 1)
-	@test -f desktop/src/App.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
+	@test -f desktop/src/AppV2.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
 	@$(MAKE) audit-no-mocks
 
 audit-no-mocks:

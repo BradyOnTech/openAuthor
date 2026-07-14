@@ -103,6 +103,7 @@ export type SceneSummary = {
   created_at: string;
   updated_at: string;
   path: string;
+  word_count?: number;
 };
 
 export type SceneDetail = {
@@ -130,7 +131,32 @@ export type ProposalRecord = {
   created_at: string;
   updated_at: string;
   notes: string;
-  source?: "manual" | "ai_generate" | "chat_agent" | string;
+  source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
+  proposed_body?: string;
+  applied_changes?: boolean;
+  applied_at?: string;
+  pre_apply_snapshot?: string;
+  draft?: {
+    generation_id: string;
+    provider: string;
+    model: string;
+    temperature: number;
+    max_output_tokens: number;
+    input_tokens: number;
+    output_tokens: number;
+    latency_ms: number;
+    estimated_cost_usd: number | null;
+    changed: boolean;
+    log_path: string;
+    created_at: string;
+  };
+  merge?: {
+    base: string;
+    head: string;
+    merge_base: string;
+    path: string;
+    file_content: string;
+  };
   generation?: {
     id: string;
     provider: ProposalProvider;
@@ -530,6 +556,29 @@ export type BranchMergeResult = {
   merge_commit: string;
   current_branch: string;
   merge_output: string;
+  resolved_paths?: string[];
+  applied_resolutions?: string[];
+};
+
+export type MergeConflict = {
+  path: string;
+  category: "scene" | "codex" | "project" | "budget" | "other" | string;
+  kind: "content" | "delete_modify" | string;
+  conflict_count: number;
+  ours_text: string | null;
+  theirs_text: string | null;
+  ancestor_text: string;
+  merged_with_markers?: string;
+};
+
+export type MergeConflictScan = {
+  base: string;
+  head: string;
+  merge_base: string;
+  overlap_count: number;
+  auto_mergeable: string[];
+  conflicts: MergeConflict[];
+  conflict_count: number;
 };
 
 export type WorkspaceAuditIssue = {

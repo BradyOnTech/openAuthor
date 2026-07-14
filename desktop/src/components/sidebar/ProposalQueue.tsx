@@ -24,8 +24,18 @@ export function ProposalQueue() {
     <>
       <div className="sidebar__header">
         <span className="sidebar__title">Proposals</span>
-        <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
-          {counts.pending} pending
+        <span style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
+            {counts.pending} pending
+          </span>
+          <button
+            className="btn btn--ghost"
+            style={{ fontSize: "var(--text-xs)", padding: "2px 8px" }}
+            title="Ask the AI for an edit proposal"
+            onClick={() => openTab({ id: "generate", kind: "generate", label: "Generate" })}
+          >
+            {"+ AI"}
+          </button>
         </span>
       </div>
       <div className="sidebar__content">
@@ -40,7 +50,7 @@ export function ProposalQueue() {
             <div className="list-item__content">
               <div className="list-item__title">{p.title || p.id.slice(0, 12)}</div>
               <div className="list-item__meta">
-                {p.scene_id || "no scene"} \u00B7 {timeAgo(p.created_at)}
+                {p.scene_id || "no scene"} {"\u00B7"} {timeAgo(p.created_at)}
               </div>
             </div>
           </div>

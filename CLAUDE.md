@@ -59,7 +59,9 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 **AI provider abstraction** (`openauthor/ai.py`): Pluggable `local` (deterministic, used in tests), `openai`, `anthropic` providers with retry/backoff and fail-closed budget enforcement.
 
-**Proposal-based edits**: AI never silently mutates content. All AI output goes through a proposal queue (add → review → apply/reject). Generated proposals are normalized to four sections: Intent, Constraints, Edit Plan, Continuity Notes.
+**Proposal-based edits**: AI never silently mutates content. All AI output goes through a proposal queue (add/generate → draft → review → apply/reject). Generated proposals are normalized to four sections: Intent, Constraints, Edit Plan, Continuity Notes. `proposal draft` asks a provider for the full revised scene body (`proposed_body`); `proposal apply` writes it to the scene after a pre-apply snapshot, refusing stale drafts unless `--force`.
+
+**Merge-conflict flow**: `branch conflicts` scans base...head for three-way conflicts without touching the worktree (git merge-file per overlapping path). `branch resolve --path <scene>` generates an AI-reconciled scene as a `merge_resolution` proposal; `branch merge --resolution <proposal-id>` performs the merge writing the reconciled content into conflicted files. Merges without resolutions still auto-abort on conflict.
 
 ## Key Conventions
 
@@ -72,10 +74,13 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 ## Desktop Notes
 
-- `desktop/src/App.tsx` is the monolithic React component (very large file)
+- `desktop/src/AppV2.tsx` is the shell entry (rendered by `main.tsx`); UI lives in `desktop/src/components/` with state in `desktop/src/contexts/` (WorkspaceContext is the domain god-context)
+- The legacy monolithic `App.tsx` was removed; helper libs it used (`voice*.ts`, `runCompare.ts`, `rerun.ts`, `runLog.ts`) remain with tests for the upcoming Voice/Runs panels
 - `desktop/src/api.ts` wraps Tauri commands that call into Python
-- `desktop/src/types.ts` has shared TypeScript interfaces
-- Voice workspace: push-to-talk STT + dictation-to-proposal pipeline
+- `desktop/src/types.ts` has shared TypeScript interfaces (hand-maintained against CLI JSON)
+- Panels: Runs, Merge (storyline branching/merge with AI conflict reconciliation), Budget (view/update/reset limits)
+- Proposal flow in-app: `+ AI` in the Proposals sidebar opens the generate tab; proposal review supports Draft scene text → Apply to scene
+- `createProjectRegistryClient()` returns the local registry under Vitest unless `VITE_PROJECT_REGISTRY=supabase` (keeps tests hermetic despite `.env.local`)
 - Local storage persists per-project UI preferences (comparison profiles, voice transcripts)
 
 ## Environment Variables

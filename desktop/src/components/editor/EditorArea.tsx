@@ -3,6 +3,7 @@ import { TabBar } from "./TabBar";
 import { SceneEditor } from "./SceneEditor";
 import { ProposalReview } from "./ProposalReview";
 import { SettingsEditor } from "./SettingsEditor";
+import { GenerateProposal } from "./GenerateProposal";
 import type { SceneDetail, ProposalRecord, CodexEntity } from "../../types";
 
 export function EditorArea() {
@@ -58,6 +59,10 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
           </div>
         </div>
       );
+    }
+    case "generate": {
+      const scene = tab.data as SceneDetail | undefined;
+      return <GenerateProposal key={tab.id} initialSceneId={scene?.id} />;
     }
     case "settings":
       return <SettingsEditor />;

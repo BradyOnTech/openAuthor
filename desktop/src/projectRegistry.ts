@@ -685,6 +685,17 @@ function defaultSupabaseTokenProvider(): string | null {
 }
 
 export function createProjectRegistryClient(): ProjectRegistryClient {
+  const mode = env("VITE_PROJECT_REGISTRY");
+  if (mode === "local") {
+    return new LocalProjectRegistryClient();
+  }
+  // Tests must stay hermetic: ambient Supabase credentials (e.g. from
+  // .env.local) must not switch the registry to a network client under
+  // Vitest unless the test explicitly opts in.
+  const underTest = Boolean(env("VITEST"));
+  if (underTest && mode !== "supabase") {
+    return new LocalProjectRegistryClient();
+  }
   const baseUrl = env("VITE_SUPABASE_URL");
   const anonKey = env("VITE_SUPABASE_ANON_KEY");
   if (baseUrl && anonKey) {

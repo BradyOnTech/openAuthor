@@ -16,6 +16,7 @@ import type {
   GenerationRuntimeConfig,
   GenerationRunSummary,
   InitProjectResult,
+  MergeConflictScan,
   PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
@@ -334,17 +335,40 @@ export async function generateProposal(
 export async function applyProposal(
   projectRoot: string,
   proposalId: string,
-  notes = ""
+  notes = "",
+  force = false
 ): Promise<ProposalRecord> {
-  const result = await runCoreCommand(projectRoot, [
-    "proposal",
-    "apply",
-    "--id",
-    proposalId,
-    "--notes",
-    notes,
-    "--json"
-  ]);
+  const args = ["proposal", "apply", "--id", proposalId, "--notes", notes];
+  if (force) {
+    args.push("--force");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function draftProposal(
+  projectRoot: string,
+  payload: {
+    proposalId: string;
+    provider: ProposalProvider;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
 }
 
@@ -1185,18 +1209,69 @@ export async function preflightMerge(
 
 export async function mergeBranches(
   projectRoot: string,
-  payload: { base: string; head: string }
+  payload: { base: string; head: string; resolutionIds?: string[] }
 ): Promise<BranchMergeResult> {
+  const args = ["branch", "merge", "--base", payload.base, "--head", payload.head];
+  for (const id of payload.resolutionIds ?? []) {
+    args.push("--resolution", id);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<BranchMergeResult>(result);
+}
+
+export async function scanMergeConflicts(
+  projectRoot: string,
+  payload: { base: string; head: string }
+): Promise<MergeConflictScan> {
   const result = await runCoreCommand(projectRoot, [
     "branch",
-    "merge",
+    "conflicts",
     "--base",
     payload.base,
     "--head",
     payload.head,
     "--json"
   ]);
-  return decodeJson<BranchMergeResult>(result);
+  return decodeJson<MergeConflictScan>(result);
+}
+
+export async function resolveMergeConflict(
+  projectRoot: string,
+  payload: {
+    base: string;
+    head: string;
+    path: string;
+    provider: ProposalProvider;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+  }
+): Promise<ProposalRecord> {
+  const args = [
+    "branch",
+    "resolve",
+    "--base",
+    payload.base,
+    "--head",
+    payload.head,
+    "--path",
+    payload.path,
+    "--provider",
+    payload.provider
+  ];
+  if (payload.model && payload.model.trim() !== "") {
+    args.push("--model", payload.model);
+  }
+  if (typeof payload.temperature === "number") {
+    args.push("--temperature", String(payload.temperature));
+  }
+  if (typeof payload.maxOutputTokens === "number") {
+    args.push("--max-output-tokens", String(payload.maxOutputTokens));
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
 }
 
 export async function listGenerationPins(

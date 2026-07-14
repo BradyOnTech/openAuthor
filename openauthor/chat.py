@@ -19,7 +19,7 @@ from .git_ops import (
   run_git,
   switch_branch,
 )
-from .project import OpenAuthorError, ProjectPaths, utc_now
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
 from .proposals import create_proposal
 from .retrieval import query_retrieval_index
 from .scenes import get_scene, list_scenes
@@ -252,10 +252,7 @@ def _write_threads(paths: ProjectPaths, rows: list[dict[str, Any]]) -> None:
     key=lambda row: (str(row.get("updated_at", "")), str(row.get("id", ""))),
     reverse=True,
   )
-  paths.chat_threads_index_file.write_text(
-    json.dumps(normalized, indent=2) + "\n",
-    encoding="utf-8",
-  )
+  atomic_write_json(paths.chat_threads_index_file, normalized)
 
 
 def _capture_vcs_anchor(paths: ProjectPaths) -> tuple[str, str]:
@@ -507,9 +504,9 @@ def truncate_chat_messages(
   kept = messages[:index]
   removed = messages[index:]
   message_path = _thread_messages_path(paths, thread_id)
-  message_path.write_text(
+  atomic_write_text(
+    message_path,
     "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in kept),
-    encoding="utf-8",
   )
   _touch_thread(paths, thread_id)
   return {

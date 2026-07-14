@@ -6,7 +6,7 @@ from typing import Any
 
 from .ai import SUPPORTED_PROVIDERS, generate_proposal, get_provider_runtime_config
 from .budget import get_generation_budget_report
-from .project import OpenAuthorError, ProjectPaths
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json
 from .scenes import list_scenes
 
 STATUSES = {"succeeded", "failed"}
@@ -48,7 +48,7 @@ def _write_pins(paths: ProjectPaths, pins: dict[str, str]) -> None:
     for scene_id, run_id in sorted(pins.items())
     if scene_id.strip() and run_id.strip()
   }
-  pins_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+  atomic_write_json(pins_file, payload)
 
 
 def _read_generation(log_file: Path) -> dict[str, Any]:

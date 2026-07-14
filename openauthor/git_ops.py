@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
+from pathlib import Path
 from typing import Any
 
 from .codex import export_codex_json, replace_runtime_codex_from_snapshot
@@ -85,6 +87,8 @@ def _require_branch_name(name: str) -> str:
     raise OpenAuthorError("Branch name cannot be empty.")
   if any(ch.isspace() for ch in normalized):
     raise OpenAuthorError("Branch name cannot contain whitespace.")
+  if normalized.startswith("-"):
+    raise OpenAuthorError("Branch name cannot start with '-'.")
   if normalized in {".", ".."}:
     raise OpenAuthorError(f"Invalid branch name '{name}'.")
   return normalized
@@ -303,6 +307,107 @@ def _classify_path(path: str) -> str:
   return "other"
 
 
+def _changed_bookstate_paths(paths: ProjectPaths, merge_base: str, ref: str) -> set[str]:
+  return {
+    line.strip()
+    for line in run_git(
+      paths,
+      ["diff", "--name-only", f"{merge_base}..{ref}", "--", *BOOKSTATE_PATHSPEC],
+      check=True,
+    ).stdout.splitlines()
+    if line.strip()
+  }
+
+
+def show_file_at_ref(paths: ProjectPaths, ref: str, path: str) -> str | None:
+  result = run_git(paths, ["show", f"{ref}:{path}"], check=False)
+  if result.returncode != 0:
+    return None
+  return result.stdout
+
+
+def scan_merge_conflicts(paths: ProjectPaths, *, base: str, head: str) -> dict[str, Any]:
+  ensure_git_repo(paths)
+  base_ref = base.strip()
+  head_ref = head.strip()
+  _ensure_ref_exists(paths, base_ref)
+  _ensure_ref_exists(paths, head_ref)
+
+  merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
+  base_changed = _changed_bookstate_paths(paths, merge_base, base_ref)
+  head_changed = _changed_bookstate_paths(paths, merge_base, head_ref)
+  overlap_paths = sorted(base_changed.intersection(head_changed))
+
+  conflicts: list[dict[str, Any]] = []
+  auto_mergeable: list[str] = []
+  for path in overlap_paths:
+    ancestor_text = show_file_at_ref(paths, merge_base, path)
+    ours_text = show_file_at_ref(paths, base_ref, path)
+    theirs_text = show_file_at_ref(paths, head_ref, path)
+    if ours_text is None or theirs_text is None:
+      conflicts.append(
+        {
+          "path": path,
+          "category": _classify_path(path),
+          "kind": "delete_modify",
+          "conflict_count": 1,
+          "ours_text": ours_text,
+          "theirs_text": theirs_text,
+          "ancestor_text": ancestor_text or "",
+        }
+      )
+      continue
+    with tempfile.TemporaryDirectory(prefix="openauthor-merge-") as tmp:
+      tmp_dir = Path(tmp)
+      ours_file = tmp_dir / "ours"
+      ancestor_file = tmp_dir / "ancestor"
+      theirs_file = tmp_dir / "theirs"
+      ours_file.write_text(ours_text, encoding="utf-8")
+      ancestor_file.write_text(ancestor_text or "", encoding="utf-8")
+      theirs_file.write_text(theirs_text, encoding="utf-8")
+      merged = run_git(
+        paths,
+        [
+          "merge-file",
+          "-p",
+          f"-L{base_ref}",
+          "-Lancestor",
+          f"-L{head_ref}",
+          str(ours_file),
+          str(ancestor_file),
+          str(theirs_file),
+        ],
+        check=False,
+      )
+    if merged.returncode == 0:
+      auto_mergeable.append(path)
+      continue
+    if merged.returncode < 0:
+      raise OpenAuthorError(f"git merge-file failed for '{path}'.")
+    conflicts.append(
+      {
+        "path": path,
+        "category": _classify_path(path),
+        "kind": "content",
+        "conflict_count": merged.returncode,
+        "ours_text": ours_text,
+        "theirs_text": theirs_text,
+        "ancestor_text": ancestor_text or "",
+        "merged_with_markers": merged.stdout,
+      }
+    )
+
+  return {
+    "base": base_ref,
+    "head": head_ref,
+    "merge_base": merge_base,
+    "overlap_count": len(overlap_paths),
+    "auto_mergeable": auto_mergeable,
+    "conflicts": conflicts,
+    "conflict_count": len(conflicts),
+  }
+
+
 def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, Any]:
   ensure_git_repo(paths)
   base_ref = base.strip()
@@ -311,24 +416,8 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
   _ensure_ref_exists(paths, head_ref)
 
   merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
-  base_changed = {
-    line.strip()
-    for line in run_git(
-      paths,
-      ["diff", "--name-only", f"{merge_base}..{base_ref}", "--", *BOOKSTATE_PATHSPEC],
-      check=True,
-    ).stdout.splitlines()
-    if line.strip()
-  }
-  head_changed = {
-    line.strip()
-    for line in run_git(
-      paths,
-      ["diff", "--name-only", f"{merge_base}..{head_ref}", "--", *BOOKSTATE_PATHSPEC],
-      check=True,
-    ).stdout.splitlines()
-    if line.strip()
-  }
+  base_changed = _changed_bookstate_paths(paths, merge_base, base_ref)
+  head_changed = _changed_bookstate_paths(paths, merge_base, head_ref)
   overlap_paths = sorted(base_changed.intersection(head_changed))
   overlap_by_category: dict[str, list[str]] = {
     "scene": [],
@@ -379,7 +468,13 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
   }
 
 
-def merge_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, Any]:
+def merge_branches(
+  paths: ProjectPaths,
+  *,
+  base: str,
+  head: str,
+  resolutions: dict[str, str] | None = None,
+) -> dict[str, Any]:
   ensure_git_repo(paths)
   base_ref = base.strip()
   head_ref = head.strip()
@@ -396,16 +491,51 @@ def merge_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, An
 
   merge_result = run_git(
     paths,
-    ["merge", "--no-ff", "--no-edit", head_ref],
+    ["merge", "--no-ff", "--no-commit", "--no-edit", head_ref],
     check=False,
   )
+  resolved_paths: list[str] = []
   if merge_result.returncode != 0:
-    run_git(paths, ["merge", "--abort"], check=False)
-    stderr = merge_result.stderr.strip() or merge_result.stdout.strip()
-    raise OpenAuthorError(
-      "Merge failed and was aborted automatically. "
-      + (stderr or "Resolve conflicts manually and retry.")
-    )
+    conflicted = [
+      line.strip()
+      for line in run_git(
+        paths,
+        ["diff", "--name-only", "--diff-filter=U"],
+        check=False,
+      ).stdout.splitlines()
+      if line.strip()
+    ]
+    resolution_map = resolutions or {}
+    missing = [path for path in conflicted if path not in resolution_map]
+    if not conflicted or missing:
+      run_git(paths, ["merge", "--abort"], check=False)
+      if conflicted:
+        listed = ", ".join(missing or conflicted)
+        raise OpenAuthorError(
+          "Merge conflicts detected and aborted. Conflicted files without a "
+          f"resolution: {listed}. Use `branch conflicts` to inspect and "
+          "`branch resolve` to draft reconciliations, then merge with "
+          "--resolution."
+        )
+      stderr = merge_result.stderr.strip() or merge_result.stdout.strip()
+      raise OpenAuthorError(
+        "Merge failed and was aborted automatically. "
+        + (stderr or "Resolve conflicts manually and retry.")
+      )
+    for path in conflicted:
+      target = paths.root / path
+      target.parent.mkdir(parents=True, exist_ok=True)
+      target.write_text(resolution_map[path], encoding="utf-8")
+      run_git(paths, ["add", "--", path], check=True)
+      resolved_paths.append(path)
+
+  merge_head = paths.root / ".git" / "MERGE_HEAD"
+  if merge_head.exists():
+    commit = run_git(paths, ["commit", "--no-edit"], check=False)
+    if commit.returncode != 0:
+      run_git(paths, ["merge", "--abort"], check=False)
+      stderr = commit.stderr.strip() or commit.stdout.strip() or "git commit failed"
+      raise OpenAuthorError(f"Merge commit failed and was aborted. {stderr}")
 
   merge_commit = run_git(paths, ["rev-parse", "HEAD"], check=True).stdout.strip()
   _sync_codex_runtime(paths)
@@ -417,5 +547,6 @@ def merge_branches(paths: ProjectPaths, *, base: str, head: str) -> dict[str, An
     "merged": True,
     "merge_commit": merge_commit,
     "current_branch": current,
+    "resolved_paths": resolved_paths,
     "merge_output": output,
   }

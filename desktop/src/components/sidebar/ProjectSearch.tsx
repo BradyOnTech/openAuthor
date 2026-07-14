@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { getScene } from "../../api";
+import { getCodexEntity, getScene } from "../../api";
 
 export function ProjectSearch() {
   const { projectRoot, scenes, codexEntities, setError } = useWorkspace();
@@ -62,7 +62,12 @@ export function ProjectSearch() {
         setError(`Failed to open scene: ${e instanceof Error ? e.message : String(e)}`);
       }
     } else {
-      openTab({ id: `codex:${item.id}`, kind: "codex", label: item.title });
+      try {
+        const entity = await getCodexEntity(projectRoot, item.id);
+        openTab({ id: `codex:${item.id}`, kind: "codex", label: item.title, data: entity });
+      } catch (e) {
+        setError(`Failed to open entity: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
   }
 
