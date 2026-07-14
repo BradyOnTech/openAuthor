@@ -61,11 +61,27 @@ those ideas to authoring rather than cloning a coding agent.
   before/after commits. `openauthor chat diff --thread --message` diffs a
   turn's anchor against HEAD.
 
-## Phase 4 — UI pass
+## Phase 4 — UI pass — DONE
 
-- Markdown rendering, optimistic user-message echo, retry/regenerate/copy.
-- Real context pickers for scenes and codex entities (the API already accepts
-  explicit ids); retrieval on by default with citations rendered as clickable
-  chips back to the source scene/codex entry.
-- "Turn this reply into a proposal" affordance on assistant messages.
-- Surface per-thread spend (from generation logs) in the thread header.
+All work landed in the ACTIVE desktop shell: `main.tsx` mounts `AppV2`, whose
+chat surface is `desktop/src/components/secondary/ChatPanel.tsx`. (The legacy
+monolith `desktop/src/App.tsx` is not mounted; it carries a parallel chat
+implementation from earlier phases.)
+
+- Streaming in the live panel: optimistic user echo, token-by-token assistant
+  bubble with cursor, and a Stop button wired to `chat.interrupt`.
+- Markdown rendering via `desktop/src/chatMarkdown.ts` — a small tested
+  parser (headings, ordered/unordered lists, blockquotes, fenced code,
+  bold/italic/inline code) rendered as React nodes, no innerHTML.
+- Retrieval defaults to `auto`. Each message stores compact citations
+  (source, title, score, excerpt); the panel renders them as chips that open
+  the cited scene/codex entry in an editor tab. Scene/codex @-mention pickers
+  already existed in the V2 composer and are kept.
+- "→ Proposal" on assistant replies queues the reply as a proposal targeting
+  the first context scene (or the open scene) — the chat-to-proposal bridge.
+- Per-thread spend badge in the header (total tokens, estimated cost).
+- "Changes" on anchored turns opens the per-turn manuscript diff (chat diff).
+- Copy button on assistant replies.
+- Remaining ideas: regenerate/edit-message (needs a message deletion API in
+  the Python core), markdown links, migrating thread/message list reads onto
+  the sidecar.

@@ -245,6 +245,42 @@ export type ChatSendResult = {
   pending_tool_calls: ChatToolCall[];
 };
 
+export type ChatRetrievalCitation = {
+  source_type: "scene" | "codex" | string;
+  source_ref: string;
+  source_title?: string;
+  source_path?: string;
+  chunk_id?: string;
+  score?: number | null;
+  excerpt?: string;
+};
+
+export type ChatTurnVcs = {
+  branch?: string;
+  base_commit?: string;
+  before_commit?: string;
+  after_commit?: string;
+  changed?: boolean;
+  snapshot?: string;
+};
+
+export type ChatTurnDiffFile = {
+  status: string;
+  path: string;
+  added: number | null;
+  deleted: number | null;
+};
+
+export type ChatTurnDiff = {
+  thread_id: string;
+  message_id: string;
+  base: string;
+  head: string;
+  ahead_by: number;
+  behind_by: number;
+  files: ChatTurnDiffFile[];
+};
+
 export type GenerationRunSummary = {
   run_id: string;
   kind?: "proposal" | "chat" | string;

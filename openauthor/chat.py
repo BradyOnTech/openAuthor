@@ -220,7 +220,7 @@ def _default_context_profile() -> dict[str, Any]:
     "include_selection": True,
     "include_recent_scenes_radius": 1,
     "include_codex": "auto_and_explicit",
-    "retrieval_mode": "off",
+    "retrieval_mode": "auto",
     "retrieval_limit": 5,
     "retrieval_min_score": 0.0,
     "retrieval_require_fresh": False,
@@ -684,11 +684,24 @@ def _resolve_context(
         min_score=float(profile.get("retrieval_min_score", 0.0)),
         require_fresh=bool(profile.get("retrieval_require_fresh", False)),
       )
+      citations = [
+        {
+          "source_type": row.get("source_type", ""),
+          "source_ref": row.get("source_ref", ""),
+          "source_path": row.get("source_path", ""),
+          "source_title": row.get("source_title", ""),
+          "chunk_id": row.get("chunk_id", ""),
+          "score": row.get("score"),
+          "excerpt": _clip_tool_result(str(row.get("text", "")), 240),
+        }
+        for row in retrieval_result.get("results", [])
+        if isinstance(row, dict)
+      ]
       retrieval_payload = {
         "mode": retrieval_mode,
-        "used": len(retrieval_result.get("results", [])) > 0,
+        "used": len(citations) > 0,
         "result_count": retrieval_result.get("result_count", 0),
-        "citations": retrieval_result.get("results", []),
+        "citations": citations,
         "index": retrieval_result.get("index", {}),
         "degraded": False,
         "error": "",

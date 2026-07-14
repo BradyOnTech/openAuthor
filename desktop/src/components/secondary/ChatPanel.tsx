@@ -1,34 +1,50 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
   createChatThread,
   updateChatThread,
-  sendChatMessage,
+  sendChatMessageStreamed,
+  interruptChatTurn,
   executeChatToolCall,
+  createProposal,
+  getChatTurnDiff,
+  getScene,
+  getCodexEntity,
 } from "../../api";
+import { parseChatMarkdown, type ChatBlock, type ChatInlineSpan } from "../../chatMarkdown";
 import type {
   ChatThreadRecord,
   ChatMessageRecord,
   ChatToolCall,
-  ChatSendResult,
+  ChatRetrievalCitation,
+  ChatTurnDiff,
+  ChatTurnVcs,
   ProposalProvider,
   SceneSummary,
   CodexEntity,
 } from "../../types";
+
+type ChatStream = {
+  requestId: string;
+  userText: string;
+  text: string;
+};
 
 export function ChatPanel() {
   const {
     projectFound, projectRoot,
     chatThreads, refreshChatThreads,
     activeChatThreadId, setActiveChatThreadId,
-    chatMessages, setChatMessages, refreshChatMessages,
+    chatMessages, refreshChatMessages,
     chatSending, setChatSending,
     scenes, codexEntities,
+    refreshProposals,
     runtimeConfig,
     setError, setMessage,
   } = useWorkspace();
-  const { tabs, activeTabId } = useEditor();
+  const { tabs, activeTabId, openTab } = useEditor();
+  const [stream, setStream] = useState<ChatStream | null>(null);
 
   if (!projectFound) {
     return (
@@ -42,11 +58,46 @@ export function ChatPanel() {
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const currentSceneId = activeTab?.kind === "scene" ? activeTab.id.replace("scene:", "") : undefined;
 
+  async function handleOpenCitation(citation: ChatRetrievalCitation) {
+    try {
+      if (citation.source_type === "scene") {
+        const detail = await getScene(projectRoot, citation.source_ref);
+        openTab({
+          id: `scene:${citation.source_ref}`,
+          kind: "scene",
+          label: citation.source_title || detail.title || citation.source_ref,
+          data: detail,
+        });
+      } else if (citation.source_type === "codex") {
+        const entity = await getCodexEntity(projectRoot, citation.source_ref);
+        openTab({
+          id: `codex:${citation.source_ref}`,
+          kind: "codex",
+          label: citation.source_title || entity.name || citation.source_ref,
+          data: entity,
+        });
+      }
+    } catch (e) {
+      setError(`Failed to open citation: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async function handleInterrupt() {
+    if (!stream) return;
+    try {
+      await interruptChatTurn(projectRoot, stream.requestId);
+      setMessage("Interrupt requested.");
+    } catch (e) {
+      setError(`Interrupt failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   return (
     <div className="chat-panel">
       <ThreadHeader
         threads={chatThreads}
         activeThread={activeThread}
+        messages={chatMessages}
         runtimeConfig={runtimeConfig}
         projectRoot={projectRoot}
         onSelectThread={setActiveChatThreadId}
@@ -60,46 +111,90 @@ export function ChatPanel() {
       <MessageList
         messages={chatMessages}
         sending={chatSending}
-        projectRoot={projectRoot}
-        threadId={activeChatThreadId}
-        onToolExecuted={refreshChatMessages}
-        setError={setError}
-      />
-      <Composer
+        stream={stream}
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
         currentSceneId={currentSceneId}
+        onToolExecuted={refreshChatMessages}
+        onOpenCitation={handleOpenCitation}
+        onProposalQueued={() => {
+          refreshProposals();
+          setMessage("Proposal queued for review.");
+        }}
+        setError={setError}
+      />
+      <Composer
+        threadId={activeChatThreadId}
         sending={chatSending}
+        streaming={stream !== null}
         scenes={scenes}
         codexEntities={codexEntities}
         activeThread={activeThread}
+        currentSceneId={currentSceneId}
+        onInterrupt={handleInterrupt}
         onSend={async (text, mentionedSceneIds, mentionedCodexIds) => {
           if (!activeChatThreadId || !text.trim()) return;
           setChatSending(true);
           try {
-            const result = await sendChatMessage(projectRoot, {
-              threadId: activeChatThreadId,
-              message: text,
-              currentSceneId,
-              sceneIds: mentionedSceneIds,
-              codexIds: mentionedCodexIds,
-            });
-            setChatMessages((prev) => [
-              ...prev,
-              result.user_message,
-              result.assistant_message,
-              ...result.tool_messages,
-            ]);
+            await sendChatMessageStreamed(
+              projectRoot,
+              {
+                threadId: activeChatThreadId,
+                message: text,
+                currentSceneId,
+                sceneIds: mentionedSceneIds,
+                codexIds: mentionedCodexIds,
+              },
+              {
+                onStart: (requestId) =>
+                  setStream({ requestId, userText: text, text: "" }),
+                onDelta: (delta) =>
+                  setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
+              }
+            );
+            await refreshChatMessages();
+            await refreshChatThreads();
           } catch (e) {
+            await refreshChatMessages();
             setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
           } finally {
+            setStream(null);
             setChatSending(false);
           }
         }}
-        setError={setError}
       />
     </div>
   );
+}
+
+
+/* ── Context-used helpers ───────────────────────────────────────── */
+
+function messageCitations(message: ChatMessageRecord): ChatRetrievalCitation[] {
+  const retrieval = (message.context_used as {
+    retrieval?: { citations?: ChatRetrievalCitation[] };
+  }).retrieval;
+  if (!retrieval || !Array.isArray(retrieval.citations)) return [];
+  const seen = new Set<string>();
+  const unique: ChatRetrievalCitation[] = [];
+  for (const citation of retrieval.citations) {
+    const key = `${citation.source_type}:${citation.source_ref}`;
+    if (citation.source_ref && !seen.has(key)) {
+      seen.add(key);
+      unique.push(citation);
+    }
+  }
+  return unique;
+}
+
+function messageVcs(message: ChatMessageRecord): ChatTurnVcs {
+  const vcs = (message.context_used as { vcs?: ChatTurnVcs }).vcs;
+  return vcs && typeof vcs === "object" ? vcs : {};
+}
+
+function messageSceneIds(message: ChatMessageRecord): string[] {
+  const ids = (message.context_used as { scene_ids?: string[] }).scene_ids;
+  return Array.isArray(ids) ? ids.filter((id) => typeof id === "string" && id !== "") : [];
 }
 
 
@@ -108,6 +203,7 @@ export function ChatPanel() {
 function ThreadHeader({
   threads,
   activeThread,
+  messages,
   runtimeConfig,
   projectRoot,
   onSelectThread,
@@ -117,6 +213,7 @@ function ThreadHeader({
 }: {
   threads: ChatThreadRecord[];
   activeThread?: ChatThreadRecord;
+  messages: ChatMessageRecord[];
   runtimeConfig: ReturnType<typeof useWorkspace>["runtimeConfig"];
   projectRoot: string;
   onSelectThread: (id: string) => void;
@@ -127,6 +224,20 @@ function ThreadHeader({
   const [showThreadList, setShowThreadList] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  const spend = useMemo(() => {
+    let tokens = 0;
+    let cost = 0;
+    let hasCost = false;
+    for (const message of messages) {
+      tokens += (message.usage.input_tokens ?? 0) + (message.usage.output_tokens ?? 0);
+      if (message.usage.estimated_cost_usd != null) {
+        cost += message.usage.estimated_cost_usd;
+        hasCost = true;
+      }
+    }
+    return { tokens, cost, hasCost };
+  }, [messages]);
 
   const availableProviders = useMemo(() => {
     if (!runtimeConfig) return [];
@@ -195,18 +306,27 @@ function ThreadHeader({
           title="Switch thread"
         >
           {activeThread ? truncate(activeThread.title, 20) : "No thread"}
-          <span className="chat-header__chevron">{"\u25BE"}</span>
+          <span className="chat-header__chevron">{"▾"}</span>
         </button>
       </div>
 
       <div className="chat-header__right">
+        {activeThread && spend.tokens > 0 && (
+          <span
+            className="chat-header__spend"
+            title={`This thread has used ${spend.tokens.toLocaleString()} tokens${spend.hasCost ? ` (~$${spend.cost.toFixed(4)})` : ""}.`}
+          >
+            {formatTokens(spend.tokens)}
+            {spend.hasCost && <> {"·"} ${spend.cost.toFixed(3)}</>}
+          </span>
+        )}
         {activeThread && (
           <button
             className={`chat-header__mode-badge chat-header__mode-badge--${activeThread.mode}`}
             onClick={handleToggleMode}
             title={`Mode: ${activeThread.mode}. Click to toggle.`}
           >
-            {activeThread.mode === "agent" ? "\u2699" : "\u2728"} {activeThread.mode}
+            {activeThread.mode === "agent" ? "⚙" : "✨"} {activeThread.mode}
           </button>
         )}
         {activeThread && (
@@ -241,7 +361,7 @@ function ThreadHeader({
             >
               <span className="chat-dropdown__item-title">{t.title || t.id.slice(0, 12)}</span>
               <span className="chat-dropdown__item-meta">
-                {shortModel(t.model)} {"\u00B7"} {timeAgo(t.updated_at)}
+                {shortModel(t.model)} {"·"} {timeAgo(t.updated_at)}
               </span>
             </div>
           ))}
@@ -272,16 +392,24 @@ function ThreadHeader({
 function MessageList({
   messages,
   sending,
+  stream,
   projectRoot,
   threadId,
+  currentSceneId,
   onToolExecuted,
+  onOpenCitation,
+  onProposalQueued,
   setError,
 }: {
   messages: ChatMessageRecord[];
   sending: boolean;
+  stream: ChatStream | null;
   projectRoot: string;
   threadId: string;
+  currentSceneId?: string;
   onToolExecuted: () => void;
+  onOpenCitation: (citation: ChatRetrievalCitation) => void;
+  onProposalQueued: () => void;
   setError: (e: string) => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -292,7 +420,7 @@ function MessageList({
     if (autoScroll) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, sending, autoScroll]);
+  }, [messages, sending, stream, autoScroll]);
 
   function handleScroll() {
     const el = containerRef.current;
@@ -301,11 +429,11 @@ function MessageList({
     setAutoScroll(atBottom);
   }
 
-  if (messages.length === 0 && !sending) {
+  if (messages.length === 0 && !sending && !stream) {
     return (
       <div className="chat-panel__messages">
         <div className="chat-empty">
-          <div className="chat-empty__icon">{"\u2728"}</div>
+          <div className="chat-empty__icon">{"✨"}</div>
           <div className="chat-empty__text">
             {threadId ? "Send a message to start the conversation." : "Create or select a thread to begin."}
           </div>
@@ -322,11 +450,36 @@ function MessageList({
           message={msg}
           projectRoot={projectRoot}
           threadId={threadId}
+          currentSceneId={currentSceneId}
           onToolExecuted={onToolExecuted}
+          onOpenCitation={onOpenCitation}
+          onProposalQueued={onProposalQueued}
           setError={setError}
         />
       ))}
-      {sending && (
+      {stream && (
+        <div className="chat-message chat-message--user chat-message--optimistic">
+          <div className="chat-message__header">
+            <span className="chat-message__role chat-message__role--user">user</span>
+            <span className="chat-message__time">sending{"…"}</span>
+          </div>
+          <div className="chat-message__body">
+            <RenderedContent content={stream.userText} />
+          </div>
+        </div>
+      )}
+      {stream && stream.text !== "" ? (
+        <div className="chat-message chat-message--assistant chat-message--streaming">
+          <div className="chat-message__header">
+            <span className="chat-message__role chat-message__role--assistant">assistant</span>
+            <span className="chat-message__time">streaming{"…"}</span>
+          </div>
+          <div className="chat-message__body">
+            <RenderedContent content={stream.text} />
+            <span className="chat-streaming-cursor" />
+          </div>
+        </div>
+      ) : sending ? (
         <div className="chat-message chat-message--typing">
           <div className="chat-message__header">
             <span className="chat-message__role chat-message__role--assistant">assistant</span>
@@ -335,7 +488,7 @@ function MessageList({
             <span /><span /><span />
           </div>
         </div>
-      )}
+      ) : null}
       <div ref={bottomRef} />
       {!autoScroll && (
         <button
@@ -345,7 +498,7 @@ function MessageList({
             bottomRef.current?.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          {"\u2193"} Latest
+          {"↓"} Latest
         </button>
       )}
     </div>
@@ -359,15 +512,78 @@ function ChatMessage({
   message,
   projectRoot,
   threadId,
+  currentSceneId,
   onToolExecuted,
+  onOpenCitation,
+  onProposalQueued,
   setError,
 }: {
   message: ChatMessageRecord;
   projectRoot: string;
   threadId: string;
+  currentSceneId?: string;
   onToolExecuted: () => void;
+  onOpenCitation: (citation: ChatRetrievalCitation) => void;
+  onProposalQueued: () => void;
   setError: (e: string) => void;
 }) {
+  const [copied, setCopied] = useState(false);
+  const [queueingProposal, setQueueingProposal] = useState(false);
+  const [diff, setDiff] = useState<ChatTurnDiff | null>(null);
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [diffLoading, setDiffLoading] = useState(false);
+
+  const citations = message.role === "assistant" ? messageCitations(message) : [];
+  const vcs = messageVcs(message);
+  const proposalSceneId = messageSceneIds(message)[0] ?? currentSceneId ?? "";
+  const isAssistant = message.role === "assistant";
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      setError(`Copy failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async function handleQueueProposal() {
+    if (proposalSceneId === "" || queueingProposal) return;
+    setQueueingProposal(true);
+    try {
+      await createProposal(projectRoot, {
+        title: proposalTitle(message.content),
+        instruction: message.content,
+        sceneId: proposalSceneId,
+      });
+      onProposalQueued();
+    } catch (e) {
+      setError(`Failed to queue proposal: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setQueueingProposal(false);
+    }
+  }
+
+  async function handleToggleDiff() {
+    if (!diffOpen && diff === null) {
+      setDiffLoading(true);
+      try {
+        const result = await getChatTurnDiff(projectRoot, {
+          threadId,
+          messageId: message.id,
+        });
+        setDiff(result);
+      } catch (e) {
+        setError(`Turn diff failed: ${e instanceof Error ? e.message : String(e)}`);
+        setDiffLoading(false);
+        return;
+      }
+      setDiffLoading(false);
+    }
+    setDiffOpen(!diffOpen);
+  }
+
   return (
     <div className={`chat-message chat-message--${message.role}`}>
       <div className="chat-message__header">
@@ -384,6 +600,22 @@ function ChatMessage({
       ) : (
         <div className="chat-message__body">
           <RenderedContent content={message.content} />
+        </div>
+      )}
+
+      {citations.length > 0 && (
+        <div className="chat-citations">
+          {citations.map((citation) => (
+            <button
+              key={`${citation.source_type}:${citation.source_ref}`}
+              className={`chat-citation-chip chat-citation-chip--${citation.source_type}`}
+              onClick={() => onOpenCitation(citation)}
+              title={citation.excerpt || citation.source_ref}
+            >
+              {citation.source_type === "scene" ? "○" : "◆"}{" "}
+              {citation.source_title || citation.source_ref}
+            </button>
+          ))}
         </div>
       )}
 
@@ -404,14 +636,66 @@ function ChatMessage({
         </div>
       )}
 
-      {message.role === "assistant" && message.usage.input_tokens != null && (
+      {isAssistant && message.content.trim() !== "" && (
+        <div className="chat-message__actions">
+          <button className="chat-action-btn" onClick={handleCopy} title="Copy message text">
+            {copied ? "✓ Copied" : "Copy"}
+          </button>
+          <button
+            className="chat-action-btn"
+            onClick={handleQueueProposal}
+            disabled={proposalSceneId === "" || queueingProposal}
+            title={
+              proposalSceneId === ""
+                ? "Open a scene or mention one to target a proposal."
+                : `Queue this reply as a proposal for ${proposalSceneId}.`
+            }
+          >
+            {queueingProposal ? "Queueing…" : "→ Proposal"}
+          </button>
+          {vcs.base_commit && (
+            <button
+              className="chat-action-btn"
+              onClick={handleToggleDiff}
+              disabled={diffLoading}
+              title="Show manuscript changes since this turn"
+            >
+              {diffLoading ? "Loading…" : diffOpen ? "Hide changes" : "Changes"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {diffOpen && diff && (
+        <div className="chat-diff-panel">
+          {diff.files.length === 0 ? (
+            <div className="chat-diff-panel__empty">No authoring changes since this turn.</div>
+          ) : (
+            diff.files.map((file) => (
+              <div key={file.path} className="chat-diff-panel__row">
+                <span className={`chat-diff-panel__status chat-diff-panel__status--${file.status.charAt(0)}`}>
+                  {file.status}
+                </span>
+                <span className="chat-diff-panel__path">{file.path}</span>
+                {file.added != null && file.deleted != null && (
+                  <span className="chat-diff-panel__stats">
+                    +{file.added} {"−"}{file.deleted}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {isAssistant && message.usage.input_tokens != null && (
         <div className="chat-message__usage">
           {message.usage.input_tokens} in / {message.usage.output_tokens} out
           {message.usage.estimated_cost_usd != null && (
-            <> {"\u00B7"} ${message.usage.estimated_cost_usd.toFixed(4)}</>
+            <> {"·"} ${message.usage.estimated_cost_usd.toFixed(4)}</>
           )}
           {message.usage.latency_ms != null && (
-            <> {"\u00B7"} {(message.usage.latency_ms / 1000).toFixed(1)}s</>
+            <> {"·"} {(message.usage.latency_ms / 1000).toFixed(1)}s</>
           )}
         </div>
       )}
@@ -458,9 +742,9 @@ function ToolCallCard({
     }
   }
 
-  const classIcon = toolCall.classification === "read" ? "\u25CB"
-    : toolCall.classification === "write" ? "\u25CF"
-    : "\u26A0";
+  const classIcon = toolCall.classification === "read" ? "○"
+    : toolCall.classification === "write" ? "●"
+    : "⚠";
 
   return (
     <div className={`tool-call-card tool-call-card--${toolCall.classification}`}>
@@ -468,9 +752,9 @@ function ToolCallCard({
         <span className="tool-call-card__icon">{classIcon}</span>
         <span className="tool-call-card__name">{toolCall.tool}</span>
         <span className="tool-call-card__status">
-          {toolCall.executed ? "\u2713" : toolCall.error ? "\u2717" : "pending"}
+          {toolCall.executed ? "✓" : toolCall.error ? "✗" : "pending"}
         </span>
-        <span className="tool-call-card__chevron">{expanded ? "\u25B4" : "\u25BE"}</span>
+        <span className="tool-call-card__chevron">{expanded ? "▴" : "▾"}</span>
       </div>
       {expanded && (
         <div className="tool-call-card__body">
@@ -502,25 +786,25 @@ function ToolCallCard({
 /* ── Composer with @ Mentions ───────────────────────────────────── */
 
 function Composer({
-  projectRoot,
   threadId,
-  currentSceneId,
   sending,
+  streaming,
   scenes,
   codexEntities,
   activeThread,
+  currentSceneId,
   onSend,
-  setError,
+  onInterrupt,
 }: {
-  projectRoot: string;
   threadId: string;
-  currentSceneId?: string;
   sending: boolean;
+  streaming: boolean;
   scenes: SceneSummary[];
   codexEntities: CodexEntity[];
   activeThread?: ChatThreadRecord;
+  currentSceneId?: string;
   onSend: (text: string, sceneIds: string[], codexIds: string[]) => Promise<void>;
-  setError: (e: string) => void;
+  onInterrupt: () => void;
 }) {
   const [text, setText] = useState("");
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -683,7 +967,7 @@ function Composer({
                 onMouseEnter={() => setMentionIndex(i)}
               >
                 <span className="mention-autocomplete__icon">
-                  {item.kind === "scene" ? "\u25CB" : "\u25C6"}
+                  {item.kind === "scene" ? "○" : "◆"}
                 </span>
                 <span className="mention-autocomplete__label">{item.label}</span>
                 <span className="mention-autocomplete__detail">{item.detail}</span>
@@ -701,90 +985,107 @@ function Composer({
           rows={1}
           disabled={!threadId || sending}
         />
-        <button
-          className="btn btn--ai btn--sm"
-          onClick={handleSend}
-          disabled={!text.trim() || sending || !threadId}
-        >
-          {sending ? "\u2026" : "Send"}
-        </button>
+        {sending && streaming ? (
+          <button className="btn btn--sm" onClick={onInterrupt} title="Interrupt this turn">
+            Stop
+          </button>
+        ) : (
+          <button
+            className="btn btn--ai btn--sm"
+            onClick={handleSend}
+            disabled={!text.trim() || sending || !threadId}
+          >
+            {sending ? "…" : "Send"}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 
-/* ── Simple Content Renderer ────────────────────────────────────── */
+/* ── Markdown Renderer ──────────────────────────────────────────── */
 
 function RenderedContent({ content }: { content: string }) {
-  // Simple renderer: code blocks, bold, italic, line breaks
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
+  const blocks = useMemo(() => parseChatMarkdown(content), [content]);
   return (
     <>
-      {parts.map((part, i) => {
-        if (part.startsWith("```") && part.endsWith("```")) {
-          const inner = part.slice(3, -3);
-          const nlIdx = inner.indexOf("\n");
-          const code = nlIdx >= 0 ? inner.slice(nlIdx + 1) : inner;
-          return (
-            <pre key={i} className="chat-code-block">
-              <code>{code}</code>
-            </pre>
-          );
+      {blocks.map((block, index) => (
+        <RenderedBlock key={index} block={block} />
+      ))}
+    </>
+  );
+}
+
+function RenderedBlock({ block }: { block: ChatBlock }) {
+  if (block.kind === "code") {
+    return (
+      <pre className="chat-code-block">
+        <code>{block.code}</code>
+      </pre>
+    );
+  }
+  if (block.kind === "heading") {
+    const spans = <Spans spans={block.spans} />;
+    if (block.level === 1) return <h3 className="chat-heading">{spans}</h3>;
+    if (block.level === 2) return <h4 className="chat-heading">{spans}</h4>;
+    return <h5 className="chat-heading">{spans}</h5>;
+  }
+  if (block.kind === "list") {
+    const items = block.items.map((item, i) => (
+      <li key={i}>
+        <Spans spans={item} />
+      </li>
+    ));
+    return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
+  }
+  if (block.kind === "quote") {
+    return (
+      <blockquote className="chat-quote">
+        <Lines lines={block.lines} />
+      </blockquote>
+    );
+  }
+  return (
+    <p>
+      <Lines lines={block.lines} />
+    </p>
+  );
+}
+
+function Lines({ lines }: { lines: ChatInlineSpan[][] }) {
+  return (
+    <>
+      {lines.map((line, index) => (
+        <span key={index}>
+          <Spans spans={line} />
+          {index < lines.length - 1 && <br />}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function Spans({ spans }: { spans: ChatInlineSpan[] }) {
+  return (
+    <>
+      {spans.map((span, index) => {
+        if (span.kind === "bold") return <strong key={index}>{span.text}</strong>;
+        if (span.kind === "italic") return <em key={index}>{span.text}</em>;
+        if (span.kind === "code") {
+          return <code key={index} className="chat-inline-code">{span.text}</code>;
         }
-        return <InlineText key={i} text={part} />;
+        return <span key={index}>{span.text}</span>;
       })}
     </>
   );
-}
-
-function InlineText({ text }: { text: string }) {
-  // Split into paragraphs
-  const paragraphs = text.split(/\n\n+/);
-  return (
-    <>
-      {paragraphs.map((p, i) => {
-        if (!p.trim()) return null;
-        const lines = p.split("\n");
-        return (
-          <p key={i}>
-            {lines.map((line, lineIndex) => (
-              <span key={`${i}-${lineIndex}`}>
-                {renderInlineText(line, `${i}-${lineIndex}`)}
-                {lineIndex < lines.length - 1 && <br />}
-              </span>
-            ))}
-          </p>
-        );
-      })}
-    </>
-  );
-}
-
-function renderInlineText(text: string, keyPrefix: string): React.ReactNode[] {
-  const tokenPattern = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g;
-  const pieces = text.split(tokenPattern).filter((piece) => piece !== "");
-  return pieces.map((piece, index) => {
-    const key = `${keyPrefix}-${index}`;
-    if (piece.startsWith("**") && piece.endsWith("**")) {
-      return <strong key={key}>{piece.slice(2, -2)}</strong>;
-    }
-    if (piece.startsWith("*") && piece.endsWith("*")) {
-      return <em key={key}>{piece.slice(1, -1)}</em>;
-    }
-    if (piece.startsWith("`") && piece.endsWith("`")) {
-      return <code key={key} className="chat-inline-code">{piece.slice(1, -1)}</code>;
-    }
-    return <span key={key}>{piece}</span>;
-  });
 }
 
 
 /* ── Utilities ──────────────────────────────────────────────────── */
 
 function truncate(s: string, max: number): string {
-  return s.length <= max ? s : s.slice(0, max - 1) + "\u2026";
+  return s.length <= max ? s : s.slice(0, max - 1) + "…";
 }
 
 function shortModel(model: string): string {
@@ -792,6 +1093,17 @@ function shortModel(model: string): string {
   const slash = model.lastIndexOf("/");
   const name = slash >= 0 ? model.slice(slash + 1) : model;
   return truncate(name, 18);
+}
+
+function formatTokens(tokens: number): string {
+  if (tokens < 1000) return `${tokens} tok`;
+  return `${(tokens / 1000).toFixed(1)}k tok`;
+}
+
+function proposalTitle(content: string): string {
+  const firstLine = content.split("\n").find((line) => line.trim() !== "") ?? "Chat reply";
+  const clean = firstLine.replace(/^#+\s*/, "").replace(/[*`>]/g, "").trim();
+  return truncate(clean === "" ? "Chat reply" : clean, 72);
 }
 
 function formatTime(iso: string): string {

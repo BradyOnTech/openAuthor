@@ -6,6 +6,7 @@ import type {
   ChatMessageRecord,
   ChatSendResult,
   ChatThreadRecord,
+  ChatTurnDiff,
   CodexEntity,
   ContinuityIssue,
   CoreCommandResponse,
@@ -699,6 +700,25 @@ export async function interruptChatTurn(
     { request_id: requestId },
     10_000
   );
+}
+
+export async function getChatTurnDiff(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    messageId: string;
+  }
+): Promise<ChatTurnDiff> {
+  const result = await runCoreCommand(projectRoot, [
+    "chat",
+    "diff",
+    "--thread",
+    payload.threadId,
+    "--message",
+    payload.messageId,
+    "--json"
+  ]);
+  return decodeJson<ChatTurnDiff>(result);
 }
 
 export async function executeChatToolCall(
