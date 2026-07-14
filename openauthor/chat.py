@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import uuid
 from pathlib import Path
 from typing import Any
@@ -13,6 +12,7 @@ from .git_ops import (
   create_branch,
   create_snapshot,
   current_branch,
+  diff_branches,
   get_branch_workspace_status,
   merge_branches,
   preflight_merge,
@@ -27,8 +27,187 @@ from .scenes import get_scene, list_scenes
 CHAT_MODES = {"chat", "agent"}
 INCLUDE_CODEX_MODES = {"off", "explicit", "auto", "auto_and_explicit"}
 RETRIEVAL_MODES = {"off", "auto", "required"}
-CHAT_TOOL_BLOCK_START = "[[OA_TOOL_CALLS_BEGIN]]"
-CHAT_TOOL_BLOCK_END = "[[OA_TOOL_CALLS_END]]"
+MAX_TOOL_ROUNDS = 4
+
+
+def _schema(properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
+  return {"type": "object", "properties": properties, "required": required}
+
+
+CHAT_TOOL_SPECS: list[dict[str, Any]] = [
+  {
+    "name": "scene.list",
+    "description": "List all scenes with ids, titles, POV, and status.",
+    "parameters": _schema({}, []),
+  },
+  {
+    "name": "scene.get",
+    "description": "Fetch one scene (frontmatter and body) by id.",
+    "parameters": _schema(
+      {"id": {"type": "string", "description": "Scene id, e.g. scene-0001."}},
+      ["id"],
+    ),
+  },
+  {
+    "name": "codex.list",
+    "description": "List codex entities (characters, places, items, lore).",
+    "parameters": _schema({}, []),
+  },
+  {
+    "name": "codex.get",
+    "description": "Fetch one codex entity by id.",
+    "parameters": _schema(
+      {"id": {"type": "string", "description": "Codex entity id."}},
+      ["id"],
+    ),
+  },
+  {
+    "name": "retrieval.query",
+    "description": "Search the local manuscript/codex retrieval index; returns cited excerpts.",
+    "parameters": _schema(
+      {
+        "text": {"type": "string", "description": "Search query."},
+        "limit": {"type": "integer", "description": "Max results (default 5)."},
+        "min_score": {"type": "number", "description": "Minimum relevance score."},
+        "require_fresh": {"type": "boolean", "description": "Fail if the index is stale."},
+      },
+      ["text"],
+    ),
+  },
+  {
+    "name": "check.continuity",
+    "description": "Run continuity checks across the whole project.",
+    "parameters": _schema({}, []),
+  },
+  {
+    "name": "branch.status",
+    "description": "Show the git branch and workspace status of the project.",
+    "parameters": _schema({}, []),
+  },
+  {
+    "name": "proposal.add",
+    "description": "Queue a manuscript edit proposal for the author to review (never edits directly).",
+    "parameters": _schema(
+      {
+        "title": {"type": "string", "description": "Short proposal title."},
+        "instruction": {"type": "string", "description": "Proposal body with Intent, Constraints, Edit Plan, Continuity Notes sections."},
+        "scene_id": {"type": "string", "description": "Target scene id."},
+      },
+      ["title", "instruction", "scene_id"],
+    ),
+  },
+  {
+    "name": "proposal.generate",
+    "description": "Generate a full AI proposal for a scene through the budgeted generation pipeline.",
+    "parameters": _schema(
+      {
+        "scene_id": {"type": "string", "description": "Target scene id."},
+        "instruction": {"type": "string", "description": "What the proposal should accomplish."},
+        "title": {"type": "string", "description": "Optional proposal title."},
+        "provider": {"type": "string", "description": "AI provider (defaults to local)."},
+        "model": {"type": "string", "description": "Optional model override."},
+        "retrieval_mode": {"type": "string", "description": "off, auto, or required."},
+      },
+      ["scene_id", "instruction"],
+    ),
+  },
+  {
+    "name": "codex.add",
+    "description": "Add a codex entity.",
+    "parameters": _schema(
+      {
+        "type": {"type": "string", "description": "Entity type (character, place, item, lore)."},
+        "name": {"type": "string", "description": "Entity name."},
+        "description": {"type": "string", "description": "Entity description."},
+      },
+      ["type", "name"],
+    ),
+  },
+  {
+    "name": "codex.update",
+    "description": "Update fields on an existing codex entity.",
+    "parameters": _schema(
+      {
+        "id": {"type": "string", "description": "Entity id."},
+        "type": {"type": "string", "description": "New entity type."},
+        "name": {"type": "string", "description": "New name."},
+        "description": {"type": "string", "description": "New description."},
+      },
+      ["id"],
+    ),
+  },
+  {
+    "name": "snapshot.create",
+    "description": "Create a git snapshot commit of the current authoring state.",
+    "parameters": _schema(
+      {"message": {"type": "string", "description": "Snapshot commit message."}},
+      ["message"],
+    ),
+  },
+  {
+    "name": "branch.create",
+    "description": "Create (and by default switch to) a new draft branch.",
+    "parameters": _schema(
+      {
+        "name": {"type": "string", "description": "Branch name."},
+        "from_ref": {"type": "string", "description": "Optional base ref."},
+        "no_switch": {"type": "boolean", "description": "Create without switching."},
+      },
+      ["name"],
+    ),
+  },
+  {
+    "name": "branch.switch",
+    "description": "Switch to an existing branch.",
+    "parameters": _schema(
+      {"name": {"type": "string", "description": "Branch name."}},
+      ["name"],
+    ),
+  },
+  {
+    "name": "merge.preflight",
+    "description": "Check whether a branch merge would apply cleanly.",
+    "parameters": _schema(
+      {
+        "base": {"type": "string", "description": "Base branch."},
+        "head": {"type": "string", "description": "Head branch."},
+      },
+      ["base", "head"],
+    ),
+  },
+  {
+    "name": "merge.apply",
+    "description": "Merge one branch into another. Requires author approval.",
+    "parameters": _schema(
+      {
+        "base": {"type": "string", "description": "Base branch."},
+        "head": {"type": "string", "description": "Head branch."},
+      },
+      ["base", "head"],
+    ),
+  },
+]
+
+CHAT_TOOL_WIRE_NAMES = {
+  spec["name"].replace(".", "_"): spec["name"] for spec in CHAT_TOOL_SPECS
+}
+
+
+def _chat_tool_specs() -> list[dict[str, Any]]:
+  return [
+    {
+      "name": spec["name"].replace(".", "_"),
+      "description": spec["description"],
+      "parameters": spec["parameters"],
+    }
+    for spec in CHAT_TOOL_SPECS
+  ]
+
+
+def _clip_tool_result(value: str, limit: int = 4000) -> str:
+  if len(value) <= limit:
+    return value
+  return value[: limit - 3] + "..."
 
 
 def _thread_messages_path(paths: ProjectPaths, thread_id: str) -> Path:
@@ -538,50 +717,6 @@ def _resolve_context(
   return context_for_prompt, context_used
 
 
-def _tool_call_template() -> str:
-  return (
-    "Agent mode tool protocol:\n"
-    f"If tools are needed, append exactly one block:\n"
-    f"{CHAT_TOOL_BLOCK_START}\n"
-    '[{"tool":"scene.list","args":{}}]\n'
-    f"{CHAT_TOOL_BLOCK_END}\n"
-    "Supported tools: scene.list, scene.get, codex.list, codex.get, retrieval.query, "
-    "check.continuity, branch.status, proposal.add, proposal.generate, codex.add, "
-    "codex.update, snapshot.create, branch.create, branch.switch, merge.preflight, merge.apply.\n"
-    "Return normal chat text outside the tool block."
-  )
-
-
-def _parse_tool_calls(text: str) -> tuple[str, list[dict[str, Any]]]:
-  pattern = re.compile(
-    rf"{re.escape(CHAT_TOOL_BLOCK_START)}\s*(.*?)\s*{re.escape(CHAT_TOOL_BLOCK_END)}",
-    flags=re.DOTALL,
-  )
-  match = pattern.search(text)
-  if match is None:
-    return text.strip(), []
-  json_block = match.group(1).strip()
-  if json_block == "":
-    return text.strip(), []
-  try:
-    payload = json.loads(json_block)
-  except json.JSONDecodeError:
-    return text.strip(), []
-  if not isinstance(payload, list):
-    return text.strip(), []
-  rows: list[dict[str, Any]] = []
-  for item in payload:
-    if not isinstance(item, dict):
-      continue
-    tool = str(item.get("tool", "")).strip()
-    args = item.get("args", {})
-    if tool == "" or not isinstance(args, dict):
-      continue
-    rows.append({"tool": tool, "args": args})
-  clean_text = (text[: match.start()] + text[match.end() :]).strip()
-  return clean_text, rows
-
-
 def _tool_classification(tool_name: str) -> str:
   read_only_tools = {
     "scene.list",
@@ -737,12 +872,17 @@ def send_chat_message(
     content=content,
     context_used=context_used,
   )
+  agent_mode = thread.get("mode") == "agent"
   system_prompt = (
     "You are openAuthor's fiction assistant. Stay grounded in provided context, "
     "be explicit about assumptions, and avoid direct manuscript mutation language."
   )
-  if thread.get("mode") == "agent":
-    system_prompt = system_prompt + "\n\n" + _tool_call_template()
+  if agent_mode:
+    system_prompt = system_prompt + (
+      "\n\nUse the available tools to read project state and to queue changes. "
+      "Write and merge tools are not executed immediately: they are held for "
+      "the author's approval, so say so when you use one."
+    )
   user_prompt = (
     "User message:\n"
     f"{content}\n\n"
@@ -751,80 +891,131 @@ def send_chat_message(
   )
   provider = str(thread.get("provider", "local"))
   model = str(thread.get("model", "")).strip() or DEFAULT_MODELS[provider]
-  completion = complete_chat(
-    paths,
-    provider=provider,
-    model=model,
-    system_prompt=system_prompt,
-    user_prompt=user_prompt,
-    history=history,
-    temperature=0.2,
-    max_output_tokens=900,
-    chat_mode=True,
-    thread_id=thread_id,
-    on_delta=on_delta,
-  )
-  assistant_text = completion.get("text", "")
-  clean_text, raw_tool_calls = _parse_tool_calls(assistant_text)
+  tools = _chat_tool_specs() if agent_mode else None
   agent_auto_read_only = bool(profile.get("agent_auto_read_only", True))
-  pending_tool_calls: list[dict[str, Any]] = []
-  recorded_tool_calls: list[dict[str, Any]] = []
+  turn_branch, turn_base_commit = _capture_vcs_anchor(paths)
+  turn_vcs = {"branch": turn_branch, "base_commit": turn_base_commit}
+
+  conversation: list[dict[str, Any]] = list(history)
+  round_prompt = user_prompt
+  assistant_message: dict[str, Any] = {}
   executed_tool_messages: list[dict[str, Any]] = []
+  pending_tool_calls: list[dict[str, Any]] = []
 
-  for row in raw_tool_calls:
-    tool_name = str(row.get("tool", "")).strip()
-    args = row.get("args", {})
-    if tool_name == "" or not isinstance(args, dict):
-      continue
-    classification = _tool_classification(tool_name)
-    tool_row: dict[str, Any] = {
-      "tool": tool_name,
-      "args": args,
-      "classification": classification,
-      "executed": False,
-      "result_summary": "",
-      "error": "",
-    }
-    if classification == "read" and agent_auto_read_only:
-      try:
-        result = _execute_tool(paths, tool_name, args)
-        tool_row["executed"] = True
-        tool_row["result_summary"] = _safe_summary(result)
-        tool_message = _append_chat_message(
-          paths,
-          thread_id=thread_id,
-          role="tool",
-          content=json.dumps(
-            {"tool": tool_name, "result": result},
+  for _ in range(MAX_TOOL_ROUNDS):
+    completion = complete_chat(
+      paths,
+      provider=provider,
+      model=model,
+      system_prompt=system_prompt,
+      user_prompt=round_prompt,
+      history=list(conversation),
+      temperature=0.2,
+      max_output_tokens=900,
+      chat_mode=True,
+      thread_id=thread_id,
+      on_delta=on_delta,
+      tools=tools,
+    )
+    if round_prompt:
+      conversation.append({"role": "user", "content": round_prompt})
+      round_prompt = ""
+    assistant_text = str(completion.get("text", ""))
+    wire_tool_calls = completion.get("tool_calls", []) if agent_mode else []
+
+    recorded_tool_calls: list[dict[str, Any]] = []
+    round_pending: list[dict[str, Any]] = []
+    tool_result_entries: list[dict[str, Any]] = []
+    for call in wire_tool_calls:
+      internal_name = CHAT_TOOL_WIRE_NAMES.get(call["name"], call["name"])
+      args = call["args"] if isinstance(call.get("args"), dict) else {}
+      classification = _tool_classification(internal_name)
+      tool_row: dict[str, Any] = {
+        "id": call["id"],
+        "tool": internal_name,
+        "args": args,
+        "classification": classification,
+        "executed": False,
+        "result_summary": "",
+        "error": "",
+      }
+      if classification == "read" and agent_auto_read_only:
+        try:
+          result = _execute_tool(paths, internal_name, args)
+          tool_row["executed"] = True
+          tool_row["result_summary"] = _safe_summary(result)
+          result_json = json.dumps(
+            {"tool": internal_name, "result": result},
             ensure_ascii=True,
-          ),
-          context_used=context_used,
-        )
-        executed_tool_messages.append(tool_message)
-      except OpenAuthorError as error:
-        tool_row["error"] = str(error)
-    else:
-      pending_tool_calls.append(tool_row)
-    recorded_tool_calls.append(tool_row)
+          )
+          tool_message = _append_chat_message(
+            paths,
+            thread_id=thread_id,
+            role="tool",
+            content=result_json,
+            context_used={"tool_call_id": call["id"], "tool": internal_name},
+          )
+          executed_tool_messages.append(tool_message)
+          tool_result_entries.append(
+            {
+              "role": "tool",
+              "tool_call_id": call["id"],
+              "name": call["name"],
+              "content": _clip_tool_result(result_json),
+            }
+          )
+        except OpenAuthorError as error:
+          tool_row["error"] = str(error)
+          tool_result_entries.append(
+            {
+              "role": "tool",
+              "tool_call_id": call["id"],
+              "name": call["name"],
+              "content": json.dumps(
+                {"tool": internal_name, "error": str(error)},
+                ensure_ascii=True,
+              ),
+            }
+          )
+      else:
+        round_pending.append(tool_row)
+      recorded_tool_calls.append(tool_row)
 
-  assistant_message = _append_chat_message(
-    paths,
-    thread_id=thread_id,
-    role="assistant",
-    content=clean_text if clean_text else assistant_text,
-    context_used=context_used,
-    tool_calls=recorded_tool_calls,
-    usage={
-      "input_tokens": completion.get("input_tokens"),
-      "output_tokens": completion.get("output_tokens"),
-      "latency_ms": completion.get("latency_ms"),
-      "provider_attempts": completion.get("provider_attempts"),
-      "estimated_cost_usd": completion.get("estimated_cost_usd"),
-      "provider": provider,
-      "model": model,
-      "generation_id": completion.get("generation_id", ""),
-    },
-  )
+    assistant_message = _append_chat_message(
+      paths,
+      thread_id=thread_id,
+      role="assistant",
+      content=assistant_text,
+      context_used={**context_used, "vcs": turn_vcs},
+      tool_calls=recorded_tool_calls,
+      usage={
+        "input_tokens": completion.get("input_tokens"),
+        "output_tokens": completion.get("output_tokens"),
+        "latency_ms": completion.get("latency_ms"),
+        "provider_attempts": completion.get("provider_attempts"),
+        "estimated_cost_usd": completion.get("estimated_cost_usd"),
+        "provider": provider,
+        "model": model,
+        "generation_id": completion.get("generation_id", ""),
+      },
+    )
+    pending_tool_calls.extend(round_pending)
+
+    # Continue only when every requested tool ran: pending calls need the
+    # author's approval first, and no calls means the turn is finished.
+    if not wire_tool_calls or round_pending or not tool_result_entries:
+      break
+    conversation.append(
+      {
+        "role": "assistant",
+        "content": assistant_text,
+        "tool_calls": [
+          {"id": call["id"], "name": call["name"], "args": call["args"]}
+          for call in wire_tool_calls
+        ],
+      }
+    )
+    conversation.extend(tool_result_entries)
 
   _touch_thread(paths, thread_id)
   return {
@@ -868,7 +1059,22 @@ def execute_pending_tool_call(
   args = tool_call.get("args", {})
   if tool_name == "" or not isinstance(args, dict):
     raise OpenAuthorError("Invalid tool call payload.")
+  _, before_commit = _capture_vcs_anchor(paths)
   result = _execute_tool(paths, tool_name, args)
+  snapshot_note = ""
+  if _tool_classification(tool_name) in {"write", "risky"}:
+    try:
+      snapshot_note = create_snapshot(paths, f"chat agent: {tool_name}")
+    except OpenAuthorError as error:
+      snapshot_note = f"Snapshot failed: {error}"
+  after_branch, after_commit = _capture_vcs_anchor(paths)
+  vcs = {
+    "branch": after_branch,
+    "before_commit": before_commit,
+    "after_commit": after_commit,
+    "changed": before_commit != after_commit,
+    "snapshot": snapshot_note,
+  }
   tool_message = _append_chat_message(
     paths,
     thread_id=thread_id,
@@ -877,7 +1083,11 @@ def execute_pending_tool_call(
       {"tool": tool_name, "result": result},
       ensure_ascii=True,
     ),
-    context_used={"from_message_id": assistant_message_id},
+    context_used={
+      "from_message_id": assistant_message_id,
+      "tool_call_id": str(tool_call.get("id", "")),
+      "vcs": vcs,
+    },
   )
   _touch_thread(paths, thread_id)
   return {
@@ -886,6 +1096,43 @@ def execute_pending_tool_call(
     "tool": tool_name,
     "result": result,
     "tool_message": tool_message,
+    "vcs": vcs,
+  }
+
+
+def get_chat_turn_diff(
+  paths: ProjectPaths,
+  *,
+  thread_id: str,
+  message_id: str,
+) -> dict[str, Any]:
+  """Diff authoring artifacts between a chat turn's VCS anchor and HEAD."""
+  normalized_message_id = message_id.strip()
+  if normalized_message_id == "":
+    raise OpenAuthorError("message_id cannot be empty.")
+  messages = list_chat_messages(paths, thread_id=thread_id)
+  row = next(
+    (item for item in messages if item.get("id") == normalized_message_id),
+    None,
+  )
+  if row is None:
+    raise OpenAuthorError(
+      f"Message '{normalized_message_id}' not found in thread '{thread_id}'."
+    )
+  context_used = row.get("context_used", {})
+  vcs = context_used.get("vcs", {}) if isinstance(context_used, dict) else {}
+  base_commit = str(
+    vcs.get("base_commit") or vcs.get("before_commit") or ""
+  ).strip()
+  if base_commit == "":
+    raise OpenAuthorError(
+      f"Message '{normalized_message_id}' has no VCS anchor to diff from."
+    )
+  diff = diff_branches(paths, base=base_commit, head="HEAD")
+  return {
+    "thread_id": thread_id,
+    "message_id": normalized_message_id,
+    **diff,
   }
 
 

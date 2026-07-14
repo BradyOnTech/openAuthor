@@ -10,6 +10,7 @@ from openauthor.chat import (
   _build_provider_history,
   create_chat_thread,
   execute_pending_tool_call,
+  get_chat_turn_diff,
   list_chat_messages,
   list_chat_threads,
   rename_chat_thread,
@@ -17,8 +18,23 @@ from openauthor.chat import (
   update_chat_thread,
 )
 from openauthor.generations import list_generation_runs
+from openauthor.git_ops import create_snapshot, initialize_git
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene
+
+
+def _completion(text: str, tool_calls: list | None = None) -> dict:
+  return {
+    "text": text,
+    "tool_calls": tool_calls or [],
+    "input_tokens": 12,
+    "output_tokens": 8,
+    "latency_ms": 3,
+    "provider_attempts": 1,
+    "estimated_cost_usd": None,
+    "generation_id": "gen-000000000000",
+    "log_path": "",
+  }
 
 
 class ChatModuleTests(unittest.TestCase):
@@ -253,6 +269,113 @@ class ChatModuleTests(unittest.TestCase):
       )
       messages = list_chat_messages(paths, thread_id=thread["id"])
       self.assertEqual([row["role"] for row in messages], ["user"])
+
+  def test_agent_tool_loop_feeds_results_back_to_provider(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Tool Loop")
+      add_scene(
+        paths,
+        title="Scene One",
+        summary="Opening",
+        pov="narrator",
+        status="draft",
+        body="Opening scene body.",
+      )
+      thread = create_chat_thread(paths, title="Loop Thread", provider="local", mode="agent")
+
+      rounds = [
+        _completion(
+          "Let me check the scene list.",
+          [{"id": "call-1", "name": "scene_list", "args": {}}],
+        ),
+        _completion("You have one scene: Scene One."),
+      ]
+      with patch("openauthor.chat.complete_chat", side_effect=rounds) as fake:
+        result = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="What scenes exist?",
+        )
+
+      self.assertEqual(fake.call_count, 2)
+      continuation = fake.call_args_list[1].kwargs
+      self.assertEqual(continuation["user_prompt"], "")
+      assistant_entry = continuation["history"][-2]
+      tool_entry = continuation["history"][-1]
+      self.assertEqual(assistant_entry["role"], "assistant")
+      self.assertEqual(assistant_entry["tool_calls"][0]["name"], "scene_list")
+      self.assertEqual(tool_entry["role"], "tool")
+      self.assertEqual(tool_entry["tool_call_id"], "call-1")
+      self.assertIn("Scene One", tool_entry["content"])
+
+      self.assertEqual(result["assistant_message"]["content"], "You have one scene: Scene One.")
+      self.assertEqual(len(result["tool_messages"]), 1)
+      self.assertEqual(result["pending_tool_calls"], [])
+      roles = [row["role"] for row in list_chat_messages(paths, thread_id=thread["id"])]
+      self.assertEqual(roles.count("assistant"), 2)
+      self.assertEqual(roles.count("tool"), 1)
+
+  def test_pending_write_execution_snapshots_and_turn_diff(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Turn Checkpoints")
+      initialize_git(paths)
+      add_scene(
+        paths,
+        title="Scene One",
+        summary="Opening",
+        pov="narrator",
+        status="draft",
+        body="Opening scene body.",
+      )
+      create_snapshot(paths, "initial state")
+      thread = create_chat_thread(paths, title="Checkpoint Thread", provider="local", mode="agent")
+
+      queued = _completion(
+        "I will queue a codex entry for approval.",
+        [
+          {
+            "id": "call-9",
+            "name": "codex_add",
+            "args": {"type": "character", "name": "Mira", "description": "Sky captain."},
+          }
+        ],
+      )
+      with patch("openauthor.chat.complete_chat", return_value=queued):
+        result = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="Add Mira to the codex.",
+        )
+      pending = result["pending_tool_calls"]
+      self.assertEqual(len(pending), 1)
+      self.assertEqual(pending[0]["tool"], "codex.add")
+      self.assertEqual(pending[0]["classification"], "write")
+
+      assistant_vcs = result["assistant_message"]["context_used"]["vcs"]
+      self.assertNotEqual(assistant_vcs["base_commit"], "")
+
+      executed = execute_pending_tool_call(
+        paths,
+        thread_id=thread["id"],
+        assistant_message_id=result["assistant_message"]["id"],
+        tool_index=0,
+      )
+      self.assertTrue(executed["vcs"]["changed"])
+      self.assertNotIn("Snapshot failed", executed["vcs"]["snapshot"])
+      self.assertNotEqual(
+        executed["vcs"]["before_commit"],
+        executed["vcs"]["after_commit"],
+      )
+
+      diff = get_chat_turn_diff(
+        paths,
+        thread_id=thread["id"],
+        message_id=result["assistant_message"]["id"],
+      )
+      changed_paths = [item["path"] for item in diff["files"]]
+      self.assertIn("codex/codex.json", changed_paths)
 
 
 if __name__ == "__main__":

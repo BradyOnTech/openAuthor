@@ -19,6 +19,7 @@ from .chat import (
   create_chat_thread,
   execute_pending_tool_call,
   get_chat_thread,
+  get_chat_turn_diff,
   list_chat_messages,
   list_chat_threads,
   rename_chat_thread,
@@ -643,6 +644,14 @@ def build_parser() -> argparse.ArgumentParser:
   chat_tool_execute.add_argument("--message", required=True, help="Assistant message id.")
   chat_tool_execute.add_argument("--index", type=int, required=True, help="Tool call index.")
   chat_tool_execute.add_argument("--json", action="store_true", help="Output JSON.")
+
+  chat_diff = chat_sub.add_parser(
+    "diff",
+    help="Diff authoring artifacts between a chat turn's VCS anchor and HEAD.",
+  )
+  chat_diff.add_argument("--thread", required=True, help="Thread id.")
+  chat_diff.add_argument("--message", required=True, help="Message id with a VCS anchor.")
+  chat_diff.add_argument("--json", action="store_true", help="Output JSON.")
 
   subparsers.add_parser(
     "serve",
@@ -1305,6 +1314,23 @@ def _run(args: argparse.Namespace) -> int:
         f"Executed tool {row.get('tool','')} "
         f"for message {row.get('assistant_message_id','')}"
       )
+      return 0
+
+    if args.chat_command == "diff":
+      row = get_chat_turn_diff(
+        paths,
+        thread_id=args.thread,
+        message_id=args.message,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      files = row.get("files", [])
+      if not files:
+        print("No authoring changes since this turn.")
+        return 0
+      for item in files:
+        print(f"{item.get('status','')}\t{item.get('path','')}")
       return 0
 
     raise OpenAuthorError(f"Unsupported chat command: {args.chat_command}")

@@ -487,35 +487,52 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
   )
 
 
-def _generate_local_chat_text(user_prompt: str) -> str:
+def _generate_local_chat_result(
+  user_prompt: str,
+  *,
+  tools_enabled: bool,
+) -> tuple[str, list[dict[str, Any]]]:
   lowered = user_prompt.lower()
-  if "list scenes" in lowered:
-    return (
-      "I can help by listing scenes.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"scene.list","args":{}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
-  if "continuity" in lowered and "check" in lowered:
-    return (
-      "I can run continuity checks.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"check.continuity","args":{}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
-  if "create proposal" in lowered:
-    return (
-      "I can draft a proposal card.\n"
-      "[[OA_TOOL_CALLS_BEGIN]]\n"
-      '[{"tool":"proposal.add","args":{"title":"Agent Draft","instruction":"Intent:\\n- Refine scene beats.","scene_id":"scene-0001"}}]\n'
-      "[[OA_TOOL_CALLS_END]]"
-    )
+  if tools_enabled:
+    if user_prompt.strip() == "":
+      return (
+        "I reviewed the tool results and folded them into my guidance:\n"
+        "- Keep motivations and continuity anchors explicit.\n"
+        "- Flag any conflicts for review before drafting.",
+        [],
+      )
+    if "list scenes" in lowered:
+      return (
+        "I can help by listing scenes.",
+        [{"id": "local-call-1", "name": "scene_list", "args": {}}],
+      )
+    if "continuity" in lowered and "check" in lowered:
+      return (
+        "I can run continuity checks.",
+        [{"id": "local-call-1", "name": "check_continuity", "args": {}}],
+      )
+    if "create proposal" in lowered:
+      return (
+        "I can draft a proposal card.",
+        [
+          {
+            "id": "local-call-1",
+            "name": "proposal_add",
+            "args": {
+              "title": "Agent Draft",
+              "instruction": "Intent:\n- Refine scene beats.",
+              "scene_id": "scene-0001",
+            },
+          }
+        ],
+      )
   return (
     "I reviewed your request and context. "
     "Here is a concise response:\n"
     "- Clarify the specific scene goal.\n"
     "- Keep character motivations explicit.\n"
-    "- Preserve established continuity anchors."
+    "- Preserve established continuity anchors.",
+    [],
   )
 
 
@@ -704,28 +721,135 @@ def _quality_from_normalization(diagnostics: dict[str, Any]) -> dict[str, Any]:
 def _chat_completion_messages(
   *,
   system_prompt: str,
-  history: list[dict[str, str]],
+  history: list[dict[str, Any]],
   user_prompt: str,
-) -> list[dict[str, str]]:
-  return [
-    {"role": "system", "content": system_prompt},
-    *history,
-    {"role": "user", "content": user_prompt},
-  ]
+) -> list[dict[str, Any]]:
+  messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
+  for entry in history:
+    role = entry["role"]
+    if role == "tool":
+      messages.append(
+        {
+          "role": "tool",
+          "tool_call_id": entry["tool_call_id"],
+          "content": entry["content"],
+        }
+      )
+      continue
+    tool_calls = entry.get("tool_calls") or []
+    if role == "assistant" and tool_calls:
+      messages.append(
+        {
+          "role": "assistant",
+          "content": entry.get("content") or None,
+          "tool_calls": [
+            {
+              "id": call["id"],
+              "type": "function",
+              "function": {
+                "name": call["name"],
+                "arguments": json.dumps(call["args"]),
+              },
+            }
+            for call in tool_calls
+          ],
+        }
+      )
+      continue
+    messages.append({"role": role, "content": entry["content"]})
+  if user_prompt.strip() != "":
+    messages.append({"role": "user", "content": user_prompt})
+  return messages
 
 
 def _normalize_chat_history(
   history: list[dict[str, Any]] | None,
-) -> list[dict[str, str]]:
-  rows: list[dict[str, str]] = []
+) -> list[dict[str, Any]]:
+  rows: list[dict[str, Any]] = []
   for item in history or []:
     if not isinstance(item, dict):
       continue
     role = str(item.get("role", "")).strip()
     content = str(item.get("content", ""))
-    if role not in {"user", "assistant"} or content.strip() == "":
+    if role == "tool":
+      tool_call_id = str(item.get("tool_call_id", "")).strip()
+      if tool_call_id == "" or content.strip() == "":
+        continue
+      rows.append(
+        {
+          "role": "tool",
+          "tool_call_id": tool_call_id,
+          "name": str(item.get("name", "")).strip(),
+          "content": content,
+        }
+      )
+      continue
+    if role not in {"user", "assistant"}:
+      continue
+    raw_tool_calls = item.get("tool_calls")
+    tool_calls: list[dict[str, Any]] = []
+    if role == "assistant" and isinstance(raw_tool_calls, list):
+      for call in raw_tool_calls:
+        if not isinstance(call, dict):
+          continue
+        name = str(call.get("name", "")).strip()
+        args = call.get("args", {})
+        if name == "" or not isinstance(args, dict):
+          continue
+        tool_calls.append(
+          {
+            "id": str(call.get("id", "")).strip() or f"call-{len(tool_calls) + 1}",
+            "name": name,
+            "args": args,
+          }
+        )
+    if tool_calls:
+      rows.append({"role": "assistant", "content": content, "tool_calls": tool_calls})
+      continue
+    if content.strip() == "":
       continue
     rows.append({"role": role, "content": content})
+  return rows
+
+
+def _openai_tools_payload(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  return [
+    {
+      "type": "function",
+      "function": {
+        "name": tool["name"],
+        "description": tool["description"],
+        "parameters": tool["parameters"],
+      },
+    }
+    for tool in tools
+  ]
+
+
+def _parse_openai_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
+  rows: list[dict[str, Any]] = []
+  for item in message.get("tool_calls") or []:
+    if not isinstance(item, dict):
+      continue
+    function = item.get("function", {})
+    if not isinstance(function, dict):
+      continue
+    name = str(function.get("name", "")).strip()
+    if name == "":
+      continue
+    try:
+      args = json.loads(function.get("arguments") or "{}")
+    except json.JSONDecodeError:
+      args = {}
+    if not isinstance(args, dict):
+      args = {}
+    rows.append(
+      {
+        "id": str(item.get("id", "")) or f"call-{len(rows) + 1}",
+        "name": name,
+        "args": args,
+      }
+    )
   return rows
 
 
@@ -738,6 +862,7 @@ def _openai_chat_completion(
   temperature: float,
   max_output_tokens: int,
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENAI_API_KEY")
   if not api_key:
@@ -758,7 +883,9 @@ def _openai_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  if on_delta is not None:
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
     return _openai_style_stream(
       provider="openai",
       url=f"{base_url.rstrip('/')}/chat/completions",
@@ -786,6 +913,7 @@ def _openai_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -793,15 +921,57 @@ def _openai_chat_completion(
   }
 
 
+def _anthropic_tools_payload(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  return [
+    {
+      "name": tool["name"],
+      "description": tool["description"],
+      "input_schema": tool["parameters"],
+    }
+    for tool in tools
+  ]
+
+
+def _anthropic_content_blocks(entry: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+  if entry["role"] == "tool":
+    return (
+      "user",
+      [
+        {
+          "type": "tool_result",
+          "tool_use_id": entry["tool_call_id"],
+          "content": entry["content"],
+        }
+      ],
+    )
+  tool_calls = entry.get("tool_calls") or []
+  if entry["role"] == "assistant" and tool_calls:
+    blocks: list[dict[str, Any]] = []
+    if str(entry.get("content", "")).strip():
+      blocks.append({"type": "text", "text": entry["content"]})
+    blocks.extend(
+      {
+        "type": "tool_use",
+        "id": call["id"],
+        "name": call["name"],
+        "input": call["args"],
+      }
+      for call in tool_calls
+    )
+    return ("assistant", blocks)
+  return (entry["role"], [{"type": "text", "text": entry["content"]}])
+
+
 def _anthropic_message(
   *,
   model: str,
   system_prompt: str,
-  history: list[dict[str, str]],
+  history: list[dict[str, Any]],
   user_prompt: str,
   temperature: float,
   max_output_tokens: int,
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("ANTHROPIC_API_KEY")
   if not api_key:
@@ -812,18 +982,19 @@ def _anthropic_message(
       provider="anthropic",
     )
   base_url = os.getenv("OPENAUTHOR_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+  entries: list[dict[str, Any]] = list(history)
+  if user_prompt.strip() != "":
+    entries.append({"role": "user", "content": user_prompt})
   # The Messages API requires alternating roles, so fold consecutive
-  # same-role entries (e.g. a trailing tool-result note plus the new user
-  # message) into one message.
-  messages: list[dict[str, str]] = []
-  for entry in [*history, {"role": "user", "content": user_prompt}]:
-    if messages and messages[-1]["role"] == entry["role"]:
-      messages[-1] = {
-        "role": entry["role"],
-        "content": messages[-1]["content"] + "\n\n" + entry["content"],
-      }
+  # same-role entries (e.g. a trailing tool-result plus the new user
+  # message) into one message by concatenating their content blocks.
+  messages: list[dict[str, Any]] = []
+  for entry in entries:
+    role, blocks = _anthropic_content_blocks(entry)
+    if messages and messages[-1]["role"] == role:
+      messages[-1]["content"].extend(blocks)
     else:
-      messages.append(dict(entry))
+      messages.append({"role": role, "content": blocks})
   payload: dict[str, Any] = {
     "model": model,
     "system": system_prompt,
@@ -831,7 +1002,9 @@ def _anthropic_message(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  if on_delta is not None:
+  if tools:
+    payload["tools"] = _anthropic_tools_payload(tools)
+  if on_delta is not None and not tools:
     return _anthropic_stream(
       url=f"{base_url.rstrip('/')}/messages",
       headers={
@@ -856,9 +1029,19 @@ def _anthropic_message(
     for part in content
     if isinstance(part, dict) and part.get("type") == "text"
   ]
+  tool_calls = [
+    {
+      "id": str(part.get("id", "")) or f"call-{index + 1}",
+      "name": str(part.get("name", "")).strip(),
+      "args": part.get("input", {}) if isinstance(part.get("input", {}), dict) else {},
+    }
+    for index, part in enumerate(content)
+    if isinstance(part, dict) and part.get("type") == "tool_use" and str(part.get("name", "")).strip()
+  ]
   usage = response.get("usage", {})
   return {
     "text": "\n".join(text_parts).strip(),
+    "tool_calls": tool_calls,
     "input_tokens": int(usage.get("input_tokens", 0) or 0),
     "output_tokens": int(usage.get("output_tokens", 0) or 0),
     "raw_usage": usage,
@@ -875,6 +1058,7 @@ def _openrouter_chat_completion(
   temperature: float,
   max_output_tokens: int,
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   api_key = os.getenv("OPENROUTER_API_KEY")
   if not api_key:
@@ -900,7 +1084,9 @@ def _openrouter_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  if on_delta is not None:
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
     return _openai_style_stream(
       provider="openrouter",
       url=f"{base_url.rstrip('/')}/chat/completions",
@@ -928,6 +1114,7 @@ def _openrouter_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -944,6 +1131,7 @@ def _openai_codex_chat_completion(
   temperature: float,
   max_output_tokens: int,
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   access_token = get_access_token("openai-codex")
   if not access_token:
@@ -965,7 +1153,9 @@ def _openai_codex_chat_completion(
     "temperature": temperature,
     "max_tokens": max_output_tokens,
   }
-  if on_delta is not None:
+  if tools:
+    payload["tools"] = _openai_tools_payload(tools)
+  if on_delta is not None and not tools:
     return _openai_style_stream(
       provider="openai-codex",
       url=f"{base_url}/chat/completions",
@@ -993,6 +1183,7 @@ def _openai_codex_chat_completion(
   usage = response.get("usage", {})
   return {
     "text": text,
+    "tool_calls": _parse_openai_tool_calls(message),
     "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
@@ -1010,19 +1201,24 @@ def _call_provider(
   instruction: str,
   temperature: float,
   max_output_tokens: int,
-  history: list[dict[str, str]] | None = None,
+  history: list[dict[str, Any]] | None = None,
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   chat_history = _normalize_chat_history(history)
+  tool_calls: list[dict[str, Any]] = []
   start = time.perf_counter()
   if provider == "local":
     if context.get("chat_mode"):
-      text = _generate_local_chat_text(user_prompt)
+      text, tool_calls = _generate_local_chat_result(
+        user_prompt,
+        tools_enabled=bool(tools),
+      )
     else:
       text = _generate_local_text(context, instruction)
-    if on_delta is not None:
+    if on_delta is not None and not tools:
       _stream_local_text(text, on_delta)
-    history_text = "\n".join(row["content"] for row in chat_history)
+    history_text = "\n".join(str(row.get("content", "")) for row in chat_history)
     input_tokens = _estimate_tokens(
       system_prompt + "\n" + history_text + "\n" + user_prompt
     )
@@ -1037,8 +1233,10 @@ def _call_provider(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
       on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -1051,8 +1249,10 @@ def _call_provider(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
       on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -1065,8 +1265,10 @@ def _call_provider(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
       on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -1079,8 +1281,10 @@ def _call_provider(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
       on_delta=on_delta,
+      tools=tools,
     )
     text = payload["text"]
+    tool_calls = payload.get("tool_calls", [])
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
@@ -1090,7 +1294,7 @@ def _call_provider(
     )
 
   latency_ms = int((time.perf_counter() - start) * 1000)
-  if not text.strip():
+  if not text.strip() and not tool_calls:
     raise ProviderExecutionError(
       "Provider returned empty output.",
       category="invalid_provider_output",
@@ -1101,6 +1305,7 @@ def _call_provider(
 
   return {
     "text": text.strip(),
+    "tool_calls": tool_calls,
     "input_tokens": int(input_tokens),
     "output_tokens": int(output_tokens),
     "latency_ms": latency_ms,
@@ -1146,6 +1351,7 @@ def _write_chat_generation_log(
   }
   if provider_result is not None:
     payload["response_text"] = provider_result["text"]
+    payload["tool_calls"] = provider_result.get("tool_calls", [])
     payload["usage"] = {
       "input_tokens": provider_result["input_tokens"],
       "output_tokens": provider_result["output_tokens"],
@@ -1172,6 +1378,7 @@ def complete_chat(
   chat_mode: bool = True,
   thread_id: str = "",
   on_delta: Any = None,
+  tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -1181,7 +1388,7 @@ def complete_chat(
 
   selected_model = model or DEFAULT_MODELS[provider]
   chat_history = _normalize_chat_history(history)
-  history_text = "\n".join(row["content"] for row in chat_history)
+  history_text = "\n".join(str(row.get("content", "")) for row in chat_history)
   projected_input_tokens = _estimate_tokens(
     system_prompt + "\n" + history_text + "\n" + user_prompt
   )
@@ -1240,6 +1447,7 @@ def complete_chat(
       max_output_tokens=max_output_tokens,
       history=chat_history,
       on_delta=on_delta,
+      tools=tools,
     )
   except ChatInterrupted:
     _write_chat_generation_log(
@@ -1309,8 +1517,14 @@ def complete_chat(
     provider_result=provider_result,
     estimated_cost_usd=estimated_cost_usd,
   )
+  # Tool-enabled turns run buffered (no provider streaming), so surface the
+  # round's text through on_delta once the spend is logged; an interrupt
+  # raised here aborts the turn between tool rounds.
+  if tools and on_delta is not None and provider_result["text"].strip():
+    on_delta(provider_result["text"] + "\n\n")
   return {
     "text": provider_result["text"],
+    "tool_calls": provider_result.get("tool_calls", []),
     "input_tokens": provider_result["input_tokens"],
     "output_tokens": provider_result["output_tokens"],
     "latency_ms": provider_result["latency_ms"],

@@ -209,6 +209,7 @@ export type ChatThreadRecord = {
 };
 
 export type ChatToolCall = {
+  id?: string;
   tool: string;
   args: Record<string, unknown>;
   classification: "read" | "write" | "risky" | string;

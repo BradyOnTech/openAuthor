@@ -43,15 +43,23 @@ those ideas to authoring rather than cloning a coding agent.
 - Remaining: thread/message list reads still go through one-shot CLI
   subprocesses; migrate them to sidecar methods when convenient.
 
-## Phase 3 — Native tool calling and turn checkpoints
+## Phase 3 — Native tool calling and turn checkpoints — DONE
 
-- Replace the `[[OA_TOOL_CALLS_BEGIN]]` text-sentinel protocol with native
-  provider function calling, with a real tool loop (model sees tool results
-  and continues within the turn). Keep the read/write/risky classification
-  and pending-approval gate.
-- Anchor agent-mode turns to manuscript state: record a snapshot ref at turn
-  start/complete (the thread's `vcs_branch`/`vcs_base_commit` fields already
-  exist), and expose a per-turn manuscript diff.
+- The `[[OA_TOOL_CALLS_BEGIN]]` text-sentinel protocol is gone. Agent mode
+  uses native provider function calling (OpenAI `tools`/`tool_calls`,
+  Anthropic `tool_use`/`tool_result` blocks) against a typed registry of 16
+  tools (`CHAT_TOOL_SPECS` in `chat.py`; dotted internal names map to
+  underscore wire names).
+- Real tool loop (up to `MAX_TOOL_ROUNDS`): read-only tools execute
+  immediately and their results feed back to the model within the turn;
+  write/risky tools stop the loop and queue for author approval, unchanged.
+  Tool-enabled turns run buffered — each round's text is emitted as one
+  delta, which also gives interruption a check-point between rounds.
+- Turn checkpoints: every assistant message records the branch/commit anchor
+  it was produced against (`context_used.vcs`); executing an approved
+  write/risky tool auto-snapshots (`chat agent: <tool>`) and records
+  before/after commits. `openauthor chat diff --thread --message` diffs a
+  turn's anchor against HEAD.
 
 ## Phase 4 — UI pass
 
