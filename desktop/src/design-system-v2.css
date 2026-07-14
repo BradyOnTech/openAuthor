@@ -1429,6 +1429,18 @@ body {
   color: var(--text-ghost);
 }
 
+.chat-link {
+  color: var(--ai);
+  text-decoration: underline;
+  text-decoration-color: var(--ai-border);
+  text-underline-offset: 2px;
+}
+
+.chat-link:hover {
+  color: var(--ai-hover);
+  text-decoration-color: currentColor;
+}
+
 .chat-heading {
   margin: var(--space-2) 0 var(--space-1);
   font-size: var(--text-sm);

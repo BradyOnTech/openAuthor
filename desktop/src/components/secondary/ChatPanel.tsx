@@ -1075,6 +1075,20 @@ function Spans({ spans }: { spans: ChatInlineSpan[] }) {
         if (span.kind === "code") {
           return <code key={index} className="chat-inline-code">{span.text}</code>;
         }
+        if (span.kind === "link" && span.href) {
+          return (
+            <a
+              key={index}
+              className="chat-link"
+              href={span.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={span.href}
+            >
+              {span.text}
+            </a>
+          );
+        }
         return <span key={index}>{span.text}</span>;
       })}
     </>

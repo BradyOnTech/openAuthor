@@ -1,6 +1,7 @@
 export type ChatInlineSpan = {
-  kind: "text" | "bold" | "italic" | "code";
+  kind: "text" | "bold" | "italic" | "code" | "link";
   text: string;
+  href?: string;
 };
 
 export type ChatBlock =
@@ -10,7 +11,12 @@ export type ChatBlock =
   | { kind: "quote"; lines: ChatInlineSpan[][] }
   | { kind: "paragraph"; lines: ChatInlineSpan[][] };
 
-const INLINE_TOKEN = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g;
+const INLINE_TOKEN = /(`[^`]+`|\[[^\]]+\]\([^)\s]+\)|\*\*[^*]+\*\*|\*[^*]+\*)/g;
+const LINK = /^\[([^\]]+)\]\(([^)\s]+)\)$/;
+
+function isSafeHref(href: string): boolean {
+  return href.startsWith("https://") || href.startsWith("http://");
+}
 const UL_ITEM = /^\s*[-*]\s+(.*)$/;
 const OL_ITEM = /^\s*\d+[.)]\s+(.*)$/;
 const HEADING = /^(#{1,6})\s+(.*)$/;
@@ -19,6 +25,13 @@ const QUOTE = /^\s*>\s?(.*)$/;
 export function parseInlineSpans(text: string): ChatInlineSpan[] {
   const pieces = text.split(INLINE_TOKEN).filter((piece) => piece !== "");
   return pieces.map((piece) => {
+    const link = LINK.exec(piece);
+    if (link) {
+      if (isSafeHref(link[2])) {
+        return { kind: "link" as const, text: link[1], href: link[2] };
+      }
+      return { kind: "text" as const, text: link[1] };
+    }
     if (piece.length > 4 && piece.startsWith("**") && piece.endsWith("**")) {
       return { kind: "bold" as const, text: piece.slice(2, -2) };
     }

@@ -18,6 +18,17 @@ describe("parseInlineSpans", () => {
   it("leaves bare asterisks alone", () => {
     expect(parseInlineSpans("a * b")).toEqual([{ kind: "text", text: "a * b" }]);
   });
+
+  it("parses http(s) links and demotes unsafe schemes to text", () => {
+    expect(parseInlineSpans("see [the docs](https://example.com/guide) here")).toEqual([
+      { kind: "text", text: "see " },
+      { kind: "link", text: "the docs", href: "https://example.com/guide" },
+      { kind: "text", text: " here" },
+    ]);
+    expect(parseInlineSpans("[bad](javascript:alert)")).toEqual([
+      { kind: "text", text: "bad" },
+    ]);
+  });
 });
 
 describe("parseChatMarkdown", () => {
