@@ -1,16 +1,191 @@
 from __future__ import annotations
 
 import json
+import shutil
+import sys
+import tempfile
 import time
 from statistics import mean
 from typing import Any, Callable
 
+from .checks import run_continuity_checks
+from .codex import ensure_codex, list_entities
 from .generations import audit_generation_pins, list_generation_runs
-from .git_ops import get_branch_workspace_status
+from .git_ops import get_branch_workspace_status, initialize_git, run_git
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .proposals import list_proposals
+from .revisions import ensure_revision_store, verify_revision_store
 from .retrieval import get_retrieval_index_status
-from .scenes import list_scenes
+from .scenes import get_scene, list_scene_details, list_scenes, update_scene
+
+
+def collect_startup_health(
+  paths: ProjectPaths,
+  *,
+  repair: bool = False,
+) -> dict[str, Any]:
+  checks: list[dict[str, Any]] = []
+
+  def record(
+    identifier: str,
+    status: str,
+    message: str,
+    *,
+    recovery: str = "",
+    repairable: bool = False,
+    repaired: bool = False,
+  ) -> None:
+    checks.append({
+      "id": identifier,
+      "status": status,
+      "message": message,
+      "recovery": recovery,
+      "repairable": repairable,
+      "repaired": repaired,
+    })
+
+  required_directories = [
+    paths.project_dir,
+    paths.workspace_dir,
+    paths.scenes_dir,
+    paths.proposals_dir,
+    paths.generations_dir,
+    paths.codex_db.parent,
+  ]
+  missing = [directory for directory in required_directories if not directory.is_dir()]
+  repaired_directories = False
+  if missing and repair:
+    for directory in missing:
+      directory.mkdir(parents=True, exist_ok=True)
+    repaired_directories = True
+    missing = [directory for directory in required_directories if not directory.is_dir()]
+  if missing:
+    record(
+      "project_directories",
+      "error",
+      f"{len(missing)} required project director{'y is' if len(missing) == 1 else 'ies are'} missing.",
+      recovery="Create the missing local project directories.",
+      repairable=True,
+    )
+  else:
+    record(
+      "project_directories",
+      "ok",
+      "Required project directories are present.",
+      repaired=repaired_directories,
+    )
+
+  try:
+    paths.workspace_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(prefix="health-", dir=paths.workspace_dir, delete=True):
+      pass
+  except OSError as error:
+    record(
+      "workspace_write",
+      "error",
+      f"Project workspace is not writable: {error}",
+      recovery="Choose a writable local folder or repair its permissions.",
+    )
+  else:
+    record("workspace_write", "ok", "Project workspace is writable.")
+
+  revision_directories_missing = any(
+    not directory.is_dir()
+    for directory in (paths.revision_objects_dir, paths.revision_records_dir)
+  )
+  repaired_revisions = False
+  if repair and revision_directories_missing:
+    ensure_revision_store(paths)
+    repaired_revisions = True
+  revision_report = verify_revision_store(paths)
+  if not revision_report["ready"]:
+    record(
+      "revision_store",
+      "error",
+      f"Revision history is damaged: {'; '.join(revision_report['errors'])}",
+      recovery="Restore the .openauthor/revisions directory from backup before applying AI changes.",
+      repairable=True,
+    )
+  else:
+    record(
+      "revision_store",
+      "ok",
+      f"Local revision history is available ({revision_report['revision_count']} revision(s)).",
+      repaired=repaired_revisions,
+    )
+
+  try:
+    details = list_scene_details(paths)
+  except (OSError, ValueError) as error:
+    record(
+      "manuscript_read",
+      "error",
+      f"Manuscript scenes could not be read: {error}",
+      recovery="Restore the damaged scene file from a revision or backup.",
+    )
+  else:
+    identifiers = [scene.get("id", "") for scene in details]
+    duplicates = sorted({identifier for identifier in identifiers if identifiers.count(identifier) > 1})
+    if duplicates:
+      record(
+        "manuscript_read",
+        "error",
+        f"Duplicate scene ids detected: {', '.join(duplicates)}.",
+        recovery="Assign unique scene ids before continuing.",
+      )
+    else:
+      record("manuscript_read", "ok", f"Loaded {len(details)} scene(s).")
+
+  codex_missing = not paths.codex_db.exists()
+  codex_error: Exception | None = None
+  if codex_missing and not repair:
+    codex_error = OpenAuthorError("Codex database is missing.")
+  else:
+    try:
+      ensure_codex(paths)
+      list_entities(paths)
+    except (OpenAuthorError, OSError) as error:
+      codex_error = error
+  if codex_error is not None:
+    record(
+      "codex_store",
+      "error",
+      f"Story reference store is unavailable: {codex_error}",
+      recovery="Rebuild the local Codex database from codex/codex.json.",
+      repairable=True,
+    )
+  else:
+    record("codex_store", "ok", "Story reference store is readable.", repaired=repair and codex_missing)
+
+  free_bytes = shutil.disk_usage(paths.root).free
+  if free_bytes < 250 * 1024 * 1024:
+    record(
+      "disk_space",
+      "warning",
+      f"Only {free_bytes // (1024 * 1024)} MB of disk space is free.",
+      recovery="Free at least 250 MB before importing or generating revisions.",
+    )
+  else:
+    record("disk_space", "ok", f"{free_bytes // (1024 * 1024)} MB of disk space is free.")
+
+  record(
+    "python_runtime",
+    "ok" if sys.version_info >= (3, 11) else "error",
+    f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} is running.",
+    recovery="Use the bundled Python 3.11+ runtime." if sys.version_info < (3, 11) else "",
+  )
+
+  errors = sum(1 for check in checks if check["status"] == "error")
+  warnings = sum(1 for check in checks if check["status"] == "warning")
+  return {
+    "checked_at": utc_now(),
+    "project_root": str(paths.root),
+    "repair_requested": repair,
+    "ready": errors == 0,
+    "errors": errors,
+    "warnings": warnings,
+    "checks": checks,
+  }
 
 
 def _timed_samples(fn: Callable[[], Any], repeat: int) -> tuple[list[float], Any]:
@@ -34,6 +209,37 @@ def _metric_row(name: str, samples_ms: list[float]) -> dict[str, Any]:
   }
 
 
+def _load_project_workspace(paths: ProjectPaths) -> dict[str, Any]:
+  return {
+    "scenes": list_scenes(paths),
+    "entities": list_entities(paths),
+    "proposals": list_proposals(paths),
+    "generation_runs": list_generation_runs(paths, limit=None),
+  }
+
+
+def _search_project_workspace(paths: ProjectPaths, query: str) -> list[str]:
+  normalized = query.strip().lower()
+  if not normalized:
+    return []
+  matches: list[str] = []
+  for scene in list_scenes(paths):
+    haystack = " ".join(
+      str(scene.get(field, ""))
+      for field in ("id", "title", "summary", "pov")
+    ).lower()
+    if normalized in haystack:
+      matches.append(str(scene.get("id", "")))
+  for entity in list_entities(paths):
+    haystack = " ".join(
+      str(entity.get(field, ""))
+      for field in ("id", "type", "name", "description")
+    ).lower()
+    if normalized in haystack:
+      matches.append(str(entity.get("id", "")))
+  return matches
+
+
 def collect_performance_baseline(
   paths: ProjectPaths,
   *,
@@ -52,6 +258,39 @@ def collect_performance_baseline(
     lambda: get_retrieval_index_status(paths),
     repeat,
   )
+  project_load_samples, project_workspace = _timed_samples(
+    lambda: _load_project_workspace(paths),
+    repeat,
+  )
+  target_scene_id = str(scene_rows[-1].get("id", "")) if scene_rows else ""
+  if target_scene_id:
+    scene_open_samples, opened_scene = _timed_samples(
+      lambda: get_scene(paths, target_scene_id),
+      repeat,
+    )
+    scene_save_samples, _ = _timed_samples(
+      lambda: update_scene(
+        paths,
+        scene_identifier=target_scene_id,
+        title=str(opened_scene.get("title", "")),
+        summary=str(opened_scene.get("summary", "")),
+        pov=str(opened_scene.get("pov", "")),
+        status=str(opened_scene.get("status", "draft")),
+        body=str(opened_scene.get("body", "")),
+      ),
+      repeat,
+    )
+  else:
+    scene_open_samples = [0.0 for _ in range(repeat)]
+    scene_save_samples = [0.0 for _ in range(repeat)]
+  project_search_samples, search_rows = _timed_samples(
+    lambda: _search_project_workspace(paths, "character"),
+    repeat,
+  )
+  analysis_samples, analysis_rows = _timed_samples(
+    lambda: run_continuity_checks(paths),
+    repeat,
+  )
 
   return {
     "checked_at": utc_now(),
@@ -60,12 +299,20 @@ def collect_performance_baseline(
       "scenes": len(scene_rows),
       "proposals": len(proposal_rows),
       "generation_runs": len(run_rows),
+      "entities": len(project_workspace["entities"]),
+      "search_results": len(search_rows),
+      "continuity_issues": len(analysis_rows),
     },
     "metrics": [
       _metric_row("scene_list", scene_samples),
       _metric_row("proposal_list", proposal_samples),
       _metric_row("generation_list", run_samples),
       _metric_row("retrieval_status", retrieval_samples),
+      _metric_row("project_load", project_load_samples),
+      _metric_row("scene_open", scene_open_samples),
+      _metric_row("scene_save", scene_save_samples),
+      _metric_row("project_search", project_search_samples),
+      _metric_row("continuity_analysis", analysis_samples),
     ],
     "retrieval": retrieval_status,
   }

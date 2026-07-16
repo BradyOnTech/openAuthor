@@ -4,13 +4,13 @@ import hashlib
 import json
 import math
 import re
-import subprocess
 from collections import Counter
 from typing import Any
 
 from .codex import list_entities
 from .project import OpenAuthorError, ProjectPaths, utc_now
-from .scenes import get_scene, list_scenes
+from .revisions import revision_head
+from .scenes import split_scene_text
 
 RETRIEVAL_INDEX_SCHEMA_VERSION = 1
 DEFAULT_CHUNK_WORDS = 90
@@ -30,29 +30,20 @@ def _tokenize(value: str) -> list[str]:
 
 
 def _current_git_head(paths: ProjectPaths) -> str:
-  result = subprocess.run(
-    ["git", "rev-parse", "--verify", "HEAD"],
-    cwd=paths.root,
-    capture_output=True,
-    text=True,
-    check=False,
-  )
-  if result.returncode != 0:
-    return ""
-  return result.stdout.strip()
+  return revision_head(paths)
 
 
 def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
   sources: list[dict[str, str]] = []
-  for scene_row in list_scenes(paths):
-    scene_id = scene_row.get("id", "").strip()
+  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+    front_matter, body = split_scene_text(scene_file.read_text(encoding="utf-8"))
+    scene_id = front_matter.get("id", scene_file.stem).strip()
     if scene_id == "":
       continue
-    scene_detail = get_scene(paths, scene_id)
-    scene_title = scene_detail.get("title", "").strip() or scene_id
-    scene_summary = scene_detail.get("summary", "").strip()
-    scene_pov = scene_detail.get("pov", "").strip()
-    scene_body = scene_detail.get("body", "").strip()
+    scene_title = front_matter.get("title", "").strip() or scene_id
+    scene_summary = front_matter.get("summary", "").strip()
+    scene_pov = front_matter.get("pov", "").strip()
+    scene_body = body.strip()
     scene_text = (
       f"Scene {scene_id}: {scene_title}\n"
       f"Summary: {scene_summary}\n"
@@ -64,9 +55,9 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
         "source_id": f"{SCENE_SOURCE_TYPE}:{scene_id}",
         "source_type": SCENE_SOURCE_TYPE,
         "source_ref": scene_id,
-        "path": scene_detail.get("path", ""),
+        "path": str(scene_file.relative_to(paths.root)),
         "title": scene_title,
-        "updated_at": scene_detail.get("updated_at", scene_row.get("updated_at", "")),
+        "updated_at": front_matter.get("updated_at", ""),
         "text": _normalize_space(scene_text),
       }
     )

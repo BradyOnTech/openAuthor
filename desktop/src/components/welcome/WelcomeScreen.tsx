@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import { getProjectStatus, pickFolder, pickZipFile } from "../../api";
+import {
+  getProjectStatus,
+  pickFolder,
+  pickManuscriptFile,
+  previewManuscriptImport,
+  type ManuscriptImportPreview,
+} from "../../api";
 import { getProjectBinding } from "../../projectBindings";
 
 function isDesktopRuntime(): boolean {
@@ -30,8 +36,9 @@ function formatRelativeDate(dateStr: string): string {
 type NewProjectForm = {
   name: string;
   savePath: string;
-  importKind: "none" | "folder" | "zip";
+  importKind: "none" | "manuscript_file" | "manuscript_folder";
   importPath: string;
+  importStrategy: "auto" | "files" | "headings" | "single";
   showImport: boolean;
 };
 
@@ -58,38 +65,6 @@ async function browseFolder(startingPath?: string): Promise<string | null> {
   return webPickFolder();
 }
 
-function webPickFile(accept?: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    if (accept) input.accept = accept;
-    input.style.display = "none";
-    document.body.appendChild(input);
-    let resolved = false;
-    input.addEventListener("change", () => {
-      resolved = true;
-      const file = input.files?.[0];
-      resolve(file ? file.name : null);
-      document.body.removeChild(input);
-    });
-    input.addEventListener("cancel", () => {
-      if (!resolved) {
-        resolved = true;
-        resolve(null);
-        document.body.removeChild(input);
-      }
-    });
-    input.click();
-  });
-}
-
-async function browseZipFile(startingPath?: string): Promise<string | null> {
-  const tauriResult = await pickZipFile(startingPath);
-  if (tauriResult) return tauriResult;
-  if (isDesktopRuntime()) return null;
-  return webPickFile(".zip");
-}
-
 export function WelcomeScreen() {
   const {
     projects,
@@ -108,15 +83,27 @@ export function WelcomeScreen() {
     savePath: "",
     importKind: "none",
     importPath: "",
+    importStrategy: "auto",
     showImport: false,
   });
+  const [importPreview, setImportPreview] = useState<ManuscriptImportPreview | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const [openState, setOpenState] = useState<OpenProjectState>({ kind: "idle" });
   const [notFoundName, setNotFoundName] = useState("");
   const [notFoundPath, setNotFoundPath] = useState("");
 
   const recentProjects = useMemo(() => {
+    const seenLocations = new Set<string>();
     return projects
       .filter((p) => p.status === "active")
+      .filter((project) => {
+        const binding = getProjectBinding(project.id);
+        if (isDesktopRuntime() && !binding) return false;
+        const key = binding?.localPath.trim().toLowerCase() || project.id;
+        if (seenLocations.has(key)) return false;
+        seenLocations.add(key);
+        return true;
+      })
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [projects]);
 
@@ -127,7 +114,7 @@ export function WelcomeScreen() {
 
   const handleCreate = useCallback(async () => {
     const importSource = form.importKind !== "none" && form.importPath.trim()
-      ? { kind: form.importKind as "folder" | "zip", path: form.importPath.trim() }
+      ? { kind: form.importKind, path: form.importPath.trim(), strategy: form.importStrategy }
       : undefined;
     const ok = await createAndOpenProject({
       name: form.name,
@@ -136,7 +123,8 @@ export function WelcomeScreen() {
     });
     if (ok) {
       setShowNewForm(false);
-      setForm({ name: "", savePath: "", importKind: "none", importPath: "", showImport: false });
+      setForm({ name: "", savePath: "", importKind: "none", importPath: "", importStrategy: "auto", showImport: false });
+      setImportPreview(null);
     }
   }, [createAndOpenProject, form]);
 
@@ -185,14 +173,35 @@ export function WelcomeScreen() {
   }, [form.savePath]);
 
   const handleBrowseImportPath = useCallback(async () => {
-    if (form.importKind === "zip") {
-      const selected = await browseZipFile(form.importPath || undefined);
-      if (selected) setForm((prev) => ({ ...prev, importPath: selected }));
-    } else {
+    if (form.importKind === "manuscript_folder") {
       const selected = await browseFolder(form.importPath || undefined);
-      if (selected) setForm((prev) => ({ ...prev, importPath: selected }));
+      if (selected) {
+        setForm((prev) => ({ ...prev, importPath: selected }));
+        setImportPreview(null);
+      }
+    } else {
+      const selected = await pickManuscriptFile(form.importPath || undefined);
+      if (selected) {
+        setForm((prev) => ({ ...prev, importPath: selected }));
+        setImportPreview(null);
+      }
     }
   }, [form.importKind, form.importPath]);
+
+  const handlePreviewImport = useCallback(async () => {
+    if (!form.importPath.trim()) return;
+    setPreviewBusy(true);
+    try {
+      const preview = await previewManuscriptImport(form.importPath.trim(), form.importStrategy);
+      setImportPreview(preview);
+      setError("");
+    } catch (e) {
+      setImportPreview(null);
+      setError(`Import preview failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setPreviewBusy(false);
+    }
+  }, [form.importPath, form.importStrategy, setError]);
 
   return (
     <div style={{
@@ -339,9 +348,15 @@ export function WelcomeScreen() {
             flexDirection: "column",
             gap: "var(--space-3)",
           }}>
+            <div>
+              <h2 style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: "var(--text-xl)", color: "var(--text-primary)" }}>Create a novel</h2>
+              <p style={{ margin: "4px 0 0", color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>Start blank or bring in an existing manuscript. Nothing here changes the source you import.</p>
+            </div>
+            <label style={{ display: "grid", gap: 5, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
+              Novel title
             <input
               className="input"
-              placeholder="Project name"
+              placeholder="e.g. The Lantern Coast"
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               autoFocus
@@ -351,26 +366,34 @@ export function WelcomeScreen() {
                 }
               }}
             />
+            </label>
 
-            <div style={{ display: "flex", gap: "var(--space-2)" }}>
-              <input
-                className="input input--mono"
-                placeholder="Save location"
-                value={form.savePath}
-                onChange={(e) => setForm((prev) => ({ ...prev, savePath: e.target.value }))}
-                style={{ flex: 1 }}
-              />
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={() => void handleBrowseSavePath()}
-              >
-                Browse
-              </button>
+            <div style={{ display: "grid", gap: 5, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
+              <label htmlFor="new-project-folder">Project folder</label>
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                <input
+                  id="new-project-folder"
+                  className="input input--mono"
+                  placeholder="Choose a folder for this novel"
+                  value={form.savePath}
+                  onChange={(e) => setForm((prev) => ({ ...prev, savePath: e.target.value }))}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => void handleBrowseSavePath()}
+                >
+                  Browse…
+                </button>
+              </div>
+              <span style={{ color: "var(--text-ghost)" }}>Scenes, Story Memory, and revision history stay in this local folder.</span>
             </div>
 
             {/* Add existing content toggle */}
             <div>
-              <div
+              <button
+                type="button"
+                aria-expanded={form.showImport}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -380,6 +403,11 @@ export function WelcomeScreen() {
                   cursor: "pointer",
                   userSelect: "none",
                   padding: "var(--space-1) 0",
+                  border: 0,
+                  background: "transparent",
+                  font: "inherit",
+                  width: "100%",
+                  textAlign: "left",
                 }}
                 onClick={() => setForm((prev) => ({ ...prev, showImport: !prev.showImport }))}
               >
@@ -391,7 +419,7 @@ export function WelcomeScreen() {
                   &#9656;
                 </span>
                 Add existing content
-              </div>
+              </button>
               {form.showImport && (
                 <div style={{
                   paddingLeft: "var(--space-3)",
@@ -404,39 +432,82 @@ export function WelcomeScreen() {
                     <button
                       className="btn btn--ghost btn--sm"
                       style={{
-                        borderColor: form.importKind === "folder" ? "var(--accent)" : undefined,
-                        color: form.importKind === "folder" ? "var(--accent)" : undefined,
+                        borderColor: form.importKind === "manuscript_file" ? "var(--accent)" : undefined,
+                        color: form.importKind === "manuscript_file" ? "var(--accent)" : undefined,
                       }}
-                      onClick={() => setForm((prev) => ({ ...prev, importKind: "folder", importPath: "" }))}
+                      onClick={() => {
+                        setForm((prev) => ({ ...prev, importKind: "manuscript_file", importPath: "" }));
+                        setImportPreview(null);
+                      }}
                     >
-                      Folder
+                      Manuscript File
                     </button>
                     <button
                       className="btn btn--ghost btn--sm"
                       style={{
-                        borderColor: form.importKind === "zip" ? "var(--accent)" : undefined,
-                        color: form.importKind === "zip" ? "var(--accent)" : undefined,
+                        borderColor: form.importKind === "manuscript_folder" ? "var(--accent)" : undefined,
+                        color: form.importKind === "manuscript_folder" ? "var(--accent)" : undefined,
                       }}
-                      onClick={() => setForm((prev) => ({ ...prev, importKind: "zip", importPath: "" }))}
+                      onClick={() => {
+                        setForm((prev) => ({ ...prev, importKind: "manuscript_folder", importPath: "", importStrategy: "files" }));
+                        setImportPreview(null);
+                      }}
                     >
-                      Zip Archive
+                      Folder / Scrivener
                     </button>
                   </div>
                   {form.importKind !== "none" && (
-                    <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                      <input
-                        className="input input--mono"
-                        placeholder={form.importKind === "folder" ? "/path/to/source-folder" : "/path/to/archive.zip"}
-                        value={form.importPath}
-                        onChange={(e) => setForm((prev) => ({ ...prev, importPath: e.target.value }))}
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => void handleBrowseImportPath()}
-                      >
-                        Browse
-                      </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                      <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                        <input
+                          className="input input--mono"
+                          placeholder={form.importKind === "manuscript_folder" ? "/path/to/scenes-or-Novel.scriv" : "/path/to/novel.docx-or-project.scrivx"}
+                          value={form.importPath}
+                          onChange={(e) => {
+                            setForm((prev) => ({ ...prev, importPath: e.target.value }));
+                            setImportPreview(null);
+                          }}
+                          style={{ flex: 1 }}
+                        />
+                        <button className="btn btn--ghost btn--sm" onClick={() => void handleBrowseImportPath()}>
+                          Browse
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                        <select
+                          className="select"
+                          value={form.importStrategy}
+                          onChange={(e) => {
+                            setForm((prev) => ({ ...prev, importStrategy: e.target.value as NewProjectForm["importStrategy"] }));
+                            setImportPreview(null);
+                          }}
+                          aria-label="Import structure"
+                        >
+                          <option value="auto">Detect structure</option>
+                          <option value="headings">Split at headings</option>
+                          <option value="files">One scene per file</option>
+                          <option value="single">Keep as one scene</option>
+                        </select>
+                        <button
+                          className="btn btn--ghost btn--sm"
+                          disabled={!form.importPath.trim() || previewBusy}
+                          onClick={() => void handlePreviewImport()}
+                        >
+                          {previewBusy ? "Previewing..." : "Preview Structure"}
+                        </button>
+                      </div>
+                      {importPreview && (
+                        <div style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "var(--space-2)", maxHeight: 150, overflowY: "auto" }}>
+                          <div style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", marginBottom: "var(--space-1)" }}>
+                            {importPreview.scene_count} scenes · {importPreview.word_count.toLocaleString()} words
+                          </div>
+                          {importPreview.scenes.map((scene) => (
+                            <div key={`${scene.position}-${scene.title}`} style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>
+                              {scene.position}. {scene.title} ({scene.word_count.toLocaleString()} words)
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -446,10 +517,13 @@ export function WelcomeScreen() {
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <button
                 className="btn btn--primary"
-                disabled={!form.name.trim() || !form.savePath.trim() || busy}
+                disabled={
+                  !form.name.trim() || !form.savePath.trim() || busy ||
+                  (form.importKind !== "none" && !importPreview)
+                }
                 onClick={() => void handleCreate()}
               >
-                {busy ? "Creating..." : "Create"}
+                {busy ? "Creating novel…" : "Create novel"}
               </button>
               <button
                 className="btn btn--ghost"
@@ -488,7 +562,8 @@ export function WelcomeScreen() {
               {recentProjects.map((project) => {
                 const binding = getProjectBinding(project.id);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={project.id}
                     style={{
                       display: "flex",
@@ -498,10 +573,16 @@ export function WelcomeScreen() {
                       cursor: "pointer",
                       borderBottom: "1px solid var(--border-subtle)",
                       transition: "background var(--duration-instant) ease",
+                      width: "100%",
+                      border: 0,
+                      background: "transparent",
+                      font: "inherit",
+                      textAlign: "left",
                     }}
                     onClick={() => handleRecentClick(project.id)}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    aria-label={`Open ${project.name}`}
                   >
                     <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
                       <span style={{
@@ -533,7 +614,7 @@ export function WelcomeScreen() {
                     }}>
                       {formatRelativeDate(project.updatedAt)}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>

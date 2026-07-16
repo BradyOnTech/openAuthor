@@ -1,12 +1,15 @@
 import { useUI, type ActivityView } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { countProposals, countContinuityIssues } from "../../state";
+import { useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
 
 const VIEWS: { id: ActivityView; label: string; shortcut: string }[] = [
   { id: "manuscript", label: "Manuscript", shortcut: "Cmd+Shift+E" },
-  { id: "codex", label: "Codex", shortcut: "Cmd+Shift+X" },
+  { id: "plan", label: "Plan", shortcut: "Cmd+Shift+P" },
+  { id: "codex", label: "Story Memory", shortcut: "Cmd+Shift+X" },
+  { id: "storylines", label: "Storylines", shortcut: "Cmd+Shift+L" },
   { id: "search", label: "Search", shortcut: "Cmd+Shift+F" },
-  { id: "proposals", label: "Proposals", shortcut: "Cmd+Shift+R" },
+  { id: "proposals", label: "Changes", shortcut: "Cmd+Shift+R" },
   { id: "checks", label: "Checks", shortcut: "Cmd+Shift+C" },
 ];
 
@@ -28,11 +31,30 @@ function CodexIcon() {
   );
 }
 
+function PlanIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="6" height="5" rx="1" />
+      <rect x="11" y="3" width="6" height="5" rx="1" />
+      <rect x="3" y="12" width="6" height="5" rx="1" />
+      <path d="M12 14.5h5M14.5 12v5" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8.5" cy="8.5" r="5" />
       <path d="M12.5 12.5L17 17" />
+    </svg>
+  );
+}
+
+function StorylineIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 3v5c0 2 2 3 4 3h8" /><path d="M8 11c-2 0-4 1-4 3v3" /><circle cx="4" cy="3" r="1.5" /><circle cx="16" cy="11" r="1.5" /><circle cx="4" cy="17" r="1.5" />
     </svg>
   );
 }
@@ -63,9 +85,20 @@ function SettingsIcon() {
   );
 }
 
+function AssistantIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 2l1.2 4.1L15 8l-3.8 1.9L10 14l-1.2-4.1L5 8l3.8-1.9L10 2z" />
+      <path d="M15.5 13l.7 2.1 1.8.9-1.8.9-.7 2.1-.7-2.1L13 16l1.8-.9.7-2.1z" />
+    </svg>
+  );
+}
+
 const ICONS: Record<ActivityView | "settings", () => JSX.Element> = {
   manuscript: ManuscriptIcon,
+  plan: PlanIcon,
   codex: CodexIcon,
+  storylines: StorylineIcon,
   search: SearchIcon,
   proposals: ProposalIcon,
   checks: ChecksIcon,
@@ -73,19 +106,15 @@ const ICONS: Record<ActivityView | "settings", () => JSX.Element> = {
 };
 
 export function ActivityBar() {
-  const { activeView, setActiveView, sidebarOpen, setSidebarOpen } = useUI();
+  const { activeView, sidebarOpen, secondarySidebarOpen, secondaryTab, setSecondarySidebarOpen, setSecondaryTab } = useUI();
   const { proposals, continuityIssues } = useWorkspace();
+  const navigateTo = useWorkspaceNavigation();
 
   const pendingCount = countProposals(proposals).pending;
   const errorCount = countContinuityIssues(continuityIssues).error;
 
   function handleClick(view: ActivityView) {
-    if (activeView === view && sidebarOpen) {
-      setSidebarOpen(false);
-    } else {
-      setActiveView(view);
-      setSidebarOpen(true);
-    }
+    void navigateTo(view);
   }
 
   return (
@@ -101,27 +130,48 @@ export function ActivityBar() {
               : null;
 
         return (
-          <div
+          <button
+            type="button"
             key={v.id}
             className={`activity-bar__item${isActive ? " activity-bar__item--active" : ""}`}
             onClick={() => handleClick(v.id)}
             title={`${v.label} (${v.shortcut})`}
+            aria-label={`${v.label} (${v.shortcut})`}
+            aria-pressed={isActive}
           >
             <Icon />
             {badge !== null && <span className="activity-bar__badge">{badge}</span>}
-          </div>
+          </button>
         );
       })}
 
       <div className="activity-bar__spacer" />
 
-      <div
+      <button
+        type="button"
+        className={`activity-bar__item${secondarySidebarOpen && secondaryTab === "chat" ? " activity-bar__item--active" : ""}`}
+        onClick={() => {
+          const isOpen = secondarySidebarOpen && secondaryTab === "chat";
+          setSecondaryTab("chat");
+          setSecondarySidebarOpen(!isOpen);
+        }}
+        title="Assistant (Cmd+L)"
+        aria-label="Assistant (Cmd+L)"
+        aria-pressed={secondarySidebarOpen && secondaryTab === "chat"}
+      >
+        <AssistantIcon />
+      </button>
+
+      <button
+        type="button"
         className={`activity-bar__item${activeView === "settings" && sidebarOpen ? " activity-bar__item--active" : ""}`}
         onClick={() => handleClick("settings")}
         title="Settings (Cmd+,)"
+        aria-label="Settings (Cmd+,)"
+        aria-pressed={activeView === "settings" && sidebarOpen}
       >
         <SettingsIcon />
-      </div>
+      </button>
     </div>
   );
 }

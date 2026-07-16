@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import { authLogin, authLogout } from "../../api";
-import type { GenerationRuntimeConfig, ProposalProvider } from "../../types";
+import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
+import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
 
 const PROVIDER_INFO: {
   id: ProposalProvider;
@@ -33,6 +33,14 @@ export function SettingsEditor() {
         <p className="settings-editor__subtitle">
           Configure AI providers for chat and proposal generation.
         </p>
+
+        <ManuscriptExportCard
+          projectRoot={projectRoot}
+          setError={setError}
+          setMessage={setMessage}
+        />
+
+        <LocalActivityCard projectRoot={projectRoot} setError={setError} />
 
         <div className="settings-editor__section">
           <h3 className="settings-editor__section-title">Subscription</h3>
@@ -103,6 +111,115 @@ export function SettingsEditor() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function LocalActivityCard({ projectRoot, setError }: { projectRoot: string; setError: (value: string) => void }) {
+  const [dashboard, setDashboard] = useState<LocalProductDashboard | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    try {
+      setDashboard(await getLocalProductDashboard(projectRoot));
+    } catch (error) {
+      setError(`Local activity dashboard failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  useEffect(() => { void load(); }, [projectRoot]);
+
+  async function toggleSignals() {
+    if (!dashboard) return;
+    setBusy(true);
+    try {
+      await updateLocalProductSignals(projectRoot, !dashboard.privacy.local_signals_enabled);
+      await load();
+    } catch (error) {
+      setError(`Local activity setting failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const milestones = dashboard?.activation;
+  return (
+    <div className="settings-editor__section">
+      <h3 className="settings-editor__section-title">Private Product Dashboard</h3>
+      <div className="settings-editor__note">
+        These content-free signals stay inside this project. They never include manuscript text, titles, prompts, names, paths, or project identifiers, and openAuthor has no external telemetry transport.
+      </div>
+      {dashboard && (
+        <>
+          <div className="settings-editor__grid" style={{ marginTop: "var(--space-3)" }}>
+            <div className="settings-editor__field"><span className="settings-editor__label">Golden loop</span><span className="settings-editor__value">{milestones?.golden_loop_completed ? "Completed" : "In progress"}</span></div>
+            <div className="settings-editor__field"><span className="settings-editor__label">Active days</span><span className="settings-editor__value">{dashboard.active_days}</span></div>
+            <div className="settings-editor__field"><span className="settings-editor__label">Reviewed hunks</span><span className="settings-editor__value">{dashboard.trust.accepted_hunks + dashboard.trust.rejected_hunks}</span></div>
+            <div className="settings-editor__field"><span className="settings-editor__label">Apply / undo</span><span className="settings-editor__value">{dashboard.trust.applied_change_sets} / {dashboard.trust.undone_change_sets}</span></div>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: "var(--space-3)" }}>
+            {(["scene_created", "change_reviewed", "change_applied", "change_undone"] as const).map((key) => <span className={`badge badge--${milestones?.[key] ? "applied" : "warning"}`} key={key}>{milestones?.[key] ? "✓" : "○"} {key.replace(/_/g, " ")}</span>)}
+          </div>
+          <button className="btn btn--sm" disabled={busy} onClick={() => void toggleSignals()} style={{ marginTop: "var(--space-3)" }}>
+            {dashboard.privacy.local_signals_enabled ? "Pause on-device signals" : "Enable on-device signals"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ManuscriptExportCard({
+  projectRoot,
+  setError,
+  setMessage,
+}: {
+  projectRoot: string;
+  setError: (value: string) => void;
+  setMessage: (value: string) => void;
+}) {
+  const [format, setFormat] = useState<"markdown" | "docx">("docx");
+  const [target, setTarget] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function browse() {
+    const selected = await pickExportTarget(format, target || undefined);
+    if (selected) setTarget(selected);
+  }
+
+  async function runExport() {
+    if (!target.trim()) return;
+    setBusy(true);
+    try {
+      const report = await exportManuscript(projectRoot, target.trim(), format);
+      const lossSummary = report.losses.length
+        ? ` ${report.losses.length} limitation${report.losses.length === 1 ? "" : "s"} recorded in the loss report.`
+        : " Lossless export completed.";
+      setMessage(`Exported ${report.scene_count} scenes.${lossSummary}`);
+    } catch (e) {
+      setError(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="settings-editor__section">
+      <h3 className="settings-editor__section-title">Manuscript Export</h3>
+      <div className="settings-editor__note">
+        Export a local copy at any time. Every export writes a machine-readable loss report beside the output.
+      </div>
+      <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
+        <select className="select" value={format} onChange={(event) => { setFormat(event.target.value as "markdown" | "docx"); setTarget(""); }} aria-label="Export format">
+          <option value="docx">Word (.docx)</option>
+          <option value="markdown">Markdown folder</option>
+        </select>
+        <input className="input input--mono" value={target} onChange={(event) => setTarget(event.target.value)} placeholder={format === "docx" ? "/path/to/manuscript.docx" : "/path/to/empty-folder"} style={{ flex: 1 }} />
+        <button className="btn btn--ghost btn--sm" onClick={() => void browse()}>Browse</button>
+        <button className="btn btn--primary btn--sm" disabled={!target.trim() || busy} onClick={() => void runExport()}>
+          {busy ? "Exporting..." : "Export"}
+        </button>
       </div>
     </div>
   );

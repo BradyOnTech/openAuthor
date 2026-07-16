@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { UIProvider, useUI } from "./contexts/UIContext";
-import { WorkspaceProvider } from "./contexts/WorkspaceContext";
+import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { EditorProvider } from "./contexts/EditorContext";
 import { Workbench } from "./components/workbench/Workbench";
 import { CommandPalette } from "./components/overlay/CommandPalette";
 import { ZenMode } from "./components/overlay/ZenMode";
+import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
   const { theme } = useUI();
@@ -92,88 +93,101 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
     toggleZenMode,
     toggleTheme,
     setCommandPaletteOpen,
-    setActiveView,
-    setSidebarOpen,
     setSecondaryTab,
     setSecondarySidebarOpen,
   } = useUI();
+  const navigateTo = useWorkspaceNavigation();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const mod = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
 
-      if (mod && e.key === "k") {
+      if (mod && key === "k" && !e.shiftKey) {
         e.preventDefault();
         setCommandPaletteOpen(true);
         return;
       }
 
-      if (mod && e.key === "b" && !e.shiftKey) {
+      if (mod && key === "b" && !e.shiftKey) {
         e.preventDefault();
         toggleSidebar();
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "B") {
+      if (mod && e.shiftKey && key === "b") {
         e.preventDefault();
         toggleSecondarySidebar();
         return;
       }
 
-      if (mod && e.key === "j") {
+      if (mod && key === "j") {
         e.preventDefault();
         togglePanel();
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "Z") {
+      if (mod && e.shiftKey && key === "z") {
         e.preventDefault();
         toggleZenMode();
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "T") {
+      if (mod && e.shiftKey && key === "t") {
         e.preventDefault();
         toggleTheme();
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "E") {
+      if (mod && e.shiftKey && key === "e") {
         e.preventDefault();
-        setActiveView("manuscript");
-        setSidebarOpen(true);
+        void navigateTo("manuscript");
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "X") {
+      if (mod && e.shiftKey && key === "p") {
         e.preventDefault();
-        setActiveView("codex");
-        setSidebarOpen(true);
+        void navigateTo("plan");
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "F") {
+      if (mod && e.shiftKey && key === "x") {
         e.preventDefault();
-        setActiveView("search");
-        setSidebarOpen(true);
+        void navigateTo("codex");
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "R") {
+      if (mod && e.shiftKey && key === "l") {
         e.preventDefault();
-        setActiveView("proposals");
-        setSidebarOpen(true);
+        void navigateTo("storylines");
         return;
       }
 
-      if (mod && e.shiftKey && e.key === "C") {
+      if (mod && e.shiftKey && key === "f") {
         e.preventDefault();
-        setActiveView("checks");
-        setSidebarOpen(true);
+        void navigateTo("search");
         return;
       }
 
-      if (mod && e.key === "l") {
+      if (mod && e.shiftKey && key === "r") {
+        e.preventDefault();
+        void navigateTo("proposals");
+        return;
+      }
+
+      if (mod && e.shiftKey && key === "c") {
+        e.preventDefault();
+        void navigateTo("checks");
+        return;
+      }
+
+      if (mod && key === "," && !e.shiftKey) {
+        e.preventDefault();
+        void navigateTo("settings");
+        return;
+      }
+
+      if (mod && key === "l" && !e.shiftKey) {
         e.preventDefault();
         setSecondaryTab("chat");
         setSecondarySidebarOpen(true);
@@ -185,11 +199,16 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     toggleSidebar, toggleSecondarySidebar, togglePanel, toggleZenMode,
-    toggleTheme, setCommandPaletteOpen, setActiveView, setSidebarOpen,
+    toggleTheme, setCommandPaletteOpen, navigateTo,
     setSecondaryTab, setSecondarySidebarOpen,
   ]);
 
   return <>{children}</>;
+}
+
+function ProjectScopedEditor({ children }: { children: React.ReactNode }) {
+  const { activeProjectId } = useWorkspace();
+  return <EditorProvider key={activeProjectId || "welcome"}>{children}</EditorProvider>;
 }
 
 export function AppV2() {
@@ -198,13 +217,13 @@ export function AppV2() {
       <UIProvider>
         <ThemeInitializer>
           <WorkspaceProvider>
-            <EditorProvider>
+            <ProjectScopedEditor>
               <KeyboardShortcuts>
                 <Workbench />
                 <CommandPalette />
                 <ZenMode />
               </KeyboardShortcuts>
-            </EditorProvider>
+            </ProjectScopedEditor>
           </WorkspaceProvider>
         </ThemeInitializer>
       </UIProvider>

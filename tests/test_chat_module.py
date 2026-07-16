@@ -158,6 +158,36 @@ class ChatModuleTests(unittest.TestCase):
       context_used = result["user_message"]["context_used"]
       self.assertEqual(context_used["scene_ids"], ["scene-0001", "scene-0002"])
 
+  def test_book_scope_uses_bounded_scene_anchors_and_grounded_local_guidance(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Book Scope")
+      add_scene(
+        paths,
+        title="The Missing Minute",
+        pov="Mara",
+        body=(
+          "At noon, Mara alone remembered the missing thirteen minutes. "
+          "She found a brass key warm in her hand."
+        ),
+      )
+      add_scene(paths, title="Aftermath", pov="Mara", body="The city denied anything had happened.")
+      thread = create_chat_thread(paths, title="Book Guide", provider="local", mode="chat")
+
+      result = send_chat_message(
+        paths,
+        thread_id=thread["id"],
+        message="What unresolved story question should I develop next, and why?",
+        context_overrides={"scope": "project"},
+      )
+
+      context_used = result["user_message"]["context_used"]
+      self.assertEqual(context_used["scene_ids"], ["scene-0001", "scene-0002"])
+      self.assertEqual(context_used["profile"]["scope"], "project")
+      reply = result["assistant_message"]["content"]
+      self.assertIn("Mara", reply)
+      self.assertIn("missing thirteen minutes", reply)
+      self.assertIn("brass key", reply)
+
   def test_build_provider_history_maps_roles_and_windows_by_tokens(self) -> None:
     rows = [
       {"role": "user", "content": "First question."},

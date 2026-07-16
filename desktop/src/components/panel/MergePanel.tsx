@@ -126,7 +126,7 @@ export function MergePanel() {
         provider: "local",
       });
       setMessage(
-        `Drafted a reconciled version of ${path} as proposal ${proposal.id}. Review it in the Proposals queue.`
+        `Drafted a reconciled version of ${path} as Change Set ${proposal.id}. Review it in Changes.`
       );
       await refreshProposals();
     } catch (e) {

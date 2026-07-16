@@ -3,9 +3,9 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 
 export type Theme = "light" | "dark";
 
-export type ActivityView = "manuscript" | "codex" | "search" | "proposals" | "checks" | "settings";
+export type ActivityView = "manuscript" | "plan" | "codex" | "storylines" | "search" | "proposals" | "checks" | "settings";
 
-export type SecondaryTab = "chat" | "inspector" | "voice";
+export type SecondaryTab = "chat" | "inspector";
 
 export type PanelTab = "runs" | "merge" | "budget";
 
@@ -60,8 +60,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeRaw] = useLocalStorage<Theme>("openauthor.theme", getSystemTheme());
   const [sidebarOpen, setSidebarOpen] = useLocalStorage("openauthor.v2.sidebarOpen", true);
   const [activeView, setActiveView] = useLocalStorage<ActivityView>("openauthor.v2.activeView", "manuscript");
-  const [secondarySidebarOpen, setSecondarySidebarOpen] = useLocalStorage("openauthor.v2.secondarySidebarOpen", true);
-  const [secondaryTab, setSecondaryTab] = useLocalStorage<SecondaryTab>("openauthor.v2.secondaryTab", "chat");
+  const [secondarySidebarOpen, setSecondarySidebarOpen] = useLocalStorage("openauthor.v2.secondarySidebarOpen", false);
+  const [secondaryTabRaw, setSecondaryTabRaw] = useLocalStorage<string>("openauthor.v2.secondaryTab", "chat");
+  const secondaryTab: SecondaryTab = secondaryTabRaw === "inspector" ? "inspector" : "chat";
+  const setSecondaryTab = useCallback((tab: SecondaryTab) => {
+    setSecondaryTabRaw(tab);
+  }, [setSecondaryTabRaw]);
   const [panelOpen, setPanelOpen] = useLocalStorage("openauthor.v2.panelOpen", false);
   const [panelTab, setPanelTab] = useLocalStorage<PanelTab>("openauthor.v2.panelTab", "runs");
   const [zenMode, setZenMode] = useLocalStorage("openauthor.v2.zenMode", false);

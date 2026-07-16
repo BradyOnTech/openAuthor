@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { updateScene } from "../../api";
+import {
+  clearSceneRecoveryDraft,
+  readSceneRecoveryDraft,
+  recoveryDraftMatchesScene,
+  writeSceneRecoveryDraft,
+  type SceneRecoveryDraft,
+} from "../../recoveryJournal";
 import type { SceneDetail } from "../../types";
 
 type Props = {
@@ -15,6 +22,11 @@ export function SceneEditor({ scene }: Props) {
   const [title, setTitle] = useState(scene.title);
   const [body, setBody] = useState(scene.body);
   const [saving, setSaving] = useState(false);
+  const [recoveryDraft, setRecoveryDraft] = useState<SceneRecoveryDraft | null>(() => {
+    const draft = readSceneRecoveryDraft(projectRoot, scene.id);
+    if (!draft || recoveryDraftMatchesScene(draft, scene)) return null;
+    return draft;
+  });
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef({ title: scene.title, body: scene.body });
   const mountedRef = useRef(true);
@@ -41,7 +53,11 @@ export function SceneEditor({ scene }: Props) {
     setTitle(scene.title);
     setBody(scene.body);
     lastSavedRef.current = { title: scene.title, body: scene.body };
-  }, [scene.id, scene.title, scene.body]);
+    const draft = readSceneRecoveryDraft(projectRoot, scene.id);
+    setRecoveryDraft(
+      draft && !recoveryDraftMatchesScene(draft, scene) ? draft : null
+    );
+  }, [projectRoot, scene.id, scene.title, scene.body]);
 
   useEffect(() => {
     latestPayloadRef.current = {
@@ -56,6 +72,18 @@ export function SceneEditor({ scene }: Props) {
   }, [scene.id, scene.summary, scene.pov, scene.status, title, body, activeTabId]);
 
   const isDirty = title !== lastSavedRef.current.title || body !== lastSavedRef.current.body;
+  const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    writeSceneRecoveryDraft({
+      projectRoot,
+      sceneId: scene.id,
+      baseUpdatedAt: scene.updated_at,
+      title,
+      body,
+    });
+  }, [body, isDirty, projectRoot, scene.id, scene.updated_at, title]);
 
   useEffect(() => {
     updateTab(activeTabId, { modified: isDirty });
@@ -83,7 +111,12 @@ export function SceneEditor({ scene }: Props) {
           status: payload.status,
           body: payload.body,
         });
-        lastSavedRef.current = { title: updated.title, body: updated.body };
+        // The serializer may add a final newline. Treat the exact editor
+        // payload as saved until the refreshed scene data reaches this tab,
+        // otherwise the save itself can immediately recreate a recovery draft.
+        lastSavedRef.current = { title: payload.title, body: payload.body };
+        clearSceneRecoveryDraft(projectRoot, payload.sceneId);
+        setRecoveryDraft(null);
         updateTab(payload.tabId, {
           modified: false,
           label: updated.title || payload.sceneId,
@@ -130,7 +163,7 @@ export function SceneEditor({ scene }: Props) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         void save(true);
       }
@@ -141,6 +174,25 @@ export function SceneEditor({ scene }: Props) {
 
   return (
     <div className="scene-editor">
+      <div className="scene-editor__status" aria-live="polite">
+        <span>{wordCount.toLocaleString()} word{wordCount === 1 ? "" : "s"}</span>
+        <span aria-hidden="true">·</span>
+        <span className={isDirty ? "scene-editor__status--dirty" : ""}>{saving ? "Saving…" : isDirty ? "Unsaved" : "Saved"}</span>
+      </div>
+      {recoveryDraft && (
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", padding: "var(--space-2) var(--space-4)", background: "var(--warning-subtle)", borderBottom: "1px solid var(--warning-border)", color: "var(--warning-text)", fontSize: "var(--text-sm)" }}>
+          <span style={{ flex: 1 }}>Unsaved writing from {new Date(recoveryDraft.journaledAt).toLocaleString()} is available.</span>
+          <button className="btn btn--primary btn--sm" onClick={() => {
+            setTitle(recoveryDraft.title);
+            setBody(recoveryDraft.body);
+            setRecoveryDraft(null);
+          }}>Restore</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => {
+            clearSceneRecoveryDraft(projectRoot, scene.id);
+            setRecoveryDraft(null);
+          }}>Discard</button>
+        </div>
+      )}
       <div className="scene-editor__content">
         <input
           className="scene-editor__title"
@@ -156,19 +208,6 @@ export function SceneEditor({ scene }: Props) {
           placeholder="Begin writing..."
         />
       </div>
-      {saving && (
-        <div style={{
-          position: "absolute",
-          bottom: "var(--space-3)",
-          right: "var(--space-4)",
-          fontSize: "var(--text-xs)",
-          color: "var(--editor-text-secondary)",
-          fontFamily: "var(--font-mono)",
-          opacity: 0.5,
-        }}>
-          Saving...
-        </div>
-      )}
     </div>
   );
 }

@@ -52,6 +52,11 @@ class ProjectPaths:
   chat_threads_index_file: Path
   pricing_file: Path
   budget_policy_file: Path
+  revisions_dir: Path
+  revision_objects_dir: Path
+  revision_records_dir: Path
+  revision_head_file: Path
+  structure_file: Path
 
 
 def utc_now() -> str:
@@ -104,6 +109,11 @@ def get_project_paths(root: Path) -> ProjectPaths:
     chat_threads_index_file=chats_dir / "threads.json",
     pricing_file=project_dir / "provider_pricing.json",
     budget_policy_file=project_dir / "generation_budget_policy.json",
+    revisions_dir=project_dir / "revisions",
+    revision_objects_dir=project_dir / "revisions" / "objects",
+    revision_records_dir=project_dir / "revisions" / "records",
+    revision_head_file=project_dir / "revisions" / "HEAD",
+    structure_file=root / "manuscript" / "structure.json",
   )
 
 
@@ -134,6 +144,7 @@ def initialize_project(
 ) -> ProjectPaths:
   root = root.resolve()
   paths = get_project_paths(root)
+  created_new = not paths.config_file.exists()
   paths.project_dir.mkdir(parents=True, exist_ok=True)
   paths.scenes_dir.mkdir(parents=True, exist_ok=True)
   paths.codex_db.parent.mkdir(parents=True, exist_ok=True)
@@ -141,6 +152,8 @@ def initialize_project(
   ensure_workspace_layout(paths)
   paths.generations_dir.mkdir(parents=True, exist_ok=True)
   paths.retrieval_dir.mkdir(parents=True, exist_ok=True)
+  paths.revision_objects_dir.mkdir(parents=True, exist_ok=True)
+  paths.revision_records_dir.mkdir(parents=True, exist_ok=True)
 
   if not paths.config_file.exists():
     project_name = name or root.name
@@ -161,7 +174,7 @@ def initialize_project(
   if not manuscript_readme.exists():
     manuscript_readme.write_text(
       "# Manuscript\n\n"
-      "Scene files live in `manuscript/scenes/` and are versioned in git.\n",
+      "Scene files live in `manuscript/scenes/` and are revisioned locally by openAuthor.\n",
       encoding="utf-8",
     )
 
@@ -210,6 +223,25 @@ def initialize_project(
     )
 
   ensure_project_identity(paths, expected_project_id=project_id)
+  if not paths.structure_file.exists():
+    atomic_write_json(paths.structure_file, {
+      "schema_version": 2,
+      "brief": {
+        "synopsis": "",
+        "genre": "",
+        "themes": [],
+        "style_guide": "",
+        "outline": "",
+      },
+      "acts": [],
+      "unassigned_scene_ids": [],
+      "beats": [],
+      "notes": [],
+      "scene_metadata": {},
+    })
+  if created_new:
+    from .product_signals import record_product_event
+    record_product_event(paths, "project_created")
   return paths
 
 
@@ -218,6 +250,8 @@ def ensure_workspace_layout(paths: ProjectPaths) -> None:
   paths.proposals_dir.mkdir(parents=True, exist_ok=True)
   paths.chats_dir.mkdir(parents=True, exist_ok=True)
   paths.chat_threads_dir.mkdir(parents=True, exist_ok=True)
+  paths.revision_objects_dir.mkdir(parents=True, exist_ok=True)
+  paths.revision_records_dir.mkdir(parents=True, exist_ok=True)
   if not paths.chat_threads_index_file.exists():
     paths.chat_threads_index_file.write_text("[]\n", encoding="utf-8")
   _migrate_legacy_proposals(paths)

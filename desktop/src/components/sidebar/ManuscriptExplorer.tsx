@@ -29,7 +29,7 @@ export function ManuscriptExplorer() {
     if (!newTitle.trim()) return;
     setAdding(true);
     try {
-      await addScene(projectRoot, {
+      const created = await addScene(projectRoot, {
         title: newTitle.trim(),
         summary: "",
         pov: newPov.trim(),
@@ -41,6 +41,12 @@ export function ManuscriptExplorer() {
       setNewStatus("draft");
       setMessage("Scene created.");
       await refreshScenes();
+      openTab({
+        id: `scene:${created.id}`,
+        kind: "scene",
+        label: created.title,
+        data: created,
+      });
     } catch (e) {
       setError(`Failed to add scene: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -58,7 +64,8 @@ export function ManuscriptExplorer() {
       </div>
       <div className="sidebar__content">
         {scenes.map((s) => (
-          <div
+          <button
+            type="button"
             key={s.id}
             className="tree-item"
             onClick={() => handleSceneClick(s.id, s.title)}
@@ -71,7 +78,7 @@ export function ManuscriptExplorer() {
             <span className={`tree-item__badge tree-item__badge--${s.status}`}>
               {s.status.slice(0, 3).toUpperCase()}
             </span>
-          </div>
+          </button>
         ))}
 
         {scenes.length === 0 && (
@@ -89,6 +96,7 @@ export function ManuscriptExplorer() {
         gap: "var(--space-2)",
       }}>
         <input
+          id="new-scene-title"
           className="input"
           placeholder="New scene title..."
           value={newTitle}

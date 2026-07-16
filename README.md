@@ -1,13 +1,22 @@
 # openAuthor
 
-Local-first fiction authoring foundation with:
+openAuthor is a local-first AI novel-writing studio built around a software-engineering idea: creative iteration should be safe, reviewable, reversible, and easy to experiment with.
 
-- Git-native manuscript project structure
-- Markdown scene files with metadata
-- SQLite-backed codex entities
-- Proposal queue for AI-assisted edits
+North star:
 
-Architecture note: desktop v1 will use `Tauri + React`, with Tauri invoking the existing Python core as a sidecar process. This keeps momentum while preserving a clean migration path later.
+> An AI assistant for novel writing that treats writing a novel like software engineering, allowing continuous iteration and experimentation with revision history and creative suggestions.
+
+Product capabilities include:
+
+- Local-first, content-addressed manuscript Revisions with optional Git-backed Storyline adapters
+- Evidence-backed Change Sets with per-hunk review, author feedback, and atomic multi-scene application
+- Temporal Story Memory with Canon Facts, character knowledge, relationships, arcs, setups/payoffs, and diagnostics
+- Book, Scene, Chapter, Character, and Storyline-scoped Assistant conversations with durable artifact promotion
+- Human-readable Markdown scenes, portable planning files, import/export, and a private content-free product dashboard
+
+The desktop product uses Tauri + React with a supervised, checksum-pinned embedded Python core. The runtime boundary preserves local files and a clean path to replace individual services only when evidence justifies it.
+
+The canonical forward-looking roadmap is [`docs/product-development-plan.md`](docs/product-development-plan.md). It sequences installability, trusted Change Sets, real Story Memory, and author-facing Storylines around one golden revision loop. Current implementation and release truth is tracked separately in [`docs/capabilities.md`](docs/capabilities.md).
 
 ## Quick start
 
@@ -48,7 +57,9 @@ make desktop-tauri
 ## Desktop shell
 
 `Tauri + React` scaffold lives in `desktop`.
-Current desktop slice: Binder + Editor + Outliner + Proposal Review + Generation Runs + Guided Merge + Context Lens + Codex Panel + Continuity Checks + Voice workspace (push-to-talk/manual command + dictation-to-proposal + confirmation/undo).
+The active desktop includes project onboarding, manuscript writing and recovery, Plan, temporal Story Memory, search, Change Sets and Revisions, scoped Assistant chat, Editorial Passes, Style Profiles, creative alternatives, Storylines, import/export, continuity diagnostics, budget controls, private local metrics, and basic generation-run visibility. Release certification remains separate from implementation truth and is tracked explicitly in the capability registry.
+
+Release builds embed a checksum-pinned Python runtime, so authors do not install Python or use a terminal. Developers can build and verify the macOS package with `make runtime-prepare`, `make macos-bundle`, and `make macos-bundle-check`; signed/notarized prereleases are produced by the dedicated macOS release workflow when Apple credentials are configured.
 
 ```bash
 cd desktop
@@ -73,6 +84,12 @@ python3 -m openauthor scene list --json
 python3 -m openauthor scene get --id scene-0001 --json
 python3 -m openauthor scene update --id scene-0001 --summary "Tighter opening" --body "Updated body" --json
 
+# preview structure, import a real manuscript, and export with a loss report
+python3 -m openauthor manuscript preview --source "/path/to/novel.docx" --strategy auto --json
+python3 -m openauthor manuscript import --source "/path/to/novel.docx" --strategy headings --json
+python3 -m openauthor manuscript export --format markdown --target "/path/to/empty-export-folder" --json
+python3 -m openauthor manuscript export --format docx --target "/path/to/novel-export.docx" --json
+
 # add and list codex entities
 python3 -m openauthor codex add --type character --name "Elara" --description "Main POV character"
 python3 -m openauthor codex list --type character
@@ -84,7 +101,8 @@ python3 -m openauthor codex update --id entity-xxxxxxxxxxxx --description "Updat
 python3 -m openauthor proposal add --title "Tighten prose" --instruction "Make paragraph one more direct" --scene scene-0001
 python3 -m openauthor proposal list --status pending
 python3 -m openauthor proposal draft --id proposal-xxxxxxxxxxxx --provider local --json   # generate the full revised scene body
-python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx                            # writes the drafted body (pre-apply snapshot; refuses stale drafts unless --force)
+python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx                            # fails closed; records before/after revisions; refuses stale drafts unless --force
+python3 -m openauthor proposal undo --id proposal-xxxxxxxxxxxx                             # restores the pre-apply scene and records the undo as a new revision
 
 # generate proposal using local provider (real deterministic adapter)
 python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --json
@@ -113,7 +131,7 @@ python3 -m openauthor generation budget --max-output-tokens 700 --daily-tokens 1
 python3 -m openauthor generation budget --reset --json
 python3 -m openauthor generation config --json
 
-# create git snapshot
+# create an optional Git snapshot for advanced branch workflows
 python3 -m openauthor snapshot create -m "Draft scene and codex seed"
 python3 -m openauthor snapshot log
 
@@ -143,6 +161,10 @@ python3 -m openauthor check continuity --json
 # workspace drift/migration audit + safe repair
 python3 -m openauthor check workspace --json
 python3 -m openauthor check workspace --repair --json
+
+# launch-critical project health + guided safe repair
+python3 -m openauthor check startup --json
+python3 -m openauthor check startup --repair --json
 
 # performance baselines for scenes/proposals/runs/retrieval status
 python3 -m openauthor check performance --repeat 3 --json
@@ -181,16 +203,14 @@ AI generation artifacts:
 - Retrieval-backed generations attach provenance metadata (`retrieval` query/mode/index state + citation chunks) to both generation logs and proposal generation payloads.
 - Logs also persist generation settings (`temperature`, `max_output_tokens`, `context_scene_radius`, `codex_limit`) for reproducible reruns.
 - Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
-- Desktop Runs panel now includes budget policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
-- Desktop Proposal Review and Runs surfaces now show retrieval provenance (query/mode/index freshness/citations with score+coverage excerpts), and generation/rerun forms include retrieval mode controls.
-- Desktop Voice Workspace supports push-to-talk/manual command capture, dictation-to-proposal capture mode, confirmation-before-execution, undo affordances, and per-project transcript audit log in desktop local storage.
+- The active desktop Budget panel includes policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
+- The active proposal generator exposes retrieval controls, while Assistant chat displays cited context. Advanced run-level provenance remains a core capability awaiting a V2 product surface.
+- Voice command and dictation helper code remains in the repository but is intentionally hidden from the active product until the trusted golden loop is complete.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
-- Desktop Runs panel supports re-run with override controls (provider/model/temperature/tokens/context/codex) plus log JSON copy/download actions for audit/debug workflows.
-- Desktop Runs panel also supports baseline run selection (same scene), compare-to-previous shortcuts, weighting profiles (balanced/quality/cost/speed/reliability), rule-based promotion hints, and copy/download export of comparison reports (JSON + Markdown). Comparison profile/toggle preferences persist per project root in desktop local storage.
-- Desktop Runs panel supports pin/unpin preferred run per scene; pinned runs are highlighted and can be opened quickly from both Runs and Proposal review (including direct jump to preferred proposal).
-- Desktop Runs panel includes hardening controls for `check workspace` (drift audit + optional repair) and `check performance` baseline metrics.
+- Generation rerun, comparison, pinning, and export primitives exist in the core or tested helpers but are hidden from the active V2 product pending a coherent revision-history experience.
+- Workspace audit/repair and performance baselines are currently CLI-only release tools.
 - Proposal review supports triage queue modes (`all`, `selected scene first`, `preferred-linked first`, `preferred-linked only`) plus status filters.
-- Context tab includes a Preferred Pipeline card (scene -> pinned run -> linked proposal) with health badges (missing/stale pin, missing proposal, pending/applied/rejected), quick-open actions, and stale-reference recovery actions.
+- Preferred-pipeline helper logic remains available for future revision-history work; it is not claimed as a shipped V2 workflow.
 
 Generated proposal format is normalized to four sections for review consistency:
 
@@ -220,7 +240,7 @@ Provider retry tuning (optional env vars):
 
 ## Status
 
-Phase 0-4 are complete. Phase 4 closeout includes budget policy enforcement, guided merge workflows, retrieval provenance, voice dictation/confirm/undo workflows, and hardening checks (drift audit + performance baselines). Phase 5 planning can build from this baseline.
+Phases 0-4 delivered the core engine and a substantial set of advanced primitives. Product readiness is now tracked separately from core implementation: active-shell parity, clean-machine installability, native end-to-end verification, trusted Change Sets, Story Memory, and Storylines are sequenced in [`docs/product-development-plan.md`](docs/product-development-plan.md).
 
 CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
 
@@ -230,3 +250,5 @@ CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
 - `make test-desktop`
 - `make desktop-build`
 - `make tauri-check`
+- `make tauri-test`
+- `make test-scale`

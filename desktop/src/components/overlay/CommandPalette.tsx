@@ -3,6 +3,7 @@ import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { getScene, getCodexEntity } from "../../api";
+import { useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
 
 type ResultItem = {
   id: string;
@@ -27,11 +28,11 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   const {
     toggleSidebar, toggleSecondarySidebar, togglePanel,
     toggleZenMode, toggleTheme,
-    setActiveView, setSidebarOpen,
     setSecondaryTab, setSecondarySidebarOpen,
   } = useUI();
   const { projectRoot, scenes, codexEntities, setError } = useWorkspace();
   const { openTab } = useEditor();
+  const navigateTo = useWorkspaceNavigation();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -44,10 +45,13 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
     { id: "cmd:secondary", kind: "command", label: "Toggle AI Chat", shortcut: "Cmd+Shift+B" },
     { id: "cmd:panel", kind: "command", label: "Toggle Panel", shortcut: "Cmd+J" },
     { id: "cmd:manuscript", kind: "command", label: "Focus Manuscript", shortcut: "Cmd+Shift+E" },
-    { id: "cmd:codex", kind: "command", label: "Focus Codex", shortcut: "Cmd+Shift+X" },
+    { id: "cmd:plan", kind: "command", label: "Focus Plan", shortcut: "Cmd+Shift+P" },
+    { id: "cmd:codex", kind: "command", label: "Focus Story Memory", shortcut: "Cmd+Shift+X" },
+    { id: "cmd:storylines", kind: "command", label: "Focus Storylines", shortcut: "Cmd+Shift+L" },
     { id: "cmd:search", kind: "command", label: "Focus Search", shortcut: "Cmd+Shift+F" },
-    { id: "cmd:proposals", kind: "command", label: "Focus Proposals", shortcut: "Cmd+Shift+R" },
+    { id: "cmd:proposals", kind: "command", label: "Focus Changes", shortcut: "Cmd+Shift+R" },
     { id: "cmd:checks", kind: "command", label: "Focus Checks", shortcut: "Cmd+Shift+C" },
+    { id: "cmd:settings", kind: "command", label: "Open Settings", shortcut: "Cmd+," },
     { id: "cmd:chat", kind: "command", label: "Focus Chat", shortcut: "Cmd+L" },
     { id: "cmd:inspector", kind: "command", label: "Open Inspector" },
   ], []);
@@ -129,15 +133,18 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
       case "cmd:sidebar": toggleSidebar(); break;
       case "cmd:secondary": toggleSecondarySidebar(); break;
       case "cmd:panel": togglePanel(); break;
-      case "cmd:manuscript": setActiveView("manuscript"); setSidebarOpen(true); break;
-      case "cmd:codex": setActiveView("codex"); setSidebarOpen(true); break;
-      case "cmd:search": setActiveView("search"); setSidebarOpen(true); break;
-      case "cmd:proposals": setActiveView("proposals"); setSidebarOpen(true); break;
-      case "cmd:checks": setActiveView("checks"); setSidebarOpen(true); break;
+      case "cmd:manuscript": void navigateTo("manuscript"); break;
+      case "cmd:plan": void navigateTo("plan"); break;
+      case "cmd:codex": void navigateTo("codex"); break;
+      case "cmd:storylines": void navigateTo("storylines"); break;
+      case "cmd:search": void navigateTo("search"); break;
+      case "cmd:proposals": void navigateTo("proposals"); break;
+      case "cmd:checks": void navigateTo("checks"); break;
+      case "cmd:settings": void navigateTo("settings"); break;
       case "cmd:chat": setSecondaryTab("chat"); setSecondarySidebarOpen(true); break;
       case "cmd:inspector": setSecondaryTab("inspector"); setSecondarySidebarOpen(true); break;
     }
-  }, [toggleZenMode, toggleTheme, toggleSidebar, toggleSecondarySidebar, togglePanel, setActiveView, setSidebarOpen, setSecondaryTab, setSecondarySidebarOpen]);
+  }, [toggleZenMode, toggleTheme, toggleSidebar, toggleSecondarySidebar, togglePanel, navigateTo, setSecondaryTab, setSecondarySidebarOpen]);
 
   const handleSelect = useCallback(async (item: ResultItem) => {
     onClose();

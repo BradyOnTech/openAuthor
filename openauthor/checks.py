@@ -5,7 +5,7 @@ import re
 
 from .codex import list_entities
 from .project import ProjectPaths
-from .scenes import get_scene, list_scenes
+from .scenes import list_scene_details
 
 SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
 
@@ -19,8 +19,7 @@ def _word_count(value: str) -> int:
 
 
 def run_continuity_checks(paths: ProjectPaths) -> list[dict[str, str]]:
-  scenes = list_scenes(paths)
-  scene_details = [get_scene(paths, row["id"]) for row in scenes]
+  scene_details = list_scene_details(paths)
   character_names = {
     _normalize(row["name"])
     for row in list_entities(paths, kind="character")
@@ -40,9 +39,6 @@ def run_continuity_checks(paths: ProjectPaths) -> list[dict[str, str]]:
     pov = scene["pov"].strip()
     status = scene["status"].strip().lower()
     body = scene["body"]
-    heading_match = re.search(r"^#\s+(.+)$", body, flags=re.MULTILINE)
-    heading = heading_match.group(1).strip() if heading_match else ""
-
     if not summary:
       issues.append(
         {
@@ -90,19 +86,6 @@ def run_continuity_checks(paths: ProjectPaths) -> list[dict[str, str]]:
           "code": "pov_not_in_codex",
           "title": "POV is not present in character codex",
           "message": f"Scene POV '{pov}' has no matching character entity.",
-          "scene_id": scene_id,
-          "path": scene_path,
-        }
-      )
-
-    if heading and title and heading != title:
-      issues.append(
-        {
-          "id": f"{scene_id}:heading-title-mismatch",
-          "severity": "info",
-          "code": "scene_heading_title_mismatch",
-          "title": "Markdown heading and scene title differ",
-          "message": f"Front matter title is '{title}', but heading is '{heading}'.",
           "scene_id": scene_id,
           "path": scene_path,
         }

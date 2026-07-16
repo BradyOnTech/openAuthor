@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, draftProposal, rejectProposal, getScene } from "../../api";
+import { applyProposal, draftProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 
 type Props = {
@@ -15,6 +15,10 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [proposal, setProposal] = useState(initial);
   const [busy, setBusy] = useState("");
   const [confirmForce, setConfirmForce] = useState(false);
+  const [editingHunkId, setEditingHunkId] = useState("");
+  const [editedHunkText, setEditedHunkText] = useState("");
+  const [feedbackHunkId, setFeedbackHunkId] = useState("");
+  const [hunkFeedback, setHunkFeedback] = useState("");
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
@@ -69,6 +73,69 @@ export function ProposalReview({ proposal: initial }: Props) {
     }
   }
 
+  async function handleHunkDecision(hunkId: string, decision: "accepted" | "rejected") {
+    setBusy(hunkId);
+    try {
+      const updated = await updateProposalHunk(projectRoot, proposal.id, hunkId, decision);
+      syncTab(updated);
+      setMessage(decision === "accepted" ? "Change hunk included." : "Change hunk excluded.");
+      await refreshProposals();
+    } catch (e) {
+      setError(`Hunk review failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleSaveHunkEdit(hunkId: string) {
+    setBusy(hunkId);
+    try {
+      const updated = await editProposalHunk(projectRoot, proposal.id, hunkId, editedHunkText);
+      syncTab(updated);
+      setEditingHunkId("");
+      setMessage("Change hunk edited and included.");
+      await refreshProposals();
+    } catch (e) {
+      setError(`Hunk edit failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleRegenerateHunk(hunkId: string, feedback = "") {
+    setBusy(hunkId);
+    try {
+      const updated = await regenerateProposalHunk(projectRoot, proposal.id, hunkId, draftProvider, undefined, feedback);
+      syncTab(updated);
+      setFeedbackHunkId("");
+      setHunkFeedback("");
+      setMessage("Change hunk regenerated; review its replacement before applying.");
+      await refreshProposals();
+    } catch (e) {
+      setError(`Hunk regeneration failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleRebase() {
+    setBusy("rebase");
+    try {
+      const updated = await rebaseProposal(projectRoot, proposal.id);
+      syncTab(updated);
+      if (updated.rebase_report?.status === "rebased") {
+        setMessage("Change Set rebased onto the current scene; review carried hunks before applying.");
+      } else {
+        setError("Automatic rebase stopped because one or more source passages changed. Review the explained conflicts.");
+      }
+      await refreshProposals();
+    } catch (e) {
+      setError(`Rebase failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function handleReject() {
     setBusy("reject");
     try {
@@ -78,6 +145,22 @@ export function ProposalReview({ proposal: initial }: Props) {
       await refreshProposals();
     } catch (e) {
       setError(`Reject failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleUndo() {
+    setBusy("undo");
+    try {
+      const updated = await undoProposal(projectRoot, proposal.id);
+      syncTab(updated);
+      const scene = await getScene(projectRoot, updated.scene_id);
+      openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene });
+      setMessage("Change undone — the scene was restored and a new revision recorded.");
+      await Promise.all([refreshProposals(), refreshScenes()]);
+    } catch (e) {
+      setError(`Undo failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy("");
     }
@@ -95,13 +178,16 @@ export function ProposalReview({ proposal: initial }: Props) {
 
   const gen = proposal.generation;
   const hasDraft = Boolean(proposal.proposed_body && proposal.proposed_body.trim());
+  const changeSet = proposal.change_set;
+  const acceptedCount = changeSet?.hunks.filter((hunk) => hunk.decision === "accepted").length ?? 0;
+  const displayStatus = proposal.undone_at ? "undone" : proposal.status;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
         <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
         <div className="review-card__meta">
-          <span className={`badge badge--${proposal.status}`}>{proposal.status}</span>
+          <span className={`badge badge--${displayStatus}`}>{displayStatus}</span>
           {proposal.stale && proposal.status === "pending" && (
             <span className="badge badge--warning" title="The scene changed after this proposal was written">
               scene changed
@@ -123,7 +209,112 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
-      {hasDraft && (
+      {proposal.revision_intent && (proposal.revision_intent.constraints.length > 0 || proposal.revision_intent.protected_elements.length > 0) && (
+        <div className="review-card__section">
+          <div className="review-card__section-title">Protected intent</div>
+          <div className="review-card__section-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>CONSTRAINTS</div>
+              {proposal.revision_intent.constraints.length ? proposal.revision_intent.constraints.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
+            </div>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>MUST NOT CHANGE</div>
+              {proposal.revision_intent.protected_elements.length ? proposal.revision_intent.protected_elements.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {proposal.rebase_report?.status === "conflicted" && (
+        <div className="review-card__section">
+          <div className="review-card__section-title">Rebase conflicts</div>
+          {proposal.rebase_report.conflicts.map((conflict) => (
+            <div key={conflict.hunk_id} style={{ color: "var(--warning-text)", marginBottom: "var(--space-1)" }}>
+              {conflict.hunk_id}: {conflict.message}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {changeSet && (
+        <div className="review-card__section">
+          <div className="review-card__section-title" style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}>
+            <span>Change Set · {acceptedCount}/{changeSet.hunks.length} hunks included</span>
+            <span className={`badge badge--${changeSet.impact_report.risk === "low" ? "applied" : "warning"}`}>
+              {changeSet.impact_report.risk} impact
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            {changeSet.impact_report.warnings.map((warning) => (
+              <div key={warning} style={{ padding: "var(--space-2) var(--space-3)", border: "1px solid var(--warning-border)", background: "var(--warning-subtle)", color: "var(--warning-text)", borderRadius: "var(--radius-sm)", fontSize: "var(--text-sm)" }}>
+                {warning}
+              </div>
+            ))}
+            {changeSet.impact_report.affected_story_memory.map((impact) => (
+              <div key={typeof impact === "string" ? impact : impact.id} style={{ marginTop: 6, padding: "8px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--info-border)", background: "var(--info-subtle)", fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+                <strong style={{ color: "var(--text-primary)" }}>{typeof impact === "string" ? impact : impact.label}</strong>
+                {typeof impact !== "string" && <div style={{ marginTop: 3 }}>{impact.reason}</div>}
+              </div>
+            ))}
+            {changeSet.hunks.map((hunk) => (
+              <div key={hunk.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden", opacity: hunk.decision === "rejected" ? 0.7 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-2)", padding: "var(--space-2)", background: "var(--bg-elevated)" }}>
+                  <div>
+                    <span className="badge">{hunk.kind}</span>
+                    <span style={{ marginLeft: "var(--space-2)", fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>{hunk.rationale}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "var(--space-1)" }}>
+                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
+                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
+                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setFeedbackHunkId(hunk.id); setHunkFeedback(""); }}>Comment</button>
+                    <button
+                      className={`btn btn--sm ${hunk.decision === "accepted" ? "btn--success" : "btn--ghost"}`}
+                      disabled={busy === hunk.id}
+                      onClick={() => void handleHunkDecision(hunk.id, hunk.decision === "accepted" ? "rejected" : "accepted")}
+                      aria-label={`${hunk.decision === "accepted" ? "Exclude" : "Include"} change hunk ${hunk.order}`}
+                    >
+                      {hunk.decision === "accepted" ? "Included" : "Excluded"}
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border-subtle)" }}>
+                  <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--danger) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
+                    <div style={{ color: "var(--danger)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
+                    {hunk.before_text || "∅"}
+                  </div>
+                  <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--success) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
+                    <div style={{ color: "var(--success)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
+                    {hunk.after_text || "∅"}
+                  </div>
+                </div>
+                {editingHunkId === hunk.id && (
+                  <div style={{ padding: "var(--space-3)", background: "var(--bg-elevated)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                    <textarea className="input" rows={6} value={editedHunkText} onChange={(event) => setEditedHunkText(event.target.value)} aria-label={`Edit replacement for hunk ${hunk.order}`} />
+                    <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                      <button className="btn btn--primary btn--sm" disabled={busy === hunk.id} onClick={() => void handleSaveHunkEdit(hunk.id)}>Save hunk</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => setEditingHunkId("")}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                {feedbackHunkId === hunk.id && (
+                  <div style={{ padding: "var(--space-3)", background: "var(--bg-elevated)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                    <textarea className="input" rows={3} value={hunkFeedback} onChange={(event) => setHunkFeedback(event.target.value)} placeholder="What should this passage do differently?" aria-label={`Revision comment for hunk ${hunk.order}`} />
+                    <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                      <button className="btn btn--primary btn--sm" disabled={busy === hunk.id || !hunkFeedback.trim()} onClick={() => void handleRegenerateHunk(hunk.id, hunkFeedback)}>Revise hunk</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => setFeedbackHunkId("")}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {changeSet.hunks.length === 0 && (
+              <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>No prose changes were generated. Redraft with a clearer intent.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {hasDraft && !changeSet && (
         <div className="review-card__section">
           <div className="review-card__section-title">
             Drafted scene text {proposal.draft ? `(${proposal.draft.provider}/${proposal.draft.model})` : ""}
@@ -172,33 +363,32 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {proposal.status === "pending" && (
         <div className="review-card__actions">
+          {proposal.stale && changeSet && (
+            <button className="btn btn--primary" disabled={busy === "rebase"} onClick={() => void handleRebase()}>
+              {busy === "rebase" ? "Rebasing…" : "Rebase safe hunks"}
+            </button>
+          )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && (
             <button className="btn btn--primary" disabled={busy === "draft"} onClick={handleDraft}>
               {busy === "draft"
                 ? "Drafting..."
                 : hasDraft
-                  ? "Redraft scene text"
-                  : "Draft scene text"}
+                  ? "Regenerate Change Set"
+                  : "Build Change Set"}
             </button>
           )}
-          {proposal.source !== "merge_resolution" && (
+          {proposal.source !== "merge_resolution" && hasDraft && (
             <button
               className="btn btn--success"
-              disabled={busy === "apply"}
+              disabled={busy === "apply" || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
               onClick={handleApply}
-              title={
-                hasDraft
-                  ? "Write the drafted text into the scene (a snapshot is taken first)"
-                  : "Mark as applied without changing the scene"
-              }
+              title="Write the drafted text into the scene and record before/after revisions"
             >
               {busy === "apply"
                 ? "Applying..."
                 : confirmForce
                   ? "Scene changed — apply anyway?"
-                  : hasDraft
-                    ? "Apply to scene"
-                    : "Mark applied"}
+                  : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
             </button>
           )}
           <button className="btn btn--danger" disabled={busy === "reject"} onClick={handleReject}>
@@ -212,6 +402,14 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {proposal.status !== "pending" && proposal.scene_id && (
         <div className="review-card__actions">
+          {proposal.status === "applied" && proposal.applied_changes && !proposal.undone_at && (
+            <button className="btn btn--primary" disabled={busy === "undo"} onClick={handleUndo}>
+              {busy === "undo" ? "Undoing..." : "Undo change"}
+            </button>
+          )}
+          {proposal.undone_at && (
+            <span className="badge badge--warning">undone</span>
+          )}
           <button className="btn btn--ghost" onClick={handleOpenScene}>Open Scene</button>
         </div>
       )}

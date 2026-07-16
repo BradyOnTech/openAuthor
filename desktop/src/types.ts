@@ -118,6 +118,23 @@ export type SceneDetail = {
   body: string;
 };
 
+export type StartupHealthReport = {
+  checked_at: string;
+  project_root: string;
+  repair_requested: boolean;
+  ready: boolean;
+  errors: number;
+  warnings: number;
+  checks: Array<{
+    id: string;
+    status: "ok" | "warning" | "error";
+    message: string;
+    recovery: string;
+    repairable: boolean;
+    repaired: boolean;
+  }>;
+};
+
 export type ProposalRecord = {
   id: string;
   title: string;
@@ -132,10 +149,72 @@ export type ProposalRecord = {
   updated_at: string;
   notes: string;
   source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
+  change_group_id?: string;
   proposed_body?: string;
+  revision_intent?: {
+    goal: string;
+    scope: string;
+    constraints: string[];
+    protected_elements: string[];
+  };
+  rebase_report?: {
+    status: "rebased" | "conflicted";
+    carried_hunk_ids: string[];
+    conflicts: Array<{ hunk_id: string; reason: string; message: string }>;
+  };
   applied_changes?: boolean;
   applied_at?: string;
   pre_apply_snapshot?: string;
+  applied_revision?: string;
+  applied_scene_digest?: string;
+  undone_at?: string;
+  undo_revision?: string;
+  restored_revision?: string;
+  accepted_hunk_ids?: string[];
+  rejected_hunk_ids?: string[];
+  change_set?: {
+    schema_version: number;
+    id: string;
+    proposal_id: string;
+    scene_id: string;
+    created_at: string;
+    intent: {
+      goal: string;
+      scope: string;
+      constraints: string[];
+      protected_elements: string[];
+    };
+    base_body: string;
+    proposed_body: string;
+    hunks: Array<{
+      id: string;
+      order: number;
+      kind: "insert" | "delete" | "replace";
+      before_start: number;
+      before_end: number;
+      after_start: number;
+      after_end: number;
+      before_text: string;
+      after_text: string;
+      decision: "accepted" | "rejected";
+      rationale: string;
+      edited_by?: "author" | "ai" | string;
+      edited_at?: string;
+      regeneration?: Record<string, unknown>;
+    }>;
+    impact_report: {
+      risk: "low" | "medium" | "high" | string;
+      affected_scenes: string[];
+      affected_story_memory: Array<string | { kind: string; id: string; label: string; reason: string }>;
+      warnings: string[];
+    };
+    provenance: {
+      provider?: string;
+      model?: string;
+      generation_id?: string;
+      citations?: unknown[];
+    };
+  };
   draft?: {
     generation_id: string;
     provider: string;
@@ -206,6 +285,139 @@ export type ProposalRecord = {
     quality_tier?: "high" | "medium" | "low" | string;
     quality_flags?: string[];
     log_path: string;
+  };
+};
+
+export type RevisionSummary = {
+  id: string;
+  parent: string;
+  created_at: string;
+  message: string;
+  kind: string;
+  file_count: number;
+  metadata: Record<string, unknown>;
+};
+
+export type RevisionComparison = {
+  base_revision: string;
+  head_revision: string;
+  changed_file_count: number;
+  files: Array<{
+    path: string;
+    status: "added" | "modified" | "deleted" | string;
+    before: string;
+    after: string;
+    diff: string;
+  }>;
+};
+
+export type RevisionRetrospective = {
+  base_revision: string;
+  head_revision: string;
+  intent: string;
+  accepted_hunk_ids: string[];
+  changed_scenes: Array<{ path: string; scene_id: string; title: string; status: string; word_count_before: number; word_count_after: number; word_count_delta: number }>;
+  word_count_delta: number;
+  story_memory_changed: boolean;
+  changed_artifact_count: number;
+  remaining_goals: Array<{ kind: string; label: string; severity: string }>;
+  summary: string;
+};
+
+export type ManuscriptPlan = {
+  schema_version: number;
+  brief: {
+    synopsis: string;
+    genre: string;
+    themes: string[];
+    style_guide: string;
+    outline: string;
+  };
+  acts: Array<{
+    id: string;
+    title: string;
+    synopsis: string;
+    position: number;
+    chapters: Array<{
+      id: string;
+      title: string;
+      synopsis: string;
+      position: number;
+      scene_ids: string[];
+    }>;
+  }>;
+  unassigned_scene_ids: string[];
+  scene_metadata: Record<string, {
+    timeline_position: string;
+    labels: string[];
+  }>;
+  beats: Array<{
+    id: string;
+    scene_id: string;
+    summary: string;
+    status: string;
+    position: number;
+    created_at: string;
+  }>;
+  notes: Array<{
+    id: string;
+    scene_id: string;
+    title: string;
+    content: string;
+    source: string;
+    created_at: string;
+  }>;
+};
+
+export type PlanMovePreview = {
+  scene_id: string;
+  from: {
+    act_id: string;
+    act_title: string;
+    chapter_id: string;
+    chapter_title: string;
+    chapter_position: number;
+    narrative_index: number;
+  };
+  to: {
+    act_id: string;
+    chapter_id: string;
+    chapter_title: string;
+    before_scene_id: string;
+    position: number;
+  };
+  crossed_scene_ids: string[];
+  warnings: string[];
+  summary: string;
+};
+
+export type LocalProductDashboard = {
+  generated_at: string;
+  privacy: {
+    content_free: true;
+    local_only: true;
+    external_telemetry_enabled: false;
+    local_signals_enabled: boolean;
+    retention_days: number;
+  };
+  event_count: number;
+  active_days: number;
+  counts: Record<string, number>;
+  activation: {
+    scene_created: boolean;
+    change_reviewed: boolean;
+    change_applied: boolean;
+    change_undone: boolean;
+    golden_loop_completed: boolean;
+  };
+  trust: {
+    accepted_hunks: number;
+    rejected_hunks: number;
+    hunk_acceptance_rate: number | null;
+    applied_change_sets: number;
+    undone_change_sets: number;
+    undo_rate: number | null;
+    memory_suggestions: Record<string, number>;
   };
 };
 
@@ -501,8 +713,67 @@ export type CodexEntity = {
   type: "character" | "location" | "lore" | "item" | "faction" | "event";
   name: string;
   description: string;
+  category?: string;
+  aliases?: string[];
+  tags?: string[];
+  details?: Array<{
+    key: string;
+    type: "text" | "number" | "boolean" | "date" | "scene" | "entity" | "list";
+    value: unknown;
+    ai_visibility: "include" | "exclude" | "ask";
+  }>;
+  notes?: string;
+  ai_visibility?: "include" | "exclude" | "ask";
+  scope?: "project" | "series";
   created_at: string;
   updated_at: string;
+};
+
+export type CodexRelationship = {
+  id: string;
+  source_entity_id: string;
+  source_name: string;
+  target_entity_id: string;
+  target_name: string;
+  relation: string;
+  notes: string;
+  valid_from_scene_id: string;
+  valid_to_scene_id: string;
+  created_at: string;
+};
+
+export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number };
+export type CanonFact = {
+  id: string;
+  subject_entity_id: string;
+  predicate: string;
+  value: string;
+  status: "accepted" | "suggested" | "rejected";
+  confidence: number;
+  evidence: CanonEvidence[];
+  validity: { from_scene_id: string; to_scene_id: string };
+  knowledge: Array<{ character_entity_id: string; state: "knows" | "believes" | "does_not_know"; from_scene_id: string }>;
+  scope: "project" | "series";
+};
+export type NarrativeSetup = {
+  id: string;
+  description: string;
+  status: "open" | "paid_off";
+  setup_evidence: CanonEvidence;
+  payoff_evidence: CanonEvidence | null;
+};
+export type OpenQuestion = { id: string; question: string; scene_id: string; status: "open" | "intentionally_unresolved" | "answered"; answer: string };
+export type CharacterArcState = { id: string; character_entity_id: string; dimension: string; value: string; scene_id: string; state_type: "observed" | "planned"; evidence: CanonEvidence; created_at: string; updated_at: string };
+export type CanonDiagnostic = {
+  id: string;
+  code: string;
+  severity: "error" | "warning" | "info";
+  title: string;
+  message: string;
+  fact_ids: string[];
+  scene_ids: string[];
+  evidence: CanonEvidence[];
+  disposition?: { disposition: "fixed" | "dismissed" | "intentional" | "deferred"; notes: string };
 };
 
 export type ContinuityIssue = {

@@ -1,11 +1,11 @@
-import { useEffect } from "react";
 import { useUI } from "../../contexts/UIContext";
-import { useEditor } from "../../contexts/EditorContext";
 import { ManuscriptExplorer } from "./ManuscriptExplorer";
 import { CodexBrowser } from "./CodexBrowser";
 import { ProjectSearch } from "./ProjectSearch";
 import { ProposalQueue } from "./ProposalQueue";
 import { CheckResults } from "./CheckResults";
+import { PlanSidebar } from "./PlanSidebar";
+import { StorylineSidebar } from "./StorylineSidebar";
 
 export function PrimarySidebar() {
   const { sidebarOpen, activeView } = useUI();
@@ -15,7 +15,9 @@ export function PrimarySidebar() {
       {sidebarOpen && (
         <>
           {activeView === "manuscript" && <ManuscriptExplorer />}
+          {activeView === "plan" && <PlanSidebar />}
           {activeView === "codex" && <CodexBrowser />}
+          {activeView === "storylines" && <StorylineSidebar />}
           {activeView === "search" && <ProjectSearch />}
           {activeView === "proposals" && <ProposalQueue />}
           {activeView === "checks" && <CheckResults />}
@@ -27,12 +29,6 @@ export function PrimarySidebar() {
 }
 
 function SettingsView() {
-  const { openTab } = useEditor();
-
-  useEffect(() => {
-    openTab({ id: "settings", kind: "settings", label: "Settings" });
-  }, [openTab]);
-
   return (
     <>
       <div className="sidebar__header">

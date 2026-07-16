@@ -1,5 +1,7 @@
 # Implementation Plan
 
+> This document preserves the engineering delivery history through Phase 4. A check mark here means the capability existed in the shell at that time; it does not guarantee exposure in the current V2 desktop or public-release readiness. The authoritative current-state registry is [`docs/capabilities.json`](capabilities.json), explained in [`docs/capabilities.md`](capabilities.md). The canonical forward-looking product strategy and roadmap is [`docs/product-development-plan.md`](product-development-plan.md).
+
 ## Phase 0: Bootstrap (completed)
 
 - Initialize git repository.
@@ -208,9 +210,11 @@ Phase 4 exit condition:
 - [ ] Add large-project regression fixture (high scene/proposal/run volume) for scale checks.
 - [ ] Run release-candidate smoke across voice dictation/undo + drift audit/repair scenarios.
 
-## Phase 5: Productization + Authoring Intelligence (planned)
+## Phase 5: Productization + Authoring Intelligence (superseded)
 
-Phase 5 mission:
+The original Phase 5 plan below is retained for historical context. Its valuable work has been resequenced in `docs/product-development-plan.md` so installability and the trusted Change Set loop precede Voice v2, additional infrastructure, and feature breadth.
+
+Original Phase 5 mission:
 - Move from "advanced local workflows" to "installable, resilient product" while preserving local-first + proposal-based safety.
 - Remove developer-environment dependency for normal desktop usage.
 - Add higher-order authoring intelligence only where it remains inspectable and reversible.

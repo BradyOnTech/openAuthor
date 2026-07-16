@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "repeat": 3,
+  "fixture": {
+    "scenes": 400,
+    "proposals": 300,
+    "generation_runs": 300,
+    "entities": 72
+  },
+  "max_ms": {
+    "scene_list": 750.0,
+    "proposal_list": 300.0,
+    "generation_list": 300.0,
+    "retrieval_status": 150.0,
+    "project_load": 1000.0,
+    "scene_open": 150.0,
+    "scene_save": 250.0,
+    "project_search": 800.0,
+    "continuity_analysis": 1500.0
+  }
+}

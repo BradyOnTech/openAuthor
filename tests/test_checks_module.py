@@ -27,7 +27,7 @@ class ContinuityChecksTests(unittest.TestCase):
         body="Too short.",
       )
 
-      second_scene = add_scene(
+      add_scene(
         paths,
         title="Opening Scene",
         summary="Second pass",
@@ -38,16 +38,10 @@ class ContinuityChecksTests(unittest.TestCase):
           "still being easy to inspect in a test fixture."
         ),
       )
-      content = second_scene.read_text(encoding="utf-8")
-      second_scene.write_text(
-        content.replace("# Opening Scene", "# A Different Heading", 1),
-        encoding="utf-8",
-      )
-
       rows = run_continuity_checks(paths)
 
-      self.assertEqual(len(rows), 7)
-      self.assertEqual(rows[-1]["severity"], "info")
+      self.assertEqual(len(rows), 6)
+      self.assertTrue(all(row["severity"] == "warning" for row in rows))
       codes = {row["code"] for row in rows}
       self.assertEqual(
         codes,
@@ -57,7 +51,6 @@ class ContinuityChecksTests(unittest.TestCase):
           "scene_status_length_mismatch",
           "pov_not_in_codex",
           "duplicate_scene_title",
-          "scene_heading_title_mismatch",
         },
       )
       self.assertTrue(any(row["scene_id"] == "scene-0001" for row in rows))
