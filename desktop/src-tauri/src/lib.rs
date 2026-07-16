@@ -64,10 +64,13 @@ fn path_separator() -> &'static str {
   }
 }
 
-fn bundled_python_candidates() -> Vec<String> {
+fn bundled_python_candidates_for(
+  runtime_dir: Option<&str>,
+  executable: Option<&PathBuf>,
+) -> Vec<String> {
   let mut candidates = Vec::new();
 
-  if let Ok(runtime_dir) = env::var("OPENAUTHOR_RUNTIME_DIR") {
+  if let Some(runtime_dir) = runtime_dir {
     let trimmed = runtime_dir.trim();
     if !trimmed.is_empty() {
       let runtime_python = PathBuf::from(trimmed).join("python").join("bin").join("python3");
@@ -77,7 +80,7 @@ fn bundled_python_candidates() -> Vec<String> {
     }
   }
 
-  if let Ok(executable) = env::current_exe() {
+  if let Some(executable) = executable {
     if let Some(bin_dir) = executable.parent() {
       let app_resource_python = bin_dir
         .join("..")
@@ -103,6 +106,12 @@ fn bundled_python_candidates() -> Vec<String> {
   }
 
   candidates
+}
+
+fn bundled_python_candidates() -> Vec<String> {
+  let runtime_dir = env::var("OPENAUTHOR_RUNTIME_DIR").ok();
+  let executable = env::current_exe().ok();
+  bundled_python_candidates_for(runtime_dir.as_deref(), executable.as_ref())
 }
 
 fn configure_runtime_environment(command: &mut Command) {
@@ -752,9 +761,8 @@ mod tests {
     fs::create_dir_all(python.parent().expect("runtime bin")).expect("create runtime bin");
     fs::write(&python, "runtime placeholder").expect("write runtime placeholder");
 
-    env::set_var("OPENAUTHOR_RUNTIME_DIR", &root);
-    let candidates = python_candidates(&root);
-    env::remove_var("OPENAUTHOR_RUNTIME_DIR");
+    let runtime_dir = root.to_string_lossy().to_string();
+    let candidates = bundled_python_candidates_for(Some(&runtime_dir), None);
 
     assert_eq!(candidates.first(), Some(&python.to_string_lossy().to_string()));
     fs::remove_dir_all(root).expect("remove temporary runtime");
