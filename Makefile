@@ -1,15 +1,20 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check audit-no-mocks test test-desktop test-all tree demo desktop-web desktop-tauri desktop-build tauri-check desktop-prereq desktop-smoke
+.PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup  - Verify local toolchain availability"
 	@echo "  make check  - Run lightweight repository checks"
+	@echo "  make capability-check - Validate shipped capability claims and active-shell parity"
 	@echo "  make audit-no-mocks - Fail if placeholder/stub markers are present"
 	@echo "  make test   - Run Python tests"
+	@echo "  make test-scale - Generate the large-project fixture and enforce performance budgets"
+	@echo "  make test-canon-eval - Measure Canon diagnostic precision and recall"
+	@echo "  make test-editorial-eval - Measure Editorial Pass improvement and canon safety"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
+	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
 	@echo "  make test-all - Run Python and desktop tests"
 	@echo "  make tree   - Print top-level structure"
 	@echo "  make demo   - Run a minimal CLI workflow in this repo"
@@ -17,8 +22,13 @@ help:
 	@echo "  make desktop-tauri - Run Tauri desktop shell (Rust required)"
 	@echo "  make desktop-build - Compile desktop frontend"
 	@echo "  make tauri-check   - Compile-check Tauri backend"
+	@echo "  make tauri-test    - Exercise the native Tauri-to-core product bridge"
 	@echo "  make desktop-prereq - Validate desktop runtime/toolchain prerequisites"
 	@echo "  make desktop-smoke  - Run desktop release smoke gates"
+	@echo "  make runtime-prepare - Download and install the pinned bundled Python runtime"
+	@echo "  make runtime-check   - Verify the bundled Python and installed openAuthor core"
+	@echo "  make macos-bundle    - Build the macOS app bundle (requires runtime-prepare)"
+	@echo "  make macos-bundle-check - Verify the packaged runtime and app structure"
 
 setup:
 	@echo "Checking local tooling..."
@@ -33,13 +43,19 @@ check:
 	@test -f docs/plan.md && echo "docs/plan.md: OK" || (echo "docs/plan.md missing" && exit 1)
 	@test -f docs/desktop-architecture.md && echo "docs/desktop-architecture.md: OK" || (echo "docs/desktop-architecture.md missing" && exit 1)
 	@test -f docs/desktop-runbook.md && echo "docs/desktop-runbook.md: OK" || (echo "docs/desktop-runbook.md missing" && exit 1)
+	@test -f docs/capabilities.md && echo "docs/capabilities.md: OK" || (echo "docs/capabilities.md missing" && exit 1)
+	@test -f docs/product-development-plan.md && echo "docs/product-development-plan.md: OK" || (echo "docs/product-development-plan.md missing" && exit 1)
 	@test -f openauthor/cli.py && echo "openauthor CLI: OK" || (echo "openauthor/cli.py missing" && exit 1)
 	@test -f desktop/src/AppV2.tsx && echo "desktop shell: OK" || (echo "desktop shell missing" && exit 1)
+	@$(MAKE) capability-check
 	@$(MAKE) audit-no-mocks
+
+capability-check:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/validate_capabilities.py
 
 audit-no-mocks:
 	@echo "Scanning for placeholder/stub markers..."
-	@! rg -n -i "TODO|FIXME|TBD|NotImplemented|mock data|stubbed|hardcoded demo" \
+	@! rg -n -i "TODO|FIXME|TBD|NotImplemented|mock data|stubbed|hardcoded demo|will be ported|coming soon|not yet implemented" \
 		openauthor desktop/src tests \
 		|| (echo "Placeholder/stub markers found. Resolve before merge." && exit 1)
 
@@ -47,9 +63,23 @@ test:
 	@echo "Running tests..."
 	@PYTHONPATH=$(PYTHONPATH) python3 -m unittest discover -s tests -p "test_*.py"
 
+test-scale:
+	@echo "Running large-project scale gate..."
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/verify_scale_fixture.py
+
+test-canon-eval:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_canon_diagnostics.py
+
+test-editorial-eval:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_editorial_passes.py
+
 test-desktop:
 	@echo "Running desktop tests..."
 	@cd desktop && npm run test
+
+desktop-audit:
+	@echo "Auditing desktop dependencies..."
+	@cd desktop && npm audit --audit-level=low
 
 test-all: test test-desktop
 
@@ -73,8 +103,23 @@ desktop-build:
 tauri-check:
 	@source "$$HOME/.cargo/env" && cargo check --manifest-path desktop/src-tauri/Cargo.toml
 
+tauri-test:
+	@source "$$HOME/.cargo/env" && cargo test --manifest-path desktop/src-tauri/Cargo.toml
+
 desktop-prereq:
 	@./scripts/desktop_prereq_check.sh
 
-desktop-smoke: desktop-prereq test-desktop desktop-build tauri-check
+desktop-smoke: desktop-prereq desktop-audit test-desktop desktop-build tauri-check tauri-test
 	@echo "Desktop smoke gates passed."
+
+runtime-prepare:
+	@./scripts/prepare_bundled_runtime.sh
+
+runtime-check:
+	@./scripts/verify_bundled_runtime.sh
+
+macos-bundle: runtime-check
+	@cd desktop && npm run tauri:build -- --bundles app,dmg
+
+macos-bundle-check:
+	@./scripts/verify_macos_bundle.sh

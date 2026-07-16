@@ -1,0 +1,70 @@
+name: release-macos
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  signed-macos:
+    name: Signed macOS (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            target: aarch64-apple-darwin
+          - arch: x86_64
+            target: x86_64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Prepare checksum-verified embedded runtime
+        env:
+          OPENAUTHOR_RUNTIME_ARCH: ${{ matrix.arch }}
+        run: scripts/prepare_bundled_runtime.sh
+
+      - name: Build, sign, notarize, and attach draft release artifacts
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: desktop
+          args: --target ${{ matrix.target }} --bundles app,dmg
+          tagName: v__VERSION__
+          releaseName: openAuthor v__VERSION__
+          releaseBody: Signed and notarized macOS preview. Install the build matching your Mac architecture.
+          releaseDraft: true
+          prerelease: true
+          uploadWorkflowArtifacts: true
+          releaseAssetNamePattern: "[name]-[version]-[arch].[ext]"
+
+      - name: Verify sealed app and packaged core
+        env:
+          OPENAUTHOR_REQUIRE_SIGNED_BUNDLE: "1"
+        run: scripts/verify_macos_bundle.sh "desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos/openAuthor.app"

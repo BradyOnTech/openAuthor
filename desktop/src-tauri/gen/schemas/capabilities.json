@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Minimum desktop permissions for streamed Assistant responses.","local":true,"windows":["main"],"permissions":["core:event:allow-listen","core:event:allow-unlisten"]}}

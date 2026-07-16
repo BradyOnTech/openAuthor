@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-15",
+  "status_definitions": {
+    "core": ["implemented", "partial", "not_started"],
+    "active_ui": ["implemented", "partial", "hidden", "not_applicable"],
+    "end_to_end": ["verified", "missing"],
+    "release": ["ready", "not_ready"]
+  },
+  "capabilities": [
+    {
+      "id": "project_onboarding",
+      "name": "Project creation, open, and local binding",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/project.py",
+        "desktop/src/components/welcome/WelcomeScreen.tsx",
+        "desktop/src/components/onboarding/FirstRunGuide.tsx",
+        "desktop/src/contexts/WorkspaceContext.tsx",
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/src-tauri/src/lib.rs"
+      ]
+    },
+    {
+      "id": "manuscript_editor",
+      "name": "Scene manuscript editor with autosave",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/scenes.py",
+        "desktop/src/components/editor/SceneEditor.tsx",
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/src-tauri/src/lib.rs"
+      ]
+    },
+    {
+      "id": "manuscript_planning",
+      "name": "Portable project brief and act, chapter, scene, beat planning",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Dragging previews affected chapters, crossed scenes, act-boundary risk, and neighboring story-time markers before the move is committed.",
+      "evidence": [
+        "openauthor/planning.py",
+        "tests/test_planning_module.py",
+        "desktop/src/components/sidebar/PlanSidebar.tsx",
+        "desktop/src/components/editor/PlanEditor.tsx",
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/src-tauri/src/lib.rs"
+      ]
+    },
+    {
+      "id": "proposal_change_flow",
+      "name": "Evidence-backed Change Set generation, hunk review, apply, Revision, restore, and undo",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/proposals.py",
+        "openauthor/changes.py",
+        "openauthor/revisions.py",
+        "tests/test_changes_module.py",
+        "tests/test_revisions_module.py",
+        "desktop/src/components/editor/GenerateProposal.tsx",
+        "desktop/src/components/editor/ProposalReview.tsx",
+        "desktop/src/components/editor/RevisionReview.tsx",
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/src-tauri/src/lib.rs"
+      ],
+      "scope_note": "The verified loop creates concrete Change Sets, supports include/exclude, direct edit, regeneration, and author-comment revision per deterministic hunk, enforces protected text, previews Story Memory impact, creates coordinated multi-scene AI groups, applies those groups atomically, records content-addressed Revisions, compares history, selectively restores, and undoes. Packaged GUI automation remains open."
+    },
+    {
+      "id": "assistant_chat",
+      "name": "Contextual project chat with citations and durable artifact promotion",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/chat.py",
+        "openauthor/server.py",
+        "desktop/src/components/secondary/ChatPanel.tsx",
+        "openauthor/planning.py",
+        "openauthor/story_memory.py"
+      ],
+      "scope_note": "Assistant conversations have explicit Book, Scene, Chapter, Character, and Storyline scopes with bounded context. Replies can become Change Sets, review-first Story Memory suggestions, visible project or scene notes, or non-destructive Storyline experiments. The packaged Book-scope and promotion paths passed manual product validation; automated rendered promotion coverage remains open."
+    },
+    {
+      "id": "codex",
+      "name": "Structured Story Memory entries, relationships, and review-first suggestions",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "Story Memory supports typed details, aliases, tags, categories, notes, AI visibility, book/series scope, temporal relationships, evidence-linked suggestions, correction before acceptance, and bulk accept/defer/exclude. The rendered workflow verifies correction and bulk acceptance while preserving the non-canon review boundary.",
+      "evidence": [
+        "openauthor/codex.py",
+        "openauthor/story_memory.py",
+        "tests/test_codex_module.py",
+        "tests/test_story_memory_module.py",
+        "desktop/src/components/sidebar/CodexBrowser.tsx",
+        "desktop/src/components/editor/StoryMemoryEditor.tsx"
+      ]
+    },
+    {
+      "id": "project_search",
+      "name": "Manuscript-wide prose, planning, and Story Memory search",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/search.py",
+        "tests/test_search_module.py",
+        "desktop/src/components/sidebar/ProjectSearch.tsx"
+      ]
+    },
+    {
+      "id": "editorial_passes",
+      "name": "Reusable built-in and custom Editorial Pass library",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Built-in and custom Passes are portable, the Change Set composer can apply them, and an author-facing builder captures goal, instruction, and readable evaluation criteria. The committed seven-genre, seven-Pass regression corpus measures 1.0 targeted issue reduction with zero protected-term or introduced-name canon errors.",
+      "evidence": [
+        "openauthor/editorial.py",
+        "tests/test_editorial_module.py",
+        "tests/test_editorial_evaluation.py",
+        "tests/fixtures/editorial_evaluation.json",
+        "scripts/evaluate_editorial_passes.py",
+        "desktop/src/components/editor/GenerateProposal.tsx"
+      ]
+    },
+    {
+      "id": "continuity_hygiene",
+      "name": "Deterministic manuscript hygiene checks",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "This is manuscript hygiene, not the evidence-backed Story Memory diagnostics planned for Phase E.",
+      "evidence": [
+        "openauthor/checks.py",
+        "desktop/src/components/sidebar/CheckResults.tsx"
+      ]
+    },
+    {
+      "id": "canon_story_memory",
+      "name": "Temporal Canon Facts, knowledge, setups/payoffs, and evidence-backed diagnostics",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "Canon Facts, validity, manuscript evidence, knowledge state, temporal relationships, setups/payoffs, open questions, Character Arc states and conflicts, dispositions, incremental affected-scene diagnostics, Change Set impact, and a seven-scenario measured diagnostic corpus are active. Broader design-partner genre data remains a release-readiness gate.",
+      "evidence": [
+        "openauthor/canon.py",
+        "openauthor/story_memory.py",
+        "tests/test_canon_module.py",
+        "tests/test_canon_evaluation.py",
+        "tests/fixtures/canon_evaluation.json",
+        "scripts/evaluate_canon_diagnostics.py",
+        "desktop/src/components/editor/CanonMemoryEditor.tsx",
+        "desktop/src/components/editor/ProposalReview.tsx"
+      ]
+    },
+    {
+      "id": "storyline_merge_primitives",
+      "name": "Branch creation, comparison, conflict resolution, and merge",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "The active UI exposes guided merge primitives; the author-facing Storylines product is planned for Phase F.",
+      "evidence": [
+        "openauthor/git_ops.py",
+        "desktop/src/components/panel/MergePanel.tsx"
+      ]
+    },
+    {
+      "id": "storylines_product",
+      "name": "Named Storyline experiments with briefs, comparison, and selective Change Set integration",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "Storylines support experiment briefs, lifecycle actions, branch-backed isolation, coordinated multi-scene AI Change Sets, semantic arc/fact/setup/question deltas, pre/post impact summaries, and selective integration as atomically applied coordinated Change Sets.",
+      "evidence": [
+        "openauthor/storylines.py",
+        "openauthor/git_ops.py",
+        "tests/test_storylines_module.py",
+        "desktop/src/components/sidebar/StorylineSidebar.tsx",
+        "desktop/src/components/editor/StorylineEditor.tsx",
+        "desktop/src/AppV2.workflow.test.tsx"
+      ]
+    },
+    {
+      "id": "style_profile",
+      "name": "Author-controlled project Style Profile",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Authors explicitly select exemplar scenes; the resulting descriptive metrics guide generation without imitating an external author.",
+      "evidence": [
+        "openauthor/style_profile.py",
+        "openauthor/ai.py",
+        "tests/test_style_profile_module.py",
+        "desktop/src/components/editor/GenerateProposal.tsx"
+      ]
+    },
+    {
+      "id": "creative_alternatives",
+      "name": "Three-direction creative generation and outcome comparison",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Alternatives compare editorial intent, hunk scope, word delta, voice shape, Story Memory impact, and Canon risk before the author chooses a direction.",
+      "evidence": [
+        "desktop/src/components/editor/GenerateProposal.tsx",
+        "desktop/src/components/editor/AlternativeComparison.tsx",
+        "openauthor/proposals.py"
+      ]
+    },
+    {
+      "id": "revision_retrospectives",
+      "name": "Intent-aware Revision retrospectives",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Revision comparison summarizes changed scenes and word deltas, linked intent and accepted hunks, Story Memory changes, and remaining diagnostics or unresolved setups.",
+      "evidence": [
+        "openauthor/revisions.py",
+        "tests/test_revisions_module.py",
+        "desktop/src/components/editor/RevisionReview.tsx"
+      ]
+    },
+    {
+      "id": "generation_budget_controls",
+      "name": "Generation budget policy and usage controls",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "evidence": [
+        "openauthor/budget.py",
+        "desktop/src/components/panel/BudgetPanel.tsx"
+      ]
+    },
+    {
+      "id": "generation_run_history_basic",
+      "name": "Basic generation run visibility",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "partial",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "The active V2 surface is a read-only history table; comparison, rerun, pinning, export, and hardening controls are not presented as shipped.",
+      "evidence": [
+        "openauthor/generations.py",
+        "desktop/src/components/panel/RunsPanel.tsx"
+      ]
+    },
+    {
+      "id": "retrieval_provenance",
+      "name": "Commit-aware retrieval and cited Assistant context",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "partial",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Citations are available in Assistant chat; the full generation and proposal provenance viewer is not yet restored in V2.",
+      "evidence": [
+        "openauthor/retrieval.py",
+        "desktop/src/components/secondary/ChatPanel.tsx"
+      ]
+    },
+    {
+      "id": "manuscript_interchange",
+      "name": "Staged Markdown, TXT, DOCX, and Scrivener import plus Markdown and DOCX export",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "partial",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "New-project import includes structure preview, Scrivener Draft binder ordering with RTF extraction, compile exclusions, and export loss reports; packaged native automation and richer formatting fidelity remain open.",
+      "evidence": [
+        "openauthor/manuscript_io.py",
+        "tests/test_manuscript_io.py",
+        "desktop/src/components/welcome/WelcomeScreen.tsx",
+        "desktop/src/components/editor/SettingsEditor.tsx",
+        "desktop/src/AppV2.workflow.test.tsx"
+      ]
+    },
+    {
+      "id": "scene_recovery",
+      "name": "Atomic scene save with crash-recovery journal",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Unsaved scene title/body drafts are journaled locally and prompt Restore or Discard on reopen; a forced process-termination native drill is still required.",
+      "evidence": [
+        "openauthor/project.py",
+        "openauthor/scenes.py",
+        "desktop/src/recoveryJournal.ts",
+        "desktop/src/recoveryJournal.test.ts",
+        "desktop/src/components/editor/SceneEditor.tsx"
+      ]
+    },
+    {
+      "id": "startup_health",
+      "name": "Startup health checks and guided safe repair",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Project load checks directories, write access, revision storage, scene integrity, Codex storage, disk space, and the Python runtime. Blocking failures expose a safe repair action; clean-machine packaged-app automation remains open.",
+      "evidence": [
+        "openauthor/hardening.py",
+        "openauthor/cli.py",
+        "tests/test_hardening_module.py",
+        "desktop/src/api.ts",
+        "desktop/src/contexts/WorkspaceContext.tsx",
+        "desktop/src/components/workbench/Workbench.tsx"
+      ]
+    },
+    {
+      "id": "private_product_dashboard",
+      "name": "On-device content-free activation and trust dashboard",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "A strict allowlist records only content-free scalar events inside the local project. The Settings dashboard shows golden-loop milestones, active days, review decisions, apply/undo depth, retention controls, and an on-device collection toggle. No external telemetry transport exists.",
+      "evidence": [
+        "openauthor/product_signals.py",
+        "tests/test_product_signals.py",
+        "desktop/src/components/editor/SettingsEditor.tsx",
+        "desktop/src/api.ts"
+      ]
+    },
+    {
+      "id": "workspace_hardening",
+      "name": "Workspace audit, repair, and performance baseline",
+      "visible": false,
+      "core": "implemented",
+      "active_ui": "hidden",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Available through CLI while the V2 recovery experience is designed.",
+      "evidence": [
+        "openauthor/hardening.py",
+        "docs/performance-budgets.json",
+        "scripts/verify_scale_fixture.py",
+        "tests/test_hardening_module.py"
+      ]
+    },
+    {
+      "id": "packaged_core_runtime",
+      "name": "Checksum-pinned embedded Python core and supervised sidecar",
+      "visible": false,
+      "core": "implemented",
+      "active_ui": "not_applicable",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "A real macOS application bundle has been built and its isolated embedded core verified. Developer ID signing, Apple notarization, both-architecture CI artifacts, and packaged GUI automation must pass before release readiness.",
+      "evidence": [
+        "scripts/prepare_bundled_runtime.sh",
+        "scripts/verify_bundled_runtime.sh",
+        "scripts/verify_macos_bundle.sh",
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/src-tauri/tauri.conf.json",
+        ".github/workflows/release-macos.yml"
+      ]
+    },
+    {
+      "id": "voice_workflows",
+      "name": "Voice commands and dictation helpers",
+      "visible": false,
+      "core": "partial",
+      "active_ui": "hidden",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Helper logic remains tested, but Voice is intentionally hidden until the golden loop is proven.",
+      "evidence": [
+        "desktop/src/voice.ts",
+        "desktop/src/voiceDictation.ts",
+        "desktop/src/voice.test.ts"
+      ]
+    },
+    {
+      "id": "run_comparison_advanced",
+      "name": "Generation rerun, comparison, pinning, and export",
+      "visible": false,
+      "core": "partial",
+      "active_ui": "hidden",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Pure helpers and core commands exist, but the active V2 product does not claim this workflow.",
+      "evidence": [
+        "desktop/src/runCompare.ts",
+        "desktop/src/rerun.ts",
+        "desktop/src/runCompare.test.ts"
+      ]
+    }
+  ]
+}

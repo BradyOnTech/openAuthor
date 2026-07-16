@@ -33,11 +33,23 @@ jobs:
       - name: Install desktop dependencies
         run: npm ci --prefix desktop
 
+      - name: Audit desktop dependencies
+        run: make desktop-audit
+
       - name: Run repository checks
         run: make check
 
       - name: Run Python tests
         run: make test
+
+      - name: Enforce large-project performance budgets
+        run: make test-scale
+
+      - name: Measure Canon diagnostic quality
+        run: make test-canon-eval
+
+      - name: Measure Editorial Pass quality and canon safety
+        run: make test-editorial-eval
 
       - name: Phase 4 hardening CLI smoke
         run: |
@@ -56,3 +68,6 @@ jobs:
 
       - name: Tauri backend check
         run: make tauri-check
+
+      - name: Native Tauri-to-core product flow
+        run: make tauri-test

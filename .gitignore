@@ -49,3 +49,5 @@ codex/codex.sqlite3
 
 # rust / tauri
 target/
+desktop/src-tauri/resources/runtime/python/**
+!desktop/src-tauri/resources/runtime/python/.gitkeep
