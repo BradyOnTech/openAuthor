@@ -3,9 +3,19 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 export function StatusBar() {
   const { theme, toggleTheme } = useUI();
-  const { projectRoot, projectFound, scenes, branches, budget, closeProject } = useWorkspace();
+  const {
+    activeProjectId,
+    projects,
+    projectRoot,
+    projectFound,
+    scenes,
+    branches,
+    budget,
+    closeProject,
+  } = useWorkspace();
 
-  const projectName = projectRoot ? projectRoot.split("/").pop() || "Project" : "No Project";
+  const projectName = projects.find((project) => project.id === activeProjectId)?.name
+    ?? (projectRoot ? projectRoot.split("/").pop() || "Project" : "No Project");
   const sceneCount = scenes.length;
   const wordCount = scenes.reduce((sum, s) => sum + (s.word_count ?? 0), 0);
   const currentBranch = branches.find((b) => b.current)?.name ?? "\u2014";
@@ -16,13 +26,14 @@ export function StatusBar() {
   return (
     <div className="status-bar">
       <div className="status-bar__left">
-        <span
+        <button
+          type="button"
           className="status-bar__item status-bar__item--clickable"
           onClick={closeProject}
           title="Return to welcome screen (Cmd/Ctrl+Shift+O)"
         >
           Projects
-        </span>
+        </button>
         <span className="status-bar__divider" />
         <span className="status-bar__item">
           {projectFound === true
@@ -58,13 +69,14 @@ export function StatusBar() {
             {dailyTokensUsed.toLocaleString()}/{dailyTokensLimit.toLocaleString()} tokens
           </span>
         )}
-        <span
+        <button
+          type="button"
           className="status-bar__item status-bar__item--clickable"
           onClick={toggleTheme}
           title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         >
           {theme === "dark" ? "\u263D" : "\u2600"}
-        </span>
+        </button>
       </div>
     </div>
   );

@@ -24,6 +24,8 @@ import {
   projectEnsureId,
   projectInspect,
   initializeLocalProject,
+  importManuscript,
+  getStartupHealth,
 } from "../api";
 import { getProjectBinding, setProjectBinding } from "../projectBindings";
 import { createProjectRegistryClient } from "../projectRegistry";
@@ -43,6 +45,7 @@ import type {
   InitProjectResult,
   Workspace,
   WorkspaceMember,
+  StartupHealthReport,
 } from "../types";
 
 type WorkspaceState = {
@@ -53,7 +56,11 @@ type WorkspaceState = {
   createAndOpenProject: (params: {
     name: string;
     savePath: string;
-    importSource?: { kind: "folder" | "zip"; path: string };
+    importSource?: {
+      kind: "manuscript_file" | "manuscript_folder";
+      path: string;
+      strategy: "auto" | "files" | "headings" | "single";
+    };
   }) => Promise<boolean>;
   closeProject: () => void;
 
@@ -93,6 +100,8 @@ type WorkspaceState = {
     projectId?: string
   ) => Promise<boolean>;
   projectFound: boolean | null;
+  startupHealth: StartupHealthReport | null;
+  refreshStartupHealth: (repair?: boolean) => Promise<void>;
 
   scenes: SceneSummary[];
   refreshScenes: () => Promise<void>;
@@ -138,6 +147,18 @@ type WorkspaceState = {
 const ACTIVE_WORKSPACE_STORAGE_KEY = "openauthor.activeWorkspaceId";
 const ACTIVE_PROJECT_STORAGE_KEY = "openauthor.activeProjectId";
 const ACTIVE_PROJECT_ROOT_STORAGE_KEY = "openauthor.activeProjectRoot";
+
+export function isMissingGitRepositoryError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.toLowerCase().includes("not a git repository");
+}
+
+function createProjectId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `proj-${crypto.randomUUID()}`;
+  }
+  return `proj-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 const LEGACY_PROJECT_ROOT_STORAGE_KEY = "openauthor.projectRoot";
 
 const WorkspaceCtx = createContext<WorkspaceState | null>(null);
@@ -200,6 +221,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   );
 
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
+  const [startupHealth, setStartupHealth] = useState<StartupHealthReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -221,6 +243,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [activeChatThreadId, setActiveChatThreadId] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<ChatMessageRecord[]>([]);
   const [chatSending, setChatSending] = useState(false);
+  const activeWorkspaceIdRef = useRef(activeWorkspaceId);
+  const activeProjectIdRef = useRef(activeProjectId);
+  const workspacesRef = useRef(workspaces);
+  activeWorkspaceIdRef.current = activeWorkspaceId;
+  activeProjectIdRef.current = activeProjectId;
+  workspacesRef.current = workspaces;
 
   const setActiveWorkspaceId = useCallback((workspaceId: string) => {
     setActiveWorkspaceIdRaw(workspaceId);
@@ -236,6 +264,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setScenes(data);
     } catch (e) {
       setError(`Failed to load scenes: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, [projectRoot]);
+
+  const refreshStartupHealth = useCallback(async (repair = false) => {
+    if (!projectRoot) return;
+    try {
+      const report = await getStartupHealth(projectRoot, repair);
+      setStartupHealth(report);
+      if (repair && report.ready) {
+        setMessage("Project health repaired and ready.");
+      }
+    } catch (e) {
+      setStartupHealth(null);
+      setError(`Startup health check failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }, [projectRoot]);
 
@@ -289,6 +331,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       const data = await apiListBranches(projectRoot);
       setBranches(data);
     } catch (e) {
+      if (isMissingGitRepositoryError(e)) {
+        setBranches([]);
+        return;
+      }
       setError(`Failed to load branches: ${e instanceof Error ? e.message : String(e)}`);
     }
   }, [projectRoot]);
@@ -363,7 +409,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
       const routeSelection = routeSelectionRef.current;
       if (routeSelection) {
-        const targetWorkspace = workspaces.find((row) => row.slug === routeSelection.workspaceSlug);
+        const targetWorkspace = workspacesRef.current.find((row) => row.slug === routeSelection.workspaceSlug);
         if (targetWorkspace?.id === workspaceId && projectRows.some((row) => row.id === routeSelection.projectId)) {
           setActiveProjectIdRaw(routeSelection.projectId);
           routeSelectionRef.current = null;
@@ -371,7 +417,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (activeProjectId && projectRows.some((row) => row.id === activeProjectId)) {
+      const currentProjectId = activeProjectIdRef.current;
+      if (currentProjectId && projectRows.some((row) => row.id === currentProjectId)) {
         return;
       }
       if (userState?.activeProjectId && projectRows.some((row) => row.id === userState.activeProjectId)) {
@@ -383,7 +430,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       setError(`Failed to load workspace projects: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [activeProjectId, registry, setActiveProjectIdRaw, workspaces]);
+  }, [registry, setActiveProjectIdRaw]);
 
   const refreshRegistry = useCallback(async () => {
     try {
@@ -397,6 +444,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }
       }
       setWorkspaces(workspaceRows);
+      workspacesRef.current = workspaceRows;
       if (!workspaceRows.length) {
         setActiveWorkspaceIdRaw("");
         setProjects([]);
@@ -404,21 +452,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         return;
       }
       const routeSelection = routeSelectionRef.current;
-      let nextWorkspace = workspaceRows.find((row) => row.id === activeWorkspaceId) ?? null;
+      const currentWorkspaceId = activeWorkspaceIdRef.current;
+      let nextWorkspace = workspaceRows.find((row) => row.id === currentWorkspaceId) ?? null;
       if (!nextWorkspace && routeSelection) {
         nextWorkspace = workspaceRows.find((row) => row.slug === routeSelection.workspaceSlug) ?? null;
       }
       if (!nextWorkspace) {
         nextWorkspace = workspaceRows[0];
       }
-      if (nextWorkspace.id !== activeWorkspaceId) {
+      if (nextWorkspace.id !== currentWorkspaceId) {
         setActiveWorkspaceIdRaw(nextWorkspace.id);
       }
       await refreshWorkspaceData(nextWorkspace.id);
     } catch (e) {
       setError(`Failed to load workspaces: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [activeWorkspaceId, refreshWorkspaceData, registry, setActiveWorkspaceIdRaw]);
+  }, [refreshWorkspaceData, registry, setActiveWorkspaceIdRaw]);
 
   const openProject = useCallback(async (projectId: string) => {
     if (!activeWorkspaceId || !projectId) return;
@@ -440,6 +489,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setActiveProjectIdRaw("");
     setProjectRootRaw("");
     setProjectFound(null);
+    setStartupHealth(null);
     setScenes([]);
     setCodexEntities([]);
     setProposals([]);
@@ -463,7 +513,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const createAndOpenProject = useCallback(async (params: {
     name: string;
     savePath: string;
-    importSource?: { kind: "folder" | "zip"; path: string };
+    importSource?: {
+      kind: "manuscript_file" | "manuscript_folder";
+      path: string;
+      strategy: "auto" | "files" | "headings" | "single";
+    };
   }): Promise<boolean> => {
     if (!activeWorkspaceId) {
       setError("Select a workspace before creating a project.");
@@ -481,36 +535,42 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     setBusy(true);
     try {
-      const row = await registry.createProject({
-        workspaceId: activeWorkspaceId,
-        name: trimmedName,
-        kind: "book",
-      });
       const hasTauri = typeof window !== "undefined" &&
         typeof (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ !== "undefined";
       let resolvedRoot = trimmedPath;
+      const projectId = createProjectId();
       if (hasTauri) {
         const initOpts: { name?: string; projectId?: string; fromZip?: string; fromFolder?: string } = {
           name: trimmedName,
-          projectId: row.id,
+          projectId,
         };
-        if (params.importSource) {
-          if (params.importSource.kind === "zip") {
-            initOpts.fromZip = params.importSource.path;
-          } else {
-            initOpts.fromFolder = params.importSource.path;
-          }
-        }
         const initialized = await initializeLocalProject(trimmedPath, initOpts);
         resolvedRoot = initialized.project_root || trimmedPath;
-        await projectEnsureId(resolvedRoot, row.id);
+        await projectEnsureId(resolvedRoot, projectId);
+        if (params.importSource) {
+          await importManuscript(
+            resolvedRoot,
+            params.importSource.path,
+            params.importSource.strategy
+          );
+        }
       }
+      const row = await registry.createProject({
+        workspaceId: activeWorkspaceId,
+        name: trimmedName,
+        projectId,
+        kind: "book",
+      });
       setProjectBinding(row.id, resolvedRoot);
       await registry.openProject(activeWorkspaceId, row.id);
       await refreshWorkspaceData(activeWorkspaceId);
       setActiveProjectIdRaw(row.id);
       setProjectRootRaw(resolvedRoot);
       setProjectFound(hasTauri);
+      const workspace = workspaces.find((item) => item.id === activeWorkspaceId);
+      if (workspace && typeof window !== "undefined") {
+        window.history.replaceState({}, "", `/w/${encodeURIComponent(workspace.slug)}/p/${encodeURIComponent(row.id)}`);
+      }
       setMessage(hasTauri
         ? `Project '${trimmedName}' created and opened.`
         : `Project '${trimmedName}' created. Open in the desktop app to scaffold local files.`);
@@ -521,7 +581,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setBusy(false);
     }
-  }, [activeWorkspaceId, refreshWorkspaceData, registry, setActiveProjectIdRaw, setProjectRootRaw]);
+  }, [activeWorkspaceId, refreshWorkspaceData, registry, setActiveProjectIdRaw, setProjectRootRaw, workspaces]);
 
   const attachProjectRoot = useCallback(async (root: string) => {
     if (!activeWorkspaceId) {
@@ -916,6 +976,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setProjectFound(status.found);
         if (status.found) {
           await Promise.all([
+            refreshStartupHealth(),
             refreshScenes(),
             refreshCodex(),
             refreshProposals(),
@@ -948,6 +1009,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     refreshRuns,
     refreshRuntimeConfig,
     refreshScenes,
+    refreshStartupHealth,
     setProjectRootRaw,
   ]);
 
@@ -979,6 +1041,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     importProjectArchive,
     importProjectFolder,
     projectFound,
+    startupHealth,
+    refreshStartupHealth,
 
     scenes,
     refreshScenes,

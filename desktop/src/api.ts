@@ -8,6 +8,12 @@ import type {
   ChatThreadRecord,
   ChatTurnDiff,
   CodexEntity,
+  CodexRelationship,
+  CanonFact,
+  NarrativeSetup,
+  OpenQuestion,
+  CharacterArcState,
+  CanonDiagnostic,
   ContinuityIssue,
   CoreCommandResponse,
   GenerationBudgetReport,
@@ -20,10 +26,17 @@ import type {
   PerformanceBaselineReport,
   ProposalProvider,
   ProposalRecord,
+  RevisionComparison,
+  RevisionSummary,
+  RevisionRetrospective,
+  ManuscriptPlan,
+  LocalProductDashboard,
+  PlanMovePreview,
   ProjectIdentity,
   ProjectStatus,
   SceneDetail,
   SceneSummary,
+  StartupHealthReport,
   WorkspaceAuditReport
 } from "./types";
 
@@ -39,7 +52,16 @@ const ALLOWED = new Set([
   "retrieval",
   "generation",
   "chat",
-  "auth"
+  "auth",
+  "manuscript",
+  "revision",
+  "plan",
+  "memory",
+  "search",
+  "pass",
+  "storyline",
+  "style",
+  "metrics"
 ]);
 
 function ensureAllowed(args: string[]): void {
@@ -86,6 +108,72 @@ export async function pickZipFile(startingPath?: string): Promise<string | null>
   return tauriInvoke<string | null>("pick_zip_file", {
     startingPath: startingPath?.trim() ? startingPath.trim() : null,
   });
+}
+
+export async function pickManuscriptFile(startingPath?: string): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return tauriInvoke<string | null>("pick_manuscript_file", {
+    startingPath: startingPath?.trim() ? startingPath.trim() : null,
+  });
+}
+
+export type ManuscriptImportPreview = {
+  source: string;
+  strategy: "auto" | "files" | "headings" | "single";
+  scene_count: number;
+  word_count: number;
+  warnings: string[];
+  scenes: Array<{
+    position: number;
+    title: string;
+    source_path: string;
+    source_format: string;
+    word_count: number;
+    excerpt: string;
+  }>;
+};
+
+export async function previewManuscriptImport(
+  source: string,
+  strategy: "auto" | "files" | "headings" | "single" = "auto"
+): Promise<ManuscriptImportPreview> {
+  const result = await runCoreCommand(CONTROL_PROJECT_ROOT, [
+    "manuscript", "preview", "--source", source, "--strategy", strategy, "--json"
+  ]);
+  return decodeJson<ManuscriptImportPreview>(result);
+}
+
+export async function importManuscript(
+  projectRoot: string,
+  source: string,
+  strategy: "auto" | "files" | "headings" | "single" = "auto"
+): Promise<{ scene_count: number; word_count: number; scene_ids: string[]; warnings: string[] }> {
+  const result = await runCoreCommand(projectRoot, [
+    "manuscript", "import", "--source", source, "--strategy", strategy, "--json"
+  ]);
+  return decodeJson(result);
+}
+
+export async function pickExportTarget(
+  format: "markdown" | "docx",
+  startingPath?: string
+): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  return tauriInvoke<string | null>("pick_export_target", {
+    format,
+    startingPath: startingPath?.trim() ? startingPath.trim() : null,
+  });
+}
+
+export async function exportManuscript(
+  projectRoot: string,
+  target: string,
+  format: "markdown" | "docx"
+): Promise<{ scene_count: number; target: string; losses: string[]; report_path: string }> {
+  const result = await runCoreCommand(projectRoot, [
+    "manuscript", "export", "--format", format, "--target", target, "--json"
+  ]);
+  return decodeJson(result);
 }
 
 export async function runCoreCommand(
@@ -183,7 +271,7 @@ export async function addScene(
     status: string;
     body: string;
   }
-): Promise<void> {
+): Promise<SceneDetail> {
   const result = await runCoreCommand(projectRoot, [
     "scene",
     "add",
@@ -196,11 +284,10 @@ export async function addScene(
     "--status",
     payload.status,
     "--body",
-    payload.body
+    payload.body,
+    "--json"
   ]);
-  if (result.status !== 0) {
-    throw new Error(result.stderr || result.stdout || "Unable to add scene.");
-  }
+  return decodeJson<SceneDetail>(result);
 }
 
 export async function updateScene(
@@ -232,6 +319,130 @@ export async function updateScene(
     "--json"
   ]);
   return decodeJson<SceneDetail>(result);
+}
+
+export async function updateSceneMetadata(
+  projectRoot: string,
+  sceneId: string,
+  payload: { summary?: string; pov?: string; status?: string }
+): Promise<SceneDetail> {
+  const args = ["scene", "update", "--id", sceneId];
+  for (const [key, value] of Object.entries(payload)) {
+    if (value !== undefined) args.push(`--${key}`, value);
+  }
+  args.push("--json");
+  return decodeJson<SceneDetail>(await runCoreCommand(projectRoot, args));
+}
+
+export async function getManuscriptPlan(projectRoot: string): Promise<ManuscriptPlan> {
+  const result = await runCoreCommand(projectRoot, ["plan", "get", "--json"]);
+  return decodeJson<ManuscriptPlan>(result);
+}
+
+export async function updateProjectBrief(
+  projectRoot: string,
+  brief: ManuscriptPlan["brief"]
+): Promise<ManuscriptPlan> {
+  const args = [
+    "plan", "brief",
+    "--synopsis", brief.synopsis,
+    "--genre", brief.genre,
+    "--style-guide", brief.style_guide,
+    "--outline", brief.outline,
+  ];
+  for (const theme of brief.themes) args.push("--theme", theme);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ManuscriptPlan>(result);
+}
+
+export async function addPlanAct(
+  projectRoot: string,
+  title: string,
+  synopsis = ""
+): Promise<ManuscriptPlan["acts"][number]> {
+  const result = await runCoreCommand(projectRoot, [
+    "plan", "act-add", "--title", title, "--synopsis", synopsis, "--json"
+  ]);
+  return decodeJson(result);
+}
+
+export async function addPlanChapter(
+  projectRoot: string,
+  actId: string,
+  title: string,
+  synopsis = ""
+): Promise<ManuscriptPlan["acts"][number]["chapters"][number]> {
+  const result = await runCoreCommand(projectRoot, [
+    "plan", "chapter-add", "--act", actId, "--title", title, "--synopsis", synopsis, "--json"
+  ]);
+  return decodeJson(result);
+}
+
+export async function assignPlanScene(
+  projectRoot: string,
+  sceneId: string,
+  chapterId: string | null,
+  beforeSceneId?: string
+): Promise<ManuscriptPlan> {
+  const args = ["plan", "scene-assign", "--scene", sceneId];
+  if (chapterId) args.push("--chapter", chapterId);
+  if (beforeSceneId) args.push("--before", beforeSceneId);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson(result);
+}
+
+export async function previewPlanSceneMove(
+  projectRoot: string,
+  sceneId: string,
+  chapterId: string | null,
+  beforeSceneId?: string
+): Promise<PlanMovePreview> {
+  const args = ["plan", "scene-preview", "--scene", sceneId];
+  if (chapterId) args.push("--chapter", chapterId);
+  if (beforeSceneId) args.push("--before", beforeSceneId);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<PlanMovePreview>(result);
+}
+
+export async function updatePlanSceneMetadata(
+  projectRoot: string,
+  sceneId: string,
+  metadata: { timelinePosition: string; labels: string[] }
+): Promise<ManuscriptPlan["scene_metadata"][string]> {
+  const args = ["plan", "scene-meta", "--scene", sceneId, "--timeline", metadata.timelinePosition];
+  for (const label of metadata.labels) args.push("--label", label);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson(result);
+}
+
+export async function getLocalProductDashboard(projectRoot: string): Promise<LocalProductDashboard> {
+  const result = await runCoreCommand(projectRoot, ["metrics", "dashboard", "--json"]);
+  return decodeJson<LocalProductDashboard>(result);
+}
+
+export async function updateLocalProductSignals(
+  projectRoot: string,
+  enabled: boolean
+): Promise<{ local_signals_enabled: boolean; external_telemetry_enabled: false; retention_days: number }> {
+  const result = await runCoreCommand(projectRoot, [
+    "metrics", "settings", "--local-signals", enabled ? "on" : "off", "--json"
+  ]);
+  return decodeJson(result);
+}
+
+export async function addPlanBeat(
+  projectRoot: string,
+  sceneId: string,
+  summary: string
+): Promise<ManuscriptPlan["beats"][number]> {
+  const result = await runCoreCommand(projectRoot, [
+    "plan", "beat-add", "--scene", sceneId, "--summary", summary, "--json"
+  ]);
+  return decodeJson(result);
 }
 
 export async function listProposals(
@@ -285,6 +496,9 @@ export async function generateProposal(
     retrievalLimit?: number;
     retrievalMinScore?: number;
     retrievalRequireFresh?: boolean;
+    constraints?: string[];
+    protectedElements?: string[];
+    changeGroupId?: string;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -327,6 +541,15 @@ export async function generateProposal(
   if (payload.retrievalRequireFresh) {
     args.push("--retrieval-require-fresh");
   }
+  for (const constraint of payload.constraints ?? []) {
+    if (constraint.trim()) args.push("--constraint", constraint.trim());
+  }
+  for (const protectedElement of payload.protectedElements ?? []) {
+    if (protectedElement.trim()) args.push("--protect", protectedElement.trim());
+  }
+  if (payload.changeGroupId?.trim()) {
+    args.push("--change-group", payload.changeGroupId.trim());
+  }
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -339,6 +562,28 @@ export async function applyProposal(
   force = false
 ): Promise<ProposalRecord> {
   const args = ["proposal", "apply", "--id", proposalId, "--notes", notes];
+  if (force) {
+    args.push("--force");
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function applyProposalBatch(projectRoot: string, proposalIds: string[], force = false): Promise<{ change_group_id: string; applied_revision: string; proposal_ids: string[]; scene_ids: string[]; proposals: ProposalRecord[] }> {
+  const args = ["proposal", "apply-batch"];
+  for (const id of proposalIds) args.push("--id", id);
+  if (force) args.push("--force");
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function undoProposal(
+  projectRoot: string,
+  proposalId: string,
+  force = false
+): Promise<ProposalRecord> {
+  const args = ["proposal", "undo", "--id", proposalId];
   if (force) {
     args.push("--force");
   }
@@ -372,6 +617,65 @@ export async function draftProposal(
   return decodeJson<ProposalRecord>(result);
 }
 
+export async function updateProposalHunk(
+  projectRoot: string,
+  proposalId: string,
+  hunkId: string,
+  decision: "accepted" | "rejected"
+): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal",
+    "hunk",
+    "--id",
+    proposalId,
+    "--hunk",
+    hunkId,
+    "--decision",
+    decision,
+    "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function editProposalHunk(
+  projectRoot: string,
+  proposalId: string,
+  hunkId: string,
+  afterText: string
+): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal", "hunk-edit", "--id", proposalId, "--hunk", hunkId,
+    "--after-text", afterText, "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function regenerateProposalHunk(
+  projectRoot: string,
+  proposalId: string,
+  hunkId: string,
+  provider: ProposalProvider,
+  model?: string,
+  feedback?: string
+): Promise<ProposalRecord> {
+  const args = [
+    "proposal", "hunk-regenerate", "--id", proposalId, "--hunk", hunkId,
+    "--provider", provider
+  ];
+  if (model?.trim()) args.push("--model", model.trim());
+  if (feedback?.trim()) args.push("--feedback", feedback.trim());
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<ProposalRecord>(result);
+}
+
+export async function rebaseProposal(projectRoot: string, proposalId: string): Promise<ProposalRecord> {
+  const result = await runCoreCommand(projectRoot, [
+    "proposal", "rebase", "--id", proposalId, "--json"
+  ]);
+  return decodeJson<ProposalRecord>(result);
+}
+
 export async function rejectProposal(
   projectRoot: string,
   proposalId: string,
@@ -387,6 +691,41 @@ export async function rejectProposal(
     "--json"
   ]);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function listRevisions(projectRoot: string, limit = 50): Promise<RevisionSummary[]> {
+  const result = await runCoreCommand(projectRoot, [
+    "revision", "list", "--limit", String(limit), "--json"
+  ]);
+  return decodeJson<RevisionSummary[]>(result);
+}
+
+export async function getRevisionRetrospective(projectRoot: string, base: string, head: string): Promise<RevisionRetrospective> {
+  const result = await runCoreCommand(projectRoot, ["revision", "retrospective", "--base", base, "--head", head, "--json"]);
+  return decodeJson(result);
+}
+
+export async function compareRevisions(
+  projectRoot: string,
+  baseRevision: string,
+  headRevision: string
+): Promise<RevisionComparison> {
+  const result = await runCoreCommand(projectRoot, [
+    "revision", "diff", "--base", baseRevision, "--head", headRevision, "--json"
+  ]);
+  return decodeJson<RevisionComparison>(result);
+}
+
+export async function restoreRevision(
+  projectRoot: string,
+  revisionId: string,
+  paths: string[]
+): Promise<Record<string, unknown>> {
+  const args = ["revision", "restore", "--id", revisionId];
+  for (const path of paths) args.push("--path", path);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<Record<string, unknown>>(result);
 }
 
 export async function listChatThreads(projectRoot: string): Promise<ChatThreadRecord[]> {
@@ -561,6 +900,7 @@ export type ChatSendPayload = {
   retrievalRequireFresh?: boolean;
   agentAutoReadOnly?: boolean;
   agentConfirmWrites?: boolean;
+  scope?: "project" | "scene" | "chapter" | "character" | "storyline";
 };
 
 export async function sendChatMessage(
@@ -713,6 +1053,9 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
   }
   if (typeof payload.agentConfirmWrites === "boolean") {
     contextOverrides.agent_confirm_writes = payload.agentConfirmWrites;
+  }
+  if (payload.scope) {
+    contextOverrides.scope = payload.scope;
   }
   return {
     thread_id: payload.threadId,
@@ -896,9 +1239,16 @@ export async function addCodexEntity(
     type: CodexEntity["type"];
     name: string;
     description: string;
+    category?: string;
+    aliases?: string[];
+    tags?: string[];
+    details?: CodexEntity["details"];
+    notes?: string;
+    aiVisibility?: CodexEntity["ai_visibility"];
+    scope?: CodexEntity["scope"];
   }
 ): Promise<CodexEntity> {
-  const result = await runCoreCommand(projectRoot, [
+  const args = [
     "codex",
     "add",
     "--type",
@@ -907,8 +1257,16 @@ export async function addCodexEntity(
     payload.name,
     "--description",
     payload.description,
-    "--json"
-  ]);
+    "--category", payload.category ?? "",
+    "--details-json", JSON.stringify(payload.details ?? []),
+    "--notes", payload.notes ?? "",
+    "--ai-visibility", payload.aiVisibility ?? "include",
+    "--scope", payload.scope ?? "project",
+  ];
+  for (const alias of payload.aliases ?? []) args.push("--alias", alias);
+  for (const tag of payload.tags ?? []) args.push("--tag", tag);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
   return decodeJson<CodexEntity>(result);
 }
 
@@ -919,9 +1277,16 @@ export async function updateCodexEntity(
     type: CodexEntity["type"];
     name: string;
     description: string;
+    category?: string;
+    aliases?: string[];
+    tags?: string[];
+    details?: CodexEntity["details"];
+    notes?: string;
+    aiVisibility?: CodexEntity["ai_visibility"];
+    scope?: CodexEntity["scope"];
   }
 ): Promise<CodexEntity> {
-  const result = await runCoreCommand(projectRoot, [
+  const args = [
     "codex",
     "update",
     "--id",
@@ -932,9 +1297,273 @@ export async function updateCodexEntity(
     payload.name,
     "--description",
     payload.description,
-    "--json"
-  ]);
+    "--category", payload.category ?? "",
+    "--details-json", JSON.stringify(payload.details ?? []),
+    "--notes", payload.notes ?? "",
+    "--ai-visibility", payload.aiVisibility ?? "include",
+    "--scope", payload.scope ?? "project",
+  ];
+  for (const alias of payload.aliases ?? []) args.push("--alias", alias);
+  for (const tag of payload.tags ?? []) args.push("--tag", tag);
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
   return decodeJson<CodexEntity>(result);
+}
+
+export async function listCodexRelationships(projectRoot: string, entityId?: string): Promise<CodexRelationship[]> {
+  const args = ["codex", "relationship-list"];
+  if (entityId) args.push("--entity", entityId);
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function addCodexRelationship(projectRoot: string, payload: { sourceId: string; targetId: string; relation: string; notes?: string; validFrom?: string; validTo?: string }): Promise<CodexRelationship> {
+  return decodeJson(await runCoreCommand(projectRoot, [
+    "codex", "relationship-add", "--source", payload.sourceId, "--target", payload.targetId,
+    "--relation", payload.relation, "--notes", payload.notes ?? "", "--valid-from", payload.validFrom ?? "", "--valid-to", payload.validTo ?? "", "--json"
+  ]));
+}
+
+export async function deleteCodexRelationship(projectRoot: string, relationshipId: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["codex", "relationship-delete", "--id", relationshipId, "--json"]);
+}
+
+export type StoryMemorySuggestion = {
+  id: string;
+  kind: "entity_create" | "canon_fact";
+  entity_type?: CodexEntity["type"];
+  name: string;
+  description: string;
+  confidence: number;
+  reason: string;
+  status: "pending" | "accepted" | "rejected" | "deferred";
+  evidence: Array<{ scene_id: string; path: string; excerpt: string; start: number; end: number }>;
+  subject_entity_id?: string;
+  subject_name?: string;
+  predicate?: string;
+  value?: string;
+};
+
+export async function scanStoryMemory(projectRoot: string): Promise<{ scanned_scenes: number; added: number; refreshed: number; pending: number; suggestions: StoryMemorySuggestion[] }> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan", "--json"]));
+}
+
+export async function listStoryMemorySuggestions(projectRoot: string, status: StoryMemorySuggestion["status"] = "pending"): Promise<StoryMemorySuggestion[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "list", "--status", status, "--json"]));
+}
+
+export async function reviewStoryMemorySuggestion(projectRoot: string, id: string, disposition: "accepted" | "rejected" | "deferred"): Promise<StoryMemorySuggestion> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "review", "--id", id, "--disposition", disposition, "--json"]));
+}
+
+export async function correctStoryMemorySuggestion(
+  projectRoot: string,
+  id: string,
+  updates: { name?: string; description?: string; predicate?: string; value?: string }
+): Promise<StoryMemorySuggestion> {
+  const args = ["memory", "correct", "--id", id];
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) args.push(`--${key}`, value);
+  }
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function queueStoryMemorySuggestion(projectRoot: string, payload: { title: string; content: string; sceneId?: string }): Promise<StoryMemorySuggestion> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "suggest", "--title", payload.title, "--content", payload.content, "--scene", payload.sceneId ?? "", "--source", "assistant", "--json"]));
+}
+
+export async function addSceneNote(projectRoot: string, payload: { title: string; content: string; sceneId?: string }): Promise<Record<string, unknown>> {
+  return decodeJson(await runCoreCommand(projectRoot, ["plan", "note-add", "--title", payload.title, "--content", payload.content, "--scene", payload.sceneId ?? "", "--source", "assistant", "--json"]));
+}
+
+export type ProjectSearchResult = {
+  source_kind: "scene" | "memory" | "plan";
+  source_id: string;
+  title: string;
+  path: string;
+  excerpt: string;
+  score: number;
+};
+
+export async function searchProject(projectRoot: string, query: string, limit = 80): Promise<ProjectSearchResult[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["search", "--query", query, "--limit", String(limit), "--json"]));
+}
+
+export type EditorialPass = {
+  id: string;
+  name: string;
+  goal: string;
+  instruction: string;
+  context_policy: { current_scene: boolean; nearby_scenes: number; story_memory: string };
+  evaluation_criteria: string[];
+  built_in: boolean;
+};
+
+export async function listEditorialPasses(projectRoot: string): Promise<EditorialPass[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["pass", "list", "--json"]));
+}
+
+export async function addEditorialPass(projectRoot: string, payload: { name: string; goal: string; instruction: string; criteria: string[] }): Promise<EditorialPass> {
+  const args = ["pass", "add", "--name", payload.name, "--goal", payload.goal, "--instruction", payload.instruction];
+  for (const criterion of payload.criteria) args.push("--criterion", criterion);
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function listCanonFacts(projectRoot: string): Promise<CanonFact[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-list", "--json"]));
+}
+
+export async function addCanonFact(projectRoot: string, payload: {
+  subjectId: string; predicate: string; value: string; sceneId: string; excerpt: string;
+  validFrom?: string; validTo?: string; scope?: "project" | "series";
+  knowledge?: CanonFact["knowledge"];
+}): Promise<CanonFact> {
+  return decodeJson(await runCoreCommand(projectRoot, [
+    "memory", "fact-add", "--subject", payload.subjectId, "--predicate", payload.predicate,
+    "--value", payload.value, "--evidence-json", JSON.stringify([{ scene_id: payload.sceneId, excerpt: payload.excerpt }]),
+    "--knowledge-json", JSON.stringify(payload.knowledge ?? []), "--valid-from", payload.validFrom ?? "",
+    "--valid-to", payload.validTo ?? "", "--scope", payload.scope ?? "project", "--json"
+  ]));
+}
+
+export async function listNarrativeSetups(projectRoot: string): Promise<NarrativeSetup[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-list", "--json"]));
+}
+
+export async function addNarrativeSetup(projectRoot: string, description: string, sceneId: string, excerpt: string): Promise<NarrativeSetup> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-add", "--description", description, "--scene", sceneId, "--excerpt", excerpt, "--json"]));
+}
+
+export async function resolveNarrativeSetup(projectRoot: string, id: string, sceneId: string, excerpt: string): Promise<NarrativeSetup> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-payoff", "--id", id, "--scene", sceneId, "--excerpt", excerpt, "--json"]));
+}
+
+export async function listOpenQuestions(projectRoot: string): Promise<OpenQuestion[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "question-list", "--json"]));
+}
+
+export async function addOpenQuestion(projectRoot: string, question: string, sceneId = "", intentional = false): Promise<OpenQuestion> {
+  const args = ["memory", "question-add", "--question", question, "--scene", sceneId];
+  if (intentional) args.push("--intentional");
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function listCharacterArcStates(projectRoot: string): Promise<CharacterArcState[]> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "arc-list", "--json"]));
+}
+
+export async function addCharacterArcState(projectRoot: string, payload: { characterId: string; dimension: string; value: string; sceneId: string; excerpt: string; stateType: "observed" | "planned" }): Promise<CharacterArcState> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "arc-add", "--character", payload.characterId, "--dimension", payload.dimension, "--value", payload.value, "--scene", payload.sceneId, "--excerpt", payload.excerpt, "--type", payload.stateType, "--json"]));
+}
+
+export async function runCanonDiagnostics(projectRoot: string): Promise<{ diagnostics: CanonDiagnostic[]; summary: { errors: number; warnings: number; info: number } }> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "diagnose", "--json"]));
+}
+
+export async function disposeCanonDiagnostic(projectRoot: string, id: string, disposition: "fixed" | "dismissed" | "intentional" | "deferred", notes = ""): Promise<void> {
+  await runCoreCommand(projectRoot, ["memory", "dispose", "--id", id, "--disposition", disposition, "--notes", notes, "--json"]);
+}
+
+export type StorylineRecord = {
+  id: string;
+  name: string;
+  branch: string;
+  status: "active" | "archived";
+  source_branch: string;
+  base_revision: string;
+  current: boolean;
+  branch_available: boolean;
+  experiment_brief: { hypothesis: string; protected_constraints: string[]; intended_scope: string; success_criteria: string };
+  divergence?: { ahead_by: number; behind_by: number; changed_files: number; changed_scenes: number };
+  created_at: string;
+  updated_at: string;
+  last_activity_at: string;
+};
+export type StorylineComparison = {
+  storyline: StorylineRecord;
+  primary_branch: string;
+  ahead_by: number;
+  behind_by: number;
+  categories: { scenes: number; plan: number; story_memory: number; settings: number };
+  scenes: Array<{ path: string; scene_id: string; title: string; status: string; word_count_before: number; word_count_after: number; word_count_delta: number; prose_changed: boolean }>;
+  word_count_delta: number;
+  semantic_delta: Record<"canon_facts" | "setups" | "open_questions" | "arcs", { added: Array<{ id: string; label: string }>; changed: Array<{ id: string; label: string }>; removed: Array<{ id: string; label: string }> }>;
+  impact_analysis: {
+    before: { hypothesis: string; success_criteria: string; protected_constraints: string[] };
+    after: { changed_scene_count: number; semantic_change_count: number; word_count_delta: number; risks: string[]; summary: string };
+  };
+};
+
+export async function listStorylines(projectRoot: string): Promise<{ primary_branch: string; current_branch: string; storylines: StorylineRecord[] }> {
+  return decodeJson(await runCoreCommand(projectRoot, ["storyline", "list", "--json"]));
+}
+
+export async function createStoryline(projectRoot: string, payload: { name: string; hypothesis: string; scope?: string; success?: string; protectedConstraints?: string[]; switch?: boolean }): Promise<StorylineRecord> {
+  const args = ["storyline", "create", "--name", payload.name, "--hypothesis", payload.hypothesis, "--scope", payload.scope ?? "", "--success", payload.success ?? ""];
+  for (const constraint of payload.protectedConstraints ?? []) args.push("--protect", constraint);
+  if (payload.switch === false) args.push("--no-switch");
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function switchStoryline(projectRoot: string, id?: string, primary = false): Promise<void> {
+  const args = ["storyline", "switch"];
+  if (primary) args.push("--primary"); else if (id) args.push("--id", id);
+  args.push("--json");
+  await runCoreCommand(projectRoot, args);
+}
+
+export async function compareStoryline(projectRoot: string, id: string): Promise<StorylineComparison> {
+  return decodeJson(await runCoreCommand(projectRoot, ["storyline", "compare", "--id", id, "--json"]));
+}
+
+export async function integrateStorylineScenes(projectRoot: string, id: string, scenePaths: string[]): Promise<{ proposal_count: number; proposals: ProposalRecord[] }> {
+  const args = ["storyline", "integrate", "--id", id];
+  for (const path of scenePaths) args.push("--scene-path", path);
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function saveStoryline(projectRoot: string, id: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["storyline", "save", "--id", id, "--json"]);
+}
+
+export async function archiveStoryline(projectRoot: string, id: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["storyline", "archive", "--id", id, "--json"]);
+}
+
+export async function restoreStoryline(projectRoot: string, id: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["storyline", "restore", "--id", id, "--json"]);
+}
+
+export async function renameStoryline(projectRoot: string, id: string, name: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["storyline", "rename", "--id", id, "--name", name, "--json"]);
+}
+
+export async function duplicateStoryline(projectRoot: string, id: string, name: string): Promise<void> {
+  await runCoreCommand(projectRoot, ["storyline", "duplicate", "--id", id, "--name", name, "--json"]);
+}
+
+export type StyleProfile = {
+  schema_version: number;
+  exemplar_scene_ids: string[];
+  created_at: string;
+  metrics: { word_count: number; sentence_count: number; paragraph_count: number; average_sentence_words: number; average_paragraph_words: number; dialogue_word_ratio: number; semicolon_per_sentence: number; em_dash_per_sentence: number; signature_words: string[] };
+  guidance: string[];
+};
+
+export async function getStyleProfile(projectRoot: string): Promise<StyleProfile | null> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", "get", "--json"]));
+}
+
+export async function buildStyleProfile(projectRoot: string, sceneIds: string[]): Promise<StyleProfile> {
+  const args = ["style", "build"];
+  for (const id of sceneIds) args.push("--scene", id);
+  args.push("--json");
+  return decodeJson(await runCoreCommand(projectRoot, args));
 }
 
 export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
@@ -968,6 +1597,17 @@ export async function runPerformanceBaseline(
     "--json"
   ]);
   return decodeJson<PerformanceBaselineReport>(result);
+}
+
+export async function getStartupHealth(
+  projectRoot: string,
+  repair = false
+): Promise<StartupHealthReport> {
+  const args = ["check", "startup"];
+  if (repair) args.push("--repair");
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  return decodeJson<StartupHealthReport>(result);
 }
 
 export async function listGenerationRuns(

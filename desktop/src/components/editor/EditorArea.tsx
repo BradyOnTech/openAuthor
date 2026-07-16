@@ -4,7 +4,15 @@ import { SceneEditor } from "./SceneEditor";
 import { ProposalReview } from "./ProposalReview";
 import { SettingsEditor } from "./SettingsEditor";
 import { GenerateProposal } from "./GenerateProposal";
-import type { SceneDetail, ProposalRecord, CodexEntity } from "../../types";
+import { RevisionReview } from "./RevisionReview";
+import { PlanEditor } from "./PlanEditor";
+import { StoryMemoryEditor } from "./StoryMemoryEditor";
+import { CanonMemoryEditor } from "./CanonMemoryEditor";
+import { StorylineEditor } from "./StorylineEditor";
+import { AlternativeComparison } from "./AlternativeComparison";
+import type { SceneDetail, ProposalRecord, CodexEntity, RevisionSummary } from "../../types";
+import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
 
 export function EditorArea() {
   const { tabs, activeTabId } = useEditor();
@@ -29,36 +37,29 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
       if (!scene) return <EmptyState />;
       return <SceneEditor key={tab.id} scene={scene} />;
     }
+    case "plan":
+      return <PlanEditor />;
+    case "memory":
+      return <CanonMemoryEditor />;
+    case "storylines":
+      return <StorylineEditor />;
     case "proposal": {
       const proposal = tab.data as ProposalRecord | undefined;
       if (!proposal) return <EmptyState />;
       return <ProposalReview proposal={proposal} />;
     }
+    case "alternatives": {
+      const proposals = tab.data as ProposalRecord[] | undefined;
+      return proposals ? <AlternativeComparison proposals={proposals} /> : <EmptyState />;
+    }
+    case "revision": {
+      const revision = tab.data as RevisionSummary | undefined;
+      if (!revision) return <EmptyState />;
+      return <RevisionReview revision={revision} />;
+    }
     case "codex": {
       const entity = tab.data as CodexEntity | undefined;
-      return (
-        <div style={{ padding: "var(--space-6) var(--space-8)", background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
-          <div style={{ maxWidth: "var(--editor-max-width)", margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
-              <span style={{ fontSize: "var(--text-lg)", color: "var(--text-tertiary)" }}>{"\u25C6"}</span>
-              <h2 style={{ fontFamily: "var(--font-ui)", fontSize: "var(--text-xl)", fontWeight: "var(--weight-semibold)", color: "var(--text-primary)" }}>
-                {entity?.name ?? "Entity"}
-              </h2>
-              {entity?.type && <span className="badge badge--info">{entity.type}</span>}
-            </div>
-            {entity?.description && (
-              <p style={{ fontSize: "var(--text-md)", lineHeight: "var(--leading-relaxed)", color: "var(--text-primary)" }}>
-                {entity.description}
-              </p>
-            )}
-            {!entity?.description && (
-              <p style={{ fontSize: "var(--text-sm)", color: "var(--text-tertiary)", fontStyle: "italic" }}>
-                No description yet.
-              </p>
-            )}
-          </div>
-        </div>
-      );
+      return entity ? <StoryMemoryEditor entity={entity} /> : <EmptyState />;
     }
     case "generate": {
       const scene = tab.data as SceneDetail | undefined;
@@ -72,8 +73,13 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
 }
 
 function EmptyState() {
+  const { activeProjectId, projects, scenes } = useWorkspace();
+  const navigateTo = useWorkspaceNavigation();
+  const projectName = projects.find((project) => project.id === activeProjectId)?.name ?? "your novel";
+  const isBlank = scenes.length === 0;
+
   return (
-    <div style={{
+    <div className="project-home" style={{
       flex: 1,
       display: "flex",
       flexDirection: "column",
@@ -84,12 +90,12 @@ function EmptyState() {
     }}>
       <div style={{
         fontFamily: "var(--font-prose)",
-        fontSize: "var(--text-2xl)",
-        fontWeight: "var(--weight-light)",
-        color: "var(--text-ghost)",
+        fontSize: "var(--text-3xl)",
+        fontWeight: "var(--weight-semibold)",
+        color: "var(--text-primary)",
         letterSpacing: "var(--tracking-tight)",
       }}>
-        openAuthor
+        {isBlank ? `Start ${projectName}` : `Continue ${projectName}`}
       </div>
       <div style={{
         fontSize: "var(--text-sm)",
@@ -97,11 +103,16 @@ function EmptyState() {
         textAlign: "center",
         lineHeight: "var(--leading-relaxed)",
       }}>
-        Select a scene from the sidebar to begin writing.
-        <br />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)" }}>
-          Cmd+K to open command palette
-        </span>
+        {isBlank
+          ? "Begin with a scene, or shape the premise and structure first. Your manuscript stays in local, readable files."
+          : "Open a scene and return to the sentence where you left off."}
+      </div>
+      <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
+        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Create first scene" : "Open manuscript"}</button>
+        <button className="btn" onClick={() => void navigateTo("plan")}>Plan the story</button>
+      </div>
+      <div style={{ display: "flex", gap: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: "var(--space-3)" }}>
+        <span>Write</span><span>→</span><span>Review changes</span><span>→</span><span>Explore Storylines</span>
       </div>
     </div>
   );

@@ -8,9 +8,19 @@ import { EditorArea } from "../editor/EditorArea";
 import { SecondarySidebar } from "../secondary/SecondarySidebar";
 import { PanelArea } from "../panel/PanelArea";
 import { WelcomeScreen } from "../welcome/WelcomeScreen";
+import { FirstRunGuide } from "../onboarding/FirstRunGuide";
 
 export function Workbench() {
-  const { sidebarOpen, secondarySidebarOpen, panelOpen, zenMode } = useUI();
+  const {
+    sidebarOpen,
+    secondarySidebarOpen,
+    panelOpen,
+    zenMode,
+    setActiveView,
+    setSidebarOpen,
+    setSecondarySidebarOpen,
+    setPanelOpen,
+  } = useUI();
   const {
     activeProjectId,
     projectFound,
@@ -19,9 +29,25 @@ export function Workbench() {
     message,
     setError,
     setMessage,
+    startupHealth,
+    refreshStartupHealth,
   } = useWorkspace();
 
   const projectReady = !!(activeProjectId && projectFound === true);
+
+  useEffect(() => {
+    if (!activeProjectId) return;
+    setActiveView("manuscript");
+    setSidebarOpen(true);
+    setSecondarySidebarOpen(false);
+    setPanelOpen(false);
+  }, [activeProjectId, setActiveView, setPanelOpen, setSecondarySidebarOpen, setSidebarOpen]);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 3200);
+    return () => window.clearTimeout(timer);
+  }, [message, setMessage]);
 
   useEffect(() => {
     if (!projectReady) return;
@@ -70,6 +96,25 @@ export function Workbench() {
           {error || message}
         </div>
       )}
+      {startupHealth && !startupHealth.ready && (
+        <div style={{ position: "fixed", top: "var(--space-3)", left: "50%", transform: "translateX(-50%)", zIndex: 650, width: "min(680px, calc(100vw - 32px))", padding: "var(--space-3) var(--space-4)", borderRadius: "var(--radius-md)", border: "1px solid var(--danger-border)", background: "var(--bg-elevated)", boxShadow: "var(--shadow-lg)", display: "flex", gap: "var(--space-3)", alignItems: "center" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, color: "var(--danger-text)", marginBottom: 2 }}>
+              This project needs attention before safe revision
+            </div>
+            {startupHealth.checks.filter((check) => check.status === "error").slice(0, 2).map((check) => (
+              <div key={check.id} style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+                {check.message} {check.recovery}
+              </div>
+            ))}
+          </div>
+          {startupHealth.checks.some((check) => check.repairable) && (
+            <button className="btn btn--primary btn--sm" onClick={() => void refreshStartupHealth(true)}>
+              Run Safe Repair
+            </button>
+          )}
+        </div>
+      )}
       <div className={classes}>
         <ActivityBar />
         <PrimarySidebar />
@@ -78,6 +123,7 @@ export function Workbench() {
         <PanelArea />
         <StatusBar />
       </div>
+      <FirstRunGuide />
     </>
   );
 }

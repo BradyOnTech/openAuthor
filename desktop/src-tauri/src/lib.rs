@@ -64,6 +64,107 @@ fn path_separator() -> &'static str {
   }
 }
 
+fn bundled_python_candidates() -> Vec<String> {
+  let mut candidates = Vec::new();
+
+  if let Ok(runtime_dir) = env::var("OPENAUTHOR_RUNTIME_DIR") {
+    let trimmed = runtime_dir.trim();
+    if !trimmed.is_empty() {
+      let runtime_python = PathBuf::from(trimmed).join("python").join("bin").join("python3");
+      if runtime_python.exists() {
+        candidates.push(runtime_python.to_string_lossy().to_string());
+      }
+    }
+  }
+
+  if let Ok(executable) = env::current_exe() {
+    if let Some(bin_dir) = executable.parent() {
+      let app_resource_python = bin_dir
+        .join("..")
+        .join("Resources")
+        .join("resources")
+        .join("runtime")
+        .join("python")
+        .join("bin")
+        .join("python3");
+      if app_resource_python.exists() {
+        candidates.push(app_resource_python.to_string_lossy().to_string());
+      }
+
+      let adjacent_python = bin_dir
+        .join("runtime")
+        .join("python")
+        .join("bin")
+        .join("python3");
+      if adjacent_python.exists() {
+        candidates.push(adjacent_python.to_string_lossy().to_string());
+      }
+    }
+  }
+
+  candidates
+}
+
+fn configure_runtime_environment(command: &mut Command) {
+  if cfg!(target_os = "macos") {
+    // A process launched from a GUI app inherits the app's XPC identity.
+    // python-build-standalone treats that identity as a GUI launch and can
+    // block during interpreter startup while macOS restores app state.
+    // Core workers are ordinary command-line children, so strip GUI identity.
+    command.env_remove("XPC_SERVICE_NAME");
+    command.env_remove("__CFBundleIdentifier");
+    for key in ["LANG", "LC_ALL", "LC_CTYPE"] {
+      if env::var(key).map(|value| value == "C.UTF-8").unwrap_or(false) {
+        command.env(key, "en_US.UTF-8");
+      }
+    }
+  }
+}
+
+fn python_command(python_bin: &str, project_root: &PathBuf) -> Command {
+  if cfg!(target_os = "macos") {
+    // std::process may fall back to fork+exec when current_dir is set. Forking
+    // a multi-threaded AppKit/WebKit process can leave the child holding a
+    // copied macOS framework lock before Python initializes its codecs. Start
+    // a clean shell through posix_spawn, change directory there, then exec.
+    let mut command = Command::new("/bin/sh");
+    command
+      .arg("-c")
+      .arg("cd -- \"$1\" && shift && exec \"$@\"")
+      .arg("openauthor-core-launcher")
+      .arg(project_root)
+      .arg(python_bin);
+    command
+  } else {
+    let mut command = Command::new(python_bin);
+    command.current_dir(project_root);
+    command
+  }
+}
+
+fn configure_python_imports(command: &mut Command, python_bin: &str) {
+  let binary = PathBuf::from(python_bin);
+  let bundled_home = binary.parent().and_then(|bin| bin.parent()).filter(|home| {
+    home.join("openauthor-runtime.json").exists()
+      || home.to_string_lossy().contains("resources/runtime/python")
+  });
+  if let Some(home) = bundled_home {
+    command.env_remove("PYTHONPATH");
+    command.env("PYTHONHOME", home);
+    command.env("PYTHONNOUSERSITE", "1");
+    command.env("PYTHONSAFEPATH", "1");
+  } else if let Some(root) = repo_root() {
+    let root_str = root.to_string_lossy().to_string();
+    let combined_pythonpath = match env::var("PYTHONPATH") {
+      Ok(existing) if !existing.trim().is_empty() => {
+        format!("{}{}{}", root_str, path_separator(), existing)
+      }
+      _ => root_str,
+    };
+    command.env("PYTHONPATH", combined_pythonpath);
+  }
+}
+
 fn python_candidates(project_root: &PathBuf) -> Vec<String> {
   let mut candidates: Vec<String> = Vec::new();
 
@@ -73,6 +174,8 @@ fn python_candidates(project_root: &PathBuf) -> Vec<String> {
       candidates.push(trimmed.to_string());
     }
   }
+
+  candidates.extend(bundled_python_candidates());
 
   if let Ok(venv) = env::var("VIRTUAL_ENV") {
     let venv_python = PathBuf::from(venv).join("bin").join("python3");
@@ -104,23 +207,13 @@ fn run_core_with_python(
   project_root: &PathBuf,
   args: &[String],
 ) -> Result<CoreCommandResponse, String> {
-  let mut command = Command::new(python_bin);
+  let mut command = python_command(python_bin, project_root);
+  configure_runtime_environment(&mut command);
+  configure_python_imports(&mut command, python_bin);
   command
     .arg("-m")
     .arg("openauthor")
-    .args(args)
-    .current_dir(project_root);
-
-  if let Some(root) = repo_root() {
-    let root_str = root.to_string_lossy().to_string();
-    let combined_pythonpath = match env::var("PYTHONPATH") {
-      Ok(existing) if !existing.trim().is_empty() => {
-        format!("{}{}{}", root_str, path_separator(), existing)
-      }
-      _ => root_str,
-    };
-    command.env("PYTHONPATH", combined_pythonpath);
-  }
+    .args(args);
 
   let output = command
     .output()
@@ -158,6 +251,15 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
     "generation",
     "chat",
     "auth",
+    "manuscript",
+    "revision",
+    "plan",
+    "memory",
+    "search",
+    "pass",
+    "storyline",
+    "style",
+    "metrics",
   ];
   if allowed.contains(&args[0].as_str()) {
     Ok(())
@@ -178,29 +280,19 @@ struct SidecarHandle {
 #[derive(Default)]
 struct SidecarRegistry(Mutex<HashMap<String, Arc<SidecarHandle>>>);
 
-fn combined_pythonpath() -> Option<String> {
-  let root = repo_root()?;
-  let root_str = root.to_string_lossy().to_string();
-  Some(match env::var("PYTHONPATH") {
-    Ok(existing) if !existing.trim().is_empty() => {
-      format!("{}{}{}", root_str, path_separator(), existing)
-    }
-    _ => root_str,
-  })
-}
-
 fn resolve_sidecar_python(project_root: &PathBuf) -> Result<String, String> {
   for candidate in python_candidates(project_root) {
-    let mut probe = Command::new(&candidate);
+    // Use the same posix_spawn-safe launcher as normal core commands. A
+    // direct Command with current_dir can hang when spawned by AppKit,
+    // leaving every Assistant request waiting behind the probe.
+    let mut probe = python_command(&candidate, project_root);
+    configure_runtime_environment(&mut probe);
+    configure_python_imports(&mut probe, &candidate);
     probe
       .arg("-c")
       .arg("import openauthor")
-      .current_dir(project_root)
       .stdout(Stdio::null())
       .stderr(Stdio::null());
-    if let Some(pythonpath) = combined_pythonpath() {
-      probe.env("PYTHONPATH", pythonpath);
-    }
     if let Ok(status) = probe.status() {
       if status.success() {
         return Ok(candidate);
@@ -223,18 +315,16 @@ fn spawn_sidecar(
   registry_key: String,
 ) -> Result<Arc<SidecarHandle>, String> {
   let python_bin = resolve_sidecar_python(project_root)?;
-  let mut command = Command::new(&python_bin);
+  let mut command = python_command(&python_bin, project_root);
+  configure_runtime_environment(&mut command);
+  configure_python_imports(&mut command, &python_bin);
   command
     .arg("-m")
     .arg("openauthor")
     .arg("serve")
-    .current_dir(project_root)
     .stdin(Stdio::piped())
     .stdout(Stdio::piped())
     .stderr(Stdio::null());
-  if let Some(pythonpath) = combined_pythonpath() {
-    command.env("PYTHONPATH", pythonpath);
-  }
   let mut child = command
     .spawn()
     .map_err(|error| format!("Failed to spawn sidecar via '{python_bin}': {error}"))?;
@@ -399,6 +489,51 @@ fn pick_zip_file(starting_path: Option<String>) -> Result<Option<String>, String
 }
 
 #[tauri::command]
+fn pick_manuscript_file(starting_path: Option<String>) -> Result<Option<String>, String> {
+  let mut dialog = rfd::FileDialog::new()
+    .add_filter("Manuscript", &["md", "markdown", "txt", "docx", "scrivx"]);
+  if let Some(raw_starting_path) = starting_path {
+    let resolved = resolve_project_root(&raw_starting_path);
+    if resolved.exists() {
+      let directory = if resolved.is_dir() {
+        resolved
+      } else {
+        resolved.parent().map_or(resolved.clone(), |parent| parent.to_path_buf())
+      };
+      dialog = dialog.set_directory(directory);
+    }
+  }
+  Ok(dialog.pick_file().map(|path| path.to_string_lossy().to_string()))
+}
+
+#[tauri::command]
+fn pick_export_target(format: String, starting_path: Option<String>) -> Result<Option<String>, String> {
+  let mut dialog = rfd::FileDialog::new();
+  if let Some(raw_starting_path) = starting_path {
+    let resolved = resolve_project_root(&raw_starting_path);
+    if resolved.exists() {
+      let directory = if resolved.is_dir() {
+        resolved
+      } else {
+        resolved.parent().map_or(resolved.clone(), |parent| parent.to_path_buf())
+      };
+      dialog = dialog.set_directory(directory);
+    }
+  }
+  if format == "docx" {
+    Ok(dialog
+      .add_filter("Word Document", &["docx"])
+      .set_file_name("manuscript.docx")
+      .save_file()
+      .map(|path| path.to_string_lossy().to_string()))
+  } else if format == "markdown" {
+    Ok(dialog.pick_folder().map(|path| path.to_string_lossy().to_string()))
+  } else {
+    Err("Export format must be markdown or docx.".to_string())
+  }
+}
+
+#[tauri::command]
 fn project_status(project_root: String) -> Result<ProjectStatus, String> {
   let root = resolve_project_root(&project_root);
   let marker = root.join(".openauthor").join("project.json");
@@ -456,8 +591,195 @@ pub fn run() {
       core_command,
       sidecar_request,
       pick_folder,
-      pick_zip_file
+      pick_zip_file,
+      pick_manuscript_file,
+      pick_export_target
     ])
     .run(tauri::generate_context!())
     .expect("error while running openAuthor desktop");
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use serde_json::Value;
+  use std::fs;
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  fn temporary_project_root(label: &str) -> PathBuf {
+    let nonce = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .expect("system clock")
+      .as_nanos();
+    let root = env::temp_dir().join(format!("openauthor-native-{label}-{nonce}"));
+    fs::create_dir_all(&root).expect("create temporary project root");
+    root
+  }
+
+  fn command(root: &PathBuf, args: &[&str]) -> CoreCommandResponse {
+    core_command(
+      root.to_string_lossy().to_string(),
+      args.iter().map(|item| item.to_string()).collect(),
+    )
+    .expect("Tauri core command bridge")
+  }
+
+  fn json_output(response: CoreCommandResponse) -> Value {
+    assert_eq!(response.status, 0, "core stderr: {}", response.stderr);
+    serde_json::from_str(response.stdout.trim()).expect("valid core JSON")
+  }
+
+  #[test]
+  fn native_bridge_completes_project_scene_and_proposal_flow() {
+    let root = temporary_project_root("golden-flow");
+
+    let initialized = json_output(command(
+      &root,
+      &["init", ".", "--name", "Native Product Flow", "--json"],
+    ));
+    assert_eq!(initialized["initialized"], true);
+
+    let status = project_status(root.to_string_lossy().to_string()).expect("project status");
+    assert!(status.found);
+
+    let added = command(
+      &root,
+      &[
+        "scene",
+        "add",
+        "--title",
+        "The First Choice",
+        "--summary",
+        "A protagonist makes a consequential decision.",
+        "--pov",
+        "Mara",
+        "--body",
+        "At exactly midnight, Mara alone remembered the gate. She paused, but fear could not answer for her.",
+      ],
+    );
+    assert_eq!(added.status, 0, "scene add stderr: {}", added.stderr);
+
+    let scene = json_output(command(
+      &root,
+      &["scene", "get", "--id", "scene-0001", "--json"],
+    ));
+    assert_eq!(scene["title"], "The First Choice");
+    let original_body = scene["body"].as_str().expect("original scene body").to_string();
+
+    let proposal = json_output(command(
+      &root,
+      &[
+        "proposal",
+        "generate",
+        "--scene",
+        "scene-0001",
+        "--instruction",
+        "Increase tension while preserving Mara's decisive voice.",
+        "--provider",
+        "local",
+        "--json",
+      ],
+    ));
+    let proposal_id = proposal["id"].as_str().expect("proposal id");
+
+    let drafted = json_output(command(
+      &root,
+      &[
+        "proposal",
+        "draft",
+        "--id",
+        proposal_id,
+        "--provider",
+        "local",
+        "--json",
+      ],
+    ));
+    let drafted_body = drafted["proposed_body"]
+      .as_str()
+      .expect("drafted scene body")
+      .to_string();
+    assert!(drafted_body.len() > 20);
+
+    let applied = json_output(command(
+      &root,
+      &["proposal", "apply", "--id", proposal_id, "--json"],
+    ));
+    assert_eq!(applied["applied_changes"], true);
+    assert!(applied["pre_apply_snapshot"].as_str().unwrap_or("").len() >= 7);
+
+    let final_scene = json_output(command(
+      &root,
+      &["scene", "get", "--id", "scene-0001", "--json"],
+    ));
+    assert_eq!(
+      final_scene["body"].as_str().unwrap_or("").trim_end(),
+      drafted_body.trim_end()
+    );
+
+    let undone = json_output(command(
+      &root,
+      &["proposal", "undo", "--id", proposal_id, "--json"],
+    ));
+    assert!(undone["undo_revision"].as_str().unwrap_or("").len() >= 7);
+    let restored_scene = json_output(command(
+      &root,
+      &["scene", "get", "--id", "scene-0001", "--json"],
+    ));
+    assert_eq!(
+      restored_scene["body"].as_str().unwrap_or("").trim_end(),
+      original_body.trim_end()
+    );
+
+    fs::remove_dir_all(root).expect("remove temporary project root");
+  }
+
+  #[test]
+  fn native_bridge_rejects_unsupported_command_roots() {
+    let error = validate_core_args(&["shell".to_string()]).expect_err("unsupported root");
+    assert!(error.contains("Unsupported command root"));
+  }
+
+  #[test]
+  fn native_bridge_allows_private_metrics_commands() {
+    validate_core_args(&["metrics".to_string(), "dashboard".to_string()])
+      .expect("metrics root should be available to the desktop dashboard");
+  }
+
+  #[test]
+  fn bundled_runtime_override_is_preferred_over_system_python() {
+    let root = temporary_project_root("bundled-runtime");
+    let python = root.join("python").join("bin").join("python3");
+    fs::create_dir_all(python.parent().expect("runtime bin")).expect("create runtime bin");
+    fs::write(&python, "runtime placeholder").expect("write runtime placeholder");
+
+    env::set_var("OPENAUTHOR_RUNTIME_DIR", &root);
+    let candidates = python_candidates(&root);
+    env::remove_var("OPENAUTHOR_RUNTIME_DIR");
+
+    assert_eq!(candidates.first(), Some(&python.to_string_lossy().to_string()));
+    fs::remove_dir_all(root).expect("remove temporary runtime");
+  }
+
+  #[cfg(target_os = "macos")]
+  #[test]
+  fn runtime_children_do_not_inherit_gui_xpc_identity() {
+    let mut command = Command::new("/usr/bin/env");
+    command.env("XPC_SERVICE_NAME", "application.com.openauthor.desktop.test");
+    command.env("__CFBundleIdentifier", "com.openauthor.desktop");
+    configure_runtime_environment(&mut command);
+    let output = command.output().expect("environment probe");
+    let environment = String::from_utf8_lossy(&output.stdout);
+    assert!(!environment.contains("XPC_SERVICE_NAME="));
+    assert!(!environment.contains("__CFBundleIdentifier="));
+  }
+
+  #[cfg(target_os = "macos")]
+  #[test]
+  fn python_launcher_changes_directory_after_spawn() {
+    let root = temporary_project_root("launcher-cwd");
+    let output = python_command("/bin/pwd", &root).output().expect("launcher output");
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), root.to_string_lossy());
+    fs::remove_dir_all(root).expect("remove launcher root");
+  }
 }

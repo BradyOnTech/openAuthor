@@ -22,26 +22,36 @@ export function TabBar() {
   }
 
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" role="tablist" aria-label="Open documents and workspaces">
       {tabs.map((tab) => (
         <div
           key={tab.id}
           className={`tab${tab.id === activeTabId ? " tab--active" : ""}`}
-          onClick={() => setActiveTab(tab.id)}
           onMouseDown={(e) => handleMouseDown(e, tab)}
         >
-          <span className="tab__icon">{KIND_ICONS[tab.kind] ?? "\u25CB"}</span>
-          <span className="tab__label">{tab.label}</span>
-          {tab.modified && <span className="tab__modified" />}
-          <span
+          <button
+            type="button"
+            role="tab"
+            aria-label={tab.modified ? `${tab.label}, unsaved changes` : tab.label}
+            aria-selected={tab.id === activeTabId}
+            className="tab__select"
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <span className="tab__icon" aria-hidden="true">{KIND_ICONS[tab.kind] ?? "\u25CB"}</span>
+            <span className="tab__label">{tab.label}</span>
+            {tab.modified && <span className="tab__modified" aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
             className="tab__close"
+            aria-label={`Close ${tab.label}`}
             onClick={(e) => {
               e.stopPropagation();
               closeTab(tab.id);
             }}
           >
             {"\u00D7"}
-          </span>
+          </button>
         </div>
       ))}
     </div>
