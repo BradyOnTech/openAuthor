@@ -12,18 +12,39 @@ import urllib.error
 from openauthor.ai import (
   _anthropic_content_blocks,
   _chat_completion_messages,
+  _generate_local_draft_text,
   _normalize_chat_history,
   build_generation_context,
   generate_proposal,
+  regenerate_change_hunk,
 )
 from openauthor.budget import update_generation_budget_policy
 from openauthor.codex import add_entity
 from openauthor.project import OpenAuthorError, initialize_project
+from openauthor.proposals import create_proposal, set_proposal_draft
 from openauthor.retrieval import build_retrieval_index
 from openauthor.scenes import add_scene
 
 
 class AIModuleTests(unittest.TestCase):
+  def test_local_draft_returns_manuscript_prose_without_instruction_receipt(self) -> None:
+    original = (
+      "# The Missing Minute\n\n"
+      "At exactly noon, the archive clock skipped ahead. "
+      "Mara alone remembered the missing thirteen minutes."
+    )
+    revised = _generate_local_draft_text(
+      {"scene": {"body": original}},
+      "Tighten pacing while preserving Mara, the archive clock, and all established facts.",
+    )
+
+    self.assertTrue(revised.startswith("# The Missing Minute\n\n"))
+    self.assertIn("archive clock", revised)
+    self.assertIn("Mara", revised)
+    self.assertNotIn("Revised per", revised)
+    self.assertNotIn("Intent:", revised)
+    self.assertNotEqual(revised, original)
+
   def test_generate_local_proposal_with_log(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -88,6 +109,7 @@ class AIModuleTests(unittest.TestCase):
       self.assertIn("Constraints:", proposal["instruction"])
       self.assertIn("Edit Plan:", proposal["instruction"])
       self.assertIn("Continuity Notes:", proposal["instruction"])
+      self.assertNotIn("..", proposal["instruction"])
 
       log_path = root / generation["log_path"]
       self.assertTrue(log_path.exists())
@@ -112,6 +134,43 @@ class AIModuleTests(unittest.TestCase):
       nearby_ids = [row["id"] for row in log_payload["context"]["nearby_scenes"]]
       self.assertEqual(nearby_ids, ["scene-0001", "scene-0003"])
 
+
+  def test_regenerate_change_hunk_preserves_author_feedback(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Hunk Feedback")
+      add_scene(
+        paths,
+        title="The Door",
+        body="Elara opened the vault door and listened to the alarms.",
+      )
+      proposal_id = create_proposal(
+        paths,
+        title="Bring the danger forward",
+        instruction="Tighten the moment without changing established facts.",
+        scene_id="scene-0001",
+      )
+      proposal = set_proposal_draft(
+        paths,
+        proposal_id=proposal_id,
+        proposed_body="Elara tore open the vault door as the alarms began to scream.",
+      )
+      hunk_id = proposal["change_set"]["hunks"][0]["id"]
+
+      revised = regenerate_change_hunk(
+        paths,
+        proposal_id=proposal_id,
+        hunk_id=hunk_id,
+        provider="local",
+        feedback="Make the danger arrive sooner without changing Elara's facts.",
+      )
+
+      hunk = next(row for row in revised["change_set"]["hunks"] if row["id"] == hunk_id)
+      self.assertEqual(hunk["edited_by"], "ai")
+      self.assertEqual(
+        hunk["regeneration"]["author_feedback"],
+        "Make the danger arrive sooner without changing Elara's facts.",
+      )
+
   def test_generation_context_validates_scene(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -132,6 +191,26 @@ class AIModuleTests(unittest.TestCase):
           context_scene_radius=1,
           codex_limit=5,
         )
+
+  def test_generated_proposal_can_join_a_coordinated_multi_scene_group(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Coordinated AI")
+      add_scene(
+        paths,
+        title="Approach",
+        body="Mara began to cross the bridge toward the burning gate.",
+      )
+
+      proposal = generate_proposal(
+        paths,
+        scene_id="scene-0001",
+        instruction="Tighten pacing across the alternate ending.",
+        provider="local",
+        change_group_id="ending-experiment",
+      )
+
+      self.assertEqual(proposal["change_group_id"], "ending-experiment")
+      self.assertEqual(proposal["revision_intent"]["scope"], "multi_scene")
 
   def test_remote_provider_requires_credentials(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

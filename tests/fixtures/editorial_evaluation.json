@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "description": "Internally authored regression tasks for deterministic Editorial Pass quality and canon preservation.",
+  "cases": [
+    {
+      "id": "fantasy-pacing-third",
+      "pass_id": "pass-pacing",
+      "genre": "fantasy",
+      "pov": "Mara",
+      "body": "Mara began to cross the ash bridge while the red wyvern circled Blackglass Keep.",
+      "undesirable_patterns": ["\\bbegan to\\s+"],
+      "protected_terms": ["Mara", "ash bridge", "red wyvern", "Blackglass Keep"]
+    },
+    {
+      "id": "mystery-dialogue-first",
+      "pass_id": "pass-dialogue",
+      "genre": "mystery",
+      "pov": "Inez",
+      "body": "Inez really wanted the brass key. \"Don't move!\" she said quietly.",
+      "undesirable_patterns": ["\\breally\\s+", "she said quietly"],
+      "protected_terms": ["Inez", "brass key", "Don't move"]
+    },
+    {
+      "id": "romance-motivation-close-third",
+      "pass_id": "pass-motivation",
+      "genre": "romance",
+      "pov": "Sofia",
+      "body": "Sofia started to leave the winter garden because she feared Arun would choose the crown.",
+      "undesirable_patterns": ["\\bstarted to\\s+"],
+      "protected_terms": ["Sofia", "winter garden", "Arun", "crown"]
+    },
+    {
+      "id": "science-fiction-clarity-first",
+      "pass_id": "pass-clarity",
+      "genre": "science fiction",
+      "pov": "Kei",
+      "body": "I opened the airlock in order to reach Kepler Station before the oxygen alarm.",
+      "undesirable_patterns": ["\\bin order to\\b"],
+      "protected_terms": ["airlock", "Kepler Station", "oxygen alarm"]
+    },
+    {
+      "id": "thriller-tension-third",
+      "pass_id": "pass-tension",
+      "genre": "thriller",
+      "pov": "Nadia",
+      "body": "At exactly midnight, Nadia began to cut the blue wire beneath Central Station.",
+      "undesirable_patterns": ["\\bAt exactly\\b", "\\bbegan to\\s+"],
+      "protected_terms": ["midnight", "Nadia", "blue wire", "Central Station"]
+    },
+    {
+      "id": "historical-pov-third",
+      "pass_id": "pass-pov",
+      "genre": "historical",
+      "pov": "Eleanor",
+      "body": "Eleanor was very certain the sealed dispatch had never left Dover Castle.",
+      "undesirable_patterns": ["\\bvery\\s+"],
+      "protected_terms": ["Eleanor", "sealed dispatch", "Dover Castle"]
+    },
+    {
+      "id": "literary-setup-payoff-first",
+      "pass_id": "pass-setup-payoff",
+      "genre": "literary",
+      "pov": "Jonah",
+      "body": "I began to hide Mother's silver thimble beneath the loose stair, where Lila would find it years later.",
+      "undesirable_patterns": ["\\bbegan to\\s+"],
+      "protected_terms": ["Mother's silver thimble", "loose stair", "Lila", "years later"]
+    }
+  ]
+}

@@ -9,6 +9,9 @@ from typing import Any
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 
 ENTITY_TYPES = {"character", "location", "lore", "item", "faction", "event"}
+DETAIL_TYPES = {"text", "number", "boolean", "date", "scene", "entity", "list"}
+AI_VISIBILITY_VALUES = {"include", "exclude", "ask"}
+SCOPE_VALUES = {"project", "series"}
 CODEX_DIRECTORY_KIND_MAP = {
   "character": "character",
   "characters": "character",
@@ -40,6 +43,18 @@ def initialize_codex(db_path: str) -> None:
       )
       """
     )
+    entity_columns = {row[1] for row in cursor.execute("PRAGMA table_info(entities)").fetchall()}
+    for column, definition in {
+      "category": "TEXT NOT NULL DEFAULT ''",
+      "aliases_json": "TEXT NOT NULL DEFAULT '[]'",
+      "tags_json": "TEXT NOT NULL DEFAULT '[]'",
+      "details_json": "TEXT NOT NULL DEFAULT '[]'",
+      "notes": "TEXT NOT NULL DEFAULT ''",
+      "ai_visibility": "TEXT NOT NULL DEFAULT 'include'",
+      "scope": "TEXT NOT NULL DEFAULT 'project'",
+    }.items():
+      if column not in entity_columns:
+        cursor.execute(f"ALTER TABLE entities ADD COLUMN {column} {definition}")
     cursor.execute(
       """
       CREATE TABLE IF NOT EXISTS relationships (
@@ -48,12 +63,18 @@ def initialize_codex(db_path: str) -> None:
         target_entity_id TEXT NOT NULL,
         relation TEXT NOT NULL,
         notes TEXT NOT NULL DEFAULT '',
+        valid_from_scene_id TEXT NOT NULL DEFAULT '',
+        valid_to_scene_id TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         FOREIGN KEY(source_entity_id) REFERENCES entities(id),
         FOREIGN KEY(target_entity_id) REFERENCES entities(id)
       )
       """
     )
+    relationship_columns = {row[1] for row in cursor.execute("PRAGMA table_info(relationships)").fetchall()}
+    for column in ("valid_from_scene_id", "valid_to_scene_id"):
+      if column not in relationship_columns:
+        cursor.execute(f"ALTER TABLE relationships ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
     connection.commit()
   finally:
     connection.close()
@@ -65,6 +86,55 @@ def ensure_codex(paths: ProjectPaths) -> None:
 
 def _codex_snapshot_path(paths: ProjectPaths) -> Path:
   return paths.root / "codex" / "codex.json"
+
+
+def _json_list(raw: Any) -> list[Any]:
+  if isinstance(raw, list):
+    return raw
+  if isinstance(raw, str):
+    try:
+      value = json.loads(raw)
+    except json.JSONDecodeError:
+      return []
+    return value if isinstance(value, list) else []
+  return []
+
+
+def _clean_strings(values: list[Any] | None) -> list[str]:
+  cleaned: list[str] = []
+  seen: set[str] = set()
+  for value in values or []:
+    text = str(value).strip()
+    key = text.casefold()
+    if text and key not in seen:
+      cleaned.append(text)
+      seen.add(key)
+  return cleaned
+
+
+def _clean_details(values: list[Any] | None) -> list[dict[str, Any]]:
+  cleaned: list[dict[str, Any]] = []
+  seen: set[str] = set()
+  for value in values or []:
+    if not isinstance(value, dict):
+      continue
+    key = str(value.get("key", "")).strip()
+    detail_type = str(value.get("type", "text")).strip().lower()
+    if not key or key.casefold() in seen:
+      continue
+    if detail_type not in DETAIL_TYPES:
+      raise OpenAuthorError(f"Invalid detail type '{detail_type}'.")
+    visibility = str(value.get("ai_visibility", "include"))
+    if visibility not in AI_VISIBILITY_VALUES:
+      raise OpenAuthorError(f"Invalid detail AI visibility '{visibility}'.")
+    cleaned.append({
+      "key": key,
+      "type": detail_type,
+      "value": value.get("value", ""),
+      "ai_visibility": visibility,
+    })
+    seen.add(key.casefold())
+  return cleaned
 
 
 def _validate_codex_snapshot(payload: Any, *, snapshot_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -116,6 +186,13 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
       kind = str(row.get("type", "")).strip()
       name = str(row.get("name", "")).strip()
       description = str(row.get("description", ""))
+      category = str(row.get("category", ""))
+      aliases = _clean_strings(_json_list(row.get("aliases", [])))
+      tags = _clean_strings(_json_list(row.get("tags", [])))
+      details = _clean_details(_json_list(row.get("details", [])))
+      notes = str(row.get("notes", ""))
+      ai_visibility = str(row.get("ai_visibility", "include"))
+      scope = str(row.get("scope", "project"))
       created_at = str(row.get("created_at", "")).strip() or now
       updated_at = str(row.get("updated_at", "")).strip() or now
       if entity_id == "" or kind == "" or name == "":
@@ -131,10 +208,16 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
       seen_names.add(name)
       cursor.execute(
         """
-        INSERT INTO entities (id, kind, name, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO entities (
+          id, kind, name, description, category, aliases_json, tags_json,
+          details_json, notes, ai_visibility, scope, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (entity_id, kind, name, description, created_at, updated_at),
+        (
+          entity_id, kind, name, description, category,
+          json.dumps(aliases), json.dumps(tags), json.dumps(details), notes,
+          ai_visibility, scope, created_at, updated_at,
+        ),
       )
       entity_ids.add(entity_id)
 
@@ -145,6 +228,8 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
       target_entity_id = str(row.get("target_entity_id", "")).strip()
       relation = str(row.get("relation", "")).strip()
       notes = str(row.get("notes", ""))
+      valid_from_scene_id = str(row.get("valid_from_scene_id", ""))
+      valid_to_scene_id = str(row.get("valid_to_scene_id", ""))
       created_at = str(row.get("created_at", "")).strip() or now
       if (
         relationship_id == ""
@@ -158,9 +243,10 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
       cursor.execute(
         """
         INSERT INTO relationships (
-          id, source_entity_id, target_entity_id, relation, notes, created_at
+          id, source_entity_id, target_entity_id, relation, notes,
+          valid_from_scene_id, valid_to_scene_id, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
           relationship_id,
@@ -168,6 +254,8 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
           target_entity_id,
           relation,
           notes,
+          valid_from_scene_id,
+          valid_to_scene_id,
           created_at,
         ),
       )
@@ -190,10 +278,21 @@ def add_entity(
   kind: str,
   name: str,
   description: str = "",
+  category: str = "",
+  aliases: list[str] | None = None,
+  tags: list[str] | None = None,
+  details: list[dict[str, Any]] | None = None,
+  notes: str = "",
+  ai_visibility: str = "include",
+  scope: str = "project",
 ) -> str:
   if kind not in ENTITY_TYPES:
     allowed = ", ".join(sorted(ENTITY_TYPES))
     raise OpenAuthorError(f"Invalid entity type '{kind}'. Allowed: {allowed}.")
+  if ai_visibility not in AI_VISIBILITY_VALUES:
+    raise OpenAuthorError(f"Invalid AI visibility '{ai_visibility}'.")
+  if scope not in SCOPE_VALUES:
+    raise OpenAuthorError(f"Invalid Story Memory scope '{scope}'.")
 
   ensure_codex(paths)
   entity_id = f"entity-{uuid.uuid4().hex[:12]}"
@@ -203,10 +302,17 @@ def add_entity(
     cursor = connection.cursor()
     cursor.execute(
       """
-      INSERT INTO entities (id, kind, name, description, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO entities (
+        id, kind, name, description, category, aliases_json, tags_json,
+        details_json, notes, ai_visibility, scope, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """,
-      (entity_id, kind, name, description, timestamp, timestamp),
+      (
+        entity_id, kind, name.strip(), description, category.strip(),
+        json.dumps(_clean_strings(aliases)), json.dumps(_clean_strings(tags)),
+        json.dumps(_clean_details(details)), notes, ai_visibility, scope,
+        timestamp, timestamp,
+      ),
     )
     connection.commit()
   except sqlite3.IntegrityError as error:
@@ -217,7 +323,7 @@ def add_entity(
   return entity_id
 
 
-def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[str, str]]:
+def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[str, Any]]:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
   try:
@@ -225,7 +331,8 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
     if kind:
       rows = cursor.execute(
         """
-        SELECT id, kind, name, description, created_at, updated_at
+        SELECT id, kind, name, description, category, aliases_json, tags_json,
+               details_json, notes, ai_visibility, scope, created_at, updated_at
         FROM entities
         WHERE kind = ?
         ORDER BY name ASC
@@ -235,7 +342,8 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
     else:
       rows = cursor.execute(
         """
-        SELECT id, kind, name, description, created_at, updated_at
+        SELECT id, kind, name, description, category, aliases_json, tags_json,
+               details_json, notes, ai_visibility, scope, created_at, updated_at
         FROM entities
         ORDER BY kind ASC, name ASC
         """
@@ -249,21 +357,29 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
       "type": row[1],
       "name": row[2],
       "description": row[3],
-      "created_at": row[4],
-      "updated_at": row[5],
+      "category": row[4],
+      "aliases": _json_list(row[5]),
+      "tags": _json_list(row[6]),
+      "details": _json_list(row[7]),
+      "notes": row[8],
+      "ai_visibility": row[9],
+      "scope": row[10],
+      "created_at": row[11],
+      "updated_at": row[12],
     }
     for row in rows
   ]
 
 
-def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, str]:
+def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, Any]:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
   try:
     cursor = connection.cursor()
     row = cursor.execute(
       """
-      SELECT id, kind, name, description, created_at, updated_at
+      SELECT id, kind, name, description, category, aliases_json, tags_json,
+             details_json, notes, ai_visibility, scope, created_at, updated_at
       FROM entities
       WHERE id = ?
       """,
@@ -280,8 +396,15 @@ def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, str]:
     "type": row[1],
     "name": row[2],
     "description": row[3],
-    "created_at": row[4],
-    "updated_at": row[5],
+    "category": row[4],
+    "aliases": _json_list(row[5]),
+    "tags": _json_list(row[6]),
+    "details": _json_list(row[7]),
+    "notes": row[8],
+    "ai_visibility": row[9],
+    "scope": row[10],
+    "created_at": row[11],
+    "updated_at": row[12],
   }
 
 
@@ -292,15 +415,33 @@ def update_entity(
   kind: str | None = None,
   name: str | None = None,
   description: str | None = None,
-) -> dict[str, str]:
+  category: str | None = None,
+  aliases: list[str] | None = None,
+  tags: list[str] | None = None,
+  details: list[dict[str, Any]] | None = None,
+  notes: str | None = None,
+  ai_visibility: str | None = None,
+  scope: str | None = None,
+) -> dict[str, Any]:
   if kind is not None and kind not in ENTITY_TYPES:
     allowed = ", ".join(sorted(ENTITY_TYPES))
     raise OpenAuthorError(f"Invalid entity type '{kind}'. Allowed: {allowed}.")
+  if ai_visibility is not None and ai_visibility not in AI_VISIBILITY_VALUES:
+    raise OpenAuthorError(f"Invalid AI visibility '{ai_visibility}'.")
+  if scope is not None and scope not in SCOPE_VALUES:
+    raise OpenAuthorError(f"Invalid Story Memory scope '{scope}'.")
 
   current = get_entity(paths, entity_id)
   next_kind = kind if kind is not None else current["type"]
   next_name = name if name is not None else current["name"]
   next_description = description if description is not None else current["description"]
+  next_category = category if category is not None else current["category"]
+  next_aliases = _clean_strings(aliases) if aliases is not None else current["aliases"]
+  next_tags = _clean_strings(tags) if tags is not None else current["tags"]
+  next_details = _clean_details(details) if details is not None else current["details"]
+  next_notes = notes if notes is not None else current["notes"]
+  next_ai_visibility = ai_visibility if ai_visibility is not None else current["ai_visibility"]
+  next_scope = scope if scope is not None else current["scope"]
   next_updated_at = utc_now()
 
   connection = sqlite3.connect(str(paths.codex_db))
@@ -309,10 +450,16 @@ def update_entity(
     cursor.execute(
       """
       UPDATE entities
-      SET kind = ?, name = ?, description = ?, updated_at = ?
+      SET kind = ?, name = ?, description = ?, category = ?, aliases_json = ?,
+          tags_json = ?, details_json = ?, notes = ?, ai_visibility = ?, scope = ?,
+          updated_at = ?
       WHERE id = ?
       """,
-      (next_kind, next_name, next_description, next_updated_at, entity_id),
+      (
+        next_kind, next_name, next_description, next_category,
+        json.dumps(next_aliases), json.dumps(next_tags), json.dumps(next_details),
+        next_notes, next_ai_visibility, next_scope, next_updated_at, entity_id,
+      ),
     )
     connection.commit()
   except sqlite3.IntegrityError as error:
@@ -325,11 +472,133 @@ def update_entity(
     "type": next_kind,
     "name": next_name,
     "description": next_description,
+    "category": next_category,
+    "aliases": next_aliases,
+    "tags": next_tags,
+    "details": next_details,
+    "notes": next_notes,
+    "ai_visibility": next_ai_visibility,
+    "scope": next_scope,
     "created_at": current["created_at"],
     "updated_at": next_updated_at,
   }
   export_codex_json(paths)
   return updated
+
+
+def add_relationship(
+  paths: ProjectPaths,
+  *,
+  source_entity_id: str,
+  target_entity_id: str,
+  relation: str,
+  notes: str = "",
+  valid_from_scene_id: str = "",
+  valid_to_scene_id: str = "",
+) -> dict[str, Any]:
+  if source_entity_id == target_entity_id:
+    raise OpenAuthorError("A Story Memory entry cannot relate to itself.")
+  get_entity(paths, source_entity_id)
+  get_entity(paths, target_entity_id)
+  if not relation.strip():
+    raise OpenAuthorError("Relationship type is required.")
+  relationship_id = f"relationship-{uuid.uuid4().hex[:12]}"
+  created_at = utc_now()
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    connection.execute(
+      """
+      INSERT INTO relationships (
+        id, source_entity_id, target_entity_id, relation, notes,
+        valid_from_scene_id, valid_to_scene_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      """,
+      (
+        relationship_id, source_entity_id, target_entity_id,
+        relation.strip(), notes.strip(), valid_from_scene_id, valid_to_scene_id, created_at,
+      ),
+    )
+    connection.commit()
+  finally:
+    connection.close()
+  export_codex_json(paths)
+  return {
+    "id": relationship_id,
+    "source_entity_id": source_entity_id,
+    "target_entity_id": target_entity_id,
+    "relation": relation.strip(),
+    "notes": notes.strip(),
+    "valid_from_scene_id": valid_from_scene_id,
+    "valid_to_scene_id": valid_to_scene_id,
+    "created_at": created_at,
+  }
+
+
+def list_relationships(
+  paths: ProjectPaths,
+  *,
+  entity_id: str | None = None,
+) -> list[dict[str, Any]]:
+  ensure_codex(paths)
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    if entity_id:
+      rows = connection.execute(
+        """
+        SELECT r.id, r.source_entity_id, source.name, r.target_entity_id,
+               target.name, r.relation, r.notes, r.valid_from_scene_id,
+               r.valid_to_scene_id, r.created_at
+        FROM relationships r
+        JOIN entities source ON source.id = r.source_entity_id
+        JOIN entities target ON target.id = r.target_entity_id
+        WHERE r.source_entity_id = ? OR r.target_entity_id = ?
+        ORDER BY r.relation, source.name, target.name
+        """,
+        (entity_id, entity_id),
+      ).fetchall()
+    else:
+      rows = connection.execute(
+        """
+        SELECT r.id, r.source_entity_id, source.name, r.target_entity_id,
+               target.name, r.relation, r.notes, r.valid_from_scene_id,
+               r.valid_to_scene_id, r.created_at
+        FROM relationships r
+        JOIN entities source ON source.id = r.source_entity_id
+        JOIN entities target ON target.id = r.target_entity_id
+        ORDER BY r.relation, source.name, target.name
+        """
+      ).fetchall()
+  finally:
+    connection.close()
+  return [
+    {
+      "id": row[0],
+      "source_entity_id": row[1],
+      "source_name": row[2],
+      "target_entity_id": row[3],
+      "target_name": row[4],
+      "relation": row[5],
+      "notes": row[6],
+      "valid_from_scene_id": row[7],
+      "valid_to_scene_id": row[8],
+      "created_at": row[9],
+    }
+    for row in rows
+  ]
+
+
+def delete_relationship(paths: ProjectPaths, relationship_id: str) -> dict[str, Any]:
+  ensure_codex(paths)
+  connection = sqlite3.connect(str(paths.codex_db))
+  try:
+    cursor = connection.execute("DELETE FROM relationships WHERE id = ?", (relationship_id,))
+    connection.commit()
+  finally:
+    connection.close()
+  if cursor.rowcount == 0:
+    raise OpenAuthorError(f"Unknown relationship '{relationship_id}'.")
+  export_codex_json(paths)
+  return {"id": relationship_id, "deleted": True}
 
 
 def export_codex_json(paths: ProjectPaths) -> Path:
@@ -339,14 +608,16 @@ def export_codex_json(paths: ProjectPaths) -> Path:
     cursor = connection.cursor()
     entity_rows = cursor.execute(
       """
-      SELECT id, kind, name, description, created_at, updated_at
+      SELECT id, kind, name, description, category, aliases_json, tags_json,
+             details_json, notes, ai_visibility, scope, created_at, updated_at
       FROM entities
       ORDER BY kind ASC, name ASC
       """
     ).fetchall()
     relationship_rows = cursor.execute(
       """
-      SELECT id, source_entity_id, target_entity_id, relation, notes, created_at
+      SELECT id, source_entity_id, target_entity_id, relation, notes,
+             valid_from_scene_id, valid_to_scene_id, created_at
       FROM relationships
       ORDER BY source_entity_id ASC, target_entity_id ASC, relation ASC
       """
@@ -361,8 +632,15 @@ def export_codex_json(paths: ProjectPaths) -> Path:
         "type": row[1],
         "name": row[2],
         "description": row[3],
-        "created_at": row[4],
-        "updated_at": row[5],
+        "category": row[4],
+        "aliases": _json_list(row[5]),
+        "tags": _json_list(row[6]),
+        "details": _json_list(row[7]),
+        "notes": row[8],
+        "ai_visibility": row[9],
+        "scope": row[10],
+        "created_at": row[11],
+        "updated_at": row[12],
       }
       for row in entity_rows
     ],
@@ -373,7 +651,9 @@ def export_codex_json(paths: ProjectPaths) -> Path:
         "target_entity_id": row[2],
         "relation": row[3],
         "notes": row[4],
-        "created_at": row[5],
+        "valid_from_scene_id": row[5],
+        "valid_to_scene_id": row[6],
+        "created_at": row[7],
       }
       for row in relationship_rows
     ],

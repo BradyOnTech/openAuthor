@@ -11,10 +11,15 @@ from .project import OpenAuthorError, ProjectPaths
 
 BOOKSTATE_PATHSPEC = [
   "manuscript/scenes",
+  "manuscript/structure.json",
   ".openauthor/project.json",
   ".openauthor/provider_pricing.json",
   ".openauthor/generation_budget_policy.json",
+  ".openauthor/editorial_passes.json",
+  ".openauthor/style_profile.json",
   "codex/codex.json",
+  "codex/memory.json",
+  "codex/suggestions.json",
 ]
 
 
@@ -28,14 +33,22 @@ def _git_env() -> dict[str, str]:
 
 
 def run_git(paths: ProjectPaths, args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-  result = subprocess.run(
-    ["git", *args],
-    cwd=paths.root,
-    capture_output=True,
-    text=True,
-    check=False,
-    env=_git_env(),
-  )
+  try:
+    result = subprocess.run(
+      ["git", *args],
+      cwd=paths.root,
+      capture_output=True,
+      text=True,
+      check=False,
+      env=_git_env(),
+    )
+  except FileNotFoundError:
+    result = subprocess.CompletedProcess(
+      ["git", *args],
+      127,
+      "",
+      "The optional Git executable is not installed. Storyline branch commands require Git.",
+    )
   if check and result.returncode != 0:
     stderr = result.stderr.strip() or result.stdout.strip() or "git command failed"
     raise OpenAuthorError(stderr)
@@ -60,7 +73,9 @@ def initialize_git(paths: ProjectPaths) -> None:
 def create_snapshot(paths: ProjectPaths, message: str) -> str:
   ensure_git_repo(paths)
   export_codex_json(paths)
-  pathspec = BOOKSTATE_PATHSPEC
+  pathspec = [relative for relative in BOOKSTATE_PATHSPEC if (paths.root / relative).exists()]
+  if not pathspec:
+    return "No changes to snapshot."
   status = run_git(paths, ["status", "--porcelain", "--", *pathspec], check=True).stdout.strip()
   if not status:
     return "No changes to snapshot."
@@ -300,6 +315,10 @@ def _classify_path(path: str) -> str:
     return "scene"
   if path == "codex/codex.json":
     return "codex"
+  if path == "codex/memory.json":
+    return "story_memory"
+  if path == "manuscript/structure.json":
+    return "plan"
   if path == ".openauthor/project.json":
     return "project"
   if path == ".openauthor/generation_budget_policy.json":

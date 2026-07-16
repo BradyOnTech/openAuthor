@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "conflict-and-knowledge",
+      "scenes": [
+        {"title": "Discovery", "pov": "Mara", "body": "Mara studies the North Gate."},
+        {"title": "Mural", "pov": "Ivo", "body": "The mural calls the gate red."},
+        {"title": "Leak", "pov": "Mara", "body": "The hidden passphrase is NIGHTJAR."}
+      ],
+      "entities": [
+        {"key": "gate", "type": "location", "name": "North Gate"},
+        {"key": "mara", "type": "character", "name": "Mara"}
+      ],
+      "facts": [
+        {"subject": "gate", "predicate": "color", "value": "blue", "scene": "scene-0001", "excerpt": "North Gate", "knowledge": []},
+        {"subject": "gate", "predicate": "color", "value": "red", "scene": "scene-0002", "excerpt": "gate red", "knowledge": []},
+        {"subject": "gate", "predicate": "passphrase", "value": "NIGHTJAR", "scene": "scene-0002", "excerpt": "passphrase", "knowledge": [{"character": "mara", "state": "does_not_know", "from_scene_id": "scene-0001"}]}
+      ],
+      "expected": {"conflicting_facts": 1, "pov_knowledge_leak": 1}
+    },
+    {
+      "id": "clean-temporal-change",
+      "scenes": [
+        {"title": "Before", "pov": "Ivo", "body": "The lantern is dark."},
+        {"title": "After", "pov": "Ivo", "body": "The lantern is lit."}
+      ],
+      "entities": [{"key": "lantern", "type": "item", "name": "Lantern"}],
+      "facts": [
+        {"subject": "lantern", "predicate": "state", "value": "dark", "scene": "scene-0001", "excerpt": "lantern is dark", "valid_to": "scene-0001", "knowledge": []},
+        {"subject": "lantern", "predicate": "state", "value": "lit", "scene": "scene-0002", "excerpt": "lantern is lit", "valid_from": "scene-0002", "knowledge": []}
+      ],
+      "expected": {}
+    },
+    {
+      "id": "impossible-timeline-range",
+      "scenes": [
+        {"title": "Winter", "pov": "Ivo", "body": "The pass freezes."},
+        {"title": "Spring", "pov": "Ivo", "body": "The pass opens."}
+      ],
+      "entities": [{"key": "pass", "type": "location", "name": "Mountain Pass"}],
+      "facts": [
+        {"subject": "pass", "predicate": "state", "value": "closed", "scene": "scene-0001", "excerpt": "pass freezes", "valid_from": "scene-0002", "valid_to": "scene-0001", "knowledge": []}
+      ],
+      "expected": {"impossible_validity": 1}
+    },
+    {
+      "id": "unreliable-narrator-claims-are-not-canon",
+      "scenes": [
+        {"title": "Boast", "pov": "Vale", "body": "Vale insists the moon belongs to him."},
+        {"title": "Correction", "pov": "Mara", "body": "Mara knows no one owns the moon."}
+      ],
+      "entities": [{"key": "moon", "type": "lore", "name": "Moon"}],
+      "facts": [
+        {"subject": "moon", "predicate": "owner", "value": "Vale", "scene": "scene-0001", "excerpt": "moon belongs to him", "status": "suggested", "knowledge": []},
+        {"subject": "moon", "predicate": "owner", "value": "no one", "scene": "scene-0002", "excerpt": "no one owns the moon", "knowledge": []}
+      ],
+      "expected": {}
+    },
+    {
+      "id": "long-running-unresolved-setup",
+      "scenes": [
+        {"title": "Seed", "body": "A silver key waits in the ash."},
+        {"title": "Road One", "body": "They travel north."},
+        {"title": "Road Two", "body": "Rain slows them."},
+        {"title": "Road Three", "body": "They cross the fen."},
+        {"title": "Road Four", "body": "The city appears."},
+        {"title": "Road Five", "body": "They reach the wall."}
+      ],
+      "entities": [],
+      "facts": [],
+      "setups": [{"description": "The silver key should open something consequential.", "scene": "scene-0001", "excerpt": "silver key"}],
+      "expected": {"unresolved_setup": 1}
+    },
+    {
+      "id": "intentional-mystery-and-series-fact",
+      "scenes": [
+        {"title": "Riddle", "pov": "Mara", "body": "The founder's name remains erased."},
+        {"title": "Aftermath", "pov": "Mara", "body": "Mara leaves the archive sealed."}
+      ],
+      "entities": [{"key": "archive", "type": "location", "name": "Archive"}],
+      "facts": [
+        {"subject": "archive", "predicate": "state", "value": "sealed", "scene": "scene-0002", "excerpt": "archive sealed", "scope": "series", "knowledge": []}
+      ],
+      "questions": [{"question": "Who founded the archive?", "scene": "scene-0001", "intentional": true}],
+      "expected": {}
+    },
+    {
+      "id": "character-arc-state-conflict",
+      "scenes": [
+        {"title": "The Choice", "pov": "Mara", "body": "Mara trusts Ivo enough to hand him the key, but keeps a knife ready."}
+      ],
+      "entities": [{"key": "mara", "type": "character", "name": "Mara"}],
+      "facts": [],
+      "arcs": [
+        {"character": "mara", "dimension": "trust in Ivo", "value": "complete", "scene": "scene-0001", "excerpt": "trusts Ivo"},
+        {"character": "mara", "dimension": "trust in Ivo", "value": "guarded", "scene": "scene-0001", "excerpt": "knife ready"}
+      ],
+      "expected": {"arc_state_conflict": 1}
+    }
+  ]
+}

@@ -15,7 +15,7 @@ from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
 from .auth import get_access_token, get_auth_status
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .proposals import create_proposal, get_proposal, set_proposal_draft
+from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
@@ -451,14 +451,21 @@ def _estimate_cost_usd(
 def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
   scene = context["scene"]
   scene_title = scene["title"]
-  scene_summary = scene["summary"] or "No summary provided."
-  scene_pov = scene["pov"] or "No POV specified."
+  scene_summary = scene["summary"] or "No summary provided"
+  scene_pov = scene["pov"] or "No POV specified"
   continuity_issues = context["continuity_issues"]
   codex_entities = context["codex_entities"]
 
+  focus = instruction.strip()
+  if focus and focus[-1] not in ".!?":
+    focus = f"{focus}."
+  aligned_summary = scene_summary.rstrip()
+  if aligned_summary and aligned_summary[-1] not in ".!?":
+    aligned_summary = f"{aligned_summary}."
+
   constraint_lines = [
     f"Preserve POV voice: {scene_pov}.",
-    f"Stay aligned with summary: {scene_summary}.",
+    f"Stay aligned with summary: {aligned_summary}",
   ]
   if codex_entities:
     anchors = ", ".join(entity["name"] for entity in codex_entities[:3])
@@ -475,7 +482,7 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
 
   return (
     "Intent:\n"
-    f"- Refine scene '{scene_title}' with focus on: {instruction.strip()}.\n\n"
+    f"- Refine scene '{scene_title}' with focus on: {focus}\n\n"
     "Constraints:\n"
     + "\n".join(f"- {line}" for line in constraint_lines)
     + "\n\nEdit Plan:\n"
@@ -490,11 +497,74 @@ def _generate_local_text(context: dict[str, Any], instruction: str) -> str:
 def _generate_local_draft_text(context: dict[str, Any], instruction: str) -> str:
   scene = context.get("scene", {})
   body = str(scene.get("body", "")).rstrip()
-  directive = " ".join(str(instruction).split())
-  if len(directive) > 160:
-    directive = directive[:157] + "..."
-  revised = f"{body}\n\n(Revised per: {directive})" if body else f"(Revised per: {directive})"
-  return revised.strip()
+  if not body:
+    return ""
+
+  # The local provider is deliberately deterministic, but it must still
+  # produce manuscript prose rather than leak an instruction receipt into the
+  # novel. Prefer conservative line edits that preserve nouns and facts.
+  heading = ""
+  prose = body
+  if body.lstrip().startswith("#") and "\n\n" in body:
+    heading, prose = body.split("\n\n", 1)
+  lowered = instruction.casefold()
+  paragraphs = prose.split("\n\n")
+  nonempty_paragraphs = [index for index, paragraph in enumerate(paragraphs) if paragraph.strip()]
+  targets_ending = any(
+    phrase in lowered
+    for phrase in ("final paragraph", "last paragraph", "final sentence", "last sentence", "ending")
+  )
+  target_index = nonempty_paragraphs[-1] if targets_ending and nonempty_paragraphs else None
+  working = paragraphs[target_index] if target_index is not None else prose
+  def direct_past(match: re.Match[str]) -> str:
+    verb = match.group(1)
+    lowered_verb = verb.casefold()
+    if lowered_verb.endswith("e"):
+      return f"{verb}d"
+    if lowered_verb.endswith("y") and len(verb) > 1 and lowered_verb[-2] not in "aeiou":
+      return f"{verb[:-1]}ied"
+    return f"{verb}ed"
+
+  cleanup_patterns = [
+    (r"\bbegan to\s+([A-Za-z'-]+)", direct_past),
+    (r"\bstarted to\s+([A-Za-z'-]+)", direct_past),
+    (r"\bin order to\b", "to"),
+    (r"\bvery\s+", ""),
+    (r"\breally\s+", ""),
+  ]
+  if any(word in lowered for word in ("tighten", "reduce", "concise", "clarity")):
+    cleanup_patterns.append((r"\b(?:somewhat|rather|quite)\s+", ""))
+  for pattern, replacement in cleanup_patterns:
+    working = re.sub(pattern, replacement, working, count=1, flags=re.IGNORECASE)
+
+  if any(word in lowered for word in ("pace", "pacing", "tension", "suspense", "urgent", "momentum")):
+    working = re.sub(r"\bAt exactly\b", "At", working, count=1)
+    working = re.sub(
+      r"\b([A-Z][A-Za-z'-]*) alone ([a-z]+(?:ed|s))\b",
+      lambda match: f"Only {match.group(1)} {match.group(2)}",
+      working,
+      count=1,
+    )
+  if any(word in lowered for word in ("ominous", "menace", "dread", "unease")):
+    # A deliberately small, fact-preserving tonal shift for the offline
+    # fallback. "Found" adds agency without inventing an event or entity.
+    working = re.sub(r"\breached\b", "found", working, count=1, flags=re.IGNORECASE)
+    working = re.sub(r"\barrived at\b", "found", working, count=1, flags=re.IGNORECASE)
+  if "dialogue" in lowered:
+    working = re.sub(r'([.!?])"\s+(?:he|she|they) (?:said|asked) ([a-z]+ly)\.', r'\1"', working, count=1, flags=re.IGNORECASE)
+
+  if target_index is not None:
+    paragraphs[target_index] = working
+    revised = "\n\n".join(paragraphs)
+  else:
+    revised = working
+
+  if revised == prose:
+    # Last-resort punctuation tightening is still a prose edit. Never manufacture
+    # a Change Set by changing paragraph whitespace alone.
+    revised = re.sub(r",\s+(but|yet|though)\s+", lambda match: f". {match.group(1).capitalize()} ", revised, count=1, flags=re.IGNORECASE)
+  revised = revised.strip()
+  return f"{heading}\n\n{revised}".strip() if heading else revised
 
 
 def _generate_local_merge_text(context: dict[str, Any], instruction: str) -> str:
@@ -546,12 +616,49 @@ def _generate_local_chat_result(
           }
         ],
       )
+  context: dict[str, Any] = {}
+  marker = "\n\nContext JSON:\n"
+  if marker in user_prompt:
+    try:
+      decoded = json.loads(user_prompt.split(marker, 1)[1].strip())
+      if isinstance(decoded, dict):
+        context = decoded
+    except json.JSONDecodeError:
+      context = {}
+
+  scenes = context.get("current_scene", [])
+  scene_rows = [row for row in scenes if isinstance(row, dict)] if isinstance(scenes, list) else []
+  if scene_rows:
+    scene = scene_rows[0]
+    title = str(scene.get("title", "this scene")).strip() or "this scene"
+    pov = str(scene.get("pov", "the protagonist")).strip() or "the protagonist"
+    body = str(scene.get("body", ""))
+    missing_matches = list(re.finditer(
+      r"\bmissing\s+(?:[A-Za-z0-9'-]+\s+){0,2}(?:minutes?|hours?|days?|memory|time)\b",
+      body,
+      flags=re.IGNORECASE,
+    ))
+    missing = max(missing_matches, key=lambda match: len(match.group(0)), default=None)
+    artifact = re.search(r"\b(?:a|the)\s+([a-z][a-z -]{0,24}\bkey)\b", body, flags=re.IGNORECASE)
+    if any(term in lowered for term in ("unresolved", "story question", "develop next", "what question")):
+      mystery = missing.group(0).lower() if missing else "central anomaly"
+      artifact_text = artifact.group(1).lower() if artifact else "physical clue"
+      return (
+        f"The strongest unresolved question is: **Why is {pov} the only person tied to the {mystery}, "
+        f"and how is the {artifact_text} connected?**\n\n"
+        f"Why this one: it joins the character mystery, the event in **{title}**, and a concrete object the reader can track. "
+        "The next scene should test one consequence of that connection without explaining it completely.",
+        [],
+      )
+    return (
+      f"I grounded this in **{title}** ({pov} POV). Focus the next decision on a consequence already present in the scene, "
+      "then preserve its named people, objects, and timeline facts in any Change Set.",
+      [],
+    )
+
   return (
-    "I reviewed your request and context. "
-    "Here is a concise response:\n"
-    "- Clarify the specific scene goal.\n"
-    "- Keep character motivations explicit.\n"
-    "- Preserve established continuity anchors.",
+    "I do not have a scene passage in this turn yet. Open a scene, choose Scene or Book scope, or mention one with `@` "
+    "so I can make a story-specific recommendation instead of guessing.",
     [],
   )
 
@@ -2041,6 +2148,9 @@ def generate_proposal(
   retrieval_limit: int = 5,
   retrieval_min_score: float = 0.0,
   retrieval_require_fresh: bool = False,
+  constraints: list[str] | None = None,
+  protected_elements: list[str] | None = None,
+  change_group_id: str = "",
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     raise OpenAuthorError(
@@ -2053,6 +2163,14 @@ def generate_proposal(
   if retrieval_min_score < 0:
     raise OpenAuthorError("retrieval_min_score must be >= 0.")
 
+  constraints = [value.strip() for value in (constraints or []) if value.strip()]
+  protected_elements = [value.strip() for value in (protected_elements or []) if value.strip()]
+  effective_instruction = instruction.strip()
+  if constraints:
+    effective_instruction += "\n\nConstraints:\n- " + "\n- ".join(constraints)
+  if protected_elements:
+    effective_instruction += "\n\nProtected elements that must remain unchanged:\n- " + "\n- ".join(protected_elements)
+
   selected_model = model or DEFAULT_MODELS[provider]
   base_context = build_generation_context(
     paths,
@@ -2060,17 +2178,25 @@ def generate_proposal(
     context_scene_radius=context_scene_radius,
     codex_limit=codex_limit,
   )
+  from .style_profile import get_style_profile
+  style_profile = get_style_profile(paths)
+  if style_profile is not None:
+    base_context["author_selected_style_profile"] = {
+      "exemplar_scene_ids": style_profile["exemplar_scene_ids"],
+      "metrics": style_profile["metrics"],
+      "guidance": style_profile["guidance"],
+    }
   retrieval = _resolve_retrieval_context(
     paths,
     context=base_context,
-    instruction=instruction,
+    instruction=effective_instruction,
     mode=retrieval_mode,
     limit=retrieval_limit,
     min_score=retrieval_min_score,
     require_fresh=retrieval_require_fresh,
   )
   context = _with_retrieval_prompt_context(base_context, retrieval)
-  system_prompt, user_prompt = _build_prompts(context, instruction)
+  system_prompt, user_prompt = _build_prompts(context, effective_instruction)
   projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
   projected_output_tokens = max_output_tokens
   projected_estimated_cost_usd = _estimate_cost_usd(
@@ -2098,7 +2224,7 @@ def generate_proposal(
       context_scene_radius=context_scene_radius,
       codex_limit=codex_limit,
       retrieval=retrieval,
-      instruction=instruction,
+      instruction=effective_instruction,
       context=context,
       system_prompt=system_prompt,
       user_prompt=user_prompt,
@@ -2114,7 +2240,7 @@ def generate_proposal(
       system_prompt=system_prompt,
       user_prompt=user_prompt,
       context=context,
-      instruction=instruction,
+      instruction=effective_instruction,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
     )
@@ -2129,7 +2255,7 @@ def generate_proposal(
       context_scene_radius=context_scene_radius,
       codex_limit=codex_limit,
       retrieval=retrieval,
-      instruction=instruction,
+      instruction=effective_instruction,
       context=context,
       system_prompt=system_prompt,
       user_prompt=user_prompt,
@@ -2141,7 +2267,7 @@ def generate_proposal(
   raw_provider_text = provider_result["text"]
   normalized_text, normalization_diagnostics = _normalize_proposal_text(
     raw_provider_text,
-    instruction=instruction,
+    instruction=effective_instruction,
     context=context,
   )
   quality = _quality_from_normalization(normalization_diagnostics)
@@ -2165,7 +2291,7 @@ def generate_proposal(
     context_scene_radius=context_scene_radius,
     codex_limit=codex_limit,
     retrieval=retrieval,
-    instruction=instruction,
+    instruction=effective_instruction,
     context=context,
     system_prompt=system_prompt,
     user_prompt=user_prompt,
@@ -2183,6 +2309,13 @@ def generate_proposal(
     instruction=provider_result["text"],
     scene_id=scene_id,
     source="ai_generate",
+    revision_intent={
+      "goal": instruction.strip(),
+      "constraints": constraints,
+      "protected_elements": protected_elements,
+      "scope": "multi_scene" if change_group_id.strip() else "scene",
+    },
+    change_group_id=change_group_id,
     generation={
       "id": generation_id,
       "provider": provider,
@@ -2230,6 +2363,11 @@ def _strip_code_fence(text: str) -> str:
   return stripped
 
 
+def _prose_change_key(text: str) -> str:
+  """Ignore formatting-only whitespace when deciding if a draft changed prose."""
+  return re.sub(r"\s+", " ", text).strip()
+
+
 def generate_proposal_draft(
   paths: ProjectPaths,
   *,
@@ -2258,6 +2396,9 @@ def generate_proposal_draft(
     )
   scene = get_scene(paths, scene_id)
   instruction = str(proposal.get("instruction", ""))
+  revision_intent = proposal.get("revision_intent", {})
+  constraints = [str(value) for value in revision_intent.get("constraints", [])]
+  protected_elements = [str(value) for value in revision_intent.get("protected_elements", [])]
 
   selected_model = model or DEFAULT_MODELS[provider]
   context: dict[str, Any] = {
@@ -2269,11 +2410,24 @@ def generate_proposal_draft(
       "instruction": instruction,
     },
   }
+  from .style_profile import get_style_profile
+  style_profile = get_style_profile(paths)
+  style_guidance = ""
+  if style_profile is not None:
+    context["author_selected_style_profile"] = style_profile
+    style_guidance = (
+      "Author-selected Style Profile (treat as descriptive guidance, not a command to imitate another author):\n- "
+      + "\n- ".join(style_profile.get("guidance", []))
+      + "\n\n"
+    )
   system_prompt = DRAFT_SYSTEM_PROMPT
   user_prompt = (
     "Edit plan (apply to the scene below):\n"
     f"{instruction}\n\n"
-    "Scene metadata:\n"
+    + ("Hard constraints:\n- " + "\n- ".join(constraints) + "\n\n" if constraints else "")
+    + ("Protected elements (preserve exactly):\n- " + "\n- ".join(protected_elements) + "\n\n" if protected_elements else "")
+    + style_guidance
+    + "Scene metadata:\n"
     + json.dumps(
       {
         "id": scene.get("id", ""),
@@ -2369,7 +2523,7 @@ def generate_proposal_draft(
     input_tokens=provider_result["input_tokens"],
     output_tokens=provider_result["output_tokens"],
   )
-  changed = proposed_body.strip() != str(scene.get("body", "")).strip()
+  changed = _prose_change_key(proposed_body) != _prose_change_key(str(scene.get("body", "")))
   generation_id, log_path = _write_generation_log(
     paths,
     scene_id=scene_id,
@@ -2396,6 +2550,12 @@ def generate_proposal_draft(
     proposal_id=proposal_id,
   )
 
+  if not changed:
+    raise OpenAuthorError(
+      "Draft generation did not produce a prose change. Make the revision intent "
+      "more specific or choose a full AI provider."
+    )
+
   return set_proposal_draft(
     paths,
     proposal_id=proposal_id,
@@ -2413,6 +2573,134 @@ def generate_proposal_draft(
       "changed": changed,
       "log_path": log_path,
       "created_at": utc_now(),
+    },
+  )
+
+
+def regenerate_change_hunk(
+  paths: ProjectPaths,
+  *,
+  proposal_id: str,
+  hunk_id: str,
+  provider: str = "local",
+  model: str | None = None,
+  temperature: float = 0.3,
+  max_output_tokens: int = 700,
+  feedback: str = "",
+) -> dict[str, Any]:
+  if provider not in SUPPORTED_PROVIDERS:
+    raise OpenAuthorError(
+      f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
+    )
+  if max_output_tokens < 64:
+    raise OpenAuthorError("max_output_tokens must be >= 64.")
+  proposal = get_proposal(paths, proposal_id)
+  change_set = proposal.get("change_set", {})
+  hunk = next(
+    (row for row in change_set.get("hunks", []) if row.get("id") == hunk_id),
+    None,
+  )
+  if hunk is None:
+    raise OpenAuthorError(f"Unknown Change Hunk '{hunk_id}'.")
+  scene_id = str(proposal.get("scene_id", ""))
+  scene = get_scene(paths, scene_id)
+  selected_model = model or DEFAULT_MODELS[provider]
+  intent = str(change_set.get("intent", {}).get("goal", proposal.get("instruction", "")))
+  author_feedback = feedback.strip()
+  system_prompt = (
+    "You are a careful fiction line editor. Rewrite only the selected passage. "
+    "Return only replacement prose, with no commentary or code fences. Preserve "
+    "the surrounding voice, tense, POV, facts, and protected elements."
+  )
+  user_prompt = (
+    f"Revision intent:\n{intent}\n\n"
+    f"Selected original passage:\n{hunk.get('before_text', '')}\n\n"
+    f"Current candidate:\n{hunk.get('after_text', '')}\n\n"
+    + (f"Author feedback on this passage:\n{author_feedback}\n\n" if author_feedback else "")
+    + "Return a better replacement for this selected passage only."
+  )
+  context = {
+    "draft_mode": True,
+    "scene": {**scene, "body": str(hunk.get("before_text", ""))},
+    "proposal": {"id": proposal_id, "instruction": intent},
+  }
+  projected_input_tokens = _estimate_tokens(system_prompt + "\n" + user_prompt)
+  projected_cost = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=projected_input_tokens,
+    output_tokens=max_output_tokens,
+  )
+  try:
+    enforce_generation_budget(
+      paths,
+      projected_input_tokens=projected_input_tokens,
+      projected_output_tokens=max_output_tokens,
+      projected_estimated_cost_usd=projected_cost,
+    )
+    result = _call_provider(
+      provider=provider,
+      model=selected_model,
+      system_prompt=system_prompt,
+      user_prompt=user_prompt,
+      context=context,
+      instruction=f"{intent}\nAuthor feedback: {author_feedback}" if author_feedback else intent,
+      temperature=temperature,
+      max_output_tokens=max_output_tokens,
+    )
+  except BudgetPolicyError as error:
+    raise OpenAuthorError(f"Hunk regeneration blocked by budget policy: {error}") from error
+  except ProviderExecutionError as error:
+    raise OpenAuthorError(f"Hunk regeneration failed ({error.category}): {error}") from error
+
+  replacement = _strip_code_fence(str(result.get("text", "")))
+  if not replacement:
+    raise OpenAuthorError("Hunk regeneration produced empty prose.")
+  estimated_cost = _estimate_cost_usd(
+    paths,
+    provider=provider,
+    model=selected_model,
+    input_tokens=int(result.get("input_tokens", 0)),
+    output_tokens=int(result.get("output_tokens", 0)),
+  )
+  generation_id, log_path = _write_generation_log(
+    paths,
+    scene_id=scene_id,
+    provider=provider,
+    model=selected_model,
+    temperature=temperature,
+    max_output_tokens=max_output_tokens,
+    context_scene_radius=0,
+    codex_limit=0,
+    retrieval={"mode": "off", "used": False},
+    instruction=f"{intent}\nAuthor feedback: {author_feedback}" if author_feedback else intent,
+    context=context,
+    system_prompt=system_prompt,
+    user_prompt=user_prompt,
+    provider_result={**result, "text": replacement},
+    raw_provider_text=str(result.get("text", "")),
+    normalization={"hunk_regeneration": True, "hunk_id": hunk_id},
+    quality={"score": None, "tier": "draft", "flags": []},
+    estimated_cost_usd=estimated_cost,
+  )
+  _attach_proposal_to_generation_log(paths, run_id=generation_id, proposal_id=proposal_id)
+  if author_feedback:
+    from .product_signals import record_product_event
+    record_product_event(paths, "change_hunk_commented", provider=provider)
+  return edit_change_hunk(
+    paths,
+    proposal_id=proposal_id,
+    hunk_id=hunk_id,
+    after_text=replacement,
+    editor="ai",
+    regeneration={
+      "generation_id": generation_id,
+      "provider": provider,
+      "model": selected_model,
+      "log_path": log_path,
+      "estimated_cost_usd": estimated_cost,
+      "author_feedback": author_feedback,
     },
   )
 

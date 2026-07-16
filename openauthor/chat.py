@@ -216,6 +216,7 @@ def _thread_messages_path(paths: ProjectPaths, thread_id: str) -> Path:
 
 def _default_context_profile() -> dict[str, Any]:
   return {
+    "scope": "adaptive",
     "include_current_scene": True,
     "include_selection": True,
     "include_recent_scenes_radius": 1,
@@ -301,6 +302,13 @@ def _normalize_context_profile(
       f"Invalid retrieval mode '{retrieval_mode}'. Allowed: {allowed}."
     )
   merged["retrieval_mode"] = retrieval_mode
+
+  scope = str(merged.get("scope", "adaptive")).strip().lower()
+  allowed_scopes = {"adaptive", "project", "scene", "chapter", "character", "storyline"}
+  if scope not in allowed_scopes:
+    allowed = ", ".join(sorted(allowed_scopes))
+    raise OpenAuthorError(f"Invalid Assistant scope '{scope}'. Allowed: {allowed}.")
+  merged["scope"] = scope
 
   merged["include_current_scene"] = bool(merged.get("include_current_scene", True))
   merged["include_selection"] = bool(merged.get("include_selection", True))
@@ -637,6 +645,18 @@ def _resolve_context(
     scene_id = item.strip()
     if scene_id and scene_id not in requested_scene_ids:
       requested_scene_ids.append(scene_id)
+  scene_inventory = list_scenes(paths)
+  if profile.get("scope") == "project" and not requested_scene_ids:
+    # Book scope stays bounded for novel-scale projects. Retrieval supplies
+    # query-relevant passages when available; first/last scenes provide a
+    # useful offline anchor when the index has not been built yet.
+    anchor_ids = [
+      str(scene_inventory[0].get("id", "")).strip() if scene_inventory else "",
+      str(scene_inventory[-1].get("id", "")).strip() if scene_inventory else "",
+    ]
+    for scene_id in anchor_ids:
+      if scene_id and scene_id not in requested_scene_ids:
+        requested_scene_ids.append(scene_id)
   for scene_id in requested_scene_ids:
     scene = get_scene(paths, scene_id)
     selected_scene_ids.append(scene_id)
@@ -757,6 +777,17 @@ def _resolve_context(
     "codex_entities": included_codex,
     "continuity_issues": run_continuity_checks(paths),
     "retrieval": retrieval_payload,
+    "book_scene_index": [
+      {
+        "id": row.get("id", ""),
+        "title": row.get("title", ""),
+        "summary": row.get("summary", ""),
+        "pov": row.get("pov", ""),
+        "status": row.get("status", ""),
+      }
+      for row in scene_inventory[:40]
+    ] if profile.get("scope") == "project" else [],
+    "book_scene_count": len(scene_inventory) if profile.get("scope") == "project" else 0,
   }
   context_used = {
     "scene_ids": selected_scene_ids,

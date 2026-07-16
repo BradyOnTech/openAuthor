@@ -339,6 +339,16 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(scene["title"], "Opening Scene")
 
       code, out, err = self.run_cli(
+        ["scene", "add", "--title", "Second Scene", "--body", "A second scene.", "--json"],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      created_scene = json.loads(out)
+      self.assertEqual(created_scene["id"], "scene-0002")
+      self.assertEqual(created_scene["title"], "Second Scene")
+      self.assertEqual(created_scene["body"], "A second scene.\n")
+
+      code, out, err = self.run_cli(
         [
           "scene",
           "update",
@@ -346,8 +356,8 @@ class OpenAuthorFlowTests(unittest.TestCase):
           "scene-0001",
           "--summary",
           "Opening is now tightened",
-          "--body",
-          "A tighter opening paragraph.",
+            "--body",
+            "An initial, very slow opening paragraph, but Elara keeps moving.",
           "--json",
         ],
         root,
@@ -355,7 +365,7 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(code, 0, msg=err)
       updated = json.loads(out)
       self.assertEqual(updated["summary"], "Opening is now tightened")
-      self.assertIn("A tighter opening paragraph.", updated["body"])
+      self.assertIn("Elara keeps moving.", updated["body"])
 
       code, out, err = self.run_cli(
         [
@@ -553,9 +563,23 @@ class OpenAuthorFlowTests(unittest.TestCase):
       self.assertEqual(updated_budget["policy"]["per_run"]["max_output_tokens"], 700)
       self.assertEqual(updated_budget["policy"]["rolling"]["daily_tokens"], 200000)
 
+      code, out, err = self.run_cli(
+        [
+          "proposal", "draft", "--id", proposal_id, "--provider", "local",
+          "--max-output-tokens", "700", "--json",
+        ],
+        root,
+      )
+      self.assertEqual(code, 0, msg=err)
+      self.assertTrue(json.loads(out)["proposed_body"].strip())
+
       code, out, err = self.run_cli(["proposal", "apply", "--id", proposal_id], root)
       self.assertEqual(code, 0, msg=err)
       self.assertIn(f"Applied proposal {proposal_id}", out)
+
+      code, out, err = self.run_cli(["proposal", "undo", "--id", proposal_id, "--json"], root)
+      self.assertEqual(code, 0, msg=err)
+      self.assertTrue(json.loads(out)["undo_revision"])
 
       code, out, err = self.run_cli(["proposal", "list", "--status", "applied"], root)
       self.assertEqual(code, 0, msg=err)

@@ -7,7 +7,11 @@ from pathlib import Path
 from openauthor.ai import generate_proposal
 from openauthor.generations import audit_generation_pins, set_pinned_generation_run
 from openauthor.git_ops import initialize_git
-from openauthor.hardening import audit_workspace_metadata, collect_performance_baseline
+from openauthor.hardening import (
+  audit_workspace_metadata,
+  collect_performance_baseline,
+  collect_startup_health,
+)
 from openauthor.project import initialize_project
 from openauthor.proposals import create_proposal
 from openauthor.retrieval import build_retrieval_index
@@ -15,6 +19,27 @@ from openauthor.scenes import add_scene, update_scene
 
 
 class HardeningModuleTests(unittest.TestCase):
+  def test_startup_health_reports_and_repairs_safe_foundation_gaps(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Startup Health")
+      paths.proposals_dir.rmdir()
+      paths.revision_objects_dir.rmdir()
+      paths.revision_records_dir.rmdir()
+      paths.revisions_dir.rmdir()
+
+      before = collect_startup_health(paths)
+      self.assertFalse(before["ready"])
+      failed = {row["id"] for row in before["checks"] if row["status"] == "error"}
+      self.assertIn("project_directories", failed)
+      self.assertIn("revision_store", failed)
+
+      after = collect_startup_health(paths, repair=True)
+      self.assertTrue(after["ready"])
+      self.assertTrue(paths.proposals_dir.is_dir())
+      repaired = {row["id"] for row in after["checks"] if row["repaired"]}
+      self.assertIn("project_directories", repaired)
+      self.assertIn("revision_store", repaired)
+
   def test_collect_performance_baseline_returns_metrics(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -47,6 +72,11 @@ class HardeningModuleTests(unittest.TestCase):
       self.assertIn("proposal_list", metric_names)
       self.assertIn("generation_list", metric_names)
       self.assertIn("retrieval_status", metric_names)
+      self.assertIn("project_load", metric_names)
+      self.assertIn("scene_open", metric_names)
+      self.assertIn("scene_save", metric_names)
+      self.assertIn("project_search", metric_names)
+      self.assertIn("continuity_analysis", metric_names)
       for row in report["metrics"]:
         self.assertEqual(len(row["samples_ms"]), 2)
         self.assertGreaterEqual(row["max_ms"], row["min_ms"])

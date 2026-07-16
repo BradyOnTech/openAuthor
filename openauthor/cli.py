@@ -12,6 +12,7 @@ from .ai import (
   generate_merge_resolution,
   generate_proposal,
   generate_proposal_draft,
+  regenerate_change_hunk,
 )
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .budget import (
@@ -33,7 +34,19 @@ from .chat import (
   truncate_chat_messages,
   update_chat_thread,
 )
-from .codex import ENTITY_TYPES, add_entity, ensure_codex, get_entity, list_entities, update_entity
+from .codex import (
+  AI_VISIBILITY_VALUES,
+  ENTITY_TYPES,
+  SCOPE_VALUES,
+  add_entity,
+  add_relationship,
+  delete_relationship,
+  ensure_codex,
+  get_entity,
+  list_entities,
+  list_relationships,
+  update_entity,
+)
 from .generations import (
   clear_pinned_generation_run,
   get_generation_run,
@@ -45,9 +58,22 @@ from .generations import (
 )
 from .hardening import (
   audit_workspace_metadata,
+  collect_startup_health,
   collect_performance_baseline,
   format_performance_baseline_text,
   format_workspace_audit_text,
+)
+from .manuscript_io import export_manuscript, import_manuscript, preview_manuscript_import
+from .planning import (
+  add_act,
+  add_beat,
+  add_chapter,
+  add_scene_note,
+  assign_scene,
+  get_plan,
+  preview_scene_move,
+  update_brief,
+  update_scene_metadata,
 )
 from .git_ops import (
   create_branch,
@@ -72,13 +98,52 @@ from .project import (
 )
 from .proposals import (
   apply_proposal,
+  apply_proposal_batch,
   create_proposal,
+  edit_change_hunk,
   get_proposal,
   list_proposals,
+  rebase_proposal_change_set,
+  undo_proposal,
+  update_change_hunk,
   update_proposal_status,
 )
 from .retrieval import build_retrieval_index, get_retrieval_index_status, query_retrieval_index
-from .scenes import add_scene, get_scene, list_scenes, update_scene
+from .revisions import compare_revisions, get_revision, list_revisions, restore_revision, revision_retrospective
+from .scenes import add_scene, get_scene, list_scenes, scene_id, update_scene
+from .story_memory import correct_memory_suggestion, extract_memory_suggestions, list_memory_suggestions, queue_memory_suggestion, review_memory_suggestion
+from .search import search_project
+from .editorial import add_editorial_pass, list_editorial_passes
+from .canon import (
+  add_canon_fact,
+  add_arc_state,
+  add_open_question,
+  add_setup,
+  disposition_diagnostic,
+  list_canon_facts,
+  list_arc_states,
+  list_open_questions,
+  list_setups,
+  resolve_setup,
+  run_canon_diagnostics,
+)
+from .storylines import (
+  compare_storyline,
+  create_storyline,
+  create_storyline_integration_changes,
+  duplicate_storyline,
+  list_storylines,
+  save_storyline_progress,
+  rename_storyline,
+  switch_storyline,
+  update_storyline_status,
+)
+from .style_profile import build_style_profile, get_style_profile
+from .product_signals import (
+  get_local_product_dashboard,
+  get_product_signal_settings,
+  update_product_signal_settings,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -104,6 +169,21 @@ def build_parser() -> argparse.ArgumentParser:
   project_ensure_id.add_argument("--id", dest="expected_id", default=None, help="Expected project id.")
   project_ensure_id.add_argument("--json", action="store_true", help="Output JSON.")
 
+  manuscript_parser = subparsers.add_parser("manuscript", help="Import and export manuscript files.")
+  manuscript_sub = manuscript_parser.add_subparsers(dest="manuscript_command", required=True)
+  manuscript_preview = manuscript_sub.add_parser("preview", help="Preview detected manuscript structure without writing scenes.")
+  manuscript_preview.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
+  manuscript_preview.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_preview.add_argument("--json", action="store_true", help="Output JSON.")
+  manuscript_import = manuscript_sub.add_parser("import", help="Import a previously reviewed manuscript structure.")
+  manuscript_import.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
+  manuscript_import.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_import.add_argument("--json", action="store_true", help="Output JSON.")
+  manuscript_export = manuscript_sub.add_parser("export", help="Export the manuscript with a loss report.")
+  manuscript_export.add_argument("--format", choices=["markdown", "docx"], required=True)
+  manuscript_export.add_argument("--target", required=True, help="Output folder for Markdown or .docx path.")
+  manuscript_export.add_argument("--json", action="store_true", help="Output JSON.")
+
   auth_parser = subparsers.add_parser("auth", help="Manage provider authentication.")
   auth_sub = auth_parser.add_subparsers(dest="auth_command", required=True)
   auth_login_parser = auth_sub.add_parser("login", help="Sign in with a provider subscription.")
@@ -123,6 +203,7 @@ def build_parser() -> argparse.ArgumentParser:
   scene_add.add_argument("--pov", default="", help="POV character.")
   scene_add.add_argument("--status", default="draft", help="Scene status.")
   scene_add.add_argument("--body", default="", help="Initial body text.")
+  scene_add.add_argument("--json", action="store_true", help="Output the created scene as JSON.")
   scene_list = scene_sub.add_parser("list", help="List scenes.")
   scene_list.add_argument("--json", action="store_true", help="Output JSON.")
   scene_get = scene_sub.add_parser("get", help="Get a scene by id.")
@@ -143,6 +224,13 @@ def build_parser() -> argparse.ArgumentParser:
   codex_add.add_argument("--type", required=True, choices=sorted(ENTITY_TYPES), help="Entity type.")
   codex_add.add_argument("--name", required=True, help="Entity name.")
   codex_add.add_argument("--description", default="", help="Entity description.")
+  codex_add.add_argument("--category", default="")
+  codex_add.add_argument("--alias", action="append", default=[])
+  codex_add.add_argument("--tag", action="append", default=[])
+  codex_add.add_argument("--details-json", default="[]")
+  codex_add.add_argument("--notes", default="")
+  codex_add.add_argument("--ai-visibility", choices=sorted(AI_VISIBILITY_VALUES), default="include")
+  codex_add.add_argument("--scope", choices=sorted(SCOPE_VALUES), default="project")
   codex_add.add_argument("--json", action="store_true", help="Output JSON.")
   codex_list = codex_sub.add_parser("list", help="List codex entities.")
   codex_list.add_argument("--type", choices=sorted(ENTITY_TYPES), default=None, help="Filter by type.")
@@ -155,7 +243,28 @@ def build_parser() -> argparse.ArgumentParser:
   codex_update.add_argument("--type", choices=sorted(ENTITY_TYPES), default=None, help="Entity type.")
   codex_update.add_argument("--name", default=None, help="Entity name.")
   codex_update.add_argument("--description", default=None, help="Entity description.")
+  codex_update.add_argument("--category", default=None)
+  codex_update.add_argument("--alias", action="append", default=None)
+  codex_update.add_argument("--tag", action="append", default=None)
+  codex_update.add_argument("--details-json", default=None)
+  codex_update.add_argument("--notes", default=None)
+  codex_update.add_argument("--ai-visibility", choices=sorted(AI_VISIBILITY_VALUES), default=None)
+  codex_update.add_argument("--scope", choices=sorted(SCOPE_VALUES), default=None)
   codex_update.add_argument("--json", action="store_true", help="Output JSON.")
+  codex_relationship_add = codex_sub.add_parser("relationship-add", help="Relate two Story Memory entries.")
+  codex_relationship_add.add_argument("--source", required=True)
+  codex_relationship_add.add_argument("--target", required=True)
+  codex_relationship_add.add_argument("--relation", required=True)
+  codex_relationship_add.add_argument("--notes", default="")
+  codex_relationship_add.add_argument("--valid-from", default="")
+  codex_relationship_add.add_argument("--valid-to", default="")
+  codex_relationship_add.add_argument("--json", action="store_true", help="Output JSON.")
+  codex_relationship_list = codex_sub.add_parser("relationship-list", help="List explicit entity relationships.")
+  codex_relationship_list.add_argument("--entity", default=None)
+  codex_relationship_list.add_argument("--json", action="store_true", help="Output JSON.")
+  codex_relationship_delete = codex_sub.add_parser("relationship-delete", help="Delete an entity relationship.")
+  codex_relationship_delete.add_argument("--id", required=True)
+  codex_relationship_delete.add_argument("--json", action="store_true", help="Output JSON.")
 
   proposal_parser = subparsers.add_parser("proposal", help="Manage AI proposal queue.")
   proposal_sub = proposal_parser.add_subparsers(dest="proposal_command", required=True)
@@ -182,6 +291,11 @@ def build_parser() -> argparse.ArgumentParser:
     help="Apply the drafted body even if the scene changed since drafting.",
   )
   proposal_apply.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_apply_batch = proposal_sub.add_parser("apply-batch", help="Atomically apply coordinated Change Sets across scenes.")
+  proposal_apply_batch.add_argument("--id", action="append", required=True, dest="ids")
+  proposal_apply_batch.add_argument("--notes", default="")
+  proposal_apply_batch.add_argument("--force", action="store_true")
+  proposal_apply_batch.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_draft = proposal_sub.add_parser(
     "draft",
     help="Generate the full revised scene body for a pending proposal.",
@@ -207,6 +321,26 @@ def build_parser() -> argparse.ArgumentParser:
     help="Max output tokens (default: 2000).",
   )
   proposal_draft.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_hunk = proposal_sub.add_parser("hunk", help="Accept or reject one Change Hunk.")
+  proposal_hunk.add_argument("--id", required=True, help="Proposal id.")
+  proposal_hunk.add_argument("--hunk", required=True, help="Change Hunk id.")
+  proposal_hunk.add_argument("--decision", choices=["accepted", "rejected"], required=True)
+  proposal_hunk.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_hunk_edit = proposal_sub.add_parser("hunk-edit", help="Directly edit one Change Hunk replacement.")
+  proposal_hunk_edit.add_argument("--id", required=True, help="Proposal id.")
+  proposal_hunk_edit.add_argument("--hunk", required=True, help="Change Hunk id.")
+  proposal_hunk_edit.add_argument("--after-text", required=True, help="Replacement prose for this hunk.")
+  proposal_hunk_edit.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_hunk_regenerate = proposal_sub.add_parser("hunk-regenerate", help="Regenerate one Change Hunk.")
+  proposal_hunk_regenerate.add_argument("--id", required=True, help="Proposal id.")
+  proposal_hunk_regenerate.add_argument("--hunk", required=True, help="Change Hunk id.")
+  proposal_hunk_regenerate.add_argument("--provider", choices=sorted(SUPPORTED_PROVIDERS), default="local")
+  proposal_hunk_regenerate.add_argument("--model", default=None)
+  proposal_hunk_regenerate.add_argument("--feedback", default="", help="Author feedback for this hunk revision.")
+  proposal_hunk_regenerate.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_rebase = proposal_sub.add_parser("rebase", help="Carry safe Change Hunks onto the current scene.")
+  proposal_rebase.add_argument("--id", required=True, help="Proposal id.")
+  proposal_rebase.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_reject = proposal_sub.add_parser("reject", help="Mark proposal as rejected.")
   proposal_reject.add_argument("--id", required=True, help="Proposal id.")
   proposal_reject.add_argument("--notes", default="", help="Optional note.")
@@ -215,6 +349,18 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
   proposal_generate.add_argument("--title", default="", help="Optional proposal title override.")
+  proposal_generate.add_argument(
+    "--constraint",
+    action="append",
+    default=[],
+    help="Hard revision constraint; repeat for multiple constraints.",
+  )
+  proposal_generate.add_argument(
+    "--protect",
+    action="append",
+    default=[],
+    help="Text, fact, voice trait, or other element that must remain unchanged.",
+  )
   proposal_generate.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -279,6 +425,224 @@ def build_parser() -> argparse.ArgumentParser:
     help="Require retrieval index freshness when retrieval mode is enabled.",
   )
   proposal_generate.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_generate.add_argument("--change-group", default="", help="Coordinate this Change Set with other scene proposals.")
+
+  proposal_undo = proposal_sub.add_parser("undo", help="Restore the scene revision from before an applied proposal.")
+  proposal_undo.add_argument("--id", required=True, help="Proposal id.")
+  proposal_undo.add_argument("--force", action="store_true", help="Replace scene changes made after apply.")
+  proposal_undo.add_argument("--json", action="store_true", help="Output JSON.")
+
+  revision_parser = subparsers.add_parser("revision", help="Inspect, compare, and restore local Revisions.")
+  revision_sub = revision_parser.add_subparsers(dest="revision_command", required=True)
+  revision_list = revision_sub.add_parser("list", help="List recent Revisions.")
+  revision_list.add_argument("--limit", type=int, default=50)
+  revision_list.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_get = revision_sub.add_parser("get", help="Inspect one Revision.")
+  revision_get.add_argument("--id", required=True)
+  revision_get.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_diff = revision_sub.add_parser("diff", help="Compare two Revisions.")
+  revision_diff.add_argument("--base", required=True)
+  revision_diff.add_argument("--head", required=True)
+  revision_diff.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_restore = revision_sub.add_parser("restore", help="Restore selected files as a new Revision.")
+  revision_restore.add_argument("--id", required=True)
+  revision_restore.add_argument("--path", action="append", required=True, dest="paths")
+  revision_restore.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_retro = revision_sub.add_parser("retrospective", help="Summarize creative outcomes and remaining goals.")
+  revision_retro.add_argument("--base", required=True)
+  revision_retro.add_argument("--head", required=True)
+  revision_retro.add_argument("--json", action="store_true", help="Output JSON.")
+
+  plan_parser = subparsers.add_parser("plan", help="Manage the portable manuscript plan and hierarchy.")
+  plan_sub = plan_parser.add_subparsers(dest="plan_command", required=True)
+  plan_get = plan_sub.add_parser("get", help="Get the project brief and manuscript hierarchy.")
+  plan_get.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_brief = plan_sub.add_parser("brief", help="Update project brief fields.")
+  plan_brief.add_argument("--synopsis", default=None)
+  plan_brief.add_argument("--genre", default=None)
+  plan_brief.add_argument("--theme", action="append", default=None, dest="themes")
+  plan_brief.add_argument("--style-guide", default=None)
+  plan_brief.add_argument("--outline", default=None)
+  plan_brief.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_act = plan_sub.add_parser("act-add", help="Add an act.")
+  plan_act.add_argument("--title", required=True)
+  plan_act.add_argument("--synopsis", default="")
+  plan_act.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_chapter = plan_sub.add_parser("chapter-add", help="Add a chapter to an act.")
+  plan_chapter.add_argument("--act", required=True, dest="act_id")
+  plan_chapter.add_argument("--title", required=True)
+  plan_chapter.add_argument("--synopsis", default="")
+  plan_chapter.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_assign = plan_sub.add_parser("scene-assign", help="Assign or reorder a scene.")
+  plan_assign.add_argument("--scene", required=True, dest="scene_id")
+  plan_assign.add_argument("--chapter", default=None, dest="chapter_id")
+  plan_assign.add_argument("--before", default=None, dest="before_scene_id")
+  plan_assign.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_preview = plan_sub.add_parser("scene-preview", help="Preview structural consequences before moving a scene.")
+  plan_preview.add_argument("--scene", required=True, dest="scene_id")
+  plan_preview.add_argument("--chapter", default=None, dest="chapter_id")
+  plan_preview.add_argument("--before", default=None, dest="before_scene_id")
+  plan_preview.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_scene_meta = plan_sub.add_parser("scene-meta", help="Update a scene's story-time position and planning labels.")
+  plan_scene_meta.add_argument("--scene", required=True, dest="scene_id")
+  plan_scene_meta.add_argument("--timeline", default=None, dest="timeline_position")
+  plan_scene_meta.add_argument("--label", action="append", default=None, dest="labels")
+  plan_scene_meta.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_beat = plan_sub.add_parser("beat-add", help="Add a planned beat to a scene.")
+  plan_beat.add_argument("--scene", required=True, dest="scene_id")
+  plan_beat.add_argument("--summary", required=True)
+  plan_beat.add_argument("--status", default="planned")
+  plan_beat.add_argument("--json", action="store_true", help="Output JSON.")
+  plan_note = plan_sub.add_parser("note-add", help="Save a durable project or scene note.")
+  plan_note.add_argument("--content", required=True)
+  plan_note.add_argument("--scene", default="", dest="scene_id")
+  plan_note.add_argument("--title", default="Assistant note")
+  plan_note.add_argument("--source", default="author")
+  plan_note.add_argument("--json", action="store_true", help="Output JSON.")
+
+  memory_parser = subparsers.add_parser("memory", help="Extract and review evidence-backed Story Memory suggestions.")
+  memory_sub = memory_parser.add_subparsers(dest="memory_command", required=True)
+  memory_scan = memory_sub.add_parser("scan", help="Scan manuscript prose into a non-canon suggestion queue.")
+  memory_scan.add_argument("--scene", action="append", default=None, dest="scene_ids")
+  memory_scan.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_list = memory_sub.add_parser("list", help="List Story Memory suggestions.")
+  memory_list.add_argument("--status", choices=["pending", "accepted", "rejected", "deferred"], default=None)
+  memory_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_review = memory_sub.add_parser("review", help="Accept, reject, or defer a suggestion.")
+  memory_review.add_argument("--id", required=True)
+  memory_review.add_argument("--disposition", choices=["accepted", "rejected", "deferred"], required=True)
+  memory_review.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_correct = memory_sub.add_parser("correct", help="Correct a suggestion before accepting or deferring it.")
+  memory_correct.add_argument("--id", required=True)
+  memory_correct.add_argument("--name", default=None)
+  memory_correct.add_argument("--description", default=None)
+  memory_correct.add_argument("--predicate", default=None)
+  memory_correct.add_argument("--value", default=None)
+  memory_correct.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_suggest = memory_sub.add_parser("suggest", help="Queue a non-canon Story Memory suggestion for review.")
+  memory_suggest.add_argument("--title", default="Assistant insight")
+  memory_suggest.add_argument("--content", required=True)
+  memory_suggest.add_argument("--scene", default="", dest="scene_id")
+  memory_suggest.add_argument("--source", default="assistant")
+  memory_suggest.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_fact_add = memory_sub.add_parser("fact-add", help="Add an evidence-backed temporal Canon Fact.")
+  memory_fact_add.add_argument("--subject", default="")
+  memory_fact_add.add_argument("--predicate", required=True)
+  memory_fact_add.add_argument("--value", required=True)
+  memory_fact_add.add_argument("--evidence-json", required=True)
+  memory_fact_add.add_argument("--knowledge-json", default="[]")
+  memory_fact_add.add_argument("--confidence", type=float, default=1.0)
+  memory_fact_add.add_argument("--status", choices=["accepted", "suggested", "rejected"], default="accepted")
+  memory_fact_add.add_argument("--valid-from", default="")
+  memory_fact_add.add_argument("--valid-to", default="")
+  memory_fact_add.add_argument("--scope", choices=["project", "series"], default="project")
+  memory_fact_add.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_fact_list = memory_sub.add_parser("fact-list", help="List Canon Facts.")
+  memory_fact_list.add_argument("--status", choices=["accepted", "suggested", "rejected"], default=None)
+  memory_fact_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_arc_add = memory_sub.add_parser("arc-add", help="Add an evidence-backed Character Arc State.")
+  memory_arc_add.add_argument("--character", required=True)
+  memory_arc_add.add_argument("--dimension", required=True)
+  memory_arc_add.add_argument("--value", required=True)
+  memory_arc_add.add_argument("--scene", required=True)
+  memory_arc_add.add_argument("--excerpt", required=True)
+  memory_arc_add.add_argument("--type", choices=["observed", "planned"], default="observed", dest="state_type")
+  memory_arc_add.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_arc_list = memory_sub.add_parser("arc-list", help="List Character Arc States.")
+  memory_arc_list.add_argument("--character", default=None)
+  memory_arc_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_setup_add = memory_sub.add_parser("setup-add", help="Track a narrative setup.")
+  memory_setup_add.add_argument("--description", required=True)
+  memory_setup_add.add_argument("--scene", required=True)
+  memory_setup_add.add_argument("--excerpt", required=True)
+  memory_setup_add.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_setup_payoff = memory_sub.add_parser("setup-payoff", help="Resolve a setup with payoff evidence.")
+  memory_setup_payoff.add_argument("--id", required=True)
+  memory_setup_payoff.add_argument("--scene", required=True)
+  memory_setup_payoff.add_argument("--excerpt", required=True)
+  memory_setup_payoff.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_setup_list = memory_sub.add_parser("setup-list", help="List setups and payoffs.")
+  memory_setup_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_question_add = memory_sub.add_parser("question-add", help="Track a deliberately open story question.")
+  memory_question_add.add_argument("--question", required=True)
+  memory_question_add.add_argument("--scene", default="")
+  memory_question_add.add_argument("--intentional", action="store_true")
+  memory_question_add.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_question_list = memory_sub.add_parser("question-list", help="List open questions.")
+  memory_question_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_diagnose = memory_sub.add_parser("diagnose", help="Run evidence-backed Canon diagnostics.")
+  memory_diagnose.add_argument("--scene", action="append", default=None, dest="scene_ids")
+  memory_diagnose.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_dispose = memory_sub.add_parser("dispose", help="Remember an author disposition for a diagnostic.")
+  memory_dispose.add_argument("--id", required=True)
+  memory_dispose.add_argument("--disposition", choices=["fixed", "dismissed", "intentional", "deferred"], required=True)
+  memory_dispose.add_argument("--notes", default="")
+  memory_dispose.add_argument("--json", action="store_true", help="Output JSON.")
+
+  search_parser = subparsers.add_parser("search", help="Search manuscript prose, planning, and Story Memory.")
+  search_parser.add_argument("--query", required=True)
+  search_parser.add_argument("--limit", type=int, default=80)
+  search_parser.add_argument("--json", action="store_true", help="Output JSON.")
+
+  pass_parser = subparsers.add_parser("pass", help="Manage reusable Editorial Passes.")
+  pass_sub = pass_parser.add_subparsers(dest="pass_command", required=True)
+  pass_list = pass_sub.add_parser("list", help="List built-in and custom Editorial Passes.")
+  pass_list.add_argument("--json", action="store_true", help="Output JSON.")
+  pass_add = pass_sub.add_parser("add", help="Create a custom Editorial Pass.")
+  pass_add.add_argument("--name", required=True)
+  pass_add.add_argument("--goal", required=True)
+  pass_add.add_argument("--instruction", required=True)
+  pass_add.add_argument("--criterion", action="append", default=[])
+  pass_add.add_argument("--json", action="store_true", help="Output JSON.")
+
+  storyline_parser = subparsers.add_parser("storyline", help="Explore and integrate named story experiments.")
+  storyline_sub = storyline_parser.add_subparsers(dest="storyline_command", required=True)
+  storyline_list = storyline_sub.add_parser("list", help="Show Storyline dashboard.")
+  storyline_list.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_create = storyline_sub.add_parser("create", help="Create and enter a Storyline experiment.")
+  storyline_create.add_argument("--name", required=True)
+  storyline_create.add_argument("--hypothesis", required=True)
+  storyline_create.add_argument("--scope", default="")
+  storyline_create.add_argument("--success", default="")
+  storyline_create.add_argument("--protect", action="append", default=[])
+  storyline_create.add_argument("--no-switch", action="store_true")
+  storyline_create.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_switch = storyline_sub.add_parser("switch", help="Switch to a Storyline or the primary manuscript.")
+  storyline_switch.add_argument("--id", default=None)
+  storyline_switch.add_argument("--primary", action="store_true")
+  storyline_switch.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_compare = storyline_sub.add_parser("compare", help="Show semantic Storyline divergence.")
+  storyline_compare.add_argument("--id", required=True)
+  storyline_compare.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_integrate = storyline_sub.add_parser("integrate", help="Prepare selected Storyline scenes as Change Sets.")
+  storyline_integrate.add_argument("--id", required=True)
+  storyline_integrate.add_argument("--scene-path", action="append", required=True, dest="scene_paths")
+  storyline_integrate.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_save = storyline_sub.add_parser("save", help="Save current Storyline progress.")
+  storyline_save.add_argument("--id", required=True)
+  storyline_save.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_archive = storyline_sub.add_parser("archive", help="Archive a Storyline from the active dashboard.")
+  storyline_archive.add_argument("--id", required=True)
+  storyline_archive.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_restore = storyline_sub.add_parser("restore", help="Restore an archived Storyline.")
+  storyline_restore.add_argument("--id", required=True)
+  storyline_restore.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_rename = storyline_sub.add_parser("rename", help="Rename a Storyline and its backing line.")
+  storyline_rename.add_argument("--id", required=True)
+  storyline_rename.add_argument("--name", required=True)
+  storyline_rename.add_argument("--json", action="store_true", help="Output JSON.")
+  storyline_duplicate = storyline_sub.add_parser("duplicate", help="Duplicate a Storyline experiment.")
+  storyline_duplicate.add_argument("--id", required=True)
+  storyline_duplicate.add_argument("--name", required=True)
+  storyline_duplicate.add_argument("--json", action="store_true", help="Output JSON.")
+
+  style_parser = subparsers.add_parser("style", help="Build an author-controlled Style Profile from exemplar scenes.")
+  style_sub = style_parser.add_subparsers(dest="style_command", required=True)
+  style_get = style_sub.add_parser("get", help="Get the active Style Profile.")
+  style_get.add_argument("--json", action="store_true", help="Output JSON.")
+  style_build = style_sub.add_parser("build", help="Rebuild from selected exemplar scenes.")
+  style_build.add_argument("--scene", action="append", required=True, dest="scene_ids")
+  style_build.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -360,6 +724,9 @@ def build_parser() -> argparse.ArgumentParser:
   check_sub = check_parser.add_subparsers(dest="check_command", required=True)
   check_continuity = check_sub.add_parser("continuity", help="Run continuity checks.")
   check_continuity.add_argument("--json", action="store_true", help="Output JSON.")
+  check_startup = check_sub.add_parser("startup", help="Validate project readiness and optionally apply safe repairs.")
+  check_startup.add_argument("--repair", action="store_true", help="Create missing directories and initialize revision storage.")
+  check_startup.add_argument("--json", action="store_true", help="Output JSON.")
   check_workspace = check_sub.add_parser(
     "workspace",
     help="Audit branch/retrieval/pin drift with optional safe repair actions.",
@@ -748,6 +1115,15 @@ def build_parser() -> argparse.ArgumentParser:
   chat_diff.add_argument("--message", required=True, help="Message id with a VCS anchor.")
   chat_diff.add_argument("--json", action="store_true", help="Output JSON.")
 
+  metrics_parser = subparsers.add_parser("metrics", help="View private, content-free product signals stored on this device.")
+  metrics_sub = metrics_parser.add_subparsers(dest="metrics_command", required=True)
+  metrics_dashboard = metrics_sub.add_parser("dashboard", help="Summarize activation and trust signals locally.")
+  metrics_dashboard.add_argument("--json", action="store_true", help="Output JSON.")
+  metrics_settings = metrics_sub.add_parser("settings", help="Configure local signal collection and retention.")
+  metrics_settings.add_argument("--local-signals", choices=["on", "off"], default=None)
+  metrics_settings.add_argument("--retention-days", type=int, default=None)
+  metrics_settings.add_argument("--json", action="store_true", help="Output JSON.")
+
   subparsers.add_parser(
     "serve",
     help="Run the persistent JSON-RPC sidecar over stdin/stdout.",
@@ -832,7 +1208,6 @@ def _run(args: argparse.Namespace) -> int:
     else:
       paths = initialize_project(root, name=args.name, project_id=args.project_id)
     ensure_codex(paths)
-    initialize_git(paths)
     if args.json:
       row = inspect_project(paths)
       row["initialized"] = True
@@ -878,7 +1253,56 @@ def _run(args: argparse.Namespace) -> int:
 
     raise OpenAuthorError(f"Unsupported auth command: {args.auth_command}")
 
+  if args.command == "revision":
+    paths = resolve_project(Path.cwd())
+    if args.revision_command == "list":
+      rows = list_revisions(paths, limit=args.limit)
+      if args.json:
+        print(json.dumps(rows))
+      else:
+        for row in rows:
+          print(f"{row['id'][:12]}\t{row['kind']}\t{row['message']}")
+      return 0
+    if args.revision_command == "get":
+      row = get_revision(paths, args.id)
+    elif args.revision_command == "diff":
+      row = compare_revisions(paths, args.base, args.head)
+    elif args.revision_command == "retrospective":
+      row = revision_retrospective(paths, args.base, args.head)
+    else:
+      row = restore_revision(paths, args.id, relative_paths=args.paths)
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
+  if args.command == "manuscript" and args.manuscript_command == "preview":
+    row = preview_manuscript_import(Path(args.source), strategy=args.strategy)
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(f"preview: {row.get('scene_count', 0)} scene(s)")
+    return 0
+
   paths = _paths_from_cwd()
+
+  if args.command == "metrics":
+    if args.metrics_command == "dashboard":
+      row = get_local_product_dashboard(paths)
+    elif args.local_signals is None and args.retention_days is None:
+      row = get_product_signal_settings(paths)
+    else:
+      row = update_product_signal_settings(
+        paths,
+        local_signals_enabled=(args.local_signals == "on") if args.local_signals is not None else None,
+        retention_days=args.retention_days,
+      )
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
 
   if args.command == "project":
     if args.project_command == "inspect":
@@ -907,6 +1331,214 @@ def _run(args: argparse.Namespace) -> int:
 
     raise OpenAuthorError(f"Unsupported project command: {args.project_command}")
 
+  if args.command == "manuscript":
+    if args.manuscript_command == "import":
+      row = import_manuscript(paths, Path(args.source), strategy=args.strategy)
+    elif args.manuscript_command == "export":
+      row = export_manuscript(paths, Path(args.target), format=args.format)
+    else:
+      raise OpenAuthorError(f"Unsupported manuscript command: {args.manuscript_command}")
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(f"{args.manuscript_command}: {row.get('scene_count', 0)} scene(s)")
+    return 0
+
+  if args.command == "plan":
+    if args.plan_command == "get":
+      row = get_plan(paths)
+    elif args.plan_command == "brief":
+      if all(value is None for value in (
+        args.synopsis, args.genre, args.themes, args.style_guide, args.outline
+      )):
+        raise OpenAuthorError("No project brief updates provided.")
+      row = update_brief(
+        paths,
+        synopsis=args.synopsis,
+        genre=args.genre,
+        themes=args.themes,
+        style_guide=args.style_guide,
+        outline=args.outline,
+      )
+    elif args.plan_command == "act-add":
+      row = add_act(paths, title=args.title, synopsis=args.synopsis)
+    elif args.plan_command == "chapter-add":
+      row = add_chapter(paths, act_id=args.act_id, title=args.title, synopsis=args.synopsis)
+    elif args.plan_command == "scene-assign":
+      row = assign_scene(
+        paths,
+        scene_id=args.scene_id,
+        chapter_id=args.chapter_id,
+        before_scene_id=args.before_scene_id,
+      )
+    elif args.plan_command == "scene-preview":
+      row = preview_scene_move(
+        paths,
+        scene_id=args.scene_id,
+        chapter_id=args.chapter_id,
+        before_scene_id=args.before_scene_id,
+      )
+    elif args.plan_command == "scene-meta":
+      if args.timeline_position is None and args.labels is None:
+        raise OpenAuthorError("No scene planning metadata updates provided.")
+      row = update_scene_metadata(
+        paths,
+        scene_id=args.scene_id,
+        timeline_position=args.timeline_position,
+        labels=args.labels,
+      )
+    elif args.plan_command == "beat-add":
+      row = add_beat(paths, scene_id=args.scene_id, summary=args.summary, status=args.status)
+    elif args.plan_command == "note-add":
+      row = add_scene_note(paths, content=args.content, scene_id=args.scene_id, title=args.title, source=args.source)
+    else:
+      raise OpenAuthorError(f"Unsupported plan command: {args.plan_command}")
+    if getattr(args, "json", False):
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
+  if args.command == "memory":
+    if args.memory_command == "scan":
+      row = extract_memory_suggestions(paths, scene_ids=args.scene_ids)
+    elif args.memory_command == "list":
+      row = list_memory_suggestions(paths, status=args.status)
+    elif args.memory_command == "review":
+      row = review_memory_suggestion(paths, args.id, disposition=args.disposition)
+    elif args.memory_command == "correct":
+      row = correct_memory_suggestion(
+        paths,
+        args.id,
+        name=args.name,
+        description=args.description,
+        predicate=args.predicate,
+        value=args.value,
+      )
+    elif args.memory_command == "suggest":
+      row = queue_memory_suggestion(paths, title=args.title, content=args.content, scene_id=args.scene_id, source=args.source)
+    elif args.memory_command == "fact-add":
+      row = add_canon_fact(
+        paths,
+        subject_entity_id=args.subject,
+        predicate=args.predicate,
+        value=args.value,
+        evidence=json.loads(args.evidence_json),
+        knowledge=json.loads(args.knowledge_json),
+        confidence=args.confidence,
+        status=args.status,
+        valid_from_scene_id=args.valid_from,
+        valid_to_scene_id=args.valid_to,
+        scope=args.scope,
+      )
+    elif args.memory_command == "fact-list":
+      row = list_canon_facts(paths, status=args.status)
+    elif args.memory_command == "arc-add":
+      row = add_arc_state(paths, character_entity_id=args.character, dimension=args.dimension, value=args.value, scene_id=args.scene, excerpt=args.excerpt, state_type=args.state_type)
+    elif args.memory_command == "arc-list":
+      row = list_arc_states(paths, character_entity_id=args.character)
+    elif args.memory_command == "setup-add":
+      row = add_setup(paths, description=args.description, setup_scene_id=args.scene, excerpt=args.excerpt)
+    elif args.memory_command == "setup-payoff":
+      row = resolve_setup(paths, args.id, payoff_scene_id=args.scene, excerpt=args.excerpt)
+    elif args.memory_command == "setup-list":
+      row = list_setups(paths)
+    elif args.memory_command == "question-add":
+      row = add_open_question(paths, question=args.question, scene_id=args.scene, intentionally_unresolved=args.intentional)
+    elif args.memory_command == "question-list":
+      row = list_open_questions(paths)
+    elif args.memory_command == "diagnose":
+      row = run_canon_diagnostics(paths, affected_scene_ids=args.scene_ids)
+    elif args.memory_command == "dispose":
+      row = disposition_diagnostic(paths, args.id, disposition=args.disposition, notes=args.notes)
+    else:
+      raise OpenAuthorError(f"Unsupported memory command: {args.memory_command}")
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
+  if args.command == "search":
+    rows = search_project(paths, args.query, limit=args.limit)
+    if args.json:
+      print(json.dumps(rows))
+    else:
+      for row in rows:
+        print(f"{row['source_kind']}\t{row['title']}\t{row['excerpt']}")
+    return 0
+
+  if args.command == "pass":
+    if args.pass_command == "list":
+      row = list_editorial_passes(paths)
+    elif args.pass_command == "add":
+      row = add_editorial_pass(
+        paths,
+        name=args.name,
+        goal=args.goal,
+        instruction=args.instruction,
+        evaluation_criteria=args.criterion,
+      )
+    else:
+      raise OpenAuthorError(f"Unsupported Editorial Pass command: {args.pass_command}")
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
+  if args.command == "storyline":
+    if args.storyline_command == "list":
+      row = list_storylines(paths)
+    elif args.storyline_command == "create":
+      row = create_storyline(
+        paths,
+        name=args.name,
+        hypothesis=args.hypothesis,
+        intended_scope=args.scope,
+        success_criteria=args.success,
+        protected_constraints=args.protect,
+        switch=not args.no_switch,
+      )
+    elif args.storyline_command == "switch":
+      if not args.primary and not args.id:
+        raise OpenAuthorError("Choose --id or --primary.")
+      row = switch_storyline(paths, args.id, primary=args.primary)
+    elif args.storyline_command == "compare":
+      row = compare_storyline(paths, args.id)
+    elif args.storyline_command == "integrate":
+      row = create_storyline_integration_changes(paths, args.id, scene_paths=args.scene_paths)
+    elif args.storyline_command == "save":
+      row = save_storyline_progress(paths, args.id)
+    elif args.storyline_command == "archive":
+      row = update_storyline_status(paths, args.id, status="archived")
+    elif args.storyline_command == "restore":
+      row = update_storyline_status(paths, args.id, status="active")
+    elif args.storyline_command == "rename":
+      row = rename_storyline(paths, args.id, name=args.name)
+    elif args.storyline_command == "duplicate":
+      row = duplicate_storyline(paths, args.id, name=args.name)
+    else:
+      raise OpenAuthorError(f"Unsupported Storyline command: {args.storyline_command}")
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
+  if args.command == "style":
+    if args.style_command == "get":
+      row = get_style_profile(paths)
+    elif args.style_command == "build":
+      row = build_style_profile(paths, scene_ids=args.scene_ids)
+    else:
+      raise OpenAuthorError(f"Unsupported Style Profile command: {args.style_command}")
+    if args.json:
+      print(json.dumps(row))
+    else:
+      print(json.dumps(row, indent=2))
+    return 0
+
   if args.command == "scene":
     if args.scene_command == "add":
       scene_file = add_scene(
@@ -917,6 +1549,13 @@ def _run(args: argparse.Namespace) -> int:
         status=args.status,
         body=args.body,
       )
+      try:
+        extract_memory_suggestions(paths)
+      except OpenAuthorError:
+        pass
+      if args.json:
+        print(json.dumps(get_scene(paths, scene_id(int(scene_file.stem.split("-", 1)[0])))))
+        return 0
       print(f"Created scene {scene_file.relative_to(paths.root)}")
       return 0
 
@@ -952,6 +1591,7 @@ def _run(args: argparse.Namespace) -> int:
         status=args.status,
         body=args.body,
       )
+      extract_memory_suggestions(paths, scene_ids=[args.id])
       if args.json:
         print(json.dumps(get_scene(paths, args.id)))
         return 0
@@ -965,6 +1605,13 @@ def _run(args: argparse.Namespace) -> int:
         kind=args.type,
         name=args.name,
         description=args.description,
+        category=args.category,
+        aliases=args.alias,
+        tags=args.tag,
+        details=json.loads(args.details_json),
+        notes=args.notes,
+        ai_visibility=args.ai_visibility,
+        scope=args.scope,
       )
       if args.json:
         print(json.dumps(get_entity(paths, entity_id)))
@@ -981,7 +1628,10 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.codex_command == "update":
-      if all(value is None for value in (args.type, args.name, args.description)):
+      if all(value is None for value in (
+        args.type, args.name, args.description, args.category, args.alias, args.tag,
+        args.details_json, args.notes, args.ai_visibility, args.scope,
+      )):
         raise OpenAuthorError("No updates provided. Supply at least one field.")
       row = update_entity(
         paths,
@@ -989,11 +1639,45 @@ def _run(args: argparse.Namespace) -> int:
         kind=args.type,
         name=args.name,
         description=args.description,
+        category=args.category,
+        aliases=args.alias,
+        tags=args.tag,
+        details=json.loads(args.details_json) if args.details_json is not None else None,
+        notes=args.notes,
+        ai_visibility=args.ai_visibility,
+        scope=args.scope,
       )
       if args.json:
         print(json.dumps(row))
         return 0
       print(f"Updated entity {row['id']}")
+      return 0
+
+    if args.codex_command == "relationship-add":
+      row = add_relationship(
+        paths,
+        source_entity_id=args.source,
+        target_entity_id=args.target,
+        relation=args.relation,
+        notes=args.notes,
+        valid_from_scene_id=args.valid_from,
+        valid_to_scene_id=args.valid_to,
+      )
+      print(json.dumps(row) if args.json else f"Created relationship {row['id']}")
+      return 0
+
+    if args.codex_command == "relationship-list":
+      rows = list_relationships(paths, entity_id=args.entity)
+      if args.json:
+        print(json.dumps(rows))
+      else:
+        for row in rows:
+          print(f"{row['source_name']}\t{row['relation']}\t{row['target_name']}")
+      return 0
+
+    if args.codex_command == "relationship-delete":
+      row = delete_relationship(paths, args.id)
+      print(json.dumps(row) if args.json else f"Deleted relationship {args.id}")
       return 0
 
     rows = list_entities(paths, kind=args.type)
@@ -1036,10 +1720,69 @@ def _run(args: argparse.Namespace) -> int:
       if args.json:
         print(json.dumps(row))
         return 0
-      if row.get("applied_changes"):
-        print(f"Applied proposal {args.id} (scene {row.get('scene_id', '')} updated)")
+      print(f"Applied proposal {args.id} (scene {row.get('scene_id', '')} updated)")
+      return 0
+
+    if args.proposal_command == "apply-batch":
+      row = apply_proposal_batch(paths, proposal_ids=args.ids, notes=args.notes, force=args.force)
+      print(json.dumps(row) if args.json else f"Applied {len(row['proposal_ids'])} coordinated Change Sets")
+      return 0
+
+    if args.proposal_command == "hunk":
+      row = update_change_hunk(
+        paths,
+        proposal_id=args.id,
+        hunk_id=args.hunk,
+        decision=args.decision,
+      )
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"Marked {args.hunk} {args.decision}")
+      return 0
+
+    if args.proposal_command == "hunk-edit":
+      row = edit_change_hunk(
+        paths,
+        proposal_id=args.id,
+        hunk_id=args.hunk,
+        after_text=args.after_text,
+      )
+      if args.json:
+        print(json.dumps(row))
       else:
-        print(f"Applied proposal {args.id} (status only; no drafted body)")
+        print(f"Edited {args.hunk}")
+      return 0
+
+    if args.proposal_command == "hunk-regenerate":
+      row = regenerate_change_hunk(
+        paths,
+        proposal_id=args.id,
+        hunk_id=args.hunk,
+        provider=args.provider,
+        model=args.model,
+        feedback=args.feedback,
+      )
+      if args.json:
+        print(json.dumps(row))
+      else:
+        print(f"Regenerated {args.hunk}")
+      return 0
+
+    if args.proposal_command == "rebase":
+      row = rebase_proposal_change_set(paths, proposal_id=args.id)
+      if args.json:
+        print(json.dumps(row))
+      else:
+        print(f"Change Set rebase: {row.get('rebase_report', {}).get('status', 'unknown')}")
+      return 0
+
+    if args.proposal_command == "undo":
+      row = undo_proposal(paths, proposal_id=args.id, force=args.force)
+      if args.json:
+        print(json.dumps(row))
+        return 0
+      print(f"Undid proposal {args.id} (scene {row.get('scene_id', '')} restored)")
       return 0
 
     if args.proposal_command == "draft":
@@ -1090,6 +1833,9 @@ def _run(args: argparse.Namespace) -> int:
         retrieval_limit=args.retrieval_limit,
         retrieval_min_score=args.retrieval_min_score,
         retrieval_require_fresh=args.retrieval_require_fresh,
+        constraints=args.constraint,
+        protected_elements=args.protect,
+        change_group_id=args.change_group,
       )
       if args.json:
         print(json.dumps(row))
@@ -1110,6 +1856,7 @@ def _run(args: argparse.Namespace) -> int:
 
   if args.command == "snapshot":
     if args.snapshot_command == "create":
+      initialize_git(paths)
       print(create_snapshot(paths, args.message))
       return 0
 
@@ -1280,6 +2027,16 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
   if args.command == "check":
+    if args.check_command == "startup":
+      report = collect_startup_health(paths, repair=args.repair)
+      if args.json:
+        print(json.dumps(report))
+      else:
+        print(f"Startup Health\nready={report['ready']} errors={report['errors']} warnings={report['warnings']}")
+        for check in report["checks"]:
+          print(f"{check['status']}\t{check['id']}\t{check['message']}")
+      return 0
+
     if args.check_command == "continuity":
       rows = run_continuity_checks(paths)
       if args.json:

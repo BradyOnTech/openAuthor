@@ -7,8 +7,11 @@ from pathlib import Path
 
 from openauthor.codex import (
   add_entity,
+  add_relationship,
+  delete_relationship,
   get_entity,
   list_entities,
+  list_relationships,
   replace_runtime_codex_from_snapshot,
   update_entity,
 )
@@ -94,6 +97,51 @@ class CodexModuleTests(unittest.TestCase):
           entity_id="entity-missing",
           description="Nope",
         )
+
+  def test_structured_story_memory_details_and_relationships_round_trip(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Structured Memory")
+      hero_id = add_entity(
+        paths,
+        kind="character",
+        name="Mara Vale",
+        description="A courier with a borrowed memory.",
+        category="protagonist",
+        aliases=["The Courier", "Mara"],
+        tags=["POV", "Archive"],
+        details=[
+          {"key": "age", "type": "number", "value": 31},
+          {"key": "secret", "type": "text", "value": "She opened the gate", "ai_visibility": "ask"},
+        ],
+        notes="Do not resolve her parentage in book one.",
+        ai_visibility="include",
+        scope="series",
+      )
+      city_id = add_entity(paths, kind="location", name="Bellweather")
+      relationship = add_relationship(
+        paths,
+        source_entity_id=hero_id,
+        target_entity_id=city_id,
+        relation="exiled from",
+        notes="Since the winter trial.",
+        valid_from_scene_id="scene-0001",
+      )
+
+      hero = get_entity(paths, hero_id)
+      self.assertEqual(hero["aliases"], ["The Courier", "Mara"])
+      self.assertEqual(hero["details"][0]["value"], 31)
+      self.assertEqual(hero["scope"], "series")
+      rows = list_relationships(paths, entity_id=hero_id)
+      self.assertEqual(rows[0]["relation"], "exiled from")
+      self.assertEqual(rows[0]["target_name"], "Bellweather")
+      self.assertEqual(rows[0]["valid_from_scene_id"], "scene-0001")
+
+      payload = json.loads((root / "codex" / "codex.json").read_text(encoding="utf-8"))
+      self.assertEqual(payload["entities"][0 if payload["entities"][0]["id"] == hero_id else 1]["category"], "protagonist")
+      deleted = delete_relationship(paths, relationship["id"])
+      self.assertTrue(deleted["deleted"])
+      self.assertEqual(list_relationships(paths), [])
 
 
 if __name__ == "__main__":

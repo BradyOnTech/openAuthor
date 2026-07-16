@@ -45,10 +45,6 @@ def _parse_front_matter_value(raw: str) -> str:
   return stripped
 
 
-def _heading_text(title: str) -> str:
-  return " ".join(title.split()) or "Untitled Scene"
-
-
 def render_scene_markdown(
   *,
   scene_identifier: str,
@@ -84,7 +80,10 @@ def build_scene_markdown(
   body: str,
 ) -> str:
   timestamp = utc_now()
-  initial_body = f"# {_heading_text(title)}\n\n{body.rstrip()}"
+  # The title already has a dedicated, editable field in every authoring
+  # surface. Duplicating it into prose makes blank scenes look pre-filled and
+  # inflates manuscript word counts, so new scene bodies contain prose only.
+  initial_body = body.rstrip()
   return render_scene_markdown(
     scene_identifier=scene_identifier,
     title=title,
@@ -131,6 +130,8 @@ def add_scene(
           body=body,
         )
       )
+    from .product_signals import record_product_event
+    record_product_event(paths, "scene_created", word_count=len(body.split()))
     return file_path
   raise OpenAuthorError("Unable to allocate a scene index.")
 
@@ -158,24 +159,36 @@ def split_scene_text(text: str) -> tuple[dict[str, str], str]:
   return parsed, body
 
 
+def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
+  text = scene_file.read_text(encoding="utf-8")
+  front_matter, body = split_scene_text(text)
+  return {
+    "id": front_matter.get("id", scene_file.stem),
+    "title": front_matter.get("title", scene_file.stem),
+    "summary": front_matter.get("summary", ""),
+    "pov": front_matter.get("pov", ""),
+    "status": front_matter.get("status", "draft"),
+    "created_at": front_matter.get("created_at", ""),
+    "updated_at": front_matter.get("updated_at", ""),
+    "path": str(scene_file.relative_to(paths.root)),
+    "body": body,
+  }
+
+
+def list_scene_details(paths: ProjectPaths) -> list[dict[str, str]]:
+  return [
+    _scene_detail(paths, scene_file)
+    for scene_file in sorted(paths.scenes_dir.glob("*.md"))
+  ]
+
+
 def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
   rows: list[dict[str, Any]] = []
-  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
-    text = scene_file.read_text(encoding="utf-8")
-    front_matter, body = split_scene_text(text)
-    rows.append(
-      {
-        "id": front_matter.get("id", scene_file.stem),
-        "title": front_matter.get("title", scene_file.stem),
-        "summary": front_matter.get("summary", ""),
-        "pov": front_matter.get("pov", ""),
-        "status": front_matter.get("status", "unknown"),
-        "created_at": front_matter.get("created_at", ""),
-        "updated_at": front_matter.get("updated_at", ""),
-        "path": str(scene_file.relative_to(paths.root)),
-        "word_count": len(body.split()),
-      }
-    )
+  for detail in list_scene_details(paths):
+    body = detail["body"]
+    summary = {key: value for key, value in detail.items() if key != "body"}
+    summary["word_count"] = len(body.split())
+    rows.append(summary)
   return rows
 
 
@@ -188,20 +201,11 @@ def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
 
 
 def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, str]:
-  scene_file = find_scene_file(paths, scene_identifier)
-  text = scene_file.read_text(encoding="utf-8")
-  front_matter, body = split_scene_text(text)
-  return {
-    "id": front_matter.get("id", scene_identifier),
-    "title": front_matter.get("title", ""),
-    "summary": front_matter.get("summary", ""),
-    "pov": front_matter.get("pov", ""),
-    "status": front_matter.get("status", "draft"),
-    "created_at": front_matter.get("created_at", ""),
-    "updated_at": front_matter.get("updated_at", ""),
-    "path": str(scene_file.relative_to(paths.root)),
-    "body": body,
-  }
+  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+    detail = _scene_detail(paths, scene_file)
+    if detail["id"] == scene_identifier:
+      return detail
+  raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
 
 
 def update_scene(
@@ -215,7 +219,7 @@ def update_scene(
   body: str | None = None,
 ) -> Path:
   scene_file = find_scene_file(paths, scene_identifier)
-  current = get_scene(paths, scene_identifier)
+  current = _scene_detail(paths, scene_file)
   updated = {
     "id": current["id"],
     "title": title if title is not None else current["title"],
