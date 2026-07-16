@@ -1,0 +1,2 @@
+# Keep the Tauri resource path present in clean source checkouts.
+# Release bundles still require scripts/prepare_bundled_runtime.sh.
