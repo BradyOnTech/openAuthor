@@ -169,10 +169,36 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response(relationship);
     }
     if (root === "memory" && action === "list") return response(harness.suggestions.filter((row) => !argument(args, "--status") || row.status === argument(args, "--status")));
+    if (root === "memory" && action === "scan") return response({
+      scanned_scenes: harness.scenes.length,
+      added: 0,
+      refreshed: harness.suggestions.length,
+      pending: harness.suggestions.filter((row) => row.status === "pending").length,
+      suggestions: harness.suggestions,
+    });
     if (root === "memory" && action === "review") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
       if (!suggestion) return response("Unknown suggestion", 1);
       suggestion.status = argument(args, "--disposition");
+      if (suggestion.status === "accepted" && suggestion.kind === "relationship_create") {
+        const existing = harness.relationships.find((row) => row.source_entity_id === suggestion.source_entity_id && row.target_entity_id === suggestion.target_entity_id && row.relation === suggestion.relation);
+        if (!existing) {
+          const relationship = {
+            id: `relationship-${harness.relationships.length + 1}`,
+            source_entity_id: suggestion.source_entity_id,
+            source_name: suggestion.source_name,
+            target_entity_id: suggestion.target_entity_id,
+            target_name: suggestion.target_name,
+            relation: suggestion.relation,
+            notes: suggestion.description,
+            valid_from_scene_id: suggestion.valid_from_scene_id,
+            valid_to_scene_id: suggestion.valid_to_scene_id || "",
+            created_at: "2026-07-15T12:00:00Z",
+          };
+          harness.relationships.push(relationship);
+          suggestion.created_relationship_id = relationship.id;
+        }
+      }
       return response(suggestion);
     }
     if (root === "memory" && action === "correct") {
@@ -840,5 +866,49 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Accept all" }));
     await waitFor(() => expect(harness.suggestions.every((row) => row.status === "accepted")).toBe(true));
     expect(harness.calls.some((args) => args[0] === "memory" && args[1] === "correct")).toBe(true);
+  });
+
+  it("keeps prose-found relationships review-first before adding them to the Connection Map", async () => {
+    harness.entities.push(
+      { id: "entity-mara", type: "character", name: "Mara", description: "Archive keeper.", aliases: [], tags: [], details: [], notes: "", ai_visibility: "include", scope: "project", created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:00:00Z" },
+      { id: "entity-soren", type: "character", name: "Soren", description: "Memory broker.", aliases: [], tags: [], details: [], notes: "", ai_visibility: "include", scope: "project", created_at: "2026-07-15T12:00:00Z", updated_at: "2026-07-15T12:00:00Z" },
+    );
+    harness.suggestions.push({
+      id: "relationship-suggestion-1",
+      kind: "relationship_create",
+      name: "Mara distrusts Soren",
+      description: "Explicit relationship statement found in manuscript prose.",
+      confidence: 0.82,
+      reason: "Explicit named relationship in manuscript prose",
+      status: "pending",
+      source_entity_id: "entity-mara",
+      source_name: "Mara",
+      target_entity_id: "entity-soren",
+      target_name: "Soren",
+      relation: "distrusts",
+      valid_from_scene_id: "scene-0001",
+      valid_to_scene_id: "",
+      evidence: [{ scene_id: "scene-0001", path: "manuscript/scenes/0001-the-gate.md", excerpt: "Mara distrusts Soren", start: 0, end: 21 }],
+    });
+
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Connection Novel");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await screen.findByText("No scenes yet.");
+
+    await user.click(screen.getByTitle(/Story Memory \(/));
+    await user.click(screen.getByRole("button", { name: "Connection Map" }));
+    expect(await screen.findByRole("heading", { name: "Connection Map" })).toBeTruthy();
+    expect(await screen.findByText("“Mara distrusts Soren”")).toBeTruthy();
+    expect(harness.relationships).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Accept" }));
+    await waitFor(() => expect(harness.relationships).toHaveLength(1));
+    await waitFor(() => expect(screen.getByLabelText("Connection map summary").textContent).toContain("1 accepted connections"));
+    expect(await screen.findByText("→ distrusts →")).toBeTruthy();
   });
 });

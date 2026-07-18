@@ -14,6 +14,7 @@ import { orderCodexEntities } from "../../state";
 import type { CodexEntity } from "../../types";
 
 const TYPE_ORDER: CodexEntity["type"][] = ["character", "location", "lore", "item", "faction", "event"];
+const belongsInSuggestionInbox = (suggestion: StoryMemorySuggestion) => suggestion.kind !== "relationship_create";
 
 const TYPE_ICONS: Record<CodexEntity["type"], string> = {
   character: "\u25C6",
@@ -45,7 +46,7 @@ export function CodexBrowser() {
   async function refreshSuggestions() {
     if (!projectRoot) return;
     try {
-      setSuggestions(await listStoryMemorySuggestions(projectRoot));
+      setSuggestions((await listStoryMemorySuggestions(projectRoot)).filter(belongsInSuggestionInbox));
     } catch (error) {
       setError(`Failed to load Memory suggestions: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -55,7 +56,7 @@ export function CodexBrowser() {
     setScanning(true);
     try {
       const report = await scanStoryMemory(projectRoot);
-      setSuggestions(report.suggestions.filter((row) => row.status === "pending"));
+      setSuggestions(report.suggestions.filter((row) => row.status === "pending" && belongsInSuggestionInbox(row)));
       setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestion${report.pending === 1 ? "" : "s"} await${report.pending === 1 ? "s" : ""} review.`);
     } catch (error) {
       setError(`Story Memory scan failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -178,6 +179,9 @@ export function CodexBrowser() {
         </button>
         <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
           Canon & Continuity
+        </button>
+        <button className="btn btn--sm" onClick={() => openTab({ id: "memory:connections", kind: "connections", label: "Connection Map" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
+          Connection Map
         </button>
       </div>
       <div className="sidebar__content">

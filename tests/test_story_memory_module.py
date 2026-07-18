@@ -4,8 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from openauthor.codex import list_entities
-from openauthor.codex import add_entity
+from openauthor.codex import add_entity, list_entities, list_relationships
 from openauthor.canon import list_canon_facts
 from openauthor.project import initialize_project
 from openauthor.scenes import add_scene, update_scene
@@ -193,6 +192,49 @@ class StoryMemorySuggestionTests(unittest.TestCase):
       accepted = review_memory_suggestion(paths, facts[0]["id"], disposition="accepted")
       self.assertTrue(accepted["created_fact_id"].startswith("fact-"))
       self.assertEqual(list_canon_facts(paths)[0]["value"], "sealed with blue glass")
+
+  def test_explicit_relationship_prose_is_reviewed_before_entering_the_graph(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Relationship Suggestions")
+      mara_id = add_entity(paths, kind="character", name="Mara Vey", aliases=["Mara"])
+      soren_id = add_entity(paths, kind="character", name="Soren Vale", aliases=["Soren"])
+      add_scene(
+        paths,
+        title="The Breach",
+        body=(
+          "Mara distrusts Soren after the council vote. "
+          "At the orchard gate, Mara protects Soren. "
+          "Mara watches Soren leave without speaking."
+        ),
+      )
+
+      report = extract_memory_suggestions(paths)
+      suggestions = [
+        row for row in report["suggestions"]
+        if row["status"] == "pending" and row["kind"] == "relationship_create"
+      ]
+
+      self.assertEqual({row["relation"] for row in suggestions}, {"distrusts", "protects"})
+      self.assertEqual(list_relationships(paths), [])
+      distrusts = next(row for row in suggestions if row["relation"] == "distrusts")
+      self.assertEqual(distrusts["source_entity_id"], mara_id)
+      self.assertEqual(distrusts["target_entity_id"], soren_id)
+      self.assertEqual(distrusts["valid_from_scene_id"], "scene-0001")
+      self.assertEqual(distrusts["evidence"][0]["excerpt"], "Mara distrusts Soren")
+
+      accepted = review_memory_suggestion(paths, distrusts["id"], disposition="accepted")
+      relationships = list_relationships(paths)
+      self.assertEqual(len(relationships), 1)
+      self.assertEqual(relationships[0]["relation"], "distrusts")
+      self.assertEqual(relationships[0]["valid_from_scene_id"], "scene-0001")
+      self.assertEqual(accepted["created_relationship_id"], relationships[0]["id"])
+
+      rescanned = extract_memory_suggestions(paths)
+      pending_relations = [
+        row["relation"] for row in rescanned["suggestions"]
+        if row["status"] == "pending" and row["kind"] == "relationship_create"
+      ]
+      self.assertEqual(pending_relations, ["protects"])
 
   def test_derived_refresh_preserves_author_metadata_and_stable_timestamp(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

@@ -6,7 +6,7 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
-from .codex import add_entity, list_entities, update_entity
+from .codex import add_entity, add_relationship, list_entities, list_relationships, update_entity
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .scenes import get_scene, list_scenes
 
@@ -24,6 +24,21 @@ NAME_TITLES = {
   "general", "inspector", "king", "lady", "lord", "prince", "princess",
   "professor", "queen", "sir",
 }
+RELATION_PATTERNS = {
+  "trusts": r"trusts?",
+  "distrusts": r"(?:distrusts?|does\s+not\s+trust)",
+  "protects": r"(?:protects?|guards?)",
+  "loves": r"loves?",
+  "fears": r"fears?",
+  "owes": r"owes?",
+  "betrayed": r"betrayed",
+  "serves": r"serves?",
+  "works for": r"works\s+for",
+  "is sibling of": r"(?:is|was)\s+(?:the\s+)?(?:brother|sister|sibling)\s+of",
+  "is parent of": r"(?:is|was)\s+(?:the\s+)?(?:mother|father|parent)\s+of",
+  "is child of": r"(?:is|was)\s+(?:the\s+)?(?:son|daughter|child)\s+of",
+}
+SYMMETRIC_RELATIONS = {"is sibling of"}
 
 
 def _suggestions_path(paths: ProjectPaths):
@@ -53,6 +68,93 @@ def _fact_suggestion_id(entity_id: str, predicate: str, value: str) -> str:
     f"{entity_id}:{predicate.casefold()}:{value.casefold()}".encode("utf-8")
   ).hexdigest()[:16]
   return f"memory-fact-suggestion-{digest}"
+
+
+def _relationship_key(source_entity_id: str, target_entity_id: str, relation: str) -> tuple[str, str, str]:
+  source = source_entity_id
+  target = target_entity_id
+  normalized_relation = " ".join(relation.casefold().split())
+  if normalized_relation in SYMMETRIC_RELATIONS and source > target:
+    source, target = target, source
+  return source, target, normalized_relation
+
+
+def _relationship_suggestion_id(source_entity_id: str, target_entity_id: str, relation: str) -> str:
+  source, target, normalized_relation = _relationship_key(source_entity_id, target_entity_id, relation)
+  digest = hashlib.sha256(f"{source}:{normalized_relation}:{target}".encode("utf-8")).hexdigest()[:16]
+  return f"memory-relationship-suggestion-{digest}"
+
+
+def _relationship_candidates(
+  scenes: list[dict[str, Any]],
+  entities: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+  mention_entities: dict[str, list[dict[str, Any]]] = defaultdict(list)
+  mention_labels: dict[str, str] = {}
+  for entity in entities:
+    for mention in [entity["name"], *entity.get("aliases", [])]:
+      cleaned = str(mention).strip()
+      if not cleaned:
+        continue
+      key = cleaned.casefold()
+      mention_entities[key].append(entity)
+      mention_labels[key] = cleaned
+  unambiguous = {
+    key: rows[0] for key, rows in mention_entities.items()
+    if len({row["id"] for row in rows}) == 1
+  }
+  if len(unambiguous) < 2:
+    return {}
+  mention_pattern = "|".join(
+    re.escape(mention_labels[key])
+    for key in sorted(unambiguous, key=lambda value: len(mention_labels[value]), reverse=True)
+  )
+  compiled = [
+    (
+      relation,
+      re.compile(
+        rf"\b(?P<source>{mention_pattern})\s+(?:{pattern})\s+(?P<target>{mention_pattern})\b",
+        flags=re.IGNORECASE,
+      ),
+    )
+    for relation, pattern in RELATION_PATTERNS.items()
+  ]
+  candidates: dict[str, dict[str, Any]] = {}
+  for scene in scenes:
+    body = str(scene.get("body", ""))
+    for relation, pattern in compiled:
+      for match in pattern.finditer(body):
+        source = unambiguous.get(match.group("source").casefold())
+        target = unambiguous.get(match.group("target").casefold())
+        if source is None or target is None or source["id"] == target["id"]:
+          continue
+        suggestion_id = _relationship_suggestion_id(source["id"], target["id"], relation)
+        candidate = candidates.setdefault(suggestion_id, {
+          "id": suggestion_id,
+          "kind": "relationship_create",
+          "source_entity_id": source["id"],
+          "source_name": source["name"],
+          "target_entity_id": target["id"],
+          "target_name": target["name"],
+          "relation": relation,
+          "name": f"{source['name']} {relation} {target['name']}",
+          "description": "Explicit relationship statement found in manuscript prose.",
+          "confidence": 0.82,
+          "reason": "Explicit named relationship in manuscript prose",
+          "valid_from_scene_id": scene["id"],
+          "valid_to_scene_id": "",
+          "evidence": [],
+        })
+        if len(candidate["evidence"]) < 3:
+          candidate["evidence"].append({
+            "scene_id": scene["id"],
+            "path": scene["path"],
+            "excerpt": match.group(0),
+            "start": match.start(),
+            "end": match.end(),
+          })
+        candidate["confidence"] = min(0.96, round(0.82 + (len(candidate["evidence"]) - 1) * 0.05, 2))
+  return candidates
 
 
 def _identity_key(name: str) -> str:
@@ -172,6 +274,11 @@ def extract_memory_suggestions(
   selected = set(scene_ids or [])
   scenes = [row for row in list_scenes(paths) if not selected or row["id"] in selected]
   entities = list_entities(paths)
+  relationships = list_relationships(paths)
+  existing_relationships = {
+    _relationship_key(row["source_entity_id"], row["target_entity_id"], row["relation"])
+    for row in relationships
+  }
   existing_names: set[str] = set()
   for entity in entities:
     existing_names.add(_identity_key(entity["name"]))
@@ -181,8 +288,10 @@ def extract_memory_suggestions(
   evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
   pov_names: set[str] = set()
   fact_candidates: dict[str, dict[str, Any]] = {}
+  scene_details: list[dict[str, Any]] = []
   for scene_summary in scenes:
     scene = get_scene(paths, scene_summary["id"])
+    scene_details.append(scene)
     pov = str(scene.get("pov", "")).strip()
     if pov:
       pov_names.add(pov)
@@ -241,6 +350,7 @@ def extract_memory_suggestions(
           }
 
   name_aliases = _consolidate_character_names(counts, evidence, pov_names)
+  relationship_candidates = _relationship_candidates(scene_details, entities)
 
   store = _read_store(paths)
   previous = {row["id"]: row for row in store["suggestions"]}
@@ -250,6 +360,16 @@ def extract_memory_suggestions(
       and suggestion.get("status") in {"pending", "deferred"}
       and not suggestion.get("author_corrected")
       and _identity_key(str(suggestion.get("name", ""))) in existing_names
+    ):
+      previous.pop(suggestion_id)
+    if (
+      suggestion.get("kind") == "relationship_create"
+      and suggestion.get("status") in {"pending", "deferred"}
+      and _relationship_key(
+        str(suggestion.get("source_entity_id", "")),
+        str(suggestion.get("target_entity_id", "")),
+        str(suggestion.get("relation", "")),
+      ) in existing_relationships
     ):
       previous.pop(suggestion_id)
   for aliases in name_aliases.values():
@@ -324,6 +444,29 @@ def extract_memory_suggestions(
     else:
       added += 1
     previous[suggestion_id] = candidate
+  for suggestion_id, candidate in relationship_candidates.items():
+    relationship_key = _relationship_key(
+      candidate["source_entity_id"], candidate["target_entity_id"], candidate["relation"]
+    )
+    if relationship_key in existing_relationships:
+      continue
+    current = previous.get(suggestion_id)
+    candidate = {
+      **(current or {}),
+      **candidate,
+      "status": current.get("status", "pending") if current else "pending",
+      "created_at": current.get("created_at", utc_now()) if current else utc_now(),
+      "updated_at": (
+        current.get("updated_at", current.get("created_at", utc_now()))
+        if current
+        else utc_now()
+      ),
+    }
+    if current:
+      refreshed += 1
+    else:
+      added += 1
+    previous[suggestion_id] = candidate
   store["suggestions"] = list(previous.values())
   atomic_write_json(_suggestions_path(paths), store)
   return {
@@ -350,6 +493,7 @@ def review_memory_suggestion(
   if suggestion.get("status") != "pending" and suggestion.get("status") != "deferred":
     raise OpenAuthorError("This Story Memory suggestion has already been decided.")
   created_entity_id = ""
+  created_relationship_id = ""
   if disposition == "accepted":
     if suggestion.get("kind") == "canon_fact":
       from .canon import add_canon_fact
@@ -362,6 +506,27 @@ def review_memory_suggestion(
         confidence=float(suggestion.get("confidence", 0.5)),
       )
       suggestion["created_fact_id"] = fact["id"]
+    elif suggestion.get("kind") == "relationship_create":
+      relationship_key = _relationship_key(
+        suggestion["source_entity_id"], suggestion["target_entity_id"], suggestion["relation"]
+      )
+      existing_relationship = next((
+        row for row in list_relationships(paths)
+        if _relationship_key(row["source_entity_id"], row["target_entity_id"], row["relation"]) == relationship_key
+      ), None)
+      if existing_relationship:
+        created_relationship_id = existing_relationship["id"]
+      else:
+        relationship = add_relationship(
+          paths,
+          source_entity_id=suggestion["source_entity_id"],
+          target_entity_id=suggestion["target_entity_id"],
+          relation=suggestion["relation"],
+          notes=suggestion.get("description", ""),
+          valid_from_scene_id=suggestion.get("valid_from_scene_id", ""),
+          valid_to_scene_id=suggestion.get("valid_to_scene_id", ""),
+        )
+        created_relationship_id = relationship["id"]
     else:
       aliases = [
         str(alias).strip() for alias in suggestion.get("aliases", [])
@@ -393,13 +558,14 @@ def review_memory_suggestion(
   suggestion["status"] = disposition
   suggestion["decided_at"] = utc_now()
   suggestion["created_entity_id"] = created_entity_id
-  if disposition == "accepted" and suggestion.get("kind") != "canon_fact":
+  suggestion["created_relationship_id"] = created_relationship_id
+  if disposition == "accepted" and suggestion.get("kind") in {"entity_create", "memory_note"}:
     accepted_names = {
       suggestion["name"].casefold(),
       *(str(alias).casefold() for alias in suggestion.get("aliases", [])),
     }
     for other in store["suggestions"]:
-      if other is suggestion or other.get("kind") == "canon_fact":
+      if other is suggestion or other.get("kind") not in {"entity_create", "memory_note"}:
         continue
       other_names = {
         str(other.get("name", "")).casefold(),

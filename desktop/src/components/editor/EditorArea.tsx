@@ -8,6 +8,7 @@ import { RevisionReview } from "./RevisionReview";
 import { PlanEditor } from "./PlanEditor";
 import { StoryMemoryEditor } from "./StoryMemoryEditor";
 import { CanonMemoryEditor } from "./CanonMemoryEditor";
+import { ConnectionGraphEditor } from "./ConnectionGraphEditor";
 import { StorylineEditor } from "./StorylineEditor";
 import { AlternativeComparison } from "./AlternativeComparison";
 import type { SceneDetail, ProposalRecord, CodexEntity, RevisionSummary } from "../../types";
@@ -41,6 +42,8 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
       return <PlanEditor />;
     case "memory":
       return <CanonMemoryEditor />;
+    case "connections":
+      return <ConnectionGraphEditor />;
     case "storylines":
       return <StorylineEditor />;
     case "proposal": {
