@@ -1334,6 +1334,7 @@ export type StoryMemorySuggestion = {
   entity_type?: CodexEntity["type"];
   name: string;
   description: string;
+  aliases?: string[];
   confidence: number;
   reason: string;
   status: "pending" | "accepted" | "rejected" | "deferred";

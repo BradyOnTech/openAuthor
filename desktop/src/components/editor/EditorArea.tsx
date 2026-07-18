@@ -108,7 +108,7 @@ function EmptyState() {
           : "Open a scene and return to the sentence where you left off."}
       </div>
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
-        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Create first scene" : "Open manuscript"}</button>
+        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
         <button className="btn" onClick={() => void navigateTo("plan")}>Plan the story</button>
       </div>
       <div style={{ display: "flex", gap: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: "var(--space-3)" }}>

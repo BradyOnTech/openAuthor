@@ -14,6 +14,7 @@ const harness = vi.hoisted(() => ({
   proposals: [] as Array<Record<string, unknown>>,
   runs: [] as Array<Record<string, unknown>>,
   entities: [] as Array<Record<string, unknown>>,
+  relationships: [] as Array<Record<string, unknown>>,
   facts: [] as Array<Record<string, unknown>>,
   arcStates: [] as Array<Record<string, unknown>>,
   suggestions: [] as Array<Record<string, unknown>>,
@@ -149,6 +150,24 @@ vi.mock("@tauri-apps/api/core", () => ({
       harness.entities.push(entity); return response(entity);
     }
     if (root === "codex" && action === "get") return response(harness.entities.find((row) => row.id === argument(args, "--id")));
+    if (root === "codex" && action === "relationship-list") return response(harness.relationships);
+    if (root === "codex" && action === "relationship-add") {
+      const source = harness.entities.find((row) => row.id === argument(args, "--source"));
+      const target = harness.entities.find((row) => row.id === argument(args, "--target"));
+      const relationship = {
+        id: `relationship-${harness.relationships.length + 1}`,
+        source_entity_id: source?.id,
+        source_name: source?.name,
+        target_entity_id: target?.id,
+        target_name: target?.name,
+        relation: argument(args, "--relation"),
+        notes: argument(args, "--notes"),
+        valid_from_scene_id: argument(args, "--valid-from"),
+        valid_to_scene_id: argument(args, "--valid-to"),
+      };
+      harness.relationships.push(relationship);
+      return response(relationship);
+    }
     if (root === "memory" && action === "list") return response(harness.suggestions.filter((row) => !argument(args, "--status") || row.status === argument(args, "--status")));
     if (root === "memory" && action === "review") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
@@ -394,6 +413,29 @@ vi.mock("@tauri-apps/api/core", () => ({
       chapters.push(chapter);
       return response(chapter);
     }
+    if (root === "plan" && action === "scene-preview") {
+      return response({
+        scene_id: argument(args, "--scene"),
+        from_chapter_id: null,
+        to_chapter_id: argument(args, "--chapter") || null,
+        before_scene_id: argument(args, "--before") || null,
+        summary: "Move The Arrival from Unassigned to False Morning.",
+        warnings: [],
+      });
+    }
+    if (root === "plan" && action === "scene-assign") {
+      const sceneId = argument(args, "--scene");
+      const chapterId = argument(args, "--chapter");
+      harness.plan.unassigned_scene_ids = harness.plan.unassigned_scene_ids.filter((id) => id !== sceneId);
+      for (const act of harness.plan.acts) {
+        for (const chapter of act.chapters as Array<Record<string, unknown>>) {
+          chapter.scene_ids = (chapter.scene_ids as string[]).filter((id) => id !== sceneId);
+          if (chapter.id === chapterId) (chapter.scene_ids as string[]).push(sceneId);
+        }
+      }
+      if (!chapterId) harness.plan.unassigned_scene_ids.push(sceneId);
+      return response(harness.plan);
+    }
     if (root === "plan" && action === "beat-add") {
       const beat = { id: "beat-golden", scene_id: argument(args, "--scene"), summary: argument(args, "--summary"), status: "planned", position: 1, created_at: "2026-07-15T12:00:00Z" };
       harness.plan.beats.push(beat);
@@ -408,6 +450,14 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response(harness.plan.scene_metadata[sceneId]);
     }
     if (root === "branch" && action === "list") return response([]);
+    if (root === "search") return response(harness.scenes.map((scene) => ({
+      source_kind: "scene",
+      source_id: scene.id,
+      title: scene.title,
+      path: scene.path,
+      excerpt: scene.body,
+      score: 1,
+    })));
     if (root === "chat" && action === "thread") return response([]);
     throw new Error(`Unexpected core command: ${args.join(" ")}`);
   }),
@@ -430,6 +480,7 @@ describe("active V2 author workflow", () => {
     harness.proposals.length = 0;
     harness.runs.length = 0;
     harness.entities.length = 0;
+    harness.relationships.length = 0;
     harness.facts.length = 0;
     harness.arcStates.length = 0;
     harness.suggestions.length = 0;
@@ -518,7 +569,7 @@ describe("active V2 author workflow", () => {
     expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
     expect(window.location.pathname).toMatch(/^\/w\/personal-workspace\/p\//);
 
-    await user.click(screen.getByRole("button", { name: "Create first scene" }));
+    await user.click(screen.getByRole("button", { name: "Name your first scene" }));
     await waitFor(() => expect(document.activeElement).toBe(screen.getByPlaceholderText("New scene title...")));
     await user.type(screen.getByPlaceholderText("New scene title..."), "A True Blank Page");
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
@@ -575,6 +626,11 @@ describe("active V2 author workflow", () => {
     expect(metadataCall?.includes("--body")).toBe(false);
     await user.click(screen.getByRole("button", { name: "Close side panel" }));
     expect(screen.queryByRole("button", { name: "Inspector" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.type(screen.getByPlaceholderText("Search manuscript..."), "crosses");
+    await user.click(await screen.findByRole("button", { name: "Open The Crossing" }));
+    expect(await screen.findByDisplayValue("Mara crosses before the signal changes.")).toBeTruthy();
   });
 
   it("resets editor tabs and panels when a different novel is created", async () => {
@@ -678,7 +734,13 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("The Disappearance")).toBeTruthy();
     await user.type(screen.getByPlaceholderText("Chapter title"), "False Morning");
     await user.click(screen.getByRole("button", { name: "Add" }));
-    expect(await screen.findByText(/False Morning/)).toBeTruthy();
+    expect((await screen.findAllByText(/False Morning/)).length).toBeGreaterThan(0);
+
+    await user.selectOptions(screen.getByLabelText("Move The Arrival to"), "chapter-golden");
+    expect(await screen.findByText("Move The Arrival from Unassigned to False Morning.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Move" }));
+    await waitFor(() => expect(harness.plan.unassigned_scene_ids).not.toContain("scene-0001"));
+    expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "scene-assign")).toBe(true);
 
     await user.type(screen.getByLabelText("New beat for The Arrival"), "The clock skips thirteen minutes.");
     await user.click(screen.getByRole("button", { name: "Add beat to The Arrival" }));
@@ -733,6 +795,15 @@ describe("active V2 author workflow", () => {
     await user.type(screen.getByPlaceholderText("Entity name..."), "Mara");
     await user.click(screen.getByRole("button", { name: "Add Memory Entry" }));
     expect(await screen.findByText("Mara")).toBeTruthy();
+    await user.type(screen.getByPlaceholderText("Entity name..."), "Soren");
+    await user.click(screen.getByRole("button", { name: "Add Memory Entry" }));
+    await user.click(await screen.findByRole("button", { name: /Mara/ }));
+    expect(await screen.findByText("No connections yet. Link Mara to another character, place, faction, or object below.")).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText("Related entry"), "entity-2");
+    await user.type(screen.getByLabelText("Connection"), "distrusts");
+    await user.type(screen.getByLabelText("Context"), "Soren concealed the missing memory.");
+    await user.click(screen.getByRole("button", { name: "Add connection" }));
+    expect(await screen.findByText("→ distrusts →")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     expect(await screen.findByText("Add Canon Fact")).toBeTruthy();
     await user.selectOptions(screen.getByLabelText("Fact subject"), "entity-1");

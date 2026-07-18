@@ -34,6 +34,9 @@ export function PlanEditor() {
   const [arcStates, setArcStates] = useState<CharacterArcState[]>([]);
 
   const scenesById = useMemo(() => new Map(scenes.map((scene) => [scene.id, scene])), [scenes]);
+  const chapterOptions = useMemo(() => (plan?.acts ?? []).flatMap((act) => (
+    act.chapters.map((chapter) => ({ id: chapter.id, label: `${act.title} · ${chapter.title}` }))
+  )), [plan]);
 
   useEffect(() => {
     void loadPlan();
@@ -56,6 +59,7 @@ export function PlanEditor() {
     try {
       await action();
       await loadPlan();
+      setError("");
       setMessage(success);
     } catch (error) {
       setError(`Plan update failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -100,6 +104,20 @@ export function PlanEditor() {
     void previewPlanSceneMove(projectRoot, draggedScene, chapterId, beforeSceneId)
       .then(setMovePreview)
       .catch((error) => setError(`Move preview failed: ${error instanceof Error ? error.message : String(error)}`));
+  }
+
+  function previewSceneMove(sceneId: string, chapterId: string | null) {
+    void previewPlanSceneMove(projectRoot, sceneId, chapterId)
+      .then(setMovePreview)
+      .catch((error) => setError(`Move preview failed: ${error instanceof Error ? error.message : String(error)}`));
+  }
+
+  function moveScene(sceneId: string, chapterId: string | null) {
+    void runMutation(
+      () => assignPlanScene(projectRoot, sceneId, chapterId),
+      chapterId ? "Scene moved. Manuscript order updated." : "Scene moved to Unassigned."
+    );
+    setMovePreview(null);
   }
 
   if (!plan) {
@@ -180,12 +198,12 @@ export function PlanEditor() {
                   <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>{chapter.position}. {chapter.title}</div>
                   {chapter.scene_ids.map((sceneId) => {
                     const scene = scenesById.get(sceneId);
-                    return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
+                    return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} chapterOptions={chapterOptions} currentChapterId={chapter.id} busy={busy} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
                       const summary = (beatDrafts[sceneId] ?? "").trim();
                       if (!summary) return;
                       void runMutation(() => addPlanBeat(projectRoot, sceneId, summary), "Beat added.");
                       setBeatDrafts({ ...beatDrafts, [sceneId]: "" });
-                    }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(chapter.id, sceneId)} onDrop={(event) => dropScene(event, chapter.id, sceneId)} /> : null;
+                    }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(chapter.id, sceneId)} onDrop={(event) => dropScene(event, chapter.id, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
                   })}
                   {chapter.scene_ids.length === 0 && <DropHint text="Drop scenes here" />}
                 </div>
@@ -204,15 +222,15 @@ export function PlanEditor() {
           <section onDragOver={(event) => event.preventDefault()} onDragEnter={() => previewMove(null)} onDrop={(event) => dropScene(event, null)} style={panelStyle}>
             <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>UNASSIGNED</div>
             <h2 style={{ ...sectionTitle, marginTop: 3 }}>Scene Inbox</h2>
-            <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", lineHeight: 1.5 }}>New and imported scenes stay here until you place them. Drag cards between chapters to preview and change reading order.</p>
+            <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", lineHeight: 1.5 }}>New and imported scenes stay here until you place them. Drag a card, or use its Move to control, to preview and change reading order.</p>
             {plan.unassigned_scene_ids.map((sceneId) => {
               const scene = scenesById.get(sceneId);
-              return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
+              return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} chapterOptions={chapterOptions} currentChapterId={null} busy={busy} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
                 const summary = (beatDrafts[sceneId] ?? "").trim();
                 if (!summary) return;
                 void runMutation(() => addPlanBeat(projectRoot, sceneId, summary), "Beat added.");
                 setBeatDrafts({ ...beatDrafts, [sceneId]: "" });
-              }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(null, sceneId)} onDrop={(event) => dropScene(event, null, sceneId)} /> : null;
+              }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(null, sceneId)} onDrop={(event) => dropScene(event, null, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
             })}
             {plan.unassigned_scene_ids.length === 0 && <DropHint text={scenes.length === 0 ? "Create your first scene in Manuscript, then place it here." : "All scenes are placed"} />}
           </section>
@@ -238,11 +256,14 @@ export function PlanEditor() {
   );
 }
 
-function SceneCard({ scene, metadata, beats, beatDraft, onBeatDraft, onAddBeat, onMetadataSave, onOpen, onDragStart, onPreview, onDrop }: {
+function SceneCard({ scene, metadata, beats, beatDraft, chapterOptions, currentChapterId, busy, onBeatDraft, onAddBeat, onMetadataSave, onOpen, onDragStart, onPreview, onDrop, onMovePreview, onMove }: {
   scene: SceneSummary;
   metadata?: ManuscriptPlan["scene_metadata"][string];
   beats: ManuscriptPlan["beats"];
   beatDraft: string;
+  chapterOptions: Array<{ id: string; label: string }>;
+  currentChapterId: string | null;
+  busy: boolean;
   onBeatDraft: (value: string) => void;
   onAddBeat: () => void;
   onMetadataSave: (timelinePosition: string, labels: string[]) => void;
@@ -250,14 +271,21 @@ function SceneCard({ scene, metadata, beats, beatDraft, onBeatDraft, onAddBeat, 
   onDragStart: (event: DragEvent) => void;
   onPreview: () => void;
   onDrop: (event: DragEvent) => void;
+  onMovePreview: (chapterId: string | null) => void;
+  onMove: (chapterId: string | null) => void;
 }) {
   const [timelinePosition, setTimelinePosition] = useState(metadata?.timeline_position ?? "");
   const [labels, setLabels] = useState((metadata?.labels ?? []).join(", "));
+  const [moveTarget, setMoveTarget] = useState(currentChapterId ?? "__unassigned__");
 
   useEffect(() => {
     setTimelinePosition(metadata?.timeline_position ?? "");
     setLabels((metadata?.labels ?? []).join(", "));
   }, [metadata?.timeline_position, metadata?.labels?.join("\u0000")]);
+
+  useEffect(() => {
+    setMoveTarget(currentChapterId ?? "__unassigned__");
+  }, [currentChapterId]);
 
   return (
     <article draggable onDragStart={onDragStart} onDragOver={(event) => event.preventDefault()} onDragEnter={(event) => { event.stopPropagation(); onPreview(); }} onDrop={(event) => { event.stopPropagation(); onDrop(event); }} style={{ marginTop: "var(--space-2)", padding: "var(--space-3)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", cursor: "grab" }}>
@@ -268,6 +296,17 @@ function SceneCard({ scene, metadata, beats, beatDraft, onBeatDraft, onAddBeat, 
       {scene.summary && <p style={{ margin: "var(--space-2) 0 0", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.45 }}>{scene.summary}</p>}
       {(timelinePosition || labels) && <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>{timelinePosition && <span className="badge">Story time · {timelinePosition}</span>}{labels.split(",").map((label) => label.trim()).filter(Boolean).map((label) => <span className="badge" key={label}>{label}</span>)}</div>}
       {beats.map((beat) => <div key={beat.id} style={{ marginTop: 6, paddingLeft: 9, borderLeft: "2px solid var(--info)", color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>Beat {beat.position}: {beat.summary}</div>)}
+      {chapterOptions.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 6, marginTop: 8 }}>
+        <select className="select" aria-label={`Move ${scene.title} to`} value={moveTarget} onChange={(event) => {
+          const target = event.target.value;
+          setMoveTarget(target);
+          onMovePreview(target === "__unassigned__" ? null : target);
+        }}>
+          <option value="__unassigned__">Unassigned scene inbox</option>
+          {chapterOptions.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.label}</option>)}
+        </select>
+        <button className="btn btn--sm" disabled={busy || moveTarget === (currentChapterId ?? "__unassigned__")} onClick={() => onMove(moveTarget === "__unassigned__" ? null : moveTarget)}>Move</button>
+      </div>}
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <input className="input" aria-label={`New beat for ${scene.title}`} placeholder="Add beat…" value={beatDraft} onChange={(event) => onBeatDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onAddBeat()} />
         <button className="btn btn--sm" aria-label={`Add beat to ${scene.title}`} disabled={!beatDraft.trim()} onClick={onAddBeat}>+</button>

@@ -56,7 +56,7 @@ export function CodexBrowser() {
     try {
       const report = await scanStoryMemory(projectRoot);
       setSuggestions(report.suggestions.filter((row) => row.status === "pending"));
-      setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestions await review.`);
+      setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestion${report.pending === 1 ? "" : "s"} await${report.pending === 1 ? "s" : ""} review.`);
     } catch (error) {
       setError(`Story Memory scan failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -68,6 +68,7 @@ export function CodexBrowser() {
     try {
       await reviewStoryMemorySuggestion(projectRoot, id, disposition);
       await Promise.all([refreshSuggestions(), refreshCodex()]);
+      setError("");
       setMessage(disposition === "accepted" ? "Suggestion accepted into Story Memory." : `Suggestion ${disposition}.`);
     } catch (error) {
       setError(`Suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -81,6 +82,7 @@ export function CodexBrowser() {
         await reviewStoryMemorySuggestion(projectRoot, suggestion.id, disposition);
       }
       await Promise.all([refreshSuggestions(), refreshCodex()]);
+      setError("");
       setMessage(`${suggestions.length} suggestions ${disposition === "accepted" ? "accepted into Story Memory" : "deferred"}.`);
     } catch (error) {
       setError(`Bulk suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -216,7 +218,8 @@ export function CodexBrowser() {
               <span className="section-header__count">({g.entities.length})</span>
             </div>
             {g.entities.map((e) => (
-              <div
+              <button
+                type="button"
                 key={e.id}
                 className="list-item"
                 onClick={() => handleEntityClick(e.id, e.name)}
@@ -228,7 +231,7 @@ export function CodexBrowser() {
                 <div className="list-item__content">
                   <div className="list-item__title">{e.name}</div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         ))}

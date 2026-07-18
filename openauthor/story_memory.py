@@ -6,7 +6,7 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
-from .codex import add_entity, list_entities
+from .codex import add_entity, list_entities, update_entity
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .scenes import get_scene, list_scenes
 
@@ -18,6 +18,11 @@ NAME_STOPWORDS = {
   "His", "I", "If", "In", "It", "Its", "No", "Not", "Of", "On", "Or",
   "She", "So", "That", "The", "Their", "Then", "They", "This", "To", "We",
   "When", "Where", "Who", "With", "You",
+}
+NAME_TITLES = {
+  "captain", "chancellor", "colonel", "dame", "detective", "doctor", "dr",
+  "general", "inspector", "king", "lady", "lord", "prince", "princess",
+  "professor", "queen", "sir",
 }
 
 
@@ -48,6 +53,64 @@ def _fact_suggestion_id(entity_id: str, predicate: str, value: str) -> str:
     f"{entity_id}:{predicate.casefold()}:{value.casefold()}".encode("utf-8")
   ).hexdigest()[:16]
   return f"memory-fact-suggestion-{digest}"
+
+
+def _identity_key(name: str) -> str:
+  parts = name.casefold().split()
+  if len(parts) > 1 and parts[0].rstrip(".") in NAME_TITLES:
+    parts = parts[1:]
+  return " ".join(parts)
+
+
+def _consolidate_character_names(
+  counts: Counter[str],
+  evidence: dict[str, list[dict[str, Any]]],
+  pov_names: set[str],
+) -> dict[str, list[str]]:
+  """Merge an unambiguous short name into the full name seen in the manuscript."""
+  full_names = [name for name in counts if len(name.split()) > 1]
+  aliases: dict[str, list[str]] = defaultdict(list)
+  for short_name in list(counts):
+    if len(short_name.split()) != 1:
+      continue
+    short_key = short_name.casefold()
+    matches = [
+      full_name for full_name in full_names
+      if short_key in {full_name.split()[0].casefold(), full_name.split()[-1].casefold()}
+    ]
+    if len(matches) != 1:
+      continue
+    canonical_name = matches[0]
+    counts[canonical_name] += counts.pop(short_name)
+    for item in evidence.pop(short_name, []):
+      identity = (item.get("scene_id"), item.get("start"), item.get("end"))
+      existing = {
+        (row.get("scene_id"), row.get("start"), row.get("end"))
+        for row in evidence[canonical_name]
+      }
+      if identity not in existing and len(evidence[canonical_name]) < 3:
+        evidence[canonical_name].append(item)
+    aliases[canonical_name].append(short_name)
+    if short_name in pov_names:
+      pov_names.discard(short_name)
+      pov_names.add(canonical_name)
+  return aliases
+
+
+def _matching_entity(
+  entities: list[dict[str, Any]],
+  name: str,
+  aliases: list[str],
+) -> dict[str, Any] | None:
+  candidate_names = {_identity_key(name), *(_identity_key(alias) for alias in aliases)}
+  for entity in entities:
+    entity_names = {
+      _identity_key(str(entity.get("name", ""))),
+      *(_identity_key(str(alias)) for alias in entity.get("aliases", [])),
+    }
+    if candidate_names & entity_names:
+      return entity
+  return None
 
 
 def queue_memory_suggestion(
@@ -111,8 +174,8 @@ def extract_memory_suggestions(
   entities = list_entities(paths)
   existing_names: set[str] = set()
   for entity in entities:
-    existing_names.add(entity["name"].casefold())
-    existing_names.update(str(alias).casefold() for alias in entity.get("aliases", []))
+    existing_names.add(_identity_key(entity["name"]))
+    existing_names.update(_identity_key(str(alias)) for alias in entity.get("aliases", []))
 
   counts: Counter[str] = Counter()
   evidence: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -177,12 +240,32 @@ def extract_memory_suggestions(
             }],
           }
 
+  name_aliases = _consolidate_character_names(counts, evidence, pov_names)
+
   store = _read_store(paths)
   previous = {row["id"]: row for row in store["suggestions"]}
+  for suggestion_id, suggestion in list(previous.items()):
+    if (
+      suggestion.get("kind") == "entity_create"
+      and suggestion.get("status") in {"pending", "deferred"}
+      and not suggestion.get("author_corrected")
+      and _identity_key(str(suggestion.get("name", ""))) in existing_names
+    ):
+      previous.pop(suggestion_id)
+  for aliases in name_aliases.values():
+    for alias in aliases:
+      alias_id = _suggestion_id("character", alias)
+      alias_suggestion = previous.get(alias_id)
+      if (
+        alias_suggestion
+        and alias_suggestion.get("status") in {"pending", "deferred"}
+        and not alias_suggestion.get("author_corrected")
+      ):
+        previous.pop(alias_id)
   added = 0
   refreshed = 0
   for name, count in counts.items():
-    if name.casefold() in existing_names or count < 2:
+    if _identity_key(name) in existing_names or count < 2:
       continue
     entity_type = "character"
     suggestion_id = _suggestion_id(entity_type, name)
@@ -197,6 +280,7 @@ def extract_memory_suggestions(
       "kind": "entity_create",
       "entity_type": entity_type,
       "name": name,
+      "aliases": name_aliases.get(name, []),
       "description": f"Appears in {len({item['scene_id'] for item in evidence[name]})} scene(s).",
       "details": [],
       "confidence": round(confidence, 2),
@@ -279,17 +363,53 @@ def review_memory_suggestion(
       )
       suggestion["created_fact_id"] = fact["id"]
     else:
-      created_entity_id = add_entity(
-        paths,
-        kind=suggestion["entity_type"],
-        name=suggestion["name"],
-        description=suggestion.get("description", ""),
-        details=suggestion.get("details", []),
-        notes=f"Accepted from suggestion {suggestion_id}. Evidence remains in codex/suggestions.json.",
-      )
+      aliases = [
+        str(alias).strip() for alias in suggestion.get("aliases", [])
+        if str(alias).strip() and str(alias).casefold() != suggestion["name"].casefold()
+      ]
+      entities = list_entities(paths)
+      existing = _matching_entity(entities, suggestion["name"], aliases)
+      if existing:
+        merged_aliases = list(existing.get("aliases", []))
+        known = {str(alias).casefold() for alias in merged_aliases}
+        known.add(existing["name"].casefold())
+        for alias in [suggestion["name"], *aliases]:
+          if alias.casefold() not in known:
+            merged_aliases.append(alias)
+            known.add(alias.casefold())
+        if merged_aliases != existing.get("aliases", []):
+          update_entity(paths, entity_id=existing["id"], aliases=merged_aliases)
+        created_entity_id = existing["id"]
+      else:
+        created_entity_id = add_entity(
+          paths,
+          kind=suggestion["entity_type"],
+          name=suggestion["name"],
+          description=suggestion.get("description", ""),
+          aliases=aliases,
+          details=suggestion.get("details", []),
+          notes=f"Accepted from suggestion {suggestion_id}. Evidence remains in codex/suggestions.json.",
+        )
   suggestion["status"] = disposition
   suggestion["decided_at"] = utc_now()
   suggestion["created_entity_id"] = created_entity_id
+  if disposition == "accepted" and suggestion.get("kind") != "canon_fact":
+    accepted_names = {
+      suggestion["name"].casefold(),
+      *(str(alias).casefold() for alias in suggestion.get("aliases", [])),
+    }
+    for other in store["suggestions"]:
+      if other is suggestion or other.get("kind") == "canon_fact":
+        continue
+      other_names = {
+        str(other.get("name", "")).casefold(),
+        *(str(alias).casefold() for alias in other.get("aliases", [])),
+      }
+      if other.get("status") in {"pending", "deferred"} and accepted_names & other_names:
+        other["status"] = "accepted"
+        other["decided_at"] = suggestion["decided_at"]
+        other["created_entity_id"] = created_entity_id
+        other["merged_into_suggestion_id"] = suggestion_id
   atomic_write_json(_suggestions_path(paths), store)
   from .product_signals import record_product_event
   record_product_event(paths, "story_memory_suggestion_reviewed", disposition=disposition)
