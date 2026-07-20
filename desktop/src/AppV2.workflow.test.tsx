@@ -335,7 +335,14 @@ vi.mock("@tauri-apps/api/core", () => ({
           openai: { ...provider, base_url: "" },
           anthropic: { ...provider, base_url: "" },
           openrouter: { ...provider, base_url: "" },
-          "openai-codex": { ...provider, auth_type: "none" },
+          "openai-codex": {
+            ...provider,
+            runtime_available: true,
+            auth_type: "codex_app_server",
+            email: "",
+            plan_type: "plus",
+            error: "",
+          },
         },
       });
     }

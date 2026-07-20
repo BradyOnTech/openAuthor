@@ -51,3 +51,5 @@ codex/codex.sqlite3
 target/
 desktop/src-tauri/resources/runtime/python/**
 !desktop/src-tauri/resources/runtime/python/.gitkeep
+desktop/src-tauri/resources/runtime/codex/**
+!desktop/src-tauri/resources/runtime/codex/.gitkeep

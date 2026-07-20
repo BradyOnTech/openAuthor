@@ -119,7 +119,7 @@ runtime-check:
 	@./scripts/verify_bundled_runtime.sh
 
 macos-bundle: runtime-check
-	@cd desktop && npm run tauri:build -- --bundles app,dmg
+	@cd desktop && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 npm run tauri:build -- --bundles app,dmg
 
 macos-bundle-check:
 	@./scripts/verify_macos_bundle.sh

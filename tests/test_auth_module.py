@@ -1,74 +1,80 @@
 from __future__ import annotations
 
-import json
-import tempfile
-import time
 import unittest
-from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from openauthor import auth
+from openauthor.codex_app_server import CodexAppServerUnavailable
 
 
 class AuthModuleTests(unittest.TestCase):
-  def test_status_ignores_expired_token_without_refresh(self) -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-      auth_dir = Path(tmp) / ".openauthor"
-      auth_file = auth_dir / "auth.json"
-      auth_dir.mkdir(parents=True, exist_ok=True)
-      auth_file.write_text(
-        json.dumps(
-          {
-            "openai-codex": {
-              "access_token": "stale-token",
-              "refresh_token": "",
-              "expires_at": time.time() - 3600,
-              "email": "writer@example.com",
-            }
-          }
-        ),
-        encoding="utf-8",
-      )
+  def test_status_reads_chatgpt_account_from_app_server(self) -> None:
+    server = MagicMock()
+    server.account_status.return_value = {
+      "authenticated": True,
+      "available": True,
+      "email": "writer@example.com",
+      "plan_type": "plus",
+    }
+    context = MagicMock()
+    context.__enter__.return_value = server
 
-      with patch.object(auth, "AUTH_DIR", auth_dir), patch.object(auth, "AUTH_FILE", auth_file):
-        status = auth.get_auth_status()
+    with patch.object(auth, "CodexAppServer", return_value=context):
+      status = auth.get_auth_status()
 
-      self.assertIn("openai-codex", status)
-      self.assertFalse(status["openai-codex"]["authenticated"])
+    self.assertEqual(
+      status["openai-codex"],
+      {
+        "authenticated": True,
+        "available": True,
+        "email": "writer@example.com",
+        "plan_type": "plus",
+      },
+    )
+    server.account_status.assert_called_once_with(refresh=True)
 
-  def test_status_refreshes_expired_token_when_refresh_token_exists(self) -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-      auth_dir = Path(tmp) / ".openauthor"
-      auth_file = auth_dir / "auth.json"
-      auth_dir.mkdir(parents=True, exist_ok=True)
-      auth_file.write_text(
-        json.dumps(
-          {
-            "openai-codex": {
-              "access_token": "expired-token",
-              "refresh_token": "refresh-token",
-              "expires_at": time.time() - 60,
-              "email": "writer@example.com",
-            }
-          }
-        ),
-        encoding="utf-8",
-      )
+  def test_status_reports_missing_codex_runtime_without_raising(self) -> None:
+    with patch.object(
+      auth,
+      "CodexAppServer",
+      side_effect=CodexAppServerUnavailable("Codex runtime is unavailable."),
+    ):
+      status = auth.get_auth_status()["openai-codex"]
 
-      with patch.object(auth, "AUTH_DIR", auth_dir), patch.object(auth, "AUTH_FILE", auth_file):
-        with patch.object(
-          auth,
-          "_refresh_token",
-          return_value={"access_token": "fresh-token", "expires_in": 1800},
-        ) as refresh_mock:
-          status = auth.get_auth_status()
-          refresh_mock.assert_called_once_with("openai-codex", "refresh-token")
+    self.assertFalse(status["authenticated"])
+    self.assertFalse(status["available"])
+    self.assertIn("unavailable", status["error"])
 
-      self.assertTrue(status["openai-codex"]["authenticated"])
-      self.assertEqual(status["openai-codex"]["email"], "writer@example.com")
-      stored = json.loads(auth_file.read_text(encoding="utf-8"))
-      self.assertEqual(stored["openai-codex"]["access_token"], "fresh-token")
-      self.assertGreater(float(stored["openai-codex"]["expires_at"]), time.time())
+  def test_login_uses_app_server_managed_chatgpt_flow(self) -> None:
+    server = MagicMock()
+    server.login_chatgpt.return_value = {
+      "authenticated": True,
+      "available": True,
+      "email": "writer@example.com",
+      "plan_type": "pro",
+    }
+    context = MagicMock()
+    context.__enter__.return_value = server
+
+    with patch.object(auth, "CodexAppServer", return_value=context):
+      result = auth.login("openai-codex")
+
+    self.assertTrue(result["authenticated"])
+    self.assertEqual(result["plan_type"], "pro")
+    self.assertIn("app-server", result["message"])
+    server.login_chatgpt.assert_called_once_with()
+
+  def test_logout_clears_only_the_app_server_account(self) -> None:
+    server = MagicMock()
+    server.logout.return_value = True
+    context = MagicMock()
+    context.__enter__.return_value = server
+
+    with patch.object(auth, "CodexAppServer", return_value=context):
+      result = auth.logout("openai-codex")
+
+    self.assertEqual(result, {"provider": "openai-codex", "removed": True})
+    server.logout.assert_called_once_with()
 
 
 if __name__ == "__main__":
