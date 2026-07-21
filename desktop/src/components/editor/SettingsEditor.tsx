@@ -243,6 +243,9 @@ function CodexAuthCard({
   const codexConfig = config.providers["openai-codex"];
   const isConnected = codexConfig.credential_present;
   const runtimeAvailable = codexConfig.runtime_available;
+  const modelLabel = codexConfig.default_model === "codex-recommended"
+    ? "Codex recommended"
+    : codexConfig.default_model;
   const planLabel = codexConfig.plan_type
     ? codexConfig.plan_type.replace(/_/g, " ")
     : "ChatGPT plan";
@@ -280,7 +283,7 @@ function CodexAuthCard({
           {isConnected ? "\u2713" : "\u25CB"}
         </span>
         <span className="provider-card__name">ChatGPT Subscription</span>
-        <span className="provider-card__model">{codexConfig.default_model}</span>
+        <span className="provider-card__model">{modelLabel}</span>
       </div>
       <div className="provider-card__detail">
         <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>

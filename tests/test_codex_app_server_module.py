@@ -51,6 +51,62 @@ class CodexAppServerModuleTests(unittest.TestCase):
     opened.assert_called_once_with("https://auth.openai.test/start")
     self.assertEqual(requests[0][0], "account/login/start")
 
+  def test_login_waits_for_account_update_when_read_is_initially_empty(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      server = CodexAppServer(binary=Path("/bin/true"), codex_home=Path(tmp))
+      read_count = 0
+      wait_count = 0
+
+      def request(method: str, params: object, **_: object) -> dict[str, object]:
+        nonlocal read_count
+        if method == "account/login/start":
+          return {
+            "type": "chatgpt",
+            "loginId": "login-1",
+            "authUrl": "https://auth.openai.test/start",
+          }
+        if method == "account/read":
+          read_count += 1
+          if read_count == 1:
+            return {"account": None, "requiresOpenaiAuth": True}
+          return {
+            "account": {
+              "type": "chatgpt",
+              "email": "writer@example.com",
+              "planType": "plus",
+            },
+            "requiresOpenaiAuth": True,
+          }
+        raise AssertionError(method)
+
+      def wait_for(predicate: object, **callbacks: object) -> dict[str, object]:
+        nonlocal wait_count
+        wait_count += 1
+        if wait_count == 1:
+          message: dict[str, object] = {
+            "method": "account/login/completed",
+            "params": {"loginId": "login-1", "success": True, "error": None},
+          }
+        else:
+          message = {
+            "method": "account/updated",
+            "params": {"authMode": "chatgpt", "planType": "plus"},
+          }
+        on_message = callbacks.get("on_message")
+        if on_message is not None:
+          on_message(message)  # type: ignore[operator]
+        self.assertTrue(predicate(message))  # type: ignore[operator]
+        return message
+
+      server.request = request  # type: ignore[method-assign]
+      server.wait_for = wait_for  # type: ignore[method-assign]
+      with patch("openauthor.codex_app_server.webbrowser.open", return_value=True):
+        status = server.login_chatgpt()
+
+    self.assertTrue(status["authenticated"])
+    self.assertEqual(read_count, 2)
+    self.assertEqual(wait_count, 2)
+
   def test_completion_streams_text_usage_and_defers_host_tool_call(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       server = CodexAppServer(binary=Path("/bin/true"), codex_home=Path(tmp))
@@ -132,9 +188,60 @@ class CodexAppServerModuleTests(unittest.TestCase):
 
     self.assertEqual(thread_params["model"], "gpt-5.6-sol")
     self.assertEqual(thread_params["sandbox"], "read-only")
+    self.assertEqual(thread_params["environments"], [])
+    config = thread_params["config"]
+    self.assertIsInstance(config, dict)
+    self.assertEqual(config["web_search"], "disabled")  # type: ignore[index]
+    self.assertFalse(config["features"]["shell_tool"])  # type: ignore[index]
+    self.assertFalse(config["features"]["multi_agent"])  # type: ignore[index]
     self.assertEqual(result["tool_calls"], [{"id": "call-1", "name": "scene_list", "args": {}}])
     self.assertEqual(result["input_tokens"], 120)
     self.assertTrue(tool_response["success"])
+
+  def test_recommended_model_is_selected_by_codex_runtime(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      server = CodexAppServer(binary=Path("/bin/true"), codex_home=Path(tmp))
+      thread_params: dict[str, object] = {}
+
+      def request(
+        method: str,
+        params: dict[str, object],
+        **_: object,
+      ) -> dict[str, object]:
+        nonlocal thread_params
+        if method == "thread/start":
+          thread_params = params
+          return {"thread": {"id": "thread-1"}}
+        if method == "turn/start":
+          return {"turn": {"id": "turn-1"}}
+        raise AssertionError(method)
+
+      def wait_for(predicate: object, **callbacks: object) -> dict[str, object]:
+        message: dict[str, object] = {
+          "method": "turn/completed",
+          "params": {
+            "turn": {"id": "turn-1", "status": "completed", "error": None},
+          },
+        }
+        handle_message = callbacks["on_message"]
+        handle_message(message)  # type: ignore[operator]
+        self.assertTrue(predicate(message))  # type: ignore[operator]
+        return message
+
+      server.request = request  # type: ignore[method-assign]
+      server.wait_for = wait_for  # type: ignore[method-assign]
+      server.complete(
+        project_root=Path(tmp),
+        model="codex-recommended",
+        system_prompt="Help the author.",
+        history=[],
+        user_prompt="Improve this paragraph.",
+        max_output_tokens=300,
+        on_delta=None,
+        tools=None,
+      )
+
+    self.assertNotIn("model", thread_params)
 
 
 if __name__ == "__main__":

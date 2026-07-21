@@ -32,7 +32,7 @@ DEFAULT_MODELS = {
   "openai": "gpt-4.1-mini",
   "anthropic": "claude-haiku-4-5",
   "openrouter": "openai/gpt-4.1-mini",
-  "openai-codex": "gpt-5.6-sol",
+  "openai-codex": "codex-recommended",
 }
 PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}

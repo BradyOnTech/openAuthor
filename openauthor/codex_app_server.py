@@ -18,13 +18,24 @@ class CodexAppServerError(RuntimeError):
   pass
 
 
+class CodexAppServerTimeout(CodexAppServerError):
+  pass
+
+
 class CodexAppServerUnavailable(CodexAppServerError):
   pass
 
 
-DEFAULT_MODEL_SENTINELS = {"", "codex-default", "codex-mini-latest"}
+DEFAULT_MODEL_SENTINELS = {
+  "",
+  "codex-default",
+  "codex-mini-latest",
+  "codex-recommended",
+}
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 120.0
 DEFAULT_LOGIN_TIMEOUT_SECONDS = 180.0
+DEFAULT_ACCOUNT_READY_TIMEOUT_SECONDS = 15.0
+ACCOUNT_READY_POLL_SECONDS = 0.25
 
 
 def _configured_timeout(name: str, default: float) -> float:
@@ -239,11 +250,11 @@ class CodexAppServer:
   def _next_message(self, *, deadline: float) -> dict[str, Any]:
     remaining = deadline - time.monotonic()
     if remaining <= 0:
-      raise CodexAppServerError("Timed out waiting for Codex app-server.")
+      raise CodexAppServerTimeout("Timed out waiting for Codex app-server.")
     try:
       message = self._messages.get(timeout=remaining)
     except queue.Empty as error:
-      raise CodexAppServerError("Timed out waiting for Codex app-server.") from error
+      raise CodexAppServerTimeout("Timed out waiting for Codex app-server.") from error
     if message is None:
       details = "\n".join(self._stderr_lines[-5:])
       suffix = f" Details: {details}" if details else ""
@@ -348,6 +359,16 @@ class CodexAppServer:
       "OPENAUTHOR_CODEX_LOGIN_TIMEOUT_SECONDS",
       DEFAULT_LOGIN_TIMEOUT_SECONDS,
     )
+    account_updated = False
+
+    def observe_account_update(message: dict[str, Any]) -> None:
+      nonlocal account_updated
+      if message.get("method") != "account/updated":
+        return
+      params = message.get("params", {})
+      account_updated = (
+        isinstance(params, dict) and str(params.get("authMode") or "") == "chatgpt"
+      )
 
     def completed(message: dict[str, Any]) -> bool:
       if message.get("method") != "account/login/completed":
@@ -355,12 +376,49 @@ class CodexAppServer:
       params = message.get("params", {})
       return isinstance(params, dict) and str(params.get("loginId") or "") == login_id
 
-    notification = self.wait_for(completed, timeout=timeout)
+    notification = self.wait_for(
+      completed,
+      on_message=observe_account_update,
+      timeout=timeout,
+    )
     params = notification.get("params", {})
     if not isinstance(params, dict) or not bool(params.get("success")):
       error = str(params.get("error") or "ChatGPT sign-in was not completed.")
       raise CodexAppServerError(error)
-    return self.account_status(refresh=True)
+
+    ready_timeout = _configured_timeout(
+      "OPENAUTHOR_CODEX_ACCOUNT_READY_TIMEOUT_SECONDS",
+      DEFAULT_ACCOUNT_READY_TIMEOUT_SECONDS,
+    )
+    ready_deadline = time.monotonic() + ready_timeout
+    while True:
+      status = self.account_status(refresh=True)
+      if bool(status.get("authenticated")):
+        return status
+
+      remaining = ready_deadline - time.monotonic()
+      if remaining <= 0:
+        raise CodexAppServerError(
+          "ChatGPT sign-in completed, but the Codex account did not become ready. "
+          "Try signing in again."
+        )
+
+      if account_updated:
+        time.sleep(min(ACCOUNT_READY_POLL_SECONDS, remaining))
+        continue
+
+      try:
+        self.wait_for(
+          lambda message: (
+            message.get("method") == "account/updated"
+            and isinstance(message.get("params"), dict)
+            and str(message["params"].get("authMode") or "") == "chatgpt"
+          ),
+          on_message=observe_account_update,
+          timeout=min(ACCOUNT_READY_POLL_SECONDS, remaining),
+        )
+      except CodexAppServerTimeout:
+        continue
 
   def logout(self) -> bool:
     before = self.account_status(refresh=False)
@@ -406,6 +464,19 @@ class CodexAppServer:
       "cwd": str(project_root.resolve()),
       "approvalPolicy": "never",
       "sandbox": "read-only",
+      "environments": [],
+      "config": {
+        "web_search": "disabled",
+        "features": {
+          "apps": False,
+          "goals": False,
+          "hooks": False,
+          "multi_agent": False,
+          "remote_plugin": False,
+          "shell_tool": False,
+          "unified_exec": False,
+        },
+      },
       "ephemeral": True,
       "developerInstructions": developer_instructions,
     }
