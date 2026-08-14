@@ -242,6 +242,13 @@ function CodexAuthCard({
   const [loading, setLoading] = useState(false);
   const codexConfig = config.providers["openai-codex"];
   const isConnected = codexConfig.credential_present;
+  const runtimeAvailable = codexConfig.runtime_available;
+  const modelLabel = codexConfig.default_model === "codex-recommended"
+    ? "Codex recommended"
+    : codexConfig.default_model;
+  const planLabel = codexConfig.plan_type
+    ? codexConfig.plan_type.replace(/_/g, " ")
+    : "ChatGPT plan";
 
   async function handleLogin() {
     setLoading(true);
@@ -276,13 +283,33 @@ function CodexAuthCard({
           {isConnected ? "\u2713" : "\u25CB"}
         </span>
         <span className="provider-card__name">ChatGPT Subscription</span>
-        <span className="provider-card__model">{codexConfig.default_model}</span>
+        <span className="provider-card__model">{modelLabel}</span>
       </div>
       <div className="provider-card__detail">
         <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
-          Use your ChatGPT Plus or Pro subscription. No API key needed.
+          Uses your ChatGPT/Codex plan through openAuthor&apos;s local Codex app-server.
+          openAuthor never reads or stores the OpenAI OAuth tokens itself.
         </span>
       </div>
+      {isConnected && (
+        <div className="provider-card__detail">
+          <span className="provider-card__tag--ok">{planLabel}</span>
+          {codexConfig.email && <span>{codexConfig.email}</span>}
+        </div>
+      )}
+      {!runtimeAvailable && (
+        <div className="provider-card__detail">
+          <span className="provider-card__tag--missing">Codex runtime unavailable</span>
+          <span>Install Codex or set <code>OPENAUTHOR_CODEX_BIN</code>.</span>
+        </div>
+      )}
+      {codexConfig.error && (
+        <div className="provider-card__detail">
+          <span style={{ fontSize: "var(--text-xs)", color: "var(--danger)" }}>
+            {codexConfig.error}
+          </span>
+        </div>
+      )}
       <div className="provider-card__actions">
         {isConnected ? (
           <>
@@ -299,11 +326,15 @@ function CodexAuthCard({
           <button
             className="btn btn--primary btn--sm"
             onClick={handleLogin}
-            disabled={loading}
+            disabled={loading || !runtimeAvailable}
           >
             {loading ? "Opening browser..." : "Sign in with ChatGPT"}
           </button>
         )}
+      </div>
+      <div className="settings-editor__note" style={{ marginTop: "var(--space-2)" }}>
+        Usage follows your ChatGPT plan limits. This login is isolated from the Codex CLI
+        and other apps on this Mac.
       </div>
     </div>
   );

@@ -115,6 +115,10 @@ python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighte
 OPENAI_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Improve dialogue clarity" --provider openai --model gpt-4.1-mini --json
 ANTHROPIC_API_KEY=... python3 -m openauthor proposal generate --scene scene-0001 --instruction "Increase tension" --provider anthropic --json
 
+# or use an existing ChatGPT/Codex plan through the official Codex app-server
+python3 -m openauthor auth login --provider openai-codex --json
+python3 -m openauthor proposal generate --scene scene-0001 --instruction "Increase tension" --provider openai-codex --json
+
 # inspect generation runs and failures
 python3 -m openauthor generation list --json
 python3 -m openauthor generation list --status failed --json
@@ -223,6 +227,17 @@ Provider retry tuning (optional env vars):
 
 - `OPENAUTHOR_PROVIDER_MAX_RETRIES` (default `2`)
 - `OPENAUTHOR_PROVIDER_RETRY_BASE_MS` (default `350`)
+
+ChatGPT subscription integration:
+
+- Packaged macOS builds include a checksum-pinned Codex app-server runtime. Development checkouts can use an installed `codex` executable or `OPENAUTHOR_CODEX_BIN`.
+- `openauthor auth login --provider openai-codex` asks app-server to run the official browser sign-in. openAuthor never reads, refreshes, or sends the OAuth tokens itself.
+- Browser sign-in waits for Codex's account update after OAuth completes, avoiding a false disconnected state while app-server finishes persisting the account.
+- Codex keeps this login under `~/.openauthor/codex` by default, isolated from the normal Codex CLI login. Override only for development with `OPENAUTHOR_CODEX_HOME`.
+- New ChatGPT-backed conversations use Codex's runtime-recommended model by default. An explicitly selected model is still honored.
+- AI use follows the signed-in ChatGPT plan's Codex limits. It does not create OpenAI API usage charges, so openAuthor records estimated API cost as `$0` while retaining token provenance.
+- Subscription turns are ephemeral and read-only. Shell execution, web search, apps, hooks, remote plugins, environments, and subagents are disabled; only openAuthor's explicit host tools are exposed.
+- The public remote WebSocket transport for app-server is still experimental. openAuthor therefore runs the bundled server locally instead of exposing an unauthenticated or unsupported cloud endpoint.
 
 ## Repository layout
 

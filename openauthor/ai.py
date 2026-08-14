@@ -5,6 +5,7 @@ import json
 import os
 import re
 import time
+from pathlib import Path
 from typing import Any
 import urllib.error
 import urllib.request
@@ -13,7 +14,12 @@ import uuid
 from .checks import run_continuity_checks
 from .codex import list_entities
 from .budget import BudgetPolicyError, enforce_generation_budget
-from .auth import get_access_token, get_auth_status
+from .auth import get_auth_status
+from .codex_app_server import (
+  CodexAppServer,
+  CodexAppServerError,
+  CodexAppServerUnavailable,
+)
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft
 from .retrieval import get_retrieval_index_status, query_retrieval_index
@@ -26,7 +32,7 @@ DEFAULT_MODELS = {
   "openai": "gpt-4.1-mini",
   "anthropic": "claude-haiku-4-5",
   "openrouter": "openai/gpt-4.1-mini",
-  "openai-codex": "codex-mini-latest",
+  "openai-codex": "codex-recommended",
 }
 PROPOSAL_SECTIONS = ("Intent", "Constraints", "Edit Plan", "Continuity Notes")
 RETRYABLE_HTTP_STATUSES = {408, 409, 425, 429, 500, 502, 503, 504}
@@ -95,6 +101,7 @@ def _retry_settings() -> tuple[int, int]:
 
 def get_provider_runtime_config() -> dict[str, Any]:
   max_retries, base_ms = _retry_settings()
+  codex_auth = get_auth_status().get("openai-codex", {})
   return {
     "retry": {
       "max_retries": max_retries,
@@ -128,8 +135,12 @@ def get_provider_runtime_config() -> dict[str, Any]:
       },
       "openai-codex": {
         "default_model": DEFAULT_MODELS["openai-codex"],
-        "credential_present": get_auth_status().get("openai-codex", {}).get("authenticated", False),
-        "auth_type": "oauth",
+        "credential_present": bool(codex_auth.get("authenticated", False)),
+        "runtime_available": bool(codex_auth.get("available", False)),
+        "auth_type": "codex_app_server",
+        "email": str(codex_auth.get("email", "")),
+        "plan_type": str(codex_auth.get("plan_type", "")),
+        "error": str(codex_auth.get("error", "")),
       },
     },
   }
@@ -429,6 +440,8 @@ def _estimate_cost_usd(
   input_tokens: int,
   output_tokens: int,
 ) -> float | None:
+  if provider == "openai-codex":
+    return 0.0
   pricing = _load_pricing(paths)
   provider_block = pricing.get(provider, {})
   model_block = provider_block.get(model)
@@ -1266,6 +1279,7 @@ def _openrouter_chat_completion(
 
 def _openai_codex_chat_completion(
   *,
+  project_root: Path,
   model: str,
   system_prompt: str,
   history: list[dict[str, str]],
@@ -1275,66 +1289,51 @@ def _openai_codex_chat_completion(
   on_delta: Any = None,
   tools: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-  access_token = get_access_token("openai-codex")
-  if not access_token:
+  del temperature
+  try:
+    with CodexAppServer() as server:
+      status = server.account_status(refresh=True)
+      if not status.get("authenticated"):
+        raise ProviderExecutionError(
+          "Not signed in to ChatGPT through Codex app-server. Open Settings and "
+          "choose 'Sign in with ChatGPT'.",
+          category="missing_credentials",
+          retriable=False,
+          provider="openai-codex",
+        )
+      return server.complete(
+        project_root=project_root,
+        model=model,
+        system_prompt=system_prompt,
+        history=history,
+        user_prompt=user_prompt,
+        max_output_tokens=max_output_tokens,
+        on_delta=on_delta,
+        tools=tools,
+      )
+  except ProviderExecutionError:
+    raise
+  except CodexAppServerUnavailable as error:
     raise ProviderExecutionError(
-      "Not authenticated with ChatGPT subscription. "
-      "Run 'openauthor auth login --provider openai-codex' to sign in.",
-      category="missing_credentials",
+      str(error),
+      category="runtime_unavailable",
       retriable=False,
       provider="openai-codex",
-    )
-  base_url = "https://api.openai.com/v1"
-  payload: dict[str, Any] = {
-    "model": model,
-    "messages": _chat_completion_messages(
-      system_prompt=system_prompt,
-      history=history,
-      user_prompt=user_prompt,
-    ),
-    "temperature": temperature,
-    "max_tokens": max_output_tokens,
-  }
-  if tools:
-    payload["tools"] = _openai_tools_payload(tools)
-  if on_delta is not None and not tools:
-    return _openai_style_stream(
+    ) from error
+  except CodexAppServerError as error:
+    message = str(error)
+    runtime_outdated = "requires a newer version of Codex" in message
+    raise ProviderExecutionError(
+      message,
+      category="runtime_outdated" if runtime_outdated else "provider_server_error",
+      retriable=not runtime_outdated,
       provider="openai-codex",
-      url=f"{base_url}/chat/completions",
-      headers={"Authorization": f"Bearer {access_token}"},
-      payload=payload,
-      on_delta=on_delta,
-    )
-  response, attempts = _json_post(
-    provider="openai-codex",
-    url=f"{base_url}/chat/completions",
-    headers={"Authorization": f"Bearer {access_token}"},
-    payload=payload,
-  )
-  choice = (response.get("choices") or [{}])[0]
-  message = choice.get("message", {})
-  content = message.get("content", "")
-  if isinstance(content, list):
-    text = "\n".join(
-      part.get("text", "") if isinstance(part, dict) else str(part)
-      for part in content
-    ).strip()
-  else:
-    text = str(content).strip()
-
-  usage = response.get("usage", {})
-  return {
-    "text": text,
-    "tool_calls": _parse_openai_tool_calls(message),
-    "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
-    "output_tokens": int(usage.get("completion_tokens", 0) or 0),
-    "raw_usage": usage,
-    "attempts": attempts,
-  }
+    ) from error
 
 
 def _call_provider(
   *,
+  project_root: Path,
   provider: str,
   model: str,
   system_prompt: str,
@@ -1420,6 +1419,7 @@ def _call_provider(
     attempts = int(payload.get("attempts", 1) or 1)
   elif provider == "openai-codex":
     payload = _openai_codex_chat_completion(
+      project_root=project_root,
       model=model,
       system_prompt=system_prompt,
       history=chat_history,
@@ -1583,6 +1583,7 @@ def complete_chat(
 
   try:
     provider_result = _call_provider(
+      project_root=paths.root,
       provider=provider,
       model=selected_model,
       system_prompt=system_prompt,
@@ -2235,6 +2236,7 @@ def generate_proposal(
     ) from error
   try:
     provider_result = _call_provider(
+      project_root=paths.root,
       provider=provider,
       model=selected_model,
       system_prompt=system_prompt,
@@ -2480,6 +2482,7 @@ def generate_proposal_draft(
 
   try:
     provider_result = _call_provider(
+      project_root=paths.root,
       provider=provider,
       model=selected_model,
       system_prompt=system_prompt,
@@ -2640,6 +2643,7 @@ def regenerate_change_hunk(
       projected_estimated_cost_usd=projected_cost,
     )
     result = _call_provider(
+      project_root=paths.root,
       provider=provider,
       model=selected_model,
       system_prompt=system_prompt,
@@ -2840,6 +2844,7 @@ def generate_merge_resolution(
 
   try:
     provider_result = _call_provider(
+      project_root=paths.root,
       provider=provider,
       model=selected_model,
       system_prompt=system_prompt,

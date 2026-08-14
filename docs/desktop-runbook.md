@@ -4,7 +4,7 @@
 
 - Platform: macOS first (`aarch64` + `x86_64`).
 - Packaging path: Tauri bundle output from `desktop/src-tauri/target/release/bundle/`.
-- Runtime: pinned Python 3.11 standalone distribution with openAuthor installed inside the app bundle; users do not install Python.
+- Runtime: pinned Python 3.11 and Codex app-server distributions inside the app bundle; users do not install Python, Node, or Codex.
 - Gate required before packaging:
   - `make desktop-smoke`
   - `make test-scale`
@@ -47,7 +47,7 @@ make macos-bundle
 make macos-bundle-check
 ```
 
-`runtime-prepare` downloads a pinned python-build-standalone asset and verifies its SHA-256 checksum before installing the openAuthor core. The Tauri build fails closed when the runtime is missing. Local bundles are not distributable releases: the `release-macos` workflow requires Apple Developer ID credentials, signs and notarizes both architectures, and verifies the sealed bundle before leaving artifacts in a draft prerelease.
+`runtime-prepare` downloads pinned python-build-standalone and Codex assets, verifies their recorded checksums, and installs the openAuthor core. The Tauri build fails closed when either runtime is missing. Local bundles are not distributable releases: the `release-macos` workflow requires Apple Developer ID credentials, signs and notarizes both architectures, and verifies the sealed bundle before leaving artifacts in a draft prerelease.
 
 ## Smoke checklist (macOS)
 
@@ -79,6 +79,9 @@ make desktop-tauri
 
 5. Validate AI run workflow:
 - Generate proposal from desktop (`local` provider minimum).
+- In Settings, choose `Sign in with ChatGPT`, complete the official browser flow, and confirm the card shows the account's ChatGPT plan.
+- Create an Assistant thread with `ChatGPT Subscription`, send a message, and generate one reviewed Change Set. Confirm no `OPENAI_API_KEY` is set for this path.
+- Sign out and confirm openAuthor's card disconnects without changing the normal Codex CLI login.
 - Optionally set retrieval mode to `required` after `openauthor retrieval build --json` and confirm cited context in Assistant chat.
 - Open `Runs` and confirm the basic history row reports provider, status, quality, cost, and latency.
 - Advanced rerun, comparison, pinning, export, and run-detail provenance are not active V2 release checks.
@@ -124,6 +127,11 @@ make desktop-tauri
   - Check path exists and contains `.openauthor/project.json`.
 - `Proposal generation failed: ... Check provider credentials/settings and retry.`
   - Validate `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` as needed.
+- `Codex runtime is unavailable.`
+  - Packaged builds should contain `Contents/Resources/resources/runtime/codex/bin/codex`.
+  - In development, install Codex or set `OPENAUTHOR_CODEX_BIN` to a compatible executable.
+- `The ... model requires a newer version of Codex.`
+  - Re-run `make runtime-prepare` to restore the pinned runtime, or update the development Codex CLI before retrying.
 - `Proposal generation blocked by budget policy.`
   - Inspect policy/usage with `openauthor generation budget --json`.
   - Adjust limits with `openauthor generation budget --max-... --daily-... --weekly-... --json`.

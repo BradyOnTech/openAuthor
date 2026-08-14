@@ -15,6 +15,14 @@
   - `python3 -m openauthor <args...>`
   - Working directory is set to `project_root`
 
+## ChatGPT subscription boundary
+
+- The packaged app includes a checksum-pinned Codex runtime and launches `codex app-server` over JSONL stdio from the Python core.
+- Account status, browser sign-in, sign-out, model turns, streaming deltas, token usage, and host tool requests use app-server's `account/*`, `thread/*`, `turn/*`, and event protocol.
+- Codex owns OAuth token acquisition, refresh, and storage in the isolated `~/.openauthor/codex` home. openAuthor does not parse or forward those credentials and does not call the regular OpenAI API with them.
+- Each AI turn is ephemeral, read-only, and `approvalPolicy=never`. openAuthor's existing review boundary still controls manuscript changes; host write tools remain pending until the author approves them.
+- The remote WebSocket app-server transport is not the product boundary because OpenAI currently marks it experimental and unsupported. The local stdio boundary preserves openAuthor's local-first privacy model and avoids a multi-user cloud credential vault.
+
 ## Workspace and navigation state ownership
 
 - `WorkspaceProvider` owns the active workspace/project identity, project root, loaded project collections, and native command lifecycle.

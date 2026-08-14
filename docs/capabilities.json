@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-15",
+  "updated_at": "2026-07-20",
   "status_definitions": {
     "core": ["implemented", "partial", "not_started"],
     "active_ui": ["implemented", "partial", "hidden", "not_applicable"],
@@ -96,6 +96,25 @@
         "openauthor/story_memory.py"
       ],
       "scope_note": "Assistant conversations have explicit Book, Scene, Chapter, Character, and Storyline scopes with bounded context. Replies can become Change Sets, review-first Story Memory suggestions, visible project or scene notes, or non-destructive Storyline experiments. The packaged Book-scope and promotion paths passed manual product validation; automated rendered promotion coverage remains open."
+    },
+    {
+      "id": "chatgpt_subscription_provider",
+      "name": "ChatGPT subscription sign-in and Codex app-server generation",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "The active Settings surface uses Codex app-server's official account flow and an isolated Codex home. Chat, proposal, draft, hunk, and merge generation can use the subscription-backed provider with streamed events and host tools. A live subscription smoke has passed, but automated rendered sign-in and packaged clean-machine coverage remain open.",
+      "evidence": [
+        "openauthor/codex_app_server.py",
+        "openauthor/auth.py",
+        "openauthor/ai.py",
+        "tests/test_codex_app_server_module.py",
+        "tests/test_auth_module.py",
+        "desktop/src/components/editor/SettingsEditor.tsx",
+        "scripts/prepare_bundled_runtime.sh"
+      ]
     },
     {
       "id": "codex",

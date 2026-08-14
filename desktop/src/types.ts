@@ -665,7 +665,11 @@ export type GenerationRuntimeConfig = {
     "openai-codex": {
       default_model: string;
       credential_present: boolean;
+      runtime_available: boolean;
       auth_type: string;
+      email: string;
+      plan_type: string;
+      error: string;
     };
   };
   budget?: GenerationBudgetReport;
