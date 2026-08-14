@@ -1330,10 +1330,11 @@ export async function deleteCodexRelationship(projectRoot: string, relationshipI
 
 export type StoryMemorySuggestion = {
   id: string;
-  kind: "entity_create" | "canon_fact";
+  kind: "entity_create" | "canon_fact" | "memory_note" | "relationship_create";
   entity_type?: CodexEntity["type"];
   name: string;
   description: string;
+  aliases?: string[];
   confidence: number;
   reason: string;
   status: "pending" | "accepted" | "rejected" | "deferred";
@@ -1342,6 +1343,14 @@ export type StoryMemorySuggestion = {
   subject_name?: string;
   predicate?: string;
   value?: string;
+  source_entity_id?: string;
+  source_name?: string;
+  target_entity_id?: string;
+  target_name?: string;
+  relation?: string;
+  valid_from_scene_id?: string;
+  valid_to_scene_id?: string;
+  created_relationship_id?: string;
 };
 
 export async function scanStoryMemory(projectRoot: string): Promise<{ scanned_scenes: number; added: number; refreshed: number; pending: number; suggestions: StoryMemorySuggestion[] }> {

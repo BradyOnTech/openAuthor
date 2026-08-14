@@ -8,6 +8,7 @@ import { RevisionReview } from "./RevisionReview";
 import { PlanEditor } from "./PlanEditor";
 import { StoryMemoryEditor } from "./StoryMemoryEditor";
 import { CanonMemoryEditor } from "./CanonMemoryEditor";
+import { ConnectionGraphEditor } from "./ConnectionGraphEditor";
 import { StorylineEditor } from "./StorylineEditor";
 import { AlternativeComparison } from "./AlternativeComparison";
 import type { SceneDetail, ProposalRecord, CodexEntity, RevisionSummary } from "../../types";
@@ -41,6 +42,8 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
       return <PlanEditor />;
     case "memory":
       return <CanonMemoryEditor />;
+    case "connections":
+      return <ConnectionGraphEditor />;
     case "storylines":
       return <StorylineEditor />;
     case "proposal": {
@@ -108,7 +111,7 @@ function EmptyState() {
           : "Open a scene and return to the sentence where you left off."}
       </div>
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
-        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Create first scene" : "Open manuscript"}</button>
+        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
         <button className="btn" onClick={() => void navigateTo("plan")}>Plan the story</button>
       </div>
       <div style={{ display: "flex", gap: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: "var(--space-3)" }}>
