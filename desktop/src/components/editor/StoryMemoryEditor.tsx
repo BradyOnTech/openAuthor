@@ -54,6 +54,7 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
       });
       updateTab(`codex:${entity.id}`, { label: updated.name, data: updated });
       await refreshCodex();
+      setError("");
       setMessage("Story Memory entry saved.");
     } catch (error) {
       setError(`Failed to save Story Memory: ${error instanceof Error ? error.message : String(error)}`);
@@ -80,6 +81,7 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
       setRelationFrom("");
       setRelationTo("");
       await refreshRelationships();
+      setError("");
       setMessage("Relationship added.");
     } catch (error) {
       setError(`Failed to add relationship: ${error instanceof Error ? error.message : String(error)}`);
@@ -131,24 +133,31 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
         </section>
 
         <section style={{ ...panelStyle, marginTop: "var(--space-4)" }}>
-          <h2 style={sectionTitle}>Relationships</h2>
+          <h2 style={sectionTitle}>Connections</h2>
+          <p style={{ margin: "-6px 0 var(--space-3)", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.5 }}>Build the character web the Assistant should understand. Connections can change at a specific scene as the story evolves.</p>
+          {relationships.length === 0 && <div style={{ padding: "var(--space-3)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)", color: "var(--text-tertiary)", fontSize: "var(--text-sm)", marginBottom: "var(--space-3)" }}>No connections yet. Link {entity.name} to another character, place, faction, or object below.</div>}
           {relationships.map((row) => {
             const outward = row.source_entity_id === entity.id;
-            return <div key={row.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ flex: 1, color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>{outward ? entity.name : row.source_name} <strong>{row.relation}</strong> {outward ? row.target_name : entity.name}{row.notes ? ` — ${row.notes}` : ""}<small style={{ display: "block", color: "var(--text-tertiary)", marginTop: 3 }}>{row.valid_from_scene_id || "beginning"} → {row.valid_to_scene_id || "ongoing"}</small></span>
+            const from = outward ? entity.name : row.source_name;
+            const to = outward ? row.target_name : entity.name;
+            const starts = row.valid_from_scene_id ? scenes.find((scene) => scene.id === row.valid_from_scene_id)?.title ?? row.valid_from_scene_id : "Beginning";
+            const ends = row.valid_to_scene_id ? scenes.find((scene) => scene.id === row.valid_to_scene_id)?.title ?? row.valid_to_scene_id : "Ongoing";
+            return <div key={row.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", marginBottom: 8 }}>
+              <span style={{ flex: 1, minWidth: 0, color: "var(--text-primary)", fontSize: "var(--text-sm)" }}><strong>{from}</strong> <span style={{ color: "var(--info-text)", fontWeight: 600 }}>→ {row.relation} →</span> <strong>{to}</strong>{row.notes && <span style={{ display: "block", color: "var(--text-secondary)", marginTop: 5 }}>{row.notes}</span>}<small style={{ display: "block", color: "var(--text-tertiary)", marginTop: 5 }}>{starts} → {ends}</small></span>
               <button className="btn btn--sm" aria-label={`Delete relationship ${row.relation}`} onClick={() => void deleteCodexRelationship(projectRoot, row.id).then(refreshRelationships)}>Remove</button>
             </div>;
           })}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr auto", gap: 8, marginTop: "var(--space-3)" }}>
-            <select className="select" aria-label="Related entry" value={targetId} onChange={(event) => setTargetId(event.target.value)}><option value="">Related entry…</option>{codexEntities.filter((row) => row.id !== entity.id).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-            <input className="input" aria-label="Relationship type" placeholder="trusts, fears, owns…" value={relation} onChange={(event) => setRelation(event.target.value)} />
-            <input className="input" aria-label="Relationship notes" placeholder="Optional context" value={relationNotes} onChange={(event) => setRelationNotes(event.target.value)} />
-            <button className="btn" disabled={busy || !targetId || !relation.trim()} onClick={() => void createRelationship()}>Connect</button>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, marginTop: "var(--space-3)" }}>
+            <label style={labelStyle}>Related entry<select className="select" value={targetId} onChange={(event) => setTargetId(event.target.value)}><option value="">Choose an entry…</option>{codexEntities.filter((row) => row.id !== entity.id).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+            <label style={labelStyle}>Connection<input className="input" list="relationship-types" placeholder="trusts, protects, rivals…" value={relation} onChange={(event) => setRelation(event.target.value)} /></label>
+            <datalist id="relationship-types">{["trusts", "distrusts", "protects", "loves", "owes", "rivals", "mentors", "is sibling of", "works for", "owns"].map((value) => <option key={value} value={value} />)}</datalist>
+            <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Context<input className="input" placeholder="Why this connection matters, or what makes it complicated" value={relationNotes} onChange={(event) => setRelationNotes(event.target.value)} /></label>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-            <select className="select" aria-label="Relationship starts" value={relationFrom} onChange={(event) => setRelationFrom(event.target.value)}><option value="">True from beginning</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>From {scene.title}</option>)}</select>
-            <select className="select" aria-label="Relationship ends" value={relationTo} onChange={(event) => setRelationTo(event.target.value)}><option value="">Ongoing</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>Until {scene.title}</option>)}</select>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, marginTop: 8 }}>
+            <label style={labelStyle}>True from<select className="select" value={relationFrom} onChange={(event) => setRelationFrom(event.target.value)}><option value="">Beginning of story</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.title}</option>)}</select></label>
+            <label style={labelStyle}>True until<select className="select" value={relationTo} onChange={(event) => setRelationTo(event.target.value)}><option value="">Ongoing</option>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.title}</option>)}</select></label>
           </div>
+          <button className="btn btn--primary" style={{ marginTop: "var(--space-3)" }} disabled={busy || !targetId || !relation.trim()} onClick={() => void createRelationship()}>Add connection</button>
         </section>
       </div>
     </div>

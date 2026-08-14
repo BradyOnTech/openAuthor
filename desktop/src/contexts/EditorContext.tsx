@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan } from "../types";
 
-export type EditorTabKind = "scene" | "plan" | "memory" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings";
+export type EditorTabKind = "scene" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings";
 
 export type EditorTab = {
   id: string;

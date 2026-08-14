@@ -84,15 +84,15 @@ export function ProjectSearch() {
           </div>
         )}
         {visibleResults.map((r) => (
-          <div key={`${r.source_kind}:${r.source_id}`} className="list-item" onClick={() => handleResultClick(r)}>
+          <button type="button" key={`${r.source_kind}:${r.source_id}`} className="list-item" aria-label={`Open ${r.title}`} onClick={() => handleResultClick(r)}>
             <span style={{ fontSize: "var(--text-xs)", color: "var(--text-ghost)", flexShrink: 0, width: 16, textAlign: "center" }}>
               {r.source_kind === "scene" ? "\u25CB" : r.source_kind === "memory" ? "\u25C6" : "\u25A6"}
             </span>
             <div className="list-item__content">
               <div className="list-item__title">{r.title}</div>
-              <div className="list-item__meta">{r.excerpt}</div>
+              <div className="list-item__meta project-search__excerpt">{r.excerpt}</div>
             </div>
-          </div>
+          </button>
         ))}
         {query.trim().length >= 2 && !loading && visibleResults.length === 0 && (
           <div style={{ padding: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-sm)" }}>

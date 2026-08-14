@@ -223,8 +223,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [projectFound, setProjectFound] = useState<boolean | null>(null);
   const [startupHealth, setStartupHealth] = useState<StartupHealthReport | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setErrorState] = useState("");
+  const [message, setMessageState] = useState("");
+  const setError = useCallback((next: string) => {
+    setErrorState(next);
+    if (next) setMessageState("");
+  }, []);
+  const setMessage = useCallback((next: string) => {
+    setMessageState(next);
+    if (next) setErrorState("");
+  }, []);
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);

@@ -14,6 +14,7 @@ import { orderCodexEntities } from "../../state";
 import type { CodexEntity } from "../../types";
 
 const TYPE_ORDER: CodexEntity["type"][] = ["character", "location", "lore", "item", "faction", "event"];
+const belongsInSuggestionInbox = (suggestion: StoryMemorySuggestion) => suggestion.kind !== "relationship_create";
 
 const TYPE_ICONS: Record<CodexEntity["type"], string> = {
   character: "\u25C6",
@@ -45,7 +46,7 @@ export function CodexBrowser() {
   async function refreshSuggestions() {
     if (!projectRoot) return;
     try {
-      setSuggestions(await listStoryMemorySuggestions(projectRoot));
+      setSuggestions((await listStoryMemorySuggestions(projectRoot)).filter(belongsInSuggestionInbox));
     } catch (error) {
       setError(`Failed to load Memory suggestions: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -55,8 +56,8 @@ export function CodexBrowser() {
     setScanning(true);
     try {
       const report = await scanStoryMemory(projectRoot);
-      setSuggestions(report.suggestions.filter((row) => row.status === "pending"));
-      setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestions await review.`);
+      setSuggestions(report.suggestions.filter((row) => row.status === "pending" && belongsInSuggestionInbox(row)));
+      setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestion${report.pending === 1 ? "" : "s"} await${report.pending === 1 ? "s" : ""} review.`);
     } catch (error) {
       setError(`Story Memory scan failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -68,6 +69,7 @@ export function CodexBrowser() {
     try {
       await reviewStoryMemorySuggestion(projectRoot, id, disposition);
       await Promise.all([refreshSuggestions(), refreshCodex()]);
+      setError("");
       setMessage(disposition === "accepted" ? "Suggestion accepted into Story Memory." : `Suggestion ${disposition}.`);
     } catch (error) {
       setError(`Suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -81,6 +83,7 @@ export function CodexBrowser() {
         await reviewStoryMemorySuggestion(projectRoot, suggestion.id, disposition);
       }
       await Promise.all([refreshSuggestions(), refreshCodex()]);
+      setError("");
       setMessage(`${suggestions.length} suggestions ${disposition === "accepted" ? "accepted into Story Memory" : "deferred"}.`);
     } catch (error) {
       setError(`Bulk suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -177,6 +180,9 @@ export function CodexBrowser() {
         <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
           Canon & Continuity
         </button>
+        <button className="btn btn--sm" onClick={() => openTab({ id: "memory:connections", kind: "connections", label: "Connection Map" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
+          Connection Map
+        </button>
       </div>
       <div className="sidebar__content">
         {suggestions.length > 0 && (
@@ -216,7 +222,8 @@ export function CodexBrowser() {
               <span className="section-header__count">({g.entities.length})</span>
             </div>
             {g.entities.map((e) => (
-              <div
+              <button
+                type="button"
                 key={e.id}
                 className="list-item"
                 onClick={() => handleEntityClick(e.id, e.name)}
@@ -228,7 +235,7 @@ export function CodexBrowser() {
                 <div className="list-item__content">
                   <div className="list-item__title">{e.name}</div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         ))}

@@ -124,14 +124,16 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Story Memory supports typed details, aliases, tags, categories, notes, AI visibility, book/series scope, temporal relationships, evidence-linked suggestions, correction before acceptance, and bulk accept/defer/exclude. The rendered workflow verifies correction and bulk acceptance while preserving the non-canon review boundary.",
+      "scope_note": "Story Memory supports typed details, aliases, tags, categories, notes, AI visibility, book/series scope, temporal relationships, evidence-linked suggestions, correction before acceptance, and bulk accept/defer/exclude. The project-wide Connection Map visualizes accepted links across every entity type, supports manual time-scoped connections, and holds explicit prose-found relationship suggestions outside canon until the author accepts them. Rendered workflows verify correction, bulk acceptance, and the relationship review boundary.",
       "evidence": [
         "openauthor/codex.py",
         "openauthor/story_memory.py",
         "tests/test_codex_module.py",
         "tests/test_story_memory_module.py",
         "desktop/src/components/sidebar/CodexBrowser.tsx",
-        "desktop/src/components/editor/StoryMemoryEditor.tsx"
+        "desktop/src/components/editor/StoryMemoryEditor.tsx",
+        "desktop/src/components/editor/ConnectionGraphEditor.tsx",
+        "desktop/src/AppV2.workflow.test.tsx"
       ]
     },
     {

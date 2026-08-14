@@ -12,7 +12,7 @@ export function PlanSidebar() {
       </div>
       <div className="sidebar__content" style={{ padding: "var(--space-4)" }}>
         <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)", lineHeight: 1.5 }}>
-          Shape the book from acts down to beats. Drag scene cards to reorder the manuscript without moving source files.
+          Shape the book from acts down to beats. Move scene cards between chapters to change reading order without moving source files.
         </p>
         <div style={{ marginTop: "var(--space-4)", padding: "var(--space-3)", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: ".08em" }}>Manuscript inventory</div>
