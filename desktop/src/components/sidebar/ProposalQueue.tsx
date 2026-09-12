@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { countProposals, orderProposalsForReview } from "../../state";
-import { applyProposalBatch, listRevisions } from "../../api";
+import { applyProposalBatch, listRevisions, undoProposalBatch } from "../../api";
 import type { RevisionSummary } from "../../types";
 
 export function ProposalQueue() {
-  const { projectRoot, proposals, refreshProposals, setError, setMessage } = useWorkspace();
-  const { openTab } = useEditor();
+  const { projectRoot, proposals, scenes, refreshProposals, refreshScenes, setError, setMessage } = useWorkspace();
+  const { openTab, updateTab, tabs } = useEditor();
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
+  const [applyingGroup, setApplyingGroup] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -28,14 +29,44 @@ export function ProposalQueue() {
     }
     return [...groups.entries()].filter(([, rows]) => rows.length > 1);
   }, [proposals]);
+  const appliedGroups = useMemo(() => {
+    const groups = new Map<string, typeof proposals>();
+    for (const proposal of proposals) {
+      if (!proposal.coordinated_undo_available || !proposal.applied_revision || proposal.status !== "applied") continue;
+      groups.set(proposal.applied_revision, [...(groups.get(proposal.applied_revision) ?? []), proposal]);
+    }
+    return [...groups.entries()].filter(([, rows]) => rows.length > 1 && rows.some((row) => !row.undone_at));
+  }, [proposals]);
+
+  async function undoGroup(revision: string, sceneIds: string[]) {
+    if (applyingGroup || tabs.some((tab) => tab.kind === "scene" && sceneIds.includes(tab.id.replace(/^scene:/, "")) && tab.modified)) return;
+    setApplyingGroup(revision);
+    try {
+      const result = await undoProposalBatch(projectRoot, revision);
+      for (const proposal of result.proposals) updateTab(`proposal:${proposal.id}`, { data: proposal });
+      for (const scene of result.scenes) updateTab(`scene:${scene.id}`, { data: scene, label: scene.title });
+      setError("");
+      setMessage(`${result.scene_ids.length} scenes restored together in one Undo Revision.${result.warnings.length ? ` ${result.warnings.join(" ")}` : ""}`);
+      await Promise.all([refreshProposals(), refreshScenes()]);
+    } catch (error) {
+      setError(`Coordinated undo failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setApplyingGroup("");
+    }
+  }
 
   async function applyGroup(groupId: string, ids: string[]) {
+    if (applyingGroup) return;
+    setApplyingGroup(groupId);
     try {
       const result = await applyProposalBatch(projectRoot, ids);
-      await refreshProposals();
+      for (const proposal of result.proposals) updateTab(`proposal:${proposal.id}`, { data: proposal });
+      await Promise.all([refreshProposals(), refreshScenes()]);
       setMessage(`${result.scene_ids.length} scenes applied together in one reversible Revision.`);
     } catch (error) {
       setError(`Coordinated apply failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setApplyingGroup("");
     }
   }
 
@@ -72,9 +103,29 @@ export function ProposalQueue() {
           <div key={groupId} style={{ margin: "var(--space-2)", padding: "var(--space-3)", border: "1px solid var(--info)", borderRadius: "var(--radius-md)", background: "var(--info-subtle)" }}>
             <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>Coordinated change · {rows.length} scenes</div>
             <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)", margin: "4px 0 8px" }}>Review each scene’s hunks, then apply the set as one reversible Revision.</div>
-            <button className="btn btn--primary btn--sm" disabled={rows.some((row) => !row.change_set || row.stale)} onClick={() => void applyGroup(groupId, rows.map((row) => row.id))}>Apply together</button>
+            <button className="btn btn--primary btn--sm" disabled={Boolean(applyingGroup) || rows.some((row) => !row.change_set || row.stale)} onClick={() => void applyGroup(groupId, rows.map((row) => row.id))}>{applyingGroup === groupId ? "Applying…" : "Apply together"}</button>
           </div>
         ))}
+        {appliedGroups.map(([revision, rows]) => {
+          const partiallyUndone = rows.some((row) => row.undone_at);
+          const dirty = tabs.some((tab) => tab.kind === "scene" && tab.modified && rows.some((row) => tab.id === `scene:${row.scene_id}`));
+          return (
+            <section key={revision} aria-label={`Coordinated Revision ${revision.slice(0, 12)}`} style={{ margin: "var(--space-2)", padding: "var(--space-3)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)" }}>
+              <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>Applied together · {rows.length} scenes</div>
+              <ul style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)", paddingLeft: "var(--space-4)", margin: "8px 0" }}>
+                {rows.map((row) => <li key={row.id}>{scenes.find((scene) => scene.id === row.scene_id)?.title || row.scene_id}</li>)}
+              </ul>
+              <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)", margin: "8px 0" }}>
+                {partiallyUndone ? "Part of this Revision was already undone. Review the remaining scenes individually."
+                  : dirty ? "Save or resolve open scene drafts before undoing this Revision."
+                    : "Restore these scenes to before this Revision. If any scene has newer saved changes, nothing will be restored."}
+              </p>
+              <button className="btn btn--secondary btn--sm" disabled={Boolean(applyingGroup) || partiallyUndone || dirty} onClick={() => void undoGroup(revision, rows.map((row) => row.scene_id))}>
+                {applyingGroup === revision ? "Restoring…" : `Undo ${rows.length} scenes together`}
+              </button>
+            </section>
+          );
+        })}
         {ordered.map((p) => {
           const displayStatus = p.undone_at ? "undone" : p.status;
           const displayTitle = p.title || p.id.slice(0, 12);

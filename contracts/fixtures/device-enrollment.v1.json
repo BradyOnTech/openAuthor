@@ -1,0 +1,22 @@
+{
+  "schema": "openauthor.mobile.device-enrollment",
+  "schema_version": 1,
+  "enrollment_id": "enroll_mara_phone_2026_08",
+  "subject_id": "author_mara",
+  "project_id": "project_glass_harbor",
+  "device_id": "device_mara_phone",
+  "device_name": "Mara's iPhone",
+  "platform": "ios",
+  "app_install_id": "install_mara_phone_01",
+  "public_key": {
+    "algorithm": "x25519-v1",
+    "format": "raw",
+    "key_id": "key_mara_phone_2026_08",
+    "value": "ERERERERERERERERERERERERERERERERERERERERERE",
+    "byte_length": 32,
+    "fingerprint_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "status": "active",
+  "enrolled_at": "2026-08-30T14:55:00.000Z",
+  "expires_at": "2027-08-30T14:55:00.000Z"
+}

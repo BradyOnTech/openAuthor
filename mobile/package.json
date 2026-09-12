@@ -1,0 +1,66 @@
+{
+  "name": "openauthor-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "web": "expo start --web",
+    "build:web": "expo export --clear --platform web && node scripts/build-pwa.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:hosted": "playwright test --config playwright.hosted.config.ts",
+    "build:test-hosted": "node scripts/build-hosted-test.mjs",
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test",
+    "doctor": "expo-doctor"
+  },
+  "dependencies": {
+    "@config-plugins/react-native-webrtc": "15.0.2",
+    "@expo/metro-runtime": "~57.0.15",
+    "@openauthor/contracts": "file:../contracts",
+    "@supabase/supabase-js": "2.112.4",
+    "expo": "~57.0.18",
+    "expo-crypto": "~57.0.2",
+    "expo-dev-client": "~57.0.16",
+    "expo-file-system": "~57.0.6",
+    "expo-network": "~57.0.1",
+    "expo-secure-store": "~57.0.2",
+    "expo-sqlite": "~57.0.2",
+    "expo-status-bar": "~57.0.1",
+    "libsodium-wrappers": "^0.8.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-libsodium": "1.7.0",
+    "react-native-url-polyfill": "4.0.0",
+    "react-native-web": "^0.21.2",
+    "react-native-webrtc": "124.0.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/react": "~19.2.2",
+    "expo-doctor": "^1.20.4",
+    "fake-indexeddb": "^6.2.4",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-libsodium",
+          "react-native-webrtc"
+        ]
+      }
+    }
+  }
+}

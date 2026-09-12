@@ -16,19 +16,31 @@ worker threads so `chat.interrupt` stays responsive); consumers match on id.
 
 from __future__ import annotations
 
+import base64
 import json
 import sys
 import threading
+import uuid
 from typing import Any, TextIO
 
 from .ai import ChatInterrupted
 from .chat import (
   list_chat_messages,
   list_chat_threads,
+  regenerate_chat_turn,
   send_chat_message,
   truncate_chat_messages,
 )
-from .project import OpenAuthorError, ProjectPaths
+from .assistant.turns import AssistantTurnStore
+from .assistant.runtime import AssistantRuntime
+from .assistant.snapshots import project_mobile_snapshot
+from .assistant.mobile_outbox import (
+  MobileOutboxEnvelope,
+  import_mobile_outbox_item,
+  list_mobile_inbox_items,
+  list_mobile_review_decisions,
+)
+from .project import OpenAuthorError, ProjectPaths, utc_now
 
 PROTOCOL_VERSION = 1
 
@@ -73,7 +85,6 @@ class ChatSidecarServer:
     self._writer = _FrameWriter(stdout if stdout is not None else sys.stdout)
     self._cancel_flags: dict[str, threading.Event] = {}
     self._cancel_lock = threading.Lock()
-    self._send_lock = threading.Lock()
     self._workers: list[threading.Thread] = []
 
   def serve_forever(self) -> None:
@@ -137,6 +148,150 @@ class ChatSidecarServer:
         ),
       )
       return
+    if method == "assistant.turn.get":
+      self._respond_call(
+        request_id,
+        lambda: AssistantTurnStore(self._paths).get(
+          str(params.get("turn_id", "")).strip()
+        ).to_dict(),
+      )
+      return
+    if method == "mobile.snapshot.prepare":
+      def prepare_mobile_snapshot() -> dict[str, Any]:
+        artifact = project_mobile_snapshot(
+          self._paths,
+          selected_project_id=str(params.get("project_id", "")).strip(),
+        )
+        return {
+          "schema_version": 1,
+          "media_type": "application/vnd.openauthor.mobile-snapshot+json",
+          "manifest": artifact.manifest,
+          "plaintext_base64": base64.b64encode(artifact.plaintext_bytes).decode("ascii"),
+        }
+
+      self._respond_call(request_id, prepare_mobile_snapshot)
+      return
+    if method == "mobile.outbox.import":
+      def import_mobile_outbox() -> dict[str, Any]:
+        raw_envelope = params.get("envelope", {})
+        raw_payload = params.get("payload", {})
+        if not isinstance(raw_envelope, dict) or not isinstance(raw_payload, dict):
+          raise OpenAuthorError(
+            "Mobile outbox import requires object envelope and payload values."
+          )
+        identity_fields = (
+          "project_id",
+          "device_id",
+          "operation_id",
+          "base_revision",
+          "payload_digest",
+        )
+        if any(not isinstance(raw_envelope.get(field), str) for field in identity_fields):
+          raise OpenAuthorError(
+            "Mobile outbox envelope identity fields must be strings."
+          )
+        envelope = MobileOutboxEnvelope(
+          project_id=raw_envelope["project_id"],
+          device_id=raw_envelope["device_id"],
+          operation_id=raw_envelope["operation_id"],
+          base_revision=raw_envelope["base_revision"],
+          payload_digest=raw_envelope["payload_digest"],
+        )
+        return import_mobile_outbox_item(
+          self._paths,
+          envelope=envelope,
+          payload=raw_payload,
+        ).to_dict()
+
+      self._respond_call(request_id, import_mobile_outbox)
+      return
+    if method == "mobile.inbox.list":
+      self._respond_call(
+        request_id,
+        lambda: list_mobile_inbox_items(self._paths),
+      )
+      return
+    if method == "mobile.review.list":
+      self._respond_call(
+        request_id,
+        lambda: list_mobile_review_decisions(self._paths),
+      )
+      return
+    if method == "voice.context.prepare":
+      self._respond_call(
+        request_id,
+        lambda: AssistantRuntime(self._paths).prepare(
+          thread_id=str(params.get("thread_id", "")).strip(),
+          channel=str(params.get("channel", "desktop_voice")).strip(),
+          utterance=str(params.get("utterance", "")),
+          current_scene_id=str(params.get("current_scene_id", "")),
+          selected_text=str(params.get("selected_text", "")),
+          scene_ids=[str(item) for item in params.get("scene_ids", [])]
+          if isinstance(params.get("scene_ids"), list)
+          else None,
+          codex_ids=[str(item) for item in params.get("codex_ids", [])]
+          if isinstance(params.get("codex_ids"), list)
+          else None,
+          approved_codex_ids=[str(item) for item in params.get("approved_codex_ids", [])]
+          if isinstance(params.get("approved_codex_ids"), list)
+          else None,
+          context_overrides=(
+            params.get("context_overrides")
+            if isinstance(params.get("context_overrides"), dict)
+            else None
+          ),
+        ),
+      )
+      return
+    if method == "voice.session.start":
+      self._respond_call(
+        request_id,
+        lambda: AssistantRuntime(self._paths).start_realtime_session(
+          offer_sdp=str(params.get("offer_sdp", "")),
+          context_pack_id=str(params.get("context_pack_id", "")),
+          model=str(params.get("model", "")),
+          voice=str(params.get("voice", "")),
+        ),
+      )
+      return
+    if method == "voice.session.end":
+      self._writer.respond(
+        request_id,
+        result={
+          "ended": True,
+          "voice_session_id": str(params.get("voice_session_id", "")),
+        },
+      )
+      return
+    if method == "voice.tool.handle":
+      arguments = params.get("arguments", {})
+      self._respond_call(
+        request_id,
+        lambda: AssistantRuntime(self._paths).handle_tool_call(
+          thread_id=str(params.get("thread_id", "")).strip(),
+          channel=str(params.get("channel", "desktop_voice")).strip(),
+          call_id=str(params.get("call_id", "")).strip(),
+          wire_name=str(params.get("name", "")).strip(),
+          arguments=arguments if isinstance(arguments, dict) else {},
+        ),
+      )
+      return
+    if method == "voice.turn.record":
+      self._respond_call(
+        request_id,
+        lambda: AssistantRuntime(self._paths).record_voice_turn(
+          thread_id=str(params.get("thread_id", "")).strip(),
+          turn_id=str(params.get("turn_id", "")).strip(),
+          voice_session_id=str(params.get("voice_session_id", "")).strip(),
+          user_transcript=str(params.get("user_transcript", "")),
+          assistant_transcript=str(params.get("assistant_transcript", "")),
+          context_pack_id=str(params.get("context_pack_id", "")).strip(),
+          provider_event_id=str(params.get("provider_event_id", "")).strip(),
+          model=str(params.get("model", "gpt-realtime")).strip(),
+          channel=str(params.get("channel", "desktop_voice")).strip(),
+        ),
+      )
+      return
     if method == "chat.interrupt":
       target = str(params.get("request_id", "")).strip()
       if target == "":
@@ -149,6 +304,15 @@ class ChatSidecarServer:
       self._writer.respond(request_id, result={"interrupt_requested": True})
       return
     if method == "chat.send":
+      worker = threading.Thread(
+        target=self._handle_chat_send,
+        args=(request_id, params),
+        daemon=True,
+      )
+      self._workers.append(worker)
+      worker.start()
+      return
+    if method == "chat.regenerate":
       worker = threading.Thread(
         target=self._handle_chat_send,
         args=(request_id, params),
@@ -187,10 +351,38 @@ class ChatSidecarServer:
     request_key = str(request_id)
     cancel = self._cancel_flag(request_key)
     thread_id = str(params.get("thread_id", "")).strip()
+    turn_id = str(params.get("turn_id", "")).strip() or f"turn-{uuid.uuid4().hex}"
+    turn_sequence = 0
+
+    def emit_assistant_event(event_type: str, data: dict[str, Any]) -> None:
+      nonlocal turn_sequence
+      turn_sequence += 1
+      self._writer.emit(
+        "assistant.event",
+        {
+          "protocol_version": 1,
+          "event_id": f"{turn_id}:{turn_sequence}",
+          "turn_id": turn_id,
+          "thread_id": thread_id,
+          "turn_sequence": turn_sequence,
+          "occurred_at": utc_now(),
+          "type": event_type,
+          "data": data,
+        },
+      )
 
     def on_delta(text: str) -> None:
       if cancel.is_set():
         raise ChatInterrupted("Chat turn interrupted by user.")
+      emit_assistant_event(
+        "output.delta",
+        {
+          "output_id": f"{turn_id}:assistant",
+          "role": "assistant",
+          "modality": "text",
+          "delta": text,
+        },
+      )
       self._writer.emit(
         "chat.delta",
         {"request_id": request_id, "thread_id": thread_id, "text": text},
@@ -200,25 +392,59 @@ class ChatSidecarServer:
     codex_ids = params.get("codex_ids")
     context_overrides = params.get("context_overrides")
     try:
-      with self._send_lock:
+      common = {
+        "thread_id": thread_id,
+        "message": str(params.get("message", "")),
+        "current_scene_id": str(params.get("current_scene_id", "")),
+        "scene_ids": [str(item) for item in scene_ids] if isinstance(scene_ids, list) else None,
+        "selected_text": str(params.get("selected_text", "")),
+        "codex_ids": [str(item) for item in codex_ids] if isinstance(codex_ids, list) else None,
+        "approved_codex_ids": [str(item) for item in params.get("approved_codex_ids", [])] if isinstance(params.get("approved_codex_ids"), list) else None,
+        "context_overrides": context_overrides if isinstance(context_overrides, dict) else None,
+        "on_delta": on_delta,
+      }
+      replacement_from = str(params.get("replace_from_message_id", "")).strip()
+      if replacement_from:
+        result = regenerate_chat_turn(
+          self._paths,
+          from_message_id=replacement_from,
+          replacement_turn_id=turn_id,
+          **common,
+        )
+      else:
         result = send_chat_message(
           self._paths,
-          thread_id=thread_id,
-          message=str(params.get("message", "")),
-          current_scene_id=str(params.get("current_scene_id", "")),
-          scene_ids=[str(item) for item in scene_ids] if isinstance(scene_ids, list) else None,
-          selected_text=str(params.get("selected_text", "")),
-          codex_ids=[str(item) for item in codex_ids] if isinstance(codex_ids, list) else None,
-          context_overrides=context_overrides if isinstance(context_overrides, dict) else None,
-          on_delta=on_delta,
+          turn_id=turn_id,
+          channel=str(params.get("channel", "text")).strip() or "text",
+          **common,
         )
+      assistant_message = result.get("assistant_message", {})
+      emit_assistant_event(
+        "output.final",
+        {
+          "message_id": assistant_message.get("id", ""),
+          "role": "assistant",
+          "modality": "text",
+          "transcript_status": "final",
+        },
+      )
+      emit_assistant_event(
+        "turn.status",
+        {"status": result.get("turn", {}).get("status", "completed")},
+      )
       self._writer.respond(request_id, result=result)
     except ChatInterrupted as error:
+      emit_assistant_event("turn.status", {"status": "interrupted"})
       self._writer.respond(
         request_id,
         error={"message": str(error), "category": "interrupted"},
       )
     except OpenAuthorError as error:
+      try:
+        status = AssistantTurnStore(self._paths).get(turn_id).status
+      except OpenAuthorError:
+        status = "failed"
+      emit_assistant_event("turn.status", {"status": status})
       self._writer.respond(
         request_id,
         error={

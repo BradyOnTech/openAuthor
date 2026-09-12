@@ -3,16 +3,16 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { applyProposal, draftProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
+import { defaultProvider } from "../../providerSelection";
 
 type Props = {
   proposal: ProposalRecord;
 };
 
-export function ProposalReview({ proposal: initial }: Props) {
+export function ProposalReview({ proposal }: Props) {
   const { projectRoot, runtimeConfig, refreshProposals, refreshScenes, setError, setMessage } =
     useWorkspace();
   const { openTab, updateTab } = useEditor();
-  const [proposal, setProposal] = useState(initial);
   const [busy, setBusy] = useState("");
   const [confirmForce, setConfirmForce] = useState(false);
   const [editingHunkId, setEditingHunkId] = useState("");
@@ -22,13 +22,9 @@ export function ProposalReview({ proposal: initial }: Props) {
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
-    (Object.entries(runtimeConfig?.providers ?? {}).find(
-      ([name, config]) => name !== "local" && config.credential_present
-    )?.[0] as ProposalProvider | undefined) ??
-    "local";
+    defaultProvider(runtimeConfig).id;
 
   function syncTab(updated: ProposalRecord) {
-    setProposal(updated);
     updateTab(`proposal:${updated.id}`, { data: updated });
   }
 
@@ -264,7 +260,7 @@ export function ProposalReview({ proposal: initial }: Props) {
                     <span style={{ marginLeft: "var(--space-2)", fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>{hunk.rationale}</span>
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-1)" }}>
-                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
+                    <button className="btn btn--ghost btn--sm" aria-label={`Edit change hunk ${hunk.order}`} disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
                     <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
                     <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setFeedbackHunkId(hunk.id); setHunkFeedback(""); }}>Comment</button>
                     <button

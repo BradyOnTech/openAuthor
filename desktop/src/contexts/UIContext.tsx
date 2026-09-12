@@ -7,7 +7,7 @@ export type ActivityView = "manuscript" | "plan" | "codex" | "storylines" | "sea
 
 export type SecondaryTab = "chat" | "inspector";
 
-export type PanelTab = "runs" | "merge" | "budget";
+export type PanelTab = "runs" | "merge" | "budget" | "mobile";
 
 type UIState = {
   theme: Theme;

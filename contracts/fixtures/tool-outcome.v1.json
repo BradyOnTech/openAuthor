@@ -1,0 +1,13 @@
+{
+  "schema": "openauthor.assistant.tool-outcome",
+  "schema_version": 1,
+  "outcome_id": "outcome_scene_0042",
+  "call_id": "call_scene_0042",
+  "turn_id": "turn_mara_0042",
+  "project_id": "project_glass_harbor",
+  "project_revision": "rev_7e3c1a",
+  "status": "succeeded",
+  "completed_at": "2026-08-30T15:04:08.000Z",
+  "result": {"scene_id": "scene-0042", "title": "The Glass Harbor"},
+  "result_sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/tool-call/v1",
+  "title": "openAuthor Tool Call v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "call_id", "turn_id", "project_id", "project_revision", "channel", "tool_name", "effect", "arguments", "arguments_sha256", "requested_at"],
+  "properties": {
+    "schema": {"const": "openauthor.assistant.tool-call"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "call_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "turn_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "channel": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/channel"},
+    "tool_name": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/toolName"},
+    "effect": {"enum": ["read", "propose", "mutate", "risky"]},
+    "arguments": {"type": "object", "maxProperties": 64},
+    "arguments_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "requested_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"}
+  }
+}

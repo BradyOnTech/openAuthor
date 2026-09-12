@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { getScene } from "../api";
+import { getScene, listScenes } from "../api";
 import { useEditor } from "../contexts/EditorContext";
 import { useUI, type ActivityView } from "../contexts/UIContext";
 import { useWorkspace } from "../contexts/WorkspaceContext";
@@ -41,10 +41,14 @@ export function useWorkspaceNavigation() {
       setActiveTab(openSceneTab.id);
       return;
     }
-    if (!projectRoot || scenes.length === 0) return;
+    if (!projectRoot) return;
 
     try {
-      const scene = await getScene(projectRoot, scenes[0].id);
+      // The workbench becomes usable before its background scene-list refresh
+      // completes. A navigation request must still open the saved manuscript.
+      const availableScenes = scenes.length ? scenes : await listScenes(projectRoot);
+      if (!availableScenes.length) return;
+      const scene = await getScene(projectRoot, availableScenes[0].id);
       openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title, data: scene });
     } catch (error) {
       setError(`Failed to open the manuscript: ${error instanceof Error ? error.message : String(error)}`);

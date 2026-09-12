@@ -106,6 +106,14 @@ export type SceneSummary = {
   word_count?: number;
 };
 
+export type SceneEditVersion = {
+  schema_version: 1;
+  workspace: string;
+  storyline: string;
+  scene_id: string;
+  fields: Record<"title" | "body" | "summary" | "pov" | "status", string>;
+};
+
 export type SceneDetail = {
   id: string;
   title: string;
@@ -116,6 +124,8 @@ export type SceneDetail = {
   updated_at: string;
   path: string;
   body: string;
+  edit_version?: SceneEditVersion;
+  save_warnings?: string[];
 };
 
 export type StartupHealthReport = {
@@ -166,6 +176,7 @@ export type ProposalRecord = {
   applied_at?: string;
   pre_apply_snapshot?: string;
   applied_revision?: string;
+  coordinated_undo_available?: boolean;
   applied_scene_digest?: string;
   undone_at?: string;
   undo_revision?: string;
@@ -324,6 +335,13 @@ export type RevisionRetrospective = {
   summary: string;
 };
 
+export type ManuscriptReading = {
+  schema_version: 1;
+  sections: Array<{ id: string; title: string; act_title: string; scene_ids: string[] }>;
+  scenes: SceneDetail[];
+  word_count: number;
+};
+
 export type ManuscriptPlan = {
   schema_version: number;
   brief: {
@@ -473,6 +491,32 @@ export type ChatMessageRecord = {
     model?: string;
     generation_id?: string;
   };
+  turn_id?: string;
+  thread_id?: string;
+  channel?: "text" | "desktop_voice" | "mobile_voice" | string;
+  turn_position?: number | null;
+};
+
+export type AssistantTurnRecord = {
+  schema_version: number;
+  turn_id: string;
+  thread_id: string;
+  channel: "text" | "desktop_voice" | "mobile_voice";
+  status: "accepted" | "running" | "completed" | "failed" | "interrupted" | "superseded";
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  input_message_id: string | null;
+  message_ids: string[];
+  generation_ids: string[];
+  pending_tool_call_ids: string[];
+  context_pack_id: string | null;
+  provider: string | null;
+  model: string | null;
+  error: { message?: string; category?: string } | null;
+  voice_session_id?: string | null;
+  provider_event_id?: string | null;
+  revision: number;
 };
 
 export type ChatSendResult = {
@@ -481,6 +525,7 @@ export type ChatSendResult = {
   assistant_message: ChatMessageRecord;
   tool_messages: ChatMessageRecord[];
   pending_tool_calls: ChatToolCall[];
+  turn?: AssistantTurnRecord;
 };
 
 export type ChatRetrievalCitation = {

@@ -1,12 +1,14 @@
 import { useUI } from "../../contexts/UIContext";
 import { BudgetPanel } from "./BudgetPanel";
 import { MergePanel } from "./MergePanel";
+import { MobileInboxPanel } from "./MobileInboxPanel";
 import { RunsPanel } from "./RunsPanel";
 
 const TABS = [
   { id: "runs" as const, label: "Runs" },
   { id: "merge" as const, label: "Merge" },
   { id: "budget" as const, label: "Budget" },
+  { id: "mobile" as const, label: "Mobile" },
 ];
 
 export function PanelArea() {
@@ -31,6 +33,7 @@ export function PanelArea() {
         {panelTab === "runs" && <RunsPanel />}
         {panelTab === "merge" && <MergePanel />}
         {panelTab === "budget" && <BudgetPanel />}
+        {panelTab === "mobile" && <MobileInboxPanel />}
       </div>
     </div>
   );

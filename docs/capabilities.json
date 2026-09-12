@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-20",
+  "updated_at": "2026-09-07",
   "status_definitions": {
     "core": ["implemented", "partial", "not_started"],
     "active_ui": ["implemented", "partial", "hidden", "not_applicable"],
@@ -22,6 +22,7 @@
         "desktop/src/components/onboarding/FirstRunGuide.tsx",
         "desktop/src/contexts/WorkspaceContext.tsx",
         "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/authoring.spec.ts",
         "desktop/src-tauri/src/lib.rs"
       ]
     },
@@ -36,8 +37,30 @@
       "evidence": [
         "openauthor/scenes.py",
         "desktop/src/components/editor/SceneEditor.tsx",
+        "desktop/src/components/editor/SceneEditor.test.tsx",
+        "desktop/src/components/editor/SceneDocument.tsx",
+        "desktop/src/components/editor/SceneDocument.test.tsx",
+        "desktop/src/recoveryJournal.test.ts",
         "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/authoring.spec.ts",
         "desktop/src-tauri/src/lib.rs"
+      ]
+    },
+    {
+      "id": "manuscript_reading",
+      "name": "Read-only manuscript and chapter reading in Plan order",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "Chapter reading retains unassigned scenes, bounds long-chapter rendering, waits for pending saves, and opens fresh scene state for editing. Reading and export share Plan ordering. Browser/real-Python evidence is not packaged or full-novel usability certification.",
+      "evidence": [
+        "openauthor/planning.py",
+        "tests/test_planning_module.py",
+        "desktop/src/components/editor/ManuscriptReader.tsx",
+        "desktop/src/components/editor/ManuscriptReader.test.tsx",
+        "desktop/e2e/book-journey.spec.ts"
       ]
     },
     {
@@ -48,11 +71,13 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Dragging previews affected chapters, crossed scenes, act-boundary risk, and neighboring story-time markers before the move is committed.",
+      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Dragging previews structural impact. The manuscript sidebar follows Plan order with collapsible chapters, counts, current-scene highlighting and title/chapter/POV filtering; unassigned scenes remain reachable.",
       "evidence": [
         "openauthor/planning.py",
         "tests/test_planning_module.py",
         "desktop/src/components/sidebar/PlanSidebar.tsx",
+        "desktop/src/components/sidebar/ManuscriptExplorer.tsx",
+        "desktop/src/components/sidebar/ManuscriptExplorer.test.tsx",
         "desktop/src/components/editor/PlanEditor.tsx",
         "desktop/src/AppV2.workflow.test.tsx",
         "desktop/src-tauri/src/lib.rs"
@@ -76,6 +101,7 @@
         "desktop/src/components/editor/ProposalReview.tsx",
         "desktop/src/components/editor/RevisionReview.tsx",
         "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/authoring.spec.ts",
         "desktop/src-tauri/src/lib.rs"
       ],
       "scope_note": "The verified loop creates concrete Change Sets, supports include/exclude, direct edit, regeneration, and author-comment revision per deterministic hunk, enforces protected text, previews Story Memory impact, creates coordinated multi-scene AI groups, applies those groups atomically, records content-addressed Revisions, compares history, selectively restores, and undoes. Packaged GUI automation remains open."
@@ -91,11 +117,22 @@
       "evidence": [
         "openauthor/chat.py",
         "openauthor/server.py",
+        "openauthor/assistant/context.py",
+        "tests/test_assistant_context.py",
+        "openauthor/memory_context.py",
+        "tests/test_ai_context_privacy.py",
+        "openauthor/review_context.py",
+        "tests/test_review_context.py",
+        "desktop/src/components/secondary/ReviewContextReceipt.tsx",
         "desktop/src/components/secondary/ChatPanel.tsx",
+        "desktop/src/hooks/useMemoryConsent.tsx",
         "openauthor/planning.py",
-        "openauthor/story_memory.py"
+        "openauthor/story_memory.py",
+        "desktop/e2e/book-journey.spec.ts",
+        "desktop/e2e/storyline-journey.spec.ts",
+        "desktop/e2e/memory-permission.spec.ts"
       ],
-      "scope_note": "Assistant conversations have explicit Book, Scene, Chapter, Character, and Storyline scopes with bounded context. Replies can become Change Sets, review-first Story Memory suggestions, visible project or scene notes, or non-destructive Storyline experiments. The packaged Book-scope and promotion paths passed manual product validation; automated rendered promotion coverage remains open."
+      "scope_note": "Assistant conversations expose Book, Scene, Chapter, Character, and Storyline scopes. Browser/real-Python journeys verify scoped discussion, regeneration, note promotion, one-request Memory permission and context receipts. Shared editorial context supplies Plan order, relevant accepted canon with evidence/knowledge limits, and active Storyline intent to chat, desktop voice preparation and whole-scene generation/drafting. Memory projection does not redact previous transcripts or retract active-session data. Whole-payload budgeting, mobile editorial parity, all promotion paths, packaged streaming and novel-scale model quality remain gates."
     },
     {
       "id": "chatgpt_subscription_provider",
@@ -142,12 +179,13 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
       "evidence": [
         "openauthor/search.py",
         "tests/test_search_module.py",
-        "desktop/src/components/sidebar/ProjectSearch.tsx"
+        "desktop/src/components/sidebar/ProjectSearch.tsx",
+        "desktop/e2e/book-journey.spec.ts"
       ]
     },
     {
@@ -224,14 +262,15 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Storylines support experiment briefs, lifecycle actions, branch-backed isolation, coordinated multi-scene AI Change Sets, semantic arc/fact/setup/question deltas, pre/post impact summaries, and selective integration as atomically applied coordinated Change Sets.",
+      "scope_note": "Storylines support experiment briefs, lifecycle actions, branch-backed isolation, coordinated multi-scene AI Change Sets, semantic deltas, impact summaries and selective integration. The browser/real-Python alternate-ending journey verifies clean-tab switching, two changed scenes, selecting one for primary integration, preserving the unselected scene and undo. Unsaved-navigation and forced-crash guarantees remain release gates.",
       "evidence": [
         "openauthor/storylines.py",
         "openauthor/git_ops.py",
         "tests/test_storylines_module.py",
         "desktop/src/components/sidebar/StorylineSidebar.tsx",
         "desktop/src/components/editor/StorylineEditor.tsx",
-        "desktop/src/AppV2.workflow.test.tsx"
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/storyline-journey.spec.ts"
       ]
     },
     {
@@ -329,7 +368,7 @@
       "active_ui": "partial",
       "end_to_end": "missing",
       "release": "not_ready",
-      "scope_note": "New-project import includes structure preview, Scrivener Draft binder ordering with RTF extraction, compile exclusions, and export loss reports; packaged native automation and richer formatting fidelity remain open.",
+      "scope_note": "Import includes structure preview, Scrivener Draft ordering and compile exclusions. Word and Markdown export follow Plan order. A browser journey covers Markdown import and Word export; the full format matrix, packaged dialogs and richer formatting fidelity remain open.",
       "evidence": [
         "openauthor/manuscript_io.py",
         "tests/test_manuscript_io.py",
@@ -346,7 +385,7 @@
       "active_ui": "implemented",
       "end_to_end": "missing",
       "release": "not_ready",
-      "scope_note": "Unsaved scene title/body drafts are journaled locally and prompt Restore or Discard on reopen; a forced process-termination native drill is still required.",
+      "scope_note": "Unsent drafts use independent editor-owned browser slots, sequence-specific retirement and a multiple-draft chooser; legacy entries remain readable. Guarded Restore is browser-tested, but native termination, eviction and a full disk archive remain gates.",
       "evidence": [
         "openauthor/project.py",
         "openauthor/scenes.py",

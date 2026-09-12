@@ -14,6 +14,7 @@ import type {
   MergeConflictScan,
   ProposalRecord,
 } from "../../types";
+import { defaultProvider } from "../../providerSelection";
 
 const sectionStyle: React.CSSProperties = {
   padding: "var(--space-4)",
@@ -31,6 +32,7 @@ export function MergePanel() {
     refreshScenes,
     refreshProposals,
     refreshCodex,
+    runtimeConfig,
     setError,
     setMessage,
   } = useWorkspace();
@@ -123,7 +125,7 @@ export function MergePanel() {
         base: effectiveBase,
         head: effectiveHead,
         path,
-        provider: "local",
+        provider: defaultProvider(runtimeConfig).id,
       });
       setMessage(
         `Drafted a reconciled version of ${path} as Change Set ${proposal.id}. Review it in Changes.`

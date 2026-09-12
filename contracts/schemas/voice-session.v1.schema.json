@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/voice-session/v1",
+  "title": "openAuthor Voice Session v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "session_id", "project_id", "project_revision", "device_id", "channel", "state", "transport", "model", "voice", "context_pack", "audio_retention", "transcript_retention", "started_at", "last_event_sequence"],
+  "properties": {
+    "schema": {"const": "openauthor.voice.session"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "session_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "device_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "channel": {"enum": ["desktop_voice", "mobile_voice"]},
+    "state": {"enum": ["connecting", "listening", "thinking", "speaking", "error", "ended"]},
+    "transport": {"const": "webrtc"},
+    "model": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "voice": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+    "context_pack": {"$ref": "https://openauthor.dev/contracts/context-pack-reference/v1"},
+    "audio_retention": {"const": "none"},
+    "transcript_retention": {"enum": ["none", "project_chat"]},
+    "started_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "ended_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "last_event_sequence": {"type": "integer", "minimum": 0}
+  }
+}

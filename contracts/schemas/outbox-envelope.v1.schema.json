@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/outbox-envelope/v1",
+  "title": "openAuthor Immutable Outbox Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "project_id", "device_id", "operation_id", "base_revision", "kind", "created_at", "payload"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.outbox-envelope"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "device_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "operation_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "base_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "kind": {"enum": ["capture_note", "change_set_request", "dictated_passage", "review_decision", "story_memory_suggestion", "thread_turn"]},
+    "created_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "project_key_version", "nonce", "aad_version", "ciphertext", "ciphertext_sha256", "ciphertext_byte_length"],
+      "properties": {
+        "algorithm": {"const": "aes-256-gcm-v1"},
+        "project_key_version": {"type": "integer", "minimum": 1},
+        "nonce": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/base64"},
+        "aad_version": {"const": 1},
+        "ciphertext": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/base64"},
+        "ciphertext_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/rawSha256"},
+        "ciphertext_byte_length": {"type": "integer", "minimum": 40, "maximum": 8388608}
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "openauthor.mobile.snapshot.blob",
+  "schema_version": 1,
+  "snapshot_id": "snapshot_glass_harbor_7e3c1a",
+  "project_id": "project_glass_harbor",
+  "project_revision": "rev_7e3c1a",
+  "object_bucket": "mobile-encrypted-sync",
+  "object_key": "projects/project_glass_harbor/snapshots/snapshot_glass_harbor_7e3c1a.bin",
+  "content_type": "text/plain;charset=utf-8",
+  "encryption": {
+    "algorithm": "aes-256-gcm-v1",
+    "project_key_version": 4,
+    "aad_version": 1
+  },
+  "ciphertext_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "ciphertext_byte_length": 48208
+}

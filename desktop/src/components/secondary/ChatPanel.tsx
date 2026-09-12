@@ -16,6 +16,7 @@ import {
   getCodexEntity,
   truncateChatMessages,
   getManuscriptPlan,
+  getAssistantTurn,
 } from "../../api";
 import { parseChatMarkdown, type ChatBlock, type ChatInlineSpan } from "../../chatMarkdown";
 import type {
@@ -29,9 +30,14 @@ import type {
   SceneSummary,
   CodexEntity,
 } from "../../types";
+import { availableProviders as getAvailableProviders } from "../../providerSelection";
+import { VoiceControl } from "../../voice/VoiceControl";
+import { useMemoryConsent } from "../../hooks/useMemoryConsent";
+import { ReviewContextReceipt } from "./ReviewContextReceipt";
 
 type ChatStream = {
   requestId: string;
+  turnId: string;
   userText: string;
   text: string;
 };
@@ -53,6 +59,7 @@ export function ChatPanel() {
   const { tabs, activeTabId, openTab } = useEditor();
   const [stream, setStream] = useState<ChatStream | null>(null);
   const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
+  const memoryConsent = useMemoryConsent(projectRoot, activeChatThreadId);
 
   if (!projectFound) {
     return (
@@ -100,9 +107,18 @@ export function ChatPanel() {
     }
   }
 
-  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
-    if (!activeChatThreadId || !text.trim()) return;
+  async function performSend(
+    text: string,
+    sceneIds: string[],
+    codexIds: string[],
+    scope: AssistantScope,
+    replacementFromMessageId?: string,
+    approvedCodexIds: string[] = [],
+  ) {
+    if (!activeChatThreadId || !text.trim()) return false;
+    setError("");
     setChatSending(true);
+    let activeTurnId = "";
     try {
       await sendChatMessageStreamed(
         projectRoot,
@@ -112,20 +128,42 @@ export function ChatPanel() {
           currentSceneId,
           sceneIds,
           codexIds,
+          approvedCodexIds,
           scope,
+          replacementFromMessageId,
         },
         {
-          onStart: (requestId) =>
-            setStream({ requestId, userText: text, text: "" }),
+          onStart: (requestId, turnId) => {
+            activeTurnId = turnId;
+            setStream({ requestId, turnId, userText: text, text: "" });
+          },
           onDelta: (delta) =>
             setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
         }
       );
       await refreshChatMessages();
       await refreshChatThreads();
+      return true;
     } catch (e) {
+      if (activeTurnId) {
+        try {
+          const turn = await getAssistantTurn(projectRoot, activeTurnId);
+          await refreshChatMessages();
+          if (turn.status === "completed") {
+            setMessage("Recovered the completed Assistant turn after a transport timeout.");
+            return true;
+          }
+          if (turn.status === "accepted" || turn.status === "running") {
+            setMessage("The Assistant turn is still running. It was not sent again.");
+            return true;
+          }
+        } catch {
+          // Fall through to the original transport error when no durable turn exists.
+        }
+      }
       await refreshChatMessages();
       setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
+      return false;
     } finally {
       setStream(null);
       setChatSending(false);
@@ -138,7 +176,15 @@ export function ChatPanel() {
   }
 
   async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
-    if (!activeChatThreadId || !text.trim()) return;
+    if (!activeChatThreadId || !text.trim()) return false;
+    let approvedCodexIds: string[] | null;
+    try {
+      approvedCodexIds = await memoryConsent.requestApproval(codexIds);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+      return false;
+    }
+    if (approvedCodexIds === null) return false;
     if (editing) {
       const target = editing;
       setEditing(null);
@@ -150,10 +196,10 @@ export function ChatPanel() {
         await refreshChatMessages();
       } catch (e) {
         setError(`Edit failed: ${e instanceof Error ? e.message : String(e)}`);
-        return;
+        return false;
       }
     }
-    await performSend(text, sceneIds, codexIds, scope);
+    return performSend(text, sceneIds, codexIds, scope, undefined, approvedCodexIds);
   }
 
   async function handleRegenerate() {
@@ -161,20 +207,33 @@ export function ChatPanel() {
     setEditing(null);
     const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
     if (!lastUser) return;
+    const mentions = extractMentionIds(lastUser.content, scenes, codexEntities);
+    const previousContext = lastUser.context_used as {
+      profile?: { scope?: AssistantScope };
+      scene_ids?: string[];
+      codex_entity_ids?: string[];
+    };
+    const previousScope = previousContext.profile?.scope;
+    // A scope-picker selection need not appear as an @mention in the prose.
+    // Regeneration must retain that target, with fresh permission for Memory.
+    if (previousScope === "chapter") mentions.sceneIds = previousContext.scene_ids ?? [];
+    if (previousScope === "character") mentions.codexIds = previousContext.codex_entity_ids ?? [];
+    let approvedCodexIds: string[] | null;
     try {
-      await truncateChatMessages(projectRoot, {
-        threadId: activeChatThreadId,
-        fromMessageId: lastUser.id,
-      });
-      await refreshChatMessages();
-    } catch (e) {
-      setError(`Regenerate failed: ${e instanceof Error ? e.message : String(e)}`);
+      approvedCodexIds = await memoryConsent.requestApproval(mentions.codexIds);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
       return;
     }
-    const mentions = extractMentionIds(lastUser.content, scenes, codexEntities);
-    const previousScope = (lastUser.context_used as { profile?: { scope?: AssistantScope } })
-      .profile?.scope;
-    await performSend(lastUser.content, mentions.sceneIds, mentions.codexIds, previousScope ?? "project");
+    if (approvedCodexIds === null) return;
+    await performSend(
+      lastUser.content,
+      mentions.sceneIds,
+      mentions.codexIds,
+      previousScope ?? "project",
+      lastUser.id,
+      approvedCodexIds,
+    );
   }
 
   const editDiscardCount = editing
@@ -183,6 +242,7 @@ export function ChatPanel() {
 
   return (
     <div className="chat-panel">
+      <button className="btn btn--ghost btn--sm" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Writing Voice</button>
       <ThreadHeader
         threads={chatThreads}
         activeThread={activeThread}
@@ -214,10 +274,24 @@ export function ChatPanel() {
         onEditMessage={handleStartEdit}
         setError={setError}
       />
+      {activeChatThreadId && (
+        <VoiceControl
+          projectRoot={projectRoot}
+          threadId={activeChatThreadId}
+          currentSceneId={currentSceneId}
+          onRecorded={async () => {
+            await refreshChatMessages();
+            await refreshChatThreads();
+          }}
+          setError={setError}
+          setMessage={setMessage}
+        />
+      )}
+      {memoryConsent.review}
       <Composer
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
-        sending={chatSending}
+        sending={chatSending || memoryConsent.pending}
         streaming={stream !== null}
         scenes={scenes}
         codexEntities={codexEntities}
@@ -332,15 +406,7 @@ function ThreadHeader({
   }, [messages]);
 
   const availableProviders = useMemo(() => {
-    if (!runtimeConfig) return [];
-    const providers: { id: ProposalProvider; model: string }[] = [];
-    const p = runtimeConfig.providers;
-    if (p["openai-codex"].credential_present) providers.push({ id: "openai-codex", model: p["openai-codex"].default_model });
-    if (p.openai.credential_present) providers.push({ id: "openai", model: p.openai.default_model });
-    if (p.anthropic.credential_present) providers.push({ id: "anthropic", model: p.anthropic.default_model });
-    if (p.openrouter.credential_present) providers.push({ id: "openrouter", model: p.openrouter.default_model });
-    providers.push({ id: "local", model: p.local.default_model });
-    return providers;
+    return getAvailableProviders(runtimeConfig);
   }, [runtimeConfig]);
 
   async function handleNewThread() {
@@ -637,6 +703,7 @@ function ChatMessage({
   setError: (e: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const { openTab } = useEditor();
   const [queueingProposal, setQueueingProposal] = useState(false);
   const [diff, setDiff] = useState<ChatTurnDiff | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -744,6 +811,8 @@ function ChatMessage({
         </div>
       )}
 
+      {isAssistant && <ReviewContextReceipt context={message.context_used} />}
+
       {citations.length > 0 && (
         <div className="chat-citations">
           {citations.map((citation) => (
@@ -815,18 +884,9 @@ function ChatMessage({
           >
             {queueingProposal ? "Queueing…" : "→ Change Set"}
           </button>
-          <span style={{ position: "relative" }}>
-            <button className="chat-action-btn" onClick={() => setSaveMenuOpen(!saveMenuOpen)} title="Turn this reply into a durable project artifact">
-              Save as…
-            </button>
-            {saveMenuOpen && (
-              <span className="chat-dropdown" style={{ display: "grid", position: "absolute", right: 0, bottom: "100%", zIndex: 20, minWidth: 190 }}>
-                <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("memory")}>Story Memory suggestion</button>
-                <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("note")}>{proposalSceneId ? "Scene note" : "Project note"}</button>
-                <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("storyline")}>Storyline experiment</button>
-              </span>
-            )}
-          </span>
+          <button className="chat-action-btn" aria-expanded={saveMenuOpen} onClick={() => setSaveMenuOpen(!saveMenuOpen)} title="Turn this reply into a durable project artifact">
+            Save as…
+          </button>
           {vcs.base_commit && (
             <button
               className="chat-action-btn"
@@ -840,6 +900,14 @@ function ChatMessage({
         </div>
       )}
 
+      {saveMenuOpen && (
+        <div className="chat-promote-options" role="group" aria-label="Save reply as">
+          <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("memory")}>Story Memory suggestion</button>
+          <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("note")}>{proposalSceneId ? "Scene note" : "Project note"}</button>
+          <button className="chat-action-btn" disabled={savingArtifact !== null} onClick={() => void handlePromote("storyline")}>Storyline experiment</button>
+          <button className="chat-action-btn" onClick={() => { openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice", data: { voiceBrief: message.content } }); setSaveMenuOpen(false); }}>Writing Voice brief</button>
+        </div>
+      )}
       {savedArtifact && <div className="chat-message__usage">✓ {savedArtifact}</div>}
 
       {diffOpen && diff && (
@@ -984,7 +1052,7 @@ function Composer({
   codexEntities: CodexEntity[];
   activeThread?: ChatThreadRecord;
   currentSceneId?: string;
-  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<void>;
+  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<boolean>;
   onInterrupt: () => void;
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
@@ -1115,6 +1183,8 @@ function Composer({
 
   async function handleSend() {
     if (!text.trim() || sending || !threadId) return;
+    if ((scope === "chapter" || scope === "character") && !scopeId) return;
+    if (scope === "scene" && !currentSceneId) return;
 
     const mentions = extractMentionIds(text, scenes, codexEntities);
     if (scope === "scene" && currentSceneId && !mentions.sceneIds.includes(currentSceneId)) mentions.sceneIds.push(currentSceneId);
@@ -1125,11 +1195,13 @@ function Composer({
     }
     if (scope === "character" && scopeId && !mentions.codexIds.includes(scopeId)) mentions.codexIds.push(scopeId);
     const msg = text;
-    setText("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    const sent = await onSend(msg, mentions.sceneIds, mentions.codexIds, scope);
+    if (sent) {
+      setText((current) => current === msg ? "" : current);
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    } else {
+      textareaRef.current?.focus();
     }
-    await onSend(msg, mentions.sceneIds, mentions.codexIds, scope);
   }
 
   const contextHints: string[] = [];
@@ -1191,15 +1263,17 @@ function Composer({
             ))}
           </div>
         )}
-        <select className="input" aria-label="Assistant conversation scope" value={scope} onChange={(event) => { setScope(event.target.value as typeof scope); setScopeId(""); }} style={{ width: 112, alignSelf: "flex-end" }}>
-          <option value="project">Book</option>
-          <option value="scene" disabled={!currentSceneId}>Scene</option>
-          <option value="chapter" disabled={chapters.length === 0}>Chapter</option>
-          <option value="character" disabled={codexEntities.length === 0}>Character</option>
-          <option value="storyline">Storyline</option>
-        </select>
-        {scope === "chapter" && <select className="input" aria-label="Assistant chapter scope" value={scopeId} onChange={(event) => setScopeId(event.target.value)} style={{ width: 130, alignSelf: "flex-end" }}><option value="">Choose…</option>{chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}</select>}
-        {scope === "character" && <select className="input" aria-label="Assistant character scope" value={scopeId} onChange={(event) => setScopeId(event.target.value)} style={{ width: 130, alignSelf: "flex-end" }}><option value="">Choose…</option>{codexEntities.filter((entity) => entity.type === "character").map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</select>}
+        <div className="chat-composer__scope">
+          <select className="input" aria-label="Assistant conversation scope" value={scope} disabled={sending || !threadId} onChange={(event) => { setScope(event.target.value as typeof scope); setScopeId(""); }}>
+            <option value="project">Book</option>
+            <option value="scene" disabled={!currentSceneId}>Scene</option>
+            <option value="chapter" disabled={chapters.length === 0}>Chapter</option>
+            <option value="character" disabled={codexEntities.length === 0}>Character</option>
+            <option value="storyline">Storyline</option>
+          </select>
+          {scope === "chapter" && <select className="input" aria-label="Assistant chapter scope" value={scopeId} disabled={sending || !threadId} onChange={(event) => setScopeId(event.target.value)}><option value="">Choose…</option>{chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}</select>}
+          {scope === "character" && <select className="input" aria-label="Assistant character scope" value={scopeId} disabled={sending || !threadId} onChange={(event) => setScopeId(event.target.value)}><option value="">Choose…</option>{codexEntities.filter((entity) => entity.type === "character").map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</select>}
+        </div>
         <textarea
           ref={textareaRef}
           className="chat-composer__input"

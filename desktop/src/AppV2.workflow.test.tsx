@@ -11,6 +11,9 @@ const harness = vi.hoisted(() => ({
   projectId: "proj-golden-loop",
   projectRoot: "/tmp/openauthor-golden-loop",
   scenes: [] as Array<Record<string, unknown>>,
+  sceneListWait: null as Promise<void> | null,
+  undoBatchError: "",
+  undoBatchWait: null as Promise<void> | null,
   proposals: [] as Array<Record<string, unknown>>,
   runs: [] as Array<Record<string, unknown>>,
   entities: [] as Array<Record<string, unknown>>,
@@ -39,6 +42,19 @@ function response(payload: unknown, status = 0) {
     stdout: typeof payload === "string" ? payload : JSON.stringify(payload),
     stderr: status === 0 ? "" : String(payload),
   };
+}
+
+function editableScene(scene: Record<string, unknown> | undefined) {
+  if (!scene) return scene;
+  // This rendered contract fixture supplies version shape only. Real digest
+  // and Storyline comparisons run in the Python/native/browser tests.
+  return { ...scene, edit_version: {
+    schema_version: 1,
+    scene_id: scene.id,
+    workspace: "a".repeat(64),
+    storyline: harness.currentBranch,
+    fields: Object.fromEntries(["title", "body", "summary", "pov", "status"].map((field) => [field, "b".repeat(64)])),
+  } };
 }
 
 function argument(args: string[], name: string): string {
@@ -109,6 +125,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ scene_count: 2, word_count: 10, scene_ids: ["scene-0001", "scene-0002"], warnings: [] });
     }
     if (root === "scene" && action === "list") {
+      if (harness.sceneListWait) await harness.sceneListWait;
       return response(harness.scenes.map(({ body: _body, ...scene }) => scene));
     }
     if (root === "scene" && action === "add") {
@@ -128,20 +145,21 @@ vi.mock("@tauri-apps/api/core", () => ({
       };
       harness.scenes.push(created);
       harness.plan.unassigned_scene_ids.push(sceneId);
-      return response(created);
+      return response(editableScene(created));
     }
     if (root === "scene" && action === "get") {
-      return response(harness.scenes.find((scene) => scene.id === argument(args, "--id")));
+      return response(editableScene(harness.scenes.find((scene) => scene.id === argument(args, "--id"))));
     }
     if (root === "scene" && action === "update") {
       const scene = harness.scenes.find((item) => item.id === argument(args, "--id"));
       if (!scene) return response("Unknown scene", 1);
+      if (!hasArgument(args, "--expected-version")) throw new Error("Rendered editor omitted its loaded scene version.");
       if (hasArgument(args, "--title")) scene.title = argument(args, "--title");
       if (hasArgument(args, "--summary")) scene.summary = argument(args, "--summary");
       if (hasArgument(args, "--pov")) scene.pov = argument(args, "--pov");
       if (hasArgument(args, "--status")) scene.status = argument(args, "--status");
       if (hasArgument(args, "--body")) scene.body = argument(args, "--body");
-      return response(scene);
+      return response(editableScene(scene));
     }
     if (root === "codex" && action === "list") return response(harness.entities);
     if (root === "codex" && action === "add") {
@@ -319,6 +337,34 @@ vi.mock("@tauri-apps/api/core", () => ({
         provenance: { provider: "local", model: "local-deterministic", generation_id: "gen-draft", citations: [] },
       };
       return response(proposal);
+    }
+    if (root === "proposal" && action === "apply-batch") {
+      const ids = args.flatMap((value, index) => value === "--id" ? [args[index + 1]] : []);
+      const proposals = harness.proposals.filter((row) => ids.includes(String(row.id)));
+      for (const proposal of proposals) {
+        const scene = harness.scenes.find((row) => row.id === proposal.scene_id)!;
+        proposal.original_body = scene.body;
+        scene.body = proposal.proposed_body;
+        proposal.status = "applied";
+        proposal.applied_changes = true;
+        proposal.pre_apply_snapshot = "group-before";
+        proposal.applied_revision = "group-after";
+        proposal.coordinated_undo_available = true;
+      }
+      return response({ change_group_id: proposals[0]?.change_group_id, applied_revision: "group-after", proposal_ids: ids, scene_ids: proposals.map((row) => row.scene_id), proposals });
+    }
+    if (root === "proposal" && action === "undo-batch") {
+      if (harness.undoBatchWait) await harness.undoBatchWait;
+      if (harness.undoBatchError) return response(harness.undoBatchError, 1);
+      const proposals = harness.proposals.filter((row) => row.applied_revision === argument(args, "--revision"));
+      const scenes = proposals.map((proposal) => {
+        const scene = harness.scenes.find((row) => row.id === proposal.scene_id)!;
+        scene.body = proposal.original_body;
+        proposal.undone_at = "2026-09-11T12:03:00Z";
+        proposal.undo_revision = "group-undo";
+        return editableScene(scene);
+      });
+      return response({ change_group_id: proposals[0]?.change_group_id, applied_revision: "group-after", undo_revision: "group-undo", proposal_ids: proposals.map((row) => row.id), scene_ids: proposals.map((row) => row.scene_id), proposals, scenes, warnings: [] });
     }
     if (root === "proposal" && action === "apply") {
       const proposal = harness.proposals.find((item) => item.id === argument(args, "--id"));
@@ -510,6 +556,9 @@ describe("active V2 author workflow", () => {
     harness.projectId = "proj-golden-loop";
     harness.projectRoot = "/tmp/openauthor-golden-loop";
     harness.scenes.length = 0;
+  harness.sceneListWait = null;
+  harness.undoBatchError = "";
+  harness.undoBatchWait = null;
     harness.proposals.length = 0;
     harness.runs.length = 0;
     harness.entities.length = 0;
@@ -586,6 +635,39 @@ describe("active V2 author workflow", () => {
     expect(harness.scenes[0]?.body).toBe("Mara waits at the crossroads.");
     expect(await screen.findByDisplayValue("Mara waits at the crossroads.")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Strengthen the turning point \u2014 undone/ })).toBeTruthy();
+  });
+
+  it("keeps the same unsaved draft and editor when entering and leaving focus mode", async () => {
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Focus Novel");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await user.type(await screen.findByPlaceholderText("New scene title..."), "The Letter");
+    await user.click(screen.getByRole("button", { name: "Add Scene" }));
+    const editor = await screen.findByRole("textbox", { name: "Scene prose" });
+    fireEvent.change(editor, { target: { value: "Mara has not sent this letter." } });
+    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+
+    expect(screen.getAllByPlaceholderText("Begin writing...")).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
+    expect((editor as HTMLTextAreaElement).value).toBe("Mara has not sent this letter.");
+    expect(screen.getByRole("button", { name: "Exit focus mode" })).toBeTruthy();
+    (editor as HTMLTextAreaElement).focus();
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Exit focus mode" }));
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(editor);
+    fireEvent.change(editor, { target: { value: "Mara has not sent this letter. She burns it instead." } });
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.queryByRole("button", { name: "Exit focus mode" })).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara has not sent this letter. She burns it instead."));
+    expect(screen.getByText("Saved")).toBeTruthy();
   });
 
   it("starts a blank novel in a focused workspace with the assistant opt-in", async () => {
@@ -716,6 +798,37 @@ describe("active V2 author workflow", () => {
     expect(harness.calls.some((args) => args[0] === "manuscript" && args[1] === "import")).toBe(true);
   });
 
+  it("can compose a coordinated revision when scenes arrive after opening Changes", async () => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    harness.sceneListWait = new Promise<void>((resolve) => { release = resolve; });
+    harness.scenes.push(...["The Hidden Key", "The Seventh Bell"].map((title, index) => ({
+      id: `scene-000${index + 1}`, title, body: "Mara began to trace the route.",
+      summary: "", pov: "Mara", status: "draft", word_count: 7,
+      path: `manuscript/scenes/000${index + 1}-scene.md`,
+    })));
+    try {
+      render(<AppV2 />);
+      await screen.findByText("Choose a project to begin writing.");
+      await user.click(screen.getByRole("button", { name: "New Project" }));
+      await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Delayed book");
+      await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+      await user.click(screen.getByRole("button", { name: "Create novel" }));
+      await user.click(await screen.findByTitle(/Changes \(/));
+      await user.click(screen.getByTitle("Create a reviewable Change Set"));
+      await user.type(screen.getByPlaceholderText(/Tighten the pacing/), "Tighten the prose.");
+      release();
+      await screen.findByRole("option", { name: "The Hidden Key" });
+      await waitFor(() => expect((screen.getByRole("combobox", { name: "Scene" }) as HTMLSelectElement).value).toBe("scene-0001"));
+      await user.click(screen.getByRole("checkbox", { name: "Coordinate this revision across multiple scenes" }));
+      await user.click(screen.getByRole("checkbox", { name: "The Seventh Bell" }));
+      const create = screen.getByRole("button", { name: "Create 2 Coordinated Change Sets" }) as HTMLButtonElement;
+      expect(create.disabled).toBe(false);
+      await user.click(create);
+      await waitFor(() => expect(harness.proposals.map((row) => row.scene_id)).toEqual(["scene-0001", "scene-0002"]));
+    } finally { release(); }
+  });
+
   it("creates coordinated AI Change Sets for a multi-scene experiment", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -740,6 +853,30 @@ describe("active V2 author workflow", () => {
     await waitFor(() => expect(harness.proposals).toHaveLength(2));
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
+    await user.click(screen.getByTitle("proposal-golden-2 — pending"));
+    expect(screen.getByText("scene-0002", { selector: ".review-card__meta span" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Apply together" }));
+    expect(await screen.findByRole("button", { name: "Undo change" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Apply 1 change" })).toBeNull();
+    harness.undoBatchError = "Undo stopped to protect newer work; no scenes were restored.";
+    await user.click(screen.getByRole("button", { name: "Undo 2 scenes together" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("protect newer work");
+    expect(harness.proposals.every((row) => !row.undone_at)).toBe(true);
+    harness.undoBatchError = "";
+    let release = () => {};
+    harness.undoBatchWait = new Promise<void>((resolve) => { release = resolve; });
+    try {
+      await user.click(screen.getByRole("button", { name: "Undo 2 scenes together" }));
+      expect((screen.getByRole("button", { name: "Restoring…" }) as HTMLButtonElement).disabled).toBe(true);
+    } finally { release(); }
+    expect(await screen.findByText("2 scenes restored together in one Undo Revision.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Undo change" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Undo 2 scenes together" })).toBeNull();
+    expect(harness.proposals.every((row) => row.undo_revision === "group-undo")).toBe(true);
+    expect(harness.calls.filter((args) => args[0] === "proposal" && args[1] === "undo-batch")).toEqual([
+      ["proposal", "undo-batch", "--revision", "group-after", "--json"],
+      ["proposal", "undo-batch", "--revision", "group-after", "--json"],
+    ]);
   });
 
   it("builds a project brief, hierarchy, and scene beat in the Plan workspace", async () => {

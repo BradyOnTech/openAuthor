@@ -2,10 +2,14 @@ SHELL := /bin/zsh
 PYTHONPATH := .
 
 .PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check
+.PHONY: install-desktop install-js test-contracts test-gateway test-mobile test-desktop-e2e js-audit
+.PHONY: mobile-web mobile-web-build test-mobile-e2e test-mobile-hosted-e2e
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup  - Verify local toolchain availability"
+	@echo "  make install-desktop - Install locked shared-contract and desktop dependencies"
+	@echo "  make install-js - Install locked dependencies for all four JavaScript packages"
 	@echo "  make check  - Run lightweight repository checks"
 	@echo "  make capability-check - Validate shipped capability claims and active-shell parity"
 	@echo "  make audit-no-mocks - Fail if placeholder/stub markers are present"
@@ -15,7 +19,9 @@ help:
 	@echo "  make test-editorial-eval - Measure Editorial Pass improvement and canon safety"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
-	@echo "  make test-all - Run Python and desktop tests"
+	@echo "  make test-all - Run Python, desktop, contracts, gateway, and mobile checks"
+	@echo "  make js-audit - Audit all four JavaScript packages"
+	@echo "  make test-desktop-e2e - Browser authoring workflow using the real Python engine"
 	@echo "  make tree   - Print top-level structure"
 	@echo "  make demo   - Run a minimal CLI workflow in this repo"
 	@echo "  make desktop-web   - Run React web shell (no Rust required)"
@@ -81,7 +87,45 @@ desktop-audit:
 	@echo "Auditing desktop dependencies..."
 	@cd desktop && npm audit --audit-level=low
 
-test-all: test test-desktop
+install-desktop:
+	@npm ci --prefix contracts
+	@npm ci --prefix desktop
+
+install-js: install-desktop
+	@npm ci --prefix gateway
+	@npm ci --prefix mobile
+
+test-contracts:
+	@npm run check --prefix contracts
+
+test-gateway:
+	@npm run check --prefix gateway
+
+test-mobile:
+	@npm run check --prefix mobile
+
+mobile-web:
+	@npm run web --prefix mobile
+
+mobile-web-build:
+	@npm run build:web --prefix mobile
+
+test-mobile-e2e: mobile-web-build
+	@npm run test:e2e --prefix mobile
+
+test-mobile-hosted-e2e:
+	@npm run test:e2e:hosted --prefix mobile
+
+test-desktop-e2e:
+	@npm run test:e2e --prefix desktop
+
+js-audit:
+	@npm audit --prefix contracts --audit-level=low
+	@npm audit --prefix desktop --audit-level=low
+	@npm audit --prefix gateway --audit-level=low
+	@npm audit --prefix mobile --audit-level=low
+
+test-all: test test-desktop test-contracts test-gateway test-mobile
 
 tree:
 	@find . -maxdepth 2 -not -path '*/\.*' | sort
@@ -95,16 +139,16 @@ desktop-web:
 	@cd desktop && npm run dev
 
 desktop-tauri:
-	@cd desktop && npm run tauri:dev
+	@source scripts/rust_env.sh && cd desktop && npm run tauri:dev
 
 desktop-build:
 	@cd desktop && npm run build
 
 tauri-check:
-	@source "$$HOME/.cargo/env" && cargo check --manifest-path desktop/src-tauri/Cargo.toml
+	@source scripts/rust_env.sh && cargo check --manifest-path desktop/src-tauri/Cargo.toml
 
 tauri-test:
-	@source "$$HOME/.cargo/env" && cargo test --manifest-path desktop/src-tauri/Cargo.toml
+	@source scripts/rust_env.sh && cargo test --manifest-path desktop/src-tauri/Cargo.toml
 
 desktop-prereq:
 	@./scripts/desktop_prereq_check.sh

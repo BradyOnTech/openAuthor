@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_text, next_scene_index, utc_now
+from .project_locks import serialized_project_access
 
 
 def slugify(value: str) -> str:
@@ -96,6 +97,7 @@ def build_scene_markdown(
   )
 
 
+@serialized_project_access
 def add_scene(
   paths: ProjectPaths,
   *,
@@ -175,6 +177,7 @@ def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
   }
 
 
+@serialized_project_access
 def list_scene_details(paths: ProjectPaths) -> list[dict[str, str]]:
   return [
     _scene_detail(paths, scene_file)
@@ -192,6 +195,7 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
   return rows
 
 
+@serialized_project_access
 def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
     front_matter = parse_front_matter(scene_file)
@@ -200,14 +204,18 @@ def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
   raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
 
 
-def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, str]:
+@serialized_project_access
+def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, Any]:
+  from .scene_edits import scene_edit_version
+
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
     detail = _scene_detail(paths, scene_file)
     if detail["id"] == scene_identifier:
-      return detail
+      return {**detail, "edit_version": scene_edit_version(paths, detail)}
   raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
 
 
+@serialized_project_access
 def update_scene(
   paths: ProjectPaths,
   *,

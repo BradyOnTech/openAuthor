@@ -13,6 +13,13 @@ These states are intentionally independent. Core code is not treated as a shippe
 
 ## Current product truth
 
+The current task-oriented assessment is [Author journey readiness](author-journey-readiness.md).
+September 7 adds browser evidence for planning, Memory, search, copilot-to-note
+promotion and Word export, plus a new chapter-reading view. Reading and both
+export formats follow Plan order. The August inventory below is historical;
+current voice/mobile implementation and native-runtime/device gates are tracked
+in `production-readiness.md`.
+
 As of 2026-08-14, the active V2 desktop includes project creation/opening, a first-safe-revision guide, staged Markdown/TXT/DOCX/Scrivener manuscript import, Markdown/DOCX export with loss reports, startup health with guided safe repair, atomic scene save with an unsaved-draft recovery journal, scene editing, a portable Plan workspace with story time, labels, move-impact previews, and arc overview, atomic single- and coordinated multi-scene AI Change Sets, structured temporal Story Memory with correction and bulk review, character arcs, evidence-backed Canon diagnostics, full-project search, reusable custom Editorial Passes, author-controlled Style Profiles, creative alternative comparison, Book/Scene/Chapter/Character/Storyline-scoped Assistant chat whose results promote to durable artifacts, ChatGPT subscription sign-in through a bundled Codex app-server, semantic Storyline experiments, Revision retrospectives, a private on-device product dashboard, budget controls, and generation history. Project onboarding, scene editing, planning, Change Set apply-and-undo, Story Memory correction and bulk acceptance, Canon Fact creation, coordinated multi-scene generation, and the Storyline create/compare/integrate path have rendered cross-boundary workflow coverage; the other visible capabilities remain below that bar.
 
 Advanced run comparison/export and Voice helpers remain hidden. The deeper workspace audit and performance diagnostics remain CLI-only; blocking startup health is visible in the workbench. A checksum-pinned embedded Python runtime builds into a real macOS `.app` and passes an isolated packaged-core smoke test. The Editorial Pass corpus now measures all seven built-ins across seven genres with zero canon regressions, and the Canon corpus includes Character Arc diagnostics. None of the visible workflows is yet marked release-ready because Developer ID signing/notarization, both-architecture clean-machine validation, broader design-partner data, and full packaged-app automation remain open.
@@ -20,6 +27,20 @@ Advanced run comparison/export and Voice helpers remain hidden. The deeper works
 The rendered React contract verifies first launch, project creation, scene creation/edit/save, project brief and hierarchy creation, scene beats and planning metadata, one-action Change Set generation, comment-driven hunk revision, hunk exclusion/re-inclusion, selected application, one-click undo, coordinated multi-scene generation, Story Memory correction and bulk acceptance, review-first prose relationship acceptance into the Connection Map, Storyline comparison/integration, and evidence-backed Canon Fact creation. The native Rust bridge independently verifies the real Tauri-to-Python command path for the golden revision loop, including restoration of the prior scene and a new undo Revision. Together they satisfy the current source-level cross-boundary gate, though packaged GUI automation is still required for release.
 
 ## Updating status
+
+### 2026-09-07 writing-safety verification
+
+The current hardening effort is tracked in [Production readiness](production-readiness.md).
+New rendered regressions cover typing during saves, pending saves on tab close,
+failed-save retry, recovery-store failures, stale recovery cleanup, focus-mode
+draft continuity, and saving while the scene-list refresh is pending. A separate
+Playwright gate runs the real Python engine through a test-only transport adapter:
+create a novel, write, focus, generate an offline Change Set, review/apply/undo,
+and reload the saved prose. Run `make test-desktop-e2e` after installing Chromium.
+This is browser/engine evidence, not packaged Tauri or live-provider certification;
+release readiness remains unchanged.
+
+### Maintaining the registry
 
 1. Change implementation and tests.
 2. Update `docs/capabilities.json` with evidence from the active path.

@@ -1,0 +1,14 @@
+{
+  "schema": "openauthor.assistant.tool-call",
+  "schema_version": 1,
+  "call_id": "call_scene_0042",
+  "turn_id": "turn_mara_0042",
+  "project_id": "project_glass_harbor",
+  "project_revision": "rev_7e3c1a",
+  "channel": "mobile_voice",
+  "tool_name": "scene.get",
+  "effect": "read",
+  "arguments": {"id": "scene-0042"},
+  "arguments_sha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "requested_at": "2026-08-30T15:04:07.000Z"
+}

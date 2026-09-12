@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { addEditorialPass, buildStyleProfile, draftProposal, generateProposal, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
+import { addEditorialPass, draftProposal, generateProposal, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
 import type { ProposalProvider } from "../../types";
+import { availableProviders, defaultProvider } from "../../providerSelection";
 
 export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }) {
   const { projectRoot, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
@@ -10,17 +11,13 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
   const { openTab, closeTab } = useEditor();
 
   const providers = useMemo(() => {
-    const entries = Object.entries(runtimeConfig?.providers ?? {});
-    return entries
-      .filter(([, config]) => config.credential_present)
-      .map(([name, config]) => ({ name: name as ProposalProvider, model: config.default_model }));
+    return availableProviders(runtimeConfig).map(({ id, model }) => ({ name: id, model }));
   }, [runtimeConfig]);
 
   const [sceneId, setSceneId] = useState(initialSceneId ?? scenes[0]?.id ?? "");
   const [instruction, setInstruction] = useState("");
-  const [provider, setProvider] = useState<ProposalProvider>(
-    (providers.find((p) => p.name !== "local")?.name ?? "local") as ProposalProvider
-  );
+  const [provider, setProvider] = useState<ProposalProvider>("local");
+  const providerWasSelected = useRef(false);
   const [model, setModel] = useState("");
   const [constraints, setConstraints] = useState("");
   const [protectedElements, setProtectedElements] = useState("");
@@ -33,11 +30,24 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
   const [passInstruction, setPassInstruction] = useState("");
   const [passCriteria, setPassCriteria] = useState("");
   const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
-  const [styleExemplars, setStyleExemplars] = useState<string[]>([]);
-  const [showStyleBuilder, setShowStyleBuilder] = useState(false);
   const [alternativeCount, setAlternativeCount] = useState<1 | 3>(1);
   const [coordinated, setCoordinated] = useState(false);
   const [coordinatedSceneIds, setCoordinatedSceneIds] = useState<string[]>(initialSceneId ? [initialSceneId] : scenes[0]?.id ? [scenes[0].id] : []);
+
+  useEffect(() => {
+    // The composer can open before the project's scenes finish loading. Keep
+    // its state aligned with the displayed default without resetting choices.
+    if (sceneId || !scenes[0]?.id) return;
+    const firstId = scenes[0].id;
+    setSceneId(firstId);
+    setCoordinatedSceneIds((ids) => [...new Set([firstId, ...ids.filter(Boolean)])]);
+  }, [sceneId, scenes]);
+
+  useEffect(() => {
+    if (!providerWasSelected.current && runtimeConfig) {
+      setProvider(defaultProvider(runtimeConfig).id);
+    }
+  }, [runtimeConfig]);
 
   useEffect(() => {
     void listEditorialPasses(projectRoot)
@@ -45,7 +55,6 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
       .catch((error) => setError(`Failed to load Editorial Passes: ${error instanceof Error ? error.message : String(error)}`));
     void getStyleProfile(projectRoot).then((profile) => {
       setStyleProfile(profile);
-      setStyleExemplars(profile?.exemplar_scene_ids ?? []);
     }).catch((error) => setError(`Failed to load Style Profile: ${error instanceof Error ? error.message : String(error)}`));
   }, [projectRoot, setError]);
 
@@ -54,17 +63,6 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
     const editorialPass = passes.find((row) => row.id === passId);
     if (!editorialPass) return;
     setInstruction(`[Editorial Pass: ${editorialPass.name}] ${editorialPass.instruction}`);
-  }
-
-  async function saveStyleProfile() {
-    if (styleExemplars.length === 0) return;
-    try {
-      const profile = await buildStyleProfile(projectRoot, styleExemplars);
-      setStyleProfile(profile); setShowStyleBuilder(false);
-      setMessage(`Style Profile rebuilt from ${styleExemplars.length} exemplar scene${styleExemplars.length === 1 ? "" : "s"}.`);
-    } catch (error) {
-      setError(`Failed to build Style Profile: ${error instanceof Error ? error.message : String(error)}`);
-    }
   }
 
   async function createCustomPass() {
@@ -168,7 +166,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
 
         <div style={{ padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)" }}>
           <label style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>
-            <input type="checkbox" checked={coordinated} onChange={(event) => { setCoordinated(event.target.checked); if (event.target.checked) { setAlternativeCount(1); setCoordinatedSceneIds((ids) => ids.includes(sceneId) ? ids : [...ids, sceneId]); } }} />
+            <input type="checkbox" checked={coordinated} onChange={(event) => { setCoordinated(event.target.checked); if (event.target.checked) { setAlternativeCount(1); if (sceneId) setCoordinatedSceneIds((ids) => ids.includes(sceneId) ? ids : [...ids, sceneId]); } }} />
             Coordinate this revision across multiple scenes
           </label>
           <div style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: 4 }}>Useful for Storyline experiments, arc changes, and alternate endings. Each scene remains separately reviewable; the chosen group applies as one Revision.</div>
@@ -195,8 +193,9 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
         </div>}
 
         <div style={{ padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><div><strong style={{ color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>Your Style Profile</strong><div style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: 3 }}>{styleProfile ? `${styleProfile.exemplar_scene_ids.length} selected exemplars guide voice-preserving revisions.` : "Choose passages that sound unmistakably like this book."}</div></div><button className="btn btn--sm" onClick={() => setShowStyleBuilder((value) => !value)}>{showStyleBuilder ? "Close" : styleProfile ? "Change Exemplars" : "Choose Exemplars"}</button></div>
-          {showStyleBuilder && <div style={{ marginTop: 8, display: "grid", gap: 6 }}>{scenes.map((scene) => <label key={scene.id} style={{ display: "flex", gap: 8, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}><input type="checkbox" checked={styleExemplars.includes(scene.id)} onChange={(event) => setStyleExemplars(event.target.checked ? [...styleExemplars, scene.id] : styleExemplars.filter((id) => id !== scene.id))} />{scene.title}</label>)}<button className="btn btn--primary btn--sm" disabled={styleExemplars.length === 0} onClick={() => void saveStyleProfile()}>Build Style Profile</button></div>}
+          <strong>Writing Voice</strong>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>{styleProfile ? `Approved voice: ${styleProfile.name}. Your scene-specific instructions can refine this direction.` : "Set the prose traits for this book, learn from your exemplars, and compare short samples."}</p>
+          <button className="btn btn--sm" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
@@ -239,7 +238,10 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
             <select
               className="input"
               value={provider}
-              onChange={(e) => setProvider(e.target.value as ProposalProvider)}
+              onChange={(e) => {
+                providerWasSelected.current = true;
+                setProvider(e.target.value as ProposalProvider);
+              }}
             >
               {providers.map((p) => (
                 <option key={p.name} value={p.name}>

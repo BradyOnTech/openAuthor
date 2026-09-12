@@ -1,3 +1,5 @@
+mod credentials;
+
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -318,6 +320,19 @@ fn frame_id_key(id: &Value) -> String {
   }
 }
 
+fn register_pending_request(
+  pending: &Mutex<HashMap<String, mpsc::Sender<Value>>>,
+  id_key: String,
+  sender: mpsc::Sender<Value>,
+) -> Result<(), String> {
+  let mut requests = pending.lock().unwrap();
+  if requests.contains_key(&id_key) {
+    return Err(format!("A sidecar request with id '{id_key}' is already pending."));
+  }
+  requests.insert(id_key, sender);
+  Ok(())
+}
+
 fn spawn_sidecar(
   app: AppHandle,
   project_root: &PathBuf,
@@ -430,7 +445,7 @@ async fn sidecar_request(
   };
 
   let (sender, receiver) = mpsc::channel::<Value>();
-  handle.pending.lock().unwrap().insert(id_key.clone(), sender);
+  register_pending_request(&handle.pending, id_key.clone(), sender)?;
 
   let line = serde_json::to_string(&request)
     .map_err(|error| format!("Failed to encode sidecar request: {error}"))?;
@@ -596,6 +611,7 @@ pub fn run() {
   tauri::Builder::default()
     .manage(SidecarRegistry::default())
     .invoke_handler(tauri::generate_handler![
+      credentials::desktop_secret,
       project_status,
       core_command,
       sidecar_request,
@@ -636,6 +652,28 @@ mod tests {
   fn json_output(response: CoreCommandResponse) -> Value {
     assert_eq!(response.status, 0, "core stderr: {}", response.stderr);
     serde_json::from_str(response.stdout.trim()).expect("valid core JSON")
+  }
+
+  #[test]
+  fn native_bridge_preserves_a_conflicting_editor_draft() {
+    let root = temporary_project_root("guarded-save");
+    json_output(command(&root, &["init", ".", "--name", "Native Conflicts", "--json"]));
+    let loaded = json_output(command(&root, &["scene", "add", "--title", "Letter", "--body", "Original", "--json"]));
+    let version = serde_json::to_string(&loaded["edit_version"]).expect("loaded scene version");
+    assert_eq!(loaded["edit_version"]["schema_version"], 1);
+    json_output(command(&root, &["scene", "update", "--id", "scene-0001", "--body", "Other writer", "--expected-version", &version, "--json"]));
+    let conflict = command(&root, &["scene", "update", "--id", "scene-0001", "--body", "Older editor draft", "--expected-version", &version, "--json"]);
+    assert_eq!(conflict.status, 3, "{}", conflict.stderr);
+    let payload: Value = serde_json::from_str(&conflict.stdout).expect("structured conflict");
+    assert_eq!(payload["error"]["code"], "scene_edit_conflict");
+    assert_eq!(payload["error"]["current"]["body"], "Other writer\n");
+    let path = payload["error"]["recovery_path"].as_str().expect("conflict copy");
+    let backup: Value = serde_json::from_str(&fs::read_to_string(root.join(path)).expect("durable copy")).expect("conflict JSON");
+    assert_eq!(backup["draft"]["body"], "Older editor draft");
+    assert_eq!(backup["current"]["body"], "Other writer\n");
+    let scene = json_output(command(&root, &["scene", "get", "--id", "scene-0001", "--json"]));
+    assert_eq!(scene["body"], "Other writer\n");
+    fs::remove_dir_all(root).expect("remove disposable native conflict project");
   }
 
   #[test]
@@ -752,6 +790,23 @@ mod tests {
   fn native_bridge_allows_private_metrics_commands() {
     validate_core_args(&["metrics".to_string(), "dashboard".to_string()])
       .expect("metrics root should be available to the desktop dashboard");
+  }
+
+  #[test]
+  fn duplicate_pending_sidecar_request_ids_are_rejected() {
+    let pending = Mutex::new(HashMap::new());
+    let (first_sender, _first_receiver) = mpsc::channel::<Value>();
+    let (retry_sender, _retry_receiver) = mpsc::channel::<Value>();
+    register_pending_request(&pending, "req-duplicate".to_string(), first_sender)
+      .expect("first request should register");
+    let error = register_pending_request(
+      &pending,
+      "req-duplicate".to_string(),
+      retry_sender,
+    )
+    .expect_err("duplicate request id should fail closed");
+    assert!(error.contains("already pending"));
+    assert_eq!(pending.lock().unwrap().len(), 1);
   }
 
   #[test]

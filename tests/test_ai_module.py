@@ -10,12 +10,15 @@ from unittest.mock import patch
 import urllib.error
 
 from openauthor.ai import (
+  ProviderExecutionError,
   _anthropic_content_blocks,
   _chat_completion_messages,
   _generate_local_draft_text,
   _normalize_chat_history,
   build_generation_context,
+  complete_chat,
   generate_proposal,
+  generate_proposal_draft,
   regenerate_change_hunk,
 )
 from openauthor.budget import update_generation_budget_policy
@@ -27,6 +30,153 @@ from openauthor.scenes import add_scene
 
 
 class AIModuleTests(unittest.TestCase):
+  def test_local_line_edit_preserves_comparative_rather_than(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Preserve comparison")
+      add_scene(paths, title="The survey", body="Mara began to trace the route rather than a conclusion.")
+      proposal_id = create_proposal(paths, title="Tighten", instruction="Tighten the prose.", scene_id="scene-0001")
+      draft = generate_proposal_draft(paths, proposal_id=proposal_id, provider="local")
+      self.assertEqual(draft["proposed_body"].strip(), "Mara traced the route rather than a conclusion.")
+
+  def test_chat_generation_log_is_metadata_only_by_default(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Private Chat Logs")
+      provider_result = {
+        "text": "RESPONSE_SECRET manuscript continuation",
+        "tool_calls": [
+          {
+            "id": "call-private",
+            "name": "scene_get",
+            "args": {"scene_id": "TOOL_ARGUMENT_SECRET"},
+          }
+        ],
+        "input_tokens": 17,
+        "output_tokens": 9,
+        "latency_ms": 12,
+        "attempts": 1,
+      }
+
+      with patch("openauthor.ai._call_provider", return_value=provider_result):
+        result = complete_chat(
+          paths,
+          provider="local",
+          model="heuristic-v1",
+          system_prompt="SYSTEM_SECRET full project context body",
+          user_prompt="USER_SECRET write the next scene",
+          history=[
+            {
+              "role": "tool",
+              "tool_call_id": "prior-call",
+              "name": "scene_get",
+              "content": "TOOL_RESULT_SECRET full scene body",
+            }
+          ],
+          thread_id="thread-private",
+          turn_id="turn-private",
+          round_index=2,
+        )
+
+      log_payload = json.loads((root / result["log_path"]).read_text(encoding="utf-8"))
+      serialized = json.dumps(log_payload, sort_keys=True)
+      for secret in (
+        "SYSTEM_SECRET",
+        "USER_SECRET",
+        "RESPONSE_SECRET",
+        "TOOL_ARGUMENT_SECRET",
+        "TOOL_RESULT_SECRET",
+      ):
+        self.assertNotIn(secret, serialized)
+
+      self.assertEqual(log_payload["content_logging"], "metadata_only")
+      self.assertEqual(log_payload["thread_id"], "thread-private")
+      self.assertEqual(log_payload["turn_id"], "turn-private")
+      self.assertEqual(log_payload["round_index"], 2)
+      self.assertEqual(log_payload["usage"]["input_tokens"], 17)
+      self.assertEqual(log_payload["usage"]["output_tokens"], 9)
+      self.assertEqual(log_payload["tool_call_count"], 1)
+      self.assertEqual(log_payload["tool_call_provenance"][0]["name"], "scene_get")
+      self.assertIn("arguments_sha256", log_payload["tool_call_provenance"][0])
+      self.assertIn("prompt_sha256", log_payload)
+      self.assertIn("system_prompt_sha256", log_payload)
+      self.assertIn("user_prompt_sha256", log_payload)
+      self.assertIn("response_sha256", log_payload)
+
+  def test_chat_generation_log_full_content_requires_explicit_local_audit_opt_in(
+    self,
+  ) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Audited Chat Logs")
+      provider_result = {
+        "text": "audited response",
+        "tool_calls": [
+          {"id": "call-audit", "name": "scene_get", "args": {"scene_id": "scene-1"}}
+        ],
+        "input_tokens": 4,
+        "output_tokens": 3,
+        "latency_ms": 2,
+        "attempts": 1,
+      }
+
+      with patch("openauthor.ai._call_provider", return_value=provider_result):
+        result = complete_chat(
+          paths,
+          provider="local",
+          model="heuristic-v1",
+          system_prompt="audited system prompt",
+          user_prompt="audited user prompt",
+          local_audit_full_content=True,
+        )
+
+      log_payload = json.loads((root / result["log_path"]).read_text(encoding="utf-8"))
+      self.assertEqual(log_payload["content_logging"], "local_audit_full_content")
+      self.assertEqual(log_payload["system_prompt"], "audited system prompt")
+      self.assertEqual(log_payload["user_prompt"], "audited user prompt")
+      self.assertEqual(log_payload["response_text"], "audited response")
+      self.assertEqual(log_payload["tool_calls"], provider_result["tool_calls"])
+
+  def test_chat_generation_failure_log_keeps_safe_diagnostics_without_error_body(
+    self,
+  ) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Private Failure Logs")
+      provider_error = ProviderExecutionError(
+        "PROVIDER_ERROR_SECRET included a rejected manuscript excerpt",
+        category="provider_request_failed",
+        retriable=True,
+        provider="openai",
+        http_status=503,
+        attempts=2,
+      )
+
+      with patch("openauthor.ai._call_provider", side_effect=provider_error):
+        with self.assertRaises(OpenAuthorError):
+          complete_chat(
+            paths,
+            provider="openai",
+            model="gpt-test",
+            system_prompt="SYSTEM_FAILURE_SECRET",
+            user_prompt="USER_FAILURE_SECRET",
+            turn_id="turn-failed",
+            round_index=0,
+          )
+
+      log_path = next((root / ".openauthor" / "generations").glob("gen-*.json"))
+      log_payload = json.loads(log_path.read_text(encoding="utf-8"))
+      serialized = json.dumps(log_payload, sort_keys=True)
+      self.assertNotIn("PROVIDER_ERROR_SECRET", serialized)
+      self.assertNotIn("SYSTEM_FAILURE_SECRET", serialized)
+      self.assertNotIn("USER_FAILURE_SECRET", serialized)
+      self.assertEqual(log_payload["error"]["category"], "provider_request_failed")
+      self.assertTrue(log_payload["error"]["retriable"])
+      self.assertEqual(log_payload["error"]["http_status"], 503)
+      self.assertEqual(log_payload["error"]["attempts"], 2)
+      self.assertIn("message_sha256", log_payload["error"])
+      self.assertEqual(log_payload["turn_id"], "turn-failed")
+      self.assertEqual(log_payload["round_index"], 0)
+
   def test_local_draft_returns_manuscript_prose_without_instruction_receipt(self) -> None:
     original = (
       "# The Missing Minute\n\n"

@@ -5,7 +5,8 @@ import uuid
 from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .scenes import list_scenes
+from .project_locks import serialized_project_access
+from .scenes import list_scenes, list_scene_details
 
 PLAN_SCHEMA_VERSION = 2
 
@@ -39,6 +40,7 @@ def _read_plan(paths: ProjectPaths) -> dict[str, Any]:
   return payload
 
 
+@serialized_project_access
 def get_plan(paths: ProjectPaths) -> dict[str, Any]:
   plan = _read_plan(paths)
   current_scene_ids = [str(scene["id"]) for scene in list_scenes(paths)]
@@ -77,6 +79,7 @@ def get_plan(paths: ProjectPaths) -> dict[str, Any]:
   return plan
 
 
+@serialized_project_access
 def update_scene_metadata(
   paths: ProjectPaths,
   *,
@@ -212,6 +215,7 @@ def preview_scene_move(
   }
 
 
+@serialized_project_access
 def update_brief(
   paths: ProjectPaths,
   *,
@@ -237,6 +241,7 @@ def update_brief(
   return plan
 
 
+@serialized_project_access
 def add_act(paths: ProjectPaths, *, title: str, synopsis: str = "") -> dict[str, Any]:
   if not title.strip():
     raise OpenAuthorError("Act title is required.")
@@ -253,6 +258,7 @@ def add_act(paths: ProjectPaths, *, title: str, synopsis: str = "") -> dict[str,
   return act
 
 
+@serialized_project_access
 def add_chapter(paths: ProjectPaths, *, act_id: str, title: str, synopsis: str = "") -> dict[str, Any]:
   if not title.strip():
     raise OpenAuthorError("Chapter title is required.")
@@ -272,6 +278,7 @@ def add_chapter(paths: ProjectPaths, *, act_id: str, title: str, synopsis: str =
   return chapter
 
 
+@serialized_project_access
 def assign_scene(
   paths: ProjectPaths,
   *,
@@ -305,6 +312,7 @@ def assign_scene(
   return plan
 
 
+@serialized_project_access
 def add_beat(
   paths: ProjectPaths,
   *,
@@ -331,6 +339,7 @@ def add_beat(
   return beat
 
 
+@serialized_project_access
 def add_scene_note(
   paths: ProjectPaths,
   *,
@@ -355,3 +364,30 @@ def add_scene_note(
   plan["notes"].append(note)
   atomic_write_json(paths.structure_file, plan)
   return note
+
+
+@serialized_project_access
+def list_manuscript_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
+  """Saved prose in Plan order, with unassigned scenes retained at the end."""
+  plan = get_plan(paths)
+  details = {scene["id"]: scene for scene in list_scene_details(paths)}
+  return [details[scene_id] for scene_id in _scene_locations(plan)]
+
+
+@serialized_project_access
+def get_manuscript_reading(paths: ProjectPaths) -> dict[str, Any]:
+  """A coherent local reading copy of the saved manuscript and its chapters."""
+  plan = get_plan(paths)
+  scenes = list_manuscript_scenes(paths)
+  sections = [
+    {"id": chapter["id"], "title": chapter["title"], "act_title": act["title"], "scene_ids": chapter["scene_ids"]}
+    for act in plan["acts"] for chapter in act["chapters"]
+  ]
+  if plan["unassigned_scene_ids"] or not sections:
+    sections.append({"id": "unassigned", "title": "Unassigned scenes", "act_title": "", "scene_ids": plan["unassigned_scene_ids"]})
+  return {
+    "schema_version": 1,
+    "sections": sections,
+    "scenes": scenes,
+    "word_count": sum(len(scene["body"].split()) for scene in scenes),
+  }

@@ -15,7 +15,6 @@ export function Workbench() {
     sidebarOpen,
     secondarySidebarOpen,
     panelOpen,
-    zenMode,
     setActiveView,
     setSidebarOpen,
     setSecondarySidebarOpen,
@@ -62,8 +61,6 @@ export function Workbench() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [projectReady, closeProject]);
 
-  if (zenMode) return null;
-
   if (!projectReady) {
     return <WelcomeScreen />;
   }
@@ -76,24 +73,15 @@ export function Workbench() {
   ].filter(Boolean).join(" ");
 
   return (
-    <>
+    <div className="workbench-frame">
       {(error || message) && (
-        <div style={{
-          position: "fixed",
-          top: "var(--space-2)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 700,
-          padding: "var(--space-2) var(--space-4)",
-          borderRadius: "var(--radius-md)",
-          fontSize: "var(--text-sm)",
-          maxWidth: "500px",
+        <div className="workbench-notification" role={error ? "alert" : "status"} style={{
           background: error ? "var(--danger-subtle)" : "var(--success-subtle)",
-          border: `1px solid ${error ? "var(--danger-border)" : "var(--success-border)"}`,
+          borderBottom: `1px solid ${error ? "var(--danger-border)" : "var(--success-border)"}`,
           color: error ? "var(--danger-text)" : "var(--success-text)",
-          cursor: "pointer",
-        }} onClick={() => { setError(""); setMessage(""); }}>
-          {error || message}
+        }}>
+          <span className="workbench-notification__text" tabIndex={0} aria-label="Notification details">{error || message}</span>
+          <button className="btn btn--ghost btn--sm" aria-label="Dismiss notification" onClick={() => { setError(""); setMessage(""); }}>×</button>
         </div>
       )}
       {startupHealth && !startupHealth.ready && (
@@ -115,6 +103,7 @@ export function Workbench() {
           )}
         </div>
       )}
+      <FirstRunGuide />
       <div className={classes}>
         <ActivityBar />
         <PrimarySidebar />
@@ -123,7 +112,6 @@ export function Workbench() {
         <PanelArea />
         <StatusBar />
       </div>
-      <FirstRunGuide />
-    </>
+    </div>
   );
 }

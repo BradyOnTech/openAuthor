@@ -25,8 +25,13 @@ build/
 .turbo/
 .cache/
 coverage/
+desktop/test-results/
+desktop/playwright-report/
+mobile/test-results/
+mobile/playwright-report/
 tmp/
 temp/
+.expo/
 
 # python
 __pycache__/
@@ -38,6 +43,7 @@ venv/
 
 # openauthor runtime data
 codex/codex.sqlite3
+.openauthor/generations/
 .openauthor/retrieval/
 .openauthor/workspace/**
 !.openauthor/workspace/

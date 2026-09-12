@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   addPlanAct,
   addPlanBeat,
@@ -32,6 +32,7 @@ export function PlanEditor() {
   const [previewKey, setPreviewKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [arcStates, setArcStates] = useState<CharacterArcState[]>([]);
+  const loadSequence = useRef(0);
 
   const scenesById = useMemo(() => new Map(scenes.map((scene) => [scene.id, scene])), [scenes]);
   const chapterOptions = useMemo(() => (plan?.acts ?? []).flatMap((act) => (
@@ -40,16 +41,20 @@ export function PlanEditor() {
 
   useEffect(() => {
     void loadPlan();
+    return () => { ++loadSequence.current; };
   }, [projectRoot]);
 
   async function loadPlan() {
     if (!projectRoot) return;
+    const sequence = ++loadSequence.current;
     try {
       const [next, arcs] = await Promise.all([getManuscriptPlan(projectRoot), listCharacterArcStates(projectRoot)]);
+      if (sequence !== loadSequence.current) return;
       setPlan(next);
       setBrief(next.brief);
       setArcStates(arcs);
     } catch (error) {
+      if (sequence !== loadSequence.current) return;
       setError(`Failed to load plan: ${error instanceof Error ? error.message : String(error)}`);
     }
   }

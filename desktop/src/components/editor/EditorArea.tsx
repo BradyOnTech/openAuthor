@@ -1,6 +1,8 @@
 import { useEditor } from "../../contexts/EditorContext";
+import { useUI } from "../../contexts/UIContext";
 import { TabBar } from "./TabBar";
-import { SceneEditor } from "./SceneEditor";
+import { SceneDocument } from "./SceneDocument";
+import { ManuscriptReader } from "./ManuscriptReader";
 import { ProposalReview } from "./ProposalReview";
 import { SettingsEditor } from "./SettingsEditor";
 import { GenerateProposal } from "./GenerateProposal";
@@ -11,6 +13,7 @@ import { CanonMemoryEditor } from "./CanonMemoryEditor";
 import { ConnectionGraphEditor } from "./ConnectionGraphEditor";
 import { StorylineEditor } from "./StorylineEditor";
 import { AlternativeComparison } from "./AlternativeComparison";
+import { WritingVoiceEditor } from "./WritingVoiceEditor";
 import type { SceneDetail, ProposalRecord, CodexEntity, RevisionSummary } from "../../types";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
@@ -31,12 +34,17 @@ export function EditorArea() {
   );
 }
 
-function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown } }) {
+function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; modified?: boolean } }) {
+  const { zenMode, setZenMode } = useUI();
   switch (tab.kind) {
+    case "writing-voice":
+      return <WritingVoiceEditor key={JSON.stringify(tab.data) || tab.id} initialBrief={(tab.data as { voiceBrief?: string } | undefined)?.voiceBrief} />;
+    case "reader":
+      return <ManuscriptReader />;
     case "scene": {
       const scene = tab.data as SceneDetail | undefined;
       if (!scene) return <EmptyState />;
-      return <SceneEditor key={tab.id} scene={scene} />;
+      return <SceneDocument key={tab.id} tabId={tab.id} scene={scene} modified={tab.modified} zenMode={zenMode} onExitZen={() => setZenMode(false)} />;
     }
     case "plan":
       return <PlanEditor />;
@@ -49,7 +57,7 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     case "proposal": {
       const proposal = tab.data as ProposalRecord | undefined;
       if (!proposal) return <EmptyState />;
-      return <ProposalReview proposal={proposal} />;
+      return <ProposalReview key={tab.id} proposal={proposal} />;
     }
     case "alternatives": {
       const proposals = tab.data as ProposalRecord[] | undefined;

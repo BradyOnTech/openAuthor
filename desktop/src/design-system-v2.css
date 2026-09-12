@@ -364,7 +364,58 @@ body {
    Workbench Layout
    ═══════════════════════════════════════════════════════════════════ */
 
+.workbench-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.workbench-notification {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.workbench-notification__text {
+  flex: 1;
+  min-width: 0;
+  max-height: 20vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.workbench-notification > button {
+  flex-shrink: 0;
+}
+
+.first-run-guide {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  max-height: 25vh;
+  overflow: auto;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.first-run-guide__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 200px;
+}
+
 .workbench {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: var(--activity-bar-width) auto 1fr auto;
   grid-template-rows: 1fr auto auto;
@@ -373,7 +424,6 @@ body {
     "activity  panel    panel    panel"
     "status    status   status   status";
   width: 100vw;
-  height: 100vh;
   overflow: hidden;
 }
 
@@ -565,6 +615,40 @@ body {
 
 
 /* ── Tree View (Manuscript Explorer) ───────────────────────────── */
+
+.manuscript-navigation__filter { margin-top: var(--space-2); }
+.manuscript-navigation__act {
+  margin: var(--space-4) var(--space-3) var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.manuscript-navigation__chapter {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.manuscript-navigation__chapter:hover { background: var(--bg-hover); }
+.manuscript-navigation__chapter small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: var(--text-xs); }
+.manuscript-navigation__notice { padding: var(--space-2) var(--space-3); color: var(--text-secondary); font-size: var(--text-xs); }
+.manuscript-navigation__notice .btn { margin-top: var(--space-2); }
+.manuscript-navigation .tree-item { padding-left: var(--space-5); }
+
+.chat-memory-permission { padding: var(--space-3); background: var(--warning-subtle); border-top: 1px solid var(--warning-border); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.chat-memory-permission h3 { margin: 0; font-size: var(--text-sm); }
+.chat-memory-permission p { margin: var(--space-2) 0; }
+.chat-memory-permission > div { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .tree-item {
   display: flex;
@@ -929,6 +1013,36 @@ body {
   color: var(--warning-text);
 }
 
+.scene-conflict {
+  padding: var(--space-3) var(--space-4);
+  background: var(--warning-subtle);
+  border-bottom: 1px solid var(--warning-border);
+  overflow-y: auto;
+  max-height: 42vh;
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+}
+.scene-conflict h2 { font-size: var(--text-base); margin: 0 0 var(--space-2); }
+.scene-conflict p { margin: var(--space-2) 0; overflow-wrap: anywhere; }
+.scene-conflict label { display: grid; gap: var(--space-1); margin-top: var(--space-2); }
+.scene-conflict label.scene-conflict__transfer { display: flex; align-items: center; gap: var(--space-2); }
+.scene-conflict__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+
+.scene-editor__save-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  color: var(--danger-text);
+  background: var(--danger-subtle);
+  border-bottom: 1px solid var(--danger-border);
+  font-size: var(--text-sm);
+}
+
+.scene-editor__save-error span {
+  flex: 1;
+}
+
 .scene-editor__title {
   font-family: var(--font-prose);
   font-size: var(--text-2xl);
@@ -1130,15 +1244,33 @@ body {
   word-break: break-word;
 }
 
+.chat-review-context {
+  margin: 8px 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.chat-review-context summary { cursor: pointer; }
+.chat-review-context p { margin: 6px 0; }
+.chat-review-context__warning { color: var(--warning, #c99240); }
+.chat-review-context__note { font-style: italic; }
+
 .chat-composer {
   padding: var(--space-3);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: var(--space-2);
   position: relative;
 }
 
+.chat-composer__scope { grid-column: 1 / -1; display: flex; gap: var(--space-2); min-width: 0; }
+.chat-composer__scope .input { flex: 1; min-width: 0; width: 0; }
+
 .chat-composer__input {
   flex: 1;
+  width: 100%;
+  min-width: 0;
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
@@ -1445,9 +1577,37 @@ body {
 
 .chat-message__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
   margin-top: var(--space-2);
 }
+
+.chat-promote-options {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  margin-top: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+}
+
+.chat-promote-options .chat-action-btn {
+  padding: var(--space-2);
+  text-align: left;
+}
+
+.manuscript-reader { flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-deep); }
+.manuscript-reader__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4); border-bottom: 1px solid var(--border); background: var(--bg-surface); }
+.manuscript-reader__toolbar h1 { font-size: var(--text-lg); margin: 0; }
+.manuscript-reader__toolbar p, .manuscript-reader__toolbar span { color: var(--text-secondary); font-size: var(--text-xs); }
+.manuscript-reader__toolbar label { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.manuscript-reader__notice { padding: var(--space-5); }
+.manuscript-reader__prose { max-width: 740px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+.manuscript-reader__prose article { margin: var(--space-8) 0; padding-bottom: var(--space-6); border-bottom: 1px solid var(--border); }
+.manuscript-reader__scene-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.manuscript-reader__body { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-prose); font-size: var(--text-lg); line-height: 1.85; }
+.manuscript-reader__prose nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 
 .chat-action-btn {
   padding: 1px var(--space-2);
@@ -2686,58 +2846,44 @@ button.status-bar__item {
 
 /* ── Zen Mode ──────────────────────────────────────────────────── */
 
-.zen-mode {
+.scene-editor.zen-mode {
   position: fixed;
   inset: 0;
   z-index: var(--z-zen-mode);
   background: var(--editor-bg-zen);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   overflow-y: auto;
   animation: zen-enter var(--duration-slow) var(--ease-out);
 }
 
-.zen-mode__content {
+.zen-mode .scene-editor__content {
   max-width: 640px;
   width: 100%;
   padding: var(--space-20) var(--space-8);
-  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .zen-mode__exit {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
+  position: relative;
+  min-height: 40px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-xs);
   color: var(--editor-text-secondary);
-  opacity: 0;
+  background: transparent;
+  border: none;
+  opacity: 0.75;
   transition: opacity var(--duration-normal) ease;
   cursor: pointer;
 }
 
-.zen-mode:hover .zen-mode__exit {
-  opacity: 0.5;
-}
-
-.zen-mode__exit:hover {
-  opacity: 1 !important;
-}
-
-.zen-mode__word-count {
-  position: fixed;
-  bottom: var(--space-4);
-  right: var(--space-6);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--editor-text-secondary);
-  opacity: 0.3;
-  transition: opacity var(--duration-slow) ease;
+.zen-mode__exit:hover,
+.zen-mode__exit:focus-visible {
+  opacity: 1;
 }
 
 
@@ -3195,7 +3341,9 @@ button.status-bar__item {
 
   .sidebar,
   .secondary-sidebar {
-    position: fixed;
+    /* Anchor overlays below notices, inside the remaining workbench space. */
+    position: absolute;
+    grid-area: auto;
     top: 0;
     bottom: var(--status-bar-height);
     z-index: var(--z-popover);

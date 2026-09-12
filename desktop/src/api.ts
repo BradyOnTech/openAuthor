@@ -39,6 +39,10 @@ import type {
   StartupHealthReport,
   WorkspaceAuditReport
 } from "./types";
+import type { AssistantTurnRecord } from "./types";
+import type { AssistantEventEnvelope } from "./assistantEvents";
+import type { SceneEditVersion } from "./types";
+import { SceneEditConflictError, type SceneConflict } from "./sceneConflicts";
 
 const ALLOWED = new Set([
   "init",
@@ -176,6 +180,10 @@ export async function exportManuscript(
   return decodeJson(result);
 }
 
+export async function getManuscriptReading(projectRoot: string): Promise<import("./types").ManuscriptReading> {
+  return decodeJson(await runCoreCommand(projectRoot, ["manuscript", "read", "--json"]));
+}
+
 export async function runCoreCommand(
   projectRoot: string,
   args: string[]
@@ -294,44 +302,38 @@ export async function updateScene(
   projectRoot: string,
   sceneId: string,
   payload: {
-    title: string;
-    summary: string;
-    pov: string;
-    status: string;
-    body: string;
+    title?: string;
+    summary?: string;
+    pov?: string;
+    status?: string;
+    body?: string;
+    expectedVersion?: SceneEditVersion;
   }
 ): Promise<SceneDetail> {
-  const result = await runCoreCommand(projectRoot, [
-    "scene",
-    "update",
-    "--id",
-    sceneId,
-    "--title",
-    payload.title,
-    "--summary",
-    payload.summary,
-    "--pov",
-    payload.pov,
-    "--status",
-    payload.status,
-    "--body",
-    payload.body,
-    "--json"
-  ]);
+  if (!payload.expectedVersion) throw new Error("This scene has no save version. Reopen it before saving; your draft has not been written.");
+  const args = ["scene", "update", "--id", sceneId];
+  args.push("--expected-version", JSON.stringify(payload.expectedVersion));
+  for (const key of ["title", "summary", "pov", "status", "body"] as const) {
+    const value = payload[key];
+    if (value !== undefined) args.push(`--${key}`, value);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  if (result.status === 3) {
+    const conflict = JSON.parse(result.stdout)?.error as SceneConflict;
+    if (conflict?.code === "scene_edit_conflict" && conflict.current?.edit_version) {
+      throw new SceneEditConflictError(conflict);
+    }
+  }
   return decodeJson<SceneDetail>(result);
 }
 
 export async function updateSceneMetadata(
   projectRoot: string,
   sceneId: string,
-  payload: { summary?: string; pov?: string; status?: string }
+  payload: { summary?: string; pov?: string; status?: string; expectedVersion?: SceneEditVersion }
 ): Promise<SceneDetail> {
-  const args = ["scene", "update", "--id", sceneId];
-  for (const [key, value] of Object.entries(payload)) {
-    if (value !== undefined) args.push(`--${key}`, value);
-  }
-  args.push("--json");
-  return decodeJson<SceneDetail>(await runCoreCommand(projectRoot, args));
+  return updateScene(projectRoot, sceneId, payload);
 }
 
 export async function getManuscriptPlan(projectRoot: string): Promise<ManuscriptPlan> {
@@ -576,6 +578,13 @@ export async function applyProposalBatch(projectRoot: string, proposalIds: strin
   if (force) args.push("--force");
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function undoProposalBatch(projectRoot: string, appliedRevision: string): Promise<{
+  change_group_id: string; applied_revision: string; undo_revision: string; restored_revision: string;
+  proposal_ids: string[]; scene_ids: string[]; proposals: ProposalRecord[]; scenes: SceneDetail[]; warnings: string[];
+}> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "undo-batch", "--revision", appliedRevision, "--json"]));
 }
 
 export async function undoProposal(
@@ -890,6 +899,7 @@ export type ChatSendPayload = {
   sceneIds?: string[];
   selectedText?: string;
   codexIds?: string[];
+  approvedCodexIds?: string[];
   includeCurrentScene?: boolean;
   includeSelection?: boolean;
   includeRecentScenesRadius?: number;
@@ -901,6 +911,9 @@ export type ChatSendPayload = {
   agentAutoReadOnly?: boolean;
   agentConfirmWrites?: boolean;
   scope?: "project" | "scene" | "chapter" | "character" | "storyline";
+  turnId?: string;
+  channel?: "text" | "desktop_voice" | "mobile_voice";
+  replacementFromMessageId?: string;
 };
 
 export async function sendChatMessage(
@@ -930,6 +943,9 @@ export async function sendChatMessage(
     if (codexId.trim() !== "") {
       args.push("--codex-id", codexId.trim());
     }
+  }
+  for (const codexId of payload.approvedCodexIds ?? []) {
+    if (codexId.trim()) args.push("--allow-memory-once", codexId.trim());
   }
   if (typeof payload.includeCurrentScene === "boolean") {
     args.push("--include-current-scene", payload.includeCurrentScene ? "true" : "false");
@@ -1058,12 +1074,16 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     contextOverrides.scope = payload.scope;
   }
   return {
+    turn_id: payload.turnId,
+    channel: payload.channel ?? "text",
+    replace_from_message_id: payload.replacementFromMessageId ?? "",
     thread_id: payload.threadId,
     message: payload.message,
     current_scene_id: payload.currentSceneId ?? "",
     scene_ids: (payload.sceneIds ?? []).filter((item) => item.trim() !== ""),
     selected_text: payload.selectedText ?? "",
     codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
+    approved_codex_ids: (payload.approvedCodexIds ?? []).filter((item) => item.trim() !== ""),
     context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
   };
 }
@@ -1073,28 +1093,337 @@ export async function sendChatMessageStreamed(
   payload: ChatSendPayload,
   handlers: {
     onDelta: (text: string) => void;
-    onStart?: (requestId: string) => void;
+    onStart?: (requestId: string, turnId: string) => void;
+    onEvent?: (event: AssistantEventEnvelope) => void;
   }
 ): Promise<ChatSendResult> {
   const requestId = nextSidecarRequestId();
-  handlers.onStart?.(requestId);
+  const turnId = payload.turnId?.trim() || `turn-${crypto.randomUUID()}`;
+  handlers.onStart?.(requestId, turnId);
   const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
     const frame = event.payload.frame;
-    if (frame.event !== "chat.delta" || !frame.payload) return;
-    if (frame.payload.request_id !== requestId) return;
-    handlers.onDelta(String(frame.payload.text ?? ""));
+    if (!frame.payload) return;
+    if (frame.event === "assistant.event") {
+      const assistantEvent = frame.payload as unknown as AssistantEventEnvelope;
+      if (assistantEvent.turn_id === turnId) handlers.onEvent?.(assistantEvent);
+      return;
+    }
+    if (frame.event === "chat.delta" && frame.payload.request_id === requestId) {
+      handlers.onDelta(String(frame.payload.text ?? ""));
+    }
   });
   try {
     return await sidecarRequest<ChatSendResult>(
       projectRoot,
       requestId,
-      "chat.send",
-      chatSendParams(payload)
+      payload.replacementFromMessageId ? "chat.regenerate" : "chat.send",
+      chatSendParams({ ...payload, turnId })
     );
   } finally {
     unlisten();
   }
+}
+
+export async function getAssistantTurn(
+  projectRoot: string,
+  turnId: string
+): Promise<AssistantTurnRecord> {
+  return sidecarRequest<AssistantTurnRecord>(
+    projectRoot,
+    nextSidecarRequestId(),
+    "assistant.turn.get",
+    { turn_id: turnId },
+    10_000
+  );
+}
+
+export type MobileSnapshotManifest = {
+  schema: "openauthor.mobile.snapshot.manifest";
+  schema_version: 1;
+  project_id: string;
+  revision: string;
+  content_sha256: string;
+  byte_length: number;
+};
+
+export type PreparedMobileSnapshot = {
+  schema_version: 1;
+  media_type: "application/vnd.openauthor.mobile-snapshot+json";
+  manifest: MobileSnapshotManifest;
+  plaintext_base64: string;
+};
+
+export type MobileOutboxEnvelopeIdentity = {
+  projectId: string;
+  deviceId: string;
+  operationId: string;
+  baseRevision: string;
+  payloadDigest: string;
+};
+
+export type MobileOutboxImportResult = {
+  schema_version: 1;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  kind: string;
+  payload_digest: string;
+  base_revision: string;
+  imported_revision: string;
+  stale: boolean;
+  disposition: "imported" | "pending_review" | "conflict";
+  artifact_kind: string;
+  artifact_id: string;
+  imported_at: string;
+};
+
+export type MobileInboxItem = {
+  schema_version: 1;
+  id: string;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  base_revision: string;
+  imported_revision: string;
+  payload_digest: string;
+  kind: "capture_note" | "thread_turn";
+  title: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type MobileReviewDecision = {
+  schema_version: 1;
+  id: string;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  base_revision: string;
+  imported_revision: string;
+  payload_digest: string;
+  kind: "review_decision";
+  status: "pending_desktop_review" | "conflict";
+  stale: boolean;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export interface MobileSidecarRequester {
+  <T>(
+    projectRoot: string,
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs: number
+  ): Promise<T>;
+}
+
+export function createMobileSidecarApi(request: MobileSidecarRequester) {
+  return {
+    prepareSnapshot(
+      projectRoot: string,
+      projectId: string
+    ): Promise<PreparedMobileSnapshot> {
+      return request<PreparedMobileSnapshot>(
+        projectRoot,
+        "mobile.snapshot.prepare",
+        { project_id: projectId },
+        30_000
+      );
+    },
+    importOutboxItem(
+      projectRoot: string,
+      input: {
+        envelope: MobileOutboxEnvelopeIdentity;
+        payload: Record<string, unknown>;
+      }
+    ): Promise<MobileOutboxImportResult> {
+      return request<MobileOutboxImportResult>(
+        projectRoot,
+        "mobile.outbox.import",
+        {
+          envelope: {
+            project_id: input.envelope.projectId,
+            device_id: input.envelope.deviceId,
+            operation_id: input.envelope.operationId,
+            base_revision: input.envelope.baseRevision,
+            payload_digest: input.envelope.payloadDigest,
+          },
+          payload: input.payload,
+        },
+        30_000
+      );
+    },
+    listInbox(projectRoot: string): Promise<MobileInboxItem[]> {
+      return request<MobileInboxItem[]>(
+        projectRoot,
+        "mobile.inbox.list",
+        {},
+        15_000
+      );
+    },
+    listReviews(projectRoot: string): Promise<MobileReviewDecision[]> {
+      return request<MobileReviewDecision[]>(
+        projectRoot,
+        "mobile.review.list",
+        {},
+        15_000
+      );
+    },
+  };
+}
+
+const mobileSidecarApi = createMobileSidecarApi(
+  <T>(
+    projectRoot: string,
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs: number
+  ) => sidecarRequest<T>(
+    projectRoot,
+    nextSidecarRequestId(),
+    method,
+    params,
+    timeoutMs
+  )
+);
+
+export async function prepareMobileSnapshot(
+  projectRoot: string,
+  projectId: string
+): Promise<PreparedMobileSnapshot> {
+  return mobileSidecarApi.prepareSnapshot(projectRoot, projectId);
+}
+
+export async function importMobileOutboxItem(
+  projectRoot: string,
+  input: {
+    envelope: MobileOutboxEnvelopeIdentity;
+    payload: Record<string, unknown>;
+  }
+): Promise<MobileOutboxImportResult> {
+  return mobileSidecarApi.importOutboxItem(projectRoot, input);
+}
+
+export async function listMobileInboxItems(
+  projectRoot: string
+): Promise<MobileInboxItem[]> {
+  return mobileSidecarApi.listInbox(projectRoot);
+}
+
+export async function listMobileReviewDecisions(
+  projectRoot: string
+): Promise<MobileReviewDecision[]> {
+  return mobileSidecarApi.listReviews(projectRoot);
+}
+
+export type VoiceContextPrepared = {
+  context_pack: Record<string, unknown> & { pack_id: string; channel: string };
+  instructions: string;
+  tools: Array<Record<string, unknown>>;
+  profile: Record<string, unknown>;
+};
+
+export async function prepareVoiceContext(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    utterance?: string;
+    currentSceneId?: string;
+    selectedText?: string;
+    sceneIds?: string[];
+    codexIds?: string[];
+  }
+): Promise<VoiceContextPrepared> {
+  return sidecarRequest<VoiceContextPrepared>(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.context.prepare",
+    {
+      thread_id: payload.threadId,
+      channel: "desktop_voice",
+      utterance: payload.utterance ?? "",
+      current_scene_id: payload.currentSceneId ?? "",
+      selected_text: payload.selectedText ?? "",
+      scene_ids: payload.sceneIds ?? [],
+      codex_ids: payload.codexIds ?? []
+    },
+    30_000
+  );
+}
+
+export async function negotiateVoiceSession(
+  projectRoot: string,
+  payload: { offerSdp: string; contextPackId: string; model?: string; voice?: string }
+): Promise<{ answer_sdp: string; context_pack_id: string; model: string; voice: string }> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.session.start",
+    {
+      offer_sdp: payload.offerSdp,
+      context_pack_id: payload.contextPackId,
+      model: payload.model ?? "",
+      voice: payload.voice ?? ""
+    },
+    45_000
+  );
+}
+
+export async function handleVoiceTool(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    callId: string;
+    name: string;
+    arguments: Record<string, unknown>;
+  }
+): Promise<Record<string, unknown>> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.tool.handle",
+    {
+      thread_id: payload.threadId,
+      channel: "desktop_voice",
+      call_id: payload.callId,
+      name: payload.name,
+      arguments: payload.arguments
+    },
+    30_000
+  );
+}
+
+export async function recordVoiceTurn(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    turnId: string;
+    voiceSessionId: string;
+    userTranscript: string;
+    assistantTranscript: string;
+    contextPackId: string;
+    providerEventId: string;
+    model: string;
+  }
+): Promise<{ turn: AssistantTurnRecord; messages: ChatMessageRecord[] }> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.turn.record",
+    {
+      thread_id: payload.threadId,
+      turn_id: payload.turnId,
+      voice_session_id: payload.voiceSessionId,
+      user_transcript: payload.userTranscript,
+      assistant_transcript: payload.assistantTranscript,
+      context_pack_id: payload.contextPackId,
+      provider_event_id: payload.providerEventId,
+      model: payload.model,
+      channel: "desktop_voice"
+    },
+    30_000
+  );
 }
 
 export async function interruptChatTurn(
@@ -1558,11 +1887,41 @@ export async function duplicateStoryline(projectRoot: string, id: string, name: 
 
 export type StyleProfile = {
   schema_version: number;
+  name: string;
+  description: string;
+  traits: Record<string, string>;
+  avoid: string[];
+  version?: string;
   exemplar_scene_ids: string[];
+  exemplar_digests?: Record<string, string>;
+  observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }>;
   created_at: string;
-  metrics: { word_count: number; sentence_count: number; paragraph_count: number; average_sentence_words: number; average_paragraph_words: number; dialogue_word_ratio: number; semicolon_per_sentence: number; em_dash_per_sentence: number; signature_words: string[] };
+  metrics: Record<string, unknown>;
   guidance: string[];
 };
+
+export type WritingVoiceWorkspace = {
+  profile: StyleProfile | null; scope: string;
+  presets: Array<Pick<StyleProfile, "name" | "description" | "traits" | "guidance" | "avoid"> & { id: string }>;
+  dimensions: Record<string, { label: string; options: string[] }>;
+  criteria: Record<string, string>;
+  previews: VoicePreview[];
+};
+export type VoicePreview = {
+  id: string; scene_id: string; source_text: string; provider: string;
+  directions: Array<{
+    id: string; profile: StyleProfile; text: string; warnings: string[]; proposal_id?: string;
+    measures: { words: number; average_sentence_words: number; dialogue_passages: number };
+    observations: Array<{ criterion: string; observation: string; excerpt: string }>;
+    author_review: { ratings: Record<string, string>; notes: string };
+  }>;
+};
+export async function getWritingVoiceWorkspace(projectRoot: string): Promise<WritingVoiceWorkspace> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", "workspace", "--json"]));
+}
+export async function writingVoiceAction<T>(projectRoot: string, action: "save" | "suggest" | "preview" | "review" | "stage", request: Record<string, unknown>): Promise<T> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", action, "--request-json", JSON.stringify(request), "--json"]));
+}
 
 export async function getStyleProfile(projectRoot: string): Promise<StyleProfile | null> {
   return decodeJson(await runCoreCommand(projectRoot, ["style", "get", "--json"]));

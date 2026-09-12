@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan } from "../types";
 
-export type EditorTabKind = "scene" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings";
+export type EditorTabKind = "scene" | "reader" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings" | "writing-voice";
 
 export type EditorTab = {
   id: string;
   kind: EditorTabKind;
   label: string;
   modified?: boolean;
-  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | null;
+  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | null;
 };
 
 export type SplitDirection = "none" | "horizontal" | "vertical";

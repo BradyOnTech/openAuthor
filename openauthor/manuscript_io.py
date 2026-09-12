@@ -11,6 +11,8 @@ from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, next_scene_index, utc_now
+from .project_locks import serialized_project_access
+from .planning import list_manuscript_scenes
 from .scenes import build_scene_markdown, list_scene_details, scene_filename, scene_id
 
 SUPPORTED_IMPORT_SUFFIXES = {".md", ".markdown", ".txt", ".docx"}
@@ -341,6 +343,7 @@ def preview_manuscript_import(source: Path, *, strategy: str = "auto") -> dict[s
   }
 
 
+@serialized_project_access
 def import_manuscript(
   paths: ProjectPaths,
   source: Path,
@@ -414,7 +417,7 @@ def _export_markdown(paths: ProjectPaths, target: Path) -> dict[str, Any]:
   target.mkdir(parents=True, exist_ok=True)
   if any(target.iterdir()):
     raise OpenAuthorError(f"Markdown export destination must be empty: {target}")
-  scenes = list_scene_details(paths)
+  scenes = list_manuscript_scenes(paths)
   files: list[str] = []
   for index, scene in enumerate(scenes, start=1):
     output = target / scene_filename(index, scene["title"])
@@ -435,7 +438,7 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
     raise OpenAuthorError(f"DOCX export target already exists: {target}")
   target.parent.mkdir(parents=True, exist_ok=True)
   paragraphs: list[str] = []
-  scenes = list_scene_details(paths)
+  scenes = list_manuscript_scenes(paths)
   for index, scene in enumerate(scenes):
     if index:
       paragraphs.append(_paragraph_xml("", page_break=True))
@@ -477,6 +480,7 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
   }
 
 
+@serialized_project_access
 def export_manuscript(paths: ProjectPaths, target: Path, *, format: str) -> dict[str, Any]:
   normalized = format.strip().lower()
   resolved = target.expanduser().resolve()

@@ -1,0 +1,47 @@
+import { test, expect } from "@playwright/test";
+
+test("phone companion reads a scene, keeps preview honest, and reopens its shell offline", async ({ page, context }, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(page.getByText("Preview only.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Password" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Explore sample book" }).click();
+  await page.getByRole("button", { name: /The Clockmaker's Map/ }).click();
+  await page.getByRole("button", { name: "Read The Observatory" }).click();
+  await expect(page.getByText(/Rain clicked against the copper dome/)).toBeVisible();
+  await page.getByRole("tab", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Explore sample book" })).toBeVisible();
+  await page.getByRole("button", { name: "Explore sample book" }).click();
+  await page.getByRole("button", { name: /The Clockmaker's Map/ }).click();
+  await page.getByRole("button", { name: "Read The Observatory" }).click();
+  await page.getByRole("tab", { name: "Assistant", exact: true }).click();
+  await expect(page.getByText("Discussing: The Observatory")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start voice" })).toBeDisabled();
+  await page.getByRole("tab", { name: "Capture", exact: true }).click();
+  await page.getByRole("textbox", { name: "Capture text" }).fill("The key should fit the observatory clock.");
+  await page.getByRole("button", { name: "Save pending item" }).click();
+  await expect(page.getByText("Pending review", { exact: true })).toBeVisible();
+  await expect(page.getByText("The key should fit the observatory clock.")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("phone-companion.png"), fullPage: true });
+  const manifest = await (await page.request.get("/manifest.webmanifest")).json();
+  expect(manifest.display).toBe("standalone");
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  const cached = await page.evaluate(async () => {
+    const names = await caches.keys();
+    return (await Promise.all(names.map(async (name) => (await (await caches.open(name)).keys()).map((request) => request.url)))).flat();
+  });
+  expect(cached.some((url) => /index.html$/.test(url))).toBe(true);
+  expect(cached.some((url) => /auth|realtime|supabase|snapshot/.test(url))).toBe(false);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Explore sample book" })).toBeVisible();
+  await page.getByRole("button", { name: "Explore sample book" }).click();
+  await page.getByRole("button", { name: /The Clockmaker's Map/ }).click();
+  await page.getByRole("button", { name: "Read The Observatory" }).click();
+  await expect(page.getByText(/Rain clicked against the copper dome/)).toBeVisible();
+  expect(errors).toEqual([]);
+});

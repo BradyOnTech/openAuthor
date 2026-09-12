@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/mobile-snapshot-envelope/v1",
+  "title": "openAuthor Mobile Snapshot Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "project_id", "project_revision", "snapshot_id", "manifest_sha256", "published_at", "manifest", "blob"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.snapshot.envelope"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "snapshot_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "manifest_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "published_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "manifest": {"$ref": "https://openauthor.dev/contracts/mobile-snapshot-manifest/v1"},
+    "blob": {"$ref": "https://openauthor.dev/contracts/encrypted-snapshot-blob-metadata/v1"}
+  }
+}

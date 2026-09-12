@@ -18,9 +18,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
           cache: "npm"
-          cache-dependency-path: desktop/package-lock.json
+          cache-dependency-path: |
+            contracts/package-lock.json
+            desktop/package-lock.json
+            gateway/package-lock.json
+            mobile/package-lock.json
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -30,11 +34,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
 
-      - name: Install desktop dependencies
-        run: npm ci --prefix desktop
+      - name: Install all JavaScript dependencies
+        run: make install-js
 
-      - name: Audit desktop dependencies
-        run: make desktop-audit
+      - name: Audit all JavaScript dependencies
+        run: make js-audit
 
       - name: Run repository checks
         run: make check
@@ -63,8 +67,33 @@ jobs:
       - name: Run desktop tests
         run: make test-desktop
 
+      - name: Verify shared contracts, session gateway, and mobile companion
+        run: make test-contracts test-gateway test-mobile
+
       - name: Build desktop frontend
         run: make desktop-build
+
+      - name: Install browser for real-engine authoring verification
+        run: npx --prefix desktop playwright install chromium
+
+      - name: Browser authoring workflow against the real Python engine
+        run: make test-desktop-e2e
+
+      - name: Browser companion and offline app-shell workflow
+        run: make test-mobile-e2e
+
+      - name: Encrypted phone to desktop workflow with local simulated hosting
+        run: make test-mobile-hosted-e2e
+
+      - name: Preserve browser workflow evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authoring-browser-evidence
+          path: |
+            desktop/test-results/
+            mobile/test-results/
+          if-no-files-found: ignore
 
       - name: Tauri backend check
         run: make tauri-check

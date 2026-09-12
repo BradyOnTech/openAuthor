@@ -1,0 +1,83 @@
+import { test, expect } from "@playwright/test";
+import { localBook } from "./localBook";
+
+test("approves an original Writing Voice, compares baselines and supplies the profile to copilot", async ({ page }, testInfo) => {
+  const book = await localBook(page);
+  async function json(args: string[]) {
+    const result = await book.core(book.projectRoot, [...args, "--json"]);
+    expect(result.status, result.stderr).toBe(0);
+    return JSON.parse(result.stdout);
+  }
+  try {
+    await page.goto("/");
+    await page.getByRole("button", { name: "New Project", exact: true }).click();
+    await page.getByRole("textbox", { name: "Novel title" }).fill("The Unlit Harbor");
+    await page.getByRole("textbox", { name: "Project folder" }).fill(book.projectRoot);
+    await page.getByRole("button", { name: "Create novel" }).click();
+    await expect(page.getByRole("button", { name: "Add Scene", exact: true })).toBeVisible();
+    await json(["scene", "add", "--title", "The gate", "--body", 'Mara began to count the boats. "Seven," she said. The tide pressed against the gate.\n\nIvo kept the key in his pocket.']);
+    const before = await json(["scene", "get", "--id", "scene-0001"]);
+    await page.reload();
+    await page.getByRole("button", { name: "Hide first-run guide" }).click();
+    await page.getByRole("button", { name: "Assistant (Cmd+L)" }).click();
+    await page.getByRole("button", { name: "Writing Voice", exact: true }).click();
+    await page.getByRole("combobox", { name: "Writing Voice preset" }).selectOption("clear-epic");
+    await page.getByRole("textbox", { name: "Profile name", exact: true }).fill("Harbor voice");
+    await page.getByRole("combobox", { name: "Voice Emotional expression", exact: true }).selectOption("restrained");
+    await page.getByRole("textbox", { name: "Avoid (one preference per line)", exact: true }).fill("Repeated metaphors\nExplaining what dialogue already implies");
+    expect(await json(["style", "get"])).toBeNull();
+    await page.getByRole("button", { name: "Approve and save Writing Voice", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Writing Voice approved" })).toBeVisible();
+    expect((await json(["style", "get"])).traits.emotion).toBe("restrained");
+    await page.locator(".writing-voice").evaluate((element) => { element.scrollTop = 0; });
+    await page.screenshot({ path: testInfo.outputPath("writing-voice-profile.png") });
+    await page.getByRole("textbox", { name: "Tell the copilot how this book should read" }).fill("Close perspective, dry humor and restrained feeling.");
+    await page.getByText("Choose your exemplar scenes (0 selected)", { exact: true }).click();
+    await page.getByRole("checkbox", { name: "The gate", exact: true }).check();
+    await page.getByRole("combobox", { name: "Writing provider", exact: true }).selectOption("local");
+    await page.getByRole("button", { name: "Propose a voice profile", exact: true }).click();
+    await expect(page.getByText(/This is an unsaved proposal/)).toBeVisible();
+    expect((await json(["style", "get"])).description).not.toBe("Close perspective, dry humor and restrained feeling.");
+    await page.getByRole("button", { name: "Approve and save Writing Voice", exact: true }).click();
+    await expect(page.getByText(/Writing Voice approved/)).toBeVisible();
+    await page.getByRole("button", { name: "Compare 3 short previews", exact: true }).click();
+    const candidate = page.getByRole("article", { name: "Preview Harbor voice", exact: true });
+    await expect(candidate).toBeVisible();
+    await expect(candidate.getByRole("button", { name: "Queue sample as Change Set" })).toBeDisabled();
+    await candidate.getByText("Your quality assessment", { exact: true }).click();
+    await candidate.getByRole("combobox").first().selectOption("works");
+    await candidate.getByRole("textbox", { name: "Assessment notes" }).fill("Baseline reference, not evidence of generated literary quality.");
+    await candidate.getByRole("button", { name: "Save assessment" }).click();
+    await expect(page.getByText(/assessment was saved/)).toBeVisible();
+    expect((await json(["style", "workspace"])).previews[0].directions[0].author_review.ratings.voice_fit).toBe("works");
+    expect(await json(["scene", "get", "--id", "scene-0001"])).toEqual(before);
+    await candidate.getByText("Your quality assessment", { exact: true }).click();
+    await page.getByRole("button", { name: "Expand comparison", exact: true }).click();
+    await page.getByRole("heading", { name: "Compare and judge", exact: true }).scrollIntoViewIfNeeded();
+    const cards = await page.getByRole("article").all();
+    const boxes = await Promise.all(cards.map((card) => card.boundingBox()));
+    expect(boxes[0]!.y).toBe(boxes[1]!.y);
+    expect(boxes[1]!.y).toBe(boxes[2]!.y);
+    await page.screenshot({ path: testInfo.outputPath("writing-voice-comparison.png") });
+    await page.reload();
+    // The project and sidebars persist; reopen the voice workspace from copilot.
+    if (await page.getByRole("button", { name: "Writing Voice", exact: true }).count() === 0) await page.getByRole("button", { name: "Assistant (Cmd+L)" }).click();
+    await page.getByRole("button", { name: "Writing Voice", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Profile name", exact: true })).toHaveValue("Harbor voice");
+    await expect(page.getByRole("article", { name: "Preview Harbor voice", exact: true })).toBeVisible();
+    await page.getByTitle("New thread", { exact: true }).click();
+    await page.getByPlaceholder("Type a message... (@ to mention)").fill("How should we revise this book's prose? Keep the established voice, but make the action more immediate.");
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Save as…", exact: true })).toBeVisible();
+    await page.getByText("Context used", { exact: true }).click();
+    await expect(page.getByText("Writing Voice: Harbor voice (manuscript prose only).", { exact: true })).toBeVisible();
+    const [thread] = await json(["chat", "thread", "list"]);
+    const messages = await json(["chat", "message", "list", "--thread", thread.id]);
+    expect(messages.find((row: any) => row.role === "assistant").context_used.review.writing_voice_name).toBe("Harbor voice");
+    await page.getByRole("button", { name: "Save as…", exact: true }).click();
+    await page.getByRole("button", { name: "Writing Voice brief", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Tell the copilot how this book should read" })).not.toHaveValue("");
+    expect(await json(["scene", "get", "--id", "scene-0001"])).toEqual(before);
+    expect(book.errors).toEqual([]);
+  } finally { await book.close(); }
+});

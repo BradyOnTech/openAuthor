@@ -53,8 +53,8 @@ export function FirstRunGuide() {
         : null;
 
   return (
-    <aside aria-label="Getting started" style={{ position: "fixed", right: "var(--space-4)", bottom: "calc(var(--statusbar-height) + var(--space-4))", zIndex: 500, width: 300, border: "1px solid var(--border-strong)", borderRadius: "var(--radius-lg)", background: "var(--bg-elevated)", boxShadow: "var(--shadow-lg)", padding: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}>
+    <aside aria-label="Getting started" className="first-run-guide">
+      <div className="first-run-guide__heading">
         <div>
           <div style={{ fontWeight: 650, color: "var(--text-primary)" }}>Getting started</div>
           <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>{completed}/3 complete</div>

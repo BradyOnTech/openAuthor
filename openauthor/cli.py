@@ -71,6 +71,7 @@ from .planning import (
   add_scene_note,
   assign_scene,
   get_plan,
+  get_manuscript_reading,
   preview_scene_move,
   update_brief,
   update_scene_metadata,
@@ -105,12 +106,14 @@ from .proposals import (
   list_proposals,
   rebase_proposal_change_set,
   undo_proposal,
+  undo_proposal_batch,
   update_change_hunk,
   update_proposal_status,
 )
 from .retrieval import build_retrieval_index, get_retrieval_index_status, query_retrieval_index
 from .revisions import compare_revisions, get_revision, list_revisions, restore_revision, revision_retrospective
 from .scenes import add_scene, get_scene, list_scenes, scene_id, update_scene
+from .scene_edits import SceneEditConflict, save_scene_edit
 from .story_memory import correct_memory_suggestion, extract_memory_suggestions, list_memory_suggestions, queue_memory_suggestion, review_memory_suggestion
 from .search import search_project
 from .editorial import add_editorial_pass, list_editorial_passes
@@ -138,7 +141,8 @@ from .storylines import (
   switch_storyline,
   update_storyline_status,
 )
-from .style_profile import build_style_profile, get_style_profile
+from .style_profile import build_style_profile, get_style_profile, save_style_profile
+from .writing_voice import voice_workspace, suggest_voice, preview_voice, review_voice_preview, stage_voice_preview
 from .product_signals import (
   get_local_product_dashboard,
   get_product_signal_settings,
@@ -171,6 +175,8 @@ def build_parser() -> argparse.ArgumentParser:
 
   manuscript_parser = subparsers.add_parser("manuscript", help="Import and export manuscript files.")
   manuscript_sub = manuscript_parser.add_subparsers(dest="manuscript_command", required=True)
+  manuscript_read = manuscript_sub.add_parser("read", help="Read saved prose in planned chapter order.")
+  manuscript_read.add_argument("--json", action="store_true", help="Output JSON.")
   manuscript_preview = manuscript_sub.add_parser("preview", help="Preview detected manuscript structure without writing scenes.")
   manuscript_preview.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
   manuscript_preview.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
@@ -216,6 +222,7 @@ def build_parser() -> argparse.ArgumentParser:
   scene_update.add_argument("--pov", default=None, help="New POV.")
   scene_update.add_argument("--status", default=None, help="New status.")
   scene_update.add_argument("--body", default=None, help="New body content.")
+  scene_update.add_argument("--expected-version", default=None, help="Loaded scene edit_version JSON; required for guarded editor saves.")
   scene_update.add_argument("--json", action="store_true", help="Output JSON.")
 
   codex_parser = subparsers.add_parser("codex", help="Manage codex entities.")
@@ -296,6 +303,10 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_apply_batch.add_argument("--notes", default="")
   proposal_apply_batch.add_argument("--force", action="store_true")
   proposal_apply_batch.add_argument("--json", action="store_true", help="Output JSON.")
+
+  proposal_undo_batch = proposal_sub.add_parser("undo-batch", help="Undo every scene in a coordinated Revision, protecting newer work.")
+  proposal_undo_batch.add_argument("--revision", required=True, help="Applied coordinated Revision id.")
+  proposal_undo_batch.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_draft = proposal_sub.add_parser(
     "draft",
     help="Generate the full revised scene body for a pending proposal.",
@@ -643,6 +654,12 @@ def build_parser() -> argparse.ArgumentParser:
   style_build = style_sub.add_parser("build", help="Rebuild from selected exemplar scenes.")
   style_build.add_argument("--scene", action="append", required=True, dest="scene_ids")
   style_build.add_argument("--json", action="store_true", help="Output JSON.")
+  style_workspace = style_sub.add_parser("workspace", help="Get Writing Voice controls and the approved profile.")
+  style_workspace.add_argument("--json", action="store_true")
+  for name in ("save", "suggest", "preview", "review", "stage"):
+    action = style_sub.add_parser(name, help=f"Writing Voice: {name}.")
+    action.add_argument("--request-json", required=True)
+    action.add_argument("--json", action="store_true")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -1027,6 +1044,7 @@ def build_parser() -> argparse.ArgumentParser:
     help="Explicit scene id to include in context. Repeatable.",
   )
   chat_send.add_argument("--selected-text", default="", help="Selected editor text.")
+  chat_send.add_argument("--allow-memory-once", action="append", default=[], help="Allow one explicitly selected ask-before-use Memory entry and its ask details for this request; never releases private notes or exclusions.")
   chat_send.add_argument(
     "--codex-id",
     action="append",
@@ -1332,7 +1350,10 @@ def _run(args: argparse.Namespace) -> int:
     raise OpenAuthorError(f"Unsupported project command: {args.project_command}")
 
   if args.command == "manuscript":
-    if args.manuscript_command == "import":
+    if args.manuscript_command == "read":
+      row = get_manuscript_reading(paths)
+      row["scene_count"] = len(row["scenes"])
+    elif args.manuscript_command == "import":
       row = import_manuscript(paths, Path(args.source), strategy=args.strategy)
     elif args.manuscript_command == "export":
       row = export_manuscript(paths, Path(args.target), format=args.format)
@@ -1531,6 +1552,25 @@ def _run(args: argparse.Namespace) -> int:
       row = get_style_profile(paths)
     elif args.style_command == "build":
       row = build_style_profile(paths, scene_ids=args.scene_ids)
+    elif args.style_command == "workspace":
+      row = voice_workspace(paths)
+    elif args.style_command in {"save", "suggest", "preview", "review", "stage"}:
+      try:
+        request = json.loads(args.request_json)
+      except ValueError as error:
+        raise OpenAuthorError("Writing Voice request must be valid JSON.") from error
+      if not isinstance(request, dict):
+        raise OpenAuthorError("Writing Voice request must be an object.")
+      if args.style_command == "save":
+        row = save_style_profile(paths, profile=request.get("profile"), expected_version=request.get("expected_version"), expected_scope=request.get("scope", ""))
+      elif args.style_command == "suggest":
+        row = suggest_voice(paths, request=request)
+      elif args.style_command == "preview":
+        row = preview_voice(paths, request=request)
+      elif args.style_command == "review":
+        row = review_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""), review=request.get("review", {}))
+      else:
+        row = stage_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""))
     else:
       raise OpenAuthorError(f"Unsupported Style Profile command: {args.style_command}")
     if args.json:
@@ -1582,6 +1622,30 @@ def _run(args: argparse.Namespace) -> int:
         for value in (args.title, args.summary, args.pov, args.status, args.body)
       ):
         raise OpenAuthorError("No updates provided. Supply at least one field.")
+      if args.expected_version is not None:
+        try:
+          expected = json.loads(args.expected_version)
+        except json.JSONDecodeError as error:
+          raise OpenAuthorError("Invalid loaded-scene version JSON.") from error
+        row = save_scene_edit(
+          paths,
+          scene_identifier=args.id,
+          expected_version=expected,
+          changes={field: getattr(args, field) for field in ("title", "body", "summary", "pov", "status") if getattr(args, field) is not None},
+        )
+        try:
+          extract_memory_suggestions(paths, scene_ids=[args.id])
+        except Exception:
+          # Derived suggestions cannot invalidate an already committed save.
+          # Return a visible warning, preserving the exact saved-scene response.
+          row["save_warnings"] = ["Scene saved, but Story Memory suggestions could not refresh. Run a memory scan to retry."]
+        # Return the scene captured while holding the write lock, never a later
+        # reread that could acknowledge a different writer's version.
+        if args.json:
+          print(json.dumps(row))
+        else:
+          print(f"Updated scene {row['path']}")
+        return 0
       scene_file = update_scene(
         paths,
         scene_identifier=args.id,
@@ -1726,6 +1790,11 @@ def _run(args: argparse.Namespace) -> int:
     if args.proposal_command == "apply-batch":
       row = apply_proposal_batch(paths, proposal_ids=args.ids, notes=args.notes, force=args.force)
       print(json.dumps(row) if args.json else f"Applied {len(row['proposal_ids'])} coordinated Change Sets")
+      return 0
+
+    if args.proposal_command == "undo-batch":
+      row = undo_proposal_batch(paths, applied_revision=args.revision)
+      print(json.dumps(row) if args.json else f"Undid {len(row['scene_ids'])} scenes together in Revision {row['undo_revision']}")
       return 0
 
     if args.proposal_command == "hunk":
@@ -2217,6 +2286,7 @@ def _run(args: argparse.Namespace) -> int:
         scene_ids=args.scene_id or [],
         selected_text=args.selected_text,
         codex_ids=args.codex_id or [],
+        approved_codex_ids=args.allow_memory_once,
         context_overrides=context_overrides if context_overrides else None,
       )
       if args.json:
@@ -2523,6 +2593,12 @@ def main(argv: list[str] | None = None) -> int:
   args = parser.parse_args(argv)
   try:
     return _run(args)
+  except SceneEditConflict as error:
+    if getattr(args, "json", False):
+      print(json.dumps({"error": {**error.details, "message": str(error)}}))
+    else:
+      print(f"error: {error}", file=sys.stderr)
+    return 3
   except OpenAuthorError as error:
     print(f"error: {error}", file=sys.stderr)
     return 2

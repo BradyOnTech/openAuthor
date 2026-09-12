@@ -18,6 +18,7 @@ from .git_ops import (
   switch_branch,
 )
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
+from .project_locks import serialized_project_access
 from .proposals import create_proposal, get_proposal, set_proposal_draft
 from .revisions import revision_head
 from .scenes import get_scene, split_scene_text
@@ -67,6 +68,7 @@ def _ensure_storyline_repo(paths: ProjectPaths) -> tuple[dict[str, Any], str]:
   return store, branch
 
 
+@serialized_project_access
 def create_storyline(
   paths: ProjectPaths,
   *,
@@ -107,6 +109,25 @@ def create_storyline(
   return row
 
 
+@serialized_project_access
+def active_storyline_context(paths: ProjectPaths) -> dict[str, Any]:
+  """The active experiment's author intent, without diffing other Storylines."""
+  store = _read_store(paths)
+  if not store["storylines"]:
+    return {}
+  branch = current_branch(paths)
+  active = next((row for row in store["storylines"] if row["branch"] == branch), None)
+  if active is None:
+    return {}
+  brief = active.get("experiment_brief", {})
+  return {
+    "id": active["id"], "name": active["name"], "branch": branch,
+    "experiment_brief": {key: brief.get(key, [] if key == "protected_constraints" else "")
+                         for key in ("hypothesis", "protected_constraints", "intended_scope", "success_criteria")},
+  }
+
+
+@serialized_project_access
 def list_storylines(paths: ProjectPaths) -> dict[str, Any]:
   store = _read_store(paths)
   branch_rows = []
@@ -137,6 +158,7 @@ def list_storylines(paths: ProjectPaths) -> dict[str, Any]:
   return {"primary_branch": store.get("primary_branch", ""), "current_branch": current, "storylines": rows}
 
 
+@serialized_project_access
 def switch_storyline(paths: ProjectPaths, storyline_id: str | None = None, *, primary: bool = False) -> dict[str, Any]:
   store = _read_store(paths)
   current = current_branch(paths)
@@ -162,6 +184,7 @@ def switch_storyline(paths: ProjectPaths, storyline_id: str | None = None, *, pr
   return {"branch": result["name"], "current": result["current"], "primary": primary}
 
 
+@serialized_project_access
 def compare_storyline(paths: ProjectPaths, storyline_id: str) -> dict[str, Any]:
   store = _read_store(paths)
   storyline = next((row for row in store["storylines"] if row["id"] == storyline_id), None)
@@ -293,6 +316,7 @@ def _semantic_storyline_delta(paths: ProjectPaths, primary: str, storyline_ref: 
   }
 
 
+@serialized_project_access
 def create_storyline_integration_changes(
   paths: ProjectPaths,
   storyline_id: str,
@@ -363,6 +387,7 @@ def create_storyline_integration_changes(
   return {"storyline_id": storyline_id, "change_group_id": change_group_id, "proposal_count": len(proposals), "proposals": proposals}
 
 
+@serialized_project_access
 def update_storyline_status(paths: ProjectPaths, storyline_id: str, *, status: str) -> dict[str, Any]:
   if status not in {"active", "archived"}:
     raise OpenAuthorError("Storyline status must be active or archived.")
@@ -376,6 +401,7 @@ def update_storyline_status(paths: ProjectPaths, storyline_id: str, *, status: s
   return storyline
 
 
+@serialized_project_access
 def rename_storyline(paths: ProjectPaths, storyline_id: str, *, name: str) -> dict[str, Any]:
   if not name.strip():
     raise OpenAuthorError("Storyline name is required.")
@@ -396,6 +422,7 @@ def rename_storyline(paths: ProjectPaths, storyline_id: str, *, name: str) -> di
   return storyline
 
 
+@serialized_project_access
 def duplicate_storyline(paths: ProjectPaths, storyline_id: str, *, name: str) -> dict[str, Any]:
   if not name.strip():
     raise OpenAuthorError("Duplicated Storyline name is required.")
@@ -422,6 +449,7 @@ def duplicate_storyline(paths: ProjectPaths, storyline_id: str, *, name: str) ->
   return row
 
 
+@serialized_project_access
 def save_storyline_progress(paths: ProjectPaths, storyline_id: str) -> dict[str, Any]:
   store = _read_store(paths)
   storyline = next((row for row in store["storylines"] if row["id"] == storyline_id), None)

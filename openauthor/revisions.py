@@ -9,6 +9,7 @@ from typing import Any
 
 from .codex import export_codex_json
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
+from .project_locks import serialized_project_access
 from .scenes import split_scene_text
 
 REVISION_SCHEMA_VERSION = 1
@@ -30,6 +31,7 @@ def ensure_revision_store(paths: ProjectPaths) -> None:
   paths.revision_records_dir.mkdir(parents=True, exist_ok=True)
 
 
+@serialized_project_access
 def revision_head(paths: ProjectPaths) -> str:
   if not paths.revision_head_file.exists():
     return ""
@@ -57,6 +59,7 @@ def _store_object(paths: ProjectPaths, content: str) -> str:
   return digest
 
 
+@serialized_project_access
 def create_revision(
   paths: ProjectPaths,
   message: str,
@@ -236,6 +239,7 @@ def compare_revisions(paths: ProjectPaths, base_revision: str, head_revision: st
   }
 
 
+@serialized_project_access
 def restore_revision(
   paths: ProjectPaths,
   revision_id: str,

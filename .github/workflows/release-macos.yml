@@ -27,16 +27,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: desktop/package-lock.json
+          cache-dependency-path: |
+            contracts/package-lock.json
+            desktop/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Install desktop dependencies
-        run: npm ci --prefix desktop
+        run: make install-desktop
 
       - name: Prepare checksum-verified embedded runtime
         env:

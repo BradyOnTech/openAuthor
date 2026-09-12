@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/project-key-envelope/v1",
+  "title": "openAuthor Sealed Project Key Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "project_id", "key_version", "recipient_device_id", "recipient_key_id", "sender_device_id", "algorithm", "sealed_project_key", "sealed_project_key_sha256", "sealed_project_key_byte_length", "created_at"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.project-key-envelope"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "key_version": {"type": "integer", "minimum": 1},
+    "recipient_device_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "recipient_key_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "sender_device_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "algorithm": {"const": "x25519-xsalsa20-poly1305-sealedbox-v1"},
+    "sealed_project_key": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/base64url"},
+    "sealed_project_key_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "sealed_project_key_byte_length": {"const": 80},
+    "created_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"}
+  }
+}

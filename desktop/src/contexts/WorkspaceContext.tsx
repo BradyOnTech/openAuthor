@@ -202,8 +202,8 @@ export function useWorkspace(): WorkspaceState {
   return ctx;
 }
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const registry = useMemo(() => createProjectRegistryClient(), []);
+export function WorkspaceProvider({ children, registryMode = "auto" }: { children: ReactNode; registryMode?: "auto" | "local" }) {
+  const registry = useMemo(() => createProjectRegistryClient(registryMode), [registryMode]);
   const routeSelectionRef = useRef(routeProjectSelection());
   const legacyMigratedRef = useRef(false);
 
