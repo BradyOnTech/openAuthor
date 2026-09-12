@@ -19,7 +19,7 @@
 Operator machine requirements:
 
 - Python 3.11+ with editable core install (`pip install -e .`)
-- Node.js 20+
+- Node.js 22.6+ (use the repository's `.nvmrc` to select Node 22)
 - Rust stable toolchain (`cargo`, `rustc`)
 - macOS build dependencies required by Tauri/WebKit
 
@@ -29,12 +29,31 @@ Validation command:
 make desktop-prereq
 ```
 
+## Real-engine browser workflow
+
+```bash
+make install-desktop
+npx --prefix desktop playwright install chromium
+make test-desktop-e2e
+```
+
+This opens the rendered application in Chromium and adapts only the native
+transport to real Python CLI subprocesses. It creates a disposable novel, writes
+prose, enters/exits focus mode, generates a deterministic local-provider Change
+Set, reviews/applies/undoes it, and reloads the saved manuscript. Screenshots and
+failure traces are saved under `desktop/test-results/`. It never uses API keys or
+an author's existing manuscript. Set `OPENAUTHOR_TEST_PYTHON` to select a Python
+executable; `OPENAUTHOR_BROWSER_EXECUTABLE` optionally selects an installed browser.
+
+This gate complements the native Rust bridge tests. It does not certify Tauri
+packaging, live-provider creative quality, microphone hardware, or mobile devices.
+
 ## Local setup
 
 ```bash
 make setup
 pip install -e .
-cd desktop && npm install && cd ..
+make install-desktop
 make desktop-prereq
 ```
 
@@ -159,7 +178,7 @@ make desktop-tauri
 1. Pull latest repository changes.
 2. Refresh Python and Node dependencies:
    - `pip install -e .`
-   - `cd desktop && npm install && cd ..`
+   - `make install-desktop` (use `make install-js` for voice/mobile development)
 3. Run `make desktop-smoke`.
 4. Run `make test-scale`.
 5. If either gate fails, fix prerequisites or regressions before attempting packaging.

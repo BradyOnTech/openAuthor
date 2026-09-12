@@ -12,6 +12,7 @@ Product capabilities include:
 - Evidence-backed Change Sets with per-hunk review, author feedback, and atomic multi-scene application
 - Temporal Story Memory with Canon Facts, character knowledge, relationships, arcs, setups/payoffs, and diagnostics
 - Book, Scene, Chapter, Character, and Storyline-scoped Assistant conversations with durable artifact promotion
+- Author-approved [Writing Voice](docs/writing-voice.md), original craft presets, exemplar analysis and short prose comparisons with review-first manuscript handoff
 - Human-readable Markdown scenes, portable planning files, import/export, and a private content-free product dashboard
 
 The desktop product uses Tauri + React with a supervised, checksum-pinned embedded Python core. The runtime boundary preserves local files and a clean path to replace individual services only when evidence justifies it.
@@ -34,7 +35,7 @@ make desktop-smoke
 ## Local setup (blank machine -> first run)
 
 ```bash
-# 1) install Python 3.11+, Node 20+, Rust stable
+# 1) install Python 3.11+, Node 22.6+ (.nvmrc selects Node 22), Rust stable
 # 2) clone and enter repository
 git clone <your-repo-url> openAuthor
 cd openAuthor
@@ -42,7 +43,7 @@ cd openAuthor
 # 3) install core + desktop dependencies
 python3 -m pip install --upgrade pip
 python3 -m pip install -e .
-cd desktop && npm install && cd ..
+make install-desktop
 
 # 4) verify toolchain/runtime contracts
 make desktop-prereq
@@ -62,10 +63,14 @@ The active desktop includes project onboarding, manuscript writing and recovery,
 Release builds embed a checksum-pinned Python runtime, so authors do not install Python or use a terminal. Developers can build and verify the macOS package with `make runtime-prepare`, `make macos-bundle`, and `make macos-bundle-check`; signed/notarized prereleases are produced by the dedicated macOS release workflow when Apple credentials are configured.
 
 ```bash
+make install-desktop
 cd desktop
-npm install
 npm run tauri:dev
 ```
+
+For shared contracts, session gateway, and mobile development, run
+`make install-js` followed by `make test-all`. Current production gates and
+verification evidence are tracked in [Production readiness](docs/production-readiness.md).
 
 See `desktop/README.md`, `docs/desktop-architecture.md`, and `docs/desktop-runbook.md`.
 
@@ -209,7 +214,7 @@ AI generation artifacts:
 - Generation is blocked fail-closed when configured per-run or rolling budget caps would be exceeded; budget violations are logged as failed generation runs with policy/usage details.
 - The active desktop Budget panel includes policy controls (view/update/reset) plus daily/weekly usage visibility for recovery when generation is budget-blocked.
 - The active proposal generator exposes retrieval controls, while Assistant chat displays cited context. Advanced run-level provenance remains a core capability awaiting a V2 product surface.
-- Voice command and dictation helper code remains in the repository but is intentionally hidden from the active product until the trusted golden loop is complete.
+- Conversational voice and the read/chat/capture/review mobile companion are active development, with a shared native/browser delivery path. See `docs/voice-mobile-build-plan.md`; live voice, hosted sync, and physical-device release validation remain open.
 - Preferred runs can be pinned per scene via generation pin/unpin commands and are surfaced in runs metadata (`preferred_for_scene`).
 - Generation rerun, comparison, pinning, and export primitives exist in the core or tested helpers but are hidden from the active V2 product pending a coherent revision-history experience.
 - Workspace audit/repair and performance baselines are currently CLI-only release tools.

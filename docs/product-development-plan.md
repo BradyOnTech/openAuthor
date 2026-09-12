@@ -4,6 +4,161 @@ Status: canonical forward-looking product plan
 Scope: product strategy, domain model, delivery sequence, release gates, and success measures
 Engineering history: `docs/plan.md`
 
+Current author-task assessment and iteration priorities: [Author journey readiness](author-journey-readiness.md).
+The September 7 iteration adds chapter reading and a connected browser/engine
+journey through import, planning, Memory, search, copilot notes and export. Future
+iterations must advance whole writing tasks alongside safety fixes; feature
+inventory and green unit tests alone do not establish a useful application.
+
+## Approved working direction — 2026-09-07
+
+The author accepted the recap and vision: a desktop studio trusted with the
+manuscript, paired with a phone companion for reading, story-aware voice,
+capturing ideas, and returning work for desktop review. This section is the
+current execution sequence; older phase-completion statements below describe
+implementation checkpoints, not present-day release certification.
+
+We have enough feature breadth to pursue a useful novel-writing application.
+Each iteration must complete an author task, address the bugs that obstruct it,
+and verify the outcome. Do not replace product progress with an indefinite list
+of isolated safety fixes or add standalone panels without a demonstrated need.
+
+### Delivery sequence and acceptance evidence
+
+1. **Finish the current assistant reliability checkpoint.** Complete assembled
+   request budgeting, required-context preservation and understandable recovery
+   when a request is too large. At resumption, the browser regression correctly
+   rejects an oversized chapter and preserves the question, but an error banner
+   blocks Send after switching to Scene scope. Finish that interaction, rerun
+   targeted and broad checks, and record the exact evidence. Estimated input
+   limits must not be presented as exact token billing or a session-wide voice
+   spending guarantee.
+2. **Prove a substantial-book editorial loop.** Use an original or authorized
+   longer manuscript with deliberate continuity, pacing, character-knowledge and
+   voice issues. Exercise chapter diagnosis, distant evidence, coordinated scene
+   revisions, protected facts, alternate Storylines, selective integration and
+   undo. Judge useful changes and preserved author intent, not just successful
+   requests. Start with deterministic mechanics; agree on manuscript scope and
+   a spending limit before live-provider evaluation.
+3. **Deliver the mobile voice companion as a parallel product track.** The first
+   acceptance journey is desktop connection/publication, opening the book on a
+   real phone, scene-aware voice, interruption and reconnect, capture, and desktop
+   review. PWA is the current first delivery candidate, not a substitute for
+   physical iOS/Android testing. Assess the desktop-connected option below before
+   making a new hosting commitment. Existing encrypted sync work remains intact.
+4. **Improve daily writing continuity alongside those journeys.** Prioritize
+   persistent reading position, retained Plan drafts, discoverable saved notes,
+   clear pending-review state, keyboard/touch accessibility and recoverable
+   errors. Select the next feature based on a demonstrated author obstacle.
+5. **Complete release gates across both tracks.** Verify crash recovery,
+   backup/restore, remaining storage races, hosted authorization where used,
+   native credentials, physical-device audio, signed packaging and clean-machine
+   installation. Passing local tests or building a PWA is not a release.
+
+Beyond these milestones, connect existing diagnostics, Story Memory, character
+arcs and setups/payoffs into a book-level revision plan: identify issues, let the
+author prioritize them, review changes and track unresolved work. Full mobile
+editing, collaboration, marketplace features and publishing/typesetting remain
+outside the first companion delivery.
+
+### Mobile option to evaluate: connection to a running desktop
+
+The author suggested a remote companion that relies on a running desktop, perhaps
+through an integrated Tailscale connection. ChatGPT and T3Code were mentioned as
+possible examples; their exact architectures have not been verified here and
+must not be cited as established implementation evidence.
+
+This is an option for evaluation, not approval to install Tailscale, expose a
+desktop service, deploy hosting or replace the existing sync implementation.
+The subsequent [first-party source evaluation](research/desktop-connected-mobile.md)
+verifies T3 Code's running-host/pairing/Tailscale HTTPS pattern; the ChatGPT
+analogy remains unverified. The research recommends a bounded loopback-only
+context/capture bridge experiment, preserving encrypted offline reading/capture,
+before any separately authorized real-device network exposure. This is a test
+candidate, not a decision to replace the current architecture.
+Compare three candidates against the same real-phone acceptance journey:
+
+- Current encrypted-snapshot companion with a hosted voice-session gateway.
+- Live desktop-connected companion with authenticated, narrowly scoped access
+  to desktop context and assistant services.
+- A hybrid that uses a live desktop when available and downloaded reading/capture
+  when it is not.
+
+Evaluate onboarding effort, desktop sleep/offline behavior, network switching,
+HTTPS and microphone permissions, phone latency, device revocation, key handling,
+distribution requirements and operational cost. Distinguish desktop-owned
+context/tools from model inference: desktop connection does not imply that a
+cloud voice model runs locally. Private network reachability alone must not be
+treated as authorization to a book or to manuscript-changing actions.
+
+Before choosing, inspect first-party documentation/source and test a bounded
+connection prototype if needed. Prefer the option that gives the author a
+reliable read/talk/capture/handoff experience with the least operational burden.
+Keep the manuscript desktop-reviewed in every option, make desktop availability
+visible, and preserve captured work during disconnects. Hosting or network
+exposure requires a separate explicit decision.
+
+### How to resume and report progress
+
+The first reliability checkpoint has now passed its focused browser regression:
+required chapter input is rejected without losing the question, Scene retry keeps
+complete focused prose, and notifications/onboarding no longer cover controls.
+Assembled-input estimates and later text-tool rounds have focused core coverage.
+See the dated input-budget entry in `production-readiness.md` for broad results
+and remaining limits. Next advance the substantial-book editorial journey while
+evaluating mobile connection options before a new hosting commitment.
+
+The next pass added a [36,476-word mechanical editorial workload](editorial-workload.md)
+and verified distant citations, protected coordinated application and per-scene
+undo. It fixed late composer initialization, stale proposal-tab identity and
+group-apply review state, plus a local fallback comparison-phrase error. This
+does not complete non-templated manuscript/editorial-quality validation. Useful
+next author tasks are explicit group undo and retained review/reading state,
+alongside the non-templated exercise and bounded mobile bridge candidate.
+
+The September 11 pass delivers explicit coordinated undo. Changes lists the
+affected scenes and restores the recorded group in one action and one new
+Revision. The shared engine refuses newer scene-file changes, partial prior
+undo, missing records and a changed Storyline before restoring anything. The
+64-scene browser journey now uses group undo, with a separate real-core browser
+case protecting newer author writing. Older groups without recorded undo scope
+retain individual review; this is not multi-file crash recovery. Next prioritize
+retained reading position and unfinished review/Plan drafts alongside the
+non-templated editorial exercise and bounded mobile companion experiment.
+
+Read this section and `author-journey-readiness.md` at resumption. Use
+`production-readiness.md` for dated verification history and
+`voice-mobile-build-plan.md` for implementation architecture. Report implemented,
+locally verified, real-device verified and release-certified states separately.
+Keep known failures visible; do not overwrite historical evidence with newer
+test counts or claim a full regression run covered edits made after it started.
+
+### Approved Writing Voice extension — 2026-09-11
+
+The author requested more control over copilot writing quality and approved the
+Writing Voice workflow. This is now implemented: an editable per-book profile,
+three original craft presets, review-first interpretation of author-selected
+exemplars and natural-language briefs, shared manuscript-prose guidance, and
+short two/three-direction comparisons with explicit author quality assessments.
+Selecting a sample queues an ordinary Change Set; neither analysis nor comparison
+automatically changes the approved voice, canon or manuscript. The copilot's
+conversational personality is separate from manuscript prose style.
+
+See [Writing Voice](writing-voice.md) for the workflow, bounds, persistence,
+provider/local differences and verification. The shared projection reaches text
+copilot, desktop voice preparation, planning, whole-scene drafting, hunk revision
+and merge generation. Mobile's independent snapshot/context adapter still needs
+the profile. Generic presets express craft traits, not author imitation.
+
+Next pair this workflow with the non-templated editorial-quality exercise: compare
+short original scenes, judge character distinction and intended emotional effect,
+and verify preserved facts separately from prose preference. Existing local and
+provider-seam tests establish workflow mechanics and supplied instructions, not
+literary quality. Live evaluation needs agreed manuscript scope and spending.
+Keep retained reading/review/Plan state and the bounded companion experiment in
+the next delivery sequence; do not replace them with more style controls before
+testing whether these controls produce useful writing.
+
 ## Delivery status
 
 Phase A is complete and Phase B is implementation-complete but not release-certified. The repository has a validated capability registry, an honest active-V2 documentation boundary, a deterministic 400-scene scale fixture with enforced budgets, a rendered React workflow contract, a native Tauri-to-core golden-loop gate, and a strict on-device product-signal schema with a private activation/trust dashboard. Phase B has delivered staged Markdown/TXT/DOCX/Scrivener import, structure preview, Markdown/DOCX export with loss reporting, crash-recovery journaling, startup health with guided safe repair, a first-safe-revision guide, and a checksum-pinned Python runtime verified inside a real macOS application bundle. Safe proposal apply/undo and retrieval freshness use an internal content-addressed Revision store, so the golden loop does not require system Git; Git is reserved for the Storyline adapter. Developer ID credentials, Apple notarization evidence, both-architecture clean-machine validation, and automated packaged-GUI execution are external release gates, so no visible capability is labeled release-ready. Current truth lives in [`capabilities.json`](capabilities.json) and [`capabilities.md`](capabilities.md).
@@ -18,7 +173,14 @@ Phase F has replaced raw branch creation as the default experiment workflow. The
 
 Phase G's durable editorial workflow is implemented in the active product. The composer includes built-in and author-defined Editorial Passes, author-selected Style Profiles, one or three intentionally different creative directions, and outcome-centered comparisons across voice shape, scope, Story Memory impact, and Canon risk. Assistant conversations have explicit Book, Scene, Chapter, Character, and Storyline presets, and outputs promote into Change Sets, review-first Story Memory suggestions, visible notes, or Storyline experiments instead of dying in chat. Revision History includes intent-aware retrospectives that summarize changed scenes, accepted hunks, Story Memory movement, and remaining continuity goals. The committed seven-genre evaluation exercises every built-in Pass, measures 1.0 targeted issue reduction, and reports zero protected-term or introduced-name canon errors. Automated rendered coverage for every promotion and comparison variant remains a release-hardening gate rather than a missing product surface.
 
-Phase H remains deliberately inactive. Optional sync, collaboration, hosted inference, and companion surfaces are candidate investments only after the private local dashboard and design-partner research demonstrate single-author retention. Building them now would weaken the local-first wedge and violate this plan's sequencing.
+Phase H is partially activated by the author's explicit roadmap decision. A mobile
+companion with voice is now a current requirement, not a retention-gated future
+candidate. It supports reading, story-aware conversation, capture, and desktop
+review, with opt-in encrypted sync and hosted voice. The first accessible delivery
+path is an installable browser/PWA experience sharing the native companion's
+domain logic and interface. Full mobile manuscript editing, collaboration, and
+broader hosted services remain deferred. See `voice-mobile-build-plan.md` for the
+active scope and `production-readiness.md` for evidence and remaining gates.
 
 ### Implementation verification record
 

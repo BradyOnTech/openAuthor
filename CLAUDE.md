@@ -61,6 +61,10 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 **Proposal-based edits**: AI never silently mutates content. All AI output goes through a proposal queue (add/generate → draft → review → apply/reject). Generated proposals are normalized to four sections: Intent, Constraints, Edit Plan, Continuity Notes. `proposal draft` asks a provider for the full revised scene body (`proposed_body`); `proposal apply` writes it to the scene after a pre-apply snapshot, refusing stale drafts unless `--force`.
 
+**Manuscript transactions**: Scene/proposal/revision and Storyline operations share a reentrant, cross-process project lock. Hold it from the initial read through commit or rollback; do not add per-screen locks or hold it across provider calls. See `docs/manuscript-transactions.md` for the interface, lock ordering, tested coverage and remaining limits. Advisory locking is not crash recovery or stale-editor conflict detection.
+
+**Editor preconditions**: Desktop prose and Inspector saves send the `edit_version` returned by `get_scene` through `scene update --expected-version`. `scene_edits.save_scene_edit` compares submitted fields and Storyline scope under the project lock and archives conflicts without replacing the manuscript. Never substitute a freshly fetched version for a dirty editor's loaded version without explicit review. Internal `update_scene` and legacy CLI updates without the flag do not provide this check.
+
 **Merge-conflict flow**: `branch conflicts` scans base...head for three-way conflicts without touching the worktree (git merge-file per overlapping path). `branch resolve --path <scene>` generates an AI-reconciled scene as a `merge_resolution` proposal; `branch merge --resolution <proposal-id>` performs the merge writing the reconciled content into conflicted files. Merges without resolutions still auto-abort on conflict.
 
 ## Key Conventions
