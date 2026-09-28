@@ -19,6 +19,7 @@ export LC_ALL="en_US.UTF-8"
 export LC_CTYPE="en_US.UTF-8"
 "$RUNTIME/bin/python3" -I -c 'import openauthor, sqlite3; assert openauthor.__file__; assert sqlite3.sqlite_version'
 "$RUNTIME/bin/python3" -I -m openauthor --help >/dev/null
+"$RUNTIME/bin/python3" -I "$ROOT/scripts/verify_packaged_recovery.py"
 
 if [[ "${OPENAUTHOR_REQUIRE_SIGNED_BUNDLE:-0}" == "1" ]]; then
   codesign --verify --deep --strict --verbose=2 "$APP"

@@ -15,6 +15,7 @@ from .ai import (
   regenerate_change_hunk,
 )
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
+from .backups import create_backup, restore_backup, verify_backup
 from .budget import (
   get_generation_budget_report,
   reset_generation_budget_policy,
@@ -108,8 +109,9 @@ from .proposals import (
   update_change_hunk,
   update_proposal_status,
 )
+from .project_lock import project_write_lock
 from .retrieval import build_retrieval_index, get_retrieval_index_status, query_retrieval_index
-from .revisions import compare_revisions, get_revision, list_revisions, restore_revision, revision_retrospective
+from .revisions import checkpointed_edit, compare_revisions, create_revision, get_revision, list_revisions, restore_revision, revision_retrospective
 from .scenes import add_scene, get_scene, list_scenes, scene_id, update_scene
 from .story_memory import correct_memory_suggestion, extract_memory_suggestions, list_memory_suggestions, queue_memory_suggestion, review_memory_suggestion
 from .search import search_project
@@ -432,8 +434,21 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_undo.add_argument("--force", action="store_true", help="Replace scene changes made after apply.")
   proposal_undo.add_argument("--json", action="store_true", help="Output JSON.")
 
+  backup_parser = subparsers.add_parser("backup", help="Create, verify, and recover portable book archives.")
+  backup_sub = backup_parser.add_subparsers(dest="backup_command", required=True)
+  for action in ("create", "verify", "restore"):
+    command = backup_sub.add_parser(action)
+    if action != "create":
+      command.add_argument("--source", required=True)
+    if action != "verify":
+      command.add_argument("--target", required=True)
+    command.add_argument("--json", action="store_true")
+
   revision_parser = subparsers.add_parser("revision", help="Inspect, compare, and restore local Revisions.")
   revision_sub = revision_parser.add_subparsers(dest="revision_command", required=True)
+  revision_save = revision_sub.add_parser("save", help="Save a named version of the manuscript, Plan, and Story Memory.")
+  revision_save.add_argument("--message", required=True)
+  revision_save.add_argument("--json", action="store_true", help="Output JSON.")
   revision_list = revision_sub.add_parser("list", help="List recent Revisions.")
   revision_list.add_argument("--limit", type=int, default=50)
   revision_list.add_argument("--json", action="store_true", help="Output JSON.")
@@ -443,6 +458,7 @@ def build_parser() -> argparse.ArgumentParser:
   revision_diff = revision_sub.add_parser("diff", help="Compare two Revisions.")
   revision_diff.add_argument("--base", required=True)
   revision_diff.add_argument("--head", required=True)
+  revision_diff.add_argument("--include-unchanged", action="store_true", help="Include all files available to restore.")
   revision_diff.add_argument("--json", action="store_true", help="Output JSON.")
   revision_restore = revision_sub.add_parser("restore", help="Restore selected files as a new Revision.")
   revision_restore.add_argument("--id", required=True)
@@ -1186,6 +1202,16 @@ def _chat_context_overrides(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _run(args: argparse.Namespace) -> int:
+  if args.command == "backup":
+    if args.backup_command == "create":
+      row = create_backup(_paths_from_cwd(), Path(args.target))
+    elif args.backup_command == "verify":
+      row = verify_backup(Path(args.source))
+    else:
+      row = restore_backup(Path(args.source), Path(args.target))
+    print(json.dumps(row, indent=None if args.json else 2))
+    return 0
+
   if args.command == "init":
     root = Path(args.path).resolve()
     import_summary = None
@@ -1263,10 +1289,14 @@ def _run(args: argparse.Namespace) -> int:
         for row in rows:
           print(f"{row['id'][:12]}\t{row['kind']}\t{row['message']}")
       return 0
-    if args.revision_command == "get":
+    if args.revision_command == "save":
+      if not args.message.strip():
+        raise OpenAuthorError("A version name is required.")
+      row = get_revision(paths, create_revision(paths, args.message.strip()))
+    elif args.revision_command == "get":
       row = get_revision(paths, args.id)
     elif args.revision_command == "diff":
-      row = compare_revisions(paths, args.base, args.head)
+      row = compare_revisions(paths, args.base, args.head, include_unchanged=args.include_unchanged)
     elif args.revision_command == "retrospective":
       row = revision_retrospective(paths, args.base, args.head)
     else:
@@ -2522,8 +2552,35 @@ def main(argv: list[str] | None = None) -> int:
   parser = build_parser()
   args = parser.parse_args(argv)
   try:
+    author_edits = {
+      "scene": {"add", "update"},
+      "plan": {"brief", "act-add", "chapter-add", "scene-assign", "scene-meta", "beat-add", "note-add"},
+      "codex": {"add", "update", "relationship-add", "relationship-delete"},
+      "memory": {"review", "correct", "suggest", "fact-add", "arc-add", "setup-add", "setup-payoff", "question-add", "dispose"},
+    }
+    action = getattr(args, f"{args.command}_command", "")
+    if action in author_edits.get(args.command, set()):
+      import io
+      from contextlib import redirect_stdout
+      output = io.StringIO()
+      label = f"{args.command.title()} {action}: {getattr(args, 'id', '') or getattr(args, 'title', '') or getattr(args, 'name', '')}".rstrip(": ")
+      paths = _paths_from_cwd()
+      with project_write_lock(paths):
+        with checkpointed_edit(paths, label):
+          with redirect_stdout(output):
+            result = _run(args)
+      print(output.getvalue(), end="")
+      return result
+    if (
+      args.command == "revision" and action in {"save", "restore"}
+      or args.command == "proposal" and action in {"apply", "apply-batch", "undo"}
+      or args.command == "storyline" and action not in {"list"}
+      or args.command == "branch" and action in {"switch", "merge", "create"}
+    ):
+      with project_write_lock(_paths_from_cwd()):
+        return _run(args)
     return _run(args)
-  except OpenAuthorError as error:
+  except (OpenAuthorError, OSError) as error:
     print(f"error: {error}", file=sys.stderr)
     return 2
 

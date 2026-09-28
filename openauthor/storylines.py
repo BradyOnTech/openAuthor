@@ -146,6 +146,8 @@ def switch_storyline(paths: ProjectPaths, storyline_id: str | None = None, *, pr
     active_storyline["last_activity_at"] = utc_now()
     active_storyline["updated_at"] = utc_now()
     _write_store(paths, store)
+  else:
+    create_snapshot(paths, "Save Primary progress before changing Storylines")
   if primary:
     branch = store.get("primary_branch", "")
   else:

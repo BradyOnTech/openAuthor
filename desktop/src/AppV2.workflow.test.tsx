@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { invoke as mockedInvoke } from "@tauri-apps/api/core";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,6 +31,10 @@ const harness = vi.hoisted(() => ({
   primaryBranch: "main",
   currentBranch: "main",
   calls: [] as string[][],
+  saveGate: null as null | (() => Promise<void>),
+  saveRoots: [] as string[],
+  versions: [] as Array<Record<string, unknown>>,
+  branchScenes: {} as Record<string, Array<Record<string, unknown>>>,
 }));
 
 function response(payload: unknown, status = 0) {
@@ -87,6 +91,10 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "project" && action === "inspect") {
       return response({ project_id: harness.projectId, name: "Golden Novel" });
     }
+    if (root === "backup") {
+      if (action === "restore") harness.initialized = true;
+      return response({ verified: true, file_count: 20, path: argument(args, "--target"), project_root: argument(args, "--target") });
+    }
     if (root === "manuscript" && action === "preview") {
       return response({
         source: argument(args, "--source"),
@@ -134,8 +142,10 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response(harness.scenes.find((scene) => scene.id === argument(args, "--id")));
     }
     if (root === "scene" && action === "update") {
+      harness.saveRoots.push(payload.projectRoot || "");
       const scene = harness.scenes.find((item) => item.id === argument(args, "--id"));
       if (!scene) return response("Unknown scene", 1);
+      if (harness.saveGate) await harness.saveGate();
       if (hasArgument(args, "--title")) scene.title = argument(args, "--title");
       if (hasArgument(args, "--summary")) scene.summary = argument(args, "--summary");
       if (hasArgument(args, "--pov")) scene.pov = argument(args, "--pov");
@@ -391,13 +401,25 @@ vi.mock("@tauri-apps/api/core", () => ({
         },
       });
     }
-    if (root === "revision" && action === "list") return response([]);
+    if (root === "revision" && action === "list") return response(harness.versions);
+    if (root === "revision" && action === "save") {
+      const version = { id: "revision-named", parent: "", message: argument(args, "--message"), kind: "manual", created_at: new Date().toISOString(), file_count: harness.scenes.length };
+      harness.versions.push(version);
+      return response(version);
+    }
+    if (root === "revision" && action === "diff") return response({
+      base_revision: argument(args, "--base"), head_revision: argument(args, "--head"), changed_file_count: 0,
+      files: ["manuscript/structure.json", "codex/codex.json"].map(path => ({ path, status: "unchanged", before: "{}", after: "{}", diff: "" })),
+    });
+    if (root === "revision" && action === "retrospective") return response({ summary: "Named version", changed_scenes: [], remaining_goals: [], intent: "" });
+    if (root === "revision" && action === "restore") return response({ kind: "restore" });
     if (root === "pass" && action === "list") return response([
       { id: "pass-pacing", name: "Pacing", goal: "Improve narrative momentum.", instruction: "Run a pacing pass.", context_policy: { current_scene: true, nearby_scenes: 1, story_memory: "auto" }, evaluation_criteria: ["momentum"], built_in: true }
     ]);
     if (root === "style" && action === "get") return response(null);
     if (root === "storyline" && action === "list") return response({ primary_branch: harness.primaryBranch, current_branch: harness.currentBranch, storylines: harness.storylines });
     if (root === "storyline" && action === "create") {
+      harness.branchScenes[harness.currentBranch] = structuredClone(harness.scenes);
       harness.storylines.forEach((row) => { row.current = false; });
       const row = {
         id: "storyline-golden", name: argument(args, "--name"), branch: "storyline/golden", status: "active",
@@ -408,9 +430,11 @@ vi.mock("@tauri-apps/api/core", () => ({
       harness.storylines.push(row); harness.currentBranch = row.branch; return response(row);
     }
     if (root === "storyline" && action === "switch") {
+      harness.branchScenes[harness.currentBranch] = structuredClone(harness.scenes);
       const primary = args.includes("--primary");
       harness.currentBranch = primary ? harness.primaryBranch : String(harness.storylines.find((row) => row.id === argument(args, "--id"))?.branch ?? harness.primaryBranch);
       harness.storylines.forEach((row) => { row.current = row.branch === harness.currentBranch; });
+      harness.scenes = structuredClone(harness.branchScenes[harness.currentBranch] ?? harness.scenes);
       return response({ branch: harness.currentBranch, current: true, primary });
     }
     if (root === "storyline" && action === "compare") return response({
@@ -530,12 +554,152 @@ describe("active V2 author workflow", () => {
     harness.primaryBranch = "main";
     harness.currentBranch = "main";
     harness.calls.length = 0;
+    harness.saveGate = null;
+    harness.saveRoots.length = 0;
+    harness.versions.length = 0;
+    harness.branchScenes = {};
   });
 
   afterEach(() => {
     cleanup();
     vi.unstubAllEnvs();
     delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+  });
+
+  async function openWritingScene() {
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Save Safety");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await screen.findByText("No scenes yet.");
+    await user.type(screen.getByPlaceholderText("New scene title..."), "Opening");
+    await user.click(screen.getByRole("button", { name: "Add Scene" }));
+    return { user, body: await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement };
+  }
+
+  it("keeps newer typing and saves it after an older save response", async () => {
+    const { body } = await openWritingScene();
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    fireEvent.change(body, { target: { value: "First edit" } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    fireEvent.change(body, { target: { value: "First edit plus newer typing" } });
+    harness.saveGate = null;
+    await act(async () => { finish(); });
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("First edit plus newer typing"));
+    expect(body.value).toBe("First edit plus newer typing");
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it("resumes newer writing when reopening a tab during its pending save", async () => {
+    const { user, body } = await openWritingScene();
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    fireEvent.change(body, { target: { value: "First edit" } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    fireEvent.change(body, { target: { value: "Newer writing before navigation" } });
+    await user.click(screen.getByTitle(/Plan \(/));
+    await user.click(screen.getByRole("tab", { name: /Opening/ }));
+    const reopened = await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement;
+    expect(reopened.value).toBe("Newer writing before navigation");
+    fireEvent.change(reopened, { target: { value: "Writing after returning" } });
+    harness.saveGate = null;
+    await act(async () => { finish(); });
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Writing after returning"));
+    expect(reopened.value).toBe("Writing after returning");
+  });
+
+  it("retains the recovery draft after a failed save and retries the latest writing", async () => {
+    const { user, body } = await openWritingScene();
+    harness.saveGate = async () => { throw new Error("Disk unavailable"); };
+    fireEvent.change(body, { target: { value: "Writing worth keeping" } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    expect(await screen.findByRole("button", { name: "Retry save" })).toBeTruthy();
+    expect(body.value).toBe("Writing worth keeping");
+    expect(Object.values(localStorage).some(value => String(value).includes("Writing worth keeping"))).toBe(true);
+    harness.saveGate = null;
+    await user.click(screen.getByRole("button", { name: "Retry save" }));
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Writing worth keeping"));
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it("finishes pending saves in their original project after creating another project", async () => {
+    const { user, body } = await openWritingScene();
+    const originalRoot = harness.projectRoot;
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    fireEvent.change(body, { target: { value: "First novel writing" } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    fireEvent.change(body, { target: { value: "First novel final writing" } });
+    await user.click(screen.getByRole("button", { name: "Projects" }));
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Second Novel");
+    const folder = screen.getByRole("textbox", { name: "Project folder" });
+    await user.clear(folder);
+    await user.type(folder, "/tmp/openauthor-save-second");
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await waitFor(() => expect(harness.projectRoot).toBe("/tmp/openauthor-save-second"));
+    harness.saveGate = null;
+    await act(async () => { finish(); });
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("First novel final writing"));
+    expect(harness.saveRoots).toEqual([originalRoot, originalRoot]);
+    expect(screen.queryByRole("tab", { name: /Opening/ })).toBeNull();
+  });
+
+  it("saves a named version after flushing unsaved manuscript writing", async () => {
+    const { user, body } = await openWritingScene();
+    fireEvent.change(body, { target: { value: "The version must include this sentence." } });
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.type(screen.getByRole("textbox", { name: "Version name" }), "Before the alternate ending");
+    await user.click(screen.getByRole("button", { name: "Save version" }));
+    await waitFor(() => expect(harness.versions).toHaveLength(1));
+    expect(harness.scenes[0]?.body).toBe("The version must include this sentence.");
+    expect(await screen.findByRole("button", { name: /Before the alternate ending/ })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /Before the alternate ending/ }));
+    await user.click(await screen.findByRole("button", { name: "Restore plan" }));
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "revision" && args[1] === "restore" && argument(args, "--path") === "manuscript/structure.json")).toBe(true));
+    await user.click(screen.getByRole("button", { name: "Restore Story Memory" }));
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "revision" && args[1] === "restore" && argument(args, "--path") === "codex/codex.json")).toBe(true));
+  });
+
+  it("backs up current writing through Settings and restores into a separate folder", async () => {
+    const { user, body } = await openWritingScene();
+    fireEvent.change(body, { target: { value: "Include my most recent writing." } });
+    await user.click(screen.getByRole("button", { name: "Settings (Cmd+,)" }));
+    await user.type(await screen.findByRole("textbox", { name: "Backup file" }), "/tmp/novel.openauthor.zip");
+    await user.click(screen.getByRole("button", { name: "Create verified backup" }));
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "backup" && args[1] === "create")).toBe(true));
+    const saveIndex = harness.calls.findIndex(args => args[0] === "scene" && args[1] === "update");
+    const backupIndex = harness.calls.findIndex(args => args[0] === "backup");
+    expect(saveIndex).toBeLessThan(backupIndex);
+    expect(harness.scenes[0]?.body).toBe("Include my most recent writing.");
+    await user.click(screen.getByRole("button", { name: "Projects" }));
+    await user.click(await screen.findByRole("button", { name: "Restore backup" }));
+    await user.type(screen.getByRole("textbox", { name: "Backup to restore" }), "/tmp/novel.openauthor.zip");
+    await user.type(screen.getByRole("textbox", { name: "Recovery folder" }), "/tmp/novel-restored");
+    await user.click(screen.getByRole("button", { name: "Verify and restore" }));
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "backup" && args[1] === "restore" && argument(args, "--target") === "/tmp/novel-restored")).toBe(true));
+  });
+
+  it("does not report a complete backup when pending writing cannot be saved", async () => {
+    const { user, body } = await openWritingScene();
+    harness.saveGate = async () => { throw new Error("Disk full"); };
+    fireEvent.change(body, { target: { value: "Unsaved writing must not be omitted silently." } });
+    await user.click(screen.getByRole("button", { name: "Settings (Cmd+,)" }));
+    await user.type(await screen.findByRole("textbox", { name: "Backup file" }), "/tmp/novel.zip");
+    await user.click(screen.getByRole("button", { name: "Create verified backup" }));
+    expect(await screen.findByText(/Backup failed: Save your pending writing/)).toBeTruthy();
+    expect(harness.calls.some(args => args[0] === "backup")).toBe(false);
+    harness.saveGate = null;
+    await user.click(screen.getByRole("button", { name: "Create verified backup" }));
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "backup")).toBe(true));
   });
 
   it("creates a project, edits a scene, and applies a reviewed proposal", async () => {
@@ -810,6 +974,34 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Return to Primary" }));
     await user.click(await screen.findByRole("button", { name: "Prepare 1 Change Set" }));
     await waitFor(() => expect(harness.calls.some((args) => args[0] === "storyline" && args[1] === "integrate")).toBe(true));
+  });
+
+  it("flushes Storyline writing and refreshes open scene tabs on returning to Primary", async () => {
+    const { user, body } = await openWritingScene();
+    fireEvent.change(body, { target: { value: "Primary prose stays protected." } });
+    await user.click(screen.getByTitle(/Storylines \(/));
+    await user.type(screen.getByPlaceholderText("Storyline name"), "Alternate");
+    await user.type(screen.getByPlaceholderText(/Hypothesis/), "Try a different ending.");
+    await user.click(screen.getByRole("button", { name: "Start Storyline" }));
+    await screen.findByText("Alternate");
+    await user.click(screen.getByRole("tab", { name: /Opening/ }));
+    let finish!: () => void;
+    const pending = new Promise<void>(resolve => { finish = resolve; });
+    harness.saveGate = () => pending;
+    fireEvent.change(screen.getByPlaceholderText("Begin writing..."), { target: { value: "The alternate ending." } });
+    await user.click(screen.getByRole("tab", { name: "Storylines" }));
+    await user.click(screen.getByRole("button", { name: "Return to Primary" }));
+    expect(harness.calls.some(args => args[0] === "storyline" && args[1] === "switch")).toBe(false);
+    harness.saveGate = null;
+    await act(async () => { finish(); });
+    await waitFor(() => expect(harness.currentBranch).toBe("main"));
+    await user.click(screen.getByRole("tab", { name: /Opening/ }));
+    await waitFor(() => expect((screen.getByPlaceholderText("Begin writing...") as HTMLTextAreaElement).value).toBe("Primary prose stays protected."));
+    await user.click(screen.getByRole("tab", { name: "Storylines" }));
+    await user.click(await screen.findByRole("button", { name: "Enter" }));
+    await waitFor(() => expect(harness.currentBranch).toBe("storyline/golden"));
+    await user.click(screen.getByRole("tab", { name: /Opening/ }));
+    await waitFor(() => expect((screen.getByPlaceholderText("Begin writing...") as HTMLTextAreaElement).value).toBe("The alternate ending."));
   });
 
   it("records an evidence-backed Canon Fact through Story Memory", async () => {

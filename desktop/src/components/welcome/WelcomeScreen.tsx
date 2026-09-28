@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { BackupRestore } from "../BackupControls";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import {
   getProjectStatus,
@@ -78,6 +79,7 @@ export function WelcomeScreen() {
     setMessage,
   } = useWorkspace();
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
   const [form, setForm] = useState<NewProjectForm>({
     name: "",
     savePath: "",
@@ -284,6 +286,9 @@ export function WelcomeScreen() {
             Open Project
           </button>
         </div>
+
+        <button className="btn btn--ghost" style={{ minHeight: 40 }} aria-expanded={showRecovery} onClick={() => setShowRecovery(value => !value)} disabled={busy}>Restore backup</button>
+        {showRecovery && <BackupRestore onRestored={attachProjectRoot} setError={setError} />}
 
         {/* Not-found prompt (from Open Project) */}
         {openState.kind === "not-found" && (

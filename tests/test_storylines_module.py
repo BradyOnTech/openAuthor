@@ -8,7 +8,7 @@ from pathlib import Path
 from openauthor.git_ops import create_snapshot
 from openauthor.canon import add_open_question
 from openauthor.project import initialize_project
-from openauthor.scenes import add_scene, update_scene
+from openauthor.scenes import add_scene, get_scene, update_scene
 from openauthor.storylines import (
   compare_storyline,
   create_storyline,
@@ -23,6 +23,19 @@ from openauthor.storylines import (
 
 @unittest.skipUnless(shutil.which("git"), "Storyline adapter requires git")
 class StorylineTests(unittest.TestCase):
+  def test_switch_preserves_new_primary_writing_without_manual_git_snapshot(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Primary safety")
+      add_scene(paths, title="Opening", body="Original Primary")
+      alternate = create_storyline(paths, name="Alternate", hypothesis="Try another ending")
+      update_scene(paths, scene_identifier="scene-0001", body="Alternate prose")
+      switch_storyline(paths, primary=True)
+      update_scene(paths, scene_identifier="scene-0001", body="Revised Primary")
+      switch_storyline(paths, alternate["id"])
+      self.assertEqual(get_scene(paths, "scene-0001")["body"].strip(), "Alternate prose")
+      switch_storyline(paths, primary=True)
+      self.assertEqual(get_scene(paths, "scene-0001")["body"].strip(), "Revised Primary")
+
   def test_experiment_compare_and_selective_integration_become_change_sets(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Storylines")
