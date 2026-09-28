@@ -9,14 +9,72 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-from openauthor.ai import generate_proposal, generate_proposal_draft
+from openauthor.ai import ProviderExecutionError, generate_proposal, generate_proposal_draft, regenerate_change_hunk
 from openauthor.project import OpenAuthorError, atomic_write_json, get_project_paths, initialize_project
-from openauthor.proposals import get_proposal, list_proposals, update_proposal_status
+from openauthor.proposals import edit_change_hunk, get_proposal, list_proposals, update_proposal_status
 from openauthor.backups import create_backup, restore_backup
 from openauthor.scenes import add_scene, get_scene, update_scene
 
 
 class ProposalDeliveryTests(unittest.TestCase):
+  def test_hunk_auth_failure_is_logged_and_can_retry_without_changing_the_review(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Hunk auth recovery")
+      add_scene(paths, title="Gate", body="Mara began to count the lanterns.")
+      proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Tighten prose.")
+      proposal = generate_proposal_draft(paths, proposal_id=proposal["id"])
+      args = {"proposal_id": proposal["id"], "hunk_id": proposal["change_set"]["hunks"][0]["id"], "request_id": "expired-session"}
+      error = ProviderExecutionError("Sign in again", category="auth", retriable=False, provider="local", http_status=401)
+      with patch("openauthor.ai._call_provider", side_effect=error):
+        with self.assertRaisesRegex(OpenAuthorError, "auth.*Sign in again"):
+          regenerate_change_hunk(paths, **args)
+      self.assertEqual(get_proposal(paths, proposal["id"]), proposal)
+      logs = [json.loads(path.read_text()) for path in paths.generations_dir.glob("*.json")]
+      failures = [row for row in logs if row.get("status") == "failed"]
+      self.assertEqual(len(failures), 1)
+      self.assertEqual(failures[0]["error"]["http_status"], 401)
+      result = regenerate_change_hunk(paths, **args)
+      self.assertEqual(regenerate_change_hunk(paths, **args), result)
+      self.assertEqual(len(list(paths.generations_dir.glob("*.json"))), 4)
+
+  def test_hunk_response_loss_recovers_one_completed_provider_attempt(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Hunk delivery")
+      add_scene(paths, title="Gate", body="Mara began to count the lanterns.")
+      proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Tighten prose.")
+      proposal = generate_proposal_draft(paths, proposal_id=proposal["id"])
+      args = {"proposal_id": proposal["id"], "hunk_id": proposal["change_set"]["hunks"][0]["id"], "feedback": "Keep the voice.", "request_id": "hunk-request"}
+      def fail_final_receipt(path, payload):
+        if payload.get("completed"):
+          raise OSError("Lost receipt after saving the hunk")
+        atomic_write_json(path, payload)
+      with patch("openauthor.proposal_delivery.atomic_write_json", side_effect=fail_final_receipt):
+        with self.assertRaisesRegex(OSError, "Lost receipt"):
+          regenerate_change_hunk(paths, **args)
+      result = regenerate_change_hunk(paths, **args)
+      self.assertEqual(regenerate_change_hunk(paths, **args), result)
+      self.assertEqual(len(list(paths.generations_dir.glob("*.json"))), 3)
+      with self.assertRaisesRegex(OpenAuthorError, "different inputs"):
+        regenerate_change_hunk(paths, **{**args, "feedback": "A new request needs a new identity."})
+
+  def test_hunk_generation_does_not_replace_an_intervening_author_edit(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Hunk concurrency")
+      add_scene(paths, title="Gate", body="Mara began to count the lanterns.")
+      proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Tighten prose.")
+      proposal = generate_proposal_draft(paths, proposal_id=proposal["id"])
+      hunk_id = proposal["change_set"]["hunks"][0]["id"]
+      from openauthor.ai import _call_provider
+      def edit_while_generating(**kwargs):
+        result = _call_provider(**kwargs)
+        edit_change_hunk(paths, proposal_id=proposal["id"], hunk_id=hunk_id, after_text="My newer replacement.")
+        return result
+      with patch("openauthor.ai._call_provider", side_effect=edit_while_generating):
+        with self.assertRaisesRegex(OpenAuthorError, "changed while"):
+          regenerate_change_hunk(paths, proposal_id=proposal["id"], hunk_id=hunk_id)
+      current = get_proposal(paths, proposal["id"])
+      self.assertEqual(current["change_set"]["hunks"][0]["after_text"], "My newer replacement.")
+
   def test_cli_recovers_repeated_generate_and_draft_commands(self) -> None:
     with tempfile.TemporaryDirectory() as temporary:
       paths = initialize_project(Path(temporary), name="CLI delivery")
@@ -32,8 +90,11 @@ class ProposalDeliveryTests(unittest.TestCase):
       proposal = run(*args)
       self.assertEqual(run(*args)["id"], proposal["id"])
       args = ("draft", "--id", proposal["id"], "--provider", "local", "--request-id", "cli-draft")
+      drafted = run(*args)
+      self.assertEqual(drafted, run(*args))
+      args = ("hunk-regenerate", "--id", proposal["id"], "--hunk", drafted["change_set"]["hunks"][0]["id"], "--provider", "local", "--request-id", "cli-hunk")
       self.assertEqual(run(*args), run(*args))
-      self.assertEqual(len(list(paths.generations_dir.glob("*.json"))), 2)
+      self.assertEqual(len(list(paths.generations_dir.glob("*.json"))), 3)
 
   def test_replayed_generate_and_draft_recover_the_same_artifact_and_usage(self) -> None:
     with tempfile.TemporaryDirectory() as temporary:

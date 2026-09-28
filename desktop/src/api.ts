@@ -666,7 +666,8 @@ export async function regenerateProposalHunk(
   hunkId: string,
   provider: ProposalProvider,
   model?: string,
-  feedback?: string
+  feedback?: string,
+  requestId?: string
 ): Promise<ProposalRecord> {
   const args = [
     "proposal", "hunk-regenerate", "--id", proposalId, "--hunk", hunkId,
@@ -674,6 +675,7 @@ export async function regenerateProposalHunk(
   ];
   if (model?.trim()) args.push("--model", model.trim());
   if (feedback?.trim()) args.push("--feedback", feedback.trim());
+  if (requestId) args.push("--request-id", requestId);
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);

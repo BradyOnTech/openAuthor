@@ -49,19 +49,23 @@ def recoverable_proposal(kind: str):
             raise OpenAuthorError("A generation request id cannot be reused for different inputs.")
         else:
           receipt = {"schema_version": 1, "key": key, "fingerprint": fingerprint, "proposal_id": proposal_id, "completed": False}
-          if kind == "draft":
+          if kind != "generate":
             receipt["initial_artifact_digest"] = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
           atomic_write_json(receipt_path, receipt)
         if artifact_path.exists():
           artifact = get_proposal(paths, proposal_id)
-          saved = artifact.get("generation" if kind == "generate" else "draft", {}).get("delivery", {})
+          if kind == "hunk":
+            hunk = next((row for row in artifact.get("change_set", {}).get("hunks", []) if row.get("id") == arguments["hunk_id"]), {})
+            saved = hunk.get("regeneration", {}).get("delivery", {})
+          else:
+            saved = artifact.get("generation" if kind == "generate" else "draft", {}).get("delivery", {})
           if saved.get("key") == key:
             if saved.get("fingerprint") != fingerprint:
               raise OpenAuthorError("Saved generation belongs to different request inputs.")
             return artifact
         if receipt.get("completed"):
           raise OpenAuthorError("The completed generation artifact has changed or is missing. Inspect Changes instead of replaying it.")
-        if kind == "draft" and receipt.get("initial_artifact_digest") != hashlib.sha256(artifact_path.read_bytes()).hexdigest():
+        if kind != "generate" and receipt.get("initial_artifact_digest") != hashlib.sha256(artifact_path.read_bytes()).hexdigest():
           raise OpenAuthorError("The Change Set changed since this draft request started. Inspect Changes and start a new request instead of replaying it.")
         token = _delivery.set({"key": key, "fingerprint": fingerprint, "proposal_id": proposal_id})
         try:

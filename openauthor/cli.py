@@ -340,6 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_hunk_regenerate.add_argument("--provider", choices=sorted(SUPPORTED_PROVIDERS), default="local")
   proposal_hunk_regenerate.add_argument("--model", default=None)
   proposal_hunk_regenerate.add_argument("--feedback", default="", help="Author feedback for this hunk revision.")
+  proposal_hunk_regenerate.add_argument("--request-id", default="", help="Reuse this id to recover the same hunk regeneration.")
   proposal_hunk_regenerate.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_rebase = proposal_sub.add_parser("rebase", help="Carry safe Change Hunks onto the current scene.")
   proposal_rebase.add_argument("--id", required=True, help="Proposal id.")
@@ -1790,6 +1791,7 @@ def _run(args: argparse.Namespace) -> int:
     if args.proposal_command == "hunk-regenerate":
       row = regenerate_change_hunk(
         paths,
+        request_id=args.request_id,
         proposal_id=args.id,
         hunk_id=args.hunk,
         provider=args.provider,

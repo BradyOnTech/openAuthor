@@ -1,8 +1,9 @@
-import { draftProposal, generateProposal, listProposals } from "./api";
+import { draftProposal, generateProposal, listProposals, regenerateProposalHunk } from "./api";
 import type { ProposalRecord } from "./types";
 
 export type GenerationInput = Parameters<typeof generateProposal>[1];
-type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean };
+type HunkRequest = { id: string; feedback: string };
+type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean; hunk?: HunkRequest };
 type Job = { id: string; tasks: Task[] };
 type Snapshot = { job: Job | null; busy: boolean; stopRequested: boolean; error: string };
 const sessions = new Map<string, ProposalGenerationSession>();
@@ -42,11 +43,12 @@ export class ProposalGenerationSession {
     this.publish({ job });
   }
 
-  async start(inputs: GenerationInput[], existingProposalId?: string): Promise<ProposalRecord[] | null> {
+  async start(inputs: GenerationInput[], existingProposalId?: string, hunk?: HunkRequest): Promise<ProposalRecord[] | null> {
     if (this.state.job || this.state.busy || !inputs.length) return null;
     if (existingProposalId && inputs.length !== 1) throw new Error("An existing Change Set needs a single draft request.");
+    if (hunk && !existingProposalId) throw new Error("Hunk regeneration needs an existing Change Set.");
     try {
-      this.save({ id: crypto.randomUUID(), tasks: inputs.map(input => ({ input, proposalId: existingProposalId })) });
+      this.save({ id: crypto.randomUUID(), tasks: inputs.map(input => ({ input, proposalId: existingProposalId, hunk })) });
     } catch {
       this.publish({ error: "Recovery storage is full or unavailable. Nothing was sent; keep your instructions and free storage before retrying." });
       return null;
@@ -69,10 +71,14 @@ export class ProposalGenerationSession {
         const plannedJob = this.state.job!;
         const planned = plannedJob.tasks[index];
         if (!planned.drafted) {
-          await draftProposal(this.projectRoot, {
-            proposalId: planned.proposalId!, provider: planned.input.provider, model: planned.input.model,
-            requestId: `${plannedJob.id}:${index}:draft`,
-          });
+          if (planned.hunk) {
+            await regenerateProposalHunk(this.projectRoot, planned.proposalId!, planned.hunk.id, planned.input.provider, planned.input.model, planned.hunk.feedback, `${plannedJob.id}:${index}:hunk`);
+          } else {
+            await draftProposal(this.projectRoot, {
+              proposalId: planned.proposalId!, provider: planned.input.provider, model: planned.input.model,
+              requestId: `${plannedJob.id}:${index}:draft`,
+            });
+          }
           this.save({ ...plannedJob, tasks: plannedJob.tasks.map((row, i) => i === index ? { ...row, drafted: true } : row) });
         }
         if (this.state.stopRequested) return null;

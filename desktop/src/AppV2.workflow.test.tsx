@@ -33,6 +33,7 @@ const harness = vi.hoisted(() => ({
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
   failDraftOnce: false,
+  failHunkOnce: false,
   saveRoots: [] as string[],
   versions: [] as Array<Record<string, unknown>>,
   branchScenes: {} as Record<string, Array<Record<string, unknown>>>,
@@ -356,6 +357,10 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response(proposal);
     }
     if (root === "proposal" && action === "hunk-regenerate") {
+      if (harness.failHunkOnce) {
+        harness.failHunkOnce = false;
+        return response("Synthetic hunk connection lost", 1);
+      }
       const proposal = harness.proposals.find((item) => item.id === argument(args, "--id"));
       const changeSet = proposal?.change_set as { hunks?: Array<Record<string, unknown>> } | undefined;
       const hunk = changeSet?.hunks?.find((item) => item.id === argument(args, "--hunk"));
@@ -560,6 +565,7 @@ describe("active V2 author workflow", () => {
     harness.currentBranch = "main";
     harness.calls.length = 0;
     harness.failDraftOnce = false;
+    harness.failHunkOnce = false;
     harness.saveGate = null;
     harness.saveRoots.length = 0;
     harness.versions.length = 0;
@@ -762,7 +768,16 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("Mara chooses the dangerous road, knowing the cost.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Comment" }));
     await user.type(screen.getByLabelText("Revision comment for hunk 1"), "Make the consequence immediate.");
+    harness.failHunkOnce = true;
     await user.click(screen.getByRole("button", { name: "Revise hunk" }));
+    await screen.findByText(/Synthetic hunk connection lost/);
+    expect(screen.getByText("Make the consequence immediate.", { selector: "p" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Retry passage revision" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry passage revision" })).toBeNull());
+    const hunkRequests = harness.calls.filter(args => args[0] === "proposal" && args[1] === "hunk-regenerate");
+    expect(hunkRequests).toHaveLength(2);
+    expect(argument(hunkRequests[0], "--request-id")).not.toBe("");
+    expect(hunkRequests[1]).toEqual(hunkRequests[0]);
     await waitFor(() => expect(harness.calls.some((args) => args[0] === "proposal" && args[1] === "hunk-regenerate" && argument(args, "--feedback") === "Make the consequence immediate.")).toBe(true));
     await user.click(screen.getByRole("button", { name: "Exclude change hunk 1" }));
     expect(await screen.findByRole("button", { name: "Include change hunk 1" })).toBeTruthy();

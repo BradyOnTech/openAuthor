@@ -21,6 +21,18 @@ const input = { sceneId: "scene-1", instruction: "Tighten this synthetic passage
 const requestId = (args: string[]) => args[args.indexOf("--request-id") + 1];
 
 describe("durable proposal generation", () => {
+  it("retains hunk feedback and request identity across a restart", async () => {
+    transport.send = async () => { throw new Error("Hunk response lost"); };
+    await new ProposalGenerationSession("/synthetic/book", "proposal-1:hunks").start([input], "proposal-1", { id: "hunk-1", feedback: "Keep the quiet voice." });
+    expect(transport.calls[0][1]).toBe("hunk-regenerate");
+    const firstRequest = transport.calls[0];
+    const restarted = new ProposalGenerationSession("/synthetic/book", "proposal-1:hunks");
+    transport.send = async args => args[1] === "list" ? [{ id: "proposal-1" }] : { id: "proposal-1" };
+    await restarted.retry();
+    expect(transport.calls[1]).toEqual(firstRequest);
+    restarted.clear();
+    expect(new ProposalGenerationSession("/synthetic/book", "proposal-1:hunks").getSnapshot().job).toBeNull();
+  });
   it("reuses the draft request after restart without repeating the completed plan", async () => {
     transport.send = async args => {
       if (args[1] === "draft") throw new Error("Response lost");

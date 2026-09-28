@@ -2629,6 +2629,7 @@ def generate_proposal_draft(
     )
 
 
+@recoverable_proposal("hunk")
 def regenerate_change_hunk(
   paths: ProjectPaths,
   *,
@@ -2648,6 +2649,8 @@ def regenerate_change_hunk(
     raise OpenAuthorError("max_output_tokens must be >= 64.")
   proposal = get_proposal(paths, proposal_id)
   change_set = proposal.get("change_set", {})
+  if proposal.get("status") != "pending":
+    raise OpenAuthorError("Applied or rejected Change Sets cannot be regenerated.")
   hunk = next(
     (row for row in change_set.get("hunks", []) if row.get("id") == hunk_id),
     None,
@@ -2684,6 +2687,14 @@ def regenerate_change_hunk(
     input_tokens=projected_input_tokens,
     output_tokens=max_output_tokens,
   )
+  failure_context = {
+    "scene_id": scene_id, "provider": provider, "model": selected_model,
+    "temperature": temperature, "max_output_tokens": max_output_tokens,
+    "context_scene_radius": 0, "codex_limit": 0,
+    "retrieval": {"mode": "off", "used": False},
+    "instruction": f"{intent}\nAuthor feedback: {author_feedback}" if author_feedback else intent,
+    "context": context, "system_prompt": system_prompt, "user_prompt": user_prompt,
+  }
   try:
     enforce_generation_budget(
       paths,
@@ -2703,9 +2714,13 @@ def regenerate_change_hunk(
       max_output_tokens=max_output_tokens,
     )
   except BudgetPolicyError as error:
-    raise OpenAuthorError(f"Hunk regeneration blocked by budget policy: {error}") from error
+    run_id, log_path = _write_generation_budget_failure_log(paths, **failure_context, error=error)
+    _attach_proposal_to_generation_log(paths, run_id=run_id, proposal_id=proposal_id)
+    raise OpenAuthorError(f"Hunk regeneration blocked by budget policy: {error}. See {log_path}.") from error
   except ProviderExecutionError as error:
-    raise OpenAuthorError(f"Hunk regeneration failed ({error.category}): {error}") from error
+    run_id, log_path = _write_generation_failure_log(paths, **failure_context, error=error)
+    _attach_proposal_to_generation_log(paths, run_id=run_id, proposal_id=proposal_id)
+    raise OpenAuthorError(f"Hunk regeneration failed ({error.category}): {error}. See {log_path}.") from error
 
   replacement = _strip_code_fence(str(result.get("text", "")))
   if not replacement:
@@ -2738,24 +2753,29 @@ def regenerate_change_hunk(
     estimated_cost_usd=estimated_cost,
   )
   _attach_proposal_to_generation_log(paths, run_id=generation_id, proposal_id=proposal_id)
-  if author_feedback:
-    from .product_signals import record_product_event
-    record_product_event(paths, "change_hunk_commented", provider=provider)
-  return edit_change_hunk(
-    paths,
-    proposal_id=proposal_id,
-    hunk_id=hunk_id,
-    after_text=replacement,
-    editor="ai",
-    regeneration={
-      "generation_id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "log_path": log_path,
-      "estimated_cost_usd": estimated_cost,
-      "author_feedback": author_feedback,
-    },
-  )
+  with project_write_lock(paths):
+    if _digest_scene_payload(get_scene(paths, scene_id)) != _digest_scene_payload(scene) or get_proposal(paths, proposal_id) != proposal:
+      raise OpenAuthorError("The scene or Change Set changed while the provider was regenerating this hunk. Newer writing and review were preserved; inspect Changes before trying again.")
+    updated = edit_change_hunk(
+      paths,
+      proposal_id=proposal_id,
+      hunk_id=hunk_id,
+      after_text=replacement,
+      editor="ai",
+      regeneration={
+        "delivery": current_proposal_delivery(),
+        "generation_id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "log_path": log_path,
+        "estimated_cost_usd": estimated_cost,
+        "author_feedback": author_feedback,
+      },
+    )
+    if author_feedback:
+      from .product_signals import record_product_event
+      record_product_event(paths, "change_hunk_commented", provider=provider)
+    return updated
 
 
 MERGE_SYSTEM_PROMPT = (
