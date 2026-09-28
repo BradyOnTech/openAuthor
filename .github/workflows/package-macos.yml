@@ -48,7 +48,7 @@ jobs:
         run: bash scripts/verify_macos_bundle.sh
       - name: Archive internal-test application
         run: ditto -c -k --keepParent desktop/src-tauri/target/release/bundle/macos/openAuthor.app openAuthor-${{ matrix.arch }}-UNSIGNED.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: openAuthor-${{ matrix.arch }}-UNSIGNED-internal-test
           path: openAuthor-${{ matrix.arch }}-UNSIGNED.zip
