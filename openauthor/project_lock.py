@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import re
 from contextlib import contextmanager
 
 from .project import ProjectPaths
@@ -11,9 +12,11 @@ _local = threading.local()
 
 
 @contextmanager
-def project_write_lock(paths: ProjectPaths):
+def project_write_lock(paths: ProjectPaths, *, resource: str = "book-write"):
   """Serialize book edits across desktop command processes and sidecar threads."""
-  key = str(paths.root.resolve())
+  if not re.fullmatch(r"[a-zA-Z0-9_-]+", resource):
+    raise ValueError("Invalid lock resource")
+  key = str(paths.root.resolve()) + ":" + resource
   with _guard:
     lock = _locks.setdefault(key, threading.RLock())
   with lock:
@@ -21,7 +24,7 @@ def project_write_lock(paths: ProjectPaths):
     if key in held:
       yield
       return
-    lock_path = paths.workspace_dir / "book-write.lock"
+    lock_path = paths.workspace_dir / f"{resource}.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+b") as handle:
       import os

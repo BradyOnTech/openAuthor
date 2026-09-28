@@ -39,6 +39,29 @@ def _completion(text: str, tool_calls: list | None = None) -> dict:
 
 
 class ChatModuleTests(unittest.TestCase):
+  def test_retry_after_transcript_write_failure_recovers_without_another_generation(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Delivery recovery")
+      thread = create_chat_thread(paths, title="Receipt", provider="local", mode="chat")
+      from openauthor.project import atomic_write_text
+      def fail_transcript(path, content):
+        if path.suffix == ".jsonl":
+          raise OSError("Simulated disk failure after provider completion")
+        return atomic_write_text(path, content)
+      with patch("openauthor.chat.atomic_write_text", side_effect=fail_transcript):
+        with self.assertRaises(OSError):
+          send_chat_message(paths, thread_id=thread["id"], message="Try another opening", request_id="delivery-1")
+      before = list_generation_runs(paths)
+      result = send_chat_message(paths, thread_id=thread["id"], message="Try another opening", request_id="delivery-1")
+      self.assertEqual(len(list_chat_messages(paths, thread_id=thread["id"])), 2)
+      self.assertEqual(list_generation_runs(paths), before)
+      self.assertEqual(send_chat_message(paths, thread_id=thread["id"], message="Try another opening", request_id="delivery-1"), result)
+      with self.assertRaises(OpenAuthorError):
+        send_chat_message(paths, thread_id=thread["id"], message="Different prompt", request_id="delivery-1")
+      truncate_chat_messages(paths, thread_id=thread["id"], from_message_id=result["user_message"]["id"])
+      send_chat_message(paths, thread_id=thread["id"], message="Try another opening", request_id="delivery-1")
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
+
   def test_chat_thread_lifecycle(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -73,6 +96,41 @@ class ChatModuleTests(unittest.TestCase):
       threads = list_chat_threads(paths)
       self.assertEqual(len(threads), 1)
       self.assertEqual(threads[0]["id"], created["id"])
+
+  def test_uncertain_tool_execution_is_never_automatically_repeated(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Uncertain tool")
+      add_scene(paths, title="Opening", summary="", pov="", status="draft", body="Synthetic prose")
+      thread = create_chat_thread(paths, title="Tools", provider="local", mode="agent")
+      sent = send_chat_message(paths, thread_id=thread["id"], message="Please create proposal for this scene.", current_scene_id="scene-0001")
+      from openauthor.project import atomic_write_json
+      from openauthor.proposals import list_proposals
+      def fail_completion(path, payload):
+        if path.parent.name == "tools" and payload.get("status") != "executing":
+          raise OSError("Synthetic disk failure after tool execution")
+        return atomic_write_json(path, payload)
+      args = {"thread_id": thread["id"], "assistant_message_id": sent["assistant_message"]["id"], "tool_index": 0}
+      with patch("openauthor.chat.atomic_write_json", side_effect=fail_completion):
+        with self.assertRaises(OSError):
+          execute_pending_tool_call(paths, **args)
+      self.assertEqual(len(list_proposals(paths)), 1)
+      with self.assertRaisesRegex(OpenAuthorError, "may already have changed"):
+        execute_pending_tool_call(paths, **args)
+      self.assertEqual(len(list_proposals(paths)), 1)
+
+  def test_cancelled_partial_turn_is_not_published_and_can_be_retried(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Cancelled delivery")
+      thread = create_chat_thread(paths, title="Cancellation", provider="local", mode="chat")
+      from openauthor.ai import ChatInterrupted
+      def interrupt(text):
+        raise ChatInterrupted("Synthetic stop after first delta")
+      args = {"thread_id": thread["id"], "message": "Synthetic prompt", "request_id": "cancelled-delivery"}
+      with self.assertRaises(ChatInterrupted):
+        send_chat_message(paths, **args, on_delta=interrupt)
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
+      send_chat_message(paths, **args)
+      self.assertEqual(len(list_chat_messages(paths, thread_id=thread["id"])), 2)
 
   def test_chat_send_agent_executes_read_tools_and_queues_writes(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -121,6 +179,17 @@ class ChatModuleTests(unittest.TestCase):
         tool_index=0,
       )
       self.assertEqual(executed["tool"], "proposal.add")
+      self.assertEqual(execute_pending_tool_call(
+        paths, thread_id=thread["id"],
+        assistant_message_id=write_result["assistant_message"]["id"], tool_index=0,
+      ), executed)
+      # Simulate an older book: its successful tool message is the receipt.
+      for receipt in paths.chats_dir.glob("deliveries/*/tools/*.json"):
+        receipt.unlink()
+      self.assertEqual(execute_pending_tool_call(
+        paths, thread_id=thread["id"],
+        assistant_message_id=write_result["assistant_message"]["id"], tool_index=0,
+      ), executed)
 
       messages = list_chat_messages(paths, thread_id=thread["id"])
       self.assertTrue(any(row["role"] == "tool" for row in messages))
@@ -299,7 +368,7 @@ class ChatModuleTests(unittest.TestCase):
         )
       )
       messages = list_chat_messages(paths, thread_id=thread["id"])
-      self.assertEqual([row["role"] for row in messages], ["user"])
+      self.assertEqual(messages, [])
 
   def test_truncate_chat_messages_rewinds_thread(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

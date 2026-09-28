@@ -4,6 +4,9 @@ import io
 import json
 import tempfile
 import unittest
+import os
+import urllib.error
+from unittest.mock import patch
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +35,28 @@ def _response_for(frames: list[dict[str, Any]], request_id: Any) -> dict[str, An
 
 
 class ServerModuleTests(unittest.TestCase):
+  def test_replayed_send_after_connection_loss_does_not_duplicate_messages(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Retry safety")
+      thread = create_chat_thread(paths, title="Retry", provider="local", mode="chat")
+      request = {"id": "lost-response", "method": "chat.send", "params": {"thread_id": thread["id"], "message": "Suggest a different opening."}}
+      first = _response_for(_run_requests(paths, [request]), "lost-response")
+      second = _response_for(_run_requests(paths, [request]), "lost-response")
+      self.assertEqual(len(list_chat_messages(paths, thread_id=thread["id"])), 2)
+      self.assertEqual(first["result"], second["result"])
+
+  def test_expired_credentials_are_actionable_and_do_not_publish_a_partial_turn(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Expired sign-in")
+      thread = create_chat_thread(paths, title="Expiry", provider="openai", mode="chat")
+      failure = urllib.error.HTTPError("https://example.invalid", 401, "Expired", {}, io.BytesIO(b'{"error":"expired credential"}'))
+      with patch.dict(os.environ, {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", side_effect=failure) as transport:
+        frames = _run_requests(paths, [{"id": "expiry", "method": "chat.send", "params": {"thread_id": thread["id"], "message": "Synthetic test."}}])
+      response = _response_for(frames, "expiry")
+      self.assertEqual(response["error"]["category"], "auth_error")
+      self.assertEqual(transport.call_count, 1)
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
+
   def test_ping_and_unknown_method(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Sidecar Ping")
@@ -166,7 +191,8 @@ class ServerModuleTests(unittest.TestCase):
       self.assertEqual(send["error"]["category"], "interrupted")
 
       messages = list_chat_messages(paths, thread_id=thread["id"])
-      self.assertEqual([row["role"] for row in messages], ["user"])
+      self.assertEqual(messages, [])
+      self.assertEqual(list(paths.generations_dir.glob("*.json")), [])
 
 
 if __name__ == "__main__":

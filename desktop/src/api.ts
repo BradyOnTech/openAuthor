@@ -895,6 +895,7 @@ export async function listChatMessages(
 
 export type ChatSendPayload = {
   threadId: string;
+  deliveryId?: string;
   message: string;
   currentSceneId?: string;
   sceneIds?: string[];
@@ -925,6 +926,7 @@ export async function sendChatMessage(
     "--message",
     payload.message
   ];
+  if (payload.deliveryId) args.push("--request-id", payload.deliveryId);
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
   }
@@ -1068,6 +1070,7 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     contextOverrides.scope = payload.scope;
   }
   return {
+    delivery_id: payload.deliveryId,
     thread_id: payload.threadId,
     message: payload.message,
     current_scene_id: payload.currentSceneId ?? "",
@@ -1091,6 +1094,7 @@ export async function sendChatMessageStreamed(
   const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
     const frame = event.payload.frame;
+    if (event.payload.projectRoot !== projectRoot) return;
     if (frame.event !== "chat.delta" || !frame.payload) return;
     if (frame.payload.request_id !== requestId) return;
     handlers.onDelta(String(frame.payload.text ?? ""));

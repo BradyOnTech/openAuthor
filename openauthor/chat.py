@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import uuid
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +25,9 @@ from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_wr
 from .proposals import create_proposal
 from .retrieval import query_retrieval_index
 from .scenes import get_scene, list_scenes
+from .project_lock import project_write_lock
+
+_pending_messages: ContextVar[list[dict[str, Any]] | None] = ContextVar("pending_chat_messages", default=None)
 
 CHAT_MODES = {"chat", "agent"}
 INCLUDE_CODEX_MODES = {"off", "explicit", "auto", "auto_and_explicit"}
@@ -480,6 +485,16 @@ def list_chat_messages(
       ) from error
     if isinstance(payload, dict):
       rows.append(payload)
+  executed = {
+    (str(row.get("context_used", {}).get("from_message_id", "")), str(row.get("context_used", {}).get("tool_call_id", ""))): row
+    for row in rows if row.get("role") == "tool"
+  }
+  for row in rows:
+    for call in row.get("tool_calls", []):
+      result = executed.get((str(row.get("id", "")), str(call.get("id", ""))))
+      if result:
+        call["executed"] = True
+        call["result_summary"] = str(result.get("content", ""))[:2000]
   if limit is not None:
     return rows[-limit:]
   return rows
@@ -491,6 +506,12 @@ def truncate_chat_messages(
   thread_id: str,
   from_message_id: str,
 ) -> dict[str, Any]:
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)):
+    _recover_chat_deliveries(paths, thread_id)
+    return _truncate_chat_messages(paths, thread_id=thread_id, from_message_id=from_message_id)
+
+
+def _truncate_chat_messages(paths: ProjectPaths, *, thread_id: str, from_message_id: str) -> dict[str, Any]:
   """Remove a message and everything after it from a thread.
 
   Used by regenerate: rewind the thread to just before a turn and send the
@@ -548,6 +569,10 @@ def _append_chat_message(
     "tool_calls": tool_calls or [],
     "usage": usage or {},
   }
+  pending = _pending_messages.get()
+  if pending is not None:
+    pending.append(row)
+    return row
   message_path = _thread_messages_path(paths, thread_id)
   message_path.parent.mkdir(parents=True, exist_ok=True)
   with message_path.open("a", encoding="utf-8") as handle:
@@ -910,7 +935,71 @@ def _execute_tool(paths: ProjectPaths, tool_name: str, args: dict[str, Any]) -> 
   raise OpenAuthorError(f"Unsupported chat tool '{tool_name}'.")
 
 
-def send_chat_message(
+def _chat_lock_resource(thread_id: str) -> str:
+  return "chat-" + hashlib.sha256(thread_id.encode()).hexdigest()
+
+
+def _chat_delivery_folder(paths: ProjectPaths, thread_id: str) -> Path:
+  return paths.chats_dir / "deliveries" / hashlib.sha256(thread_id.encode()).hexdigest()
+
+
+def _recover_chat_deliveries(paths: ProjectPaths, thread_id: str) -> None:
+  folder = _chat_delivery_folder(paths, thread_id)
+  for stored in sorted([*folder.glob("*.json"), *(folder / "tools").glob("*.json")]):
+    receipt = json.loads(stored.read_text(encoding="utf-8"))
+    if receipt.get("status") != "executing":
+      _publish_chat_receipt(paths, thread_id, stored, receipt)
+
+
+def _publish_chat_receipt(paths: ProjectPaths, thread_id: str, receipt_path: Path, receipt: dict[str, Any]) -> None:
+  if receipt.get("published"):
+    return
+  messages = list_chat_messages(paths, thread_id=thread_id)
+  known = {row["id"] for row in messages}
+  messages.extend(row for row in receipt["messages"] if row["id"] not in known)
+  atomic_write_text(_thread_messages_path(paths, thread_id), "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in messages))
+  receipt["published"] = True
+  atomic_write_json(receipt_path, receipt)
+
+
+def send_chat_message(paths: ProjectPaths, *, request_id: str = "", is_cancelled: Any = None, **kwargs: Any) -> dict[str, Any]:
+  """Publish a turn once, even when its response is lost and delivery is retried.
+
+  Failed/cancelled keyed turns never publish partial messages or pending tools.
+  A durable completed receipt precedes transcript publication, closing the
+  process-exit window between provider completion and response delivery.
+  """
+  request_id = request_id or uuid.uuid4().hex
+  thread_id = str(kwargs["thread_id"])
+  get_chat_thread(paths, thread_id)
+  fingerprint = hashlib.sha256(json.dumps({key: value for key, value in kwargs.items() if key != "on_delta"}, sort_keys=True).encode()).hexdigest()
+  key = hashlib.sha256(f"{thread_id}:{request_id}".encode()).hexdigest()
+  folder = _chat_delivery_folder(paths, thread_id)
+  receipt_path = folder / f"{key}.json"
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)):
+    # Repair completed deliveries before accepting another turn in this chat.
+    _recover_chat_deliveries(paths, thread_id)
+    if receipt_path.exists():
+      receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+      if receipt["fingerprint"] != fingerprint:
+        raise OpenAuthorError("A chat request id cannot be reused for different content.")
+      return receipt["result"]
+    pending: list[dict[str, Any]] = []
+    token = _pending_messages.set(pending)
+    try:
+      result = _send_chat_message(paths, is_cancelled=is_cancelled, **kwargs)
+      if is_cancelled and is_cancelled():
+        from .ai import ChatInterrupted
+        raise ChatInterrupted("Chat turn interrupted by user.")
+      receipt = {"schema_version": 1, "fingerprint": fingerprint, "result": result, "messages": pending, "published": False}
+      atomic_write_json(receipt_path, receipt)
+      _publish_chat_receipt(paths, thread_id, receipt_path, receipt)
+      return result
+    finally:
+      _pending_messages.reset(token)
+
+
+def _send_chat_message(
   paths: ProjectPaths,
   *,
   thread_id: str,
@@ -921,6 +1010,7 @@ def send_chat_message(
   codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
   on_delta: Any = None,
+  is_cancelled: Any = None,
 ) -> dict[str, Any]:
   thread = get_chat_thread(paths, thread_id)
   content = message.strip()
@@ -985,6 +1075,9 @@ def send_chat_message(
   pending_tool_calls: list[dict[str, Any]] = []
 
   for _ in range(MAX_TOOL_ROUNDS):
+    if is_cancelled and is_cancelled():
+      from .ai import ChatInterrupted
+      raise ChatInterrupted("Chat turn interrupted by user.")
     completion = complete_chat(
       paths,
       provider=provider,
@@ -999,6 +1092,9 @@ def send_chat_message(
       on_delta=on_delta,
       tools=tools,
     )
+    if is_cancelled and is_cancelled():
+      from .ai import ChatInterrupted
+      raise ChatInterrupted("Chat turn interrupted by user.")
     if round_prompt:
       conversation.append({"role": "user", "content": round_prompt})
       round_prompt = ""
@@ -1116,6 +1212,34 @@ def execute_pending_tool_call(
   assistant_message_id: str,
   tool_index: int,
 ) -> dict[str, Any]:
+  key = hashlib.sha256(f"{assistant_message_id}:{tool_index}".encode()).hexdigest()
+  receipt_path = _chat_delivery_folder(paths, thread_id) / "tools" / f"{key}.json"
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)), project_write_lock(paths):
+    get_chat_thread(paths, thread_id)
+    _recover_chat_deliveries(paths, thread_id)
+    if receipt_path.exists():
+      receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+      if receipt.get("status") == "executing":
+        raise OpenAuthorError("This tool may already have changed the book before its result was saved. Review the book and Revisions before requesting another change; automatic replay is disabled.")
+      return receipt["result"]
+    pending: list[dict[str, Any]] = []
+    token = _pending_messages.set(pending)
+    try:
+      result = _execute_pending_tool_call(
+        paths, thread_id=thread_id, assistant_message_id=assistant_message_id, tool_index=tool_index,
+        before_execute=lambda: atomic_write_json(receipt_path, {"status": "executing"}),
+      )
+      receipt = {"schema_version": 1, "result": result, "messages": pending, "published": False}
+      atomic_write_json(receipt_path, receipt)
+      _publish_chat_receipt(paths, thread_id, receipt_path, receipt)
+      return result
+    finally:
+      _pending_messages.reset(token)
+
+
+def _execute_pending_tool_call(
+  paths: ProjectPaths, *, thread_id: str, assistant_message_id: str, tool_index: int, before_execute: Any,
+) -> dict[str, Any]:
   if tool_index < 0:
     raise OpenAuthorError("tool_index must be >= 0.")
   messages = list_chat_messages(paths, thread_id=thread_id)
@@ -1141,7 +1265,19 @@ def execute_pending_tool_call(
   args = tool_call.get("args", {})
   if tool_name == "" or not isinstance(args, dict):
     raise OpenAuthorError("Invalid tool call payload.")
+  # Older books have tool result messages but no delivery receipts.
+  for message in messages:
+    context = message.get("context_used", {})
+    if (message.get("role") == "tool" and context.get("from_message_id") == assistant_message_id
+        and context.get("tool_call_id") == tool_call.get("id")):
+      saved = json.loads(message["content"])
+      return {
+        "assistant_message_id": assistant_message_id, "tool_index": tool_index,
+        "tool": tool_name, "result": saved["result"], "tool_message": message,
+        "vcs": context.get("vcs", {}),
+      }
   _, before_commit = _capture_vcs_anchor(paths)
+  before_execute()
   result = _execute_tool(paths, tool_name, args)
   snapshot_note = ""
   if _tool_classification(tool_name) in {"write", "risky"}:

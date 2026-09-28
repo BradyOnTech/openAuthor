@@ -1035,6 +1035,7 @@ def build_parser() -> argparse.ArgumentParser:
   chat_send = chat_sub.add_parser("send", help="Send a message to a chat thread.")
   chat_send.add_argument("--thread", required=True, help="Thread id.")
   chat_send.add_argument("--message", required=True, help="Message content.")
+  chat_send.add_argument("--request-id", default="", help="Reuse this id when retrying the same chat delivery.")
   chat_send.add_argument("--current-scene", default="", help="Current scene id.")
   chat_send.add_argument(
     "--scene-id",
@@ -2241,6 +2242,7 @@ def _run(args: argparse.Namespace) -> int:
       context_overrides = _chat_context_overrides(args)
       row = send_chat_message(
         paths,
+        request_id=args.request_id,
         thread_id=args.thread,
         message=args.message,
         current_scene_id=args.current_scene,

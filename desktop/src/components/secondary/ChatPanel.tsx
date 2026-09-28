@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useSyncExternalStore } from "react";
+import { chatDeliverySession } from "../../chatDeliverySession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
   createChatThread,
   updateChatThread,
-  sendChatMessageStreamed,
-  interruptChatTurn,
   executeChatToolCall,
   createProposal,
   queueStoryMemorySuggestion,
@@ -39,20 +38,36 @@ type ChatStream = {
 type AssistantScope = "project" | "scene" | "chapter" | "character" | "storyline";
 
 export function ChatPanel() {
+  const { projectRoot, activeChatThreadId } = useWorkspace();
+  return <ThreadPanel key={JSON.stringify([projectRoot, activeChatThreadId])} />;
+}
+
+function ThreadPanel() {
   const {
     projectFound, projectRoot,
     chatThreads, refreshChatThreads,
     activeChatThreadId, setActiveChatThreadId,
     chatMessages, refreshChatMessages,
-    chatSending, setChatSending,
     scenes, codexEntities,
     refreshProposals,
     runtimeConfig,
     setError, setMessage,
   } = useWorkspace();
   const { tabs, activeTabId, openTab } = useEditor();
-  const [stream, setStream] = useState<ChatStream | null>(null);
+  const session = useMemo(() => chatDeliverySession(projectRoot, activeChatThreadId), [projectRoot, activeChatThreadId]);
+  const delivery = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const chatSending = delivery.sending;
+  const stream: ChatStream | null = delivery.sending && delivery.pending
+    ? { requestId: delivery.requestId, userText: delivery.pending.message, text: delivery.text }
+    : null;
   const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!delivery.sending) {
+      void refreshChatMessages();
+      void refreshChatThreads();
+    }
+  }, [delivery.sending, refreshChatMessages, refreshChatThreads]);
 
   if (!projectFound) {
     return (
@@ -91,54 +106,21 @@ export function ChatPanel() {
   }
 
   async function handleInterrupt() {
-    if (!stream) return;
-    try {
-      await interruptChatTurn(projectRoot, stream.requestId);
-      setMessage("Interrupt requested.");
-    } catch (e) {
-      setError(`Interrupt failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
+    await session.interrupt();
   }
 
   async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
-    if (!activeChatThreadId || !text.trim()) return;
-    setChatSending(true);
-    try {
-      await sendChatMessageStreamed(
-        projectRoot,
-        {
-          threadId: activeChatThreadId,
-          message: text,
-          currentSceneId,
-          sceneIds,
-          codexIds,
-          scope,
-        },
-        {
-          onStart: (requestId) =>
-            setStream({ requestId, userText: text, text: "" }),
-          onDelta: (delta) =>
-            setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
-        }
-      );
-      await refreshChatMessages();
-      await refreshChatThreads();
-    } catch (e) {
-      await refreshChatMessages();
-      setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setStream(null);
-      setChatSending(false);
-    }
+    if (!activeChatThreadId || !text.trim()) return false;
+    return session.send({ threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope });
   }
 
   function handleStartEdit(message: ChatMessageRecord) {
-    if (chatSending) return;
+    if (chatSending || delivery.pending) return;
     setEditing({ messageId: message.id, text: message.content });
   }
 
   async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
-    if (!activeChatThreadId || !text.trim()) return;
+    if (!activeChatThreadId || !text.trim() || delivery.pending) return false;
     if (editing) {
       const target = editing;
       setEditing(null);
@@ -150,14 +132,14 @@ export function ChatPanel() {
         await refreshChatMessages();
       } catch (e) {
         setError(`Edit failed: ${e instanceof Error ? e.message : String(e)}`);
-        return;
+        return false;
       }
     }
-    await performSend(text, sceneIds, codexIds, scope);
+    return performSend(text, sceneIds, codexIds, scope);
   }
 
   async function handleRegenerate() {
-    if (!activeChatThreadId || chatSending) return;
+    if (!activeChatThreadId || chatSending || delivery.pending) return;
     setEditing(null);
     const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
     if (!lastUser) return;
@@ -214,10 +196,24 @@ export function ChatPanel() {
         onEditMessage={handleStartEdit}
         setError={setError}
       />
+      {delivery.error && (
+        <div role="status" className="chat-recovery" style={{ padding: "var(--space-3)", fontSize: "var(--text-sm)", borderTop: "1px solid var(--border-default)" }}>
+          <p>{delivery.error}</p>
+          {delivery.pending && !chatSending && <>
+            <p style={{ whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>{delivery.pending.message}</p>
+            <p>Your prompt is saved on this device. Retry recovers a completed reply when available; a new provider attempt may incur charges. Discard only removes this saved retry, not an already-delivered chat turn.</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn--ai" style={{ minHeight: 40 }} onClick={() => void session.retry()}>Retry message</button>
+              <button className="btn" style={{ minHeight: 40 }} onClick={session.discard}>Discard retry</button>
+            </div>
+          </>}
+        </div>
+      )}
       <Composer
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
         sending={chatSending}
+        recoveryPending={delivery.pending !== null}
         streaming={stream !== null}
         scenes={scenes}
         codexEntities={codexEntities}
@@ -965,6 +961,7 @@ function Composer({
   projectRoot,
   threadId,
   sending,
+  recoveryPending,
   streaming,
   scenes,
   codexEntities,
@@ -979,12 +976,13 @@ function Composer({
   projectRoot: string;
   threadId: string;
   sending: boolean;
+  recoveryPending: boolean;
   streaming: boolean;
   scenes: SceneSummary[];
   codexEntities: CodexEntity[];
   activeThread?: ChatThreadRecord;
   currentSceneId?: string;
-  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<void>;
+  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<boolean>;
   onInterrupt: () => void;
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
@@ -1114,7 +1112,7 @@ function Composer({
   }
 
   async function handleSend() {
-    if (!text.trim() || sending || !threadId) return;
+    if (!text.trim() || sending || recoveryPending || !threadId) return;
 
     const mentions = extractMentionIds(text, scenes, codexEntities);
     if (scope === "scene" && currentSceneId && !mentions.sceneIds.includes(currentSceneId)) mentions.sceneIds.push(currentSceneId);
@@ -1125,11 +1123,10 @@ function Composer({
     }
     if (scope === "character" && scopeId && !mentions.codexIds.includes(scopeId)) mentions.codexIds.push(scopeId);
     const msg = text;
-    setText("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    if (await onSend(msg, mentions.sceneIds, mentions.codexIds, scope)) {
+      setText(current => current === msg ? "" : current);
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
-    await onSend(msg, mentions.sceneIds, mentions.codexIds, scope);
   }
 
   const contextHints: string[] = [];
@@ -1218,7 +1215,7 @@ function Composer({
           <button
             className="btn btn--ai btn--sm"
             onClick={handleSend}
-            disabled={!text.trim() || sending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}
+            disabled={!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}
           >
             {sending ? "…" : "Send"}
           </button>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -198,8 +199,8 @@ def _json_post(
         http_status=error.code,
         attempts=attempts,
       ) from error
-    except urllib.error.URLError as error:
-      reason = str(error.reason)
+    except (OSError, http.client.HTTPException) as error:
+      reason = str(getattr(error, "reason", error))
       category = "timeout" if "timed out" in reason.lower() else "network_error"
       retriable = True
       if retriable and attempts <= max_retries:
@@ -227,16 +228,16 @@ def _json_post(
 
 def _sse_data_lines(response: Any) -> Any:
   for raw_line in response:
-    line = raw_line.decode("utf-8", errors="replace").strip()
+    line = raw_line.decode("utf-8").strip()
     if not line.startswith("data:"):
       continue
     data = line[len("data:") :].strip()
-    if data == "" or data == "[DONE]":
+    if data == "":
       continue
-    try:
-      yield json.loads(data)
-    except json.JSONDecodeError:
-      continue
+    if data == "[DONE]":
+      yield data
+      return
+    yield json.loads(data)
 
 
 def _stream_post(
@@ -269,6 +270,12 @@ def _stream_post(
     def _frames(response: Any) -> Any:
       for frame in _sse_data_lines(response):
         started["value"] = True
+        if isinstance(frame, dict) and frame.get("error"):
+          raise ProviderExecutionError(
+            f"Provider stream failed: {_truncate(str(frame['error']), 280)}",
+            category="provider_stream_error", retriable=False, provider=provider,
+            attempts=attempts,
+          )
         yield frame
 
     try:
@@ -289,8 +296,8 @@ def _stream_post(
         http_status=error.code,
         attempts=attempts,
       ) from error
-    except urllib.error.URLError as error:
-      reason = str(error.reason)
+    except (OSError, http.client.HTTPException) as error:
+      reason = str(getattr(error, "reason", error))
       category = "timeout" if "timed out" in reason.lower() else "network_error"
       retriable = not started["value"]
       if retriable and attempts <= max_retries:
@@ -303,6 +310,15 @@ def _stream_post(
         provider=provider,
         attempts=attempts,
       ) from error
+    except (ValueError, UnicodeError) as error:
+      raise ProviderExecutionError(
+        "Provider returned an invalid stream. Retry the request explicitly.",
+        category="invalid_provider_response", retriable=False, provider=provider,
+        attempts=attempts,
+      ) from error
+    except ProviderExecutionError as error:
+      error.attempts = attempts
+      raise
 
 
 def _openai_style_stream(
@@ -322,7 +338,11 @@ def _openai_style_stream(
   def consume(frames: Any) -> dict[str, Any]:
     parts: list[str] = []
     usage: dict[str, Any] = {}
+    completed = False
     for frame in frames:
+      if frame == "[DONE]":
+        completed = True
+        break
       if not isinstance(frame, dict):
         continue
       frame_usage = frame.get("usage")
@@ -336,6 +356,11 @@ def _openai_style_stream(
       if isinstance(content, str) and content != "":
         parts.append(content)
         on_delta(content)
+    if not completed:
+      raise ProviderExecutionError(
+        "Provider response was incomplete. Retry the request explicitly.",
+        category="incomplete_stream", retriable=False, provider=provider,
+      )
     return {"text": "".join(parts).strip(), "usage": usage}
 
   result, attempts = _stream_post(
@@ -368,11 +393,15 @@ def _anthropic_stream(
     parts: list[str] = []
     input_tokens = 0
     output_tokens = 0
+    completed = False
     for frame in frames:
       if not isinstance(frame, dict):
         continue
       frame_type = frame.get("type", "")
-      if frame_type == "message_start":
+      if frame_type == "message_stop":
+        completed = True
+        break
+      elif frame_type == "message_start":
         message_usage = frame.get("message", {}).get("usage", {})
         if isinstance(message_usage, dict):
           input_tokens = int(message_usage.get("input_tokens", 0) or 0)
@@ -386,6 +415,11 @@ def _anthropic_stream(
         delta_usage = frame.get("usage", {})
         if isinstance(delta_usage, dict):
           output_tokens = int(delta_usage.get("output_tokens", 0) or 0)
+    if not completed:
+      raise ProviderExecutionError(
+        "Provider response was incomplete. Retry the request explicitly.",
+        category="incomplete_stream", retriable=False, provider="anthropic",
+      )
     return {
       "text": "".join(parts).strip(),
       "input_tokens": input_tokens,
@@ -1639,8 +1673,11 @@ def complete_chat(
         "provider": error.provider,
       },
     )
-    raise OpenAuthorError(
-      f"Chat completion failed ({error.category}). See {log_path}."
+    guidance = " Sign in again or update this provider's credentials in Settings." if error.category == "auth_error" else ""
+    raise ProviderExecutionError(
+      f"Chat completion failed ({error.category}).{guidance} See {log_path}.",
+      category=error.category, retriable=error.retriable, provider=error.provider,
+      http_status=error.http_status, attempts=error.attempts,
     ) from error
 
   estimated_cost_usd = _estimate_cost_usd(
