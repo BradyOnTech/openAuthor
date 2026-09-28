@@ -32,6 +32,7 @@ const harness = vi.hoisted(() => ({
   currentBranch: "main",
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
+  failDraftOnce: false,
   saveRoots: [] as string[],
   versions: [] as Array<Record<string, unknown>>,
   branchScenes: {} as Record<string, Array<Record<string, unknown>>>,
@@ -286,6 +287,10 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response(proposal);
     }
     if (root === "proposal" && action === "draft") {
+      if (harness.failDraftOnce) {
+        harness.failDraftOnce = false;
+        return response("Synthetic provider connection lost", 1);
+      }
       const proposal = harness.proposals.find((item) => item.id === argument(args, "--id"));
       if (!proposal) return response("Unknown proposal", 1);
       proposal.proposed_body = "Mara chooses the dangerous road, knowing the cost.";
@@ -554,6 +559,7 @@ describe("active V2 author workflow", () => {
     harness.primaryBranch = "main";
     harness.currentBranch = "main";
     harness.calls.length = 0;
+    harness.failDraftOnce = false;
     harness.saveGate = null;
     harness.saveRoots.length = 0;
     harness.versions.length = 0;
@@ -579,6 +585,29 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
     return { user, body: await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement };
   }
+
+  it("retries a failed draft without recreating its already generated proposal", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(screen.getByTitle("Create a reviewable Change Set"));
+    await user.type(await screen.findByPlaceholderText(/Tighten the pacing/), "Tighten the opening.");
+    harness.failDraftOnce = true;
+    await user.click(screen.getByRole("button", { name: "Create Change Set" }));
+    await screen.findByText(/Synthetic provider connection lost/);
+    await user.click(screen.getByRole("button", { name: "Retry generation" }));
+    await screen.findByText("Mara chooses the dangerous road, knowing the cost.");
+    expect(harness.proposals).toHaveLength(1);
+    expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "generate")).toHaveLength(1);
+    harness.failDraftOnce = true;
+    await user.click(screen.getByRole("button", { name: "Regenerate Change Set" }));
+    await screen.findByText(/Synthetic provider connection lost/);
+    const failedRequest = harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft").slice(-1)[0];
+    await user.click(screen.getByRole("button", { name: "Retry draft" }));
+    await screen.findByRole("button", { name: "Regenerate Change Set" });
+    const retriedRequest = harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft").slice(-1)[0];
+    expect(argument(retriedRequest, "--request-id")).toBe(argument(failedRequest, "--request-id"));
+    expect(harness.proposals).toHaveLength(1);
+  });
 
   it("keeps newer typing and saves it after an older save response", async () => {
     const { body } = await openWritingScene();

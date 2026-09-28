@@ -25,7 +25,7 @@ The executable evaluation runner now prepares isolated source-hashed cases, perf
 
 **Current verification**
 
-159 Python tests and the new synthetic author-workflow gate pass, along with repository checks. The preceding desktop slice passed 99 frontend tests, six native bridge tests, and the frontend build; the dependency audit reported zero vulnerabilities. The 400-scene scale gate passed before the provider-recovery slice. The rebuilt embedded arm64 Python/Git combination passes Storyline create, compare, switch, backup, recovery, and older Story Memory restoration with system tools removed from PATH. These counts describe local source/runtime tests, not signed-installation or author-pilot evidence.
+165 Python tests and the synthetic author-workflow gate pass, along with repository checks. The standalone generation-recovery slice passed 105 frontend tests, six native bridge tests, and the frontend build; the dependency audit reported zero vulnerabilities. The 400-scene scale gate passed before the provider-recovery slice. The previously rebuilt embedded arm64 Python/Git combination passes Storyline create, compare, switch, backup, recovery, and older Story Memory restoration with system tools removed from PATH. These counts describe local source/runtime tests, not signed-installation or author-pilot evidence. The latest standalone retry controls have rendered coverage, not a new packaged GUI drill.
 
 No Apple signing identities or repository secrets were available in the inspected environment. The unsigned packaging workflow permits native arm64 and Intel verification without signing credentials; neither that new workflow nor a signed release has been run on GitHub in this work.
 
@@ -47,7 +47,9 @@ OpenAI-style streams must reach `[DONE]`; Anthropic streams must reach `message_
 
 Repeated approval of the same tool returns its recorded result, including for older transcripts. If the process fails after a potentially mutating tool starts but before its result is durably saved, replay is refused and the author is asked to inspect the book and Revisions. This is a fail-closed uncertain result, not a claim that every external action is transactional.
 
-Cancellation is checked before provider calls, on incoming deltas, and before publication; a silent provider connection may still wait for its transport timeout. A crash before the completed receipt is saved may require another paid provider attempt. Live expired ChatGPT sign-in, network cancellation/billing behavior, standalone generation retries, and real-provider quality remain unverified. The parent recovery task stays open for those gaps.
+Standalone Change Set planning and drafting now support `--request-id`. Durable receipts and artifact-embedded delivery identities recover saved results after response loss, including failure before the final receipt write. The desktop journals each step in a coordinated or alternative batch and resumes unfinished steps instead of recreating successful proposals. The review panel uses the same mechanism for explicit regeneration. Receipts travel with portable backups. Core, CLI, and rendered tests cover repeated requests, application-session restart, failed storage, stopped batches, response loss, and backup recovery. A late draft is refused if the scene or review changed while the provider was working; a retry also refuses to overwrite a review changed since its first attempt.
+
+Chat cancellation is checked before provider calls, on incoming deltas, and before publication; a silent provider connection may still wait for its transport timeout. Standalone batch stopping is explicitly **after the current step**, not cancellation of an in-flight remote call. A crash before a result is durably saved may require another paid provider attempt. Live expired ChatGPT sign-in, network cancellation/billing behavior, individual-hunk regeneration recovery, and real-provider quality remain unverified. The parent recovery task stays open for those gaps.
 
 **Interface changes**
 
@@ -62,8 +64,11 @@ Cancellation is checked before provider calls, on incoming deltas, and before pu
 | Failed chat sends cleared the only visible copy of the prompt. | A local recovery card retains the prompt and context, exposes 40px Retry/Discard controls, and explains possible charges and discard semantics. |
 | Navigation could show a stream or stale message refresh in another conversation. | Per-book/thread delivery sessions and refresh guards keep recovery and responses with their originating conversation. |
 | Repeated tool approvals could create duplicate Change Sets. | Completed tool calls display their recorded outcome and replay safely; uncertain interrupted writes require inspection. |
+| A failed draft followed by Create restarted planning and duplicated proposals. | A per-book recovery panel retains the original instructions, shows a tabular progress count, and offers 40px Retry/Open results, stop-after-step, and new-request controls. Saved steps are reused and pending inputs are disabled. |
+| Closing a generation view lost its in-memory progress; late results could reopen unrelated tabs. | Recovery journals survive restarts, sessions continue outside the view, and result-opening guards check the originating book and mounted view. |
+| Regenerate Change Set had no retained retry identity. | The review panel retains the draft request, exposes a 40px Retry draft action and explicit discard control, and explains possible retry charges. Intentional regeneration after success uses a fresh identity. |
 
-The interface-polish skill informed the backup and chat recovery controls' labels, layout, and minimum hit targets; existing application styling is retained.
+The interface-polish skill informed the backup, chat, and standalone generation recovery controls' labels, layout, stable progress numerals, and minimum hit targets; existing application styling is retained.
 
 **Baseline**
 

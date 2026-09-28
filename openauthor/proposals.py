@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 import uuid
 from pathlib import Path
@@ -31,8 +32,13 @@ def create_proposal(
   merge: dict[str, Any] | None = None,
   revision_intent: dict[str, Any] | None = None,
   change_group_id: str = "",
+  proposal_id: str | None = None,
 ) -> str:
-  proposal_id = f"proposal-{uuid.uuid4().hex[:12]}"
+  proposal_id = proposal_id or f"proposal-{uuid.uuid4().hex[:12]}"
+  if not re.fullmatch(r"proposal-[a-f0-9]{12,64}", proposal_id):
+    raise OpenAuthorError("Invalid proposal id.")
+  if _proposal_file(paths, proposal_id).exists():
+    raise OpenAuthorError("This proposal already exists; recover its original generation request.")
   vcs_branch, vcs_base_commit = _capture_vcs_anchor(paths)
   scene_digest = ""
   if scene_id.strip():
@@ -68,10 +74,7 @@ def create_proposal(
     payload["generation"] = generation
   if merge is not None:
     payload["merge"] = merge
-  _proposal_file(paths, proposal_id).write_text(
-    json.dumps(payload, indent=2) + "\n",
-    encoding="utf-8",
-  )
+  atomic_write_json(_proposal_file(paths, proposal_id), payload)
   return proposal_id
 
 

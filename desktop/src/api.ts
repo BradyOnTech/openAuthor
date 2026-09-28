@@ -490,6 +490,7 @@ export async function generateProposal(
   projectRoot: string,
   payload: {
     sceneId: string;
+    requestId?: string;
     instruction: string;
     provider: ProposalProvider;
     title?: string;
@@ -517,6 +518,7 @@ export async function generateProposal(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.title && payload.title.trim() !== "") {
     args.push("--title", payload.title);
   }
@@ -602,6 +604,7 @@ export async function draftProposal(
   projectRoot: string,
   payload: {
     proposalId: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
@@ -609,6 +612,7 @@ export async function draftProposal(
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }

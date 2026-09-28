@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, draftProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 
 type Props = {
@@ -19,6 +20,15 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [editedHunkText, setEditedHunkText] = useState("");
   const [feedbackHunkId, setFeedbackHunkId] = useState("");
   const [hunkFeedback, setHunkFeedback] = useState("");
+  const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
+  const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
+  const view = useRef({ mounted: true, key: "" });
+  const viewKey = JSON.stringify([projectRoot, initial.id]);
+  view.current.key = viewKey;
+  useEffect(() => {
+    view.current.mounted = true;
+    return () => { view.current.mounted = false; };
+  }, []);
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
@@ -35,11 +45,13 @@ export function ProposalReview({ proposal: initial }: Props) {
   async function handleDraft() {
     setBusy("draft");
     try {
-      const updated = await draftProposal(projectRoot, {
-        proposalId: proposal.id,
-        provider: draftProvider,
-      });
+      const results = draftState.job ? await draftSession.retry() : await draftSession.start([{
+        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+      }], proposal.id);
+      if (!results || !view.current.mounted || view.current.key !== viewKey) return;
+      const updated = results[0];
       syncTab(updated);
+      draftSession.clear();
       setMessage("Draft ready — review the revised scene text below, then apply.");
       await refreshProposals();
     } catch (e) {
@@ -363,16 +375,18 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {proposal.status === "pending" && (
         <div className="review-card__actions">
+          {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
+          {draftState.job && !draftState.busy && <button className="btn" style={{ minHeight: 40 }} onClick={draftSession.clear}>Discard draft request</button>}
           {proposal.stale && changeSet && (
             <button className="btn btn--primary" disabled={busy === "rebase"} onClick={() => void handleRebase()}>
               {busy === "rebase" ? "Rebasing…" : "Rebase safe hunks"}
             </button>
           )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && (
-            <button className="btn btn--primary" disabled={busy === "draft"} onClick={handleDraft}>
-              {busy === "draft"
+            <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={handleDraft}>
+              {draftState.busy
                 ? "Drafting..."
-                : hasDraft
+                : draftState.job ? "Retry draft" : hasDraft
                   ? "Regenerate Change Set"
                   : "Build Change Set"}
             </button>

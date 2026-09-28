@@ -22,7 +22,9 @@ from .codex_app_server import (
   CodexAppServerUnavailable,
 )
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft
+from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft, _digest_scene_payload
+from .proposal_delivery import current_proposal_delivery, recoverable_proposal
+from .project_lock import project_write_lock
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
@@ -2170,6 +2172,7 @@ def _default_title(scene_title: str, instruction: str) -> str:
   return _truncate(f"{scene_title}: {short_instruction}", 72)
 
 
+@recoverable_proposal("generate")
 def generate_proposal(
   paths: ProjectPaths,
   *,
@@ -2344,6 +2347,7 @@ def generate_proposal(
   final_title = title.strip() or _default_title(context["scene"]["title"], instruction)
   proposal_id = create_proposal(
     paths,
+    proposal_id=current_proposal_delivery().get("proposal_id"),
     title=final_title,
     instruction=provider_result["text"],
     scene_id=scene_id,
@@ -2356,6 +2360,7 @@ def generate_proposal(
     },
     change_group_id=change_group_id,
     generation={
+      "delivery": current_proposal_delivery(),
       "id": generation_id,
       "provider": provider,
       "model": selected_model,
@@ -2407,6 +2412,7 @@ def _prose_change_key(text: str) -> str:
   return re.sub(r"\s+", " ", text).strip()
 
 
+@recoverable_proposal("draft")
 def generate_proposal_draft(
   paths: ProjectPaths,
   *,
@@ -2596,25 +2602,31 @@ def generate_proposal_draft(
       "more specific or choose a full AI provider."
     )
 
-  return set_proposal_draft(
-    paths,
-    proposal_id=proposal_id,
-    proposed_body=proposed_body,
-    draft={
-      "generation_id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "temperature": temperature,
-      "max_output_tokens": max_output_tokens,
-      "input_tokens": provider_result["input_tokens"],
-      "output_tokens": provider_result["output_tokens"],
-      "latency_ms": provider_result["latency_ms"],
-      "estimated_cost_usd": estimated_cost_usd,
-      "changed": changed,
-      "log_path": log_path,
-      "created_at": utc_now(),
-    },
-  )
+  with project_write_lock(paths):
+    if _digest_scene_payload(get_scene(paths, scene_id)) != _digest_scene_payload(scene):
+      raise OpenAuthorError("The scene changed while the provider was drafting. Newer writing was preserved; request a new draft against the current scene.")
+    if get_proposal(paths, proposal_id) != proposal:
+      raise OpenAuthorError("The Change Set changed while the provider was drafting. Your review was preserved; inspect Changes before requesting another draft.")
+    return set_proposal_draft(
+      paths,
+      proposal_id=proposal_id,
+      proposed_body=proposed_body,
+      draft={
+        "delivery": current_proposal_delivery(),
+        "generation_id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+        "input_tokens": provider_result["input_tokens"],
+        "output_tokens": provider_result["output_tokens"],
+        "latency_ms": provider_result["latency_ms"],
+        "estimated_cost_usd": estimated_cost_usd,
+        "changed": changed,
+        "log_path": log_path,
+        "created_at": utc_now(),
+      },
+    )
 
 
 def regenerate_change_hunk(

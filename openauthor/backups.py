@@ -28,6 +28,7 @@ ROOT_FILES = {
 PREFIXES = (
   "manuscript/", "codex/", ".openauthor/revisions/", ".openauthor/generations/",
   ".openauthor/workspace/proposals/", ".openauthor/workspace/chats/",
+  ".openauthor/workspace/proposal-deliveries/",
 )
 
 

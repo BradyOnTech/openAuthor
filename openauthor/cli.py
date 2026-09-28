@@ -303,6 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
     help="Generate the full revised scene body for a pending proposal.",
   )
   proposal_draft.add_argument("--id", required=True, help="Proposal id.")
+  proposal_draft.add_argument("--request-id", default="", help="Reuse this id to recover the same draft delivery.")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -349,6 +350,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_reject.add_argument("--json", action="store_true", help="Output JSON.")
   proposal_generate = proposal_sub.add_parser("generate", help="Generate proposal via provider.")
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
+  proposal_generate.add_argument("--request-id", default="", help="Reuse this id to recover the same proposal delivery.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
   proposal_generate.add_argument("--title", default="", help="Optional proposal title override.")
   proposal_generate.add_argument(
@@ -1819,6 +1821,7 @@ def _run(args: argparse.Namespace) -> int:
     if args.proposal_command == "draft":
       row = generate_proposal_draft(
         paths,
+        request_id=args.request_id,
         proposal_id=args.id,
         provider=args.provider,
         model=args.model,
@@ -1851,6 +1854,7 @@ def _run(args: argparse.Namespace) -> int:
     if args.proposal_command == "generate":
       row = generate_proposal(
         paths,
+        request_id=args.request_id,
         scene_id=args.scene,
         instruction=args.instruction,
         title=args.title,
@@ -2575,7 +2579,7 @@ def main(argv: list[str] | None = None) -> int:
       return result
     if (
       args.command == "revision" and action in {"save", "restore"}
-      or args.command == "proposal" and action in {"apply", "apply-batch", "undo"}
+      or args.command == "proposal" and action in {"apply", "apply-batch", "undo", "hunk", "hunk-edit", "rebase", "reject"}
       or args.command == "storyline" and action not in {"list"}
       or args.command == "branch" and action in {"switch", "merge", "create"}
     ):
