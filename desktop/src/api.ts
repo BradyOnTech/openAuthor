@@ -1911,6 +1911,7 @@ export async function resolveMergeConflict(
     base: string;
     head: string;
     path: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
@@ -1929,6 +1930,7 @@ export async function resolveMergeConflict(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }

@@ -230,6 +230,8 @@ export type ProposalRecord = {
     created_at: string;
   };
   merge?: {
+    base_commit?: string;
+    head_commit?: string;
     base: string;
     head: string;
     merge_base: string;

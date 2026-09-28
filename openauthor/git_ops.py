@@ -511,6 +511,13 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
   }
 
 
+def merge_revision_pair(paths: ProjectPaths, *, base: str, head: str) -> dict[str, str]:
+  return {
+    "base_commit": run_git(paths, ["rev-parse", "--verify", "--end-of-options", f"{base.strip()}^{{commit}}"]).stdout.strip(),
+    "head_commit": run_git(paths, ["rev-parse", "--verify", "--end-of-options", f"{head.strip()}^{{commit}}"]).stdout.strip(),
+  }
+
+
 def merge_branches(
   paths: ProjectPaths,
   *,

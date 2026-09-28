@@ -2789,6 +2789,7 @@ MERGE_SYSTEM_PROMPT = (
 )
 
 
+@recoverable_proposal("merge")
 def generate_merge_resolution(
   paths: ProjectPaths,
   *,
@@ -2800,7 +2801,7 @@ def generate_merge_resolution(
   temperature: float = 0.3,
   max_output_tokens: int = 3000,
 ) -> dict[str, Any]:
-  from .git_ops import run_git, show_file_at_ref
+  from .git_ops import merge_revision_pair, run_git, show_file_at_ref
   from .scenes import render_scene_markdown, split_scene_text
 
   if provider not in SUPPORTED_PROVIDERS:
@@ -2817,9 +2818,10 @@ def generate_merge_resolution(
 
   base_ref = base.strip()
   head_ref = head.strip()
-  merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
-  ours_file = show_file_at_ref(paths, base_ref, normalized_path)
-  theirs_file = show_file_at_ref(paths, head_ref, normalized_path)
+  revisions = current_proposal_delivery().get("merge_revisions") or merge_revision_pair(paths, base=base_ref, head=head_ref)
+  merge_base = run_git(paths, ["merge-base", revisions["base_commit"], revisions["head_commit"]], check=True).stdout.strip()
+  ours_file = show_file_at_ref(paths, revisions["base_commit"], normalized_path)
+  theirs_file = show_file_at_ref(paths, revisions["head_commit"], normalized_path)
   ancestor_file = show_file_at_ref(paths, merge_base, normalized_path) or ""
   if ours_file is None or theirs_file is None:
     raise OpenAuthorError(
@@ -2989,34 +2991,40 @@ def generate_merge_resolution(
     estimated_cost_usd=estimated_cost_usd,
   )
 
-  title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
-  proposal_id = create_proposal(
-    paths,
-    title=title,
-    instruction=instruction,
-    scene_id=scene_id,
-    source="merge_resolution",
-    proposed_body=reconciled_body,
-    generation={
-      "id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "temperature": temperature,
-      "max_output_tokens": max_output_tokens,
-      "input_tokens": provider_result["input_tokens"],
-      "output_tokens": provider_result["output_tokens"],
-      "latency_ms": provider_result["latency_ms"],
-      "estimated_cost_usd": estimated_cost_usd,
-      "log_path": log_path,
-    },
-    merge={
-      "base": base_ref,
-      "head": head_ref,
-      "merge_base": merge_base,
-      "path": normalized_path,
-      "file_content": file_content,
-    },
-  )
+  with project_write_lock(paths):
+    if merge_revision_pair(paths, base=base_ref, head=head_ref) != revisions:
+      raise OpenAuthorError("The Storyline revisions changed while reconciliation was generating. Newer writing was preserved; check compatibility and start a new request.")
+    title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
+    proposal_id = create_proposal(
+      paths,
+      proposal_id=current_proposal_delivery().get("proposal_id"),
+      title=title,
+      instruction=instruction,
+      scene_id=scene_id,
+      source="merge_resolution",
+      proposed_body=reconciled_body,
+      generation={
+        "delivery": current_proposal_delivery(),
+        "id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+        "input_tokens": provider_result["input_tokens"],
+        "output_tokens": provider_result["output_tokens"],
+        "latency_ms": provider_result["latency_ms"],
+        "estimated_cost_usd": estimated_cost_usd,
+        "log_path": log_path,
+      },
+      merge={
+        "base": base_ref,
+        "head": head_ref,
+        **revisions,
+        "merge_base": merge_base,
+        "path": normalized_path,
+        "file_content": file_content,
+      },
+    )
   _attach_proposal_to_generation_log(
     paths,
     run_id=generation_id,

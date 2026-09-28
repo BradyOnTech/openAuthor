@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 
 from .changes import build_change_set, edit_hunk_after_text, rebase_change_set, render_change_set, set_hunk_decision
-from .git_ops import current_branch
+from .git_ops import current_branch, merge_revision_pair
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
 from .revisions import create_revision, read_file_at_revision, revision_head
 from .scenes import get_scene, split_scene_text, update_scene
@@ -667,6 +667,13 @@ def _proposal_is_stale(
   *,
   current_digests: dict[str, str] | None = None,
 ) -> bool:
+  if proposal.get("source") == "merge_resolution":
+    metadata = proposal.get("merge") or {}
+    try:
+      revisions = merge_revision_pair(paths, base=metadata.get("base", ""), head=metadata.get("head", ""))
+      return any(metadata.get(key) != value for key, value in revisions.items())
+    except OpenAuthorError:
+      return True
   scene_id = str(proposal.get("scene_id", "")).strip()
   if scene_id == "":
     return False

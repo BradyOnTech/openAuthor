@@ -84,6 +84,7 @@ from .git_ops import (
   list_branches,
   list_snapshots,
   merge_branches,
+  merge_revision_pair,
   preflight_merge,
   scan_merge_conflicts,
   switch_branch,
@@ -731,6 +732,7 @@ def build_parser() -> argparse.ArgumentParser:
     help="AI provider (default: local).",
   )
   branch_resolve.add_argument("--model", default=None, help="Model override.")
+  branch_resolve.add_argument("--request-id", default="", help="Reuse this id to recover the same reconciliation.")
   branch_resolve.add_argument(
     "--temperature", type=float, default=0.3, help="Sampling temperature (default: 0.3)."
   )
@@ -1999,6 +2001,9 @@ def _run(args: argparse.Namespace) -> int:
             f"{merge_meta.get('base')} <- {merge_meta.get('head')}, "
             f"not {args.base} <- {args.head}."
           )
+        revisions = merge_revision_pair(paths, base=args.base, head=args.head)
+        if any(merge_meta.get(key) != value for key, value in revisions.items()):
+          raise OpenAuthorError("The Storyline revisions changed or this reconciliation lacks revision anchors. Check compatibility and generate a new reconciliation before merging.")
         resolutions[str(merge_meta["path"])] = str(merge_meta.get("file_content", ""))
         resolution_proposal_ids.append(resolution_id)
       row = merge_branches(
@@ -2045,6 +2050,7 @@ def _run(args: argparse.Namespace) -> int:
     if args.branch_command == "resolve":
       row = generate_merge_resolution(
         paths,
+        request_id=args.request_id,
         base=args.base,
         head=args.head,
         scene_path=args.path,
@@ -2581,6 +2587,7 @@ def main(argv: list[str] | None = None) -> int:
       return result
     if (
       args.command == "revision" and action in {"save", "restore"}
+      or args.command == "snapshot" and action == "create"
       or args.command == "proposal" and action in {"apply", "apply-batch", "undo", "hunk", "hunk-edit", "rebase", "reject"}
       or args.command == "storyline" and action not in {"list"}
       or args.command == "branch" and action in {"switch", "merge", "create"}
