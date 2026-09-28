@@ -21,11 +21,15 @@ Signing and notarization require valid Apple credentials. Both architectures req
 
 The user is unsure which manuscripts and participants are approved. Do not read private manuscripts for evaluation, send their contents to providers, or contact participants until scope and consent are recorded. Synthetic evaluation and pilot preparation may proceed.
 
+The executable evaluation runner now prepares isolated source-hashed cases, performs cold-start extraction without seeding Canon, requires exact-draft hunk review, measures apply/undo/backup recovery, and separates synthetic decisions from human observations. It checks consent before reading a real source and rechecks both retained and original approvals before generation; a live call additionally requires explicit opt-in. The pilot record starts with no observed outcomes and no outreach authorization. This tooling is preparation, not completion of the real-author requirements.
+
 **Current verification**
 
-145 Python tests, 99 desktop tests, and six native bridge tests pass, along with the frontend build and repository checks. The dependency audit reports zero vulnerabilities. The 400-scene scale gate passed before the provider-recovery slice. The rebuilt embedded arm64 Python/Git combination passes Storyline create, compare, switch, backup, recovery, and older Story Memory restoration with system tools removed from PATH. These counts describe local source/runtime tests, not signed-installation or author-pilot evidence.
+159 Python tests and the new synthetic author-workflow gate pass, along with repository checks. The preceding desktop slice passed 99 frontend tests, six native bridge tests, and the frontend build; the dependency audit reported zero vulnerabilities. The 400-scene scale gate passed before the provider-recovery slice. The rebuilt embedded arm64 Python/Git combination passes Storyline create, compare, switch, backup, recovery, and older Story Memory restoration with system tools removed from PATH. These counts describe local source/runtime tests, not signed-installation or author-pilot evidence.
 
 No Apple signing identities or repository secrets were available in the inspected environment. The unsigned packaging workflow permits native arm64 and Intel verification without signing credentials; neither that new workflow nor a signed release has been run on GitHub in this work.
+
+The September 28 follow-up confirmed that the configured GitHub repository is private, its repository-secret list is empty, and the local keychain still has zero valid code-signing identities. Approval has been requested to push the isolated reliability branch and open a PR for native packaging checks; no merge or release is authorized by that request.
 
 **Native GUI evidence: 2026-09-28, local arm64**
 

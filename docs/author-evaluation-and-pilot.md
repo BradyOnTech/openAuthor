@@ -51,3 +51,73 @@ With separate permission for a follow-up, check about a week later whether they 
 For each participant code, record task completion without help, assistance required, misunderstood changes, undo confidence before/after, observed data-loss incidents, return-to-revision behavior, blockers, and short approved quotations. Include explicit values for not observed and declined; never convert missing answers into success. Record only the minimum approved content and keep raw manuscript artifacts outside Git.
 
 The next decision is whether authors can identify the current book state, understand proposed edits, and recover confidently. Any observed lost writing, cross-Storyline contamination, or unreliable undo blocks a release recommendation even if preference ratings are positive.
+
+**Executable evaluation workflow**
+
+`scripts/evaluate_author_workflow.py` now runs the real import, cold-start heuristic extraction, proposal drafting, hunk review, apply, undo, backup, and restore APIs. It creates a new isolated book, never edits the source manuscript, and refuses to overwrite an existing run. Nothing contacts a provider during preparation. The built-in synthetic mode is local-only and cannot be relabeled as human evidence.
+
+Run the disposable synthetic recovery gate with `make test-author-workflow`. To inspect a persistent synthetic run, use a new output folder:
+
+```sh
+python3 scripts/evaluate_author_workflow.py prepare --output /tmp/openauthor-study-run
+python3 scripts/evaluate_author_workflow.py generate --run /tmp/openauthor-study-run
+```
+
+Read `draft.json`, the imported book, and the original source. Fill `review.json` before proceeding. The runner checks the run, proposal, and draft hashes, requires an explicit accepted/rejected decision for every hunk, and stops if the book changed since intake. An unfilled review never authorizes application.
+
+```sh
+python3 scripts/evaluate_author_workflow.py finish \
+  --run /tmp/openauthor-study-run \
+  --review /tmp/openauthor-study-run/review.json
+```
+
+The resulting `report.json` includes per-kind extraction denominators, requested provider/model/settings, all generation-attempt summaries and failures, usage/provenance, reviewed hunk counts, exact application comparison, byte-exact undo, and exact backup/book/history comparison. Provider-reported usage is not a billing receipt; failed-attempt usage may be unknown. A rejected-only draft does not count as a successful apply or undo. Unknown ratings, missing annotations, empty denominators, and absent pilot outcomes remain null. Source bytes and full text-bearing reports stay inside the private run folder; stdout contains only the run identifier and verification summary.
+
+For extraction labels, classify each suggestion as `correct`, `incorrect`, or `uncertain`. Add genuinely missing entities, relationships, and facts to `missed_items`, using entries such as `{"kind":"canon_fact","description":"Ivo is the keeper."}`. Mark `extraction_complete` true only after checking false negatives as well as suggestions. Precision and recall are ungraded when annotations are incomplete or uncertain; separate `entity_create`, `relationship_create`, and `canon_fact` results prevent successful name detection from disguising missing facts. Human ratings and observations are never inferred from token counts or deterministic edits.
+
+**Real-manuscript case manifests**
+
+No such manifest is currently approved. The following is a deliberately disabled intake example, not consent. An authorized person must supply the missing scope and evidence before it can run:
+
+```json
+{
+  "case_id": "author-case-01",
+  "source": "approved-excerpt.md",
+  "source_sha256": null,
+  "strategy": "headings",
+  "target_scene_index": 0,
+  "provider": "local",
+  "model": "heuristic-v1",
+  "instruction": "Tighten pacing while preserving named people and events.",
+  "protected_elements": [],
+  "consent": {
+    "status": "not_approved",
+    "authority_ref": null,
+    "evidence_ref": null,
+    "participant_code": null,
+    "local_analysis": false,
+    "retain_artifacts": false,
+    "retain_until": null,
+    "provider_transmission": []
+  }
+}
+```
+
+Use an opaque authority/evidence reference and participant code, not contact details. Once local access is approved, record the exact source SHA-256. Supported intake is one Markdown, TXT, or DOCX file of at most 20 MiB, containing one or more scenes; the target index is zero-based. A case per source/target/provider combination keeps comparisons explicit. Real-author outputs must be outside Git repositories.
+
+For a live run, set the provider and explicit requested model and add that exact pair to `consent.provider_transmission`, for example `{"provider":"openai","model":"the-explicitly-approved-model-id"}` with the actual approved identifier substituted. `retain_until` must be a future timezone-aware ISO timestamp. `retain_artifacts` covers the copied source, prompts, completions, annotations, logs, revision history, and unencrypted backups. The operator remains responsible for restricted access and deleting every retained copy by that deadline; the runner does not provide automatic deletion or legal verification of consent.
+
+```sh
+python3 scripts/evaluate_author_workflow.py prepare \
+  --manifest /path/to/approved-case.json --output /path/to/new-private-run
+python3 scripts/evaluate_author_workflow.py generate \
+  --run /path/to/new-private-run --allow-provider
+```
+
+Both the retained approval and the original manifest are checked again before generation and finishing. Revoking the original manifest, changing its approved source digest, removing approval, or letting retention expire blocks further processing. `--allow-provider` is an additional deliberate transmission gate, not a substitute for consent. Credentials must be configured through the product's existing provider mechanism; they never belong in case or review files.
+
+An interrupted generation requires explicit `--retry` and may incur another charge if no completed draft was saved. A saved draft is reused instead of creating another proposal. An interrupted apply is left for inspection rather than replayed blindly. The report is not proof of signed-installation readiness or actual remote cancellation/billing behavior.
+
+**Pilot preparation artifact**
+
+Each prepared run includes `pilot-record.json` with task outcomes set to `not_observed`, ratings unset, and outreach/follow-up authorization false. Use it only after separate participant and observation permission. Record task outcomes as unassisted, assisted, failed, declined, or not observed; record actual return to the author's own revision work separately from intention. The runner performs no outreach, scheduling, recording, or automatic retention inference. Filling this form is observational work still required from an approved pilot; no pilot has been conducted.

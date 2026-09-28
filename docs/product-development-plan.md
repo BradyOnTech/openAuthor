@@ -4,6 +4,10 @@ Status: canonical forward-looking product plan
 Scope: product strategy, domain model, delivery sequence, release gates, and success measures
 Engineering history: `docs/plan.md`
 
+**Evaluation evidence boundary, September 2026**
+
+All 1.0 scores and zero-error Editorial/Canon claims below refer only to the small deterministic regression corpora: Editorial uses the local adapter and pattern/term checks, while Canon starts with manually supplied facts. They do not establish manuscript extraction accuracy, preservation of author voice, or live-provider editing quality. The consent-gated workflow in `docs/author-evaluation-and-pilot.md` adds real import/review/apply/undo/recovery measurement, but current runs are synthetic and no author pilot or live manuscript evaluation is approved. The July verification record is historical, not a current release certification.
+
 ## Delivery status
 
 Phase A is complete and Phase B is implementation-complete but not release-certified. The repository has a validated capability registry, an honest active-V2 documentation boundary, a deterministic 400-scene scale fixture with enforced budgets, a rendered React workflow contract, a native Tauri-to-core golden-loop gate, and a strict on-device product-signal schema with a private activation/trust dashboard. Phase B has delivered staged Markdown/TXT/DOCX/Scrivener import, structure preview, Markdown/DOCX export with loss reporting, crash-recovery journaling, startup health with guided safe repair, a first-safe-revision guide, and a checksum-pinned Python runtime verified inside a real macOS application bundle. Safe proposal apply/undo and retrieval freshness use an internal content-addressed Revision store, so the golden loop does not require system Git; Git is reserved for the Storyline adapter. Developer ID credentials, Apple notarization evidence, both-architecture clean-machine validation, and automated packaged-GUI execution are external release gates, so no visible capability is labeled release-ready. Current truth lives in [`capabilities.json`](capabilities.json) and [`capabilities.md`](capabilities.md).
