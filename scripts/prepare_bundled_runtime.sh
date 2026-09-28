@@ -116,4 +116,5 @@ cat > "$DEST/openauthor-runtime.json" <<EOF
 }
 EOF
 
-echo "Bundled runtimes prepared at $DEST and $CODEX_DEST"
+bash "$ROOT/scripts/prepare_bundled_git.sh"
+echo "Bundled runtimes prepared at $DEST and $CODEX_DEST (including local Git)"

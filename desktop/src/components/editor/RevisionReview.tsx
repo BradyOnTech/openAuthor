@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import { compareRevisions, getRevisionRetrospective, restoreRevision } from "../../api";
+import { useRefreshBookTabs } from "../../hooks/useRefreshBookTabs";
+import { withProjectBookChange } from "../../sceneSaveSession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { RevisionComparison, RevisionRetrospective, RevisionSummary } from "../../types";
 
 export function RevisionReview({ revision }: { revision: RevisionSummary }) {
-  const { projectRoot, refreshScenes, setError, setMessage } = useWorkspace();
+  const { projectRoot, refreshScenes, refreshCodex, setError, setMessage } = useWorkspace();
+  const refreshBookTabs = useRefreshBookTabs(projectRoot);
   const [comparison, setComparison] = useState<RevisionComparison | null>(null);
   const [retrospective, setRetrospective] = useState<RevisionRetrospective | null>(null);
   const [busyPath, setBusyPath] = useState("");
 
   useEffect(() => {
     let active = true;
-    if (!revision.parent) {
-      setComparison(null);
-      return () => { active = false; };
-    }
+    setComparison(null);
+    setRetrospective(null);
     void Promise.all([
-      compareRevisions(projectRoot, revision.parent, revision.id),
-      getRevisionRetrospective(projectRoot, revision.parent, revision.id),
+      compareRevisions(projectRoot, revision.parent || revision.id, revision.id),
+      getRevisionRetrospective(projectRoot, revision.parent || revision.id, revision.id),
     ])
       .then(([result, retro]) => { if (active) { setComparison(result); setRetrospective(retro); } })
       .catch((error) => { if (active) setError(`Revision comparison failed: ${error instanceof Error ? error.message : String(error)}`); });
@@ -27,8 +28,11 @@ export function RevisionReview({ revision }: { revision: RevisionSummary }) {
   async function handleRestore(path: string) {
     setBusyPath(path);
     try {
-      await restoreRevision(projectRoot, revision.id, [path]);
-      await refreshScenes();
+      await withProjectBookChange(projectRoot, async () => {
+        const deleted = comparison?.files.find(file => file.path === path)?.status === "deleted";
+        await restoreRevision(projectRoot, deleted ? revision.parent : revision.id, [path]);
+        await Promise.all([refreshScenes(), refreshCodex(), refreshBookTabs()]);
+      });
       setMessage(`Restored ${path} as a new Revision. Your newer history was preserved.`);
     } catch (error) {
       setError(`Restore failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -66,14 +70,12 @@ export function RevisionReview({ revision }: { revision: RevisionSummary }) {
                 <span className="badge">{file.status}</span>
                 <span style={{ marginLeft: "var(--space-2)", fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)" }}>{file.path}</span>
               </div>
-              {file.path.startsWith("manuscript/scenes/") && file.status !== "deleted" && (
-                <button className="btn btn--ghost btn--sm" disabled={busyPath === file.path} onClick={() => void handleRestore(file.path)}>
-                  {busyPath === file.path ? "Restoring…" : "Restore this scene"}
-                </button>
-              )}
+              <button className="btn btn--ghost btn--sm" disabled={Boolean(busyPath)} onClick={() => void handleRestore(file.path)}>
+                {busyPath === file.path ? "Restoring…" : file.path.startsWith("manuscript/scenes/") ? "Restore this scene" : file.path === "manuscript/structure.json" ? "Restore plan" : file.path.startsWith("codex/") ? "Restore Story Memory" : "Restore this file"}
+              </button>
             </div>
             <pre style={{ margin: 0, padding: "var(--space-3)", overflowX: "auto", whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", lineHeight: 1.5, color: "var(--text-secondary)" }}>
-              {file.diff || "Binary or metadata-only change."}
+              {file.diff || (file.status === "unchanged" ? "Unchanged in this version; available to restore." : "Metadata-only change.")}
             </pre>
           </section>
         ))}

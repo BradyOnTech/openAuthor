@@ -55,6 +55,7 @@ const ALLOWED = new Set([
   "auth",
   "manuscript",
   "revision",
+  "backup",
   "plan",
   "memory",
   "search",
@@ -110,6 +111,14 @@ export async function pickZipFile(startingPath?: string): Promise<string | null>
   });
 }
 
+export async function createPortableBackup(projectRoot: string, target: string): Promise<{ verified: boolean; file_count: number; path: string }> {
+  return decodeJson(await runCoreCommand(projectRoot, ["backup", "create", "--target", target, "--json"]));
+}
+
+export async function restorePortableBackup(source: string, target: string): Promise<{ verified: boolean; project_root: string }> {
+  return decodeJson(await runCoreCommand(CONTROL_PROJECT_ROOT, ["backup", "restore", "--source", source, "--target", target, "--json"]));
+}
+
 export async function pickManuscriptFile(startingPath?: string): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   return tauriInvoke<string | null>("pick_manuscript_file", {
@@ -155,7 +164,7 @@ export async function importManuscript(
 }
 
 export async function pickExportTarget(
-  format: "markdown" | "docx",
+  format: "markdown" | "docx" | "backup",
   startingPath?: string
 ): Promise<string | null> {
   if (!isTauriRuntime()) return null;
@@ -295,9 +304,9 @@ export async function updateScene(
   sceneId: string,
   payload: {
     title: string;
-    summary: string;
-    pov: string;
-    status: string;
+    summary?: string;
+    pov?: string;
+    status?: string;
     body: string;
   }
 ): Promise<SceneDetail> {
@@ -308,12 +317,9 @@ export async function updateScene(
     sceneId,
     "--title",
     payload.title,
-    "--summary",
-    payload.summary,
-    "--pov",
-    payload.pov,
-    "--status",
-    payload.status,
+    ...(payload.summary === undefined ? [] : ["--summary", payload.summary]),
+    ...(payload.pov === undefined ? [] : ["--pov", payload.pov]),
+    ...(payload.status === undefined ? [] : ["--status", payload.status]),
     "--body",
     payload.body,
     "--json"
@@ -484,6 +490,7 @@ export async function generateProposal(
   projectRoot: string,
   payload: {
     sceneId: string;
+    requestId?: string;
     instruction: string;
     provider: ProposalProvider;
     title?: string;
@@ -511,6 +518,7 @@ export async function generateProposal(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.title && payload.title.trim() !== "") {
     args.push("--title", payload.title);
   }
@@ -596,6 +604,7 @@ export async function draftProposal(
   projectRoot: string,
   payload: {
     proposalId: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
@@ -603,6 +612,7 @@ export async function draftProposal(
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }
@@ -656,7 +666,8 @@ export async function regenerateProposalHunk(
   hunkId: string,
   provider: ProposalProvider,
   model?: string,
-  feedback?: string
+  feedback?: string,
+  requestId?: string
 ): Promise<ProposalRecord> {
   const args = [
     "proposal", "hunk-regenerate", "--id", proposalId, "--hunk", hunkId,
@@ -664,6 +675,7 @@ export async function regenerateProposalHunk(
   ];
   if (model?.trim()) args.push("--model", model.trim());
   if (feedback?.trim()) args.push("--feedback", feedback.trim());
+  if (requestId) args.push("--request-id", requestId);
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -700,6 +712,10 @@ export async function listRevisions(projectRoot: string, limit = 50): Promise<Re
   return decodeJson<RevisionSummary[]>(result);
 }
 
+export async function saveRevision(projectRoot: string, message: string): Promise<RevisionSummary> {
+  return decodeJson(await runCoreCommand(projectRoot, ["revision", "save", "--message", message, "--json"]));
+}
+
 export async function getRevisionRetrospective(projectRoot: string, base: string, head: string): Promise<RevisionRetrospective> {
   const result = await runCoreCommand(projectRoot, ["revision", "retrospective", "--base", base, "--head", head, "--json"]);
   return decodeJson(result);
@@ -711,7 +727,7 @@ export async function compareRevisions(
   headRevision: string
 ): Promise<RevisionComparison> {
   const result = await runCoreCommand(projectRoot, [
-    "revision", "diff", "--base", baseRevision, "--head", headRevision, "--json"
+    "revision", "diff", "--base", baseRevision, "--head", headRevision, "--include-unchanged", "--json"
   ]);
   return decodeJson<RevisionComparison>(result);
 }
@@ -885,6 +901,7 @@ export async function listChatMessages(
 
 export type ChatSendPayload = {
   threadId: string;
+  deliveryId?: string;
   message: string;
   currentSceneId?: string;
   sceneIds?: string[];
@@ -915,6 +932,7 @@ export async function sendChatMessage(
     "--message",
     payload.message
   ];
+  if (payload.deliveryId) args.push("--request-id", payload.deliveryId);
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
   }
@@ -1058,6 +1076,7 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     contextOverrides.scope = payload.scope;
   }
   return {
+    delivery_id: payload.deliveryId,
     thread_id: payload.threadId,
     message: payload.message,
     current_scene_id: payload.currentSceneId ?? "",
@@ -1081,6 +1100,7 @@ export async function sendChatMessageStreamed(
   const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
     const frame = event.payload.frame;
+    if (event.payload.projectRoot !== projectRoot) return;
     if (frame.event !== "chat.delta" || !frame.payload) return;
     if (frame.payload.request_id !== requestId) return;
     handlers.onDelta(String(frame.payload.text ?? ""));
@@ -1891,6 +1911,7 @@ export async function resolveMergeConflict(
     base: string;
     head: string;
     path: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
@@ -1909,6 +1930,7 @@ export async function resolveMergeConflict(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }

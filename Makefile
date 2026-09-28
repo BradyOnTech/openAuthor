@@ -13,6 +13,7 @@ help:
 	@echo "  make test-scale - Generate the large-project fixture and enforce performance budgets"
 	@echo "  make test-canon-eval - Measure Canon diagnostic precision and recall"
 	@echo "  make test-editorial-eval - Measure Editorial Pass improvement and canon safety"
+	@echo "  make test-author-workflow - Verify synthetic import, reviewed edits, undo, and recovery"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
 	@echo "  make test-all - Run Python and desktop tests"
@@ -72,6 +73,10 @@ test-canon-eval:
 
 test-editorial-eval:
 	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_editorial_passes.py
+
+.PHONY: test-author-workflow
+test-author-workflow:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_author_workflow.py smoke
 
 test-desktop:
 	@echo "Running desktop tests..."

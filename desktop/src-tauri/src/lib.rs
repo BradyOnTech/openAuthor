@@ -262,6 +262,7 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
     "auth",
     "manuscript",
     "revision",
+    "backup",
     "plan",
     "memory",
     "search",
@@ -535,10 +536,16 @@ fn pick_export_target(format: String, starting_path: Option<String>) -> Result<O
       .set_file_name("manuscript.docx")
       .save_file()
       .map(|path| path.to_string_lossy().to_string()))
+  } else if format == "backup" {
+    Ok(dialog
+      .add_filter("openAuthor Backup", &["zip"])
+      .set_file_name("novel.openauthor.zip")
+      .save_file()
+      .map(|path| path.to_string_lossy().to_string()))
   } else if format == "markdown" {
     Ok(dialog.pick_folder().map(|path| path.to_string_lossy().to_string()))
   } else {
-    Err("Export format must be markdown or docx.".to_string())
+    Err("Export format must be markdown, docx, or backup.".to_string())
   }
 }
 

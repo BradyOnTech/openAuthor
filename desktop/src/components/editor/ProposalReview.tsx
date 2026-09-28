@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, draftProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 
 type Props = {
@@ -19,6 +20,17 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [editedHunkText, setEditedHunkText] = useState("");
   const [feedbackHunkId, setFeedbackHunkId] = useState("");
   const [hunkFeedback, setHunkFeedback] = useState("");
+  const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
+  const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
+  const hunkSession = useMemo(() => proposalGenerationSession(projectRoot, `${initial.id}:hunks`), [projectRoot, initial.id]);
+  const hunkState = useSyncExternalStore(hunkSession.subscribe, hunkSession.getSnapshot);
+  const view = useRef({ mounted: true, key: "" });
+  const viewKey = JSON.stringify([projectRoot, initial.id]);
+  view.current.key = viewKey;
+  useEffect(() => {
+    view.current.mounted = true;
+    return () => { view.current.mounted = false; };
+  }, []);
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
@@ -35,11 +47,13 @@ export function ProposalReview({ proposal: initial }: Props) {
   async function handleDraft() {
     setBusy("draft");
     try {
-      const updated = await draftProposal(projectRoot, {
-        proposalId: proposal.id,
-        provider: draftProvider,
-      });
+      const results = draftState.job ? await draftSession.retry() : await draftSession.start([{
+        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+      }], proposal.id);
+      if (!results || !view.current.mounted || view.current.key !== viewKey) return;
+      const updated = results[0];
       syncTab(updated);
+      draftSession.clear();
       setMessage("Draft ready — review the revised scene text below, then apply.");
       await refreshProposals();
     } catch (e) {
@@ -105,8 +119,12 @@ export function ProposalReview({ proposal: initial }: Props) {
   async function handleRegenerateHunk(hunkId: string, feedback = "") {
     setBusy(hunkId);
     try {
-      const updated = await regenerateProposalHunk(projectRoot, proposal.id, hunkId, draftProvider, undefined, feedback);
-      syncTab(updated);
+      const results = hunkState.job ? await hunkSession.retry() : await hunkSession.start([{
+        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+      }], proposal.id, { id: hunkId, feedback });
+      if (!results || !view.current.mounted || view.current.key !== viewKey) return;
+      syncTab(results[0]);
+      hunkSession.clear();
       setFeedbackHunkId("");
       setHunkFeedback("");
       setMessage("Change hunk regenerated; review its replacement before applying.");
@@ -265,7 +283,7 @@ export function ProposalReview({ proposal: initial }: Props) {
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-1)" }}>
                     <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
-                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
+                    <button className="btn btn--ghost btn--sm" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy || Boolean(hunkState.job)} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
                     <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setFeedbackHunkId(hunk.id); setHunkFeedback(""); }}>Comment</button>
                     <button
                       className={`btn btn--sm ${hunk.decision === "accepted" ? "btn--success" : "btn--ghost"}`}
@@ -298,9 +316,9 @@ export function ProposalReview({ proposal: initial }: Props) {
                 )}
                 {feedbackHunkId === hunk.id && (
                   <div style={{ padding: "var(--space-3)", background: "var(--bg-elevated)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                    <textarea className="input" rows={3} value={hunkFeedback} onChange={(event) => setHunkFeedback(event.target.value)} placeholder="What should this passage do differently?" aria-label={`Revision comment for hunk ${hunk.order}`} />
+                    <textarea className="input" rows={3} disabled={hunkState.busy || Boolean(hunkState.job)} value={hunkFeedback} onChange={(event) => setHunkFeedback(event.target.value)} placeholder="What should this passage do differently?" aria-label={`Revision comment for hunk ${hunk.order}`} />
                     <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                      <button className="btn btn--primary btn--sm" disabled={busy === hunk.id || !hunkFeedback.trim()} onClick={() => void handleRegenerateHunk(hunk.id, hunkFeedback)}>Revise hunk</button>
+                      <button className="btn btn--primary btn--sm" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy || Boolean(hunkState.job) || !hunkFeedback.trim()} onClick={() => void handleRegenerateHunk(hunk.id, hunkFeedback)}>Revise hunk</button>
                       <button className="btn btn--ghost btn--sm" onClick={() => setFeedbackHunkId("")}>Cancel</button>
                     </div>
                   </div>
@@ -361,18 +379,31 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
+      {(hunkState.job || hunkState.error) && <section aria-label="Hunk regeneration recovery" className="review-card__section" style={{ display: "grid", gap: 12 }}>
+        <strong>{hunkState.busy ? "Regenerating passage…" : "Passage revision needs recovery"}</strong>
+        {hunkState.job?.tasks[0].hunk?.feedback && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{hunkState.job.tasks[0].hunk.feedback}</p>}
+        {hunkState.error && <p role="alert">{hunkState.error}</p>}
+        <p>Saved results are reused. An interrupted request without a saved result may incur another provider charge. Discarding this request keeps existing changes and prose.</p>
+        {hunkState.job && <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy} onClick={() => void handleRegenerateHunk(hunkState.job!.tasks[0].hunk!.id)}>Retry passage revision</button>
+          <button className="btn" style={{ minHeight: 40 }} disabled={hunkState.busy} onClick={hunkSession.clear}>Discard passage request</button>
+        </div>}
+      </section>}
+
       {proposal.status === "pending" && (
         <div className="review-card__actions">
+          {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
+          {draftState.job && !draftState.busy && <button className="btn" style={{ minHeight: 40 }} onClick={draftSession.clear}>Discard draft request</button>}
           {proposal.stale && changeSet && (
             <button className="btn btn--primary" disabled={busy === "rebase"} onClick={() => void handleRebase()}>
               {busy === "rebase" ? "Rebasing…" : "Rebase safe hunks"}
             </button>
           )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && (
-            <button className="btn btn--primary" disabled={busy === "draft"} onClick={handleDraft}>
-              {busy === "draft"
+            <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={handleDraft}>
+              {draftState.busy
                 ? "Drafting..."
-                : hasDraft
+                : draftState.job ? "Retry draft" : hasDraft
                   ? "Regenerate Change Set"
                   : "Build Change Set"}
             </button>

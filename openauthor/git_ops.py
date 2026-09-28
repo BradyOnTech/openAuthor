@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -23,31 +25,53 @@ BOOKSTATE_PATHSPEC = [
 ]
 
 
-def _git_env() -> dict[str, str]:
+def resolve_git_binary() -> str:
+  configured = os.getenv("OPENAUTHOR_GIT_BIN", "").strip()
+  if configured:
+    return str(Path(configured).expanduser().resolve())
+  executable = Path(sys.executable).resolve()
+  candidates = [
+    executable.parents[2] / "git" / "bin" / "git",
+    Path(__file__).resolve().parents[1] / "desktop/src-tauri/resources/runtime/git/bin/git",
+  ]
+  for candidate in candidates:
+    if candidate.is_file() and os.access(candidate, os.X_OK):
+      return str(candidate)
+  return shutil.which("git") or "git"
+
+
+def _git_env(binary: str) -> dict[str, str]:
   env = os.environ.copy()
   env.setdefault("GIT_AUTHOR_NAME", "openAuthor")
   env.setdefault("GIT_AUTHOR_EMAIL", "openauthor@local")
   env.setdefault("GIT_COMMITTER_NAME", "openAuthor")
   env.setdefault("GIT_COMMITTER_EMAIL", "openauthor@local")
+  if Path(binary).is_absolute():
+    env["PATH"] = str(Path(binary).parent) + os.pathsep + env.get("PATH", "")
+    templates = Path(binary).parent.parent / "share/git-core/templates"
+    if templates.is_dir():
+      env["GIT_TEMPLATE_DIR"] = str(templates)
+      env["GIT_EXEC_PATH"] = str(Path(binary).parent)
   return env
 
 
 def run_git(paths: ProjectPaths, args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+  binary = resolve_git_binary()
   try:
     result = subprocess.run(
-      ["git", *args],
+      [binary, *args],
       cwd=paths.root,
       capture_output=True,
       text=True,
       check=False,
-      env=_git_env(),
+      env=_git_env(binary),
     )
-  except FileNotFoundError:
+  except OSError:
     result = subprocess.CompletedProcess(
       ["git", *args],
       127,
       "",
-      "The optional Git executable is not installed. Storyline branch commands require Git.",
+      "The Storyline Git runtime is unavailable. Reinstall openAuthor or set OPENAUTHOR_GIT_BIN to a working Git executable.",
     )
   if check and result.returncode != 0:
     stderr = result.stderr.strip() or result.stdout.strip() or "git command failed"
@@ -56,14 +80,14 @@ def run_git(paths: ProjectPaths, args: list[str], *, check: bool = True) -> subp
 
 
 def ensure_git_repo(paths: ProjectPaths) -> None:
-  result = run_git(paths, ["rev-parse", "--is-inside-work-tree"], check=False)
-  if result.returncode != 0:
+  result = run_git(paths, ["rev-parse", "--show-toplevel"], check=False)
+  if result.returncode != 0 or Path(result.stdout.strip()).resolve() != paths.root.resolve():
     raise OpenAuthorError("Project is not a git repository.")
 
 
 def initialize_git(paths: ProjectPaths) -> None:
-  result = run_git(paths, ["rev-parse", "--is-inside-work-tree"], check=False)
-  if result.returncode == 0:
+  result = run_git(paths, ["rev-parse", "--show-toplevel"], check=False)
+  if result.returncode == 0 and Path(result.stdout.strip()).resolve() == paths.root.resolve():
     return
   created = run_git(paths, ["init"], check=True)
   if created.returncode != 0:
@@ -484,6 +508,13 @@ def preflight_merge(paths: ProjectPaths, *, base: str, head: str) -> dict[str, A
     "safe_to_merge": overlap_total == 0,
     "risk_level": risk_level,
     "recommendations": recommendations,
+  }
+
+
+def merge_revision_pair(paths: ProjectPaths, *, base: str, head: str) -> dict[str, str]:
+  return {
+    "base_commit": run_git(paths, ["rev-parse", "--verify", "--end-of-options", f"{base.strip()}^{{commit}}"]).stdout.strip(),
+    "head_commit": run_git(paths, ["rev-parse", "--verify", "--end-of-options", f"{head.strip()}^{{commit}}"]).stdout.strip(),
   }
 
 

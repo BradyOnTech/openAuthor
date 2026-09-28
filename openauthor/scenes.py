@@ -220,6 +220,12 @@ def update_scene(
 ) -> Path:
   scene_file = find_scene_file(paths, scene_identifier)
   current = _scene_detail(paths, scene_file)
+  fields = {"title": title, "summary": summary, "pov": pov, "status": status, "body": body}
+  if all(
+    value is None or (value.rstrip("\n") == current[key].rstrip("\n") if key == "body" else value == current[key])
+    for key, value in fields.items()
+  ):
+    return scene_file
   updated = {
     "id": current["id"],
     "title": title if title is not None else current["title"],

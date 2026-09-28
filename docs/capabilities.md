@@ -2,6 +2,8 @@
 
 This page explains how openAuthor reports product status. The machine-readable source of truth is [`capabilities.json`](capabilities.json); `make capability-check` validates its schema, evidence paths, and visible-product claims.
 
+The Editorial/Canon scores on this page describe tiny deterministic regression fixtures, not live-provider quality or manuscript extraction accuracy. Canon fixtures preload their facts; Editorial fixtures use the local adapter and limited pattern/term checks. The consent-gated author workflow runner is available, but consenting-author evaluation and pilot results remain absent. See `docs/author-evaluation-and-pilot.md` for the explicit evidence boundary.
+
 ## Status model
 
 - **Core** means the Python engine or a deterministic desktop helper exists and is tested in isolation.

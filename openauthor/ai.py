@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -21,7 +22,9 @@ from .codex_app_server import (
   CodexAppServerUnavailable,
 )
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft
+from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft, _digest_scene_payload
+from .proposal_delivery import current_proposal_delivery, recoverable_proposal
+from .project_lock import project_write_lock
 from .retrieval import get_retrieval_index_status, query_retrieval_index
 from .scenes import get_scene, list_scenes
 
@@ -198,8 +201,8 @@ def _json_post(
         http_status=error.code,
         attempts=attempts,
       ) from error
-    except urllib.error.URLError as error:
-      reason = str(error.reason)
+    except (OSError, http.client.HTTPException) as error:
+      reason = str(getattr(error, "reason", error))
       category = "timeout" if "timed out" in reason.lower() else "network_error"
       retriable = True
       if retriable and attempts <= max_retries:
@@ -227,16 +230,16 @@ def _json_post(
 
 def _sse_data_lines(response: Any) -> Any:
   for raw_line in response:
-    line = raw_line.decode("utf-8", errors="replace").strip()
+    line = raw_line.decode("utf-8").strip()
     if not line.startswith("data:"):
       continue
     data = line[len("data:") :].strip()
-    if data == "" or data == "[DONE]":
+    if data == "":
       continue
-    try:
-      yield json.loads(data)
-    except json.JSONDecodeError:
-      continue
+    if data == "[DONE]":
+      yield data
+      return
+    yield json.loads(data)
 
 
 def _stream_post(
@@ -269,6 +272,12 @@ def _stream_post(
     def _frames(response: Any) -> Any:
       for frame in _sse_data_lines(response):
         started["value"] = True
+        if isinstance(frame, dict) and frame.get("error"):
+          raise ProviderExecutionError(
+            f"Provider stream failed: {_truncate(str(frame['error']), 280)}",
+            category="provider_stream_error", retriable=False, provider=provider,
+            attempts=attempts,
+          )
         yield frame
 
     try:
@@ -289,8 +298,8 @@ def _stream_post(
         http_status=error.code,
         attempts=attempts,
       ) from error
-    except urllib.error.URLError as error:
-      reason = str(error.reason)
+    except (OSError, http.client.HTTPException) as error:
+      reason = str(getattr(error, "reason", error))
       category = "timeout" if "timed out" in reason.lower() else "network_error"
       retriable = not started["value"]
       if retriable and attempts <= max_retries:
@@ -303,6 +312,15 @@ def _stream_post(
         provider=provider,
         attempts=attempts,
       ) from error
+    except (ValueError, UnicodeError) as error:
+      raise ProviderExecutionError(
+        "Provider returned an invalid stream. Retry the request explicitly.",
+        category="invalid_provider_response", retriable=False, provider=provider,
+        attempts=attempts,
+      ) from error
+    except ProviderExecutionError as error:
+      error.attempts = attempts
+      raise
 
 
 def _openai_style_stream(
@@ -322,7 +340,11 @@ def _openai_style_stream(
   def consume(frames: Any) -> dict[str, Any]:
     parts: list[str] = []
     usage: dict[str, Any] = {}
+    completed = False
     for frame in frames:
+      if frame == "[DONE]":
+        completed = True
+        break
       if not isinstance(frame, dict):
         continue
       frame_usage = frame.get("usage")
@@ -336,6 +358,11 @@ def _openai_style_stream(
       if isinstance(content, str) and content != "":
         parts.append(content)
         on_delta(content)
+    if not completed:
+      raise ProviderExecutionError(
+        "Provider response was incomplete. Retry the request explicitly.",
+        category="incomplete_stream", retriable=False, provider=provider,
+      )
     return {"text": "".join(parts).strip(), "usage": usage}
 
   result, attempts = _stream_post(
@@ -368,11 +395,15 @@ def _anthropic_stream(
     parts: list[str] = []
     input_tokens = 0
     output_tokens = 0
+    completed = False
     for frame in frames:
       if not isinstance(frame, dict):
         continue
       frame_type = frame.get("type", "")
-      if frame_type == "message_start":
+      if frame_type == "message_stop":
+        completed = True
+        break
+      elif frame_type == "message_start":
         message_usage = frame.get("message", {}).get("usage", {})
         if isinstance(message_usage, dict):
           input_tokens = int(message_usage.get("input_tokens", 0) or 0)
@@ -386,6 +417,11 @@ def _anthropic_stream(
         delta_usage = frame.get("usage", {})
         if isinstance(delta_usage, dict):
           output_tokens = int(delta_usage.get("output_tokens", 0) or 0)
+    if not completed:
+      raise ProviderExecutionError(
+        "Provider response was incomplete. Retry the request explicitly.",
+        category="incomplete_stream", retriable=False, provider="anthropic",
+      )
     return {
       "text": "".join(parts).strip(),
       "input_tokens": input_tokens,
@@ -1639,8 +1675,11 @@ def complete_chat(
         "provider": error.provider,
       },
     )
-    raise OpenAuthorError(
-      f"Chat completion failed ({error.category}). See {log_path}."
+    guidance = " Sign in again or update this provider's credentials in Settings." if error.category == "auth_error" else ""
+    raise ProviderExecutionError(
+      f"Chat completion failed ({error.category}).{guidance} See {log_path}.",
+      category=error.category, retriable=error.retriable, provider=error.provider,
+      http_status=error.http_status, attempts=error.attempts,
     ) from error
 
   estimated_cost_usd = _estimate_cost_usd(
@@ -2133,6 +2172,7 @@ def _default_title(scene_title: str, instruction: str) -> str:
   return _truncate(f"{scene_title}: {short_instruction}", 72)
 
 
+@recoverable_proposal("generate")
 def generate_proposal(
   paths: ProjectPaths,
   *,
@@ -2307,6 +2347,7 @@ def generate_proposal(
   final_title = title.strip() or _default_title(context["scene"]["title"], instruction)
   proposal_id = create_proposal(
     paths,
+    proposal_id=current_proposal_delivery().get("proposal_id"),
     title=final_title,
     instruction=provider_result["text"],
     scene_id=scene_id,
@@ -2319,6 +2360,7 @@ def generate_proposal(
     },
     change_group_id=change_group_id,
     generation={
+      "delivery": current_proposal_delivery(),
       "id": generation_id,
       "provider": provider,
       "model": selected_model,
@@ -2370,6 +2412,7 @@ def _prose_change_key(text: str) -> str:
   return re.sub(r"\s+", " ", text).strip()
 
 
+@recoverable_proposal("draft")
 def generate_proposal_draft(
   paths: ProjectPaths,
   *,
@@ -2559,27 +2602,34 @@ def generate_proposal_draft(
       "more specific or choose a full AI provider."
     )
 
-  return set_proposal_draft(
-    paths,
-    proposal_id=proposal_id,
-    proposed_body=proposed_body,
-    draft={
-      "generation_id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "temperature": temperature,
-      "max_output_tokens": max_output_tokens,
-      "input_tokens": provider_result["input_tokens"],
-      "output_tokens": provider_result["output_tokens"],
-      "latency_ms": provider_result["latency_ms"],
-      "estimated_cost_usd": estimated_cost_usd,
-      "changed": changed,
-      "log_path": log_path,
-      "created_at": utc_now(),
-    },
-  )
+  with project_write_lock(paths):
+    if _digest_scene_payload(get_scene(paths, scene_id)) != _digest_scene_payload(scene):
+      raise OpenAuthorError("The scene changed while the provider was drafting. Newer writing was preserved; request a new draft against the current scene.")
+    if get_proposal(paths, proposal_id) != proposal:
+      raise OpenAuthorError("The Change Set changed while the provider was drafting. Your review was preserved; inspect Changes before requesting another draft.")
+    return set_proposal_draft(
+      paths,
+      proposal_id=proposal_id,
+      proposed_body=proposed_body,
+      draft={
+        "delivery": current_proposal_delivery(),
+        "generation_id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+        "input_tokens": provider_result["input_tokens"],
+        "output_tokens": provider_result["output_tokens"],
+        "latency_ms": provider_result["latency_ms"],
+        "estimated_cost_usd": estimated_cost_usd,
+        "changed": changed,
+        "log_path": log_path,
+        "created_at": utc_now(),
+      },
+    )
 
 
+@recoverable_proposal("hunk")
 def regenerate_change_hunk(
   paths: ProjectPaths,
   *,
@@ -2599,6 +2649,8 @@ def regenerate_change_hunk(
     raise OpenAuthorError("max_output_tokens must be >= 64.")
   proposal = get_proposal(paths, proposal_id)
   change_set = proposal.get("change_set", {})
+  if proposal.get("status") != "pending":
+    raise OpenAuthorError("Applied or rejected Change Sets cannot be regenerated.")
   hunk = next(
     (row for row in change_set.get("hunks", []) if row.get("id") == hunk_id),
     None,
@@ -2635,6 +2687,14 @@ def regenerate_change_hunk(
     input_tokens=projected_input_tokens,
     output_tokens=max_output_tokens,
   )
+  failure_context = {
+    "scene_id": scene_id, "provider": provider, "model": selected_model,
+    "temperature": temperature, "max_output_tokens": max_output_tokens,
+    "context_scene_radius": 0, "codex_limit": 0,
+    "retrieval": {"mode": "off", "used": False},
+    "instruction": f"{intent}\nAuthor feedback: {author_feedback}" if author_feedback else intent,
+    "context": context, "system_prompt": system_prompt, "user_prompt": user_prompt,
+  }
   try:
     enforce_generation_budget(
       paths,
@@ -2654,9 +2714,13 @@ def regenerate_change_hunk(
       max_output_tokens=max_output_tokens,
     )
   except BudgetPolicyError as error:
-    raise OpenAuthorError(f"Hunk regeneration blocked by budget policy: {error}") from error
+    run_id, log_path = _write_generation_budget_failure_log(paths, **failure_context, error=error)
+    _attach_proposal_to_generation_log(paths, run_id=run_id, proposal_id=proposal_id)
+    raise OpenAuthorError(f"Hunk regeneration blocked by budget policy: {error}. See {log_path}.") from error
   except ProviderExecutionError as error:
-    raise OpenAuthorError(f"Hunk regeneration failed ({error.category}): {error}") from error
+    run_id, log_path = _write_generation_failure_log(paths, **failure_context, error=error)
+    _attach_proposal_to_generation_log(paths, run_id=run_id, proposal_id=proposal_id)
+    raise OpenAuthorError(f"Hunk regeneration failed ({error.category}): {error}. See {log_path}.") from error
 
   replacement = _strip_code_fence(str(result.get("text", "")))
   if not replacement:
@@ -2689,24 +2753,29 @@ def regenerate_change_hunk(
     estimated_cost_usd=estimated_cost,
   )
   _attach_proposal_to_generation_log(paths, run_id=generation_id, proposal_id=proposal_id)
-  if author_feedback:
-    from .product_signals import record_product_event
-    record_product_event(paths, "change_hunk_commented", provider=provider)
-  return edit_change_hunk(
-    paths,
-    proposal_id=proposal_id,
-    hunk_id=hunk_id,
-    after_text=replacement,
-    editor="ai",
-    regeneration={
-      "generation_id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "log_path": log_path,
-      "estimated_cost_usd": estimated_cost,
-      "author_feedback": author_feedback,
-    },
-  )
+  with project_write_lock(paths):
+    if _digest_scene_payload(get_scene(paths, scene_id)) != _digest_scene_payload(scene) or get_proposal(paths, proposal_id) != proposal:
+      raise OpenAuthorError("The scene or Change Set changed while the provider was regenerating this hunk. Newer writing and review were preserved; inspect Changes before trying again.")
+    updated = edit_change_hunk(
+      paths,
+      proposal_id=proposal_id,
+      hunk_id=hunk_id,
+      after_text=replacement,
+      editor="ai",
+      regeneration={
+        "delivery": current_proposal_delivery(),
+        "generation_id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "log_path": log_path,
+        "estimated_cost_usd": estimated_cost,
+        "author_feedback": author_feedback,
+      },
+    )
+    if author_feedback:
+      from .product_signals import record_product_event
+      record_product_event(paths, "change_hunk_commented", provider=provider)
+    return updated
 
 
 MERGE_SYSTEM_PROMPT = (
@@ -2720,6 +2789,7 @@ MERGE_SYSTEM_PROMPT = (
 )
 
 
+@recoverable_proposal("merge")
 def generate_merge_resolution(
   paths: ProjectPaths,
   *,
@@ -2731,7 +2801,7 @@ def generate_merge_resolution(
   temperature: float = 0.3,
   max_output_tokens: int = 3000,
 ) -> dict[str, Any]:
-  from .git_ops import run_git, show_file_at_ref
+  from .git_ops import merge_revision_pair, run_git, show_file_at_ref
   from .scenes import render_scene_markdown, split_scene_text
 
   if provider not in SUPPORTED_PROVIDERS:
@@ -2748,9 +2818,10 @@ def generate_merge_resolution(
 
   base_ref = base.strip()
   head_ref = head.strip()
-  merge_base = run_git(paths, ["merge-base", base_ref, head_ref], check=True).stdout.strip()
-  ours_file = show_file_at_ref(paths, base_ref, normalized_path)
-  theirs_file = show_file_at_ref(paths, head_ref, normalized_path)
+  revisions = current_proposal_delivery().get("merge_revisions") or merge_revision_pair(paths, base=base_ref, head=head_ref)
+  merge_base = run_git(paths, ["merge-base", revisions["base_commit"], revisions["head_commit"]], check=True).stdout.strip()
+  ours_file = show_file_at_ref(paths, revisions["base_commit"], normalized_path)
+  theirs_file = show_file_at_ref(paths, revisions["head_commit"], normalized_path)
   ancestor_file = show_file_at_ref(paths, merge_base, normalized_path) or ""
   if ours_file is None or theirs_file is None:
     raise OpenAuthorError(
@@ -2920,34 +2991,40 @@ def generate_merge_resolution(
     estimated_cost_usd=estimated_cost_usd,
   )
 
-  title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
-  proposal_id = create_proposal(
-    paths,
-    title=title,
-    instruction=instruction,
-    scene_id=scene_id,
-    source="merge_resolution",
-    proposed_body=reconciled_body,
-    generation={
-      "id": generation_id,
-      "provider": provider,
-      "model": selected_model,
-      "temperature": temperature,
-      "max_output_tokens": max_output_tokens,
-      "input_tokens": provider_result["input_tokens"],
-      "output_tokens": provider_result["output_tokens"],
-      "latency_ms": provider_result["latency_ms"],
-      "estimated_cost_usd": estimated_cost_usd,
-      "log_path": log_path,
-    },
-    merge={
-      "base": base_ref,
-      "head": head_ref,
-      "merge_base": merge_base,
-      "path": normalized_path,
-      "file_content": file_content,
-    },
-  )
+  with project_write_lock(paths):
+    if merge_revision_pair(paths, base=base_ref, head=head_ref) != revisions:
+      raise OpenAuthorError("The Storyline revisions changed while reconciliation was generating. Newer writing was preserved; check compatibility and start a new request.")
+    title = f"Reconcile {ours_meta.get('title') or scene_id or normalized_path}: {base_ref} + {head_ref}"
+    proposal_id = create_proposal(
+      paths,
+      proposal_id=current_proposal_delivery().get("proposal_id"),
+      title=title,
+      instruction=instruction,
+      scene_id=scene_id,
+      source="merge_resolution",
+      proposed_body=reconciled_body,
+      generation={
+        "delivery": current_proposal_delivery(),
+        "id": generation_id,
+        "provider": provider,
+        "model": selected_model,
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+        "input_tokens": provider_result["input_tokens"],
+        "output_tokens": provider_result["output_tokens"],
+        "latency_ms": provider_result["latency_ms"],
+        "estimated_cost_usd": estimated_cost_usd,
+        "log_path": log_path,
+      },
+      merge={
+        "base": base_ref,
+        "head": head_ref,
+        **revisions,
+        "merge_base": merge_base,
+        "path": normalized_path,
+        "file_content": file_content,
+      },
+    )
   _attach_proposal_to_generation_log(
     paths,
     run_id=generation_id,

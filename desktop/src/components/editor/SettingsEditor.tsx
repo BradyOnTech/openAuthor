@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BackupCreate } from "../BackupControls";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
 import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
@@ -41,6 +42,7 @@ export function SettingsEditor() {
         />
 
         <LocalActivityCard projectRoot={projectRoot} setError={setError} />
+        <BackupCreate projectRoot={projectRoot} setError={setError} setMessage={setMessage} />
 
         <div className="settings-editor__section">
           <h3 className="settings-editor__section-title">Subscription</h3>

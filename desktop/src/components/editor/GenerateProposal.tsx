@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { addEditorialPass, buildStyleProfile, draftProposal, generateProposal, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
-import type { ProposalProvider } from "../../types";
+import { addEditorialPass, buildStyleProfile, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
+import type { ProposalProvider, ProposalRecord } from "../../types";
+import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
 
 export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }) {
   const { projectRoot, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
@@ -24,7 +25,14 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
   const [model, setModel] = useState("");
   const [constraints, setConstraints] = useState("");
   const [protectedElements, setProtectedElements] = useState("");
-  const [busy, setBusy] = useState(false);
+  const session = useMemo(() => proposalGenerationSession(projectRoot), [projectRoot]);
+  const { busy, job, error: generationError, stopRequested } = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const view = useRef({ projectRoot, mounted: true });
+  view.current.projectRoot = projectRoot;
+  useEffect(() => {
+    view.current.mounted = true;
+    return () => { view.current.mounted = false; };
+  }, []);
   const [passes, setPasses] = useState<EditorialPass[]>([]);
   const [selectedPassId, setSelectedPassId] = useState("");
   const [showPassBuilder, setShowPassBuilder] = useState(false);
@@ -85,49 +93,49 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
     }
   }
 
-  async function handleGenerate() {
-    if (!sceneId || !instruction.trim()) return;
-    setBusy(true);
+  async function showResults(proposals: ProposalRecord[] | null) {
+    if (!view.current.mounted || view.current.projectRoot !== projectRoot) return;
     try {
-      const proposals = [];
-      const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
-      if (targetSceneIds.length === 0) return;
-      const groupId = coordinated && targetSceneIds.length > 1 ? `change-group-ui-${Date.now()}` : undefined;
-      const directionCount = coordinated ? 1 : alternativeCount;
-      for (const targetSceneId of targetSceneIds) {
-      for (let index = 0; index < directionCount; index += 1) {
-        const direction = alternativeCount === 1 ? "" : `\n\nAlternative direction ${index + 1} of ${alternativeCount}: make this a materially distinct creative approach, not a paraphrase of the other directions.`;
-        const generated = await generateProposal(projectRoot, {
-          sceneId: targetSceneId,
-          instruction: instruction.trim() + direction,
-          provider,
-          model: model.trim() || undefined,
-          temperature: alternativeCount === 1 ? undefined : 0.35 + index * 0.15,
-          constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
-          protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
-          changeGroupId: groupId,
-        });
-        proposals.push(await draftProposal(projectRoot, {
-          proposalId: generated.id,
-          provider,
-          model: model.trim() || undefined,
-        }));
-      }
-      }
-      setMessage(groupId ? `${proposals.length} coordinated Change Sets ready. Review each scene, then apply the group atomically from Changes.` : alternativeCount === 1 ? `Change Set ready: review each hunk before applying.` : `${alternativeCount} creative directions ready to compare.`);
       await Promise.all([refreshProposals(), refreshRuns()]);
-      closeTab("generate");
-      if (proposals.length === 1 || groupId) {
+      if (!proposals || !view.current.mounted || view.current.projectRoot !== projectRoot) return;
+      const grouped = Boolean(proposals[0].change_group_id);
+      setMessage(grouped ? `${proposals.length} coordinated Change Sets ready. Review each scene, then apply the group atomically from Changes.` : proposals.length === 1 ? "Change Set ready: review each hunk before applying." : `${proposals.length} creative directions ready to compare.`);
+      if (proposals.length === 1 || grouped) {
         const proposal = proposals[0];
         openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || proposal.id.slice(0, 8), data: proposal });
       } else {
         openTab({ id: `alternatives:${proposals[0].scene_id}`, kind: "alternatives", label: "Compare Directions", data: proposals });
       }
-    } catch (e) {
-      setError(`Generation failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setBusy(false);
+      session.clear();
+      closeTab("generate");
+    } catch (error) {
+      setError(`Could not refresh the generation results: ${error instanceof Error ? error.message : String(error)}. Saved work remains recoverable from this panel.`);
     }
+  }
+
+  async function handleGenerate() {
+    if (!sceneId || !instruction.trim()) return;
+    const inputs: GenerationInput[] = [];
+    const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
+    if (targetSceneIds.length === 0) return;
+    const groupId = coordinated && targetSceneIds.length > 1 ? `change-group-ui-${crypto.randomUUID()}` : undefined;
+    const directionCount = coordinated ? 1 : alternativeCount;
+    for (const targetSceneId of targetSceneIds) {
+      for (let index = 0; index < directionCount; index += 1) {
+        const direction = directionCount === 1 ? "" : `\n\nAlternative direction ${index + 1} of ${directionCount}: make this a materially distinct creative approach, not a paraphrase of the other directions.`;
+        inputs.push({
+          sceneId: targetSceneId,
+          instruction: instruction.trim() + direction,
+          provider,
+          model: model.trim() || undefined,
+          temperature: directionCount === 1 ? undefined : 0.35 + index * 0.15,
+          constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
+          protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
+          changeGroupId: groupId,
+        });
+      }
+    }
+    await showResults(await session.start(inputs));
   }
 
   return (
@@ -155,6 +163,23 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           edits your manuscript directly. You choose what to include, and openAuthor records a named Revision.
         </p>
 
+        {(job || generationError) && <section aria-label="Generation recovery" style={{ padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", display: "grid", gap: 12 }}>
+          {job && <>
+            <strong style={{ fontVariantNumeric: "tabular-nums" }}>{job.tasks.filter(task => task.drafted).length} of {job.tasks.length} Change Sets ready</strong>
+            <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{job.tasks[0].input.instruction}</p>
+          </>}
+          {generationError && <p role="alert">{generationError}</p>}
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Saved steps are reused. An interrupted provider request without a saved result may incur another charge when retried.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {busy ? <button className="btn" style={{ minHeight: 40 }} disabled={stopRequested} onClick={session.stop}>{stopRequested ? "Stopping after current step…" : "Stop after current step"}</button> : job && <>
+              <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>
+              <button className="btn" style={{ minHeight: 40 }} onClick={session.clear}>Start new request</button>
+            </>}
+          </div>
+          {job && <small>Starting a new request keeps existing Change Sets in Changes.</small>}
+        </section>}
+
+        <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
           <span style={{ color: "var(--text-secondary)" }}>Scene</span>
           <select className="input" value={sceneId} onChange={(e) => setSceneId(e.target.value)}>
@@ -272,6 +297,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
             {busy ? `Building ${coordinated ? "coordinated Change Sets" : alternativeCount === 1 ? "Change Set" : "creative directions"}...` : coordinated ? `Create ${coordinatedSceneIds.length} Coordinated Change Sets` : alternativeCount === 1 ? "Create Change Set" : "Create 3 Alternatives"}
           </button>
         </div>
+        </fieldset>
       </div>
     </div>
   );

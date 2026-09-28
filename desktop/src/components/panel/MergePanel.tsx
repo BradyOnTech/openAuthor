@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import {
   createBranch,
   mergeBranches,
   preflightMerge,
-  resolveMergeConflict,
   scanMergeConflicts,
   switchBranch,
 } from "../../api";
+import { mergeResolutionSession } from "../../mergeResolutionSession";
+import { withProjectBookChange } from "../../sceneSaveSession";
+import { useRefreshBookTabs } from "../../hooks/useRefreshBookTabs";
 import type {
   BranchMergeResult,
   BranchPreflightReport,
@@ -34,6 +36,7 @@ export function MergePanel() {
     setError,
     setMessage,
   } = useWorkspace();
+  const refreshBookTabs = useRefreshBookTabs(projectRoot);
 
   const currentBranch = branches.find((b) => b.current)?.name ?? "";
   const [newBranchName, setNewBranchName] = useState("");
@@ -43,16 +46,32 @@ export function MergePanel() {
   const [scan, setScan] = useState<MergeConflictScan | null>(null);
   const [mergeResult, setMergeResult] = useState<BranchMergeResult | null>(null);
   const [busyAction, setBusyAction] = useState("");
-  const [resolving, setResolving] = useState<string>("");
+  const session = useMemo(() => mergeResolutionSession(projectRoot), [projectRoot]);
+  const recovery = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const view = useRef({ projectRoot, mounted: true });
+  view.current.projectRoot = projectRoot;
+  useEffect(() => {
+    view.current.mounted = true;
+    return () => { view.current.mounted = false; };
+  }, []);
 
   const effectiveBase = base || currentBranch;
   const effectiveHead = head;
+  const selection = useRef("");
+  const selectionKey = JSON.stringify([projectRoot, effectiveBase, effectiveHead]);
+  selection.current = selectionKey;
+  useEffect(() => {
+    setPreflight(null);
+    setScan(null);
+    setMergeResult(null);
+  }, [selectionKey]);
 
   const pendingResolutions = useMemo(
     () =>
       proposals.filter(
         (p) =>
           p.status === "pending" &&
+          !p.stale &&
           p.source === "merge_resolution" &&
           p.merge?.base === effectiveBase &&
           p.merge?.head === effectiveHead
@@ -74,10 +93,12 @@ export function MergePanel() {
     if (!name) return;
     setBusyAction("create");
     try {
-      await createBranch(projectRoot, { name });
+      await withProjectBookChange(projectRoot, async () => {
+        await createBranch(projectRoot, { name });
+        await Promise.all([refreshBranches(), refreshScenes(), refreshCodex(), refreshBookTabs()]);
+      });
       setNewBranchName("");
       setMessage(`Created storyline "${name}" and switched to it.`);
-      await Promise.all([refreshBranches(), refreshScenes(), refreshCodex()]);
     } catch (e) {
       reportError("Failed to create storyline", e);
     } finally {
@@ -88,9 +109,11 @@ export function MergePanel() {
   async function handleSwitch(name: string) {
     setBusyAction(`switch:${name}`);
     try {
-      await switchBranch(projectRoot, name);
+      await withProjectBookChange(projectRoot, async () => {
+        await switchBranch(projectRoot, name);
+        await Promise.all([refreshBranches(), refreshScenes(), refreshCodex(), refreshProposals(), refreshBookTabs()]);
+      });
       setMessage(`Switched to storyline "${name}".`);
-      await Promise.all([refreshBranches(), refreshScenes(), refreshCodex(), refreshProposals()]);
     } catch (e) {
       reportError("Failed to switch storyline", e);
     } finally {
@@ -106,7 +129,9 @@ export function MergePanel() {
       const [pf, cs] = await Promise.all([
         preflightMerge(projectRoot, { base: effectiveBase, head: effectiveHead }),
         scanMergeConflicts(projectRoot, { base: effectiveBase, head: effectiveHead }),
+        refreshProposals(),
       ]);
+      if (!view.current.mounted || selection.current !== selectionKey) return;
       setPreflight(pf);
       setScan(cs);
     } catch (e) {
@@ -116,45 +141,43 @@ export function MergePanel() {
     }
   }
 
-  async function handleResolve(path: string) {
-    setResolving(path);
+  async function showResolution(proposal: ProposalRecord | null) {
+    if (!proposal || !view.current.mounted || view.current.projectRoot !== projectRoot) return;
     try {
-      const proposal = await resolveMergeConflict(projectRoot, {
-        base: effectiveBase,
-        head: effectiveHead,
-        path,
-        provider: "local",
-      });
-      setMessage(
-        `Drafted a reconciled version of ${path} as Change Set ${proposal.id}. Review it in Changes.`
-      );
       await refreshProposals();
+      if (!view.current.mounted || view.current.projectRoot !== projectRoot) return;
+      session.clear();
+      if (proposal.stale) {
+        setError("The saved reconciliation is now outdated. Check compatibility and generate a new one before merging.");
+      } else {
+        setMessage(`Drafted a reconciled version of ${proposal.merge?.path} as Change Set ${proposal.id}. Review it in Changes.`);
+      }
     } catch (e) {
-      reportError("Reconciliation failed", e);
-    } finally {
-      setResolving("");
+      reportError("The reconciliation is saved but could not be refreshed; Retry can recover it", e);
     }
+  }
+
+  async function handleResolve(path: string) {
+    await showResolution(await session.start({ base: effectiveBase, head: effectiveHead, path, provider: "local" }));
   }
 
   async function handleMerge() {
     if (!effectiveBase || !effectiveHead) return;
     setBusyAction("merge");
     try {
-      const result = await mergeBranches(projectRoot, {
-        base: effectiveBase,
-        head: effectiveHead,
-        resolutionIds: pendingResolutions.map((p) => p.id),
+      const result = await withProjectBookChange(projectRoot, async () => {
+        const merged = await mergeBranches(projectRoot, {
+          base: effectiveBase,
+          head: effectiveHead,
+          resolutionIds: pendingResolutions.map((p) => p.id),
+        });
+        await Promise.all([refreshBranches(), refreshScenes(), refreshCodex(), refreshProposals(), refreshBookTabs()]);
+        return merged;
       });
       setMergeResult(result);
       setMessage(`Merged "${effectiveHead}" into "${effectiveBase}".`);
       setPreflight(null);
       setScan(null);
-      await Promise.all([
-        refreshBranches(),
-        refreshScenes(),
-        refreshCodex(),
-        refreshProposals(),
-      ]);
     } catch (e) {
       reportError("Merge failed", e);
     } finally {
@@ -208,6 +231,16 @@ export function MergePanel() {
 
       <div style={sectionStyle}>
         <div style={{ fontWeight: 600 }}>Merge a storyline back</div>
+        {(recovery.pending || recovery.error) && <section aria-label="Reconciliation recovery" style={{ display: "grid", gap: 12, padding: 16, background: "var(--bg-elevated)", borderRadius: "var(--radius-md)" }}>
+          <strong>{recovery.busy ? "Reconciling…" : "Reconciliation request retained"}</strong>
+          {recovery.pending && <p style={{ overflowWrap: "anywhere" }}>{recovery.pending.head} into {recovery.pending.base}: {recovery.pending.path}</p>}
+          {recovery.error && <p role="alert" style={{ overflowWrap: "anywhere" }}>{recovery.error}</p>}
+          <p>Retry reuses saved results. An unsaved provider response may incur another charge. Discard keeps existing proposals and does not merge anything.</p>
+          {recovery.pending && <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={() => void session.retry().then(showResolution)}>Retry reconciliation</button>
+            <button className="btn" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={session.clear}>Discard reconciliation request</button>
+          </div>}
+        </section>}
         <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
           <select
             className="input"
@@ -275,10 +308,10 @@ export function MergePanel() {
                 {c.category === "scene" && c.kind === "content" ? (
                   <button
                     className="btn btn--ghost"
-                    disabled={resolving === c.path}
+                    disabled={recovery.busy || Boolean(recovery.pending)}
                     onClick={() => handleResolve(c.path)}
                   >
-                    {resolving === c.path ? "Reconciling..." : "Reconcile with AI"}
+                    {recovery.busy && recovery.pending?.path === c.path ? "Reconciling..." : "Reconcile with AI"}
                   </button>
                 ) : (
                   <span style={{ color: "var(--text-tertiary)" }}>

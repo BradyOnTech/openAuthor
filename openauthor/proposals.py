@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 import uuid
 from pathlib import Path
 
 from .changes import build_change_set, edit_hunk_after_text, rebase_change_set, render_change_set, set_hunk_decision
-from .git_ops import current_branch
+from .git_ops import current_branch, merge_revision_pair
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
 from .revisions import create_revision, read_file_at_revision, revision_head
 from .scenes import get_scene, split_scene_text, update_scene
@@ -31,8 +32,13 @@ def create_proposal(
   merge: dict[str, Any] | None = None,
   revision_intent: dict[str, Any] | None = None,
   change_group_id: str = "",
+  proposal_id: str | None = None,
 ) -> str:
-  proposal_id = f"proposal-{uuid.uuid4().hex[:12]}"
+  proposal_id = proposal_id or f"proposal-{uuid.uuid4().hex[:12]}"
+  if not re.fullmatch(r"proposal-[a-f0-9]{12,64}", proposal_id):
+    raise OpenAuthorError("Invalid proposal id.")
+  if _proposal_file(paths, proposal_id).exists():
+    raise OpenAuthorError("This proposal already exists; recover its original generation request.")
   vcs_branch, vcs_base_commit = _capture_vcs_anchor(paths)
   scene_digest = ""
   if scene_id.strip():
@@ -68,10 +74,7 @@ def create_proposal(
     payload["generation"] = generation
   if merge is not None:
     payload["merge"] = merge
-  _proposal_file(paths, proposal_id).write_text(
-    json.dumps(payload, indent=2) + "\n",
-    encoding="utf-8",
-  )
+  atomic_write_json(_proposal_file(paths, proposal_id), payload)
   return proposal_id
 
 
@@ -664,6 +667,13 @@ def _proposal_is_stale(
   *,
   current_digests: dict[str, str] | None = None,
 ) -> bool:
+  if proposal.get("source") == "merge_resolution":
+    metadata = proposal.get("merge") or {}
+    try:
+      revisions = merge_revision_pair(paths, base=metadata.get("base", ""), head=metadata.get("head", ""))
+      return any(metadata.get(key) != value for key, value in revisions.items())
+    except OpenAuthorError:
+      return True
   scene_id = str(proposal.get("scene_id", "")).strip()
   if scene_id == "":
     return False

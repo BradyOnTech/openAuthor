@@ -211,6 +211,8 @@ class ChatSidecarServer:
           codex_ids=[str(item) for item in codex_ids] if isinstance(codex_ids, list) else None,
           context_overrides=context_overrides if isinstance(context_overrides, dict) else None,
           on_delta=on_delta,
+          request_id=str(params.get("delivery_id") or request_id),
+          is_cancelled=cancel.is_set,
         )
       self._writer.respond(request_id, result=result)
     except ChatInterrupted as error:
@@ -218,7 +220,7 @@ class ChatSidecarServer:
         request_id,
         error={"message": str(error), "category": "interrupted"},
       )
-    except OpenAuthorError as error:
+    except (OpenAuthorError, OSError, ValueError) as error:
       self._writer.respond(
         request_id,
         error={

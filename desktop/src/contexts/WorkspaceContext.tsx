@@ -134,8 +134,6 @@ type WorkspaceState = {
   chatMessages: ChatMessageRecord[];
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessageRecord[]>>;
   refreshChatMessages: () => Promise<void>;
-  chatSending: boolean;
-  setChatSending: (v: boolean) => void;
 
   busy: boolean;
   error: string;
@@ -250,7 +248,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [chatThreads, setChatThreads] = useState<ChatThreadRecord[]>([]);
   const [activeChatThreadId, setActiveChatThreadId] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<ChatMessageRecord[]>([]);
-  const [chatSending, setChatSending] = useState(false);
+  const chatTargetRef = useRef({ projectRoot, threadId: activeChatThreadId });
+  chatTargetRef.current = { projectRoot, threadId: activeChatThreadId };
   const activeWorkspaceIdRef = useRef(activeWorkspaceId);
   const activeProjectIdRef = useRef(activeProjectId);
   const workspacesRef = useRef(workspaces);
@@ -371,6 +370,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!projectRoot) return;
     try {
       const data = await apiListChatThreads(projectRoot);
+      if (chatTargetRef.current.projectRoot !== projectRoot) return;
       setChatThreads(data);
     } catch (e) {
       setError(`Failed to load chat threads: ${e instanceof Error ? e.message : String(e)}`);
@@ -381,6 +381,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!projectRoot || !activeChatThreadId) return;
     try {
       const data = await apiListChatMessages(projectRoot, { threadId: activeChatThreadId });
+      if (chatTargetRef.current.projectRoot !== projectRoot || chatTargetRef.current.threadId !== activeChatThreadId) return;
       setChatMessages(data);
     } catch (e) {
       setError(`Failed to load chat messages: ${e instanceof Error ? e.message : String(e)}`);
@@ -1075,8 +1076,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     chatMessages,
     setChatMessages,
     refreshChatMessages,
-    chatSending,
-    setChatSending,
     busy,
     error,
     message,

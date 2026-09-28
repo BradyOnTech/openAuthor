@@ -23,7 +23,7 @@
     "active": true,
     "targets": ["app", "dmg"],
     "category": "Productivity",
-    "resources": ["resources/runtime/python", "resources/runtime/codex"],
+    "resources": ["resources/runtime/python", "resources/runtime/codex", "resources/runtime/git"],
     "macOS": {
       "minimumSystemVersion": "12.0",
       "hardenedRuntime": true

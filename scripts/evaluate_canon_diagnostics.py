@@ -62,9 +62,11 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
         false_positive += max(0, actual[code] - expected[code])
         false_negative += max(0, expected[code] - actual[code])
       case_results.append({"id": case["id"], "expected": dict(expected), "actual": dict(actual)})
-  precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 1.0
-  recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 1.0
+  precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else None
+  recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else None
   return {
+    "evidence_kind": "synthetic_seeded_canon_regression",
+    "limitations": "Facts are supplied manually; this does not measure manuscript extraction or live-model quality.",
     "corpus": str(corpus_path),
     "cases": case_results,
     "true_positive": true_positive,
