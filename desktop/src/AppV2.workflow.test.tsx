@@ -16,6 +16,7 @@ const harness = vi.hoisted(() => ({
   entities: [] as Array<Record<string, unknown>>,
   relationships: [] as Array<Record<string, unknown>>,
   facts: [] as Array<Record<string, unknown>>,
+  diagnostics: [] as Array<Record<string, unknown>>,
   arcStates: [] as Array<Record<string, unknown>>,
   suggestions: [] as Array<Record<string, unknown>>,
   plan: {
@@ -239,7 +240,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "setup-list") return response([]);
     if (root === "memory" && action === "question-list") return response([]);
     if (root === "memory" && action === "arc-list") return response(harness.arcStates);
-    if (root === "memory" && action === "diagnose") return response({ diagnostics: [], summary: { errors: 0, warnings: 0, info: 0 } });
+    if (root === "memory" && action === "diagnose") return response({ diagnostics: harness.diagnostics, summary: { errors: 0, warnings: harness.diagnostics.length, info: 0 } });
     if (root === "memory" && action === "fact-add") {
       const fact = { id: `fact-${harness.facts.length + 1}`, subject_entity_id: argument(args, "--subject"), predicate: argument(args, "--predicate"), value: argument(args, "--value"), status: "accepted", confidence: 1, evidence: JSON.parse(argument(args, "--evidence-json")), validity: { from_scene_id: argument(args, "--valid-from"), to_scene_id: argument(args, "--valid-to") }, knowledge: [], scope: argument(args, "--scope") };
       harness.facts.push(fact); return response(fact);
@@ -255,6 +256,7 @@ vi.mock("@tauri-apps/api/core", () => ({
         checks: [],
       });
     }
+    if (root === "check" && action === "continuity") return response([]);
     if (root === "proposal" && action === "list") return response(harness.proposals);
     if (root === "proposal" && action === "generate") {
       const now = "2026-07-15T12:01:00Z";
@@ -564,6 +566,7 @@ describe("active V2 author workflow", () => {
     harness.entities.length = 0;
     harness.relationships.length = 0;
     harness.facts.length = 0;
+    harness.diagnostics.length = 0;
     harness.arcStates.length = 0;
     harness.suggestions.length = 0;
     harness.plan = {
@@ -606,6 +609,60 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
     return { user, body: await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement };
   }
+
+  it("saves pending prose before diagnostics and opens the exact evidence passage", async () => {
+    const { user, body } = await openWritingScene();
+    const excerpt = "Mara's left hand had four fingers.";
+    const prose = `🌙 A quiet room. ${excerpt}`;
+    fireEvent.change(body, { target: { value: prose } });
+    harness.diagnostics.push({ id: "trait-warning", code: "prose_trait_mismatch", severity: "warning", title: "Possible physical-detail mismatch", message: "Review the character's left hand.", fact_ids: [], scene_ids: ["scene-0001"], evidence: [{ scene_id: "scene-0001", excerpt, start: [...prose.slice(0, prose.indexOf(excerpt))].length, end: [...prose].length }] });
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    await user.click(screen.getByTitle(/Story Memory \(/));
+    await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(harness.calls.filter(args => args[0] === "memory" && args[1] === "diagnose")).toHaveLength(0);
+    harness.saveGate = null;
+    await act(async () => finish());
+    expect(await screen.findByText(excerpt)).toBeTruthy();
+    expect(screen.getByText(/Not a comprehensive plot/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Open evidence 1 in Opening" }));
+    const reopened = await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement;
+    expect(reopened.value.slice(reopened.selectionStart, reopened.selectionEnd)).toBe(excerpt);
+    expect(harness.scenes[0]?.body).toBe(prose);
+  });
+
+  it("labels basic checks as manuscript hygiene and distinguishes an empty completed run", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Checks \(/));
+    expect(await screen.findByText("Manuscript hygiene")).toBeTruthy();
+    expect(screen.getByText(/not a story-consistency verdict/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Run hygiene checks" }));
+    expect(await screen.findByText("No hygiene findings in the last run.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Open story continuity" }));
+    expect(await screen.findByRole("heading", { name: "Canon & Continuity" })).toBeTruthy();
+  });
+
+  it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {
+    const { user, body } = await openWritingScene();
+    fireEvent.change(body, { target: { value: "Mara waits. Mara returns." } });
+    harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", evidence: [
+      { scene_id: "scene-0001", excerpt: "Mara waits.", start: 0, end: 11 },
+      { scene_id: "scene-0001", excerpt: "Mara returns.", start: 12, end: 25 },
+    ] });
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    await user.click(screen.getByTitle(/Story Memory \(/));
+    await user.click(screen.getByRole("button", { name: "Scan Manuscript for Memory" }));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(harness.calls.filter(args => args[0] === "memory" && args[1] === "scan")).toHaveLength(0);
+    harness.saveGate = null;
+    await act(async () => finish());
+    await waitFor(() => expect(harness.calls.some(args => args[0] === "memory" && args[1] === "scan")).toBe(true));
+    expect(await screen.findByText("Mara returns.")).toBeTruthy();
+    expect(screen.queryByText("92%")).toBeNull();
+    expect(screen.getByText("Repeated proper-name mentions")).toBeTruthy();
+  });
 
   it("retries a failed draft without recreating its already generated proposal", async () => {
     const { user } = await openWritingScene();

@@ -1,20 +1,22 @@
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { sceneSaveSession } from "../../sceneSaveSession";
 import { clearSceneRecoveryDraft, readSceneRecoveryDraft, recoveryDraftMatchesScene } from "../../recoveryJournal";
-import type { SceneDetail } from "../../types";
+import type { CanonEvidence, SceneDetail } from "../../types";
+import { evidenceRange } from "../../evidenceRange";
 
-export function SceneEditor({ scene }: { scene: SceneDetail }) {
+export function SceneEditor({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
   const { projectRoot } = useWorkspace();
-  return <SceneEditorSession key={`${projectRoot}:${scene.id}`} scene={scene} />;
+  return <SceneEditorSession key={`${projectRoot}:${scene.id}`} scene={scene} focusPassage={focusPassage} />;
 }
 
-function SceneEditorSession({ scene }: { scene: SceneDetail }) {
+function SceneEditorSession({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
   const { projectRoot, refreshScenes, setError } = useWorkspace();
   const { updateTab, activeTabId } = useEditor();
   const [session] = useState(() => sceneSaveSession(projectRoot, scene));
   const { title, body, saving, error, readOnly } = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [recoveryDraft, setRecoveryDraft] = useState(() => {
     if (session.dirty) return null;
     const draft = readSceneRecoveryDraft(projectRoot, scene.id);
@@ -24,6 +26,18 @@ function SceneEditorSession({ scene }: { scene: SceneDetail }) {
   const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
 
   useEffect(() => { session.acceptScene(scene); }, [scene, session]);
+
+  useEffect(() => {
+    if (!focusPassage || !bodyRef.current) return;
+    const range = evidenceRange(session.getSnapshot().body, focusPassage);
+    if (range) {
+      bodyRef.current.focus();
+      bodyRef.current.setSelectionRange(...range);
+    } else {
+      setError("This evidence passage changed or is ambiguous. The scene is open; run a fresh scan before relying on the old passage.");
+    }
+    updateTab(`scene:${scene.id}`, { focusPassage: undefined });
+  }, [focusPassage, session, scene.id, setError, updateTab]);
 
   useEffect(() => {
     let mounted = true;
@@ -83,7 +97,7 @@ function SceneEditorSession({ scene }: { scene: SceneDetail }) {
       <div className="scene-editor__content">
         <input className="scene-editor__title" readOnly={readOnly} value={title} onChange={event => session.edit({ title: event.target.value })} placeholder="Scene title..." />
         <div className="scene-editor__divider" />
-        <textarea className="scene-editor__body" readOnly={readOnly} value={body} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
+        <textarea ref={bodyRef} className="scene-editor__body" aria-label="Scene prose" readOnly={readOnly} value={body} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
       </div>
     </div>
   );

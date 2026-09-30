@@ -1,0 +1,22 @@
+{
+  "evidence_kind": "synthetic_unseeded_prose_regression",
+  "limitations": "Curated English pattern-regression cases, authored alongside the implementation. No Canon Facts are seeded. This is not an independent benchmark, broad language understanding test, or live-model quality measurement. Unsupported paraphrases, subtle coreference, causal explanations, and plot or motivation problems can still be missed.",
+  "cases": [
+    {"id": "explicit-finger-count", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "Mara's left hand had five fingers."}], "expected": {"prose_trait_mismatch": 1}},
+    {"id": "unicode-name-and-short-alias", "scenes": [{"title": "Before", "body": "Élodie Marchand's eyes were blue. Élodie waited."}, {"title": "After", "body": "Élodie's eyes were green."}], "expected": {"prose_trait_mismatch": 1}},
+    {"id": "hair-color", "scenes": [{"title": "Before", "body": "Ivo's hair was black."}, {"title": "After", "body": "Ivo's hair was silver."}], "expected": {"prose_trait_mismatch": 1}},
+    {"id": "same-sentence-owner", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "Mara raised her left hand, all five fingers spread."}], "expected": {"prose_trait_mismatch": 1}},
+    {"id": "nearby-pronoun-needs-review", "scenes": [{"title": "Before", "body": "Mara hid the key. Her left hand still had four fingers."}, {"title": "After", "body": "Mara's left hand had five fingers."}], "expected": {"prose_trait_mismatch": 1}},
+    {"id": "two-traits", "scenes": [{"title": "Before", "body": "Anne-Marie's hair was red. Anne-Marie's eyes were brown."}, {"title": "After", "body": "Anne-Marie's hair was black. Anne-Marie's eyes were blue."}], "expected": {"prose_trait_mismatch": 2}},
+    {"id": "dialogue-is-not-truth", "scenes": [{"title": "Before", "body": "Mara's eyes were blue."}, {"title": "After", "body": "\"Mara's eyes were green,\" Ivo said."}], "expected": {}},
+    {"id": "smart-quotes-is-not-truth", "scenes": [{"title": "Before", "body": "Mara’s left hand had four fingers."}, {"title": "After", "body": "“Mara’s left hand had five fingers,” Ivo said."}], "expected": {}},
+    {"id": "hypothetical", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "If Mara's left hand had five fingers, she would play."}], "expected": {}},
+    {"id": "negation", "scenes": [{"title": "Before", "body": "Mara's eyes were blue."}, {"title": "After", "body": "Mara's eyes were not green."}], "expected": {}},
+    {"id": "dream", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "Mara imagined her left hand, all five fingers spread."}], "expected": {}},
+    {"id": "different-hands", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "Mara's right hand had five fingers."}], "expected": {}},
+    {"id": "different-people", "scenes": [{"title": "Before", "body": "Mara Voss's eyes were blue. Mara Voss slept."}, {"title": "After", "body": "Mara Lynn's eyes were green. Mara Lynn waited."}], "expected": {}},
+    {"id": "numeric-equivalence", "scenes": [{"title": "Before", "body": "Mara's left hand had four fingers."}, {"title": "After", "body": "Mara's left hand had 4 fingers."}], "expected": {}},
+    {"id": "color-spelling-equivalence", "scenes": [{"title": "Before", "body": "Ivo's hair was grey."}, {"title": "After", "body": "Ivo's hair was gray."}], "expected": {}},
+    {"id": "no-cross-paragraph-pronoun", "scenes": [{"title": "Before", "body": "Mara left.\n\nHer eyes were blue."}, {"title": "After", "body": "Mara's eyes were green."}], "expected": {}}
+  ]
+}

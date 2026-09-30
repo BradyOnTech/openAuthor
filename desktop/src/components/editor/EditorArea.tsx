@@ -31,12 +31,12 @@ export function EditorArea() {
   );
 }
 
-function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown } }) {
+function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; focusPassage?: import("../../types").CanonEvidence } }) {
   switch (tab.kind) {
     case "scene": {
       const scene = tab.data as SceneDetail | undefined;
       if (!scene) return <EmptyState />;
-      return <SceneEditor key={tab.id} scene={scene} />;
+      return <SceneEditor key={tab.id} scene={scene} focusPassage={tab.focusPassage} />;
     }
     case "plan":
       return <PlanEditor />;

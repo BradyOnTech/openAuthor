@@ -6,13 +6,15 @@ import uuid
 from collections import defaultdict
 from typing import Any
 
-from .codex import get_entity
+from .codex import get_entity, list_entities
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .scenes import get_scene, list_scenes
+from .scenes import get_scene, list_scene_details, list_scenes
+from .story_observations import prose_trait_diagnostics
 
 CANON_SCHEMA_VERSION = 1
 FACT_STATUSES = {"accepted", "suggested", "rejected"}
 DIAGNOSTIC_DISPOSITIONS = {"fixed", "dismissed", "intentional", "deferred"}
+NONEXCLUSIVE_PREDICATES = {"is", "was", "has", "had", "owns", "knows", "believes", "can", "likes"}
 
 
 def _memory_path(paths: ProjectPaths):
@@ -287,7 +289,7 @@ def run_canon_diagnostics(
   memory = _read_memory(paths)
   positions = _scene_positions(paths)
   facts = [row for row in memory["facts"] if row.get("status") == "accepted"]
-  diagnostics: list[dict[str, Any]] = []
+  diagnostics = prose_trait_diagnostics(list_scene_details(paths), list_entities(paths))
   groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
   for fact in facts:
     groups[(fact.get("subject_entity_id", ""), fact["predicate"].casefold())].append(fact)
@@ -309,7 +311,8 @@ def run_canon_diagnostics(
         left_range = _validity_range(left, positions)
         right_range = _validity_range(right, positions)
         overlaps = max(left_range[0], right_range[0]) <= min(left_range[1], right_range[1])
-        if overlaps and left["value"].casefold() != right["value"].casefold():
+        exclusive = left["predicate"].casefold().strip() not in NONEXCLUSIVE_PREDICATES
+        if exclusive and overlaps and left["value"].casefold() != right["value"].casefold():
           diagnostics.append({
             "id": _diagnostic_id("conflicting_facts", [left["id"], right["id"]]),
             "code": "conflicting_facts",
@@ -412,6 +415,10 @@ def run_canon_diagnostics(
     ]
   return {
     "generated_at": utc_now(),
+    "coverage": {
+      "method": "Local, limited pattern checks plus author-recorded Canon, knowledge, setups and arcs.",
+      "limitations": ["Not a comprehensive plot, timeline, motivation or prose-quality analysis.", "Physical-detail warnings are unconfirmed observations, not Canon Facts."],
+    },
     "affected_scene_ids": affected_scene_ids or [],
     "incremental": affected_scene_ids is not None,
     "diagnostics": diagnostics,

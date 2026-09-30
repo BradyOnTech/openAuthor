@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from typing import Any
 
@@ -12,7 +13,6 @@ from .scenes import get_scene, list_scenes
 
 SUGGESTION_SCHEMA_VERSION = 1
 SUGGESTION_STATUSES = {"pending", "accepted", "rejected", "deferred"}
-NAME_PATTERN = re.compile(r"\b[A-Z][a-z]+(?:\s+(?:[A-Z][a-z]+|of|the)){0,2}\b")
 NAME_STOPWORDS = {
   "A", "An", "And", "As", "At", "But", "By", "For", "From", "He", "Her",
   "His", "I", "If", "In", "It", "Its", "No", "Not", "Of", "On", "Or",
@@ -39,6 +39,61 @@ RELATION_PATTERNS = {
   "is child of": r"(?:is|was)\s+(?:the\s+)?(?:son|daughter|child)\s+of",
 }
 SYMMETRIC_RELATIONS = {"is sibling of"}
+
+
+def _proper_name_mentions(body: str):
+  """Keep Unicode spelling and source offsets without an ASCII-only capital class."""
+  words: list[tuple[str, int, int]] = []
+  cursor = 0
+  while cursor < len(body):
+    if not body[cursor].isalpha():
+      cursor += 1
+      continue
+    start = cursor
+    cursor += 1
+    while cursor < len(body):
+      char = body[cursor]
+      if char.isalpha() or unicodedata.category(char).startswith("M"):
+        cursor += 1
+      elif char in "'’‐‑-" and cursor + 1 < len(body) and body[cursor + 1].isalpha():
+        cursor += 1
+      else:
+        break
+    value = body[start:cursor]
+    end = cursor - 2 if value.endswith(("'s", "’s")) else cursor
+    words.append((body[start:end], start, end))
+  stopwords = {word.casefold() for word in NAME_STOPWORDS}
+  particles = {"of", "the", "de", "del", "da", "di", "van", "von"}
+
+  def capitalized(value: str) -> bool:
+    return value[0].isupper() and any(char.islower() for char in value) and value.casefold() not in stopwords
+
+  index = 0
+  while index < len(words):
+    first = words[index]
+    if not capitalized(first[0]):
+      index += 1
+      continue
+    end_index = index
+    while end_index + 1 < len(words) and end_index - index < 5:
+      following = words[end_index + 1]
+      gap = body[words[end_index][2]:following[1]]
+      title_period = words[end_index][0].casefold() in NAME_TITLES and gap.startswith(".") and gap[1:].isspace()
+      if (not gap.isspace() and not title_period) or "\n\n" in gap:
+        break
+      if capitalized(following[0]):
+        end_index += 1
+        continue
+      if following[0] in particles and end_index + 2 < len(words):
+        after = words[end_index + 2]
+        second_gap = body[following[2]:after[1]]
+        if capitalized(after[0]) and second_gap.isspace() and "\n\n" not in second_gap:
+          end_index += 2
+          continue
+      break
+    start, end = first[1], words[end_index][2]
+    yield unicodedata.normalize("NFC", " ".join(body[start:end].split())), start, end
+    index = end_index + 1
 
 
 def _suggestions_path(paths: ProjectPaths):
@@ -158,10 +213,20 @@ def _relationship_candidates(
 
 
 def _identity_key(name: str) -> str:
-  parts = name.casefold().split()
+  normalized = unicodedata.normalize("NFC", name).casefold().replace("’", "'").replace("‐", "-").replace("‑", "-")
+  parts = normalized.split()
   if len(parts) > 1 and parts[0].rstrip(".") in NAME_TITLES:
     parts = parts[1:]
   return " ".join(parts)
+
+
+def _evidence_fingerprint(scene: dict[str, Any], evidence: dict[str, Any]) -> str:
+  # POV metadata is independent of prose. Hashing the whole scene for it would
+  # manufacture a Memory merge conflict when only the scene's prose diverges.
+  source = {"pov": scene.get("pov", "")}
+  if evidence.get("source_field") != "pov":
+    source["body"] = scene.get("body", "")
+  return hashlib.sha256(json.dumps(source, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def _consolidate_character_names(
@@ -170,19 +235,9 @@ def _consolidate_character_names(
   pov_names: set[str],
 ) -> dict[str, list[str]]:
   """Merge an unambiguous short name into the full name seen in the manuscript."""
-  full_names = [name for name in counts if len(name.split()) > 1]
   aliases: dict[str, list[str]] = defaultdict(list)
-  for short_name in list(counts):
-    if len(short_name.split()) != 1:
-      continue
-    short_key = short_name.casefold()
-    matches = [
-      full_name for full_name in full_names
-      if short_key in {full_name.split()[0].casefold(), full_name.split()[-1].casefold()}
-    ]
-    if len(matches) != 1:
-      continue
-    canonical_name = matches[0]
+
+  def merge(short_name: str, canonical_name: str) -> None:
     counts[canonical_name] += counts.pop(short_name)
     for item in evidence.pop(short_name, []):
       identity = (item.get("scene_id"), item.get("start"), item.get("end"))
@@ -196,6 +251,28 @@ def _consolidate_character_names(
     if short_name in pov_names:
       pov_names.discard(short_name)
       pov_names.add(canonical_name)
+
+  equivalent: dict[str, list[str]] = defaultdict(list)
+  for name in counts:
+    equivalent[_identity_key(name)].append(name)
+  for names in equivalent.values():
+    canonical = min(names, key=lambda name: (name not in pov_names, len(name.split()), -counts[name], name))
+    for variant in names:
+      if variant != canonical:
+        merge(variant, canonical)
+
+  full_names = [name for name in counts if len(_identity_key(name).split()) > 1]
+  for short_name in list(counts):
+    short_key = _identity_key(short_name)
+    if len(short_key.split()) != 1:
+      continue
+    matches = [full_name for full_name in full_names
+               if short_key in {_identity_key(full_name).split()[0], _identity_key(full_name).split()[-1]}]
+    if len(matches) == 1:
+      canonical = matches[0]
+      inherited = aliases.pop(short_name, [])
+      merge(short_name, canonical)
+      aliases[canonical].extend(inherited)
   return aliases
 
 
@@ -204,15 +281,17 @@ def _matching_entity(
   name: str,
   aliases: list[str],
 ) -> dict[str, Any] | None:
-  candidate_names = {_identity_key(name), *(_identity_key(alias) for alias in aliases)}
-  for entity in entities:
-    entity_names = {
-      _identity_key(str(entity.get("name", ""))),
-      *(_identity_key(str(alias)) for alias in entity.get("aliases", [])),
-    }
-    if candidate_names & entity_names:
-      return entity
-  return None
+  primary = _identity_key(name)
+  exact = [entity for entity in entities if _identity_key(entity["name"]) == primary]
+  matching = exact or [entity for entity in entities if primary in {_identity_key(str(alias)) for alias in entity.get("aliases", [])}]
+  if not matching:
+    # A new full name must not be swallowed by another full name merely because
+    # both have the same short alias. An existing mononym can be extended.
+    candidate_aliases = {_identity_key(alias) for alias in aliases}
+    matching = [entity for entity in entities if len(_identity_key(entity["name"]).split()) == 1 and _identity_key(entity["name"]) in candidate_aliases]
+  if len(matching) > 1:
+    raise OpenAuthorError("This suggestion's identity is ambiguous. Correct it to the intended character's full name before accepting.")
+  return matching[0] if matching else None
 
 
 def queue_memory_suggestion(
@@ -300,28 +379,39 @@ def extract_memory_suggestions(
         "scene_id": scene["id"],
         "path": scene["path"],
         "excerpt": f"POV: {pov}",
+        "source_field": "pov",
         "start": 0,
         "end": 0,
       })
     body = str(scene.get("body", ""))
-    for match in NAME_PATTERN.finditer(body):
-      name = match.group(0).strip()
+    for name, mention_start, mention_end in _proper_name_mentions(body):
       if name in NAME_STOPWORDS or len(name) < 3:
         continue
       counts[name] += 1
       if len(evidence[name]) < 3:
-        start = max(0, match.start() - 70)
-        end = min(len(body), match.end() + 100)
+        start = max(0, mention_start - 70)
+        end = min(len(body), mention_end + 100)
         evidence[name].append({
           "scene_id": scene["id"],
           "path": scene["path"],
           "excerpt": " ".join(body[start:end].split()),
-          "start": match.start(),
-          "end": match.end(),
+          "anchor_text": body[mention_start:mention_end],
+          "start": mention_start,
+          "end": mention_end,
         })
     for entity in entities:
       names = [entity["name"], *entity.get("aliases", [])]
       for entity_name in names:
+        if not str(entity_name).strip():
+          continue
+        try:
+          identity = _matching_entity(entities, entity_name, [])
+        except OpenAuthorError:
+          # A shared nickname cannot support a fact about either person until
+          # the author supplies an unambiguous identity.
+          continue
+        if identity is None or identity["id"] != entity["id"]:
+          continue
         pattern = re.compile(
           rf"\b{re.escape(entity_name)}\s+(is|was|has|owns|knows|believes|lives\s+in)\s+([^.!?\n]{{2,120}})",
           flags=re.IGNORECASE,
@@ -384,11 +474,13 @@ def extract_memory_suggestions(
         previous.pop(alias_id)
   added = 0
   refreshed = 0
+  candidate_ids: set[str] = set()
   for name, count in counts.items():
     if _identity_key(name) in existing_names or count < 2:
       continue
     entity_type = "character"
     suggestion_id = _suggestion_id(entity_type, name)
+    candidate_ids.add(suggestion_id)
     current = previous.get(suggestion_id)
     confidence = min(0.95, 0.45 + count * 0.08 + (0.15 if name in pov_names else 0))
     # Keep author-owned review metadata when prose evidence is refreshed. The
@@ -423,6 +515,7 @@ def extract_memory_suggestions(
       added += 1
     previous[suggestion_id] = row
   for suggestion_id, candidate in fact_candidates.items():
+    candidate_ids.add(suggestion_id)
     current = previous.get(suggestion_id)
     candidate = {
       **(current or {}),
@@ -450,6 +543,7 @@ def extract_memory_suggestions(
     )
     if relationship_key in existing_relationships:
       continue
+    candidate_ids.add(suggestion_id)
     current = previous.get(suggestion_id)
     candidate = {
       **(current or {}),
@@ -467,6 +561,17 @@ def extract_memory_suggestions(
     else:
       added += 1
     previous[suggestion_id] = candidate
+  source_scenes = {scene["id"]: scene for scene in scene_details}
+  for suggestion_id, row in list(previous.items()):
+    if suggestion_id in candidate_ids:
+      for item in row.get("evidence", []):
+        item["source_sha256"] = _evidence_fingerprint(source_scenes[item["scene_id"]], item)
+    elif (row.get("kind") in {"entity_create", "canon_fact", "relationship_create"}
+          and row.get("status") in {"pending", "deferred"} and not row.get("author_corrected")
+          and row.get("evidence") and all(item.get("scene_id") in source_scenes for item in row["evidence"])):
+      # A partial scan only retires derived suggestions wholly supported by the
+      # scanned scenes. Decisions and author corrections remain author-owned.
+      previous.pop(suggestion_id)
   store["suggestions"] = list(previous.values())
   atomic_write_json(_suggestions_path(paths), store)
   return {
@@ -495,6 +600,11 @@ def review_memory_suggestion(
   created_entity_id = ""
   created_relationship_id = ""
   if disposition == "accepted":
+    if suggestion.get("kind") in {"entity_create", "canon_fact", "relationship_create"}:
+      for item in suggestion.get("evidence", []):
+        current_scene = get_scene(paths, item["scene_id"])
+        if item.get("source_sha256") != _evidence_fingerprint(current_scene, item):
+          raise OpenAuthorError("The source prose or POV changed, or this suggestion predates evidence validation. Run a fresh Memory scan before accepting it.")
     if suggestion.get("kind") == "canon_fact":
       from .canon import add_canon_fact
       fact = add_canon_fact(
@@ -560,18 +670,11 @@ def review_memory_suggestion(
   suggestion["created_entity_id"] = created_entity_id
   suggestion["created_relationship_id"] = created_relationship_id
   if disposition == "accepted" and suggestion.get("kind") in {"entity_create", "memory_note"}:
-    accepted_names = {
-      suggestion["name"].casefold(),
-      *(str(alias).casefold() for alias in suggestion.get("aliases", [])),
-    }
+    accepted_entity = next(row for row in list_entities(paths) if row["id"] == created_entity_id)
     for other in store["suggestions"]:
       if other is suggestion or other.get("kind") not in {"entity_create", "memory_note"}:
         continue
-      other_names = {
-        str(other.get("name", "")).casefold(),
-        *(str(alias).casefold() for alias in other.get("aliases", [])),
-      }
-      if other.get("status") in {"pending", "deferred"} and accepted_names & other_names:
+      if other.get("status") in {"pending", "deferred"} and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
         other["status"] = "accepted"
         other["decided_at"] = suggestion["decided_at"]
         other["created_entity_id"] = created_entity_id

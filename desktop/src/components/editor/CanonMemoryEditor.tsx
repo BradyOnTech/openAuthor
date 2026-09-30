@@ -13,6 +13,8 @@ import {
   addCharacterArcState,
 } from "../../api";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { flushProjectSceneSaves } from "../../sceneSaveSession";
+import { EvidencePassages } from "../shared/EvidencePassages";
 import type { CanonDiagnostic, CanonFact, CharacterArcState, NarrativeSetup, OpenQuestion } from "../../types";
 
 export function CanonMemoryEditor() {
@@ -40,14 +42,16 @@ export function CanonMemoryEditor() {
   useEffect(() => { void load(); }, [projectRoot]);
 
   async function load() {
+    setBusy(true);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before running diagnostics.");
       const [nextFacts, nextSetups, nextQuestions, nextArcStates, report] = await Promise.all([
         listCanonFacts(projectRoot), listNarrativeSetups(projectRoot), listOpenQuestions(projectRoot), listCharacterArcStates(projectRoot), runCanonDiagnostics(projectRoot),
       ]);
       setFacts(nextFacts); setSetups(nextSetups); setQuestions(nextQuestions); setArcStates(nextArcStates); setDiagnostics(report.diagnostics);
     } catch (error) {
       setError(`Failed to load Canon Memory: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    } finally { setBusy(false); }
   }
 
   async function mutate(action: () => Promise<unknown>, message: string) {
@@ -63,8 +67,9 @@ export function CanonMemoryEditor() {
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "var(--space-6)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: "var(--space-5)" }}>
           <div><div style={eyebrow}>Evidence-backed story truth</div><h1 style={pageTitle}>Canon & Continuity</h1></div>
-          <button className="btn" disabled={busy} onClick={() => void load()}>Run Diagnostics</button>
+          <button className="btn" style={{ minHeight: 40 }} disabled={busy} onClick={() => void load()}>{busy ? "Checking…" : "Run Diagnostics"}</button>
         </div>
+        <p style={{ ...valueStyle, marginBottom: 16 }}>Local checks compare recorded Canon, knowledge, setups and arcs, plus explicit English descriptions of finger counts and eye/hair colors. Not a comprehensive plot, timeline, motivation or prose-quality analysis. Warnings need author review; an empty result is not proof of consistency.</p>
 
         <section style={panelStyle}>
           <h2 style={sectionTitle}>Add Canon Fact</h2>
@@ -86,7 +91,7 @@ export function CanonMemoryEditor() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
           <section style={panelStyle}><h2 style={sectionTitle}>Canon Facts <span style={countStyle}>{facts.length}</span></h2>{facts.map((fact) => <article key={fact.id} style={rowStyle}><strong>{entityName(fact.subject_entity_id)} · {fact.predicate}</strong><div style={valueStyle}>{fact.value}</div><div style={metaStyle}>{fact.validity.from_scene_id || "beginning"} → {fact.validity.to_scene_id || "ongoing"} · {fact.evidence.length} source{fact.evidence.length === 1 ? "" : "s"}</div></article>)}</section>
-          <section style={panelStyle}><h2 style={sectionTitle}>Continuity Diagnostics <span style={countStyle}>{diagnostics.length}</span></h2>{diagnostics.map((diagnostic) => <article key={diagnostic.id} style={{ ...rowStyle, borderLeft: `3px solid var(--${diagnostic.severity === "error" ? "danger" : diagnostic.severity === "warning" ? "warning" : "info"})` }}><strong>{diagnostic.title}</strong><div style={valueStyle}>{diagnostic.message}</div><div style={metaStyle}>{diagnostic.evidence.length} evidence passage{diagnostic.evidence.length === 1 ? "" : "s"}{diagnostic.disposition ? ` · ${diagnostic.disposition.disposition}` : ""}</div>{!diagnostic.disposition && <div style={{ display: "flex", gap: 5, marginTop: 7 }}>{(["intentional", "dismissed", "deferred"] as const).map((disposition) => <button key={disposition} className="btn btn--sm" onClick={() => void mutate(() => disposeCanonDiagnostic(projectRoot, diagnostic.id, disposition), `Marked ${disposition}.`)}>{disposition}</button>)}</div>}</article>)}</section>
+          <section style={panelStyle}><h2 style={sectionTitle}>Continuity Diagnostics <span style={countStyle}>{diagnostics.length}</span></h2>{!busy && diagnostics.length === 0 && <p style={valueStyle}>No findings from these limited checks.</p>}{diagnostics.map((diagnostic) => <article key={diagnostic.id} style={{ ...rowStyle, borderLeft: `3px solid var(--${diagnostic.severity === "error" ? "danger" : diagnostic.severity === "warning" ? "warning" : "info"})` }}><strong>{diagnostic.title}</strong><div style={valueStyle}>{diagnostic.message}</div><div style={metaStyle}>{diagnostic.evidence.length} evidence passage{diagnostic.evidence.length === 1 ? "" : "s"}{diagnostic.disposition ? ` · ${diagnostic.disposition.disposition}` : ""}</div><EvidencePassages evidence={diagnostic.evidence} />{!diagnostic.disposition && <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>{(["intentional", "dismissed", "deferred"] as const).map((disposition) => <button key={disposition} className="btn btn--sm" style={{ minHeight: 40 }} disabled={busy} onClick={() => void mutate(() => disposeCanonDiagnostic(projectRoot, diagnostic.id, disposition), `Marked ${disposition}.`)}>{disposition}</button>)}</div>}</article>)}</section>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan } from "../types";
+import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan, CanonEvidence } from "../types";
 
 export type EditorTabKind = "scene" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings";
 
@@ -8,6 +8,7 @@ export type EditorTab = {
   kind: EditorTabKind;
   label: string;
   modified?: boolean;
+  focusPassage?: CanonEvidence;
   data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | null;
 };
 

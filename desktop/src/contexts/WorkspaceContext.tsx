@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import { flushProjectSceneSaves } from "../sceneSaveSession";
 import {
   getProjectStatus,
   listScenes,
@@ -119,6 +120,7 @@ type WorkspaceState = {
   refreshRuns: () => Promise<void>;
 
   continuityIssues: ContinuityIssue[];
+  checksCompleted: boolean;
   runChecks: () => Promise<void>;
 
   branches: BranchSummary[];
@@ -245,6 +247,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [proposals, setProposals] = useState<ProposalRecord[]>([]);
   const [runs, setRuns] = useState<GenerationRunSummary[]>([]);
   const [continuityIssues, setContinuityIssues] = useState<ContinuityIssue[]>([]);
+  const [checksCompleted, setChecksCompleted] = useState(false);
   const [branches, setBranches] = useState<BranchSummary[]>([]);
   const [budget, setBudget] = useState<GenerationBudgetReport | null>(null);
   const [runtimeConfig, setRuntimeConfig] = useState<GenerationRuntimeConfig | null>(null);
@@ -325,11 +328,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!projectRoot) return;
     setBusy(true);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before running checks.");
       const data = await apiRunContinuityChecks(projectRoot);
       setContinuityIssues(data);
-      setMessage(`Continuity check complete: ${data.length} issue${data.length === 1 ? "" : "s"} found.`);
+      setChecksCompleted(true);
+      setMessage(`Manuscript hygiene check complete: ${data.length} finding${data.length === 1 ? "" : "s"}. This is not a story-consistency verdict.`);
     } catch (e) {
-      setError(`Continuity check failed: ${e instanceof Error ? e.message : String(e)}`);
+      setError(`Manuscript hygiene check failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusy(false);
     }
@@ -507,6 +512,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setProposals([]);
     setRuns([]);
     setContinuityIssues([]);
+    setChecksCompleted(false);
     setBranches([]);
     setBudget(null);
     setRuntimeConfig(null);
@@ -1069,6 +1075,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     runs,
     refreshRuns,
     continuityIssues,
+    checksCompleted,
     runChecks,
     branches,
     refreshBranches,

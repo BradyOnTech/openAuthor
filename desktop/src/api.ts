@@ -14,6 +14,7 @@ import type {
   OpenQuestion,
   CharacterArcState,
   CanonDiagnostic,
+  CanonEvidence,
   ContinuityIssue,
   CoreCommandResponse,
   GenerationBudgetReport,
@@ -1416,7 +1417,7 @@ export type StoryMemorySuggestion = {
   confidence: number;
   reason: string;
   status: "pending" | "accepted" | "rejected" | "deferred";
-  evidence: Array<{ scene_id: string; path: string; excerpt: string; start: number; end: number }>;
+  evidence: Array<CanonEvidence & { path: string }>;
   subject_entity_id?: string;
   subject_name?: string;
   predicate?: string;

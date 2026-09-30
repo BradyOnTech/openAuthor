@@ -3244,3 +3244,6 @@ button.status-bar__item {
 .import-structure-review__fields label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 150px; min-width: 0; }
 .import-structure-review input, .import-structure-review select, .import-structure-review summary { min-height: 40px; }
 .import-structure-review summary { cursor: pointer; align-content: center; }
+.memory-suggestion-review button { min-height: 40px; }
+.memory-suggestion-review p { text-wrap: pretty; }
+.memory-suggestion-review strong { overflow-wrap: anywhere; }
