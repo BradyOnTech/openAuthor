@@ -7,7 +7,7 @@ import re
 from collections import Counter
 from typing import Any
 
-from .codex import list_entities
+from .ai_visibility import memory_for_ai
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .revisions import revision_head
 from .scenes import split_scene_text
@@ -62,7 +62,7 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
       }
     )
 
-  for codex_row in list_entities(paths):
+  for codex_row in memory_for_ai(paths):
     entity_id = codex_row.get("id", "").strip()
     if entity_id == "":
       continue
@@ -224,6 +224,7 @@ def build_retrieval_index(
         "path": row["path"],
         "title": row["title"],
         "updated_at": row.get("updated_at", ""),
+        "content_digest": hashlib.sha256(row["text"].encode("utf-8")).hexdigest(),
       }
       for row in sources
     ],
@@ -266,6 +267,10 @@ def get_retrieval_index_status(paths: ProjectPaths) -> dict[str, Any]:
   )
   stale_by_sources = indexed_digest != current_digest
   stale_reasons: list[str] = []
+  if any(not row.get("content_digest") for row in payload.get("sources", [])):
+    stale_reasons.append("source_content_validation_missing")
+  if any(row.get("source_type") == CODEX_SOURCE_TYPE and not row.get("content_digest") for row in payload.get("sources", [])):
+    stale_reasons.append("memory_visibility_policy_changed")
   if stale_by_head:
     stale_reasons.append("git_head_changed")
   if stale_by_sources:
@@ -335,9 +340,19 @@ def query_retrieval_index(
   }
   corpus_size = max(1, len(chunks))
   ranked: list[dict[str, Any]] = []
+  current_source_digests = {
+    source["source_id"]: hashlib.sha256(source["text"].encode("utf-8")).hexdigest()
+    for source in _collect_sources(paths)
+  }
 
   for chunk in chunks:
     if not isinstance(chunk, dict):
+      continue
+    source_id = str(chunk.get("source_id", ""))
+    source_row = source_lookup.get(source_id, {})
+    # A stale index can still return unchanged, permitted sources. Never quote
+    # obsolete manuscript facts, revoked Memory, or unverified legacy chunks.
+    if source_id not in current_source_digests or source_row.get("content_digest") != current_source_digests[source_id]:
       continue
     token_counts = chunk.get("token_counts")
     if not isinstance(token_counts, dict):

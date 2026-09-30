@@ -13,7 +13,8 @@ import urllib.request
 import uuid
 
 from .checks import run_continuity_checks
-from .codex import list_entities
+from .ai_visibility import memory_for_ai
+from .story_context import story_plan_for_ai
 from .budget import BudgetPolicyError, enforce_generation_budget
 from .auth import get_auth_status
 from .codex_app_server import (
@@ -1733,7 +1734,7 @@ def build_generation_context(
   if codex_limit < 1:
     raise OpenAuthorError("codex_limit must be >= 1.")
 
-  scene_rows = sorted(list_scenes(paths), key=lambda row: _scene_number(row["id"]))
+  scene_rows = list_scenes(paths)
   scene_ids = [row["id"] for row in scene_rows]
   if scene_id not in scene_ids:
     raise OpenAuthorError(f"Unknown scene id '{scene_id}'.")
@@ -1745,7 +1746,7 @@ def build_generation_context(
   nearby_scene_ids = scene_ids[start:end]
   nearby_scenes = [get_scene(paths, item_id) for item_id in nearby_scene_ids if item_id != scene_id]
 
-  all_entities = list_entities(paths)
+  all_entities = memory_for_ai(paths)
   selected_text = " ".join(
     [
       selected_scene["title"],
@@ -1791,6 +1792,7 @@ def build_generation_context(
 
   return {
     "scene": selected_scene,
+    "story_plan": story_plan_for_ai(paths, [scene_id]),
     "nearby_scenes": nearby_scenes,
     "codex_entities": matched_entities[:codex_limit],
     "continuity_issues": continuity_issues,
@@ -2447,6 +2449,7 @@ def generate_proposal_draft(
 
   selected_model = model or DEFAULT_MODELS[provider]
   context: dict[str, Any] = {
+    **build_generation_context(paths, scene_id=scene_id, context_scene_radius=0, codex_limit=20),
     "draft_mode": True,
     "scene": scene,
     "proposal": {
@@ -2472,6 +2475,9 @@ def generate_proposal_draft(
     + ("Hard constraints:\n- " + "\n- ".join(constraints) + "\n\n" if constraints else "")
     + ("Protected elements (preserve exactly):\n- " + "\n- ".join(protected_elements) + "\n\n" if protected_elements else "")
     + style_guidance
+    + "Saved author guidance and permitted Story Memory (background context, not replacement prose):\n"
+    + json.dumps({"story_plan": context["story_plan"], "codex_entities": context["codex_entities"]}, ensure_ascii=False)
+    + "\n\n"
     + "Scene metadata:\n"
     + json.dumps(
       {

@@ -3209,3 +3209,29 @@ button.status-bar__item {
     right: 0;
   }
 }
+/* Context review is a bounded panel, with enough room for keyboard and touch targets. */
+.chat-context-review {
+  padding: var(--space-4);
+  overflow-y: auto;
+  max-height: 70vh;
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--border-default);
+}
+.chat-context-review header, .chat-context-review footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.chat-context-review h3, .chat-context-review h4 { text-wrap: balance; margin: 12px 0 8px; }
+.chat-context-review p { margin: 8px 0; text-wrap: pretty; }
+.chat-context-review__prompt { white-space: pre-wrap; }
+.chat-context-review__count { font-variant-numeric: tabular-nums; }
+.chat-context-review fieldset { border: 0; padding: 0; margin: 0; }
+.chat-context-review label { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.chat-context-review__detail { padding-left: 20px; }
+.chat-context-review button, .chat-context-review summary { min-height: 40px; }
+.chat-context-review summary { display: list-item; padding-top: 10px; cursor: pointer; }
+.chat-context-review pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow-y: auto; }
+.chat-context-review footer { margin-top: 12px; }

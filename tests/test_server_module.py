@@ -35,6 +35,23 @@ def _response_for(frames: list[dict[str, Any]], request_id: Any) -> dict[str, An
 
 
 class ServerModuleTests(unittest.TestCase):
+  def test_context_preview_and_one_time_permission_reach_the_streamed_turn(self) -> None:
+    from openauthor.codex import add_entity
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Context transport")
+      entity_id = add_entity(paths, kind="character", name="Mara", description="APPROVED_FACT", ai_visibility="ask")
+      thread = create_chat_thread(paths, title="Review", provider="local", mode="chat")
+      params = {"thread_id": thread["id"], "message": "Discuss Mara.", "memory_approvals": [{"entity_id": entity_id}]}
+      preview = _response_for(_run_requests(paths, [{"id": "preview", "method": "chat.context", "params": params}]), "preview")["result"]
+      self.assertIn("APPROVED_FACT", preview["user_prompt"])
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
+      params["expected_context_fingerprint"] = preview["fingerprint"]
+      sent = _response_for(_run_requests(paths, [{"id": "send", "method": "chat.send", "params": params}]), "send")["result"]
+      self.assertTrue(sent["user_message"]["context_used"]["privacy"]["one_time_approval"])
+      following = _response_for(_run_requests(paths, [{"id": "next", "method": "chat.context", "params": {"thread_id": thread["id"], "message": "Continue."}}]), "next")["result"]
+      self.assertNotIn("APPROVED_FACT", following["user_prompt"])
+      self.assertEqual(following["history"], [])
+
   def test_replayed_send_after_connection_loss_does_not_duplicate_messages(self) -> None:
     with tempfile.TemporaryDirectory() as temporary:
       paths = initialize_project(Path(temporary), name="Retry safety")

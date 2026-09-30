@@ -1,0 +1,34 @@
+{
+  "objective": "Bring the local-first single-author product to production paid-product quality without adding SaaS billing or hosting.",
+  "status": "in_progress",
+  "requirements": [
+    {"id": "privacy", "requirement": "Enforce entity and detail AI visibility, never send private notes, support explicit per-request approval, prevent retrieval/tool/history bypasses, and show author-readable context previews.", "status": "in_progress", "evidence": ["Shared safe Memory projection in chat, generation, retrieval and agent read tools", "Per-entry and per-detail one-turn permissions through CLI, sidecar and native context review", "Privacy changes and expired grants exclude old provider history without deleting local transcripts", "Stale reviewed payloads fail before provider contact", "9 privacy regression tests and a native two-turn local-provider log inspection"], "remaining": ["Extend context review and one-turn permission controls to non-chat generation surfaces", "Improve stale-preview retry recovery without risking duplicate completed turns"]},
+    {"id": "reading-order", "requirement": "Use one authoritative act/chapter/scene order in navigation, export, AI context, continuity and move previews, preserving legacy unstructured books.", "status": "verified", "evidence": ["3 regressions cover list/navigation, generation neighbors, Markdown/DOCX ordering, Canon ranges, legacy and corrupt structures", "Native scene move immediately changes manuscript sidebar order"]},
+    {"id": "durable-planning", "requirement": "Planning and Memory drafts survive structural actions, navigation and recoverable failures with explicit save/recovery state.", "status": "in_progress", "evidence": ["Recoverable brief, act/chapter/beat form, scene-planning metadata, Memory entry and new detail/connection drafts", "Drafts keyed by project and Storyline", "Conflict choices, storage warnings and in-flight edit preservation", "Native brief and Memory entry/detail/connection drafts recovered after app restart", "Native Plan tab reopening preserves chapter, beat, story time and labels drafts", "Native Memory save, clear aliases and detail visibility changes verified", "Rendered Memory and Plan reopening regressions"], "remaining": ["Audit in-flight metadata saves during Storyline/version switches", "Add navigation protection for unavailable recovery storage", "Audit optimistic concurrency for external Memory edits and validate typed detail values"]},
+    {"id": "structured-import", "requirement": "Preserve chapter/scene hierarchy, preview and correct import boundaries, avoid empty heading scenes, and report export losses honestly.", "status": "pending"},
+    {"id": "grounded-context", "requirement": "Connect saved brief, style guide, relevant outline/beats and safe canon to AI workflows; preview included/omitted context and explain context limits and history compaction.", "status": "in_progress", "evidence": ["Chat, proposal generation and scene drafting share bounded saved story guidance", "Context preview shows scenes, Memory permissions, guidance clipping, retrieval state, history limits and exact initial prompts", "Retrieval validates current source content before quoting cached passages"], "remaining": ["Apply shared grounding and previews to hunk regeneration and merge reconciliation", "Include permitted scene-valid Canon and relationships", "Audit total context limits and token estimates across providers"]},
+    {"id": "story-understanding", "requirement": "Support Unicode names and alias resolution, evidence-reviewed fact extraction and actionable continuity diagnostics; distinguish manuscript hygiene from story analysis and evaluate false positives as well as misses.", "status": "pending"},
+    {"id": "selection-editing", "requirement": "Provide Rewrite, Shorten, Expand and Critique selection with context preview, a durable selected-range anchor, accept/reject diffs, stale-edit protection and exact undo.", "status": "pending"},
+    {"id": "quality-evidence", "requirement": "Expand synthetic extraction/editorial corpora, measure live-provider voice/canon quality within the approved total budget, and test the native author workflow, recovery and performance. Never use unapproved private manuscripts.", "status": "pending"},
+    {"id": "completion-audit", "requirement": "Run full core/frontend/native/build/dependency/capability gates, inspect rendered workflows, and audit all stated requirements against current evidence. Record distribution and real-author evidence limitations without declaring them passed.", "status": "pending"}
+  ],
+  "latest_automated_checkpoint": {
+    "date": "2026-09-30",
+    "python_tests_passed": 188,
+    "desktop_tests_passed": 124,
+    "rust_tests_passed": 6,
+    "frontend_build": "passed",
+    "repository_and_placeholder_audit": "passed",
+    "dependency_audit": "zero vulnerabilities reported",
+    "synthetic_apply_undo_backup_workflow": "passed with exact manuscript and history recovery",
+    "scale_gate": "passed with 400 scenes, 300 proposals, 300 runs and 72 Memory entries",
+    "live_provider_spend_this_implementation": 0,
+    "production_readiness_claim": false
+  },
+  "external_constraints": {
+    "live_provider_spend_usd_max_total": 5,
+    "approved_test_content": "synthetic only",
+    "apple_developer_account": "not available",
+    "real_author_pilot_consent": "not supplied"
+  }
+}

@@ -32,6 +32,7 @@ from .chat import (
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  preview_chat_context,
   truncate_chat_messages,
   update_chat_thread,
 )
@@ -1099,6 +1100,10 @@ def build_parser() -> argparse.ArgumentParser:
     default=None,
   )
   chat_send.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_send.add_argument("--memory-approvals", default="[]", help="JSON array of one-time Ask first permissions (entity_id and optional detail_key).")
+  chat_send.add_argument("--expected-context-fingerprint", default="", help="Require the context reviewed with chat context.")
+  chat_context = chat_sub.add_parser("context", parents=[chat_send], add_help=False, help="Preview the exact initial AI context without contacting a provider.")
+  chat_context.add_argument("--history-before-message-id", default="", help="Preview a replacement for an earlier message.")
 
   chat_message = chat_sub.add_parser("message", help="Manage chat messages.")
   chat_message_sub = chat_message.add_subparsers(dest="chat_message_command", required=True)
@@ -2250,11 +2255,18 @@ def _run(args: argparse.Namespace) -> int:
         f"Unsupported chat thread command: {args.chat_thread_command}"
       )
 
-    if args.chat_command == "send":
+    if args.chat_command in {"send", "context"}:
       context_overrides = _chat_context_overrides(args)
-      row = send_chat_message(
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Memory permissions must be a valid JSON array.") from error
+      operation = send_chat_message if args.chat_command == "send" else preview_chat_context
+      extra = {"request_id": args.request_id, "expected_context_fingerprint": args.expected_context_fingerprint} if args.chat_command == "send" else {"history_before_message_id": args.history_before_message_id}
+      row = operation(
         paths,
-        request_id=args.request_id,
+        **extra,
+        memory_approvals=memory_approvals,
         thread_id=args.thread,
         message=args.message,
         current_scene_id=args.current_scene,
@@ -2263,6 +2275,9 @@ def _run(args: argparse.Namespace) -> int:
         codex_ids=args.codex_id or [],
         context_overrides=context_overrides if context_overrides else None,
       )
+      if args.chat_command == "context":
+        print(json.dumps(row, indent=None if args.json else 2))
+        return 0
       if args.json:
         print(json.dumps(row))
         return 0

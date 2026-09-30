@@ -907,6 +907,8 @@ export type ChatSendPayload = {
   sceneIds?: string[];
   selectedText?: string;
   codexIds?: string[];
+  memoryApprovals?: MemoryApproval[];
+  expectedContextFingerprint?: string;
   includeCurrentScene?: boolean;
   includeSelection?: boolean;
   includeRecentScenesRadius?: number;
@@ -919,6 +921,42 @@ export type ChatSendPayload = {
   agentConfirmWrites?: boolean;
   scope?: "project" | "scene" | "chapter" | "character" | "storyline";
 };
+
+export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type ChatContextPreview = {
+  fingerprint: string;
+  provider: string;
+  model: string;
+  mode: string;
+  estimated_input_tokens: number;
+  history_messages_included: number;
+  history_messages_omitted: number;
+  history_budget_limited?: boolean;
+  system_prompt: string;
+  user_prompt: string;
+  history: Array<{ role: string; content: string }>;
+  context: {
+    current_scene: Array<{ id: string; title: string }>;
+    nearby_scenes: Array<{ id: string; title: string }>;
+    codex_entities: Array<{ id: string; name: string; details: Array<{ key: string }> }>;
+    retrieval: { citations: Array<{ source_title: string }>; degraded: boolean; error: string; index?: { stale: boolean } };
+    story_plan?: {
+      brief: { synopsis: string; genre: string; themes: string[]; style_guide: string; outline: string };
+      structure: Array<{ title: string; chapters: Array<{ title: string }> }>;
+      beats: Array<{ summary: string }>;
+      limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number };
+    };
+    [key: string]: unknown;
+  };
+  context_used: { privacy: { history_reset: boolean; one_time_approval: boolean } };
+  memory_choices: Array<{ id: string; name: string; visibility: string; details: Array<{ key: string; visibility: string }> }>;
+};
+
+export async function previewChatContext(projectRoot: string, payload: ChatSendPayload, historyBeforeMessageId = ""): Promise<ChatContextPreview> {
+  return sidecarRequest<ChatContextPreview>(projectRoot, nextSidecarRequestId(), "chat.context", {
+    ...chatSendParams(payload), history_before_message_id: historyBeforeMessageId,
+  });
+}
 
 export async function sendChatMessage(
   projectRoot: string,
@@ -933,6 +971,8 @@ export async function sendChatMessage(
     payload.message
   ];
   if (payload.deliveryId) args.push("--request-id", payload.deliveryId);
+  if (payload.memoryApprovals?.length) args.push("--memory-approvals", JSON.stringify(payload.memoryApprovals));
+  if (payload.expectedContextFingerprint) args.push("--expected-context-fingerprint", payload.expectedContextFingerprint);
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
   }
@@ -1083,6 +1123,8 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     scene_ids: (payload.sceneIds ?? []).filter((item) => item.trim() !== ""),
     selected_text: payload.selectedText ?? "",
     codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
+    memory_approvals: payload.memoryApprovals ?? [],
+    expected_context_fingerprint: payload.expectedContextFingerprint ?? "",
     context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
   };
 }
@@ -1325,6 +1367,10 @@ export async function updateCodexEntity(
   ];
   for (const alias of payload.aliases ?? []) args.push("--alias", alias);
   for (const tag of payload.tags ?? []) args.push("--tag", tag);
+  // No flag means "leave unchanged" in the CLI; a blank repeated value means
+  // the author intentionally cleared the list after normalization.
+  if (payload.aliases?.length === 0) args.push("--alias", "");
+  if (payload.tags?.length === 0) args.push("--tag", "");
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<CodexEntity>(result);

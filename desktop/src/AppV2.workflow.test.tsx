@@ -950,6 +950,35 @@ describe("active V2 author workflow", () => {
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
   });
 
+  it("preserves an unsaved brief across structural edits and closing the Plan tab", async () => {
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Recovery Novel");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await screen.findByText("No scenes yet.");
+    await user.click(screen.getByTitle(/Plan \(/));
+    await user.type(await screen.findByLabelText("Synopsis"), "Mara chooses her brother.");
+    await user.type(screen.getByLabelText("Themes"), "trust, found family");
+    expect((screen.getByLabelText("Themes") as HTMLInputElement).value).toBe("trust, found family");
+    await user.type(screen.getByPlaceholderText("New act title"), "The Choice");
+    await user.click(screen.getByRole("button", { name: "Add Act" }));
+    await screen.findByText("The Choice");
+    await user.type(screen.getByPlaceholderText("Chapter title"), "Unfinished chapter title");
+    await user.type(screen.getByPlaceholderText("New act title"), "The unwritten return");
+    expect((screen.getByLabelText("Synopsis") as HTMLTextAreaElement).value).toBe("Mara chooses her brother.");
+    await user.click(screen.getByRole("button", { name: "Close Plan" }));
+    await user.click(screen.getByRole("button", { name: "Open Story Board" }));
+    expect((await screen.findByLabelText("Synopsis") as HTMLTextAreaElement).value).toBe("Mara chooses her brother.");
+    expect((screen.getByPlaceholderText("Chapter title") as HTMLInputElement).value).toBe("Unfinished chapter title");
+    expect((screen.getByPlaceholderText("New act title") as HTMLInputElement).value).toBe("The unwritten return");
+    await user.click(screen.getByRole("button", { name: "Save Brief" }));
+    await waitFor(() => expect(harness.plan.brief.synopsis).toBe("Mara chooses her brother."));
+    expect(harness.plan.brief.themes).toEqual(["trust", "found family"]);
+  });
+
   it("builds a project brief, hierarchy, and scene beat in the Plan workspace", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -984,12 +1013,20 @@ describe("active V2 author workflow", () => {
     expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "scene-assign")).toBe(true);
 
     await user.type(screen.getByLabelText("New beat for The Arrival"), "The clock skips thirteen minutes.");
+    await user.click(screen.getByRole("button", { name: "Close Plan" }));
+    await user.click(screen.getByRole("button", { name: "Open Story Board" }));
+    expect((await screen.findByLabelText("New beat for The Arrival") as HTMLInputElement).value).toBe("The clock skips thirteen minutes.");
     await user.click(screen.getByRole("button", { name: "Add beat to The Arrival" }));
     expect(await screen.findByText(/clock skips thirteen minutes/)).toBeTruthy();
     expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "beat-add")).toBe(true);
     await user.click(screen.getByText("Story time & labels"));
     await user.type(screen.getByLabelText("Story time for The Arrival"), "Day 2, dusk");
     await user.type(screen.getByLabelText("Labels for The Arrival"), "turning point, Mara");
+    await user.click(screen.getByRole("button", { name: "Close Plan" }));
+    await user.click(screen.getByRole("button", { name: "Open Story Board" }));
+    await user.click(await screen.findByText("Story time & labels"));
+    expect((screen.getByLabelText("Story time for The Arrival") as HTMLInputElement).value).toBe("Day 2, dusk");
+    expect((screen.getByLabelText("Labels for The Arrival") as HTMLInputElement).value).toBe("turning point, Mara");
     await user.click(screen.getByRole("button", { name: "Save planning details" }));
     await waitFor(() => expect(harness.plan.scene_metadata["scene-0001"]?.timeline_position).toBe("Day 2, dusk"));
     expect(await screen.findByText("Story time · Day 2, dusk")).toBeTruthy();

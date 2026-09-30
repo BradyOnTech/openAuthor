@@ -15,6 +15,17 @@ from openauthor.scenes import add_scene, update_scene
 
 
 class RetrievalModuleTests(unittest.TestCase):
+  def test_cached_scene_facts_are_not_returned_after_a_revision(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = initialize_project(Path(folder), name="Current facts only")
+      add_scene(paths, title="Archive", body="The gate was cobalt.")
+      add_scene(paths, title="Harbor", body="The sea was cobalt.")
+      build_retrieval_index(paths)
+      update_scene(paths, scene_identifier="scene-0001", body="The gate was red.")
+      result = query_retrieval_index(paths, query="cobalt", require_fresh=False)
+      self.assertEqual([row["source_ref"] for row in result["results"]], ["scene-0002"])
+      self.assertTrue(result["index"]["stale"])
+
   def _seed_project(self, root: Path):
     paths = initialize_project(root, name="Retrieval Demo")
     add_scene(

@@ -8,26 +8,37 @@ import {
 import { useEditor } from "../../contexts/EditorContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { CodexEntity, CodexRelationship } from "../../types";
+import { useRecoverableDraft } from "../../recoverableDraft";
+import { DraftStatus } from "../shared/DraftStatus";
+
+const EMPTY_FORM = { targetId: "", relation: "", relationNotes: "", relationFrom: "", relationTo: "", detailKey: "", detailType: "text" as NonNullable<CodexEntity["details"]>[number]["type"], detailValue: "" };
+function validForm(value: unknown): value is typeof EMPTY_FORM {
+  return !!value && typeof value === "object" && Object.keys(EMPTY_FORM).every(key => typeof (value as Record<string, unknown>)[key] === "string");
+}
 
 export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
-  const { projectRoot, scenes, codexEntities, refreshCodex, setError, setMessage } = useWorkspace();
+  const { projectRoot, branches, scenes, codexEntities, refreshCodex, setError, setMessage } = useWorkspace();
   const { updateTab } = useEditor();
-  const [draft, setDraft] = useState(() => normalize(entity));
+  const draftScope = JSON.stringify([projectRoot, branches?.find(row => row.current)?.name || "main", entity.id]);
+  const recovery = useRecoverableDraft(`openauthor.memoryRecovery.v1:${draftScope}`, normalize(entity), validDraft);
+  const draft = recovery.value;
+  const setDraft = recovery.session.edit;
   const [relationships, setRelationships] = useState<CodexRelationship[]>([]);
-  const [targetId, setTargetId] = useState("");
-  const [relation, setRelation] = useState("");
-  const [relationNotes, setRelationNotes] = useState("");
-  const [relationFrom, setRelationFrom] = useState("");
-  const [relationTo, setRelationTo] = useState("");
-  const [detailKey, setDetailKey] = useState("");
-  const [detailType, setDetailType] = useState<NonNullable<CodexEntity["details"]>[number]["type"]>("text");
-  const [detailValue, setDetailValue] = useState("");
+  const formRecovery = useRecoverableDraft(`openauthor.memoryFormRecovery.v1:${draftScope}`, EMPTY_FORM, validForm);
+  const { targetId, relation, relationNotes, relationFrom, relationTo, detailKey, detailType, detailValue } = formRecovery.value;
+  const changeForm = (key: keyof typeof EMPTY_FORM) => (value: string) => formRecovery.session.edit({ ...formRecovery.session.getSnapshot().value, [key]: value });
+  const setTargetId = changeForm("targetId"), setRelation = changeForm("relation"), setRelationNotes = changeForm("relationNotes");
+  const setRelationFrom = changeForm("relationFrom"), setRelationTo = changeForm("relationTo");
+  const setDetailKey = changeForm("detailKey"), setDetailType = changeForm("detailType"), setDetailValue = changeForm("detailValue");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setDraft(normalize(entity));
+    recovery.session.acceptSaved(normalize(entity));
+  }, [entity, recovery.session]);
+
+  useEffect(() => {
     void refreshRelationships();
-  }, [entity.id]);
+  }, [projectRoot, entity.id]);
 
   async function refreshRelationships() {
     try {
@@ -38,6 +49,7 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
   }
 
   async function save() {
+    const submitted = draft;
     setBusy(true);
     try {
       const updated = await updateCodexEntity(projectRoot, entity.id, {
@@ -45,13 +57,14 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
         name: draft.name,
         description: draft.description,
         category: draft.category,
-        aliases: draft.aliases,
-        tags: draft.tags,
+        aliases: draft.aliases.map(value => value.trim()).filter(Boolean),
+        tags: draft.tags.map(value => value.trim()).filter(Boolean),
         details: draft.details,
         notes: draft.notes,
         aiVisibility: draft.ai_visibility,
         scope: draft.scope,
       });
+      recovery.session.saved(submitted, normalize(updated));
       updateTab(`codex:${entity.id}`, { label: updated.name, data: updated });
       await refreshCodex();
       setError("");
@@ -72,14 +85,17 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
 
   async function createRelationship() {
     if (!targetId || !relation.trim()) return;
+    const submitted = formRecovery.value;
     setBusy(true);
     try {
       await addCodexRelationship(projectRoot, { sourceId: entity.id, targetId, relation: relation.trim(), notes: relationNotes, validFrom: relationFrom, validTo: relationTo });
-      setTargetId("");
-      setRelation("");
-      setRelationNotes("");
-      setRelationFrom("");
-      setRelationTo("");
+      formRecovery.session.amend(current => {
+        const remaining = { ...current };
+        for (const key of ["targetId", "relation", "relationNotes", "relationFrom", "relationTo"] as const) {
+          if (current[key] === submitted[key]) remaining[key] = "";
+        }
+        return remaining;
+      });
       await refreshRelationships();
       setError("");
       setMessage("Relationship added.");
@@ -98,15 +114,17 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
             <div style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", textTransform: "uppercase", letterSpacing: ".1em" }}>Story Memory · {draft.type}</div>
             <h1 style={{ color: "var(--text-primary)", margin: "4px 0 0", fontFamily: "var(--font-prose)", fontWeight: 500 }}>{draft.name}</h1>
           </div>
-          <button className="btn btn--primary" disabled={busy || !draft.name.trim()} onClick={() => void save()}>Save Memory</button>
+          <button className="btn btn--primary" disabled={busy || recovery.conflict || !draft.name.trim()} onClick={() => void save()}>Save Memory</button>
         </div>
+        <DraftStatus {...recovery} onUseSaved={recovery.session.useSaved} onKeepDraft={recovery.session.keepDraft} />
+        {formRecovery.error ? <p role="alert">{formRecovery.error}</p> : (detailKey || detailValue || targetId || relation || relationNotes || relationFrom || relationTo) && <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>Unfinished detail or connection forms are saved for recovery on this device. Use Add or Add connection to save them to the book.</p>}
 
         <section style={panelStyle}>
           <div style={twoColumns}>
             <label style={labelStyle}>Name<input className="input" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
             <label style={labelStyle}>Category<input className="input" placeholder="protagonist, city, artifact…" value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></label>
-            <label style={labelStyle}>Aliases<input className="input" placeholder="Comma separated" value={draft.aliases.join(", ")} onChange={(event) => setDraft({ ...draft, aliases: splitList(event.target.value) })} /></label>
-            <label style={labelStyle}>Tags<input className="input" placeholder="POV, antagonist, book two…" value={draft.tags.join(", ")} onChange={(event) => setDraft({ ...draft, tags: splitList(event.target.value) })} /></label>
+            <label style={labelStyle}>Aliases<input className="input" placeholder="Comma separated" value={draft.aliases.join(",")} onChange={(event) => setDraft({ ...draft, aliases: event.target.value.split(",") })} /></label>
+            <label style={labelStyle}>Tags<input className="input" placeholder="POV, antagonist, book two…" value={draft.tags.join(",")} onChange={(event) => setDraft({ ...draft, tags: event.target.value.split(",") })} /></label>
             <label style={labelStyle}>Scope<select className="select" value={draft.scope} onChange={(event) => setDraft({ ...draft, scope: event.target.value as "project" | "series" })}><option value="project">This book</option><option value="series">Entire series</option></select></label>
             <label style={labelStyle}>Assistant access<select className="select" value={draft.ai_visibility} onChange={(event) => setDraft({ ...draft, ai_visibility: event.target.value as "include" | "exclude" | "ask" })}><option value="include">Use automatically</option><option value="ask">Ask before using</option><option value="exclude">Keep out of AI context</option></select></label>
           </div>
@@ -117,11 +135,14 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
         <section style={{ ...panelStyle, marginTop: "var(--space-4)" }}>
           <h2 style={sectionTitle}>Typed details</h2>
           {draft.details.map((detail, index) => (
-            <div key={`${detail.key}-${index}`} style={{ display: "grid", gridTemplateColumns: "1fr 110px 2fr auto", gap: 8, marginBottom: 8, alignItems: "center" }}>
+            <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 110px 2fr auto", gap: 8, marginBottom: 16, alignItems: "center" }}>
               <input className="input" aria-label={`Detail ${index + 1} key`} value={detail.key} onChange={(event) => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, key: event.target.value } : row) })} />
               <span className="badge badge--info">{detail.type}</span>
               <input className="input" aria-label={`Detail ${detail.key} value`} value={String(detail.value ?? "")} onChange={(event) => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, value: event.target.value } : row) })} />
-              <button className="btn btn--sm" aria-label={`Remove ${detail.key}`} onClick={() => setDraft({ ...draft, details: draft.details.filter((_, rowIndex) => rowIndex !== index) })}>×</button>
+              <button className="btn btn--sm" style={{ minHeight: 40, minWidth: 40 }} aria-label={`Remove ${detail.key}`} onClick={() => setDraft({ ...draft, details: draft.details.filter((_, rowIndex) => rowIndex !== index) })}>×</button>
+              <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Assistant access for {detail.key}<select className="select" style={{ minHeight: 40 }} value={detail.ai_visibility} onChange={event => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, ai_visibility: event.target.value as "include" | "ask" | "exclude" } : row) })}>
+                <option value="include">Use automatically when this entry is included</option><option value="ask">Ask before using this detail</option><option value="exclude">Keep this detail out of AI context</option>
+              </select></label>
             </div>
           ))}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 2fr auto", gap: 8 }}>
@@ -166,7 +187,9 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
 
 function normalize(entity: CodexEntity) {
   return {
-    ...entity,
+    type: entity.type,
+    name: entity.name,
+    description: entity.description,
     category: entity.category ?? "",
     aliases: entity.aliases ?? [],
     tags: entity.tags ?? [],
@@ -177,8 +200,12 @@ function normalize(entity: CodexEntity) {
   };
 }
 
-function splitList(value: string): string[] {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
+function validDraft(value: unknown): value is ReturnType<typeof normalize> {
+  if (!value || typeof value !== "object") return false;
+  const row = value as ReturnType<typeof normalize>;
+  return [row.type, row.name, row.description, row.category, row.notes, row.ai_visibility, row.scope].every(item => typeof item === "string")
+    && [row.aliases, row.tags].every(items => Array.isArray(items) && items.every(item => typeof item === "string"))
+    && Array.isArray(row.details) && row.details.every(detail => detail && typeof detail.key === "string" && typeof detail.type === "string" && typeof detail.ai_visibility === "string");
 }
 
 const panelStyle = { padding: "var(--space-4)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--bg-surface)" } as const;
