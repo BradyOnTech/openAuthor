@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { previewChatContext, type ChatContextPreview, type ChatSendPayload, type MemoryApproval } from "../../api";
+import { StoryContextChoices } from "../common/StoryContextChoices";
 
 type Props = {
   projectRoot: string;
@@ -11,6 +12,7 @@ type Props = {
 
 export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId, onSend, onClose }: Props) {
   const [approvals, setApprovals] = useState<MemoryApproval[]>([]);
+  const [storyApprovals, setStoryApprovals] = useState<string[]>([]);
   const [preview, setPreview] = useState<ChatContextPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -20,18 +22,19 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
     let active = true;
     setLoading(true);
     setError("");
-    void previewChatContext(projectRoot, { ...payload, memoryApprovals: approvals }, historyBeforeMessageId).then(result => {
+    void previewChatContext(projectRoot, { ...payload, memoryApprovals: approvals, storyApprovals }, historyBeforeMessageId).then(result => {
       if (active) setPreview(result);
     }).catch(cause => {
       if (active) { setPreview(null); setError(cause instanceof Error ? cause.message : String(cause)); }
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [projectRoot, payload, approvals, historyBeforeMessageId, revision]);
+  }, [projectRoot, payload, approvals, storyApprovals, historyBeforeMessageId, revision]);
 
   const hasGrant = (id: string, key?: string) => approvals.some(grant => grant.entity_id === id && grant.detail_key === key);
   function toggleGrant(id: string, key: string | undefined, checked: boolean) {
     // Changing permission invalidates the old preview immediately, before effects run.
     setLoading(true);
+    setStoryApprovals([]);
     setApprovals(current => checked
       ? [...current, key === undefined ? { entity_id: id } : { entity_id: id, detail_key: key }]
       : current.filter(grant => grant.entity_id !== id || (key !== undefined && grant.detail_key !== key)));
@@ -40,7 +43,7 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
     if (!preview || loading || sending) return;
     setSending(true);
     try {
-      if (await onSend({ ...payload, memoryApprovals: approvals, expectedContextFingerprint: preview.fingerprint })) onClose();
+      if (await onSend({ ...payload, memoryApprovals: approvals, storyApprovals, expectedContextFingerprint: preview.fingerprint })) onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally { setSending(false); }
@@ -80,13 +83,15 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
         })}
       </fieldset>
       {!preview.memory_choices.length && <p>No Memory entries saved yet.</p>}
+      <p>Changing Memory permission clears Canon selections and refreshes their availability.</p>
+      <StoryContextChoices choices={preview.story_choices ?? []} selected={storyApprovals} disabled={loading || sending} reviewed={!loading} onChange={ids => { setLoading(true); setStoryApprovals(ids); }} />
       <h4>Retrieved passages</h4>
       {preview.context.retrieval.citations.length ? <ul>{preview.context.retrieval.citations.map((citation, index) => <li key={index}>{citation.source_title}</li>)}</ul> : <p>No retrieved passages.</p>}
       {preview.context.retrieval.degraded && <p role="status">Retrieval unavailable: {preview.context.retrieval.error}</p>}
       {preview.context.retrieval.index?.stale && <p role="status">The retrieval index is out of date. Changed, restricted, or unverified sources are omitted until the index is rebuilt.</p>}
       <h4>Conversation history</h4>
       <p>{preview.history_messages_included} provider history messages included within the history budget.</p>
-      {preview.context_used.privacy.history_reset && <p>Earlier replies stay on this device but are not being resent because Memory changed or one-time permission expired. This cannot remove information already sent to a provider.</p>}
+      {preview.context_used.privacy.history_reset && <p>Earlier replies stay on this device but are not being resent because Memory changed or one-time Memory or Canon permission expired. This cannot remove information already sent to a provider.</p>}
       {preview.history_budget_limited && <p>Some earlier messages are outside the context window. They remain in this conversation; they have not been summarized.</p>}
       <details><summary>Inspect exact initial prompts and history</summary><pre>{JSON.stringify({ system: preview.system_prompt, user: preview.user_prompt, history: preview.history }, null, 2)}</pre></details>
     </>}

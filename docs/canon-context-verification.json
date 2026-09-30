@@ -1,0 +1,113 @@
+{
+  "date": "2026-09-30",
+  "evidence_kind": "synthetic_native_and_regression_checkpoint",
+  "production_readiness_claim": false,
+  "scope": "Knowledge false alarms, permission-aware Canon grounding for selection/chat, and readable selection review.",
+  "native": {
+    "app": "desktop/src-tauri/target/release/bundle/macos/openAuthor.app",
+    "architecture": "arm64",
+    "signing": "unsigned",
+    "book": "/tmp/openauthor-canon-context.OWpFwN/book",
+    "selection_run": "gen-01b1ee69fd21",
+    "selection_proposal": "proposal-f49a945a0b7181c2d71082a0",
+    "chat_run": "gen-e28db279e7f4",
+    "chat_thread": "chat-d0643db3194b",
+    "provider": "local",
+    "checks": [
+      "Dark-theme selection explanatory text and review controls readable on a matching shell surface.",
+      "Canon fact and relationship initially unchecked; future fact unavailable with scene-validity explanation.",
+      "Toggling a selection grant removes Generate immediately and preserves choices; re-review reports included records.",
+      "Collapsed exact-prompt disclosure opens and closes; local reviewed generation reaches before/after review.",
+      "Selection log contains only the approved fact and relationship; current does_not_know state retained, future knows omitted.",
+      "Chat automatic re-preview includes only the selected fact, not the unselected relationship.",
+      "Next chat turn shows Canon unchecked and zero provider history, with expiry explanation and local transcript preserved.",
+      "Both logged requests exclude synthetic private-note sentinels.",
+      "Original synthetic scene remains byte-for-byte equivalent through these operations; no proposal applied."
+    ],
+    "unverified": [
+      "Native light-theme and comprehensive keyboard/error visual audit",
+      "Clean Intel Mac and signed/notarized distribution"
+    ]
+  },
+  "contrast": {
+    "method": "Calculated from CSS sRGB foreground/background tokens; not a complete accessibility audit.",
+    "old_dark_primary": 1.18,
+    "new_dark_primary": 14,
+    "new_dark_secondary": 4.9,
+    "light_primary": 15.85,
+    "light_secondary": 5.16
+  },
+  "regression_results": {
+    "python_default_passed": 248,
+    "python_default_skipped": 1,
+    "packaged_contract_passed": 1,
+    "desktop_passed": 154,
+    "rust_passed": 7,
+    "dependency_vulnerabilities_reported": 0,
+    "frontend_build": "passed",
+    "unsigned_bundle": "passed",
+    "repository_audit": "passed",
+    "seeded_canon_cases": 7,
+    "unseeded_prose_cases": 16,
+    "local_editorial_cases": 7,
+    "apply_undo_backup": "exact",
+    "scale_story_diagnostics_max_ms": 384.321,
+    "product_review_challenges": {
+      "expected_outcomes_before": 1,
+      "expected_outcomes_after": 4,
+      "total": 8,
+      "independent_benchmark": false
+    },
+    "limitations": "Knowledge matching remains literal with limited English ignorance handling. Broader trait, paraphrase, causal and multilingual cases remain unresolved."
+  },
+  "requirement_audit": [
+    {
+      "id": "privacy",
+      "result": "Selection/chat covered; whole-scene, hunk and merge review plus stale chat retry remain."
+    },
+    {
+      "id": "reading-order",
+      "result": "Existing gates pass; new Canon knowledge regression covers scene reordering and tied states."
+    },
+    {
+      "id": "durable-planning",
+      "result": "No new completion claim; stale responses, direct metadata paths, unavailable storage and optimistic concurrency remain."
+    },
+    {
+      "id": "structured-import",
+      "result": "Existing author workflow passes; retry recovery, export snapshot/cleanup and hierarchy-loss disclosure remain."
+    },
+    {
+      "id": "grounded-context",
+      "result": "Selection/chat now use shared scene-valid Canon; hunk style-guide omission, merge/whole-scene parity and total limits remain."
+    },
+    {
+      "id": "story-understanding",
+      "result": "Three verified knowledge false alarms fixed; four fresh challenge failures and wider meaning-based review remain."
+    },
+    {
+      "id": "selection-editing",
+      "result": "Canon review and dark-theme readability verified; editorial quality and provider/runtime failure paths remain."
+    },
+    {
+      "id": "quality-evidence",
+      "result": "Synthetic native and regression evidence expanded; focused modes, language support, independent quality review and broader native faults remain."
+    },
+    {
+      "id": "focused-editorial",
+      "result": "Targeted live critique is promising but unproven; focused modes and fresh quality evaluations remain."
+    },
+    {
+      "id": "daily-writing-ux",
+      "result": "Hierarchical navigation, compact Plan and full-width evidence review remain pending; no completion claim."
+    },
+    {
+      "id": "inspectable-memory-and-language",
+      "result": "Unicode retrieval, honest voice metrics and source-backed chapter summaries remain pending."
+    },
+    {
+      "id": "completion-audit",
+      "result": "Current gates pass, but multiple requirements remain open; goal stays active."
+    }
+  ]
+}

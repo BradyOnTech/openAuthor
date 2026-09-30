@@ -28,6 +28,7 @@ from .retrieval import query_retrieval_index
 from .scenes import get_scene, list_scenes
 from .project_lock import project_write_lock
 from .story_context import story_plan_for_ai
+from .story_grounding import prepare_story_grounding, STORY_GROUNDING_INSTRUCTIONS
 
 _pending_messages: ContextVar[list[dict[str, Any]] | None] = ContextVar("pending_chat_messages", default=None)
 
@@ -1027,6 +1028,7 @@ def preview_chat_context(
   codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
   memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
   history_before_message_id: str = "",
 ) -> dict[str, Any]:
   """Resolve the exact initial provider payload without contacting a provider.
@@ -1056,6 +1058,10 @@ def preview_chat_context(
     explicit_codex_ids=codex_ids or [],
     memory_approvals=memory_approvals,
   )
+  story_scene_ids = [current_scene_id] if current_scene_id else context_used["scene_ids"]
+  grounding = prepare_story_grounding(paths, story_scene_ids, memory_approvals=memory_approvals, story_approvals=story_approvals)
+  prompt_context["story_memory"] = grounding["context"]
+  context_used["story_scene_ids"] = story_scene_ids
   transcript = list_chat_messages(paths, thread_id=thread_id)
   if history_before_message_id:
     boundary = next((index for index, row in enumerate(transcript) if row["id"] == history_before_message_id), None)
@@ -1067,7 +1073,7 @@ def preview_chat_context(
     "fingerprint": fingerprint,
     "history_reset": len(eligible_history) != len(transcript),
     "history_messages_omitted": len(transcript) - len(eligible_history),
-    "one_time_approval": bool(memory_approvals),
+    "one_time_approval": bool(memory_approvals or story_approvals),
   }
   history = _build_provider_history(
     eligible_history,
@@ -1078,6 +1084,7 @@ def preview_chat_context(
   system_prompt = (
     "You are openAuthor's fiction assistant. Stay grounded in provided context, "
     "be explicit about assumptions, and avoid direct manuscript mutation language."
+    + " " + STORY_GROUNDING_INSTRUCTIONS
   )
   if agent_mode:
     system_prompt = system_prompt + (
@@ -1099,6 +1106,7 @@ def preview_chat_context(
     "mode": thread.get("mode", "chat"),
   }
   payload["fingerprint"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+  payload["story_choices"] = grounding["choices"]
   payload["estimated_input_tokens"] = _estimate_tokens(system_prompt + "\n" + "\n".join(row["content"] for row in history) + "\n" + user_prompt)
   payload["history_messages_included"] = len(history)
   payload["history_messages_omitted"] = len(transcript) - len(history)
@@ -1126,12 +1134,13 @@ def _send_chat_message(
   on_delta: Any = None,
   is_cancelled: Any = None,
   memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
   expected_context_fingerprint: str = "",
 ) -> dict[str, Any]:
   prepared = preview_chat_context(
     paths, thread_id=thread_id, message=message, current_scene_id=current_scene_id,
     scene_ids=scene_ids, selected_text=selected_text, codex_ids=codex_ids,
-    context_overrides=context_overrides, memory_approvals=memory_approvals,
+    context_overrides=context_overrides, memory_approvals=memory_approvals, story_approvals=story_approvals,
   )
   if expected_context_fingerprint and expected_context_fingerprint != prepared["fingerprint"]:
     raise OpenAuthorError("Context changed since the preview. Review context again before sending.")
@@ -1158,6 +1167,8 @@ def _send_chat_message(
   for _ in range(MAX_TOOL_ROUNDS):
     if memory_context_fingerprint(paths, memory_approvals) != fingerprint:
       raise OpenAuthorError("Story Memory access or content changed during this turn. Please send again with fresh context.")
+    if prepare_story_grounding(paths, context_used["story_scene_ids"], memory_approvals=memory_approvals, story_approvals=story_approvals)["context"] != prepared["context"]["story_memory"]:
+      raise OpenAuthorError("Canon or relationship context changed during this turn. Review fresh context before continuing.")
     if is_cancelled and is_cancelled():
       from .ai import ChatInterrupted
       raise ChatInterrupted("Chat turn interrupted by user.")

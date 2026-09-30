@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from collections import defaultdict
 from typing import Any
@@ -315,9 +316,48 @@ def _validity_range(fact: dict[str, Any], positions: dict[str, int]) -> tuple[in
   return start, end
 
 
+def resolve_fact_knowledge(fact: dict[str, Any], scene_ids: list[str], positions: dict[str, int]) -> list[dict[str, Any]]:
+  """Resolve author-recorded knowledge in current reading order, retaining tied claims."""
+  validity = fact.get("validity", {})
+  boundaries = [validity.get("from_scene_id", ""), validity.get("to_scene_id", "")]
+  if any(boundary and boundary not in positions for boundary in boundaries):
+    return []
+  first, last = _validity_range(fact, positions)
+  applicable = [scene_id for scene_id in dict.fromkeys(scene_ids) if scene_id in positions and first <= positions[scene_id] <= last]
+  rows = [row for row in fact.get("knowledge", []) if row.get("state") in {"knows", "believes", "does_not_know"}
+    and (not row.get("from_scene_id") or row["from_scene_id"] in positions)]
+  result = []
+  for row in rows:
+    start = positions.get(row.get("from_scene_id", ""), -1)
+    later = [positions[other["from_scene_id"]] for other in rows if other.get("character_entity_id") == row.get("character_entity_id")
+      and other.get("from_scene_id") in positions and positions[other["from_scene_id"]] > start]
+    end = min(later, default=10**9)
+    targets = [scene_id for scene_id in applicable if start <= positions[scene_id] < end]
+    if targets:
+      result.append({**row, "applies_to_scene_ids": targets})
+  return result
+
+
 def _diagnostic_id(code: str, refs: list[str]) -> str:
   digest = hashlib.sha256(f"{code}:{':'.join(sorted(refs))}".encode("utf-8")).hexdigest()[:16]
   return f"memory-diagnostic-{digest}"
+
+
+def _knowledge_mention(body: str, value: str, names: set[str]) -> re.Match[str] | None:
+  # Match original text so evidence offsets survive Unicode case changes.
+  pattern = (r"(?<!\w)" if value[0].isalnum() or value[0] == "_" else "") + re.escape(value)
+  pattern += r"(?!\w)" if value[-1].isalnum() or value[-1] == "_" else ""
+  subject = "|".join(re.escape(name) for name in names if name)
+  ignorance = re.compile(rf"(?<!\w)(?:{subject}|I|he|she|they)\s+(?:"
+    r"(?:did|does|do)\s+not\s+know|(?:didn|doesn|don)['’]t\s+know|"
+    r"(?:was|were|is|are)\s+unaware|(?:had|has|have)\s+no\s+idea|knew\s+nothing)\b", re.IGNORECASE)
+  for match in re.finditer(pattern, body, re.IGNORECASE):
+    # Suppress only explicit ignorance in this clause, not unrelated negation
+    # elsewhere in the sentence or later affirmative mentions of the same fact.
+    prefix = re.split(r"[.!?;\n]|\b(?:but|however|yet)\b", body[:match.start()], flags=re.IGNORECASE)[-1]
+    if not ignorance.search(prefix):
+      return match
+  return None
 
 
 def run_canon_diagnostics(
@@ -414,8 +454,9 @@ def run_canon_diagnostics(
       })
 
   entities: dict[str, dict[str, Any]] = {}
+  scenes_by_id = {scene["id"]: scene for scene in scenes}
   for fact in facts:
-    for knowledge in fact.get("knowledge", []):
+    for knowledge in resolve_fact_knowledge(fact, list(positions), positions):
       if knowledge.get("state") != "does_not_know":
         continue
       character_id = knowledge["character_entity_id"]
@@ -423,25 +464,23 @@ def run_canon_diagnostics(
         entities[character_id] = get_entity(paths, character_id)
       character = entities[character_id]
       names = {character["name"].casefold(), *(str(alias).casefold() for alias in character.get("aliases", []))}
-      from_position = positions.get(knowledge.get("from_scene_id", ""), 0)
-      for scene_summary in list_scenes(paths):
-        if positions[scene_summary["id"]] < from_position:
-          continue
-        scene = get_scene(paths, scene_summary["id"])
+      for scene_id in knowledge["applies_to_scene_ids"]:
+        scene = scenes_by_id[scene_id]
         if scene.get("pov", "").casefold() not in names:
           continue
         value = fact["value"]
         body = scene.get("body", "")
-        if value.casefold() in body.casefold():
+        mention = _knowledge_mention(body, value, names)
+        if mention:
           diagnostics.append({
             "id": _diagnostic_id("pov_knowledge_leak", [fact["id"], character_id, scene["id"]]),
             "code": "pov_knowledge_leak",
             "severity": "warning",
             "title": "Possible POV knowledge leak",
-            "message": f"{character['name']} is marked as not knowing '{value}', but the fact appears in their POV scene.",
+            "message": f"{character['name']} is marked as not knowing '{value}', but this phrase appears in their POV scene. A mention alone does not prove they know it; review the narrative context.",
             "fact_ids": [fact["id"]],
             "scene_ids": [scene["id"]],
-            "evidence": [*fact["evidence"], {"scene_id": scene["id"], "excerpt": value, "start": body.casefold().find(value.casefold()), "end": body.casefold().find(value.casefold()) + len(value)}],
+            "evidence": [*fact["evidence"], {"scene_id": scene["id"], "excerpt": mention.group(), "start": mention.start(), "end": mention.end()}],
           })
 
   manuscript_length = len(positions)
@@ -474,7 +513,7 @@ def run_canon_diagnostics(
     "generated_at": utc_now(),
     "coverage": {
       "method": "Local, limited pattern checks plus author-recorded Canon, knowledge, setups and arcs.",
-      "limitations": ["Not a comprehensive plot, timeline, motivation or prose-quality analysis.", "Physical-detail warnings are unconfirmed observations, not Canon Facts."],
+      "limitations": ["Not a comprehensive plot, timeline, motivation or prose-quality analysis.", "Physical-detail warnings are unconfirmed observations, not Canon Facts.", "Knowledge checks match literal phrases and a limited set of English ignorance expressions; dialogue and paraphrases still require author review."],
     },
     "affected_scene_ids": affected_scene_ids or [],
     "incremental": affected_scene_ids is not None,

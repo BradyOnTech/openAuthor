@@ -15,6 +15,26 @@ from openauthor.cli import main
 
 
 class OpenAuthorFlowTests(unittest.TestCase):
+  def test_chat_cli_carries_reviewed_canon_permissions(self) -> None:
+    from openauthor.canon import add_canon_fact
+    from openauthor.chat import create_chat_thread
+    from openauthor.project import initialize_project
+    from openauthor.scenes import add_scene
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Reviewed Canon")
+      add_scene(paths, title="Gate", body="The gate is blue.")
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="gate color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": "The gate is blue."}])
+      thread = create_chat_thread(paths, title="Review", provider="local", mode="chat")
+      args = ["--thread", thread["id"], "--message", "Discuss the gate.", "--current-scene", "scene-0001", "--story-approvals", json.dumps([fact["id"]]), "--json"]
+      code, output, error = self.run_cli(["chat", "context", *args], root)
+      self.assertEqual(code, 0, error)
+      preview = json.loads(output)
+      self.assertEqual([row["id"] for row in preview["context"]["story_memory"]["facts"]], [fact["id"]])
+      code, output, error = self.run_cli(["chat", "send", *args, "--expected-context-fingerprint", preview["fingerprint"]], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(json.loads(output)["user_message"]["context_used"]["privacy"]["one_time_approval"])
+
   def test_canon_review_cli_preserves_identity_and_recoverable_history(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

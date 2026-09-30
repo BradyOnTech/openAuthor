@@ -22,6 +22,45 @@ from openauthor.scenes import add_scene, update_scene
 
 
 class CanonMemoryTests(unittest.TestCase):
+  def test_knowledge_mentions_use_whole_words_exact_offsets_and_ignore_explicit_ignorance(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Knowledge Evidence")
+      bodies = ["Mara hid the key.", "Ivo watched a monkey climb a tree.",
+        "Ivo did not know where Mara had hidden the key.",
+        "Ivo didn't know about the key; later, he used the KEY.",
+        "Straße was empty. Ivo picked up the KEY.",
+        "Mara did not know about the key. Ivo carried the key."]
+      for index, body in enumerate(bodies):
+        add_scene(paths, title=str(index), body=body, pov="Mara" if index == 0 else "Ivo")
+      ivo = add_entity(paths, kind="character", name="Ivo")
+      add_canon_fact(paths, subject_entity_id=ivo, predicate="secret object", value="key",
+        evidence=[{"scene_id": "scene-0001", "excerpt": bodies[0]}],
+        knowledge=[{"character_entity_id": ivo, "state": "does_not_know", "from_scene_id": "scene-0001"}])
+      warnings = [row for row in run_canon_diagnostics(paths)["diagnostics"] if row["code"] == "pov_knowledge_leak"]
+      self.assertEqual([row["scene_ids"] for row in warnings], [["scene-0004"], ["scene-0005"], ["scene-0006"]])
+      for warning in warnings:
+        passage = warning["evidence"][-1]
+        body = bodies[int(passage["scene_id"].split("-")[1]) - 1]
+        self.assertEqual(body[passage["start"]:passage["end"]], passage["excerpt"])
+      self.assertEqual(warnings[0]["evidence"][-1]["excerpt"], "KEY")
+
+  def test_knowledge_warnings_follow_latest_state_and_fact_validity_in_reading_order(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Learning")
+      for index in range(5):
+        add_scene(paths, title=str(index), body="The passphrase is NIGHTJAR.", pov="Ivo")
+      ivo = add_entity(paths, kind="character", name="Ivo")
+      add_canon_fact(paths, subject_entity_id=ivo, predicate="passphrase", value="NIGHTJAR",
+        evidence=[{"scene_id": "scene-0001", "excerpt": "The passphrase is NIGHTJAR."}],
+        valid_from_scene_id="scene-0002", valid_to_scene_id="scene-0004",
+        knowledge=[
+          {"character_entity_id": ivo, "state": "does_not_know", "from_scene_id": "scene-0001"},
+          {"character_entity_id": ivo, "state": "knows", "from_scene_id": "scene-0003"},
+          {"character_entity_id": ivo, "state": "does_not_know", "from_scene_id": "scene-0004"},
+        ])
+      warnings = [row for row in run_canon_diagnostics(paths)["diagnostics"] if row["code"] == "pov_knowledge_leak"]
+      self.assertEqual([row["scene_ids"] for row in warnings], [["scene-0002"], ["scene-0004"]])
+
   def test_repeated_trait_evidence_is_bounded_but_preserves_both_sides_of_a_mismatch(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Readable Evidence")

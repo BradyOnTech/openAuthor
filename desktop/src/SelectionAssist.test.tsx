@@ -10,10 +10,27 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: async (_: string, payload: { ar
   return { status: 0, stderr: "", stdout: JSON.stringify(payload.args[1] === "selection-preview" ? {
     fingerprint: "reviewed", provider: "local", model: "heuristic-v1", system_prompt: "Edit selected prose only", user_prompt: "Mara began to count.", estimated_input_tokens: 120, max_output_tokens: 4096,
     anchor: { branch: "main" }, limits: { omitted_before_characters: 0, omitted_after_characters: 0, omitted_memory_ids: [] }, memory_choices: [{ id: "mara", name: "Mara", visibility: "ask", details: [] }],
+    story_choices: [{ id: "fact-blue", kind: "fact", label: "Gate · color: blue", eligible: true, approved: false, included: false, reason: "" }, { id: "stale", kind: "fact", label: "Stale fact", eligible: false, approved: false, included: false, reason: "Source evidence changed." }],
   } : { id: "proposal-selection", title: "Shorten", selection: { before: "Mara began to count.", after: "Mara counted." } }) };
 } }));
 beforeEach(() => { boundary.calls = []; boundary.loseResponse = false; window.localStorage.clear(); Object.defineProperty(window, "__TAURI_INTERNALS__", { value: {}, configurable: true }); });
 afterEach(() => { cleanup(); });
+
+it("keeps context choices visible while invalidating the preview and requires re-review of Canon permissions", async () => {
+  render(<SelectionAssist projectRoot="/synthetic/canon" sceneId="scene-1" branch="main" selection={{ body: "Mara began to count.", start: 0, end: 20 }} disabled={false} providers={["local"]} flush={async () => true} onResult={async () => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Rewrite" }));
+  fireEvent.click(screen.getByRole("button", { name: "Review context" }));
+  const permission = await screen.findByRole("checkbox", { name: "Allow Canon fact: Gate · color: blue for this request" });
+  expect((screen.getByRole("checkbox", { name: "Allow Canon fact: Stale fact for this request" }) as HTMLInputElement).disabled).toBe(true);
+  fireEvent.click(permission);
+  expect(screen.queryByRole("button", { name: "Generate reviewed edit" })).toBeNull();
+  expect((screen.getByRole("checkbox", { name: "Allow Canon fact: Gate · color: blue for this request" }) as HTMLInputElement).checked).toBe(true);
+  expect(screen.getByRole("checkbox", { name: "Allow Mara for this request" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Review context" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Generate reviewed edit" }));
+  await waitFor(() => expect(boundary.calls).toHaveLength(3));
+  for (const args of boundary.calls.slice(1)) expect(JSON.parse(args[args.indexOf("--input-json") + 1]).story_approvals).toEqual(["fact-blue"]);
+});
 
 it("requires reviewed context before generation and journals the exact Unicode selection", async () => {
   const completed: string[] = [];
@@ -69,6 +86,7 @@ it("does not carry one-request Memory permission into a new request", async () =
   fireEvent.click(screen.getByRole("button", { name: "Review context" }));
   fireEvent.click(await screen.findByRole("checkbox", { name: "Allow Mara for this request" }));
   expect(screen.queryByRole("button", { name: "Generate reviewed edit" })).toBeNull();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Allow Canon fact: Gate · color: blue for this request" }));
   fireEvent.click(screen.getByRole("button", { name: "Review context" }));
   fireEvent.click(await screen.findByRole("button", { name: "Generate reviewed edit" }));
   await screen.findByRole("alert");
@@ -76,4 +94,5 @@ it("does not carry one-request Memory permission into a new request", async () =
   fireEvent.click(screen.getByRole("button", { name: "Review context" }));
   const permission = await screen.findByRole("checkbox", { name: "Allow Mara for this request" }) as HTMLInputElement;
   expect(permission.checked).toBe(false);
+  expect((screen.getByRole("checkbox", { name: "Allow Canon fact: Gate · color: blue for this request" }) as HTMLInputElement).checked).toBe(false);
 });

@@ -903,6 +903,8 @@ body {
 
 .selection-assist {
   flex: 0 0 auto;
+  background: var(--bg-surface);
+  color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
   padding: var(--space-2) var(--space-4);
   font-family: var(--font-ui);
@@ -919,6 +921,13 @@ body {
 .selection-assist blockquote { max-height: 120px; overflow: auto; font-family: var(--font-prose); }
 .selection-assist pre { font-size: var(--text-xs); }
 .selection-assist p, .selection-review p { text-wrap: pretty; line-height: 1.5; }
+.story-context-choices { border: 0; margin: 0; padding: 0; min-width: 0; }
+.story-context-choices legend { font-weight: 600; }
+.story-context-choices__list { max-height: 320px; overflow-y: auto; }
+.story-context-choices__entry + .story-context-choices__entry { border-top: 1px solid var(--border-subtle); }
+.story-context-choices label { display: flex; align-items: center; gap: 8px; min-height: 40px; overflow-wrap: anywhere; }
+.story-context-choices input { flex-shrink: 0; }
+.story-context-choices__entry p { margin: 0 0 12px 24px; color: var(--text-secondary); }
 .selection-review__comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
 .selection-review h3 { text-wrap: balance; }
 .scene-editor__content {

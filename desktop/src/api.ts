@@ -934,6 +934,7 @@ export type ChatSendPayload = {
   selectedText?: string;
   codexIds?: string[];
   memoryApprovals?: MemoryApproval[];
+  storyApprovals?: string[];
   expectedContextFingerprint?: string;
   includeCurrentScene?: boolean;
   includeSelection?: boolean;
@@ -949,10 +950,12 @@ export type ChatSendPayload = {
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
 export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
 export type SelectionInput = {
   scene_id: string; start: number; end: number; selected_text: string; action: SelectionAction;
   instruction: string; provider: ProposalProvider; model: string; memory_approvals: MemoryApproval[];
+  story_approvals?: string[];
 };
 export type SelectionPreview = {
   fingerprint: string; provider: string; model: string; system_prompt: string; user_prompt: string;
@@ -960,6 +963,7 @@ export type SelectionPreview = {
   anchor: { branch: string };
   limits: { omitted_before_characters: number; omitted_after_characters: number; omitted_memory_ids: string[] };
   memory_choices: ChatContextPreview["memory_choices"];
+  story_choices?: StoryContextChoice[];
 };
 export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -994,6 +998,7 @@ export type ChatContextPreview = {
   };
   context_used: { privacy: { history_reset: boolean; one_time_approval: boolean } };
   memory_choices: Array<{ id: string; name: string; visibility: string; details: Array<{ key: string; visibility: string }> }>;
+  story_choices?: StoryContextChoice[];
 };
 
 export async function previewChatContext(projectRoot: string, payload: ChatSendPayload, historyBeforeMessageId = ""): Promise<ChatContextPreview> {
@@ -1016,6 +1021,7 @@ export async function sendChatMessage(
   ];
   if (payload.deliveryId) args.push("--request-id", payload.deliveryId);
   if (payload.memoryApprovals?.length) args.push("--memory-approvals", JSON.stringify(payload.memoryApprovals));
+  if (payload.storyApprovals?.length) args.push("--story-approvals", JSON.stringify(payload.storyApprovals));
   if (payload.expectedContextFingerprint) args.push("--expected-context-fingerprint", payload.expectedContextFingerprint);
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
@@ -1168,6 +1174,7 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     selected_text: payload.selectedText ?? "",
     codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
     memory_approvals: payload.memoryApprovals ?? [],
+    story_approvals: payload.storyApprovals ?? [],
     expected_context_fingerprint: payload.expectedContextFingerprint ?? "",
     context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
   };

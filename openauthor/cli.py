@@ -1118,6 +1118,7 @@ def build_parser() -> argparse.ArgumentParser:
   )
   chat_send.add_argument("--json", action="store_true", help="Output JSON.")
   chat_send.add_argument("--memory-approvals", default="[]", help="JSON array of one-time Ask first permissions (entity_id and optional detail_key).")
+  chat_send.add_argument("--story-approvals", default="[]", help="JSON array of Canon Fact or relationship ids approved for this request only.")
   chat_send.add_argument("--expected-context-fingerprint", default="", help="Require the context reviewed with chat context.")
   chat_context = chat_sub.add_parser("context", parents=[chat_send], add_help=False, help="Preview the exact initial AI context without contacting a provider.")
   chat_context.add_argument("--history-before-message-id", default="", help="Preview a replacement for an earlier message.")
@@ -2299,12 +2300,17 @@ def _run(args: argparse.Namespace) -> int:
         memory_approvals = json.loads(args.memory_approvals)
       except json.JSONDecodeError as error:
         raise OpenAuthorError("Memory permissions must be a valid JSON array.") from error
+      try:
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Story permissions must be a valid JSON array.") from error
       operation = send_chat_message if args.chat_command == "send" else preview_chat_context
       extra = {"request_id": args.request_id, "expected_context_fingerprint": args.expected_context_fingerprint} if args.chat_command == "send" else {"history_before_message_id": args.history_before_message_id}
       row = operation(
         paths,
         **extra,
         memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
         thread_id=args.thread,
         message=args.message,
         current_scene_id=args.current_scene,

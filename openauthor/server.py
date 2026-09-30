@@ -44,6 +44,7 @@ def _chat_context_params(params: dict[str, Any]) -> dict[str, Any]:
     "codex_ids": [str(item) for item in params.get("codex_ids", [])] if isinstance(params.get("codex_ids"), list) else None,
     "context_overrides": params.get("context_overrides") if isinstance(params.get("context_overrides"), dict) else None,
     "memory_approvals": params.get("memory_approvals"),
+    "story_approvals": params.get("story_approvals"),
   }
 
 
