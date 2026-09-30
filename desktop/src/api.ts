@@ -126,12 +126,17 @@ export async function pickManuscriptFile(startingPath?: string): Promise<string 
   });
 }
 
+export type ImportSectionRole = "act" | "chapter" | "scene" | "text";
+export type ImportCorrections = Record<string, { title?: string; role?: ImportSectionRole }>;
 export type ManuscriptImportPreview = {
   source: string;
   strategy: "auto" | "files" | "headings" | "single";
   scene_count: number;
+  chapter_count: number;
+  fingerprint: string;
   word_count: number;
   warnings: string[];
+  sections: Array<{ id: string; title: string; role: ImportSectionRole; level: number; word_count: number; excerpt: string }>;
   scenes: Array<{
     position: number;
     title: string;
@@ -139,15 +144,18 @@ export type ManuscriptImportPreview = {
     source_format: string;
     word_count: number;
     excerpt: string;
+    chapter_title?: string;
+    act_title?: string;
   }>;
 };
 
 export async function previewManuscriptImport(
   source: string,
-  strategy: "auto" | "files" | "headings" | "single" = "auto"
+  strategy: "auto" | "files" | "headings" | "single" = "auto",
+  corrections: ImportCorrections = {}
 ): Promise<ManuscriptImportPreview> {
   const result = await runCoreCommand(CONTROL_PROJECT_ROOT, [
-    "manuscript", "preview", "--source", source, "--strategy", strategy, "--json"
+    "manuscript", "preview", "--source", source, "--strategy", strategy, "--corrections", JSON.stringify(corrections), "--json"
   ]);
   return decodeJson<ManuscriptImportPreview>(result);
 }
@@ -155,10 +163,14 @@ export async function previewManuscriptImport(
 export async function importManuscript(
   projectRoot: string,
   source: string,
-  strategy: "auto" | "files" | "headings" | "single" = "auto"
+  strategy: "auto" | "files" | "headings" | "single" = "auto",
+  corrections: ImportCorrections = {},
+  expectedFingerprint?: string
 ): Promise<{ scene_count: number; word_count: number; scene_ids: string[]; warnings: string[] }> {
   const result = await runCoreCommand(projectRoot, [
-    "manuscript", "import", "--source", source, "--strategy", strategy, "--json"
+    "manuscript", "import", "--source", source, "--strategy", strategy,
+    "--corrections", JSON.stringify(corrections),
+    ...(expectedFingerprint ? ["--expected-fingerprint", expectedFingerprint] : []), "--json"
   ]);
   return decodeJson(result);
 }

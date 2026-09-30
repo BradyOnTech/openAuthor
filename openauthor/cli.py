@@ -178,10 +178,13 @@ def build_parser() -> argparse.ArgumentParser:
   manuscript_preview = manuscript_sub.add_parser("preview", help="Preview detected manuscript structure without writing scenes.")
   manuscript_preview.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
   manuscript_preview.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_preview.add_argument("--corrections", default="{}", help="JSON object mapping preview section IDs to role/title corrections.")
   manuscript_preview.add_argument("--json", action="store_true", help="Output JSON.")
   manuscript_import = manuscript_sub.add_parser("import", help="Import a previously reviewed manuscript structure.")
   manuscript_import.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
   manuscript_import.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_import.add_argument("--corrections", default="{}", help="Reviewed section role/title corrections as JSON.")
+  manuscript_import.add_argument("--expected-fingerprint", default=None, help="Refuse import if the reviewed source or corrections changed.")
   manuscript_import.add_argument("--json", action="store_true", help="Output JSON.")
   manuscript_export = manuscript_sub.add_parser("export", help="Export the manuscript with a loss report.")
   manuscript_export.add_argument("--format", choices=["markdown", "docx"], required=True)
@@ -1318,8 +1321,14 @@ def _run(args: argparse.Namespace) -> int:
       print(json.dumps(row, indent=2))
     return 0
 
+  if args.command == "manuscript" and args.manuscript_command in {"preview", "import"}:
+    try:
+      import_corrections = json.loads(args.corrections)
+    except json.JSONDecodeError as error:
+      raise OpenAuthorError(f"Invalid import corrections JSON: {error}") from error
+
   if args.command == "manuscript" and args.manuscript_command == "preview":
-    row = preview_manuscript_import(Path(args.source), strategy=args.strategy)
+    row = preview_manuscript_import(Path(args.source), strategy=args.strategy, corrections=import_corrections)
     if args.json:
       print(json.dumps(row))
     else:
@@ -1374,7 +1383,7 @@ def _run(args: argparse.Namespace) -> int:
 
   if args.command == "manuscript":
     if args.manuscript_command == "import":
-      row = import_manuscript(paths, Path(args.source), strategy=args.strategy)
+      row = import_manuscript(paths, Path(args.source), strategy=args.strategy, corrections=import_corrections, expected_fingerprint=args.expected_fingerprint)
     elif args.manuscript_command == "export":
       row = export_manuscript(paths, Path(args.target), format=args.format)
     else:

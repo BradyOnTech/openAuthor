@@ -22,6 +22,7 @@ STATIC_BOOK_PATHS = [
   ".openauthor/generation_budget_policy.json",
   ".openauthor/editorial_passes.json",
   ".openauthor/style_profile.json",
+  ".openauthor/last_import_report.json",
   "codex/codex.json",
   "codex/suggestions.json",
   "codex/memory.json",

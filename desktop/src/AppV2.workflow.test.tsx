@@ -37,6 +37,7 @@ const harness = vi.hoisted(() => ({
   saveRoots: [] as string[],
   versions: [] as Array<Record<string, unknown>>,
   branchScenes: {} as Record<string, Array<Record<string, unknown>>>,
+  exportedBodies: [] as string[],
 }));
 
 function response(payload: unknown, status = 0) {
@@ -98,25 +99,38 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ verified: true, file_count: 20, path: argument(args, "--target"), project_root: argument(args, "--target") });
     }
     if (root === "manuscript" && action === "preview") {
+      const corrections = JSON.parse(argument(args, "--corrections") || "{}");
+      const title = corrections["section-0001"]?.title || "Imported Arrival";
       return response({
         source: argument(args, "--source"),
         strategy: argument(args, "--strategy") || "auto",
         scene_count: 2,
+        chapter_count: 0,
+        fingerprint: JSON.stringify(corrections),
         word_count: 10,
-        warnings: [],
+        warnings: ["Source typography is not preserved."],
+        sections: [
+          { id: "section-0001", title, role: "scene", level: 1, word_count: 5, excerpt: "Arrival prose." },
+          { id: "section-0002", title: "Imported Choice", role: "scene", level: 1, word_count: 5, excerpt: "Choice prose." },
+        ],
         scenes: [
-          { position: 1, title: "Imported Arrival", source_path: argument(args, "--source"), source_format: "docx", word_count: 5, excerpt: "Arrival prose." },
+          { position: 1, title, source_path: argument(args, "--source"), source_format: "docx", word_count: 5, excerpt: "Arrival prose." },
           { position: 2, title: "Imported Choice", source_path: argument(args, "--source"), source_format: "docx", word_count: 5, excerpt: "Choice prose." },
         ],
       });
     }
     if (root === "manuscript" && action === "import") {
       const now = "2026-07-15T12:00:00Z";
+      const corrections = JSON.parse(argument(args, "--corrections") || "{}");
       harness.scenes.push(
-        { id: "scene-0001", title: "Imported Arrival", summary: "", pov: "", status: "draft", body: "Arrival prose from the manuscript.", created_at: now, updated_at: now, path: "manuscript/scenes/0001-imported-arrival.md" },
+        { id: "scene-0001", title: corrections["section-0001"]?.title || "Imported Arrival", summary: "", pov: "", status: "draft", body: "Arrival prose from the manuscript.", created_at: now, updated_at: now, path: "manuscript/scenes/0001-imported-arrival.md" },
         { id: "scene-0002", title: "Imported Choice", summary: "", pov: "", status: "draft", body: "Choice prose from the manuscript.", created_at: now, updated_at: now, path: "manuscript/scenes/0002-imported-choice.md" },
       );
       return response({ scene_count: 2, word_count: 10, scene_ids: ["scene-0001", "scene-0002"], warnings: [] });
+    }
+    if (root === "manuscript" && action === "export") {
+      harness.exportedBodies = harness.scenes.map(scene => String(scene.body));
+      return response({ scene_count: harness.scenes.length, target: argument(args, "--target"), losses: ["Story Memory and history are not included; use a full backup."], report_path: "/tmp/export.report.json" });
     }
     if (root === "scene" && action === "list") {
       return response(harness.scenes.map(({ body: _body, ...scene }) => scene));
@@ -544,6 +558,7 @@ describe("active V2 author workflow", () => {
     harness.projectId = "proj-golden-loop";
     harness.projectRoot = "/tmp/openauthor-golden-loop";
     harness.scenes.length = 0;
+    harness.exportedBodies = [];
     harness.proposals.length = 0;
     harness.runs.length = 0;
     harness.entities.length = 0;
@@ -702,6 +717,17 @@ describe("active V2 author workflow", () => {
     await waitFor(() => expect(harness.calls.some(args => args[0] === "revision" && args[1] === "restore" && argument(args, "--path") === "manuscript/structure.json")).toBe(true));
     await user.click(screen.getByRole("button", { name: "Restore Story Memory" }));
     await waitFor(() => expect(harness.calls.some(args => args[0] === "revision" && args[1] === "restore" && argument(args, "--path") === "codex/codex.json")).toBe(true));
+  });
+
+  it("exports current unsaved writing and shows the full loss report", async () => {
+    const { user, body } = await openWritingScene();
+    fireEvent.change(body, { target: { value: "Export my latest sentence." } });
+    await user.click(screen.getByRole("button", { name: "Settings (Cmd+,)" }));
+    await user.type(screen.getByRole("textbox", { name: "Export destination" }), "/tmp/latest.docx");
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    expect(await screen.findByText("Story Memory and history are not included; use a full backup.")).toBeTruthy();
+    expect(harness.exportedBodies).toEqual(["Export my latest sentence."]);
+    expect(screen.getByText("/tmp/export.report.json")).toBeTruthy();
   });
 
   it("backs up current writing through Settings and restores into a separate folder", async () => {
@@ -914,14 +940,21 @@ describe("active V2 author workflow", () => {
     await user.type(screen.getByPlaceholderText(/\/path\/to\/novel\.docx/), "/tmp/novel.docx");
     await user.click(screen.getByRole("button", { name: "Preview Structure" }));
 
-    expect(await screen.findByText("2 scenes · 10 words")).toBeTruthy();
-    expect(screen.getByText(/Imported Arrival/)).toBeTruthy();
+    expect(await screen.findByText(/2 scenes · 10 words/)).toBeTruthy();
+    expect(screen.getByText("Source typography is not preserved.")).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox", { name: "Title for section 1" }), { target: { value: "Corrected Arrival" } });
+    expect((screen.getByRole("button", { name: "Create novel" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Update Preview" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Create novel" }) as HTMLButtonElement).disabled).toBe(false));
     await user.click(screen.getByRole("button", { name: "Create novel" }));
 
-    expect(await screen.findByText("Imported Arrival")).toBeTruthy();
+    expect(await screen.findByText("Corrected Arrival")).toBeTruthy();
     expect(screen.getByText("Imported Choice")).toBeTruthy();
     expect(harness.calls.some((args) => args[0] === "manuscript" && args[1] === "preview")).toBe(true);
     expect(harness.calls.some((args) => args[0] === "manuscript" && args[1] === "import")).toBe(true);
+    const imported = harness.calls.find(args => args[0] === "manuscript" && args[1] === "import")!;
+    expect(JSON.parse(argument(imported, "--corrections"))).toEqual({ "section-0001": { title: "Corrected Arrival" } });
+    expect(argument(imported, "--expected-fingerprint")).toBe(argument(imported, "--corrections"));
   });
 
   it("creates coordinated AI Change Sets for a multi-scene experiment", async () => {

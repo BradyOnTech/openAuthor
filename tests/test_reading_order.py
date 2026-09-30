@@ -30,7 +30,7 @@ class ReadingOrderTests(unittest.TestCase):
       context = build_generation_context(paths, scene_id="scene-0002", context_scene_radius=1, codex_limit=5)
       self.assertEqual([scene["id"] for scene in context["nearby_scenes"]], ["scene-0003", "scene-0004"])
       report = export_manuscript(paths, root / "export", format="markdown")
-      self.assertEqual(report["files"], ["0001-opening.md", "0002-flashback.md", "0003-reveal.md", "0004-ending.md"])
+      self.assertEqual(report["files"], ["0001-opening.md", "0002-flashback.md", "0003-reveal.md", "0004-ending.md", "openauthor-manuscript.json"])
       export_manuscript(paths, root / "manuscript.docx", format="docx")
       with zipfile.ZipFile(root / "manuscript.docx") as archive:
         document = ElementTree.fromstring(archive.read("word/document.xml"))
@@ -39,7 +39,7 @@ class ReadingOrderTests(unittest.TestCase):
         "".join(paragraph.itertext()) for paragraph in document.findall(".//w:p", ns)
         if paragraph.find("w:pPr/w:pStyle", ns) is not None
       ]
-      self.assertEqual(headings, ["Opening", "Flashback", "Reveal", "Ending"])
+      self.assertEqual(headings, ["Act I", "Chapter One", "Opening", "Flashback", "Reveal", "Ending"])
       add_canon_fact(paths, subject_entity_id="", predicate="draft status", value="synthetic", evidence=[{"scene_id": "scene-0003", "excerpt": "Synthetic prose for Flashback."}],
         valid_from_scene_id="scene-0003", valid_to_scene_id="scene-0002")
       self.assertNotIn("impossible_validity", [row["code"] for row in run_canon_diagnostics(paths)["diagnostics"]])

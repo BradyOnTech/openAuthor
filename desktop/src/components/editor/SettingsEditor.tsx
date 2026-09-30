@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BackupCreate } from "../BackupControls";
+import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
 import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
@@ -184,20 +185,27 @@ function ManuscriptExportCard({
   const [format, setFormat] = useState<"markdown" | "docx">("docx");
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState(false);
+  const [exportReport, setExportReport] = useState<Awaited<ReturnType<typeof exportManuscript>> | null>(null);
 
   async function browse() {
-    const selected = await pickExportTarget(format, target || undefined);
-    if (selected) setTarget(selected);
+    try {
+      const selected = await pickExportTarget(format, target || undefined);
+      if (selected) setTarget(selected);
+    } catch (error) { setError(`Cannot choose export destination: ${String(error)}`); }
   }
 
   async function runExport() {
     if (!target.trim()) return;
     setBusy(true);
+    setError("");
+    setExportReport(null);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before exporting.");
       const report = await exportManuscript(projectRoot, target.trim(), format);
+      setExportReport(report);
       const lossSummary = report.losses.length
         ? ` ${report.losses.length} limitation${report.losses.length === 1 ? "" : "s"} recorded in the loss report.`
-        : " Lossless export completed.";
+        : " No additional limitations reported.";
       setMessage(`Exported ${report.scene_count} scenes.${lossSummary}`);
     } catch (e) {
       setError(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -210,19 +218,24 @@ function ManuscriptExportCard({
     <div className="settings-editor__section">
       <h3 className="settings-editor__section-title">Manuscript Export</h3>
       <div className="settings-editor__note">
-        Export a local copy at any time. Every export writes a machine-readable loss report beside the output.
+        Export saved prose and reading order. Unsaved scene writing is saved first. This is not a full backup: Plan notes, Story Memory, AI work and version history are not included. Every export writes a loss report beside the output.
       </div>
-      <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
-        <select className="select" value={format} onChange={(event) => { setFormat(event.target.value as "markdown" | "docx"); setTarget(""); }} aria-label="Export format">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
+        <select className="select" style={{ minHeight: 40 }} disabled={busy} value={format} onChange={(event) => { setFormat(event.target.value as "markdown" | "docx"); setTarget(""); }} aria-label="Export format">
           <option value="docx">Word (.docx)</option>
           <option value="markdown">Markdown folder</option>
         </select>
-        <input className="input input--mono" value={target} onChange={(event) => setTarget(event.target.value)} placeholder={format === "docx" ? "/path/to/manuscript.docx" : "/path/to/empty-folder"} style={{ flex: 1 }} />
-        <button className="btn btn--ghost btn--sm" onClick={() => void browse()}>Browse</button>
-        <button className="btn btn--primary btn--sm" disabled={!target.trim() || busy} onClick={() => void runExport()}>
+        <input className="input input--mono" aria-label="Export destination" disabled={busy} value={target} onChange={(event) => setTarget(event.target.value)} placeholder={format === "docx" ? "/path/to/manuscript.docx" : "/path/to/empty-folder"} style={{ flex: "1 1 200px", minHeight: 40 }} />
+        <button className="btn btn--ghost btn--sm" style={{ minHeight: 40 }} disabled={busy} onClick={() => void browse()}>Browse</button>
+        <button className="btn btn--primary btn--sm" style={{ minHeight: 40 }} disabled={!target.trim() || busy} onClick={() => void runExport()}>
           {busy ? "Exporting..." : "Export"}
         </button>
       </div>
+      {exportReport && <section aria-label="Export loss report" style={{ overflowWrap: "anywhere", marginTop: 12 }}>
+        <p role="status">Exported {exportReport.scene_count} scenes to {exportReport.target}.</p>
+        <ul>{exportReport.losses.map(loss => <li key={loss}>{loss}</li>)}</ul>
+        <p>Report file: <code>{exportReport.report_path}</code></p>
+      </section>}
     </div>
   );
 }

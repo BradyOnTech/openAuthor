@@ -3235,3 +3235,12 @@ button.status-bar__item {
 .chat-context-review summary { display: list-item; padding-top: 10px; cursor: pointer; }
 .chat-context-review pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow-y: auto; }
 .chat-context-review footer { margin-top: 12px; }
+.import-structure-review { padding: 12px; border-radius: 16px; box-shadow: 0 0 0 1px var(--border-subtle); font-size: var(--text-sm); }
+.import-structure-review p, .import-structure-review li { text-wrap: pretty; overflow-wrap: anywhere; }
+.import-structure-review__summary { font-variant-numeric: tabular-nums; }
+.import-structure-review__sections { max-height: 320px; overflow-y: auto; }
+.import-structure-review__section { padding: 12px 0; border-top: 1px solid var(--border-subtle); }
+.import-structure-review__fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.import-structure-review__fields label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 150px; min-width: 0; }
+.import-structure-review input, .import-structure-review select, .import-structure-review summary { min-height: 40px; }
+.import-structure-review summary { cursor: pointer; align-content: center; }

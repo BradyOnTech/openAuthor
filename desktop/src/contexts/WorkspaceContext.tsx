@@ -25,6 +25,7 @@ import {
   projectInspect,
   initializeLocalProject,
   importManuscript,
+  type ImportCorrections,
   getStartupHealth,
 } from "../api";
 import { getProjectBinding, setProjectBinding } from "../projectBindings";
@@ -60,6 +61,8 @@ type WorkspaceState = {
       kind: "manuscript_file" | "manuscript_folder";
       path: string;
       strategy: "auto" | "files" | "headings" | "single";
+      corrections: ImportCorrections;
+      expectedFingerprint: string;
     };
   }) => Promise<boolean>;
   closeProject: () => void;
@@ -526,6 +529,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       kind: "manuscript_file" | "manuscript_folder";
       path: string;
       strategy: "auto" | "files" | "headings" | "single";
+      corrections: ImportCorrections;
+      expectedFingerprint: string;
     };
   }): Promise<boolean> => {
     if (!activeWorkspaceId) {
@@ -560,7 +565,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           await importManuscript(
             resolvedRoot,
             params.importSource.path,
-            params.importSource.strategy
+            params.importSource.strategy,
+            params.importSource.corrections,
+            params.importSource.expectedFingerprint
           );
         }
       }

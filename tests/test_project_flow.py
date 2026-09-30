@@ -15,6 +15,26 @@ from openauthor.cli import main
 
 
 class OpenAuthorFlowTests(unittest.TestCase):
+  def test_import_cli_applies_reviewed_corrections_and_checks_fingerprint(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      source = root / "novel.md"
+      source.write_text("# Opening\n\nThe gate opens.\n\n# Ending\n\nIt closes.", encoding="utf-8")
+      corrections = json.dumps({"section-0001": {"title": "First Light"}})
+      args = ["--source", str(source), "--corrections", corrections, "--json"]
+      code, output, error = self.run_cli(["manuscript", "preview", *args], root)
+      self.assertEqual(code, 0, error)
+      preview = json.loads(output)
+      project = root / "book"
+      self.assertEqual(self.run_cli(["init", str(project)], root)[0], 0)
+      code, _, error = self.run_cli(["manuscript", "import", *args, "--expected-fingerprint", preview["fingerprint"]], project)
+      self.assertEqual(code, 0, error)
+      code, output, error = self.run_cli(["scene", "list", "--json"], project)
+      self.assertEqual(json.loads(output)[0]["title"], "First Light")
+      code, _, error = self.run_cli(["manuscript", "preview", "--source", str(source), "--corrections", "broken-json"], root)
+      self.assertEqual(code, 2)
+      self.assertIn("corrections", error)
+
   def test_backup_cli_restores_from_outside_a_project(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

@@ -23,6 +23,7 @@ ROOT_FILES = {
   ".openauthor/project.json", ".openauthor/provider_pricing.json",
   ".openauthor/generation_budget_policy.json", ".openauthor/editorial_passes.json",
   ".openauthor/style_profile.json", ".openauthor/workspace/storylines.json",
+  ".openauthor/last_import_report.json",
   ".gitignore",
 }
 PREFIXES = (
