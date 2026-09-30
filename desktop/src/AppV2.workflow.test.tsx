@@ -33,6 +33,8 @@ const harness = vi.hoisted(() => ({
   currentBranch: "main",
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
+  briefGate: null as null | (() => Promise<void>),
+  briefWriteBranches: [] as string[],
   failDraftOnce: false,
   failHunkOnce: false,
   saveRoots: [] as string[],
@@ -482,6 +484,8 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "storyline" && ["save", "archive", "restore", "rename", "duplicate"].includes(action)) return response({ ok: true });
     if (root === "plan" && action === "get") return response(harness.plan);
     if (root === "plan" && action === "brief") {
+      if (harness.briefGate) await harness.briefGate();
+      harness.briefWriteBranches.push(harness.currentBranch);
       harness.plan.brief = {
         synopsis: argument(args, "--synopsis"),
         genre: argument(args, "--genre"),
@@ -593,6 +597,8 @@ describe("active V2 author workflow", () => {
     harness.failDraftOnce = false;
     harness.failHunkOnce = false;
     harness.saveGate = null;
+    harness.briefGate = null;
+    harness.briefWriteBranches.length = 0;
     harness.saveRoots.length = 0;
     harness.versions.length = 0;
     harness.branchScenes = {};
@@ -1097,6 +1103,28 @@ describe("active V2 author workflow", () => {
     await waitFor(() => expect(harness.proposals).toHaveLength(2));
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
+  });
+
+  it("waits for a pending Plan save before entering another Storyline", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Plan \(/));
+    fireEvent.change(await screen.findByLabelText("Synopsis"), { target: { value: "Primary brief saved before the experiment." } });
+    let finish!: () => void;
+    harness.briefGate = () => new Promise<void>(resolve => { finish = resolve; });
+    await user.click(screen.getByRole("button", { name: "Save Brief" }));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    await user.click(screen.getByTitle(/Storylines \(/));
+    await user.type(screen.getByPlaceholderText("Storyline name"), "Experiment after saving");
+    await user.type(screen.getByPlaceholderText(/Hypothesis/), "The alternative gives Mara a stronger choice.");
+    expect((screen.getByRole("button", { name: "Start Storyline" }) as HTMLButtonElement).disabled).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Start Storyline" }));
+    expect(harness.currentBranch).toBe("main");
+    expect(harness.calls.some(args => args[0] === "storyline" && args[1] === "create")).toBe(false);
+    harness.briefGate = null;
+    await act(async () => finish());
+    await waitFor(() => expect(harness.currentBranch).toBe("storyline/golden"));
+    expect(harness.briefWriteBranches).toEqual(["main"]);
+    expect(harness.plan.brief.synopsis).toBe("Primary brief saved before the experiment.");
   });
 
   it("preserves an unsaved brief across structural edits and closing the Plan tab", async () => {

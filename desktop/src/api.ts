@@ -40,6 +40,7 @@ import type {
   StartupHealthReport,
   WorkspaceAuditReport
 } from "./types";
+import { withBookMetadataWrite } from "./bookOperationBarrier";
 
 const ALLOWED = new Set([
   "init",
@@ -203,6 +204,14 @@ export async function runCoreCommand(
   args: string[]
 ): Promise<CoreCommandResponse> {
   ensureAllowed(args);
+  const reads: Record<string, string[]> = {
+    plan: ["get", "scene-preview"],
+    codex: ["get", "list", "relationship-list"],
+    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose"],
+  };
+  if ((reads[args[0]] && !reads[args[0]].includes(args[1])) || (args[0] === "scene" && args[1] === "add")) {
+    return withBookMetadataWrite(projectRoot, () => tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args }));
+  }
   return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
 }
 
