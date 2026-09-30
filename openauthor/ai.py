@@ -21,6 +21,8 @@ from .codex_app_server import (
   CodexAppServer,
   CodexAppServerError,
   CodexAppServerUnavailable,
+  CodexAppServerUnsafeConfiguration,
+  CodexAppServerIncompleteTurn,
 )
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft, _digest_scene_payload
@@ -56,6 +58,8 @@ class ProviderExecutionError(OpenAuthorError):
     provider: str,
     http_status: int | None = None,
     attempts: int = 1,
+    reported_usage: dict[str, Any] | None = None,
+    resolved_model: str = "",
   ) -> None:
     super().__init__(message)
     self.category = category
@@ -63,6 +67,8 @@ class ProviderExecutionError(OpenAuthorError):
     self.provider = provider
     self.http_status = http_status
     self.attempts = attempts
+    self.reported_usage = reported_usage
+    self.resolved_model = resolved_model
 
 
 def _scene_number(scene_id: str) -> int:
@@ -1357,6 +1363,26 @@ def _openai_codex_chat_completion(
       retriable=False,
       provider="openai-codex",
     ) from error
+  except CodexAppServerUnsafeConfiguration as error:
+    raise ProviderExecutionError(
+      str(error), category="unreviewed_runtime_context", retriable=False,
+      provider="openai-codex", attempts=0,
+    ) from error
+  except CodexAppServerIncompleteTurn as error:
+    usage = error.token_usage.get("total") or error.token_usage.get("last")
+    reported_usage = None
+    if isinstance(usage, dict):
+      reported_usage = {
+        "input_tokens": int(usage.get("inputTokens", 0) or 0),
+        "output_tokens": int(usage.get("outputTokens", 0) or 0),
+        "estimated_cost_usd": 0.0,
+        "provider_attempts": 1,
+      }
+    raise ProviderExecutionError(
+      str(error), category="incomplete_turn", retriable=False,
+      provider="openai-codex", reported_usage=reported_usage,
+      resolved_model=error.model,
+    ) from error
   except CodexAppServerError as error:
     message = str(error)
     runtime_outdated = "requires a newer version of Codex" in message
@@ -1385,8 +1411,10 @@ def _call_provider(
 ) -> dict[str, Any]:
   chat_history = _normalize_chat_history(history)
   tool_calls: list[dict[str, Any]] = []
+  resolved_model = ""
   start = time.perf_counter()
   if provider == "local":
+    resolved_model = model
     if context.get("selection_mode"):
       from .selection_editing import local_selection_result
       text = local_selection_result(context)
@@ -1474,6 +1502,7 @@ def _call_provider(
     input_tokens = payload["input_tokens"]
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
+    resolved_model = str(payload.get("model") or "")
   else:
     raise OpenAuthorError(
       f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
@@ -1496,6 +1525,7 @@ def _call_provider(
     "output_tokens": int(output_tokens),
     "latency_ms": latency_ms,
     "attempts": attempts,
+    "resolved_model": resolved_model,
   }
 
 
@@ -1537,6 +1567,7 @@ def _write_chat_generation_log(
     "user_prompt": user_prompt,
   }
   if provider_result is not None:
+    payload["resolved_model"] = provider_result.get("resolved_model", "")
     payload["response_text"] = provider_result["text"]
     payload["tool_calls"] = provider_result.get("tool_calls", [])
     payload["usage"] = {
@@ -1548,6 +1579,11 @@ def _write_chat_generation_log(
     }
   if error is not None:
     payload["error"] = error
+    if error.get("reported_usage") is not None:
+      payload["usage"] = error["reported_usage"]
+      payload["usage_reported"] = True
+    if error.get("resolved_model"):
+      payload["resolved_model"] = error["resolved_model"]
   atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
@@ -1682,13 +1718,18 @@ def complete_chat(
         "http_status": error.http_status,
         "attempts": error.attempts,
         "provider": error.provider,
+        "reported_usage": error.reported_usage,
+        "resolved_model": error.resolved_model,
       },
     )
     guidance = " Sign in again or update this provider's credentials in Settings." if error.category == "auth_error" else ""
+    if error.category == "unreviewed_runtime_context":
+      guidance = " Use a dedicated openAuthor Codex home without AGENTS instruction files; no manuscript was sent."
     raise ProviderExecutionError(
       f"Chat completion failed ({error.category}).{guidance} See {log_path}.",
       category=error.category, retriable=error.retriable, provider=error.provider,
       http_status=error.http_status, attempts=error.attempts,
+      reported_usage=error.reported_usage, resolved_model=error.resolved_model,
     ) from error
 
   estimated_cost_usd = _estimate_cost_usd(
@@ -1728,6 +1769,7 @@ def complete_chat(
     "estimated_cost_usd": estimated_cost_usd,
     "generation_id": generation_id,
     "log_path": log_path,
+    "resolved_model": provider_result.get("resolved_model", ""),
   }
 
 
@@ -2044,6 +2086,7 @@ def _write_generation_log(
     "context": context,
     "raw_response_text": raw_provider_text,
     "normalized_instruction": provider_result["text"],
+    "resolved_model": provider_result.get("resolved_model", ""),
     "normalization": normalization,
     "quality": quality,
     "usage": {
@@ -2105,6 +2148,11 @@ def _write_generation_failure_log(
       "provider": error.provider,
     },
   }
+  if error.reported_usage is not None:
+    payload["usage"] = error.reported_usage
+    payload["usage_reported"] = True
+  if error.resolved_model:
+    payload["resolved_model"] = error.resolved_model
   atomic_write_json(log_file, payload)
   return run_id, str(log_file.relative_to(paths.root))
 
