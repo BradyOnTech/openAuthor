@@ -245,6 +245,14 @@ vi.mock("@tauri-apps/api/core", () => ({
       const fact = { id: `fact-${harness.facts.length + 1}`, subject_entity_id: argument(args, "--subject"), predicate: argument(args, "--predicate"), value: argument(args, "--value"), status: "accepted", confidence: 1, evidence: JSON.parse(argument(args, "--evidence-json")), validity: { from_scene_id: argument(args, "--valid-from"), to_scene_id: argument(args, "--valid-to") }, knowledge: [], scope: argument(args, "--scope") };
       harness.facts.push(fact); return response(fact);
     }
+    if (root === "memory" && action === "fact-review") {
+      const fact = harness.facts.find(row => row.id === argument(args, "--id"));
+      if (!fact) return response("Unknown fact", 1);
+      fact.status = argument(args, "--disposition");
+      if (argument(args, "--evidence-json")) fact.evidence = JSON.parse(argument(args, "--evidence-json"));
+      fact.updated_at = "2026-09-30T20:00:00Z";
+      return response(fact);
+    }
     if (root === "check" && action === "startup") {
       return response({
         checked_at: "2026-07-15T12:00:00Z",
@@ -641,6 +649,57 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("No hygiene findings in the last run.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Open story continuity" }));
     expect(await screen.findByRole("heading", { name: "Canon & Continuity" })).toBeTruthy();
+  });
+
+  it("recovers an unfinished Canon evidence correction and can retire a fact without deleting it", async () => {
+    const { user } = await openWritingScene();
+    harness.facts.push({ id: "fact-gate", subject_entity_id: "", predicate: "color", value: "blue", status: "accepted", updated_at: "2026-09-30T19:00:00Z", evidence: [{ scene_id: "scene-0001", excerpt: "The gate is blue.", start: 0, end: 17 }], validity: {} });
+    await user.click(screen.getByTitle(/Story Memory \(/));
+    await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    await user.click(await screen.findByText("Review evidence for color: blue"));
+    fireEvent.change(screen.getByRole("textbox", { name: "Supporting passage for color: blue" }), { target: { value: "The gate gleams blue." } });
+    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    await user.click(await screen.findByText("Review evidence for color: blue"));
+    expect((screen.getByRole("textbox", { name: "Supporting passage for color: blue" }) as HTMLTextAreaElement).value).toBe("The gate gleams blue.");
+    await user.click(screen.getByRole("button", { name: "Save verified evidence" }));
+    await waitFor(() => expect((harness.facts[0].evidence as Array<{ excerpt: string }>)[0].excerpt).toBe("The gate gleams blue."));
+    const request = harness.calls.find(args => args[0] === "memory" && args[1] === "fact-review")!;
+    expect(argument(request, "--expected-updated-at")).toBe("2026-09-30T19:00:00Z");
+    await user.click(screen.getByRole("button", { name: "Retire fact" }));
+    await waitFor(() => expect(harness.facts[0].status).toBe("rejected"));
+    expect(harness.facts).toHaveLength(1);
+    expect(await screen.findByText("Retired · excluded from accepted Canon checks")).toBeTruthy();
+  });
+
+  it("recovers unfinished Canon forms and clears only the saved fact fields", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Story Memory \(/));
+    await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    await screen.findByText("Add Canon Fact");
+    for (const [label, value] of [["Fact predicate", "color"], ["Fact value", "blue"], ["Evidence excerpt", "The gate is blue."], ["Arc dimension", "trust"], ["Arc state", "suspicious"]]) {
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    }
+    fireEvent.change(screen.getByPlaceholderText("Narrative promise or planted detail"), { target: { value: "The hidden key" } });
+    fireEvent.change(screen.getByPlaceholderText("What should remain unresolved?"), { target: { value: "Who locked the gate?" } });
+    await user.selectOptions(screen.getByLabelText("Arc state type"), "planned");
+    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    expect((await screen.findByLabelText("Fact predicate") as HTMLInputElement).value).toBe("color");
+    expect((screen.getByLabelText("Fact value") as HTMLInputElement).value).toBe("blue");
+    expect((screen.getByLabelText("Evidence excerpt") as HTMLInputElement).value).toBe("The gate is blue.");
+    expect((screen.getByLabelText("Arc dimension") as HTMLInputElement).value).toBe("trust");
+    expect((screen.getByLabelText("Arc state") as HTMLInputElement).value).toBe("suspicious");
+    expect((screen.getByLabelText("Arc state type") as HTMLSelectElement).value).toBe("planned");
+    expect((screen.getByPlaceholderText("Narrative promise or planted detail") as HTMLInputElement).value).toBe("The hidden key");
+    expect((screen.getByPlaceholderText("What should remain unresolved?") as HTMLInputElement).value).toBe("Who locked the gate?");
+    expect(screen.getByText("Recovered unsaved draft. Review and save when ready.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Add Fact" }));
+    await waitFor(() => expect(harness.facts).toHaveLength(1));
+    await waitFor(() => expect((screen.getByLabelText("Fact predicate") as HTMLInputElement).value).toBe(""));
+    expect((screen.getByLabelText("Fact value") as HTMLInputElement).value).toBe("");
+    expect((screen.getByPlaceholderText("What should remain unresolved?") as HTMLInputElement).value).toBe("Who locked the gate?");
+    expect((screen.getByLabelText("Evidence excerpt") as HTMLInputElement).value).toBe("The gate is blue.");
   });
 
   it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {

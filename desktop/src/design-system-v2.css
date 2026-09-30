@@ -3247,3 +3247,9 @@ button.status-bar__item {
 .memory-suggestion-review button { min-height: 40px; }
 .memory-suggestion-review p { text-wrap: pretty; }
 .memory-suggestion-review strong { overflow-wrap: anywhere; }
+.canon-fact-review { margin-top: 8px; font-size: var(--text-sm); }
+.canon-fact-review summary { min-height: 40px; padding-top: 10px; cursor: pointer; overflow-wrap: anywhere; }
+.canon-fact-review p { color: var(--text-secondary); line-height: 1.5; text-wrap: pretty; }
+.canon-fact-review label { display: grid; gap: 4px; }
+.canon-fact-review button, .canon-fact-review select, .canon-fact-review textarea { min-height: 40px; }
+.canon-memory-editor button, .canon-memory-editor input, .canon-memory-editor select { min-height: 40px; }

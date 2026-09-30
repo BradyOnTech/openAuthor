@@ -1520,6 +1520,15 @@ export async function listNarrativeSetups(projectRoot: string): Promise<Narrativ
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-list", "--json"]));
 }
 
+export async function reviewCanonFact(projectRoot: string, factId: string, payload: {
+  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedUpdatedAt?: string;
+}): Promise<CanonFact> {
+  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--json"];
+  if (payload.evidence) args.push("--evidence-json", JSON.stringify(payload.evidence));
+  if (payload.expectedUpdatedAt) args.push("--expected-updated-at", payload.expectedUpdatedAt);
+  return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
 export async function addNarrativeSetup(projectRoot: string, description: string, sceneId: string, excerpt: string): Promise<NarrativeSetup> {
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-add", "--description", description, "--scene", sceneId, "--excerpt", excerpt, "--json"]));
 }

@@ -15,6 +15,26 @@ from openauthor.cli import main
 
 
 class OpenAuthorFlowTests(unittest.TestCase):
+  def test_canon_review_cli_preserves_identity_and_recoverable_history(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      for args in [["init", str(root)], ["scene", "add", "--title", "Gate", "--body", "The gate is blue."]]:
+        code, _, error = self.run_cli(args, root)
+        self.assertEqual(code, 0, error)
+      code, output, error = self.run_cli(["memory", "fact-add", "--predicate", "color", "--value", "blue", "--evidence-json", json.dumps([{"scene_id": "scene-0001", "excerpt": "The gate is blue."}]), "--json"], root)
+      self.assertEqual(code, 0, error)
+      fact = json.loads(output)
+      code, _, error = self.run_cli(["memory", "fact-review", "--id", fact["id"], "--disposition", "rejected", "--expected-updated-at", "stale", "--json"], root)
+      self.assertNotEqual(code, 0)
+      self.assertIn("changed", error)
+      code, output, error = self.run_cli(["memory", "fact-review", "--id", fact["id"], "--disposition", "rejected", "--expected-updated-at", fact["updated_at"], "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertEqual(json.loads(output)["id"], fact["id"])
+      self.assertEqual(json.loads(output)["status"], "rejected")
+      code, output, error = self.run_cli(["revision", "list", "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(any("fact-review" in row["message"] for row in json.loads(output)))
+
   def test_import_cli_applies_reviewed_corrections_and_checks_fingerprint(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

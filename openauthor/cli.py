@@ -129,6 +129,7 @@ from .canon import (
   list_open_questions,
   list_setups,
   resolve_setup,
+  review_canon_fact,
   run_canon_diagnostics,
 )
 from .storylines import (
@@ -564,6 +565,12 @@ def build_parser() -> argparse.ArgumentParser:
   memory_fact_list = memory_sub.add_parser("fact-list", help="List Canon Facts.")
   memory_fact_list.add_argument("--status", choices=["accepted", "suggested", "rejected"], default=None)
   memory_fact_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_fact_review = memory_sub.add_parser("fact-review", help="Re-link current evidence or retire a Canon Fact without deleting its history.")
+  memory_fact_review.add_argument("--id", required=True)
+  memory_fact_review.add_argument("--disposition", choices=["accepted", "rejected"], required=True)
+  memory_fact_review.add_argument("--evidence-json", default=None)
+  memory_fact_review.add_argument("--expected-updated-at", default=None)
+  memory_fact_review.add_argument("--json", action="store_true", help="Output JSON.")
   memory_arc_add = memory_sub.add_parser("arc-add", help="Add an evidence-backed Character Arc State.")
   memory_arc_add.add_argument("--character", required=True)
   memory_arc_add.add_argument("--dimension", required=True)
@@ -1483,6 +1490,10 @@ def _run(args: argparse.Namespace) -> int:
       )
     elif args.memory_command == "fact-list":
       row = list_canon_facts(paths, status=args.status)
+    elif args.memory_command == "fact-review":
+      row = review_canon_fact(paths, args.id, disposition=args.disposition,
+        evidence=json.loads(args.evidence_json) if args.evidence_json is not None else None,
+        expected_updated_at=args.expected_updated_at)
     elif args.memory_command == "arc-add":
       row = add_arc_state(paths, character_entity_id=args.character, dimension=args.dimension, value=args.value, scene_id=args.scene, excerpt=args.excerpt, state_type=args.state_type)
     elif args.memory_command == "arc-list":
@@ -2594,7 +2605,7 @@ def main(argv: list[str] | None = None) -> int:
       "scene": {"add", "update"},
       "plan": {"brief", "act-add", "chapter-add", "scene-assign", "scene-meta", "beat-add", "note-add"},
       "codex": {"add", "update", "relationship-add", "relationship-delete"},
-      "memory": {"review", "correct", "suggest", "fact-add", "arc-add", "setup-add", "setup-payoff", "question-add", "dispose"},
+      "memory": {"review", "correct", "suggest", "fact-add", "fact-review", "arc-add", "setup-add", "setup-payoff", "question-add", "dispose"},
     }
     action = getattr(args, f"{args.command}_command", "")
     if action in author_edits.get(args.command, set()):

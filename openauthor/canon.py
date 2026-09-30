@@ -35,9 +35,7 @@ def _default_memory() -> dict[str, Any]:
 def _read_memory(paths: ProjectPaths) -> dict[str, Any]:
   path = _memory_path(paths)
   if not path.exists():
-    payload = _default_memory()
-    atomic_write_json(path, payload)
-    return payload
+    return _default_memory()
   try:
     payload = json.loads(path.read_text(encoding="utf-8"))
   except (OSError, json.JSONDecodeError) as error:
@@ -62,11 +60,28 @@ def _clean_evidence(paths: ProjectPaths, evidence: list[dict[str, Any]]) -> list
       raise OpenAuthorError(f"Unknown evidence scene '{scene_id}'.")
     if not excerpt:
       raise OpenAuthorError("Canon evidence requires an excerpt.")
+    body = get_scene(paths, scene_id)["body"]
+    try:
+      start, end = int(row.get("start", 0)), int(row.get("end", 0))
+    except (TypeError, ValueError) as error:
+      raise OpenAuthorError("Evidence offsets must be character positions in the current scene.") from error
+    if start < 0 or end < start:
+      raise OpenAuthorError("Evidence offsets must be character positions in the current scene.")
+    if end > start:
+      if body[start:end] != excerpt:
+        raise OpenAuthorError("The selected evidence changed. Select the exact current passage again.")
+    else:
+      start = body.find(excerpt)
+      if start < 0:
+        raise OpenAuthorError("Evidence must be an exact passage from the current scene. Open the scene and copy the supporting words.")
+      if body.find(excerpt, start + 1) >= 0:
+        raise OpenAuthorError("This evidence excerpt occurs more than once. Include more surrounding words or provide exact selection offsets.")
+      end = start + len(excerpt)
     cleaned.append({
       "scene_id": scene_id,
       "excerpt": excerpt,
-      "start": int(row.get("start", 0)),
-      "end": int(row.get("end", 0)),
+      "start": start,
+      "end": end,
     })
   if not cleaned:
     raise OpenAuthorError("A Canon Fact requires at least one manuscript evidence passage.")
@@ -140,6 +155,30 @@ def list_canon_facts(paths: ProjectPaths, *, status: str | None = None) -> list[
   if status:
     rows = [row for row in rows if row.get("status") == status]
   return rows
+
+
+def review_canon_fact(
+  paths: ProjectPaths,
+  fact_id: str,
+  *,
+  disposition: str,
+  evidence: list[dict[str, Any]] | None = None,
+  expected_updated_at: str | None = None,
+) -> dict[str, Any]:
+  if disposition not in {"accepted", "rejected"}:
+    raise OpenAuthorError("A Canon Fact review must accept or retire the fact.")
+  memory = _read_memory(paths)
+  fact = next((row for row in memory["facts"] if row["id"] == fact_id), None)
+  if fact is None:
+    raise OpenAuthorError(f"Unknown Canon Fact '{fact_id}'.")
+  if expected_updated_at is not None and fact["updated_at"] != expected_updated_at:
+    raise OpenAuthorError("This Canon Fact changed since you opened it. Reload and review the current evidence before saving.")
+  if evidence is not None or disposition == "accepted":
+    fact["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
+  fact["status"] = disposition
+  fact["updated_at"] = utc_now()
+  _write_memory(paths, memory)
+  return fact
 
 
 def add_setup(
@@ -289,7 +328,25 @@ def run_canon_diagnostics(
   memory = _read_memory(paths)
   positions = _scene_positions(paths)
   facts = [row for row in memory["facts"] if row.get("status") == "accepted"]
-  diagnostics = prose_trait_diagnostics(list_scene_details(paths), list_entities(paths))
+  scenes = list_scene_details(paths)
+  scene_bodies = {scene["id"]: scene["body"] for scene in scenes}
+  diagnostics = prose_trait_diagnostics(scenes, list_entities(paths))
+  source_records = [("Canon Fact", row, row["evidence"]) for row in facts]
+  source_records.extend(("Setup or payoff", row, [item for item in [row.get("setup_evidence"), row.get("payoff_evidence")] if item]) for row in memory["setups"])
+  source_records.extend(("Character Arc", row, [row["evidence"]]) for row in memory.get("arcs", []))
+  for kind, record, passages in source_records:
+    missing = [item for item in passages if not item.get("excerpt") or item["excerpt"] not in scene_bodies.get(item.get("scene_id"), "")]
+    if missing:
+      diagnostics.append({
+        "id": _diagnostic_id("stale_evidence", [record["id"]]),
+        "code": "stale_evidence",
+        "severity": "warning",
+        "title": "Source evidence needs review",
+        "message": f"{kind} evidence no longer appears in its cited scene, or was never an exact quote. Review the current prose before relying on this record. The author-owned record has not been changed.",
+        "fact_ids": [record["id"]] if kind == "Canon Fact" else [],
+        "scene_ids": list(dict.fromkeys(item["scene_id"] for item in missing)),
+        "evidence": missing,
+      })
   groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
   for fact in facts:
     groups[(fact.get("subject_entity_id", ""), fact["predicate"].casefold())].append(fact)

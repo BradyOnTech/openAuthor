@@ -93,16 +93,32 @@ def prose_trait_diagnostics(scenes: list[dict[str, Any]], entities: list[dict[st
     values = list(dict.fromkeys(row["value"] for row in rows))
     if len(values) < 2:
       continue
-    evidence = [row["evidence"] for row in rows]
-    identity = f"{subject}:{trait}:" + ":".join(f"{item['scene_id']}:{item['excerpt']}" for item in evidence)
+    all_evidence = [row["evidence"] for row in rows]
+    # Keep the first occurrence of each different value before filling spare
+    # slots. Taking only the first eight passages could hide the contradiction.
+    first_by_value: dict[str, int] = {}
+    for index, row in enumerate(rows):
+      first_by_value.setdefault(row["value"], index)
+    selected = set(list(first_by_value.values())[:8])
+    for index in range(len(rows)):
+      if len(selected) >= 8:
+        break
+      selected.add(index)
+    evidence = [all_evidence[index] for index in sorted(selected)]
+    values_label = " and ".join(values[:8])
+    if len(values) > 8:
+      values_label += f" and {len(values) - 8} additional values"
+    clipped = f" Showing {len(evidence)} of {len(rows)} supporting observations." if len(rows) > len(evidence) else ""
+    identity = f"{subject}:{trait}:" + ":".join(f"{item['scene_id']}:{item['excerpt']}" for item in all_evidence)
     diagnostics.append({
       "id": "memory-diagnostic-" + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16],
       "code": "prose_trait_mismatch",
       "severity": "warning",
       "title": "Possible physical-detail mismatch",
-      "message": f"{subject}'s {trait} is described as {' and '.join(values)}. Review the passages for an intentional change or a mistaken attribution; no Canon Fact was changed." + (" Pronoun ownership was inferred from a nearby name and needs confirmation." if any(item["attribution"] != "explicit name" for item in evidence) else ""),
+      "message": f"{subject}'s {trait} is described as {values_label}. Review the passages for an intentional change or a mistaken attribution; no Canon Fact was changed." + (" Pronoun ownership was inferred from a nearby name and needs confirmation." if any(item["attribution"] != "explicit name" for item in all_evidence) else "") + clipped,
       "fact_ids": [],
-      "scene_ids": list(dict.fromkeys(item["scene_id"] for item in evidence)),
+      "scene_ids": list(dict.fromkeys(item["scene_id"] for item in all_evidence)),
       "evidence": evidence,
+      "evidence_count": len(rows),
     })
   return diagnostics

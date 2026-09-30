@@ -9,7 +9,7 @@ from typing import Any
 
 from .codex import add_entity, add_relationship, list_entities, list_relationships, update_entity
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .scenes import get_scene, list_scenes
+from .scenes import get_scene, list_scene_details, list_scenes
 
 SUGGESTION_SCHEMA_VERSION = 1
 SUGGESTION_STATUSES = {"pending", "accepted", "rejected", "deferred"}
@@ -351,7 +351,8 @@ def extract_memory_suggestions(
   scene_ids: list[str] | None = None,
 ) -> dict[str, Any]:
   selected = set(scene_ids or [])
-  scenes = [row for row in list_scenes(paths) if not selected or row["id"] in selected]
+  all_scenes = list_scene_details(paths)
+  scenes = [row for row in all_scenes if not selected or row["id"] in selected]
   entities = list_entities(paths)
   relationships = list_relationships(paths)
   existing_relationships = {
@@ -368,9 +369,10 @@ def extract_memory_suggestions(
   pov_names: set[str] = set()
   fact_candidates: dict[str, dict[str, Any]] = {}
   scene_details: list[dict[str, Any]] = []
-  for scene_summary in scenes:
-    scene = get_scene(paths, scene_summary["id"])
-    scene_details.append(scene)
+  for scene in all_scenes:
+    # Character identity is manuscript-wide even when a save only refreshes
+    # facts and relationships in one scene. Otherwise a short name splits off
+    # whenever its full-name introduction happens to be in another scene.
     pov = str(scene.get("pov", "")).strip()
     if pov:
       pov_names.add(pov)
@@ -399,6 +401,9 @@ def extract_memory_suggestions(
           "start": mention_start,
           "end": mention_end,
         })
+    if selected and scene["id"] not in selected:
+      continue
+    scene_details.append(scene)
     for entity in entities:
       names = [entity["name"], *entity.get("aliases", [])]
       for entity_name in names:
@@ -475,8 +480,13 @@ def extract_memory_suggestions(
   added = 0
   refreshed = 0
   candidate_ids: set[str] = set()
+  repeated_short_names = {_identity_key(name) for name, count in counts.items() if count >= 2 and len(_identity_key(name).split()) == 1}
   for name, count in counts.items():
-    if _identity_key(name) in existing_names or count < 2:
+    parts = _identity_key(name).split()
+    # A shared "Mara" must not absorb or erase the explicitly named Mara Voss
+    # and Mara Lynn. Retain their own evidence without assigning the nickname.
+    ambiguous_short_support = len(parts) > 1 and bool({parts[0], parts[-1]} & repeated_short_names)
+    if _identity_key(name) in existing_names or (count < 2 and not ambiguous_short_support):
       continue
     entity_type = "character"
     suggestion_id = _suggestion_id(entity_type, name)
@@ -496,7 +506,7 @@ def extract_memory_suggestions(
       "description": f"Appears in {len({item['scene_id'] for item in evidence[name]})} scene(s).",
       "details": [],
       "confidence": round(confidence, 2),
-      "reason": "POV metadata and repeated proper-name mentions" if name in pov_names else "Repeated proper-name mentions",
+      "reason": "POV metadata and repeated proper-name mentions" if name in pov_names else "Explicit full-name mention; short-name references are ambiguous" if count < 2 else "Repeated proper-name mentions",
       "evidence": evidence[name],
       "status": current.get("status", "pending") if current else "pending",
       "created_at": current.get("created_at", utc_now()) if current else utc_now(),
@@ -561,16 +571,18 @@ def extract_memory_suggestions(
     else:
       added += 1
     previous[suggestion_id] = candidate
-  source_scenes = {scene["id"]: scene for scene in scene_details}
+  source_scenes = {scene["id"]: scene for scene in all_scenes}
+  scanned_scene_ids = {scene["id"] for scene in scene_details}
   for suggestion_id, row in list(previous.items()):
     if suggestion_id in candidate_ids:
       for item in row.get("evidence", []):
         item["source_sha256"] = _evidence_fingerprint(source_scenes[item["scene_id"]], item)
     elif (row.get("kind") in {"entity_create", "canon_fact", "relationship_create"}
           and row.get("status") in {"pending", "deferred"} and not row.get("author_corrected")
-          and row.get("evidence") and all(item.get("scene_id") in source_scenes for item in row["evidence"])):
-      # A partial scan only retires derived suggestions wholly supported by the
-      # scanned scenes. Decisions and author corrections remain author-owned.
+          and row.get("evidence") and (row.get("kind") == "entity_create" or all(item.get("scene_id") in scanned_scene_ids for item in row["evidence"]))):
+      # Identity is refreshed across the book. Facts and relationships are
+      # retired only when wholly supported by the selected scenes. Decisions
+      # and author corrections remain author-owned.
       previous.pop(suggestion_id)
   store["suggestions"] = list(previous.values())
   atomic_write_json(_suggestions_path(paths), store)

@@ -751,6 +751,7 @@ export type CodexRelationship = {
 export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number; attribution?: string; anchor_text?: string; source_field?: "pov" };
 export type CanonFact = {
   id: string;
+  updated_at?: string;
   subject_entity_id: string;
   predicate: string;
   value: string;

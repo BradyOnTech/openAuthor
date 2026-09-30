@@ -11,15 +11,86 @@ from openauthor.canon import (
   add_setup,
   assess_story_memory_impact,
   disposition_diagnostic,
+  list_canon_facts,
   resolve_setup,
+  review_canon_fact,
   run_canon_diagnostics,
 )
 from openauthor.codex import add_entity
-from openauthor.project import initialize_project
-from openauthor.scenes import add_scene
+from openauthor.project import OpenAuthorError, initialize_project
+from openauthor.scenes import add_scene, update_scene
 
 
 class CanonMemoryTests(unittest.TestCase):
+  def test_repeated_trait_evidence_is_bounded_but_preserves_both_sides_of_a_mismatch(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Readable Evidence")
+      for index in range(12):
+        add_scene(paths, title=str(index), body=f"Mara's eyes were {'blue' if index < 11 else 'green'}.")
+      warning = next(row for row in run_canon_diagnostics(paths)["diagnostics"] if row["code"] == "prose_trait_mismatch")
+      self.assertLessEqual(len(warning["evidence"]), 8)
+      self.assertEqual(warning["evidence_count"], 12)
+      self.assertTrue(any("green" in row["excerpt"] for row in warning["evidence"]))
+      self.assertTrue(any("blue" in row["excerpt"] for row in warning["evidence"]))
+      self.assertIn("8 of 12", warning["message"])
+
+  def test_author_can_relink_or_retire_a_fact_without_changing_its_identity_or_overwriting_a_newer_review(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Repair Evidence")
+      add_scene(paths, title="One", body="The gate is blue.")
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": "The gate is blue."}])
+      update_scene(paths, scene_identifier="scene-0001", body="The gate gleams blue.")
+      repaired = review_canon_fact(paths, fact["id"], disposition="accepted", evidence=[{"scene_id": "scene-0001", "excerpt": "The gate gleams blue."}], expected_updated_at=fact["updated_at"])
+      self.assertEqual(repaired["id"], fact["id"])
+      self.assertEqual(repaired["value"], "blue")
+      self.assertFalse(run_canon_diagnostics(paths)["diagnostics"])
+      with self.assertRaisesRegex(OpenAuthorError, "changed"):
+        review_canon_fact(paths, fact["id"], disposition="rejected", expected_updated_at=fact["updated_at"])
+      self.assertEqual(list_canon_facts(paths), [repaired])
+      retired = review_canon_fact(paths, fact["id"], disposition="rejected", expected_updated_at=repaired["updated_at"])
+      self.assertEqual(retired["status"], "rejected")
+      self.assertEqual(retired["evidence"], repaired["evidence"])
+      self.assertFalse(list_canon_facts(paths, status="accepted"))
+
+  def test_reading_canon_and_running_diagnostics_do_not_create_book_files(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Read Only Checks")
+      self.assertFalse((paths.root / "codex" / "memory.json").exists())
+      list_canon_facts(paths)
+      run_canon_diagnostics(paths)
+      self.assertFalse((paths.root / "codex" / "memory.json").exists())
+
+  def test_changed_historical_evidence_is_flagged_without_rewriting_author_canon(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Historical Evidence")
+      add_scene(paths, title="One", body="The gate is blue.")
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": "The gate is blue."}])
+      update_scene(paths, scene_identifier="scene-0001", body="The gate is red.")
+      warnings = [row for row in run_canon_diagnostics(paths)["diagnostics"] if row["code"] == "stale_evidence"]
+      self.assertEqual(len(warnings), 1)
+      self.assertEqual(warnings[0]["fact_ids"], [fact["id"]])
+      self.assertEqual(warnings[0]["evidence"], fact["evidence"])
+      self.assertEqual(list_canon_facts(paths), [fact])
+      update_scene(paths, scene_identifier="scene-0001", body="A new opening. The gate is blue.")
+      self.assertFalse([row for row in run_canon_diagnostics(paths)["diagnostics"] if row["code"] == "stale_evidence"])
+
+  def test_new_canon_evidence_must_match_current_prose_and_records_real_offsets(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Verified Evidence")
+      prose = "🌙 Élodie carries a key. The key is blue. The key is blue."
+      add_scene(paths, title="One", body=prose)
+      for excerpt in ["An invented quote.", "The key is blue."]:
+        with self.subTest(excerpt=excerpt), self.assertRaises(OpenAuthorError):
+          add_canon_fact(paths, subject_entity_id="", predicate="color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": excerpt}])
+      self.assertEqual(list_canon_facts(paths), [])
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="carries", value="key", evidence=[{"scene_id": "scene-0001", "excerpt": "Élodie carries a key."}])
+      evidence = fact["evidence"][0]
+      self.assertEqual(evidence["start"], 2)
+      self.assertEqual(prose[evidence["start"]:evidence["end"]], evidence["excerpt"])
+      occurrence = prose.rfind("The key is blue.")
+      anchored = add_canon_fact(paths, subject_entity_id="", predicate="color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": "The key is blue.", "start": occurrence, "end": occurrence + len("The key is blue.")}])
+      self.assertEqual(anchored["evidence"][0]["start"], occurrence)
+
   def test_multiple_possessions_and_general_descriptions_are_not_exclusive_canon(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Nonexclusive Canon")
@@ -96,9 +167,10 @@ class CanonMemoryTests(unittest.TestCase):
   def test_conflicts_knowledge_setup_and_dispositions_are_evidence_backed(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Canon")
-      add_scene(paths, title="One", pov="Mara", body="Mara sees that the gate is blue.")
+      add_scene(paths, title="One", pov="Mara", body="Mara sees that the gate is blue. She carries a brass key.")
       for index in range(2, 8):
-        add_scene(paths, title=f"Scene {index}", pov="Mara" if index == 3 else "Ivo", body="The gate is blue." if index == 3 else "A quiet interval.")
+        body = {2: "The gate is painted red. A quiet interval.", 3: "The gate is blue.", 7: "At last, the key turns."}.get(index, "A quiet interval.")
+        add_scene(paths, title=f"Scene {index}", pov="Mara" if index == 3 else "Ivo", body=body)
       gate = add_entity(paths, kind="location", name="The Gate")
       mara = add_entity(paths, kind="character", name="Mara")
       first = add_canon_fact(

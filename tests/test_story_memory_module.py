@@ -18,6 +18,23 @@ from openauthor.story_memory import (
 
 
 class StoryMemorySuggestionTests(unittest.TestCase):
+  def test_single_scene_refresh_keeps_manuscript_wide_character_identity(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Stable Incremental Identity")
+      add_scene(paths, title="First", body="Mara Voss waited by the gate. Mara held the key.")
+      add_scene(paths, title="Later", body="Mara crossed the river. Mara opened the door.")
+      first = extract_memory_suggestions(paths)
+      original = next(row for row in first["suggestions"] if row["kind"] == "entity_create")
+      update_scene(paths, scene_identifier="scene-0002", body="Mara crossed the river. Mara locked the door.")
+      refreshed = extract_memory_suggestions(paths, scene_ids=["scene-0002"])
+      people = [row for row in refreshed["suggestions"] if row["kind"] == "entity_create" and row["status"] == "pending"]
+      self.assertEqual([row["name"] for row in people], ["Mara Voss"])
+      self.assertEqual(people[0]["id"], original["id"])
+      self.assertIn("Mara", people[0]["aliases"])
+      self.assertEqual(refreshed["scanned_scenes"], 1)
+      review_memory_suggestion(paths, people[0]["id"], disposition="accepted")
+      self.assertEqual([row["name"] for row in list_entities(paths)], ["Mara Voss"])
+
   def test_fact_extraction_does_not_assign_a_shared_alias_to_both_people(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Ambiguous Facts")
@@ -65,6 +82,8 @@ class StoryMemorySuggestionTests(unittest.TestCase):
       suggestions = extract_memory_suggestions(paths, scene_ids=["scene-0002"])["suggestions"]
       first = next(row for row in suggestions if row["name"] == "Mara Voss")
       second = next(row for row in suggestions if row["name"] == "Mara Lynn")
+      self.assertNotIn("Mara", first["aliases"])
+      self.assertNotIn("Mara", second["aliases"])
       review_memory_suggestion(paths, first["id"], disposition="accepted")
       self.assertEqual(next(row for row in list_memory_suggestions(paths) if row["id"] == second["id"])["status"], "pending")
       review_memory_suggestion(paths, second["id"], disposition="accepted")
