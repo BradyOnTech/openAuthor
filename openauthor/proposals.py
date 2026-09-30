@@ -33,6 +33,7 @@ def create_proposal(
   revision_intent: dict[str, Any] | None = None,
   change_group_id: str = "",
   proposal_id: str | None = None,
+  selection: dict[str, Any] | None = None,
 ) -> str:
   proposal_id = proposal_id or f"proposal-{uuid.uuid4().hex[:12]}"
   if not re.fullmatch(r"proposal-[a-f0-9]{12,64}", proposal_id):
@@ -74,6 +75,8 @@ def create_proposal(
     payload["generation"] = generation
   if merge is not None:
     payload["merge"] = merge
+  if selection is not None:
+    payload["selection"] = selection
   atomic_write_json(_proposal_file(paths, proposal_id), payload)
   return proposal_id
 
@@ -154,6 +157,8 @@ def set_proposal_draft(
   if not file_path.exists():
     raise OpenAuthorError(f"Unknown proposal id '{proposal_id}'.")
   payload = _read_proposal(file_path)
+  if payload.get("selection"):
+    raise OpenAuthorError("A selection edit cannot be replaced with a whole-scene draft. Select the passage again.")
   if payload.get("status") != "pending":
     raise OpenAuthorError(
       f"Proposal '{proposal_id}' is not pending; cannot attach a draft."
@@ -311,6 +316,16 @@ def apply_proposal(
 
   scene_id = str(payload.get("scene_id", "")).strip()
   proposed_body = str(payload.get("proposed_body", "") or "")
+  selection = payload.get("selection")
+  if isinstance(selection, dict):
+    if selection.get("action") == "critique":
+      raise OpenAuthorError("Critique is feedback only and cannot be applied to the manuscript.")
+    if _proposal_is_stale(paths, payload):
+      raise OpenAuthorError("The scene or book version changed. Select the passage again; selection edits cannot force-overwrite newer writing.")
+    before = get_scene(paths, scene_id)["body"]
+    start, end = selection["start"], selection["end"]
+    if before[start:end] != selection["before"] or proposed_body != before[:start] + selection["after"] + before[end:] or payload.get("change_set"):
+      raise OpenAuthorError("The selection anchor or replacement is invalid. Select the passage again.")
   if not scene_id:
     raise OpenAuthorError(
       f"Proposal '{proposal_id}' has no target scene and cannot be applied as a manuscript edit."
@@ -446,6 +461,8 @@ def apply_proposal_batch(
       raise OpenAuthorError(f"Proposal '{proposal_id}' is not pending.")
     if payload.get("source") == "merge_resolution":
       raise OpenAuthorError("Merge resolutions cannot be part of a coordinated Change Set.")
+    if payload.get("selection"):
+      raise OpenAuthorError("Selection edits must be reviewed and applied individually.")
     scene_id = str(payload.get("scene_id", "")).strip()
     if not scene_id or scene_id in scene_ids:
       raise OpenAuthorError("Coordinated Change Sets require one distinct target scene per proposal.")
@@ -573,6 +590,8 @@ def undo_proposal(
     raise OpenAuthorError(f"Proposal '{proposal_id}' has no applied manuscript change to undo.")
   if payload.get("undone_at"):
     raise OpenAuthorError(f"Proposal '{proposal_id}' has already been undone.")
+  if payload.get("selection") and _proposal_is_stale(paths, payload):
+    raise OpenAuthorError("The scene or book version changed since applying this selection. Undo stopped to protect newer writing.")
 
   scene_id = str(payload.get("scene_id", "")).strip()
   before_revision = str(payload.get("pre_apply_snapshot", "")).strip()
@@ -667,6 +686,8 @@ def _proposal_is_stale(
   *,
   current_digests: dict[str, str] | None = None,
 ) -> bool:
+  if proposal.get("selection") and proposal["selection"].get("branch") != _capture_vcs_anchor(paths)[0]:
+    return True
   if proposal.get("source") == "merge_resolution":
     metadata = proposal.get("merge") or {}
     try:

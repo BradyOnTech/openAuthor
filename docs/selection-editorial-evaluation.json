@@ -1,0 +1,57 @@
+{
+  "date": "2026-09-30",
+  "scope": "Four native macOS selection actions on one synthetic scene; not an independent benchmark or an author pilot.",
+  "provider": "openai-codex",
+  "model_requested": "codex-recommended",
+  "resolved_model_recorded": false,
+  "billing": "Existing authenticated subscription; no OpenAI API key used. App-reported estimated incremental USD: 0. Subscription quota was consumed.",
+  "reported_input_tokens": 47894,
+  "reported_output_tokens": 294,
+  "quality_reviewer": "Implementation assistant; no independent human judgment",
+  "cases": [
+    {
+      "action": "rewrite",
+      "proposal_id": "proposal-d34597aa5ecda899624638c1",
+      "run_id": "gen-7abd8f6a237f",
+      "before": "Ivo, her younger brother, watched her hands rather than the wall.",
+      "after": "But Ivo, her younger brother, watched her hands instead of the wall.",
+      "assessment": "Retains relationship, action and past tense. Makes contrast explicit; editorial improvement remains subjective.",
+      "workflow": "Previewed, generated, accepted, inspected in editor, then undone. SHA-256 before and after undo matched exactly.",
+      "scene_file_sha256_before_and_after_undo": "a910c6612549b058dce0da4d49b2322fab37533413a912cc24914fa91fc5472c"
+    },
+    {
+      "action": "expand",
+      "proposal_id": "proposal-3c59839cd05a90075958a4c1",
+      "run_id": "gen-eec3c2d7142a",
+      "before": "The eighth hook was empty.",
+      "after": "The eighth hook was empty, its curve dark against the blue wall. Mara counted again, slower, though the bare iron stayed bare.",
+      "assessment": "Two restrained sentences preserve the missing lantern, but invent iron as the hook material and extend the gate's blue color to the wall. Counting again adds a small action despite the explicit no-new-event direction. Grounding is not reliable enough to automate acceptance.",
+      "workflow": "Previewed and generated; rejected without changing prose."
+    },
+    {
+      "action": "critique",
+      "proposal_id": "proposal-964ef1dd3381c568e89bcbec",
+      "run_id": "gen-b09648ee30f7",
+      "assessment": "Returns three quoted concerns about exposition, viewpoint and naming, with suggestions. Useful viewpoint concern, but does not explicitly identify the contradiction between Mara knowing the key location and the absolute nobody-in-the-square claim. The assertion that one brother's introduction makes a second person's non-brother status redundant is editorial judgment, not a logical guarantee.",
+      "workflow": "Feedback retained in Changes; no manuscript apply or whole-scene redraft control. Prose unchanged."
+    },
+    {
+      "action": "shorten",
+      "proposal_id": "proposal-e4ec15ac43511139ec950a2d",
+      "run_id": "gen-d5f3becba0a8",
+      "before": "He had done that since the accident, as if another missing finger might announce itself before she noticed.",
+      "after": "Since the accident, he watched as if another finger might vanish unnoticed.",
+      "assessment": "Shortens 18 words to 12, retaining accident, another finger and past tense. Trades the original personification for a simpler image; voice preference needs author judgment.",
+      "workflow": "Unsent passage and direction survived app restart. Re-previewed and generated. A later author title edit made it stale; applying was refused and the newer title survived."
+    }
+  ],
+  "product_findings": [
+    "Selection safety works separately from editorial quality: explicit accept/reject remains necessary.",
+    "Context is bounded and privacy-filtered, but this action currently omits Canon and relationships; broader scene-valid grounding remains required.",
+    "Subscription runtime reported roughly 11,500-13,250 input tokens per call against roughly 400 app-context estimated tokens. UI now distinguishes app text estimates from provider overhead and labels the subscription output target as non-hard.",
+    "Resolved provider model should be retained instead of only the recommended-model sentinel.",
+    "Audit runtime-added context and project instruction discovery in the Codex adapter; app-supplied preview alone does not establish a full provider-context boundary.",
+    "Native stale-apply rejection exposed an outdated review-tab state. A rendered regression now requires fresh scene/version verification before selection apply or undo controls enable."
+  ],
+  "production_ready": false
+}

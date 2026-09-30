@@ -40,7 +40,7 @@ def recoverable_proposal(kind: str):
       arguments = {key: value for key, value in bound.arguments.items() if key != "paths"}
       fingerprint = hashlib.sha256(json.dumps(arguments, sort_keys=True).encode()).hexdigest()
       key = hashlib.sha256(f"{kind}:{request_id}".encode()).hexdigest()
-      creates_proposal = kind in {"generate", "merge"}
+      creates_proposal = kind in {"generate", "merge", "selection"}
       proposal_id = f"proposal-{key[:24]}" if creates_proposal else arguments["proposal_id"]
       receipt_path = paths.workspace_dir / "proposal-deliveries" / f"{key}.json"
       artifact_path = paths.proposals_dir / f"{proposal_id}.json"

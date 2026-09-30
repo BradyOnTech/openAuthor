@@ -268,6 +268,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     }
     if (root === "check" && action === "continuity") return response([]);
     if (root === "proposal" && action === "list") return response(harness.proposals);
+    if (root === "proposal" && action === "get") return response(harness.proposals.find(row => row.id === argument(args, "--id")));
     if (root === "proposal" && action === "generate") {
       const now = "2026-07-15T12:01:00Z";
       const proposalId = harness.proposals.length === 0 ? "proposal-golden" : `proposal-golden-${harness.proposals.length + 1}`;
@@ -623,6 +624,20 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
     return { user, body: await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement };
   }
+
+  it("refreshes selection staleness before offering to apply a reopened review", async () => {
+    harness.proposals.push({ id: "proposal-selection", title: "Shorten selection", instruction: "Tighten", scene_id: "scene-0001", status: "pending", source: "selection", proposed_body: "Mara counted.", notes: "", stale: false, created_at: "2026-09-30", updated_at: "2026-09-30", selection: { action: "shorten", start: 0, end: 20, before: "Mara began to count.", after: "Mara counted.", feedback: "", branch: "main" } });
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(await screen.findByRole("button", { name: /Shorten selection/ }));
+    await screen.findByRole("button", { name: "Accept selected replacement" });
+    await user.click(screen.getByRole("button", { name: "Open Scene" }));
+    harness.proposals[0].stale = true;
+    await user.click(screen.getByRole("tab", { name: "Shorten selection" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Accept selected replacement" }) as HTMLButtonElement).disabled).toBe(true));
+    expect(screen.getByText(/The scene or book version changed/)).toBeTruthy();
+    expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "apply")).toBe(false);
+  });
 
   it("saves pending prose before diagnostics and opens the exact evidence passage", async () => {
     const { user, body } = await openWritingScene();

@@ -1,20 +1,32 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
+import { sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
 
 type Props = {
   proposal: ProposalRecord;
 };
 
 export function ProposalReview({ proposal: initial }: Props) {
-  const { projectRoot, runtimeConfig, refreshProposals, refreshScenes, setError, setMessage } =
+  const { projectRoot, runtimeConfig, scenes, branches, refreshProposals, refreshScenes, setError, setMessage } =
     useWorkspace();
   const { openTab, updateTab } = useEditor();
   const [proposal, setProposal] = useState(initial);
   const [busy, setBusy] = useState("");
+  const [selectionVerified, setSelectionVerified] = useState(!initial.selection);
+  const [selectionRefresh, setSelectionRefresh] = useState(0);
+  useEffect(() => {
+    if (!initial.selection || busy) return;
+    let current = true;
+    setSelectionVerified(false);
+    void getProposal(projectRoot, initial.id).then(updated => {
+      if (current) { setProposal(updated); setSelectionVerified(true); }
+    }).catch(error => { if (current) setError(`Could not verify this selection: ${error instanceof Error ? error.message : String(error)}`); });
+    return () => { current = false; };
+  }, [projectRoot, initial.id, Boolean(initial.selection), scenes, branches, busy, selectionRefresh, setError]);
   const [confirmForce, setConfirmForce] = useState(false);
   const [editingHunkId, setEditingHunkId] = useState("");
   const [editedHunkText, setEditedHunkText] = useState("");
@@ -64,14 +76,23 @@ export function ProposalReview({ proposal: initial }: Props) {
   }
 
   async function handleApply() {
-    const needsForce = Boolean(proposal.stale && proposal.proposed_body);
+    const needsForce = Boolean(!proposal.selection && proposal.stale && proposal.proposed_body);
     if (needsForce && !confirmForce) {
       setConfirmForce(true);
       return;
     }
     setBusy("apply");
     try {
-      const updated = await applyProposal(projectRoot, proposal.id, "", needsForce);
+      const apply = async () => {
+        const updated = await applyProposal(projectRoot, proposal.id, "", needsForce);
+        if (proposal.selection) {
+          const scene = await getScene(projectRoot, proposal.scene_id);
+          sceneSaveSession(projectRoot, scene).acceptScene(scene);
+          updateTab(`scene:${scene.id}`, { data: scene, label: scene.title, modified: false });
+        }
+        return updated;
+      };
+      const updated = proposal.selection ? await withProjectBookChange(projectRoot, apply) : await apply();
       syncTab(updated);
       setMessage(
         updated.applied_changes
@@ -171,9 +192,14 @@ export function ProposalReview({ proposal: initial }: Props) {
   async function handleUndo() {
     setBusy("undo");
     try {
-      const updated = await undoProposal(projectRoot, proposal.id);
+      const undo = async () => {
+        const updated = await undoProposal(projectRoot, proposal.id);
+        const scene = await getScene(projectRoot, updated.scene_id);
+        sceneSaveSession(projectRoot, scene).acceptScene(scene);
+        return { updated, scene };
+      };
+      const { updated, scene } = proposal.selection ? await withProjectBookChange(projectRoot, undo) : await undo();
       syncTab(updated);
-      const scene = await getScene(projectRoot, updated.scene_id);
       openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene });
       setMessage("Change undone — the scene was restored and a new revision recorded.");
       await Promise.all([refreshProposals(), refreshScenes()]);
@@ -332,7 +358,19 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
-      {hasDraft && !changeSet && (
+      {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
+        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
+        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
+        <div className="selection-review__comparison">
+          <div><strong>Before</strong><blockquote>{proposal.selection.before}</blockquote></div>
+          <div><strong>{proposal.selection.action === "critique" ? "Feedback" : "After"}</strong><blockquote>{proposal.selection.feedback || proposal.selection.after}</blockquote></div>
+        </div>
+        {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
+        {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
+        <button className="btn" style={{ minHeight: 40 }} disabled={Boolean(busy)} onClick={() => setSelectionRefresh(value => value + 1)}>Refresh selection status</button>
+      </section>}
+
+      {hasDraft && !changeSet && !proposal.selection && (
         <div className="review-card__section">
           <div className="review-card__section-title">
             Drafted scene text {proposal.draft ? `(${proposal.draft.provider}/${proposal.draft.model})` : ""}
@@ -399,7 +437,7 @@ export function ProposalReview({ proposal: initial }: Props) {
               {busy === "rebase" ? "Rebasing…" : "Rebase safe hunks"}
             </button>
           )}
-          {proposal.scene_id && proposal.source !== "merge_resolution" && (
+          {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && (
             <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={handleDraft}>
               {draftState.busy
                 ? "Drafting..."
@@ -411,7 +449,7 @@ export function ProposalReview({ proposal: initial }: Props) {
           {proposal.source !== "merge_resolution" && hasDraft && (
             <button
               className="btn btn--success"
-              disabled={busy === "apply" || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
+              disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale)) || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
               onClick={handleApply}
               title="Write the drafted text into the scene and record before/after revisions"
             >
@@ -419,10 +457,10 @@ export function ProposalReview({ proposal: initial }: Props) {
                 ? "Applying..."
                 : confirmForce
                   ? "Scene changed — apply anyway?"
-                  : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
+                  : proposal.selection ? "Accept selected replacement" : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
             </button>
           )}
-          <button className="btn btn--danger" disabled={busy === "reject"} onClick={handleReject}>
+          <button className="btn btn--danger" disabled={Boolean(busy)} onClick={handleReject}>
             Reject
           </button>
           {proposal.scene_id && (
@@ -434,7 +472,7 @@ export function ProposalReview({ proposal: initial }: Props) {
       {proposal.status !== "pending" && proposal.scene_id && (
         <div className="review-card__actions">
           {proposal.status === "applied" && proposal.applied_changes && !proposal.undone_at && (
-            <button className="btn btn--primary" disabled={busy === "undo"} onClick={handleUndo}>
+            <button className="btn btn--primary" disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale))} onClick={handleUndo}>
               {busy === "undo" ? "Undoing..." : "Undo change"}
             </button>
           )}

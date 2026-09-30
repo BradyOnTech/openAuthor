@@ -3,8 +3,9 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { sceneSaveSession } from "../../sceneSaveSession";
 import { clearSceneRecoveryDraft, readSceneRecoveryDraft, recoveryDraftMatchesScene } from "../../recoveryJournal";
-import type { CanonEvidence, SceneDetail } from "../../types";
+import type { CanonEvidence, ProposalProvider, SceneDetail } from "../../types";
 import { evidenceRange } from "../../evidenceRange";
+import { SelectionAssist } from "./SelectionAssist";
 
 export function SceneEditor({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
   const { projectRoot } = useWorkspace();
@@ -12,11 +13,12 @@ export function SceneEditor({ scene, focusPassage }: { scene: SceneDetail; focus
 }
 
 function SceneEditorSession({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
-  const { projectRoot, refreshScenes, setError } = useWorkspace();
-  const { updateTab, activeTabId } = useEditor();
+  const { projectRoot, refreshScenes, refreshProposals, refreshRuns, runtimeConfig, branches, setError } = useWorkspace();
+  const { updateTab, activeTabId, openTab } = useEditor();
   const [session] = useState(() => sceneSaveSession(projectRoot, scene));
   const { title, body, saving, error, readOnly } = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [selection, setSelection] = useState<{ body: string; start: number; end: number } | null>(null);
   const [recoveryDraft, setRecoveryDraft] = useState(() => {
     if (session.dirty) return null;
     const draft = readSceneRecoveryDraft(projectRoot, scene.id);
@@ -94,10 +96,20 @@ function SceneEditorSession({ scene, focusPassage }: { scene: SceneDetail; focus
           }}>Discard</button>
         </div>
       )}
+      <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches.find(row => row.current)?.name ?? ""}
+        selection={selection?.body === body ? selection : null} disabled={readOnly || Boolean(recoveryDraft)}
+        providers={Object.entries(runtimeConfig?.providers ?? {}).filter(([, config]) => config.credential_present).map(([name]) => name as ProposalProvider)}
+        flush={session.flush} onResult={async proposal => {
+          await Promise.all([refreshProposals(), refreshRuns()]);
+          openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title, data: proposal });
+        }} />
       <div className="scene-editor__content">
         <input className="scene-editor__title" readOnly={readOnly} value={title} onChange={event => session.edit({ title: event.target.value })} placeholder="Scene title..." />
         <div className="scene-editor__divider" />
-        <textarea ref={bodyRef} className="scene-editor__body" aria-label="Scene prose" readOnly={readOnly} value={body} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
+        <textarea ref={bodyRef} className="scene-editor__body" aria-label="Scene prose" readOnly={readOnly} value={body} onSelect={event => {
+          const editor = event.currentTarget;
+          setSelection(editor.selectionEnd > editor.selectionStart ? { body: editor.value, start: editor.selectionStart, end: editor.selectionEnd } : null);
+        }} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
       </div>
     </div>
   );

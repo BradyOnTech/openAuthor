@@ -276,6 +276,13 @@ def build_parser() -> argparse.ArgumentParser:
 
   proposal_parser = subparsers.add_parser("proposal", help="Manage AI proposal queue.")
   proposal_sub = proposal_parser.add_subparsers(dest="proposal_command", required=True)
+  for selection_action in ("selection-preview", "selection-generate"):
+    selection_parser = proposal_sub.add_parser(selection_action, help="Preview or generate a range-anchored selection edit.")
+    selection_parser.add_argument("--input-json", required=True, help="Selection range, action, provider and one-turn permissions.")
+    selection_parser.add_argument("--json", action="store_true")
+    if selection_action == "selection-generate":
+      selection_parser.add_argument("--expected-fingerprint", required=True)
+      selection_parser.add_argument("--request-id", required=True)
   proposal_add = proposal_sub.add_parser("add", help="Create proposal.")
   proposal_add.add_argument("--title", required=True, help="Proposal title.")
   proposal_add.add_argument("--instruction", required=True, help="Change instruction.")
@@ -1750,6 +1757,17 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
   if args.command == "proposal":
+    if args.proposal_command in {"selection-preview", "selection-generate"}:
+      from .selection_editing import preview_selection, generate_selection
+      try:
+        selection_args = json.loads(args.input_json)
+        if not isinstance(selection_args, dict):
+          raise ValueError("Expected an object")
+        row = (preview_selection(paths, **selection_args) if args.proposal_command == "selection-preview" else generate_selection(paths, **selection_args, expected_fingerprint=args.expected_fingerprint, request_id=args.request_id))
+      except (TypeError, ValueError) as error:
+        raise OpenAuthorError(f"Invalid selection input: {error}") from error
+      print(json.dumps(row))
+      return 0
     if args.proposal_command == "add":
       proposal_id = create_proposal(
         paths,

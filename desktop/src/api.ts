@@ -508,6 +508,10 @@ export async function createProposal(
   return decodeJson<ProposalRecord>(result);
 }
 
+export async function getProposal(projectRoot: string, proposalId: string): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "get", "--id", proposalId, "--json"]));
+}
+
 export async function generateProposal(
   projectRoot: string,
   payload: {
@@ -945,6 +949,24 @@ export type ChatSendPayload = {
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
+export type SelectionInput = {
+  scene_id: string; start: number; end: number; selected_text: string; action: SelectionAction;
+  instruction: string; provider: ProposalProvider; model: string; memory_approvals: MemoryApproval[];
+};
+export type SelectionPreview = {
+  fingerprint: string; provider: string; model: string; system_prompt: string; user_prompt: string;
+  estimated_input_tokens: number; max_output_tokens: number;
+  anchor: { branch: string };
+  limits: { omitted_before_characters: number; omitted_after_characters: number; omitted_memory_ids: string[] };
+  memory_choices: ChatContextPreview["memory_choices"];
+};
+export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
+}
+export async function generateSelection(projectRoot: string, input: SelectionInput, fingerprint: string, requestId: string): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-generate", "--input-json", JSON.stringify(input), "--expected-fingerprint", fingerprint, "--request-id", requestId, "--json"]));
+}
 export type ChatContextPreview = {
   fingerprint: string;
   provider: string;

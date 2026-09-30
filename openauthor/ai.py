@@ -1387,7 +1387,10 @@ def _call_provider(
   tool_calls: list[dict[str, Any]] = []
   start = time.perf_counter()
   if provider == "local":
-    if context.get("chat_mode"):
+    if context.get("selection_mode"):
+      from .selection_editing import local_selection_result
+      text = local_selection_result(context)
+    elif context.get("chat_mode"):
       text, tool_calls = _generate_local_chat_result(
         user_prompt,
         tools_enabled=bool(tools),
@@ -1511,16 +1514,17 @@ def _write_chat_generation_log(
   provider_result: dict[str, Any] | None = None,
   estimated_cost_usd: float | None = None,
   error: dict[str, Any] | None = None,
+  completion_context: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
   run_id = f"gen-{uuid.uuid4().hex[:12]}"
   log_file = paths.generations_dir / f"{run_id}.json"
   payload: dict[str, Any] = {
     "run_id": run_id,
-    "kind": "chat",
+    "kind": "selection" if (completion_context or {}).get("selection_mode") else "chat",
     "status": status,
     "created_at": utc_now(),
     "thread_id": thread_id,
-    "scene_id": "",
+    "scene_id": (completion_context or {}).get("scene_id", ""),
     "provider": provider,
     "model": model,
     "temperature": temperature,
@@ -1562,6 +1566,7 @@ def complete_chat(
   thread_id: str = "",
   on_delta: Any = None,
   tools: list[dict[str, Any]] | None = None,
+  completion_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -1601,6 +1606,7 @@ def complete_chat(
       system_prompt=system_prompt,
       user_prompt=user_prompt,
       history_message_count=len(chat_history),
+      completion_context=completion_context,
       error={
         "message": str(error),
         "category": error.category,
@@ -1625,7 +1631,7 @@ def complete_chat(
       model=selected_model,
       system_prompt=system_prompt,
       user_prompt=user_prompt,
-      context={"chat_mode": bool(chat_mode)},
+      context=completion_context if completion_context is not None else {"chat_mode": bool(chat_mode)},
       instruction=user_prompt,
       temperature=temperature,
       max_output_tokens=max_output_tokens,
@@ -1645,6 +1651,7 @@ def complete_chat(
       system_prompt=system_prompt,
       user_prompt=user_prompt,
       history_message_count=len(chat_history),
+      completion_context=completion_context,
       error={
         "message": "Chat turn interrupted by user.",
         "category": "interrupted",
@@ -1667,6 +1674,7 @@ def complete_chat(
       system_prompt=system_prompt,
       user_prompt=user_prompt,
       history_message_count=len(chat_history),
+      completion_context=completion_context,
       error={
         "message": str(error),
         "category": error.category,
@@ -1701,6 +1709,7 @@ def complete_chat(
     system_prompt=system_prompt,
     user_prompt=user_prompt,
     history_message_count=len(chat_history),
+    completion_context=completion_context,
     provider_result=provider_result,
     estimated_cost_usd=estimated_cost_usd,
   )
@@ -2432,6 +2441,8 @@ def generate_proposal_draft(
     raise OpenAuthorError("max_output_tokens must be >= 64.")
 
   proposal = get_proposal(paths, proposal_id)
+  if proposal.get("selection"):
+    raise OpenAuthorError("For a selection edit, select the passage again and review a new selection preview.")
   if proposal.get("status") != "pending":
     raise OpenAuthorError(
       f"Proposal '{proposal_id}' is not pending; cannot draft."
