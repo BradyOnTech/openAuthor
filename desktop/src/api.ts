@@ -205,6 +205,7 @@ export async function runCoreCommand(
 ): Promise<CoreCommandResponse> {
   ensureAllowed(args);
   const reads: Record<string, string[]> = {
+    style: ["get"],
     plan: ["get", "scene-preview"],
     codex: ["get", "list", "relationship-list"],
     memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose"],
@@ -532,6 +533,7 @@ export async function generateProposal(
     constraints?: string[];
     protectedElements?: string[];
     changeGroupId?: string;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -545,6 +547,8 @@ export async function generateProposal(
     payload.provider
   ];
   if (payload.requestId) args.push("--request-id", payload.requestId);
+  if (payload.authorization) args.push("--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals),
+    "--story-approvals", JSON.stringify(payload.authorization.storyApprovals), "--expected-context-fingerprint", payload.authorization.fingerprint);
   if (payload.title && payload.title.trim() !== "") {
     args.push("--title", payload.title);
   }
@@ -958,7 +962,8 @@ export type ChatSendPayload = {
 export type MemoryApproval = { entity_id: string; detail_key?: string };
 export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
-  context: { scene: { id: string; title: string }; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
+  context: { scene: { id: string; title: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
   limits: { omitted_memory_ids: string[] };
 };
 export async function previewProposalRevision(projectRoot: string, input: {
@@ -966,6 +971,15 @@ export async function previewProposalRevision(projectRoot: string, input: {
   memory_approvals: MemoryApproval[]; story_approvals: string[];
 }): Promise<RevisionContextPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));
+}
+export async function previewProposalGeneration(projectRoot: string, input: Parameters<typeof generateProposal>[1], memoryApprovals: MemoryApproval[], storyApprovals: string[]): Promise<RevisionContextPreview> {
+  const payload = { scene_id: input.sceneId, instruction: input.instruction, provider: input.provider, model: input.model,
+    temperature: input.temperature, max_output_tokens: input.maxOutputTokens, context_scene_radius: input.contextScenes,
+    codex_limit: input.codexLimit, retrieval_mode: input.retrievalMode, retrieval_limit: input.retrievalLimit,
+    retrieval_min_score: input.retrievalMinScore, retrieval_require_fresh: input.retrievalRequireFresh,
+    constraints: input.constraints, protected_elements: input.protectedElements,
+    memory_approvals: memoryApprovals, story_approvals: storyApprovals };
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "generation-preview", "--input-json", JSON.stringify(payload), "--json"]));
 }
 export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
 export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
@@ -1703,7 +1717,14 @@ export type StyleProfile = {
   schema_version: number;
   exemplar_scene_ids: string[];
   created_at: string;
-  metrics: { word_count: number; sentence_count: number; paragraph_count: number; average_sentence_words: number; average_paragraph_words: number; dialogue_word_ratio: number; semicolon_per_sentence: number; em_dash_per_sentence: number; signature_words: string[] };
+  reference_mode: "current" | "frozen";
+  freshness: "current" | "stale" | "unknown";
+  changed_scene_ids: string[];
+  usable_for_ai: boolean;
+  fingerprint: string;
+  source_digests?: Record<string, string>;
+  measurement?: { method: string; word_metrics_available: boolean; limitations: string[] };
+  metrics: { character_count?: number; word_count: number | null; sentence_count: number | null; paragraph_count: number; average_sentence_words: number | null; average_paragraph_words: number | null; dialogue_word_ratio: number | null; semicolon_per_sentence: number | null; em_dash_per_sentence: number | null; signature_words: string[] };
   guidance: string[];
 };
 
@@ -1711,11 +1732,16 @@ export async function getStyleProfile(projectRoot: string): Promise<StyleProfile
   return decodeJson(await runCoreCommand(projectRoot, ["style", "get", "--json"]));
 }
 
-export async function buildStyleProfile(projectRoot: string, sceneIds: string[]): Promise<StyleProfile> {
+export async function buildStyleProfile(projectRoot: string, sceneIds: string[], fingerprint?: string): Promise<StyleProfile> {
   const args = ["style", "build"];
   for (const id of sceneIds) args.push("--scene", id);
+  if (fingerprint !== undefined) args.push("--expected-fingerprint", fingerprint);
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function setStyleProfileReference(projectRoot: string, mode: "current" | "frozen", fingerprint: string): Promise<StyleProfile> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", "reference", "--mode", mode, "--expected-fingerprint", fingerprint, "--json"]));
 }
 
 export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
@@ -2039,6 +2065,7 @@ export async function resolveMergeConflict(
     model?: string;
     temperature?: number;
     maxOutputTokens?: number;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -2054,6 +2081,8 @@ export async function resolveMergeConflict(
     payload.provider
   ];
   if (payload.requestId) args.push("--request-id", payload.requestId);
+  if (payload.authorization) args.push("--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals),
+    "--story-approvals", JSON.stringify(payload.authorization.storyApprovals), "--expected-context-fingerprint", payload.authorization.fingerprint);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }
@@ -2066,6 +2095,13 @@ export async function resolveMergeConflict(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function previewMergeResolution(projectRoot: string, input: Parameters<typeof resolveMergeConflict>[1], memoryApprovals: MemoryApproval[], storyApprovals: string[]): Promise<RevisionContextPreview> {
+  const payload = { base: input.base, head: input.head, scene_path: input.path, provider: input.provider,
+    model: input.model, temperature: input.temperature, max_output_tokens: input.maxOutputTokens,
+    memory_approvals: memoryApprovals, story_approvals: storyApprovals };
+  return decodeJson(await runCoreCommand(projectRoot, ["branch", "resolve-preview", "--input-json", JSON.stringify(payload), "--json"]));
 }
 
 export async function listGenerationPins(

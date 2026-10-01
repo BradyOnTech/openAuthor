@@ -23,6 +23,7 @@ vi.mock("./hooks/useRefreshBookTabs", () => ({ useRefreshBookTabs: () => async (
 
 const input = { base: "primary", head: "alternate", path: "manuscript/scenes/0001-choice.md", provider: "local" as const };
 const result = { id: "proposal-1", stale: false, merge: input };
+const approval = { fingerprint: "merge-reviewed", memoryApprovals: [], storyApprovals: [] };
 beforeEach(() => {
   Object.defineProperty(window, "__TAURI_INTERNALS__", { value: { invoke }, configurable: true });
   localStorage.clear();
@@ -32,10 +33,16 @@ beforeEach(() => {
 afterEach(() => { cleanup(); delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__; });
 
 describe("reconciliation recovery", () => {
+  it("waits for durable context approval before reconciliation", async () => {
+    const session = new MergeResolutionSession("/synthetic/first-merge-review");
+    await session.start(input);
+    expect(transport.calls).toHaveLength(0);
+  });
   it("retains the exact branch/path request across restart and serializes retries", async () => {
     transport.send = async () => { throw new Error("Response lost"); };
     const initial = new MergeResolutionSession("/synthetic/book");
     expect(await initial.start(input)).toBeNull();
+    await initial.approve(approval);
     const original = transport.calls[0];
     const restarted = new MergeResolutionSession("/synthetic/book");
     expect(restarted.getSnapshot().pending?.path).toBe(input.path);
@@ -70,6 +77,9 @@ describe("reconciliation recovery", () => {
     transport.send = async args => {
       if (args[1] === "preflight") return { risk_level: "high" };
       if (args[1] === "conflicts") return { conflicts: [{ path: input.path, category: "scene", kind: "content" }], auto_mergeable: [], conflict_count: 1 };
+      if (args[1] === "resolve-preview") return { fingerprint: "merge-reviewed", provider: "local", model: "heuristic-v1", estimated_input_tokens: 320, max_output_tokens: 3000,
+        system_prompt: "Reconcile reviewed versions.", user_prompt: "Saved guidance.", memory_choices: [], story_choices: [], limits: { omitted_memory_ids: [] },
+        context: { scene: { id: "scene-0001", title: "Choice" }, guidance_branch: "primary", codex_entities: [], story_plan: { limits: { clipped_fields: [], omitted_chapters: 0, omitted_relevant_beats: 0 } } } };
       if (args[1] === "resolve") {
         if (fail) { fail = false; throw new Error("Synthetic reconciliation response lost"); }
         return result;
@@ -82,6 +92,8 @@ describe("reconciliation recovery", () => {
     await user.click(screen.getByRole("button", { name: "Check compatibility" }));
     expect(transport.messages).toEqual([]);
     await user.click(await screen.findByRole("button", { name: "Reconcile with AI" }));
+    expect(transport.calls.filter(args => args[1] === "resolve")).toHaveLength(0);
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed reconciliation" }));
     await screen.findByText(/Synthetic reconciliation response lost/);
     expect(screen.getByText(/alternate into primary: manuscript/)).toBeTruthy();
     await user.selectOptions(screen.getAllByRole("combobox")[0], "another");

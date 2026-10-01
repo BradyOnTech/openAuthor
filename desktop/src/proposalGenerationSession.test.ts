@@ -22,15 +22,52 @@ const requestId = (args: string[]) => args[args.indexOf("--request-id") + 1];
 const approval = { fingerprint: "reviewed-draft", memoryApprovals: [], storyApprovals: [] };
 
 describe("durable proposal generation", () => {
+  it("sends no initial plan before its context is durably approved", async () => {
+    const session = new ProposalGenerationSession("/synthetic/first-review");
+    await session.start([input]);
+    expect(transport.calls).toHaveLength(0);
+    expect(session.getSnapshot().planReviewTask?.input).toEqual(input);
+  });
+  it("retains an unapproved plan when approval storage fails", async () => {
+    const session = new ProposalGenerationSession("/synthetic/plan-approval-storage");
+    await session.start([input]);
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage full"); });
+    try {
+      await session.approvePlan(0, approval);
+      expect(transport.calls).toHaveLength(0);
+      expect(session.getSnapshot().planReviewTask?.input).toEqual(input);
+      expect(session.getSnapshot().error).toContain("Nothing was sent");
+    } finally { storage.mockRestore(); }
+  });
+  it("retains plan instructions but resets approval and request identity for a new review", async () => {
+    const session = new ProposalGenerationSession("/synthetic/plan-changed");
+    transport.send = async () => { throw new Error("Context changed"); };
+    await session.start([input]);
+    await session.approvePlan(0, approval);
+    const original = transport.calls[0];
+    session.reviewDraftAgain();
+    expect(session.getSnapshot().planReviewTask?.input).toEqual(input);
+    const restarted = new ProposalGenerationSession("/synthetic/plan-changed");
+    await restarted.retry();
+    expect(transport.calls).toHaveLength(1);
+    await restarted.approvePlan(0, { ...approval, fingerprint: "updated-plan" });
+    expect(requestId(transport.calls[1])).not.toEqual(requestId(original));
+    expect(transport.calls[1]).toContain("updated-plan");
+  });
   it("pauses after planning and requires separate durable context approval for every draft", async () => {
     transport.send = async args => args[1] === "list" ? [{ id: "proposal-1" }, { id: "proposal-2" }]
       : { id: args.includes("scene-2") ? "proposal-2" : "proposal-1" };
     const session = new ProposalGenerationSession("/synthetic/reviewed");
     expect(await session.start([input, { ...input, sceneId: "scene-2" }])).toBeNull();
+    expect(transport.calls).toHaveLength(0);
+    await session.approvePlan(0, approval);
     expect(transport.calls.map(args => args[1])).toEqual(["generate"]);
     expect(session.getSnapshot().reviewTask?.proposalId).toBe("proposal-1");
     const first = { fingerprint: "first-context", memoryApprovals: [{ entity_id: "mara" }], storyApprovals: ["fact-four"] };
     expect(await session.approveDraft(0, first)).toBeNull();
+    expect(transport.calls.map(args => args[1])).toEqual(["generate", "draft"]);
+    expect(session.getSnapshot().planReviewTask?.index).toBe(1);
+    await session.approvePlan(1, { ...approval, fingerprint: "second-plan" });
     expect(transport.calls.map(args => args[1])).toEqual(["generate", "draft", "generate"]);
     expect(transport.calls[1]).toContain("first-context");
     expect(session.getSnapshot().reviewTask?.proposalId).toBe("proposal-2");
@@ -62,6 +99,7 @@ describe("durable proposal generation", () => {
     };
     const first = new ProposalGenerationSession("/synthetic/book");
     expect(await first.start([input])).toBeNull();
+    await first.approvePlan(0, approval);
     expect(first.getSnapshot().job?.tasks[0].proposalId).toBe("proposal-1");
     expect(await first.approveDraft(0, approval)).toBeNull();
     const interruptedDraft = requestId(transport.calls[1]);
@@ -77,7 +115,9 @@ describe("durable proposal generation", () => {
 
   it("reuses a planning request whose response was lost and keeps books separate", async () => {
     transport.send = async () => { throw new Error("Response lost"); };
-    await new ProposalGenerationSession("/synthetic/book").start([input]);
+    const session = new ProposalGenerationSession("/synthetic/book");
+    await session.start([input]);
+    await session.approvePlan(0, approval);
     const previous = requestId(transport.calls[0]);
     expect(new ProposalGenerationSession("/synthetic/other").getSnapshot().job).toBeNull();
     const restarted = new ProposalGenerationSession("/synthetic/book");
@@ -92,7 +132,8 @@ describe("durable proposal generation", () => {
     let finish!: (result: unknown) => void;
     transport.send = () => new Promise(resolve => { finish = resolve; });
     const session = new ProposalGenerationSession("/synthetic/book");
-    const running = session.start([input, { ...input, sceneId: "scene-2" }]);
+    await session.start([input, { ...input, sceneId: "scene-2" }]);
+    const running = session.approvePlan(0, approval);
     await vi.waitFor(() => expect(transport.calls).toHaveLength(1));
     expect(await session.start([input])).toBeNull();
     expect(await session.retry()).toBeNull();
@@ -105,6 +146,7 @@ describe("durable proposal generation", () => {
     transport.send = async args => args[1] === "list" ? [{ id: "proposal-1" }, { id: "proposal-2" }] : { id: "proposal-2" };
     expect(await session.retry()).toBeNull();
     expect(await session.approveDraft(0, approval)).toBeNull();
+    await session.approvePlan(1, { ...approval, fingerprint: "second-plan" });
     expect(await session.approveDraft(1, { ...approval, fingerprint: "second-scene" })).toHaveLength(2);
     expect(transport.calls.filter(args => args[1] === "generate")).toHaveLength(2);
     expect(transport.calls.filter(args => args[1] === "draft")).toHaveLength(2);
@@ -158,6 +200,7 @@ describe("durable proposal generation", () => {
       return { id: "proposal-1" };
     };
     await session.start([input]);
+    await session.approvePlan(0, approval);
     await session.approveDraft(0, approval);
     const original = transport.calls[1];
     await session.retry();

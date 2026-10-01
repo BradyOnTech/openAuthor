@@ -45,8 +45,8 @@ function SceneEditorSession({ scene, focusPassage }: { scene: SceneDetail; focus
     let mounted = true;
     session.setOnSaved((updated, dirty) => {
       updateTab(activeTabId, { modified: dirty, label: updated.title || scene.id, data: updated });
-      if (mounted && !dirty) {
-        setRecoveryDraft(null);
+      if (!dirty) {
+        if (mounted) setRecoveryDraft(null);
         void refreshScenes();
       }
     });

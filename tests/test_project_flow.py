@@ -15,6 +15,21 @@ from openauthor.cli import main
 
 
 class OpenAuthorFlowTests(unittest.TestCase):
+  def test_style_cli_references_are_reviewed_and_versioned(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      for args in [["init", str(root)], ["scene", "add", "--title", "Gate", "--body", "Mara waited."]]:
+        self.assertEqual(self.run_cli(args, root)[0], 0)
+      code, output, error = self.run_cli(["style", "build", "--scene", "scene-0001", "--json"], root)
+      self.assertEqual(code, 0, error)
+      original = json.loads(output)
+      code, output, error = self.run_cli(["style", "reference", "--mode", "frozen", "--expected-fingerprint", original["fingerprint"], "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertEqual(json.loads(output)["reference_mode"], "frozen")
+      code, output, error = self.run_cli(["revision", "list", "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(any("Style reference" in row["message"] for row in json.loads(output)))
+
   def test_chat_cli_carries_reviewed_canon_permissions(self) -> None:
     from openauthor.canon import add_canon_fact
     from openauthor.chat import create_chat_thread

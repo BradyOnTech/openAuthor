@@ -8,6 +8,7 @@ import {
   switchBranch,
 } from "../../api";
 import { mergeResolutionSession } from "../../mergeResolutionSession";
+import { RevisionContextReview } from "../editor/RevisionContextReview";
 import { withProjectBookChange } from "../../sceneSaveSession";
 import { useRefreshBookTabs } from "../../hooks/useRefreshBookTabs";
 import type {
@@ -237,10 +238,16 @@ export function MergePanel() {
           {recovery.error && <p role="alert" style={{ overflowWrap: "anywhere" }}>{recovery.error}</p>}
           <p>Retry reuses saved results. An unsaved provider response may incur another charge. Discard keeps existing proposals and does not merge anything.</p>
           {recovery.pending && <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={() => void session.retry().then(showResolution)}>Retry reconciliation</button>
+            {recovery.pending.authorization && <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={() => void session.retry().then(showResolution)}>Retry reconciliation</button>}
+            {recovery.pending.authorization && recovery.error && <button className="btn" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={session.reviewAgain}>Start new context review</button>}
             <button className="btn" style={{ minHeight: 40 }} disabled={recovery.busy} onClick={session.clear}>Discard reconciliation request</button>
           </div>}
         </section>}
+        {recovery.pending && !recovery.pending.authorization && !recovery.busy && <RevisionContextReview
+          key={recovery.pending.requestId} projectRoot={projectRoot} mergeInput={recovery.pending}
+          provider={recovery.pending.provider} model={recovery.pending.model}
+          onSend={async authorization => { await showResolution(await session.approve(authorization)); }}
+          onClose={session.clear} closeLabel="Cancel reconciliation" />}
         <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
           <select
             className="input"

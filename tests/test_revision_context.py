@@ -15,7 +15,7 @@ from openauthor.canon import add_canon_fact
 from openauthor.codex import add_entity
 from openauthor.planning import update_brief
 from openauthor.project import OpenAuthorError, initialize_project
-from openauthor.proposals import create_proposal, get_proposal, set_proposal_draft
+from openauthor.proposals import create_proposal, get_proposal, list_proposals, set_proposal_draft
 from openauthor.scenes import add_scene
 
 
@@ -32,6 +32,52 @@ class RevisionContextTests(unittest.TestCase):
     self.proposal_id = create_proposal(self.paths, title="Tighten", instruction="Tighten without inventing facts.", scene_id="scene-0001", revision_intent={"goal": "Tighten", "constraints": ["CONSTRAINT_SENTINEL: no new objects"], "protected_elements": ["Mara"]})
     self.proposal = set_proposal_draft(self.paths, proposal_id=self.proposal_id, proposed_body="Mara counted the lanterns. Her left hand had four fingers.")
     self.hunk_id = self.proposal["change_set"]["hunks"][0]["id"]
+
+  def test_initial_edit_plan_sends_exact_reviewed_guidance_and_canon(self):
+    args = dict(scene_id="scene-0001", instruction="Tighten the scene.", constraints=["CONSTRAINT_SENTINEL"], story_approvals=[self.fact["id"]])
+    preview = ai.preview_proposal_generation(self.paths, **args)
+    for marker in ("STYLE_SENTINEL", "CONSTRAINT_SENTINEL", self.fact["id"]):
+      self.assertIn(marker, preview["user_prompt"])
+    self.assertNotIn("PRIVATE_NOTE_SENTINEL", preview["user_prompt"])
+    generated = ai.generate_proposal(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
+    log = json.loads((self.paths.root / generated["generation"]["log_path"]).read_text())
+    self.assertEqual(log["user_prompt"], preview["user_prompt"])
+    self.assertEqual(log["system_prompt"], preview["system_prompt"])
+
+  def test_initial_plan_refuses_unreviewed_or_changed_context_before_and_during_send(self):
+    args = dict(scene_id="scene-0001", instruction="Tighten.", provider="openai")
+    with patch("urllib.request.urlopen") as transport:
+      with self.assertRaisesRegex(OpenAuthorError, "Review context"):
+        ai.generate_proposal(self.paths, **args)
+      transport.assert_not_called()
+    preview = ai.preview_proposal_generation(self.paths, **args)
+    update_brief(self.paths, style_guide="New direction.")
+    with patch("urllib.request.urlopen") as transport:
+      with self.assertRaisesRegex(OpenAuthorError, "context changed"):
+        ai.generate_proposal(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
+      transport.assert_not_called()
+    preview = ai.preview_proposal_generation(self.paths, **args)
+    before = list_proposals(self.paths)
+    def provider_response(*_args, **_kwargs):
+      update_brief(self.paths, style_guide="Changed during the plan request.")
+      return io.BytesIO(json.dumps({"choices": [{"message": {"content": "Intent: Tighten.\nConstraints: Preserve facts.\nEdit Plan: Remove hedging.\nContinuity Notes: No new objects."}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 100, "completion_tokens": 30}}).encode())
+    with patch.dict("os.environ", {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", side_effect=provider_response):
+      with self.assertRaisesRegex(OpenAuthorError, "context changed"):
+        ai.generate_proposal(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
+    self.assertEqual(list_proposals(self.paths), before)
+
+  def test_cli_initial_plan_retries_the_reviewed_request(self):
+    def run(*args):
+      result = subprocess.run([sys.executable, "-m", "openauthor", "proposal", *args, "--json"], cwd=self.paths.root,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])}, capture_output=True, text=True, check=True)
+      return json.loads(result.stdout)
+    inputs = dict(scene_id="scene-0001", instruction="Tighten.", story_approvals=[self.fact["id"]])
+    preview = run("generation-preview", "--input-json", json.dumps(inputs))
+    args = ("generate", "--scene", "scene-0001", "--instruction", "Tighten.", "--story-approvals", json.dumps([self.fact["id"]]), "--expected-context-fingerprint", preview["fingerprint"], "--request-id", "reviewed-plan")
+    first = run(*args)
+    self.assertEqual(run(*args), first)
+    log = json.loads((self.paths.root / first["generation"]["log_path"]).read_text())
+    self.assertEqual(log["user_prompt"], preview["user_prompt"])
 
   def test_hunk_sends_exact_reviewed_guidance_constraints_and_approved_canon(self):
     args = dict(proposal_id=self.proposal_id, hunk_id=self.hunk_id, provider="local", feedback="Keep the voice.", story_approvals=[self.fact["id"]])

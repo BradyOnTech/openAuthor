@@ -33,6 +33,7 @@ const harness = vi.hoisted(() => ({
   currentBranch: "main",
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
+  sceneListGate: null as null | ((root: string, rows: Array<Record<string, unknown>>) => Promise<Array<Record<string, unknown>>>),
   briefGate: null as null | (() => Promise<void>),
   briefWriteBranches: [] as string[],
   failDraftOnce: false,
@@ -136,7 +137,8 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ scene_count: harness.scenes.length, target: argument(args, "--target"), losses: ["Story Memory and history are not included; use a full backup."], report_path: "/tmp/export.report.json" });
     }
     if (root === "scene" && action === "list") {
-      return response(harness.scenes.map(({ body: _body, ...scene }) => scene));
+      const rows = harness.scenes.map(({ body, ...scene }) => ({ ...scene, word_count: String(body ?? "").trim() ? String(body).trim().split(/\s+/).length : 0 }));
+      return response(harness.sceneListGate ? await harness.sceneListGate(payload.projectRoot || "", rows) : rows);
     }
     if (root === "scene" && action === "add") {
       const now = "2026-07-15T12:00:00Z";
@@ -383,7 +385,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       hunk.decision = argument(args, "--decision");
       return response(proposal);
     }
-    if (root === "proposal" && action === "revision-preview") {
+    if (root === "proposal" && (action === "revision-preview" || action === "generation-preview")) {
       const input = JSON.parse(argument(args, "--input-json"));
       return response({
         fingerprint: "reviewed-hunk-context", provider: input.provider, model: "heuristic-v1", estimated_input_tokens: 320, max_output_tokens: 700,
@@ -554,7 +556,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       };
       return response(harness.plan.scene_metadata[sceneId]);
     }
-    if (root === "branch" && action === "list") return response([]);
+    if (root === "branch" && action === "list") return response([{ name: harness.currentBranch, current: true }]);
     if (root === "search") return response(harness.scenes.map((scene) => ({
       source_kind: "scene",
       source_id: scene.id,
@@ -608,6 +610,7 @@ describe("active V2 author workflow", () => {
     harness.failHunkOnce = false;
     harness.saveGate = null;
     harness.briefGate = null;
+    harness.sceneListGate = null;
     harness.briefWriteBranches.length = 0;
     harness.saveRoots.length = 0;
     harness.versions.length = 0;
@@ -633,6 +636,63 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
     return { user, body: await screen.findByPlaceholderText("Begin writing...") as HTMLTextAreaElement };
   }
+
+  it("retains unfinished revision instructions when switching tabs and restarting the shell", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(screen.getByTitle("Create a reviewable Change Set"));
+    fireEvent.change(await screen.findByLabelText("What should change?"), { target: { value: "Preserve Mara's uncertainty." } });
+    fireEvent.change(screen.getByLabelText("Protect exactly (optional)"), { target: { value: "The blue gate" } });
+    await user.click(screen.getByTitle(/Plan \(/));
+    await user.click(screen.getByRole("tab", { name: "Generate" }));
+    expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
+    expect((screen.getByLabelText("Protect exactly (optional)") as HTMLTextAreaElement).value).toBe("The blue gate");
+    cleanup(); render(<AppV2 />);
+    await screen.findByText("Continue Save Safety");
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(screen.getByTitle("Create a reviewable Change Set"));
+    expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
+    expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "generate")).toBe(false);
+  });
+
+  it("retains revision input in memory when recovery storage fails and allows retrying its save", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(screen.getByTitle("Create a reviewable Change Set"));
+    const original = Storage.prototype.setItem;
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (key.startsWith("openauthor.revisionRequest")) throw new Error("Quota exceeded");
+      original.call(this, key, value);
+    });
+    fireEvent.change(await screen.findByLabelText("What should change?"), { target: { value: "Do not lose this direction." } });
+    await user.click(screen.getByTitle(/Plan \(/));
+    await user.click(screen.getByRole("tab", { name: "Generate" }));
+    expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Do not lose this direction.");
+    expect(screen.getByRole("alert").textContent).toMatch(/storage/i);
+    storage.mockRestore();
+    await user.click(screen.getByRole("button", { name: "Retry saving request" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("keeps unfinished revision directions separate for each Storyline", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByTitle(/Changes \(/));
+    await user.click(screen.getByTitle("Create a reviewable Change Set"));
+    fireEvent.change(await screen.findByLabelText("What should change?"), { target: { value: "Primary direction." } });
+    await user.click(screen.getByTitle(/Storylines \(/));
+    await user.type(screen.getByPlaceholderText("Storyline name"), "Alternate");
+    await user.type(screen.getByPlaceholderText(/Hypothesis/), "Try another ending.");
+    await user.click(screen.getByRole("button", { name: "Start Storyline" }));
+    await screen.findByText("Alternate");
+    await user.click(screen.getByRole("tab", { name: "Generate" }));
+    expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("");
+    fireEvent.change(screen.getByLabelText("What should change?"), { target: { value: "Alternate direction." } });
+    await user.click(screen.getByRole("tab", { name: "Storylines" }));
+    await user.click(screen.getByRole("button", { name: "Return to Primary" }));
+    await waitFor(() => expect(harness.currentBranch).toBe("main"));
+    await user.click(screen.getByRole("tab", { name: "Generate" }));
+    expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Primary direction.");
+  });
 
   it("refreshes selection staleness before offering to apply a reopened review", async () => {
     harness.proposals.push({ id: "proposal-selection", title: "Shorten selection", instruction: "Tighten", scene_id: "scene-0001", status: "pending", source: "selection", proposed_body: "Mara counted.", notes: "", stale: false, created_at: "2026-09-30", updated_at: "2026-09-30", selection: { action: "shorten", start: 0, end: 20, before: "Mara began to count.", after: "Mara counted.", feedback: "", branch: "main" } });
@@ -760,6 +820,8 @@ describe("active V2 author workflow", () => {
     await user.type(await screen.findByPlaceholderText(/Tighten the pacing/), "Tighten the opening.");
     harness.failDraftOnce = true;
     await user.click(screen.getByRole("button", { name: "Create Change Set" }));
+    expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "generate")).toBe(false);
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
     await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
     await screen.findByText(/Synthetic provider connection lost/);
     await user.click(screen.getByRole("button", { name: "Retry generation" }));
@@ -811,6 +873,46 @@ describe("active V2 author workflow", () => {
     await act(async () => { finish(); });
     await waitFor(() => expect(harness.scenes[0]?.body).toBe("Writing after returning"));
     expect(reopened.value).toBe("Writing after returning");
+  });
+
+  it("refreshes the book word count when a save finishes after leaving the scene", async () => {
+    const { user, body } = await openWritingScene();
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    fireEvent.change(body, { target: { value: "Mara watches the silver gate at dawn." } });
+    await user.click(screen.getByTitle(/Plan \(/));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(screen.queryByPlaceholderText("Begin writing...")).toBeNull();
+    harness.saveGate = null;
+    await act(async () => finish());
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara watches the silver gate at dawn."));
+    expect(await screen.findAllByText("7 words")).toHaveLength(2);
+  });
+
+  it("ignores a delayed scene-list response after opening another book", async () => {
+    const { user, body } = await openWritingScene();
+    const originalRoot = harness.projectRoot;
+    let finish!: () => void;
+    harness.sceneListGate = async (root, rows) => {
+      if (root === originalRoot && rows[0]?.word_count === 7) await new Promise<void>(resolve => { finish = resolve; });
+      return rows;
+    };
+    fireEvent.change(body, { target: { value: "Mara watches the silver gate at dawn." } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    await user.click(screen.getByRole("button", { name: "Projects" }));
+    await screen.findByText("Choose a project to begin writing.");
+    harness.scenes = [];
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Another Book");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), "/tmp/openauthor-scene-read-second");
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await screen.findByText("No scenes yet.");
+    harness.sceneListGate = null;
+    await act(async () => finish());
+    expect(screen.getByText("No scenes yet.")).toBeTruthy();
+    expect(screen.getByText("0 scenes")).toBeTruthy();
+    expect(screen.queryByText("7 words")).toBeNull();
   });
 
   it("retains the recovery draft after a failed save and retries the latest writing", async () => {
@@ -939,6 +1041,7 @@ describe("active V2 author workflow", () => {
       "Make Mara commit to the dangerous route."
     );
     await user.click(screen.getAllByRole("button", { name: "Create Change Set" })[0]);
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
 
     const reviewDraft = await screen.findByRole("button", { name: "Generate reviewed scene" });
     await waitFor(() => expect((reviewDraft as HTMLButtonElement).disabled).toBe(false));
@@ -1135,8 +1238,10 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("checkbox", { name: "The Choice" }));
     await user.type(screen.getByPlaceholderText(/Tighten the pacing/), "Make the alternate ending escalate across both scenes.");
     await user.click(screen.getByRole("button", { name: "Create 2 Coordinated Change Sets" }));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
     await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
     await waitFor(() => expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft")).toHaveLength(1));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
     await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
 
     await waitFor(() => expect(harness.proposals).toHaveLength(2));

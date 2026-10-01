@@ -1,8 +1,14 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 type RecordValue<T> = { base: T; value: T };
 type Snapshot<T> = RecordValue<T> & { latest: T; recovered: boolean; error: string; conflict: boolean };
 const equal = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
+// Retain only unsaved recovery failures beyond an editor's lifetime. Successful
+// drafts reload from storage; failed writes must not disappear on navigation.
+const failedDrafts = new Map<string, RecoverableDraft<unknown>>();
+const warnBeforeClose = (event: BeforeUnloadEvent) => {
+  if (failedDrafts.size) { event.preventDefault(); event.returnValue = ""; }
+};
 
 export class RecoverableDraft<T> {
   private state: Snapshot<T>;
@@ -83,7 +89,17 @@ export class RecoverableDraft<T> {
 }
 
 export function useRecoverableDraft<T>(key: string, initial: T, validate: (value: unknown) => value is T) {
-  const session = useMemo(() => new RecoverableDraft(key, initial, validate), [key]);
+  const session = useMemo(() => (failedDrafts.get(key) as RecoverableDraft<T> | undefined) ?? new RecoverableDraft(key, initial, validate), [key]);
+  useEffect(() => {
+    const retainFailure = () => {
+      if (session.dirty && session.getSnapshot().error) failedDrafts.set(key, session as RecoverableDraft<unknown>);
+      else if (failedDrafts.get(key) === session) failedDrafts.delete(key);
+      window.removeEventListener("beforeunload", warnBeforeClose);
+      if (failedDrafts.size) window.addEventListener("beforeunload", warnBeforeClose);
+    };
+    retainFailure();
+    return session.subscribe(retainFailure);
+  }, [key, session]);
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot);
   return { session, ...state, dirty: session.dirty };
 }

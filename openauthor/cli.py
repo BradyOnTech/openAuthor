@@ -14,6 +14,8 @@ from .ai import (
   generate_proposal_draft,
   regenerate_change_hunk,
   preview_proposal_revision,
+  preview_proposal_generation,
+  preview_merge_resolution,
 )
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .backups import create_backup, restore_backup, verify_backup
@@ -144,7 +146,7 @@ from .storylines import (
   switch_storyline,
   update_storyline_status,
 )
-from .style_profile import build_style_profile, get_style_profile
+from .style_profile import build_style_profile, get_style_profile, set_style_profile_reference
 from .product_signals import (
   get_local_product_dashboard,
   get_product_signal_settings,
@@ -367,6 +369,9 @@ def build_parser() -> argparse.ArgumentParser:
   revision_preview = proposal_sub.add_parser("revision-preview", help="Preview scene or passage revision context without contacting a provider.")
   revision_preview.add_argument("--input-json", required=True, help="Revision parameters including proposal_id and optional hunk_id.")
   revision_preview.add_argument("--json", action="store_true")
+  generation_preview = proposal_sub.add_parser("generation-preview", help="Review the exact edit-plan request locally before generation.")
+  generation_preview.add_argument("--input-json", required=True)
+  generation_preview.add_argument("--json", action="store_true")
   proposal_rebase = proposal_sub.add_parser("rebase", help="Carry safe Change Hunks onto the current scene.")
   proposal_rebase.add_argument("--id", required=True, help="Proposal id.")
   proposal_rebase.add_argument("--json", action="store_true", help="Output JSON.")
@@ -378,6 +383,9 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
   proposal_generate.add_argument("--request-id", default="", help="Reuse this id to recover the same proposal delivery.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
+  proposal_generate.add_argument("--memory-approvals", default="[]")
+  proposal_generate.add_argument("--story-approvals", default="[]")
+  proposal_generate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from generation-preview; required for external AI providers.")
   proposal_generate.add_argument("--title", default="", help="Optional proposal title override.")
   proposal_generate.add_argument(
     "--constraint",
@@ -692,7 +700,12 @@ def build_parser() -> argparse.ArgumentParser:
   style_get.add_argument("--json", action="store_true", help="Output JSON.")
   style_build = style_sub.add_parser("build", help="Rebuild from selected exemplar scenes.")
   style_build.add_argument("--scene", action="append", required=True, dest="scene_ids")
+  style_build.add_argument("--expected-fingerprint")
   style_build.add_argument("--json", action="store_true", help="Output JSON.")
+  style_reference = style_sub.add_parser("reference", help="Choose current sources or deliberately retain frozen measurements.")
+  style_reference.add_argument("--mode", choices=["current", "frozen"], required=True)
+  style_reference.add_argument("--expected-fingerprint", required=True)
+  style_reference.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -746,6 +759,9 @@ def build_parser() -> argparse.ArgumentParser:
   branch_conflicts.add_argument("--base", required=True, help="Base branch/ref.")
   branch_conflicts.add_argument("--head", required=True, help="Head branch/ref.")
   branch_conflicts.add_argument("--json", action="store_true", help="Output JSON.")
+  merge_preview = branch_sub.add_parser("resolve-preview", help="Review reconciliation context locally before contacting a provider.")
+  merge_preview.add_argument("--input-json", required=True)
+  merge_preview.add_argument("--json", action="store_true")
   branch_resolve = branch_sub.add_parser(
     "resolve",
     help="Draft an AI-reconciled version of a conflicted scene as a proposal.",
@@ -763,6 +779,9 @@ def build_parser() -> argparse.ArgumentParser:
   )
   branch_resolve.add_argument("--model", default=None, help="Model override.")
   branch_resolve.add_argument("--request-id", default="", help="Reuse this id to recover the same reconciliation.")
+  branch_resolve.add_argument("--memory-approvals", default="[]")
+  branch_resolve.add_argument("--story-approvals", default="[]")
+  branch_resolve.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from resolve-preview; required for external AI providers.")
   branch_resolve.add_argument(
     "--temperature", type=float, default=0.3, help="Sampling temperature (default: 0.3)."
   )
@@ -1611,7 +1630,9 @@ def _run(args: argparse.Namespace) -> int:
     if args.style_command == "get":
       row = get_style_profile(paths)
     elif args.style_command == "build":
-      row = build_style_profile(paths, scene_ids=args.scene_ids)
+      row = build_style_profile(paths, scene_ids=args.scene_ids, expected_fingerprint=args.expected_fingerprint)
+    elif args.style_command == "reference":
+      row = set_style_profile_reference(paths, mode=args.mode, expected_fingerprint=args.expected_fingerprint)
     else:
       raise OpenAuthorError(f"Unsupported Style Profile command: {args.style_command}")
     if args.json:
@@ -1846,12 +1867,13 @@ def _run(args: argparse.Namespace) -> int:
         print(f"Edited {args.hunk}")
       return 0
 
-    if args.proposal_command == "revision-preview":
+    if args.proposal_command in {"revision-preview", "generation-preview"}:
       try:
         inputs = json.loads(args.input_json)
         if not isinstance(inputs, dict):
           raise ValueError("Revision parameters must be an object.")
-        row = preview_proposal_revision(paths, **inputs)
+        preview = preview_proposal_revision if args.proposal_command == "revision-preview" else preview_proposal_generation
+        row = preview(paths, **inputs)
       except (ValueError, TypeError) as error:
         raise OpenAuthorError(f"Invalid revision preview: {error}") from error
       print(json.dumps(row, indent=None if args.json else 2))
@@ -1941,6 +1963,11 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.proposal_command == "generate":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_proposal(
         paths,
         request_id=args.request_id,
@@ -1960,6 +1987,9 @@ def _run(args: argparse.Namespace) -> int:
         constraints=args.constraint,
         protected_elements=args.protect,
         change_group_id=args.change_group,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -2132,7 +2162,23 @@ def _run(args: argparse.Namespace) -> int:
         print(f"auto\t{path}")
       return 0
 
+    if args.branch_command == "resolve-preview":
+      try:
+        inputs = json.loads(args.input_json)
+        if not isinstance(inputs, dict):
+          raise ValueError("Reconciliation parameters must be an object.")
+        row = preview_merge_resolution(paths, **inputs)
+      except (ValueError, TypeError) as error:
+        raise OpenAuthorError(f"Invalid reconciliation preview: {error}") from error
+      print(json.dumps(row, indent=None if args.json else 2))
+      return 0
+
     if args.branch_command == "resolve":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_merge_resolution(
         paths,
         request_id=args.request_id,
@@ -2143,6 +2189,9 @@ def _run(args: argparse.Namespace) -> int:
         model=args.model,
         temperature=args.temperature,
         max_output_tokens=args.max_output_tokens,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -2667,6 +2716,7 @@ def main(argv: list[str] | None = None) -> int:
   args = parser.parse_args(argv)
   try:
     author_edits = {
+      "style": {"build", "reference"},
       "scene": {"add", "update"},
       "plan": {"brief", "act-add", "chapter-add", "scene-assign", "scene-meta", "beat-add", "note-add"},
       "codex": {"add", "update", "relationship-add", "relationship-delete"},

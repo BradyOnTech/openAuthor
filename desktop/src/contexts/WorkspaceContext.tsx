@@ -243,6 +243,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [projectActivity, setProjectActivity] = useState<ProjectActivityEvent[]>([]);
 
   const [scenes, setScenes] = useState<SceneSummary[]>([]);
+  const sceneReadTarget = useRef({ projectRoot, request: 0 });
+  if (sceneReadTarget.current.projectRoot !== projectRoot) sceneReadTarget.current = { projectRoot, request: 0 };
   const [codexEntities, setCodexEntities] = useState<CodexEntity[]>([]);
   const [proposals, setProposals] = useState<ProposalRecord[]>([]);
   const [runs, setRuns] = useState<GenerationRunSummary[]>([]);
@@ -271,11 +273,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [setActiveWorkspaceIdRaw, setActiveProjectIdRaw, setProjectRootRaw]);
 
   const refreshScenes = useCallback(async () => {
-    if (!projectRoot) return;
+    if (!projectRoot || sceneReadTarget.current.projectRoot !== projectRoot) return;
+    const target = sceneReadTarget.current;
+    const request = ++target.request;
     try {
       const data = await listScenes(projectRoot);
+      if (sceneReadTarget.current !== target || target.request !== request) return;
       setScenes(data);
     } catch (e) {
+      if (sceneReadTarget.current !== target || target.request !== request) return;
       setError(`Failed to load scenes: ${e instanceof Error ? e.message : String(e)}`);
     }
   }, [projectRoot]);

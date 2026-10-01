@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { addEditorialPass, buildStyleProfile, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
+import { addEditorialPass, listEditorialPasses, type EditorialPass } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
 import { RevisionContextReview } from "./RevisionContextReview";
+import { StyleProfilePanel } from "./StyleProfilePanel";
+import { useRecoverableDraft } from "../../recoverableDraft";
+import { emptyRevisionRequest, validRevisionRequest, type RevisionRequestDraft } from "../../revisionRequestDraft";
 
 export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }) {
-  const { projectRoot, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
+  const { projectRoot, branches, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
     useWorkspace();
   const { openTab, closeTab } = useEditor();
 
@@ -18,16 +21,24 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
       .map(([name, config]) => ({ name: name as ProposalProvider, model: config.default_model }));
   }, [runtimeConfig]);
 
-  const [sceneId, setSceneId] = useState(initialSceneId ?? scenes[0]?.id ?? "");
-  const [instruction, setInstruction] = useState("");
-  const [provider, setProvider] = useState<ProposalProvider>(
-    (providers.find((p) => p.name !== "local")?.name ?? "local") as ProposalProvider
-  );
-  const [model, setModel] = useState("");
-  const [constraints, setConstraints] = useState("");
-  const [protectedElements, setProtectedElements] = useState("");
+  const branch = branches.find(row => row.current)?.name ?? "main";
+  const recovery = useRecoverableDraft(`openauthor.revisionRequest.v1:${JSON.stringify([projectRoot, branch])}`,
+    emptyRevisionRequest(initialSceneId ?? scenes[0]?.id ?? "", providers.find(row => row.name !== "local")?.name ?? "local"), validRevisionRequest);
+  const { sceneId, instruction, provider, model, constraints, protectedElements, selectedPassId,
+    showPassBuilder, passName, passGoal, passInstruction, passCriteria, alternativeCount, coordinated, coordinatedSceneIds } = recovery.value;
+  function setter<K extends keyof RevisionRequestDraft>(key: K) {
+    return (value: RevisionRequestDraft[K] | ((previous: RevisionRequestDraft[K]) => RevisionRequestDraft[K])) => {
+      const current = recovery.session.getSnapshot().value;
+      recovery.session.edit({ ...current, [key]: typeof value === "function" ? value(current[key]) : value });
+    };
+  }
+  const setSceneId = setter("sceneId"), setInstruction = setter("instruction"), setProvider = setter("provider"), setModel = setter("model");
+  const setConstraints = setter("constraints"), setProtectedElements = setter("protectedElements"), setSelectedPassId = setter("selectedPassId");
+  const setShowPassBuilder = setter("showPassBuilder"), setPassName = setter("passName"), setPassGoal = setter("passGoal");
+  const setPassInstruction = setter("passInstruction"), setPassCriteria = setter("passCriteria"), setAlternativeCount = setter("alternativeCount");
+  const setCoordinated = setter("coordinated"), setCoordinatedSceneIds = setter("coordinatedSceneIds");
   const session = useMemo(() => proposalGenerationSession(projectRoot), [projectRoot]);
-  const { busy, job, error: generationError, stopRequested, reviewTask } = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const { busy, job, error: generationError, stopRequested, reviewTask, planReviewTask } = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const view = useRef({ projectRoot, mounted: true });
   view.current.projectRoot = projectRoot;
   useEffect(() => {
@@ -35,27 +46,11 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
     return () => { view.current.mounted = false; };
   }, []);
   const [passes, setPasses] = useState<EditorialPass[]>([]);
-  const [selectedPassId, setSelectedPassId] = useState("");
-  const [showPassBuilder, setShowPassBuilder] = useState(false);
-  const [passName, setPassName] = useState("");
-  const [passGoal, setPassGoal] = useState("");
-  const [passInstruction, setPassInstruction] = useState("");
-  const [passCriteria, setPassCriteria] = useState("");
-  const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
-  const [styleExemplars, setStyleExemplars] = useState<string[]>([]);
-  const [showStyleBuilder, setShowStyleBuilder] = useState(false);
-  const [alternativeCount, setAlternativeCount] = useState<1 | 3>(1);
-  const [coordinated, setCoordinated] = useState(false);
-  const [coordinatedSceneIds, setCoordinatedSceneIds] = useState<string[]>(initialSceneId ? [initialSceneId] : scenes[0]?.id ? [scenes[0].id] : []);
 
   useEffect(() => {
     void listEditorialPasses(projectRoot)
       .then(setPasses)
       .catch((error) => setError(`Failed to load Editorial Passes: ${error instanceof Error ? error.message : String(error)}`));
-    void getStyleProfile(projectRoot).then((profile) => {
-      setStyleProfile(profile);
-      setStyleExemplars(profile?.exemplar_scene_ids ?? []);
-    }).catch((error) => setError(`Failed to load Style Profile: ${error instanceof Error ? error.message : String(error)}`));
   }, [projectRoot, setError]);
 
   function choosePass(passId: string) {
@@ -63,17 +58,6 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
     const editorialPass = passes.find((row) => row.id === passId);
     if (!editorialPass) return;
     setInstruction(`[Editorial Pass: ${editorialPass.name}] ${editorialPass.instruction}`);
-  }
-
-  async function saveStyleProfile() {
-    if (styleExemplars.length === 0) return;
-    try {
-      const profile = await buildStyleProfile(projectRoot, styleExemplars);
-      setStyleProfile(profile); setShowStyleBuilder(false);
-      setMessage(`Style Profile rebuilt from ${styleExemplars.length} exemplar scene${styleExemplars.length === 1 ? "" : "s"}.`);
-    } catch (error) {
-      setError(`Failed to build Style Profile: ${error instanceof Error ? error.message : String(error)}`);
-    }
   }
 
   async function createCustomPass() {
@@ -163,8 +147,13 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           Describe the revision once. The AI produces concrete prose split into reviewable hunks; it never
           edits your manuscript directly. You choose what to include, and openAuthor records a named Revision.
         </p>
+        <p role={recovery.error ? "alert" : "status"}>{recovery.error || (recovery.dirty
+          ? "Unfinished request saved on this device for this book and Storyline. Nothing is sent until you confirm."
+          : "Your request stays on this device until you confirm generation.")}</p>
+        {recovery.error && <button className="btn" style={{ minHeight: 40 }} onClick={() => recovery.session.edit(recovery.value)}>Retry saving request</button>}
+        {sceneId && !scenes.some(scene => scene.id === sceneId) && <p role="alert">The selected scene is no longer available. Choose a current scene before continuing; your instructions are retained.</p>}
 
-        {((job && !reviewTask) || generationError) && <section aria-label="Generation recovery" style={{ padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", display: "grid", gap: 12 }}>
+        {((job && !reviewTask && !planReviewTask) || generationError) && <section aria-label="Generation recovery" style={{ padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", display: "grid", gap: 12 }}>
           {job && <>
             <strong style={{ fontVariantNumeric: "tabular-nums" }}>{job.tasks.filter(task => task.drafted).length} of {job.tasks.length} Change Sets ready</strong>
             <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{job.tasks[0].input.instruction}</p>
@@ -173,8 +162,8 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Saved steps are reused. An interrupted provider request without a saved result may incur another charge when retried.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {busy ? <button className="btn" style={{ minHeight: 40 }} disabled={stopRequested} onClick={session.stop}>{stopRequested ? "Stopping after current step…" : "Stop after current step"}</button> : job && <>
-              {!reviewTask && <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>}
-              {generationError && job.tasks.find(task => !task.drafted)?.authorization && <button className="btn" style={{ minHeight: 40 }} onClick={session.reviewDraftAgain}>Start new draft review</button>}
+              {!reviewTask && !planReviewTask && <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>}
+              {generationError && job.tasks.some(task => !task.drafted && (task.authorization || task.planAuthorization)) && <button className="btn" style={{ minHeight: 40 }} onClick={session.reviewDraftAgain}>Start new context review</button>}
               <button className="btn" style={{ minHeight: 40 }} onClick={session.clear}>Start new request</button>
             </>}
           </div>
@@ -182,8 +171,12 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           {generationError && <small>Retry keeps the original approval. A new draft review retains the edit plan, clears permissions and starts a new request; any earlier provider charges still apply.</small>}
         </section>}
 
+        {planReviewTask && !busy && <RevisionContextReview key={`${job!.id}:${planReviewTask.index}:plan`} projectRoot={projectRoot}
+          generationInput={planReviewTask.input} provider={planReviewTask.input.provider} model={planReviewTask.input.model}
+          onSend={async authorization => { await showResults(await session.approvePlan(planReviewTask.index, authorization)); }}
+          onClose={session.clear} closeLabel="Back to request" />}
         {reviewTask && !busy && <p>Draft {reviewTask.index + 1} of {job!.tasks.length} · Edit plan saved; review context before drafting.</p>}
-        {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}`} projectRoot={projectRoot}
+        {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}:draft`} projectRoot={projectRoot}
           proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
           onSend={async authorization => { await showResults(await session.approveDraft(reviewTask.index, authorization)); }}
           onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
@@ -228,10 +221,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           <button className="btn btn--primary" disabled={!passName.trim() || !passGoal.trim() || !passInstruction.trim()} onClick={() => void createCustomPass()}>Save Pass</button>
         </div>}
 
-        <div style={{ padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><div><strong style={{ color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>Your Style Profile</strong><div style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: 3 }}>{styleProfile ? `${styleProfile.exemplar_scene_ids.length} selected exemplars guide voice-preserving revisions.` : "Choose passages that sound unmistakably like this book."}</div></div><button className="btn btn--sm" onClick={() => setShowStyleBuilder((value) => !value)}>{showStyleBuilder ? "Close" : styleProfile ? "Change Exemplars" : "Choose Exemplars"}</button></div>
-          {showStyleBuilder && <div style={{ marginTop: 8, display: "grid", gap: 6 }}>{scenes.map((scene) => <label key={scene.id} style={{ display: "flex", gap: 8, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}><input type="checkbox" checked={styleExemplars.includes(scene.id)} onChange={(event) => setStyleExemplars(event.target.checked ? [...styleExemplars, scene.id] : styleExemplars.filter((id) => id !== scene.id))} />{scene.title}</label>)}<button className="btn btn--primary btn--sm" disabled={styleExemplars.length === 0} onClick={() => void saveStyleProfile()}>Build Style Profile</button></div>}
-        </div>
+        <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
@@ -300,7 +290,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           </div>
           <button
             className="btn btn--primary"
-            disabled={busy || !sceneId || !instruction.trim() || (coordinated && coordinatedSceneIds.length < 2)}
+            disabled={busy || Boolean(recovery.error) || !scenes.some(scene => scene.id === sceneId) || !instruction.trim() || (coordinated && (coordinatedSceneIds.length < 2 || coordinatedSceneIds.some(id => !scenes.some(scene => scene.id === id))))}
             onClick={handleGenerate}
           >
             {busy ? `Building ${coordinated ? "coordinated Change Sets" : alternativeCount === 1 ? "Change Set" : "creative directions"}...` : coordinated ? `Create ${coordinatedSceneIds.length} Coordinated Change Sets` : alternativeCount === 1 ? "Create Change Set" : "Create 3 Alternatives"}

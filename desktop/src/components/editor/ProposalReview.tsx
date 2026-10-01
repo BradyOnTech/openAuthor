@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { GenerationAssessment } from "../common/GenerationAssessment";
 import { useEditor } from "../../contexts/EditorContext";
 import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
@@ -414,7 +415,7 @@ export function ProposalReview({ proposal: initial }: Props) {
           <span>{gen.input_tokens} in / {gen.output_tokens} out</span>
           {gen.latency_ms != null && <span>{(gen.latency_ms / 1000).toFixed(1)}s</span>}
           {gen.estimated_cost_usd != null && <span>${gen.estimated_cost_usd.toFixed(4)}</span>}
-          {gen.quality_tier && <span className={`badge badge--${gen.quality_tier === "high" ? "applied" : gen.quality_tier === "low" ? "error" : "warning"}`}>{gen.quality_tier}</span>}
+          <GenerationAssessment tier={gen.quality_tier} />
         </div>
       )}
 

@@ -3,10 +3,10 @@ import type { ProposalRecord } from "./types";
 
 export type GenerationInput = Parameters<typeof generateProposal>[1];
 type HunkRequest = { id: string; feedback: string; authorization?: RevisionAuthorization };
-type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean; hunk?: HunkRequest; authorization?: RevisionAuthorization; draftRequestId?: string };
+type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean; hunk?: HunkRequest; authorization?: RevisionAuthorization; draftRequestId?: string; planAuthorization?: RevisionAuthorization; planRequestId?: string };
 type Job = { id: string; tasks: Task[] };
 type ReviewTask = { index: number; proposalId: string; input: GenerationInput };
-type Snapshot = { job: Job | null; busy: boolean; stopRequested: boolean; error: string; reviewTask: ReviewTask | null };
+type Snapshot = { job: Job | null; busy: boolean; stopRequested: boolean; error: string; reviewTask: ReviewTask | null; planReviewTask: { index: number; input: GenerationInput } | null };
 const sessions = new Map<string, ProposalGenerationSession>();
 
 function reviewTask(job: Job | null): ReviewTask | null {
@@ -14,9 +14,14 @@ function reviewTask(job: Job | null): ReviewTask | null {
   const task = job?.tasks[index];
   return task?.proposalId && !task.hunk && !task.authorization ? { index, proposalId: task.proposalId, input: task.input } : null;
 }
+function planReviewTask(job: Job | null) {
+  const index = job?.tasks.findIndex(task => !task.drafted) ?? -1;
+  const task = job?.tasks[index];
+  return task && !task.proposalId && !task.planAuthorization ? { index, input: task.input } : null;
+}
 
 export class ProposalGenerationSession {
-  private state: Snapshot = { job: null, busy: false, stopRequested: false, error: "", reviewTask: null };
+  private state: Snapshot = { job: null, busy: false, stopRequested: false, error: "", reviewTask: null, planReviewTask: null };
   private listeners = new Set<() => void>();
   private key: string;
 
@@ -29,7 +34,7 @@ export class ProposalGenerationSession {
         if (typeof job.id !== "string" || !Array.isArray(job.tasks) || !job.tasks.length || job.tasks.some(task => !task.input?.sceneId || !task.input.instruction)) {
           throw new Error("Invalid generation journal");
         }
-        this.state = { ...this.state, job, reviewTask: reviewTask(job), error: reviewTask(job) ? "" : "A previous generation needs recovery. Retry reuses the original request; a new context review starts a new draft request." };
+        this.state = { ...this.state, job, reviewTask: reviewTask(job), planReviewTask: planReviewTask(job), error: reviewTask(job) || planReviewTask(job) ? "" : "A previous generation needs recovery. Retry reuses the original request; a new context review starts a new request." };
       }
     } catch {
       this.state.error = "Generation recovery storage could not be read. Keep a copy of your instructions before closing.";
@@ -44,6 +49,7 @@ export class ProposalGenerationSession {
   private publish(changes: Partial<Snapshot>) {
     this.state = { ...this.state, ...changes };
     this.state.reviewTask = reviewTask(this.state.job);
+    this.state.planReviewTask = planReviewTask(this.state.job);
     this.listeners.forEach(listener => listener());
   }
   private save(job: Job) {
@@ -62,14 +68,26 @@ export class ProposalGenerationSession {
     return this.retry();
   };
 
+  approvePlan = async (index: number, authorization: RevisionAuthorization): Promise<ProposalRecord[] | null> => {
+    if (this.state.busy || !this.state.job || this.state.planReviewTask?.index !== index || !authorization.fingerprint) return null;
+    try {
+      this.save({ ...this.state.job, tasks: this.state.job.tasks.map((task, i) => i === index ? { ...task, planAuthorization: authorization } : task) });
+    } catch {
+      this.publish({ error: "Context approval could not be saved for recovery. Nothing was sent; free storage and review again." });
+      return null;
+    }
+    return this.retry();
+  };
+
   reviewDraftAgain = () => {
     if (this.state.busy || !this.state.job) return;
     const index = this.state.job.tasks.findIndex(task => !task.drafted);
     const task = this.state.job.tasks[index];
-    if (!task?.proposalId || task.hunk || !task.authorization) return;
+    if (!task || task.hunk || (!task.authorization && !task.planAuthorization)) return;
     try {
       this.save({ ...this.state.job, tasks: this.state.job.tasks.map((row, i) => i === index
-        ? { ...row, authorization: undefined, draftRequestId: crypto.randomUUID() } : row) });
+        ? task.proposalId ? { ...row, authorization: undefined, draftRequestId: crypto.randomUUID() }
+          : { ...row, planAuthorization: undefined, planRequestId: crypto.randomUUID() } : row) });
       this.publish({ error: "" });
     } catch {
       this.publish({ error: "Could not save a fresh context review. The original request is retained; nothing was sent." });
@@ -97,7 +115,8 @@ export class ProposalGenerationSession {
         const job = this.state.job!;
         const task = job.tasks[index];
         if (!task.proposalId) {
-          const generated = await generateProposal(this.projectRoot, { ...task.input, requestId: `${job.id}:${index}:plan` });
+          if (!task.planAuthorization) return null;
+          const generated = await generateProposal(this.projectRoot, { ...task.input, authorization: task.planAuthorization, requestId: task.planRequestId ?? `${job.id}:${index}:plan` });
           this.save({ ...job, tasks: job.tasks.map((row, i) => i === index ? { ...row, proposalId: generated.id } : row) });
         }
         if (this.state.stopRequested) return null;
