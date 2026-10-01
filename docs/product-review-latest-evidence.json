@@ -1,0 +1,132 @@
+{
+  "reviewed_at_local": "2026-09-30T20:02:10-05:00",
+  "timezone": "America/Chicago",
+  "branch": "codex/production-authoring",
+  "head": "2fbe4f6d2750c615d4e658e2b04eab6491d1a4d9",
+  "checkout": "Includes uncommitted Unicode retrieval, Style Profile freshness/UI, format-assessment label and scene-count updates",
+  "data": "Synthetic manuscripts only",
+  "external_model_requests": 0,
+  "api_spend_usd": 0,
+  "production_ready": false,
+  "automated": {
+    "desktop": {"tests_passed": 163, "files_passed": 31},
+    "python_default": {"discovered": 265, "passed": 264, "skipped": 1, "failed": 0},
+    "packaged_subscription_contract": "The default suite's opt-in test passed separately against a local endpoint; no external model",
+    "rust_tests_passed": 7,
+    "frontend_build": "passed",
+    "repository_checks": "passed",
+    "npm_reported_vulnerabilities": 0,
+    "macos_bundle": "Unsigned arm64 app and DMG rebuilt; packaged Python, packaged Codex contract and packaged recovery checks passed",
+    "author_workflow": {
+      "run_id": "c30156e663974ef49c3a758ff950bd66",
+      "applied_matches_review": true,
+      "undo_byte_exact": true,
+      "backup_book_exact": true,
+      "backup_history_exact": true
+    },
+    "scale": {
+      "checked_at_utc": "2026-10-01T01:02:12.872788+00:00",
+      "scenes": 400,
+      "proposals": 300,
+      "generation_runs": 300,
+      "entities": 72,
+      "samples_per_metric": 3,
+      "max_ms": {
+        "scene_list": 22.323,
+        "proposal_list": 28.253,
+        "generation_list": 15.334,
+        "retrieval_status": 53.309,
+        "project_load": 62.987,
+        "scene_open": 16.315,
+        "scene_save": 12.7,
+        "project_search": 22.09,
+        "continuity_analysis": 46.118,
+        "story_continuity_analysis": 418.01
+      },
+      "budget_failures": [],
+      "native_ui_latency_measured": false
+    }
+  },
+  "native": {
+    "app": "desktop/src-tauri/target/release/bundle/macos/openAuthor.app",
+    "fixture": "Large Project Regression Fixture",
+    "initial_scenes": 42,
+    "final_scenes": 43,
+    "new_synthetic_scene": "scene-0043",
+    "save_navigation": {
+      "original_book_words": 10276,
+      "typed_body": "Rain fell. Mara waited beside the closed blue gate.",
+      "immediate_destination": "Plan",
+      "plan_scene_words": 9,
+      "book_words": 10285,
+      "second_body": "Mara listened quietly. The blue gate remained closed.",
+      "final_scene_words": 8,
+      "final_book_words": 10284,
+      "final_body_survived_restart": true
+    },
+    "style_profile": {
+      "exemplar_scene_ids": ["scene-0043"],
+      "built_current": true,
+      "source_edit_became_stale_and_excluded": true,
+      "explicit_freeze_became_included": true,
+      "require_current_sources_excluded_stale_profile": true,
+      "rebuild_restored_current": true,
+      "final_mode": "current",
+      "final_metric_words": 8
+    },
+    "generation_assessment": "Changes view shows FORMAT SCORE: HIGH for existing local proposal",
+    "unfinished_request_loss": {
+      "instruction": "Tighten only this scene while preserving the blue gate and Mara’s uncertainty.",
+      "steps": ["Type into Generate revision intent", "Switch to existing Plan tab", "Return to Generate tab"],
+      "actual": "Instruction field empty, showing placeholder again",
+      "submitted": false,
+      "status": "unfixed"
+    },
+    "restart": {"project_restored": true, "open_tabs_before": 4, "open_tabs_after": 0},
+    "navigation": "Flat scene list despite two acts and eight chapters",
+    "memory_review": "Narrow sidebar shows Beyond as a suggested character; evidence pushes per-item actions below the viewport while the center displays Generate"
+  },
+  "probes": {
+    "continuity": {
+      "corpus": "docs/product-review-challenges.json",
+      "cases": 8,
+      "expected_outcomes_matched": 4,
+      "missed": ["natural-finger-paraphrase", "spanish-eye-color", "unrelated-negation"],
+      "false_alarm": "explained-dye-change",
+      "limitations": "Authored exploratory challenge cases, not an independent general accuracy benchmark"
+    },
+    "memory": {
+      "body": "Beyond the gate, Mara waited. Beyond the wall, Mara listened. Meanwhile the rain fell. Meanwhile the bell rang.",
+      "candidates": ["Beyond", "Mara", "Meanwhile"],
+      "internal_confidence_each": 0.61
+    },
+    "style": {
+      "body": "夜雨落在长街。小林看见蓝色的灯。她没有回头。",
+      "character_count": 23,
+      "word_count": null,
+      "zero_word_target_advice": false,
+      "freshness_after_source_edit": "stale",
+      "included_in_ai_after_source_edit": false
+    }
+  },
+  "source_confirmed_gaps": [
+    "Initial edit-plan generation precedes shared reviewed-context approval",
+    "Merge reconciliation lacks shared Plan, Style and approved Canon context",
+    "Generate form draft lives in component state; active-tab switching unmounts it",
+    "Style Profile measures approximate lexical statistics, not narrative voice semantics"
+  ],
+  "competitor_method": "Online search, primary public documentation and selected source inspection; no installation, quality benchmark or code reuse",
+  "sources": [
+    "https://github.com/lukashonke/inscriptor/blob/main/src/components/Common/PromptSelector/PromptContextSelector.vue",
+    "https://github.com/LunaRime/novelforge/blob/master/README.en.md",
+    "https://github.com/LunaRime/novelforge/blob/master/src/services/memory/memory-invalidation.ts",
+    "https://github.com/giapnguyen74/xnovelist/blob/main/docs/AI_LEVELS.md",
+    "https://github.com/joelgrus/snowmeth"
+  ],
+  "not_established": [
+    "Independent or live-model literary quality in this audit",
+    "Real-author manuscript evaluation or pilot consent",
+    "Signed distribution or clean Intel installation",
+    "Exhaustive native accessibility, corruption and provider-failure recovery"
+  ]
+}

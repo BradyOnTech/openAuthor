@@ -1,0 +1,105 @@
+{
+  "superseded_by": "docs/product-review-latest-evidence.json",
+  "date": "2026-09-30",
+  "timezone": "America/Chicago",
+  "scope": "Testing and product review; no production code edited in this review",
+  "source_head": "2fbe4f6",
+  "existing_modified_files_preserved": [
+    "desktop/src/AppV2.workflow.test.tsx",
+    "desktop/src/components/editor/SceneEditor.tsx",
+    "desktop/src/contexts/WorkspaceContext.tsx",
+    "tests/test_retrieval_module.py"
+  ],
+  "data": "Synthetic manuscripts only",
+  "external_provider_calls": 0,
+  "api_spend_usd": 0,
+  "production_readiness_established": false,
+  "automated": {
+    "python": {
+      "command": "make test",
+      "discovered": 257,
+      "passed": 255,
+      "skipped": 1,
+      "test_methods_with_errors": 1,
+      "subcase_errors": 3,
+      "failing_test": "test_unicode_queries_find_original_passages_without_ascii_fallback",
+      "failing_queries": ["夜雨", "разговор", "المدينة"],
+      "error": "query must include at least one searchable token."
+    },
+    "desktop": {"command": "npm test", "passed": 161, "files": 29},
+    "frontend_build": "passed",
+    "rust_tests_passed": 7,
+    "repository_checks": "passed",
+    "npm_known_vulnerabilities": 0,
+    "packaged_local_endpoint_contract": "passed separately; no external provider",
+    "synthetic_author_workflow": {
+      "command": "make test-author-workflow",
+      "applied_matches_review": true,
+      "undo_byte_exact": true,
+      "backup_book_exact": true,
+      "backup_history_exact": true
+    },
+    "scale": {
+      "command": "make test-scale",
+      "scenes": 400,
+      "proposals": 300,
+      "generation_runs": 300,
+      "entities": 72,
+      "samples_per_metric": 3,
+      "story_diagnostics_max_ms": 400.654,
+      "budget_failures": [],
+      "native_ui_latency_measured": false
+    }
+  },
+  "probes": {
+    "style": {
+      "functions": ["build_style_profile", "update_scene", "get_style_profile", "generate_proposal", "get_generation_run"],
+      "original_body": "夜雨落在长街。小林看见蓝色的灯。她没有回头。",
+      "reported_word_count": 0,
+      "guidance": "Aim near 0.0 words per sentence and 0.0 words per paragraph.",
+      "replacement_body": "Rain falls. A light burns. I wait.",
+      "profile_unchanged_after_source_rewrite": true,
+      "source_freshness_fields": [],
+      "stale_guidance_in_subsequent_local_generation_record": true,
+      "generation_format_score": 100,
+      "generation_quality_tier": "high"
+    },
+    "memory": {
+      "function": "extract_memory_suggestions",
+      "body": "Beyond the gate, Mara waited. Beyond the wall, Mara listened. Meanwhile the rain fell. Meanwhile the bell rang.",
+      "character_candidates": ["Beyond", "Mara", "Meanwhile"],
+      "confidence_for_each": 0.61
+    },
+    "continuity": {
+      "function": "scripts.evaluate_canon_diagnostics.evaluate",
+      "corpus": "docs/product-review-challenges.json",
+      "cases": 8,
+      "matched_expected_outcome": 4,
+      "missed": ["natural-finger-paraphrase", "spanish-eye-color", "unrelated-negation"],
+      "false_alarm": "explained-dye-change",
+      "limitation": "Small exploratory challenge corpus, not a general accuracy benchmark"
+    }
+  },
+  "native": {
+    "bundle": "Existing unsigned arm64 app; not rebuilt for the uncommitted word-count fix",
+    "fixture": "Large Project Regression Fixture",
+    "scenes": 42,
+    "chapters": 8,
+    "acts": 2,
+    "memory_candidates_visible": 18,
+    "false_character_visible": "Beyond",
+    "evidence_navigation": "Opened Chapter 1, Scene 1 and selected Beyond",
+    "navigation": "Flat manuscript scene list; Plan brief occupies most of initial viewport; Memory triage remains in sidebar",
+    "restart": "Project restored; four previously open scene, proposal and Plan tabs did not restore",
+    "continuity": "Refreshed local diagnostics retained one eye-color warning and clear scope limitation",
+    "manuscript_editing_performed_in_this_review": false
+  },
+  "competitor_method": "Public documentation and selected source inspection only; no competitor installation, quality benchmark or code import",
+  "sources": [
+    "https://github.com/lukashonke/inscriptor/blob/main/src/components/Common/PromptSelector/PromptContextSelector.vue",
+    "https://github.com/LunaRime/novelforge/blob/master/README.en.md",
+    "https://github.com/LunaRime/novelforge/blob/master/src/services/memory/memory-invalidation.ts",
+    "https://github.com/giapnguyen74/xnovelist/blob/main/docs/AI_LEVELS.md",
+    "https://github.com/joelgrus/snowmeth"
+  ]
+}
