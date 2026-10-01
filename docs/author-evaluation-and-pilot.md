@@ -110,13 +110,21 @@ For a live run, set the provider and explicit requested model and add that exact
 ```sh
 python3 scripts/evaluate_author_workflow.py prepare \
   --manifest /path/to/approved-case.json --output /path/to/new-private-run
+python3 scripts/evaluate_author_workflow.py preview-draft \
+  --run /path/to/new-private-run
+```
+
+Read `draft-context.json` in the private run folder before sending. It contains the exact app-supplied prompts, saved guidance, permitted Memory, context limits, and a fingerprint. Previewing does not contact a provider. Supply that reviewed fingerprint explicitly:
+
+```sh
 python3 scripts/evaluate_author_workflow.py generate \
-  --run /path/to/new-private-run --allow-provider
+  --run /path/to/new-private-run --allow-provider \
+  --expected-context-fingerprint "REVIEWED_FINGERPRINT"
 ```
 
 Both the retained approval and the original manifest are checked again before generation and finishing. Revoking the original manifest, changing its approved source digest, removing approval, or letting retention expire blocks further processing. `--allow-provider` is an additional deliberate transmission gate, not a substitute for consent. Credentials must be configured through the product's existing provider mechanism; they never belong in case or review files.
 
-An interrupted generation requires explicit `--retry` and may incur another charge if no completed draft was saved. A saved draft is reused instead of creating another proposal. An interrupted apply is left for inspection rather than replayed blindly. The report is not proof of signed-installation readiness or actual remote cancellation/billing behavior.
+An interrupted generation requires explicit `--retry` and the reviewed fingerprint, and may incur another charge if no completed draft was saved. A saved draft is reused instead of creating another proposal. Changed guidance or permissions require a fresh preview and review. Changes during generation preserve the existing Change Set rather than attaching a draft under stale approval. An interrupted apply is left for inspection rather than replayed blindly. The report is not proof of signed-installation readiness or actual remote cancellation/billing behavior.
 
 **Pilot preparation artifact**
 

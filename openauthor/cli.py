@@ -13,6 +13,7 @@ from .ai import (
   generate_proposal,
   generate_proposal_draft,
   regenerate_change_hunk,
+  preview_proposal_revision,
 )
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .backups import create_backup, restore_backup, verify_backup
@@ -317,6 +318,9 @@ def build_parser() -> argparse.ArgumentParser:
   )
   proposal_draft.add_argument("--id", required=True, help="Proposal id.")
   proposal_draft.add_argument("--request-id", default="", help="Reuse this id to recover the same draft delivery.")
+  proposal_draft.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
+  proposal_draft.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
+  proposal_draft.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -352,9 +356,17 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_hunk_regenerate.add_argument("--hunk", required=True, help="Change Hunk id.")
   proposal_hunk_regenerate.add_argument("--provider", choices=sorted(SUPPORTED_PROVIDERS), default="local")
   proposal_hunk_regenerate.add_argument("--model", default=None)
+  proposal_hunk_regenerate.add_argument("--temperature", type=float, default=0.3)
+  proposal_hunk_regenerate.add_argument("--max-output-tokens", type=int, default=700)
   proposal_hunk_regenerate.add_argument("--feedback", default="", help="Author feedback for this hunk revision.")
   proposal_hunk_regenerate.add_argument("--request-id", default="", help="Reuse this id to recover the same hunk regeneration.")
+  proposal_hunk_regenerate.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
+  proposal_hunk_regenerate.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
+  proposal_hunk_regenerate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
   proposal_hunk_regenerate.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_preview = proposal_sub.add_parser("revision-preview", help="Preview scene or passage revision context without contacting a provider.")
+  revision_preview.add_argument("--input-json", required=True, help="Revision parameters including proposal_id and optional hunk_id.")
+  revision_preview.add_argument("--json", action="store_true")
   proposal_rebase = proposal_sub.add_parser("rebase", help="Carry safe Change Hunks onto the current scene.")
   proposal_rebase.add_argument("--id", required=True, help="Proposal id.")
   proposal_rebase.add_argument("--json", action="store_true", help="Output JSON.")
@@ -1834,7 +1846,23 @@ def _run(args: argparse.Namespace) -> int:
         print(f"Edited {args.hunk}")
       return 0
 
+    if args.proposal_command == "revision-preview":
+      try:
+        inputs = json.loads(args.input_json)
+        if not isinstance(inputs, dict):
+          raise ValueError("Revision parameters must be an object.")
+        row = preview_proposal_revision(paths, **inputs)
+      except (ValueError, TypeError) as error:
+        raise OpenAuthorError(f"Invalid revision preview: {error}") from error
+      print(json.dumps(row, indent=None if args.json else 2))
+      return 0
+
     if args.proposal_command == "hunk-regenerate":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = regenerate_change_hunk(
         paths,
         request_id=args.request_id,
@@ -1842,7 +1870,12 @@ def _run(args: argparse.Namespace) -> int:
         hunk_id=args.hunk,
         provider=args.provider,
         model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
         feedback=args.feedback,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -1867,6 +1900,11 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.proposal_command == "draft":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_proposal_draft(
         paths,
         request_id=args.request_id,
@@ -1875,6 +1913,9 @@ def _run(args: argparse.Namespace) -> int:
         model=args.model,
         temperature=args.temperature,
         max_output_tokens=args.max_output_tokens,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))

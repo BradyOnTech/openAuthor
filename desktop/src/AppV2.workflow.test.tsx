@@ -383,6 +383,15 @@ vi.mock("@tauri-apps/api/core", () => ({
       hunk.decision = argument(args, "--decision");
       return response(proposal);
     }
+    if (root === "proposal" && action === "revision-preview") {
+      const input = JSON.parse(argument(args, "--input-json"));
+      return response({
+        fingerprint: "reviewed-hunk-context", provider: input.provider, model: "heuristic-v1", estimated_input_tokens: 320, max_output_tokens: 700,
+        system_prompt: "Review a passage with saved style guidance.", user_prompt: "STYLE_REVIEW_SENTINEL",
+        context: { scene: { id: "scene-0001", title: "Opening" }, codex_entities: [], story_plan: { limits: { clipped_fields: [], omitted_chapters: 0, omitted_relevant_beats: 0 } } },
+        limits: { omitted_memory_ids: [] }, memory_choices: [], story_choices: [],
+      });
+    }
     if (root === "proposal" && action === "hunk-regenerate") {
       if (harness.failHunkOnce) {
         harness.failHunkOnce = false;
@@ -751,6 +760,7 @@ describe("active V2 author workflow", () => {
     await user.type(await screen.findByPlaceholderText(/Tighten the pacing/), "Tighten the opening.");
     harness.failDraftOnce = true;
     await user.click(screen.getByRole("button", { name: "Create Change Set" }));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
     await screen.findByText(/Synthetic provider connection lost/);
     await user.click(screen.getByRole("button", { name: "Retry generation" }));
     await screen.findByText("Mara chooses the dangerous road, knowing the cost.");
@@ -758,12 +768,14 @@ describe("active V2 author workflow", () => {
     expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "generate")).toHaveLength(1);
     harness.failDraftOnce = true;
     await user.click(screen.getByRole("button", { name: "Regenerate Change Set" }));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
     await screen.findByText(/Synthetic provider connection lost/);
     const failedRequest = harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft").slice(-1)[0];
     await user.click(screen.getByRole("button", { name: "Retry draft" }));
     await screen.findByRole("button", { name: "Regenerate Change Set" });
     const retriedRequest = harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft").slice(-1)[0];
     expect(argument(retriedRequest, "--request-id")).toBe(argument(failedRequest, "--request-id"));
+    expect(argument(retriedRequest, "--expected-context-fingerprint")).toBe(argument(failedRequest, "--expected-context-fingerprint"));
     expect(harness.proposals).toHaveLength(1);
   });
 
@@ -928,11 +940,19 @@ describe("active V2 author workflow", () => {
     );
     await user.click(screen.getAllByRole("button", { name: "Create Change Set" })[0]);
 
+    const reviewDraft = await screen.findByRole("button", { name: "Generate reviewed scene" });
+    await waitFor(() => expect((reviewDraft as HTMLButtonElement).disabled).toBe(false));
+    expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "draft")).toBe(false);
+    await user.click(reviewDraft);
+
     expect(await screen.findByText("Mara chooses the dangerous road, knowing the cost.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Comment" }));
     await user.type(screen.getByLabelText("Revision comment for hunk 1"), "Make the consequence immediate.");
     harness.failHunkOnce = true;
     await user.click(screen.getByRole("button", { name: "Revise hunk" }));
+    expect(harness.calls.filter(args => args[1] === "hunk-regenerate")).toHaveLength(0);
+    await screen.findByText("STYLE_REVIEW_SENTINEL");
+    await user.click(screen.getByRole("button", { name: "Generate reviewed passage" }));
     await screen.findByText(/Synthetic hunk connection lost/);
     expect(screen.getByText("Make the consequence immediate.", { selector: "p" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Retry passage revision" }));
@@ -940,6 +960,7 @@ describe("active V2 author workflow", () => {
     const hunkRequests = harness.calls.filter(args => args[0] === "proposal" && args[1] === "hunk-regenerate");
     expect(hunkRequests).toHaveLength(2);
     expect(argument(hunkRequests[0], "--request-id")).not.toBe("");
+    expect(argument(hunkRequests[0], "--expected-context-fingerprint")).toBe("reviewed-hunk-context");
     expect(hunkRequests[1]).toEqual(hunkRequests[0]);
     await waitFor(() => expect(harness.calls.some((args) => args[0] === "proposal" && args[1] === "hunk-regenerate" && argument(args, "--feedback") === "Make the consequence immediate.")).toBe(true));
     await user.click(screen.getByRole("button", { name: "Exclude change hunk 1" }));
@@ -1114,6 +1135,9 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("checkbox", { name: "The Choice" }));
     await user.type(screen.getByPlaceholderText(/Tighten the pacing/), "Make the alternate ending escalate across both scenes.");
     await user.click(screen.getByRole("button", { name: "Create 2 Coordinated Change Sets" }));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
+    await waitFor(() => expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft")).toHaveLength(1));
+    await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
 
     await waitFor(() => expect(harness.proposals).toHaveLength(2));
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();

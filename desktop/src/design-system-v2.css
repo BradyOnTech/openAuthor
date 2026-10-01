@@ -930,6 +930,16 @@ body {
 .story-context-choices__entry p { margin: 0 0 12px 24px; color: var(--text-secondary); }
 .selection-review__comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
 .selection-review h3 { text-wrap: balance; }
+.revision-context-review { background: var(--bg-surface); color: var(--text-primary); padding: 16px; display: grid; gap: 12px; }
+.revision-context-review h3 { text-wrap: balance; }
+.revision-context-review p { line-height: 1.5; text-wrap: pretty; }
+.revision-context-review fieldset { border: 0; min-width: 0; padding: 0; }
+.revision-context-review label { display: flex; gap: 8px; align-items: center; min-height: 40px; overflow-wrap: anywhere; }
+.revision-context-review button, .revision-context-review summary { min-height: 40px; }
+.revision-context-review footer { display: flex; flex-wrap: wrap; gap: 8px; }
+.revision-context-review__count { font-variant-numeric: tabular-nums; }
+.revision-context-review pre, .revision-context-review__feedback { white-space: pre-wrap; overflow-wrap: anywhere; }
+.revision-context-review pre { max-height: 280px; overflow: auto; }
 .scene-editor__content {
   max-width: var(--editor-max-width);
   margin: 0 auto;

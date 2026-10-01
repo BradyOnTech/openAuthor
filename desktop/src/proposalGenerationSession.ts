@@ -1,15 +1,22 @@
-import { draftProposal, generateProposal, listProposals, regenerateProposalHunk } from "./api";
+import { draftProposal, generateProposal, listProposals, regenerateProposalHunk, type RevisionAuthorization } from "./api";
 import type { ProposalRecord } from "./types";
 
 export type GenerationInput = Parameters<typeof generateProposal>[1];
-type HunkRequest = { id: string; feedback: string };
-type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean; hunk?: HunkRequest };
+type HunkRequest = { id: string; feedback: string; authorization?: RevisionAuthorization };
+type Task = { input: GenerationInput; proposalId?: string; drafted?: boolean; hunk?: HunkRequest; authorization?: RevisionAuthorization; draftRequestId?: string };
 type Job = { id: string; tasks: Task[] };
-type Snapshot = { job: Job | null; busy: boolean; stopRequested: boolean; error: string };
+type ReviewTask = { index: number; proposalId: string; input: GenerationInput };
+type Snapshot = { job: Job | null; busy: boolean; stopRequested: boolean; error: string; reviewTask: ReviewTask | null };
 const sessions = new Map<string, ProposalGenerationSession>();
 
+function reviewTask(job: Job | null): ReviewTask | null {
+  const index = job?.tasks.findIndex(task => !task.drafted) ?? -1;
+  const task = job?.tasks[index];
+  return task?.proposalId && !task.hunk && !task.authorization ? { index, proposalId: task.proposalId, input: task.input } : null;
+}
+
 export class ProposalGenerationSession {
-  private state: Snapshot = { job: null, busy: false, stopRequested: false, error: "" };
+  private state: Snapshot = { job: null, busy: false, stopRequested: false, error: "", reviewTask: null };
   private listeners = new Set<() => void>();
   private key: string;
 
@@ -22,7 +29,7 @@ export class ProposalGenerationSession {
         if (typeof job.id !== "string" || !Array.isArray(job.tasks) || !job.tasks.length || job.tasks.some(task => !task.input?.sceneId || !task.input.instruction)) {
           throw new Error("Invalid generation journal");
         }
-        this.state = { ...this.state, job, error: "A previous generation needs recovery. Retry resumes the remaining steps." };
+        this.state = { ...this.state, job, reviewTask: reviewTask(job), error: reviewTask(job) ? "" : "A previous generation needs recovery. Retry reuses the original request; a new context review starts a new draft request." };
       }
     } catch {
       this.state.error = "Generation recovery storage could not be read. Keep a copy of your instructions before closing.";
@@ -36,12 +43,38 @@ export class ProposalGenerationSession {
   };
   private publish(changes: Partial<Snapshot>) {
     this.state = { ...this.state, ...changes };
+    this.state.reviewTask = reviewTask(this.state.job);
     this.listeners.forEach(listener => listener());
   }
   private save(job: Job) {
     localStorage.setItem(this.key, JSON.stringify(job));
     this.publish({ job });
   }
+
+  approveDraft = async (index: number, authorization: RevisionAuthorization): Promise<ProposalRecord[] | null> => {
+    if (this.state.busy || !this.state.job || this.state.reviewTask?.index !== index || !authorization.fingerprint) return null;
+    try {
+      this.save({ ...this.state.job, tasks: this.state.job.tasks.map((task, i) => i === index ? { ...task, authorization } : task) });
+    } catch {
+      this.publish({ error: "Context approval could not be saved for recovery. Nothing was sent; free storage and review again." });
+      return null;
+    }
+    return this.retry();
+  };
+
+  reviewDraftAgain = () => {
+    if (this.state.busy || !this.state.job) return;
+    const index = this.state.job.tasks.findIndex(task => !task.drafted);
+    const task = this.state.job.tasks[index];
+    if (!task?.proposalId || task.hunk || !task.authorization) return;
+    try {
+      this.save({ ...this.state.job, tasks: this.state.job.tasks.map((row, i) => i === index
+        ? { ...row, authorization: undefined, draftRequestId: crypto.randomUUID() } : row) });
+      this.publish({ error: "" });
+    } catch {
+      this.publish({ error: "Could not save a fresh context review. The original request is retained; nothing was sent." });
+    }
+  };
 
   async start(inputs: GenerationInput[], existingProposalId?: string, hunk?: HunkRequest): Promise<ProposalRecord[] | null> {
     if (this.state.job || this.state.busy || !inputs.length) return null;
@@ -72,11 +105,13 @@ export class ProposalGenerationSession {
         const planned = plannedJob.tasks[index];
         if (!planned.drafted) {
           if (planned.hunk) {
-            await regenerateProposalHunk(this.projectRoot, planned.proposalId!, planned.hunk.id, planned.input.provider, planned.input.model, planned.hunk.feedback, `${plannedJob.id}:${index}:hunk`);
+            await regenerateProposalHunk(this.projectRoot, planned.proposalId!, planned.hunk.id, planned.input.provider, planned.input.model, planned.hunk.feedback, `${plannedJob.id}:${index}:hunk`, planned.hunk.authorization);
           } else {
+            if (!planned.authorization) return null;
             await draftProposal(this.projectRoot, {
               proposalId: planned.proposalId!, provider: planned.input.provider, model: planned.input.model,
-              requestId: `${plannedJob.id}:${index}:draft`,
+              requestId: planned.draftRequestId ?? `${plannedJob.id}:${index}:draft`,
+              authorization: planned.authorization,
             });
           }
           this.save({ ...plannedJob, tasks: plannedJob.tasks.map((row, i) => i === index ? { ...row, drafted: true } : row) });

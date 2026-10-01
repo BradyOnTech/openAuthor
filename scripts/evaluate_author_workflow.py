@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
   sys.path.insert(0, str(ROOT))
 
-from openauthor.ai import SUPPORTED_PROVIDERS, generate_proposal_draft
+from openauthor.ai import SUPPORTED_PROVIDERS, generate_proposal_draft, preview_proposal_revision
 from openauthor.backups import create_backup, restore_backup
 from openauthor.canon import list_canon_facts
 from openauthor.changes import render_change_set
@@ -159,7 +159,27 @@ def checked_run(output: Path, *, transmission: bool = False) -> tuple[dict[str, 
   return state, resolve_project(output / "book")
 
 
-def generate(output: Path, *, allow_provider: bool = False, retry: bool = False) -> dict[str, Any]:
+def preview_draft(output: Path) -> dict[str, Any]:
+  state, paths = checked_run(output, transmission=True)
+  with project_write_lock(paths):
+    state, paths = checked_run(output, transmission=True)
+    if state["status"] not in {"prepared", "generation_failed", "generating"}:
+      raise OpenAuthorError("This run is not awaiting generation.")
+    if book_fingerprint(paths) != state["baseline_files"]:
+      raise OpenAuthorError("The evaluation book changed after intake; start a new approved run.")
+    if not state.get("proposal_id"):
+      state["proposal_id"] = create_proposal(
+        paths, title="Author-reviewed evaluation", instruction=state["case"]["instruction"],
+        scene_id=state["target_scene_id"], revision_intent={"goal": state["case"]["instruction"],
+          "constraints": [], "protected_elements": state["case"].get("protected_elements", []), "scope": "scene"},
+      )
+      atomic_write_json(output / "run.json", state)
+    preview = preview_proposal_revision(paths, proposal_id=state["proposal_id"], **state["provider_settings"])
+    atomic_write_json(output / "draft-context.json", preview)
+    return {"run_id": state["run_id"], "status": state["status"], "fingerprint": preview["fingerprint"], "review_path": str(output / "draft-context.json")}
+
+
+def generate(output: Path, *, allow_provider: bool = False, retry: bool = False, expected_context_fingerprint: str = "") -> dict[str, Any]:
   state, paths = checked_run(output, transmission=True)
   with project_write_lock(paths):
     state, paths = checked_run(output, transmission=True)
@@ -171,6 +191,8 @@ def generate(output: Path, *, allow_provider: bool = False, retry: bool = False)
       raise OpenAuthorError("Explicit --retry is required; an earlier provider attempt may have incurred charges.")
     if state["provider_settings"]["provider"] != "local" and not allow_provider:
       raise OpenAuthorError("Provider calls require --allow-provider as well as recorded consent.")
+    if state["provider_settings"]["provider"] != "local" and not expected_context_fingerprint:
+      raise OpenAuthorError("Review the preview-draft artifact, then provide --expected-context-fingerprint before sending to a provider.")
     if book_fingerprint(paths) != state["baseline_files"]:
       raise OpenAuthorError("The evaluation book changed after intake; start a new approved run.")
     if not state.get("proposal_id"):
@@ -185,7 +207,8 @@ def generate(output: Path, *, allow_provider: bool = False, retry: bool = False)
       proposal = get_proposal(paths, state["proposal_id"])
       # Recover a saved draft if only the runner's response/checkpoint was lost.
       if not proposal.get("draft"):
-        proposal = generate_proposal_draft(paths, proposal_id=state["proposal_id"], **state["provider_settings"])
+        proposal = generate_proposal_draft(paths, proposal_id=state["proposal_id"],
+          expected_context_fingerprint=expected_context_fingerprint, **state["provider_settings"])
       state.update(status="awaiting_review", draft_sha256=digest(proposal["proposed_body"].encode()), usage=proposal["draft"])
       state.pop("error", None)
       review = {
@@ -347,6 +370,9 @@ def main() -> None:
   drafting.add_argument("--run", type=Path, required=True)
   drafting.add_argument("--allow-provider", action="store_true")
   drafting.add_argument("--retry", action="store_true")
+  drafting.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from the reviewed preview-draft artifact; required for external providers.")
+  previewing = commands.add_parser("preview-draft", help="Save exact draft context locally without contacting a provider.")
+  previewing.add_argument("--run", type=Path, required=True)
   review = commands.add_parser("finish")
   review.add_argument("--run", type=Path, required=True)
   review.add_argument("--review", type=Path, required=True)
@@ -357,11 +383,13 @@ def main() -> None:
     elif args.command == "prepare":
       result = prepare(args.output, manifest=args.manifest)
     elif args.command == "generate":
-      result = generate(args.run, allow_provider=args.allow_provider, retry=args.retry)
+      result = generate(args.run, allow_provider=args.allow_provider, retry=args.retry, expected_context_fingerprint=args.expected_context_fingerprint)
+    elif args.command == "preview-draft":
+      result = preview_draft(args.run)
     else:
       result = finish(args.run, args.review)
     # Full prose-bearing artifacts stay in the run directory, never on stdout.
-    print(json.dumps({key: result[key] for key in ("run_id", "status", "evidence_kind", "applied_matches_review", "undo_byte_exact", "backup_book_exact", "backup_history_exact") if key in result}, indent=2))
+    print(json.dumps({key: result[key] for key in ("run_id", "status", "fingerprint", "review_path", "evidence_kind", "applied_matches_review", "undo_byte_exact", "backup_book_exact", "backup_history_exact") if key in result}, indent=2))
   except (OpenAuthorError, OSError, ValueError, KeyError, TypeError) as error:
     print(json.dumps({"error": str(error)}), file=sys.stderr)
     raise SystemExit(1) from None

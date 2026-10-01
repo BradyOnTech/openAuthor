@@ -4,6 +4,7 @@ import { useEditor } from "../../contexts/EditorContext";
 import { addEditorialPass, buildStyleProfile, getStyleProfile, listEditorialPasses, type EditorialPass, type StyleProfile } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
+import { RevisionContextReview } from "./RevisionContextReview";
 
 export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }) {
   const { projectRoot, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
@@ -26,7 +27,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
   const [constraints, setConstraints] = useState("");
   const [protectedElements, setProtectedElements] = useState("");
   const session = useMemo(() => proposalGenerationSession(projectRoot), [projectRoot]);
-  const { busy, job, error: generationError, stopRequested } = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const { busy, job, error: generationError, stopRequested, reviewTask } = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const view = useRef({ projectRoot, mounted: true });
   view.current.projectRoot = projectRoot;
   useEffect(() => {
@@ -163,7 +164,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           edits your manuscript directly. You choose what to include, and openAuthor records a named Revision.
         </p>
 
-        {(job || generationError) && <section aria-label="Generation recovery" style={{ padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", display: "grid", gap: 12 }}>
+        {((job && !reviewTask) || generationError) && <section aria-label="Generation recovery" style={{ padding: 16, borderRadius: "var(--radius-md)", background: "var(--bg-elevated)", display: "grid", gap: 12 }}>
           {job && <>
             <strong style={{ fontVariantNumeric: "tabular-nums" }}>{job.tasks.filter(task => task.drafted).length} of {job.tasks.length} Change Sets ready</strong>
             <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{job.tasks[0].input.instruction}</p>
@@ -172,12 +173,20 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
           <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Saved steps are reused. An interrupted provider request without a saved result may incur another charge when retried.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {busy ? <button className="btn" style={{ minHeight: 40 }} disabled={stopRequested} onClick={session.stop}>{stopRequested ? "Stopping after current step…" : "Stop after current step"}</button> : job && <>
-              <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>
+              {!reviewTask && <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>}
+              {generationError && job.tasks.find(task => !task.drafted)?.authorization && <button className="btn" style={{ minHeight: 40 }} onClick={session.reviewDraftAgain}>Start new draft review</button>}
               <button className="btn" style={{ minHeight: 40 }} onClick={session.clear}>Start new request</button>
             </>}
           </div>
           {job && <small>Starting a new request keeps existing Change Sets in Changes.</small>}
+          {generationError && <small>Retry keeps the original approval. A new draft review retains the edit plan, clears permissions and starts a new request; any earlier provider charges still apply.</small>}
         </section>}
+
+        {reviewTask && !busy && <p>Draft {reviewTask.index + 1} of {job!.tasks.length} · Edit plan saved; review context before drafting.</p>}
+        {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}`} projectRoot={projectRoot}
+          proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
+          onSend={async authorization => { await showResults(await session.approveDraft(reviewTask.index, authorization)); }}
+          onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
 
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>

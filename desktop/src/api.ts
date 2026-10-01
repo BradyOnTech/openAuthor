@@ -635,6 +635,7 @@ export async function draftProposal(
     model?: string;
     temperature?: number;
     maxOutputTokens?: number;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
@@ -648,6 +649,8 @@ export async function draftProposal(
   if (typeof payload.maxOutputTokens === "number") {
     args.push("--max-output-tokens", String(payload.maxOutputTokens));
   }
+  if (payload.authorization) args.push("--expected-context-fingerprint", payload.authorization.fingerprint,
+    "--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals), "--story-approvals", JSON.stringify(payload.authorization.storyApprovals));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -693,7 +696,8 @@ export async function regenerateProposalHunk(
   provider: ProposalProvider,
   model?: string,
   feedback?: string,
-  requestId?: string
+  requestId?: string,
+  authorization?: RevisionAuthorization
 ): Promise<ProposalRecord> {
   const args = [
     "proposal", "hunk-regenerate", "--id", proposalId, "--hunk", hunkId,
@@ -702,6 +706,8 @@ export async function regenerateProposalHunk(
   if (model?.trim()) args.push("--model", model.trim());
   if (feedback?.trim()) args.push("--feedback", feedback.trim());
   if (requestId) args.push("--request-id", requestId);
+  if (authorization) args.push("--expected-context-fingerprint", authorization.fingerprint,
+    "--memory-approvals", JSON.stringify(authorization.memoryApprovals), "--story-approvals", JSON.stringify(authorization.storyApprovals));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -950,6 +956,17 @@ export type ChatSendPayload = {
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
+export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
+  context: { scene: { id: string; title: string }; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  limits: { omitted_memory_ids: string[] };
+};
+export async function previewProposalRevision(projectRoot: string, input: {
+  proposal_id: string; hunk_id?: string; provider: ProposalProvider; model?: string; feedback?: string;
+  memory_approvals: MemoryApproval[]; story_approvals: string[];
+}): Promise<RevisionContextPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));
+}
 export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
 export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
 export type SelectionInput = {
