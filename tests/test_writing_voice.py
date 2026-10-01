@@ -57,6 +57,37 @@ class WritingVoiceTests(unittest.TestCase):
     self.assertEqual(list_proposals(self.paths), [])
     self.assertEqual(profile["traits"]["pacing"], "propulsive")
 
+  def test_refine_one_sample_preserves_original_and_review_history_until_apply_and_undo(self):
+    from openauthor.writing_voice import refine_voice_preview
+    approved = self.save()
+    before = get_scene(self.paths, "scene-0001")
+    original, _ = self.creative_preview()
+    reviewed = review_voice_preview(self.paths, preview_id=original["id"], direction_id="direction-1",
+      review={"ratings": {"consistency": "needs_revision"}, "notes": "The count must stay unfinished."})
+    feedback = "Keep the interrupted count. Clarify the pressure of the tide without adding an ending."
+    revised = self.source.replace("The tide pressed", "The tide shoved")
+    with patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": revised, "observations": []})) as provider:
+      result = refine_voice_preview(self.paths, request={"preview_id": original["id"], "direction_id": "direction-1",
+        "feedback": feedback, "provider": "openai"})
+    self.assertEqual(provider.call_count, 1)
+    payload = json.loads(provider.call_args.kwargs["user_prompt"])
+    self.assertEqual(payload["source"], self.source)
+    self.assertEqual(payload["refinement"]["candidate"], original["directions"][0]["text"])
+    self.assertEqual(payload["refinement"]["feedback"], feedback)
+    self.assertEqual(result["source_text"], self.source)
+    self.assertEqual(result["refinement"]["preview_id"], original["id"])
+    self.assertEqual(len(result["directions"]), 1)
+    self.assertEqual(result["directions"][0]["author_review"], {"ratings": {}, "notes": ""})
+    self.assertIn(reviewed, voice_workspace(self.paths)["previews"])
+    self.assertEqual(get_scene(self.paths, "scene-0001"), before)
+    self.assertEqual(get_style_profile(self.paths), approved)
+    proposal = stage_voice_preview(self.paths, preview_id=result["id"], direction_id="direction-1")
+    self.assertEqual(get_scene(self.paths, "scene-0001"), before)
+    apply_proposal(self.paths, proposal_id=proposal["id"])
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], revised + "\n\nIvo kept the key in his pocket.\n")
+    undo_proposal(self.paths, proposal_id=proposal["id"])
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], before["body"])
+
   def test_stale_profile_and_changed_workspace_never_overwrite_approved_voice(self):
     old = self.save()
     current = self.save(PRESETS[1])
@@ -65,6 +96,57 @@ class WritingVoiceTests(unittest.TestCase):
     with self.assertRaisesRegex(OpenAuthorError, "workspace changed"):
       save_style_profile(self.paths, profile=old, expected_version=current["version"], expected_scope="other-scope")
     self.assertEqual(get_style_profile(self.paths), current)
+
+  def test_refinement_refuses_changed_scene_before_calling_provider(self):
+    from openauthor.writing_voice import refine_voice_preview
+    original = preview_voice(self.paths, request=self.preview_request())
+    update_scene(self.paths, scene_identifier="scene-0001", body="New author writing")
+    with patch("openauthor.ai._call_provider") as provider:
+      with self.assertRaisesRegex(OpenAuthorError, "scene or Storyline changed"):
+        refine_voice_preview(self.paths, request={"preview_id": original["id"], "direction_id": "direction-1", "feedback": "Less exposition.", "provider": "openai"})
+      provider.assert_not_called()
+    self.assertEqual(len(voice_workspace(self.paths)["previews"]), 1)
+
+  def test_refinement_refuses_other_storyline_even_with_identical_prose(self):
+    from openauthor.writing_voice import refine_voice_preview
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=self.paths.root, check=True)
+    original = preview_voice(self.paths, request=self.preview_request())
+    subprocess.run(["git", "symbolic-ref", "HEAD", "refs/heads/alternate"], cwd=self.paths.root, check=True)
+    with patch("openauthor.ai._call_provider") as provider:
+      with self.assertRaisesRegex(OpenAuthorError, "scene or Storyline changed"):
+        refine_voice_preview(self.paths, request={"preview_id": original["id"], "direction_id": "direction-1", "feedback": "Less exposition.", "provider": "openai"})
+      provider.assert_not_called()
+
+  def test_refinement_keeps_prior_attempt_on_invalid_feedback_or_model_output(self):
+    from openauthor.writing_voice import refine_voice_preview
+    original = preview_voice(self.paths, request=self.preview_request())
+    request = {"preview_id": original["id"], "direction_id": "direction-1", "provider": "openai"}
+    for feedback in (" ", "x" * 2001, None):
+      with patch("openauthor.ai._call_provider") as provider:
+        with self.assertRaises(OpenAuthorError):
+          refine_voice_preview(self.paths, request={**request, "feedback": feedback})
+        provider.assert_not_called()
+    with patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": "", "observations": []})):
+      with self.assertRaises(OpenAuthorError):
+        refine_voice_preview(self.paths, request={**request, "feedback": "Less exposition."})
+    self.assertEqual(voice_workspace(self.paths)["previews"], [original])
+    self.assertEqual(list_proposals(self.paths), [])
+
+  def test_refinement_preserves_late_edits_and_uses_original_on_subsequent_attempts(self):
+    from openauthor.writing_voice import refine_voice_preview
+    original = preview_voice(self.paths, request=self.preview_request())
+    first = refine_voice_preview(self.paths, request={"preview_id": original["id"], "direction_id": "direction-1", "feedback": "Keep the count unfinished."})
+    def completion(**kwargs):
+      update_scene(self.paths, scene_identifier="scene-0001", body="The author's newer scene.")
+      return self.provider_result({"text": self.source.replace("pressed", "shoved"), "observations": []})
+    with patch("openauthor.ai._call_provider", side_effect=completion):
+      second = refine_voice_preview(self.paths, request={"preview_id": first["id"], "direction_id": "direction-1", "feedback": "Clarify the tide.", "provider": "openai"})
+    self.assertEqual(second["source_text"], self.source)
+    self.assertEqual(second["refinement"]["preview_id"], first["id"])
+    with self.assertRaisesRegex(OpenAuthorError, "scene or Storyline changed"):
+      stage_voice_preview(self.paths, preview_id=second["id"], direction_id="direction-1")
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"].strip(), "The author's newer scene.")
+    self.assertEqual(list_proposals(self.paths), [])
 
   def test_legacy_profile_is_read_without_rewriting_the_file(self):
     legacy = {"schema_version": 1, "exemplar_scene_ids": ["scene-0001"], "guidance": ["Keep dialogue restrained."], "metrics": {"word_count": 40}, "created_at": "then"}
@@ -194,10 +276,47 @@ class WritingVoiceTests(unittest.TestCase):
         provider.assert_not_called()
 
   def test_invalid_model_output_does_not_create_previews(self):
-    for data in ({"text": "word " * 501}, {"text": "A sample.", "observations": [{"criterion": "voice_fit", "observation": "Good", "excerpt": "Absent."}]}):
-      with self.subTest(data=data), patch("openauthor.ai._call_provider", return_value=self.provider_result(data)):
-        with self.assertRaises(OpenAuthorError):
-          preview_voice(self.paths, request=self.preview_request(provider="openai"))
+    with patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": "word " * 501})):
+      with self.assertRaises(OpenAuthorError):
+        preview_voice(self.paths, request=self.preview_request(provider="openai"))
+    self.assertEqual(voice_workspace(self.paths)["previews"], [])
+
+  def test_valid_prose_survives_malformed_provider_self_review(self):
+    replies = [self.provider_result({"text": "A usable revision.", "observations": [
+      {"criterion": "voice_fit", "observation": "Good", "excerpt": "Absent."},
+      {"criterion": "readability", "observation": "The sentence is clear.", "excerpt": "A usable revision."}]}),
+      self.provider_result({"text": "A second usable revision.", "observations": []})]
+    with patch("openauthor.ai._call_provider", side_effect=replies):
+      record = preview_voice(self.paths, request=self.preview_request(provider="openai"))
+    self.assertEqual(record["directions"][0]["text"], "A usable revision.")
+    self.assertEqual(len(record["directions"][0]["observations"]), 1)
+    self.assertEqual(record["directions"][0]["observations"][0]["criterion"], "readability")
+    self.assertTrue(any("self-review" in warning.lower() for warning in record["directions"][0]["warnings"]))
+    self.assertEqual(voice_workspace(self.paths)["previews"][0]["id"], record["id"])
+
+  def test_preview_accepts_presentational_quote_wrappers_only_for_exact_evidence(self):
+    text = 'The count broke off before the boy. “Splendid plan.”'
+    for excerpt, expected in [('“The count broke off before the boy.”', 'The count broke off before the boy.'),
+      ('"The count broke off before the boy."', 'The count broke off before the boy.'),
+      ('“Splendid plan.”', '“Splendid plan.”')]:
+      with self.subTest(excerpt=excerpt), patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": text,
+        "observations": [{"criterion": "consistency", "observation": "The count remains unfinished.", "excerpt": excerpt}]})):
+        record = preview_voice(self.paths, request=self.preview_request(provider="openai-codex"))
+        self.assertEqual(record["directions"][0]["observations"][0]["excerpt"], expected)
+
+  def test_quote_wrapper_normalization_never_repairs_fabricated_or_omitted_words(self):
+    for excerpt in ['“She finished the count.”', '“The count…before the boy.”', '“”']:
+      with self.subTest(excerpt=excerpt), patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": 'The count broke off before the boy.',
+        "observations": [{"criterion": "consistency", "observation": "Unverifiable", "excerpt": excerpt}]})):
+        record = preview_voice(self.paths, request=self.preview_request(provider="openai-codex"))
+        self.assertEqual(record["directions"][0]["observations"], [])
+        self.assertTrue(any("unverifiable" in warning.lower() for warning in record["directions"][0]["warnings"]))
+
+  def test_strict_review_mode_rejects_malformed_self_review_for_evaluations(self):
+    with patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": "A usable revision.", "observations": [
+      {"criterion": "voice_fit", "observation": "Good", "excerpt": "Absent."}]})):
+      with self.assertRaisesRegex(OpenAuthorError, "quoted text absent"):
+        preview_voice(self.paths, request=self.preview_request(provider="openai-codex", strict_review=True))
     self.assertEqual(voice_workspace(self.paths)["previews"], [])
 
   def test_author_quality_review_persists_without_learning_or_numerical_score(self):
@@ -269,3 +388,8 @@ class WritingVoiceTests(unittest.TestCase):
     self.assertIsNone(get_style_profile(self.paths))
     saved = command(["save", "--request-json", json.dumps({"profile": suggested["profile"], "expected_version": "", "scope": workspace["scope"]})])
     self.assertEqual(saved["description"], "Dry humor and clear action.")
+    preview = command(["preview", "--request-json", json.dumps(self.preview_request())])
+    refined = command(["refine", "--request-json", json.dumps({"preview_id": preview["id"], "direction_id": "direction-1", "feedback": "Keep the count unfinished.", "provider": "local"})])
+    self.assertEqual(len(refined["directions"]), 1)
+    self.assertEqual(refined["directions"][0]["text"], self.source)
+    self.assertIn("baseline", refined["directions"][0]["warnings"][0])

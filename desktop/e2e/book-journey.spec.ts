@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localBook } from "./localBook";
 
+// Keep the connected author journey usable on a smaller laptop, not only a
+// wide development monitor. Other journeys retain the default 1400px viewport.
+test.use({ viewport: { width: 1024, height: 768 } });
+
 test("imports a book, plans chapters, saves Memory, discusses a scene, and exports readable prose", async ({ page }, testInfo) => {
   const book = await localBook(page);
   const { sandbox, projectRoot, core } = book;
@@ -90,9 +94,46 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await page.getByRole("button", { name: "Scene note", exact: true }).click();
     await expect(page.getByText(/Saved as a scene note\./)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("scene-discussion.png") });
+    const activeLabel = page.getByRole("tab", { name: "The Clocktower", exact: true }).locator(".tab__label");
+    // A short document title should not collapse into "T…" when sidebars are open.
+    expect(await activeLabel.evaluate((element) => element.clientWidth)).toBeGreaterThanOrEqual(80);
+    await expect(activeLabel).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const threads = await json(["chat", "thread", "list"]);
     const messages = await json(["chat", "message", "list", "--thread", threads[0].id]);
     expect(messages.some((message: any) => message.role === "assistant" && message.context_used.scene_ids.includes("scene-0002"))).toBe(true);
+
+    // Continue a saved idea through Plan into the normal review workflow.
+    const beforeRevision = await json(["scene", "get", "--id", "scene-0002"]);
+    await page.getByRole("button", { name: "View saved note", exact: true }).click();
+    const notes = page.getByRole("region", { name: "Saved notes" });
+    const replyText = messages.find((message: any) => message.role === "assistant").content;
+    await expect(notes).toContainText(replyText);
+    await notes.getByRole("searchbox", { name: "Search saved notes" }).fill("no such idea 123");
+    await expect(notes.getByText("No notes match. Try a different search or scene.")).toBeVisible();
+    await notes.getByRole("searchbox", { name: "Search saved notes" }).fill("Clocktower");
+    await expect(notes.getByRole("status")).toHaveText("1 of 1 notes");
+    await page.screenshot({ path: testInfo.outputPath("saved-notes.png") });
+    await notes.getByRole("button", { name: "Open scene: The Clocktower" }).click();
+    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(beforeRevision.body);
+    await page.getByRole("button", { name: "View saved note", exact: true }).click();
+    await notes.getByRole("button", { name: "Plan a revision" }).click();
+    await expect(page.getByRole("combobox", { name: "Scene", exact: true })).toHaveValue("scene-0002");
+    const revisionRequest = page.getByRole("textbox", { name: "What should change?" });
+    await expect(revisionRequest).toHaveValue(replyText);
+    expect(await json(["proposal", "list"])).toHaveLength(0);
+    // The author can change the target; this original passage supports the
+    // deterministic provider's small tonal edit without using live inference.
+    const otherScene = await json(["scene", "get", "--id", "scene-0001"]);
+    await page.getByRole("combobox", { name: "Scene", exact: true }).selectOption("scene-0001");
+    await revisionRequest.fill("Make the final paragraph more ominous while preserving every name and story event.");
+    await page.getByRole("combobox", { name: "Provider", exact: true }).selectOption("local");
+    await page.getByRole("button", { name: "Create Change Set", exact: true }).click();
+    await expect(page.getByRole("button", { name: /^Apply \d+ change/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Revise from note", exact: true })).toHaveCount(0);
+    expect((await json(["proposal", "list"]))).toHaveLength(1);
+    expect((await json(["scene", "get", "--id", "scene-0002"])).body).toBe(beforeRevision.body);
+    expect((await json(["scene", "get", "--id", "scene-0001"])).body).toBe(otherScene.body);
 
     await page.getByRole("button", { name: /^Settings \(/ }).click();
     await page.getByRole("combobox", { name: "Export format" }).selectOption("docx");

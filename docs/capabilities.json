@@ -54,12 +54,14 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Chapter reading retains unassigned scenes, bounds long-chapter rendering, waits for pending saves, and opens fresh scene state for editing. Reading and export share Plan ordering. Browser/real-Python evidence is not packaged or full-novel usability certification.",
+      "scope_note": "Chapter reading retains unassigned scenes, bounds long-chapter rendering, waits for pending saves, and opens fresh scene state for editing. Reading and export share Plan ordering. Reading position is retained per book/Storyline using a scene anchor; later navigation wins over delayed first-scene loading. Browser/real-Python evidence is not packaged or full-novel usability certification.",
       "evidence": [
         "openauthor/planning.py",
         "tests/test_planning_module.py",
         "desktop/src/components/editor/ManuscriptReader.tsx",
         "desktop/src/components/editor/ManuscriptReader.test.tsx",
+        "desktop/src/readingPosition.test.ts",
+        "desktop/e2e/session-continuity.spec.ts",
         "desktop/e2e/book-journey.spec.ts"
       ]
     },
@@ -71,7 +73,7 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Dragging previews structural impact. The manuscript sidebar follows Plan order with collapsible chapters, counts, current-scene highlighting and title/chapter/POV filtering; unassigned scenes remain reachable.",
+      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Unfinished form text is retained locally per book/Storyline, and guarded brief/metadata saves refuse stale values. Dragging previews structural impact. The manuscript sidebar follows Plan order with collapsible chapters, counts, current-scene highlighting and title/chapter/POV filtering; unassigned scenes remain reachable.",
       "evidence": [
         "openauthor/planning.py",
         "tests/test_planning_module.py",
@@ -79,6 +81,9 @@
         "desktop/src/components/sidebar/ManuscriptExplorer.tsx",
         "desktop/src/components/sidebar/ManuscriptExplorer.test.tsx",
         "desktop/src/components/editor/PlanEditor.tsx",
+        "desktop/src/components/editor/PlanEditor.test.tsx",
+        "tests/test_session_continuity.py",
+        "docs/session-continuity.md",
         "desktop/src/AppV2.workflow.test.tsx",
         "desktop/src-tauri/src/lib.rs"
       ]

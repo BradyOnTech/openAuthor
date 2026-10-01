@@ -1,4 +1,4 @@
-import { useEditor } from "../../contexts/EditorContext";
+import { useEditor, type RevisionDraft } from "../../contexts/EditorContext";
 import { useUI } from "../../contexts/UIContext";
 import { TabBar } from "./TabBar";
 import { SceneDocument } from "./SceneDocument";
@@ -47,7 +47,7 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
       return <SceneDocument key={tab.id} tabId={tab.id} scene={scene} modified={tab.modified} zenMode={zenMode} onExitZen={() => setZenMode(false)} />;
     }
     case "plan":
-      return <PlanEditor />;
+      return <PlanEditor focusNoteId={(tab.data as { noteId?: string } | undefined)?.noteId} />;
     case "memory":
       return <CanonMemoryEditor />;
     case "connections":
@@ -74,7 +74,8 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     }
     case "generate": {
       const scene = tab.data as SceneDetail | undefined;
-      return <GenerateProposal key={tab.id} initialSceneId={scene?.id} />;
+      const draft = tab.data as RevisionDraft | undefined;
+      return <GenerateProposal key={tab.id} tabId={tab.id} initialSceneId={draft?.sceneId ?? scene?.id} initialInstruction={draft?.instruction} />;
     }
     case "settings":
       return <SettingsEditor />;

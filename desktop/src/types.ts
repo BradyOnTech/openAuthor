@@ -337,6 +337,7 @@ export type RevisionRetrospective = {
 
 export type ManuscriptReading = {
   schema_version: 1;
+  workspace?: string;
   sections: Array<{ id: string; title: string; act_title: string; scene_ids: string[] }>;
   scenes: SceneDetail[];
   word_count: number;
@@ -344,6 +345,7 @@ export type ManuscriptReading = {
 
 export type ManuscriptPlan = {
   schema_version: number;
+  workspace?: string;
   brief: {
     synopsis: string;
     genre: string;
@@ -794,6 +796,7 @@ export type CodexRelationship = {
 export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number };
 export type CanonFact = {
   id: string;
+  edit_version?: string;
   subject_entity_id: string;
   predicate: string;
   value: string;

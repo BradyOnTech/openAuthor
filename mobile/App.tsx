@@ -21,6 +21,7 @@ import type { SnapshotProject, SnapshotScene } from "./src/core/snapshotProject"
 import { initialVoiceSession, reduceVoiceSession } from "./src/voice/voiceSession";
 
 type Tab = "scenes" | "assistant" | "capture" | "review" | "settings";
+type CaptureStatus = "empty" | "draft" | "saving";
 const runtime = createAppRuntime();
 
 function Button(props: {
@@ -224,6 +225,7 @@ function ScenesView({ project, onScene }: { project: SnapshotProject; onScene(sc
   return (
     <ScrollView contentContainerStyle={styles.list}>
       <TextInput accessibilityLabel="Search scenes" onChangeText={setQuery} placeholder="Search scenes and characters" placeholderTextColor="#697386" style={styles.input} value={query} />
+      <Text style={styles.muted}>{query.trim() ? "Search results · ranked by relevance" : project.readingOrder()}</Text>
       {scenes.length === 0 && <Text style={styles.empty}>No matching scenes in this snapshot.</Text>}
       {scenes.map((scene) => (
         <Pressable accessibilityRole="button" accessibilityLabel={`Read ${scene.title}`} key={scene.id} onPress={() => onScene(scene)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -232,6 +234,7 @@ function ScenesView({ project, onScene }: { project: SnapshotProject; onScene(sc
             <Text style={styles.pill}>{scene.status}</Text>
           </View>
           <Text style={styles.muted}>{scene.pov || "No POV"}</Text>
+          {scene.chapter_title && <Text style={styles.muted}>{[scene.act_title, scene.chapter_title].filter(Boolean).join(" · ")}</Text>}
           <Text numberOfLines={3} style={styles.body}>{scene.summary || scene.body}</Text>
         </Pressable>
       ))}
@@ -239,19 +242,30 @@ function ScenesView({ project, onScene }: { project: SnapshotProject; onScene(sc
   );
 }
 
-function SceneReader({ scene, onBack }: { scene: SnapshotScene; onBack(): void }) {
+function SceneReader({ project, scene, onScene, onBack, onDiscuss }: {
+  project: SnapshotProject; scene: SnapshotScene; onScene(scene: SnapshotScene): void; onBack(): void; onDiscuss(): void;
+}) {
+  const scenes = project.listScenes();
+  const position = scenes.findIndex((item) => item.id === scene.id);
+  const previous = scenes[position - 1];
+  const next = scenes[position + 1];
   return (
     <ScrollView contentContainerStyle={styles.reader}>
       <Button label="Back to scenes" onPress={onBack} variant="secondary" />
       <Text style={styles.h1}>{scene.title}</Text>
       <Text style={styles.muted}>{scene.pov} · {scene.status}</Text>
+      {scene.chapter_title && <Text style={styles.muted}>{[scene.act_title, scene.chapter_title].filter(Boolean).join(" · ")}</Text>}
+      <Text style={styles.muted}>Scene {position + 1} of {scenes.length} · {project.readingOrder()}</Text>
+      <Button label="Discuss this scene" onPress={onDiscuss} variant="secondary" />
       <Text selectable style={styles.manuscript}>{scene.body}</Text>
       <Text style={styles.readOnly}>Read-only snapshot · edits happen on desktop</Text>
+      <Button label="Previous scene" disabled={!previous} onPress={() => { if (previous) onScene(previous); }} variant="secondary" />
+      <Button label="Next scene" disabled={!next} onPress={() => { if (next) onScene(next); }} variant="secondary" />
     </ScrollView>
   );
 }
 
-function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingItem): void }) {
+function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingItem): void; onStatusChange(status: CaptureStatus): void }) {
   const [kind, setKind] = useState<"capture_note" | "dictated_passage" | "story_memory_suggestion" | "change_set_request">("capture_note");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -259,6 +273,9 @@ function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingI
   const inFlight = useRef(false);
   const active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  useEffect(() => {
+    props.onStatusChange(busy ? "saving" : text.length > 0 ? "draft" : "empty");
+  }, [busy, text, props.onStatusChange]);
   const submit = async () => {
     if (inFlight.current || !text.trim()) return;
     inFlight.current = true;
@@ -282,6 +299,7 @@ function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingI
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
       <Text style={styles.sectionTitle}>Capture for desktop review</Text>
+      <Text style={styles.muted}>Your draft stays while switching tabs. Save it before closing this book or reloading the app.</Text>
       {runtime.mode === "preview" && <Text style={styles.notice}>Sample capture only. It is not synced and disappears on reload.</Text>}
       <View style={styles.chips}>
         {(["capture_note", "dictated_passage", "story_memory_suggestion", "change_set_request"] as const).map((value) => (
@@ -379,21 +397,25 @@ function ReviewView({ projectId, revision }: { projectId: string; revision: stri
   );
 }
 
-function AssistantView({ project, sceneId, onOpenScene }: { project: SnapshotProject; sceneId?: string; onOpenScene(sceneId: string): void }) {
+function AssistantView({ project, sceneId, onOpenScene, onClearScene }: { project: SnapshotProject; sceneId?: string; onOpenScene(sceneId: string): void; onClearScene(): void }) {
   const [voice, dispatch] = useReducer(reduceVoiceSession, undefined, initialVoiceSession);
   const [handle, setHandle] = useState<VoiceHandle | null>(null);
   const [text, setText] = useState("");
   const [localError, setLocalError] = useState("");
+  const [showContext, setShowContext] = useState(false);
   const handleRef = useRef<VoiceHandle | null>(null);
   const attemptRef = useRef<AbortController | null>(null);
-  const stop = useCallback(() => {
+  const release = useCallback(() => {
     attemptRef.current?.abort();
     attemptRef.current = null;
     handleRef.current?.stop();
     handleRef.current = null;
     setHandle(null);
-    dispatch({ type: "end" });
   }, []);
+  const stop = useCallback(() => {
+    release();
+    dispatch({ type: "end" });
+  }, [release]);
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state !== "active") stop();
@@ -411,7 +433,13 @@ function AssistantView({ project, sceneId, onOpenScene }: { project: SnapshotPro
         projectId: project.identity().projectId,
         ...(sceneId ? { currentSceneId: sceneId } : {}),
         signal: attempt.signal,
-        onEvent: (event) => { if (!attempt.signal.aborted) dispatch(event); },
+        onEvent: (event) => {
+          if (attempt.signal.aborted) return;
+          // These local transport errors have already closed media resources.
+          // Retire the UI handle too, preserving the error and allowing retry.
+          if (event.type === "session.error" && ["disconnected", "playback_failed"].includes(event.code)) release();
+          dispatch(event);
+        },
       });
       if (attempt.signal.aborted) { next.stop(); return; }
       handleRef.current = next;
@@ -430,14 +458,32 @@ function AssistantView({ project, sceneId, onOpenScene }: { project: SnapshotPro
     catch (caught) { setLocalError(caught instanceof Error ? caught.message : "Message could not be sent."); }
   };
   const citations = useMemo(() => project.search(voice.userTranscript, 3), [project, voice.userTranscript]);
+  const writingVoice = project.writingVoice();
+  const canon = project.acceptedCanon(sceneId);
+  const staleFacts = canon?.facts.filter((fact) => fact.evidence.some((item) => item.verification !== "excerpt_present")).length ?? 0;
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.conversation}>
         <Text style={styles.sectionTitle}>Copilot voice</Text>
         {sceneId && <Text style={styles.muted}>Discussing: {project.getScene(sceneId)?.title}</Text>}
-        <Text style={styles.muted}>Voice uses OpenAI. Selected story context and microphone audio are sent for this session.</Text>
-        <Text style={styles.muted}>Status: {voice.status}{voice.muted ? " · muted" : ""}</Text>
-        <ErrorBanner message={localError || voice.error?.message || ""} />
+        <Text style={styles.muted}>{canon
+          ? `${canon.facts.length} accepted story ${canon.facts.length === 1 ? "fact" : "facts"} selected from this snapshot${sceneId ? " for this scene" : " for the book"}.`
+          : "Accepted story facts are unavailable in this older snapshot. Publish and reopen to include them."}</Text>
+        {staleFacts > 0 && <Text style={styles.notice}>{staleFacts} selected {staleFacts === 1 ? "fact has" : "facts have"} missing source passages in this snapshot. Check their evidence on desktop.</Text>}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{writingVoice ? `Writing Voice: ${writingVoice.name}` : "No Writing Voice in this snapshot"}</Text>
+          <Pressable accessibilityRole="button" aria-expanded={showContext} onPress={() => setShowContext((value) => !value)} style={styles.contextToggle}>
+            <Text style={styles.back}>{showContext ? "Hide context details" : "Show context details"}</Text>
+          </Pressable>
+          {showContext && <>
+            {writingVoice && <Text style={styles.body}>{writingVoice.description}</Text>}
+            <Text style={styles.muted}>{writingVoice
+              ? "This session uses the downloaded profile for proposed prose, not Copilot's speaking personality."
+              : "Approve a Writing Voice on desktop and publish a fresh snapshot to include it here."}</Text>
+            <Text style={styles.muted}>Desktop changes are not live. Reopen the book after publication and start a new session to use an updated profile.</Text>
+            {sceneId && <Button label="Discuss without a selected scene" variant="secondary" disabled={!!handle || voice.status === "connecting"} onPress={() => { setLocalError(""); onClearScene(); }} />}
+          </>}
+        </View>
         {!!voice.userTranscript && <View style={styles.userBubble}><Text style={styles.bubbleLabel}>You</Text><Text style={styles.body}>{voice.userTranscript}</Text></View>}
         {!!voice.assistantTranscript && <View style={styles.assistantBubble}><Text style={styles.bubbleLabel}>Copilot</Text><Text style={styles.body}>{voice.assistantTranscript}</Text></View>}
         {citations.length > 0 && <View style={styles.chips}>{citations.map((item) => (
@@ -450,8 +496,13 @@ function AssistantView({ project, sceneId, onOpenScene }: { project: SnapshotPro
             <Text style={styles.citation}>Related: {item.title}</Text>
           </Pressable>
         ))}</View>}
-        {!voice.userTranscript && !voice.assistantTranscript && <Text style={styles.empty}>Start voice to discuss this snapshot. Copilot can read context and queue suggestions; it cannot alter manuscript prose.</Text>}
+        {!voice.userTranscript && !voice.assistantTranscript && <Text style={styles.empty}>Start voice, then speak or type. Copilot can discuss this snapshot and queue suggestions, not edit your manuscript.</Text>}
       </ScrollView>
+      <View style={styles.sessionStatus}>
+        <Text style={styles.muted}>Status: {voice.status}{voice.muted ? " · muted" : ""}</Text>
+        <Text style={styles.muted}>Voice uses OpenAI. Selected story context and microphone audio are sent for this session.</Text>
+        <ErrorBanner message={localError || voice.error?.message || ""} />
+      </View>
       <View style={styles.voiceControls}>
         {!handle ? (voice.status === "connecting" ? <Button label="Cancel connection" variant="secondary" onPress={stop} /> : <Button label="Start voice" disabled={runtime.mode === "preview"} onPress={() => void start()} />) : <>
           <Button label={voice.muted ? "Unmute" : "Mute"} onPress={() => { handle.mute(!voice.muted); dispatch({ type: "mute.changed", muted: !voice.muted }); }} variant="secondary" />
@@ -459,15 +510,15 @@ function AssistantView({ project, sceneId, onOpenScene }: { project: SnapshotPro
           <Button label="End" onPress={stop} variant="danger" />
         </>}
       </View>
-      <View style={styles.textComposer}>
-        <TextInput accessibilityLabel="Message Copilot" editable={!!handle} onChangeText={setText} placeholder={handle ? "Type to the same conversation" : "Start voice to open a session"} placeholderTextColor="#697386" style={[styles.input, styles.flex]} value={text} />
-        <Button label="Send" disabled={!handle || !text.trim()} onPress={send} />
-      </View>
+      {!!handle && <View style={styles.textComposer}>
+        <TextInput accessibilityLabel="Message Copilot" onChangeText={setText} placeholder="Type to the same conversation" placeholderTextColor="#697386" style={[styles.input, styles.flex]} value={text} />
+        <Button label="Send" disabled={!text.trim()} onPress={send} />
+      </View>}
     </View>
   );
 }
 
-function SettingsView({ projectId, onSignedOut }: { projectId: string; onSignedOut(): void }) {
+function SettingsView({ projectId, onSignedOut, requestLeave }: { projectId: string; onSignedOut(): void; requestLeave(action: () => void): void }) {
   const [recovery, setRecovery] = useState("");
   const [restoreCode, setRestoreCode] = useState("");
   const [restoreVersion, setRestoreVersion] = useState("");
@@ -513,8 +564,8 @@ function SettingsView({ projectId, onSignedOut }: { projectId: string; onSignedO
         <Button label="Restore recovery key" variant="secondary" disabled={!restoreVersion || !restoreCode.trim()} onPress={() => void restoreKey()} />
         {!!recoveryMessage && <Text accessibilityLiveRegion="polite" style={styles.muted}>{recoveryMessage}</Text>}
       </View>
-      <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(onSignedOut).catch(() => setRecoveryMessage("Sign-out failed. Please retry."))} />
-      <Button label="Revoke device and delete local data" variant="danger" onPress={erase} />
+      <Button label="Sign out" variant="secondary" onPress={() => requestLeave(() => void runtime.signOut().then(onSignedOut).catch(() => setRecoveryMessage("Sign-out failed. Please retry.")))} />
+      <Button label="Revoke device and delete local data" variant="danger" onPress={() => requestLeave(erase)} />
     </ScrollView>
   );
 }
@@ -525,6 +576,26 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
   const [tab, setTab] = useState<Tab>("scenes");
   const [scene, setScene] = useState<SnapshotScene | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [captureStatus, setCaptureStatus] = useState<CaptureStatus>("empty");
+  const [captureRevision, setCaptureRevision] = useState(0);
+  const [leaveMessage, setLeaveMessage] = useState("");
+  useEffect(() => { setLeaveMessage(""); }, [captureStatus]);
+  const requestLeave = (action: () => void) => {
+    if (captureStatus === "saving") {
+      setLeaveMessage("Your capture is still saving. Please wait before leaving this book.");
+      return;
+    }
+    if (captureStatus === "empty") { action(); return; }
+    const message = "Your unfinished capture has not been saved. Stay and choose Save pending item to keep it, or discard the draft and leave.";
+    if (Platform.OS === "web") {
+      if (globalThis.confirm(`Discard unfinished capture?\n\n${message}`)) action();
+    } else {
+      Alert.alert("Discard unfinished capture?", message, [
+        { text: "Stay", style: "cancel" },
+        { text: "Discard and leave", style: "destructive", onPress: action },
+      ]);
+    }
+  };
   useEffect(() => {
     let active = true;
     setError("");
@@ -547,13 +618,19 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
     <SafeAreaView style={styles.safe}>
       {runtime.mode === "preview" && <Text style={styles.notice}>Sample book · voice and sync unavailable</Text>}
       <View style={styles.projectHeader}>
-        <Pressable accessibilityRole="button" onPress={onExit}><Text style={styles.back}>‹ Projects</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => requestLeave(onExit)}><Text style={styles.back}>‹ Projects</Text></Pressable>
         <View style={styles.flex}><Text numberOfLines={1} style={styles.projectTitle}>{selected.title}</Text><Text style={styles.muted}>{loaded.freshness}{loaded.offline ? " · downloaded copy" : ""}</Text></View>
       </View>
+      <ErrorBanner message={leaveMessage} />
       <View style={styles.flex}>
-        {tab === "scenes" && (scene ? <SceneReader scene={scene} onBack={() => setScene(null)} /> : <ScenesView project={loaded.project} onScene={setScene} />)}
+        {/* Keep only passive reading/capture views mounted across tabs. Voice
+            must still unmount and stop the microphone when leaving Assistant. */}
+        <View style={[styles.flex, tab !== "scenes" && styles.hidden]}>
+          {scene ? <SceneReader key={scene.id} project={loaded.project} scene={scene} onScene={setScene} onBack={() => setScene(null)} onDiscuss={() => setTab("assistant")} /> : <ScenesView project={loaded.project} onScene={setScene} />}
+        </View>
         {tab === "assistant" && <AssistantView
           project={loaded.project}
+          onClearScene={() => setScene(null)}
           {...(scene ? { sceneId: scene.id } : {})}
           onOpenScene={(sceneId) => {
             const cited = loaded.project.getScene(sceneId);
@@ -563,13 +640,18 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
             }
           }}
         />}
-        {tab === "capture" && <CaptureView project={loaded.project} onCreated={() => setTab("review")} />}
-        {tab === "review" && <ReviewView projectId={identity.projectId} revision={identity.revision} />}
-        {tab === "settings" && <SettingsView projectId={identity.projectId} onSignedOut={onSignedOut} />}
+        <View style={[styles.flex, tab !== "capture" && styles.hidden]}>
+          <CaptureView project={loaded.project} onStatusChange={setCaptureStatus} onCreated={() => {
+            setCaptureRevision((value) => value + 1);
+            setTab((current) => current === "capture" ? "review" : current);
+          }} />
+        </View>
+        {tab === "review" && <ReviewView key={captureRevision} projectId={identity.projectId} revision={identity.revision} />}
+        {tab === "settings" && <SettingsView projectId={identity.projectId} onSignedOut={onSignedOut} requestLeave={requestLeave} />}
       </View>
       <View accessibilityRole="tablist" style={styles.tabBar}>
         {(["scenes", "assistant", "capture", "review", "settings"] as const).map((value) => (
-          <Pressable accessibilityRole="tab" accessibilityState={{ selected: tab === value }} key={value} onPress={() => { setTab(value); if (value !== "scenes" && value !== "assistant") setScene(null); }} style={styles.tab}>
+          <Pressable accessibilityRole="tab" aria-selected={tab === value} key={value} onPress={() => setTab(value)} style={styles.tab}>
             <Text style={tab === value ? styles.tabTextActive : styles.tabText}>{value[0]?.toUpperCase()}{value.slice(1)}</Text>
           </Pressable>
         ))}
@@ -613,6 +695,9 @@ export default function App() {
 
 const colors = { bg: "#0c0d12", surface: "#171923", border: "#2a2e3d", text: "#f4f1ff", muted: "#a8adbd", accent: "#7d5cff", danger: "#c84762" };
 const styles = StyleSheet.create({
+  hidden: { display: "none" },
+  contextToggle: { minHeight: 44, justifyContent: "center" },
+  sessionStatus: { paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
   safe: { flex: 1, backgroundColor: colors.bg }, flex: { flex: 1 }, centered: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", padding: 24, gap: 18 },
   authCard: { gap: 16, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 24 },
   brand: { color: "#b8a7ff", fontSize: 18, fontWeight: "800", letterSpacing: 1 }, brandSmall: { color: "#b8a7ff", fontSize: 15, fontWeight: "800" },

@@ -21,7 +21,8 @@ from ..codex import list_entities, list_relationships
 from ..project import OpenAuthorError, ProjectPaths, ensure_project_identity
 from ..project_locks import serialized_project_access
 from ..revisions import revision_head
-from ..scenes import list_scene_details
+from ..planning import get_manuscript_reading
+from ..review_context import build_review_context
 
 
 MOBILE_SNAPSHOT_SCHEMA = "openauthor.mobile.snapshot"
@@ -54,6 +55,7 @@ class MobileSnapshotPolicy:
   max_codex_relationships: int = 10_000
   max_evidence_items: int = 17_000
   max_reference_characters: int = 256
+  max_canon_facts: int = 5_000
 
   def __post_init__(self) -> None:
     for name, value in (
@@ -62,6 +64,7 @@ class MobileSnapshotPolicy:
       ("max_codex_relationships", self.max_codex_relationships),
       ("max_evidence_items", self.max_evidence_items),
       ("max_reference_characters", self.max_reference_characters),
+      ("max_canon_facts", self.max_canon_facts),
     ):
       if value < 1:
         raise ValueError(f"{name} must be positive.")
@@ -122,8 +125,13 @@ def project_mobile_snapshot(
     )
   active_policy = policy or MobileSnapshotPolicy()
 
+  reading = get_manuscript_reading(paths)
+  locations = {
+    scene_id: {"chapter_title": section["title"], "act_title": section["act_title"]}
+    for section in reading["sections"] for scene_id in section["scene_ids"]
+  }
   scenes = []
-  for scene in list_scene_details(paths):
+  for scene in reading["scenes"]:
     scenes.append({
       "id": scene["id"],
       "title": scene["title"],
@@ -133,6 +141,7 @@ def project_mobile_snapshot(
       "created_at": scene["created_at"],
       "updated_at": scene["updated_at"],
       "body": scene["body"],
+      **locations[scene["id"]],
     })
 
   entities = list_entities(paths)
@@ -176,17 +185,25 @@ def project_mobile_snapshot(
   )
   evidence.sort(key=lambda item: item["reference"])
   _require_count("evidence", evidence, active_policy.max_evidence_items)
+  review = build_review_context(paths, scene_ids=(), project_scope=True)
+  _require_count("canon facts", review["accepted_canon"], active_policy.max_canon_facts)
   snapshot = {
     "schema": MOBILE_SNAPSHOT_SCHEMA,
     "schema_version": MOBILE_SNAPSHOT_SCHEMA_VERSION,
     "project_id": project_id,
     "revision": revision,
     "scenes": scenes,
+    "reading_order": "plan",
     "codex": {
       "entities": entities,
       "relationships": relationships,
     },
     "evidence": evidence,
+    # Only approved craft preferences travel, never analysis, raw exemplars,
+    # local preview drafts or filesystem-bound edit versions.
+    "writing_voice": review["writing_voice"] or None,
+    # Reuse desktop's accepted-only projection with no one-request permissions.
+    "accepted_canon": review["accepted_canon"],
   }
   payload_bytes = _canonical_bytes(snapshot)
   manifest = {

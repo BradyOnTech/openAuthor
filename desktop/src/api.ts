@@ -343,7 +343,8 @@ export async function getManuscriptPlan(projectRoot: string): Promise<Manuscript
 
 export async function updateProjectBrief(
   projectRoot: string,
-  brief: ManuscriptPlan["brief"]
+  brief: ManuscriptPlan["brief"],
+  expectedVersion?: { workspace: string; value: ManuscriptPlan["brief"] }
 ): Promise<ManuscriptPlan> {
   const args = [
     "plan", "brief",
@@ -353,6 +354,8 @@ export async function updateProjectBrief(
     "--outline", brief.outline,
   ];
   for (const theme of brief.themes) args.push("--theme", theme);
+  if (!brief.themes.length) args.push("--clear-themes");
+  if (expectedVersion) args.push("--expected-version", JSON.stringify(expectedVersion));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ManuscriptPlan>(result);
@@ -361,10 +364,11 @@ export async function updateProjectBrief(
 export async function addPlanAct(
   projectRoot: string,
   title: string,
-  synopsis = ""
+  synopsis = "",
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["acts"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "act-add", "--title", title, "--synopsis", synopsis, "--json"
+    "plan", "act-add", "--title", title, "--synopsis", synopsis, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -373,10 +377,11 @@ export async function addPlanChapter(
   projectRoot: string,
   actId: string,
   title: string,
-  synopsis = ""
+  synopsis = "",
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["acts"][number]["chapters"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "chapter-add", "--act", actId, "--title", title, "--synopsis", synopsis, "--json"
+    "plan", "chapter-add", "--act", actId, "--title", title, "--synopsis", synopsis, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -385,9 +390,11 @@ export async function assignPlanScene(
   projectRoot: string,
   sceneId: string,
   chapterId: string | null,
-  beforeSceneId?: string
+  beforeSceneId?: string,
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan> {
   const args = ["plan", "scene-assign", "--scene", sceneId];
+  if (expectedWorkspace) args.push("--expected-workspace", expectedWorkspace);
   if (chapterId) args.push("--chapter", chapterId);
   if (beforeSceneId) args.push("--before", beforeSceneId);
   args.push("--json");
@@ -412,10 +419,13 @@ export async function previewPlanSceneMove(
 export async function updatePlanSceneMetadata(
   projectRoot: string,
   sceneId: string,
-  metadata: { timelinePosition: string; labels: string[] }
+  metadata: { timelinePosition: string; labels: string[] },
+  expectedVersion?: { workspace: string; value: ManuscriptPlan["scene_metadata"][string] }
 ): Promise<ManuscriptPlan["scene_metadata"][string]> {
   const args = ["plan", "scene-meta", "--scene", sceneId, "--timeline", metadata.timelinePosition];
   for (const label of metadata.labels) args.push("--label", label);
+  if (!metadata.labels.length) args.push("--clear-labels");
+  if (expectedVersion) args.push("--expected-version", JSON.stringify(expectedVersion));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson(result);
@@ -439,10 +449,11 @@ export async function updateLocalProductSignals(
 export async function addPlanBeat(
   projectRoot: string,
   sceneId: string,
-  summary: string
+  summary: string,
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["beats"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "beat-add", "--scene", sceneId, "--summary", summary, "--json"
+    "plan", "beat-add", "--scene", sceneId, "--summary", summary, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -1750,7 +1761,14 @@ export async function addEditorialPass(projectRoot: string, payload: { name: str
 }
 
 export async function listCanonFacts(projectRoot: string): Promise<CanonFact[]> {
-  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-list", "--json"]));
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-list", "--for-editing", "--json"]));
+}
+
+export type CanonFactChanges = Pick<CanonFact, "predicate" | "value" | "status" | "validity" | "evidence">;
+
+export async function updateCanonFact(projectRoot: string, fact: CanonFact, changes: CanonFactChanges): Promise<CanonFact> {
+  if (!fact.edit_version) throw new Error("Reload Canon & Continuity before editing this fact.");
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-update", "--id", fact.id, "--expected-version", fact.edit_version, "--changes-json", JSON.stringify(changes), "--json"]));
 }
 
 export async function addCanonFact(projectRoot: string, payload: {
@@ -1909,6 +1927,8 @@ export type WritingVoiceWorkspace = {
 };
 export type VoicePreview = {
   id: string; scene_id: string; source_text: string; provider: string;
+  instruction?: string;
+  refinement?: { preview_id: string; direction_id: string; candidate: string; feedback: string };
   directions: Array<{
     id: string; profile: StyleProfile; text: string; warnings: string[]; proposal_id?: string;
     measures: { words: number; average_sentence_words: number; dialogue_passages: number };
@@ -1919,7 +1939,7 @@ export type VoicePreview = {
 export async function getWritingVoiceWorkspace(projectRoot: string): Promise<WritingVoiceWorkspace> {
   return decodeJson(await runCoreCommand(projectRoot, ["style", "workspace", "--json"]));
 }
-export async function writingVoiceAction<T>(projectRoot: string, action: "save" | "suggest" | "preview" | "review" | "stage", request: Record<string, unknown>): Promise<T> {
+export async function writingVoiceAction<T>(projectRoot: string, action: "save" | "suggest" | "preview" | "refine" | "review" | "stage", request: Record<string, unknown>): Promise<T> {
   return decodeJson(await runCoreCommand(projectRoot, ["style", action, "--request-json", JSON.stringify(request), "--json"]));
 }
 

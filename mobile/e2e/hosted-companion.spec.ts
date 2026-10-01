@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { createMobileSyncService, type EncryptedMobileOutboxItem, type MobileSyncSidecar } from "../../desktop/src/mobileSync/mobileSync";
 import { encodeRecoveryKey } from "../src/core/recoveryKey";
 import type { OutboxEnvelope } from "../src/core/outbox";
+import { exerciseVoiceControls } from "./voiceControls";
 
 test.use({ serviceWorkers: "allow" });
 
@@ -18,7 +19,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
       cwd: repo, env: { ...process.env, PYTHONPATH: repo }, encoding: "utf8", input: JSON.stringify(input ?? {}),
     }));
   }
-  const prepared = python("prepare");
+  let prepared = python("prepare");
   const projectId = prepared.manifest.project_id as string;
   const userId = "10000000-0000-4000-8000-000000000001";
   const workspaceId = "30000000-0000-4000-8000-000000000001";
@@ -34,7 +35,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
     sidecar,
     transport: { publishSnapshot: async () => {}, pullOutbox: async () => outbox.splice(0) },
   });
-  const published = await desktop.publishSnapshot({ projectRoot, projectId, projectKey, keyVersion: 1 });
+  let published = await desktop.publishSnapshot({ projectRoot, projectId, projectKey, keyVersion: 1 });
   const bytea = (base64: string) => `\\x${Buffer.from(base64, "base64").toString("hex")}`;
   const registrations: Record<string, unknown>[] = [];
   const requests: { path: string; body: string }[] = [];
@@ -125,15 +126,82 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await expect(page.getByText(/cannot unlock the selected book/)).toBeVisible();
   await page.getByLabel("Book recovery key").fill(recoveryKey);
   await page.getByRole("button", { name: "Verify key and open book" }).click();
+  await expect(page.getByRole("button", { name: /^Read / })).toHaveText([
+    /The Blue Hour/, /The Snow Key/, /A Loose Page/,
+  ]);
+  await page.getByRole("textbox", { name: "Search scenes" }).fill("Arrival");
+  await expect(page.getByRole("button", { name: /^Read / })).toHaveCount(1);
+  await page.getByRole("textbox", { name: "Search scenes" }).fill("");
+  await page.getByRole("button", { name: "Read The Blue Hour" }).click();
+  await expect(page.getByText("Winter · Arrival", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Previous scene", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Next scene", exact: true }).click();
+  await expect(page.getByText("Winter · Discovery", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Next scene", exact: true }).click();
+  await expect(page.getByText("Unassigned scenes", { exact: true })).toBeVisible();
+  await expect(page.getByText("An unsorted page waited in her notebook.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Next scene", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Previous scene", exact: true }).click();
+  await expect(page.getByText(/Scene 2 of 3 · Desktop Plan reading order/)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("plan-ordered-reader.png"), fullPage: true });
+  await page.getByRole("button", { name: "Back to scenes", exact: true }).click();
   await page.getByRole("button", { name: "Read The Snow Key" }).click();
   missingBookKey = false;
   await expect(page.getByText(/Mara found a brass key beneath/)).toBeVisible();
+  await page.getByRole("button", { name: "Discuss this scene", exact: true }).click();
+  await expect(page.getByText("Discussing: The Snow Key", { exact: true })).toBeVisible();
+  await expect(page.getByText("Status: idle", { exact: true })).toBeInViewport();
+  await expect(page.getByText(/Selected story context and microphone audio/)).toBeInViewport();
+  await expect(page.getByText("Writing Voice: Winter restraint", { exact: true })).toBeVisible();
+  await expect(page.getByText("Let physical choices carry emotion.", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("compact-assistant.png"), fullPage: true });
+  await page.getByRole("button", { name: "Show context details", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Hide context details", exact: true })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("Let physical choices carry emotion.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/not Copilot's speaking personality/)).toBeVisible();
+  await expect(page.getByText("2 accepted story facts selected from this snapshot for this scene.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/1 selected fact has missing source passages/)).toBeVisible();
+  await page.getByRole("button", { name: "Discuss without a selected scene", exact: true }).click();
+  await expect(page.getByText("Discussing: The Snow Key", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Hide context details", exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath("downloaded-writing-voice.png"), fullPage: true });
+  // Withdrawal changes the next encrypted publication, not an already-open copy.
+  prepared = python("withdraw-fact");
+  const previousSnapshotId = published.snapshot_id;
+  published = await desktop.publishSnapshot({ projectRoot, projectId, projectKey, keyVersion: 1 });
+  expect(published.snapshot_id).not.toBe(previousSnapshotId);
+  await expect(page.getByText("2 accepted story facts selected from this snapshot for the book.", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: /The Winter Observatory/ }).click();
   await page.getByRole("button", { name: "Read The Snow Key" }).click();
+  await page.getByRole("tab", { name: "Assistant", exact: true }).click();
+  await expect(page.getByText("Writing Voice: Winter restraint", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 accepted story fact selected from this snapshot for this scene.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/missing source passages/)).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("refreshed-story-facts.png"), fullPage: true });
+  await exerciseVoiceControls(page, testInfo);
   await page.getByRole("tab", { name: "Capture", exact: true }).click();
   const note = "Let the key open the clock instead of the door.";
   await page.getByLabel("Capture text").fill(note);
+  await page.getByRole("tab", { name: "Scenes", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Discuss this scene", exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Capture", exact: true }).click();
+  await expect(page.getByLabel("Capture text")).toHaveValue(note);
+  // One failed local write must not erase the draft or pretend it was saved.
+  // This changes only this disposable browser's next outbox insert.
+  await page.evaluate(() => {
+    const originalAdd = IDBObjectStore.prototype.add;
+    IDBObjectStore.prototype.add = function (value: unknown, key?: IDBValidKey) {
+      if (this.name === "outbox") {
+        IDBObjectStore.prototype.add = originalAdd;
+        throw new Error("Fixture: capture storage is temporarily unavailable.");
+      }
+      return originalAdd.call(this, value, key);
+    };
+  });
+  await page.getByRole("button", { name: "Save pending item" }).click();
+  await expect(page.getByText("Fixture: capture storage is temporarily unavailable.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Capture text")).toHaveValue(note);
   await page.getByRole("button", { name: "Save pending item" }).click();
   await expect(page.getByText("Pending review", { exact: true })).toBeVisible();
   await expect(page.getByText(note, { exact: true })).toBeVisible();

@@ -66,6 +66,7 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
     })
   task_count = len(results)
   return {
+    "assessment_scope": "Deterministic pattern regression, not literary quality or semantic canon validation.",
     "corpus": str(corpus_path),
     "task_count": task_count,
     "pass_count": len({row["pass_id"] for row in results}),

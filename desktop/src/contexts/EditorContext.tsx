@@ -1,14 +1,16 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan } from "../types";
 
 export type EditorTabKind = "scene" | "reader" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings" | "writing-voice";
+
+export type RevisionDraft = { sceneId?: string; instruction: string };
 
 export type EditorTab = {
   id: string;
   kind: EditorTabKind;
   label: string;
   modified?: boolean;
-  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | null;
+  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | { noteId: string } | RevisionDraft | null;
 };
 
 export type SplitDirection = "none" | "horizontal" | "vertical";
@@ -23,6 +25,7 @@ type EditorState = {
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateTab: (id: string, updates: Partial<EditorTab>) => void;
+  beginNavigation: () => () => boolean;
 
   setSplitDirection: (d: SplitDirection) => void;
   setSecondaryActiveTab: (id: string) => void;
@@ -41,8 +44,15 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   const [activeTabId, setActiveTabId] = useState("");
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("none");
   const [secondaryActiveTabId, setSecondaryActiveTabId] = useState("");
+  const navigationRevision = useRef(0);
+  useEffect(() => () => { ++navigationRevision.current; }, []);
+  const beginNavigation = useCallback(() => {
+    const revision = ++navigationRevision.current;
+    return () => revision === navigationRevision.current;
+  }, []);
 
   const openTab = useCallback((tab: EditorTab) => {
+    ++navigationRevision.current;
     setTabs((prev) => {
       const exists = prev.find((t) => t.id === tab.id);
       if (exists) {
@@ -54,6 +64,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const closeTab = useCallback((id: string) => {
+    ++navigationRevision.current;
     setTabs((prev) => {
       const idx = prev.findIndex((t) => t.id === id);
       const next = prev.filter((t) => t.id !== id);
@@ -68,6 +79,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, [activeTabId]);
 
   const setActiveTab = useCallback((id: string) => {
+    ++navigationRevision.current;
     setActiveTabId(id);
   }, []);
 
@@ -88,6 +100,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     closeTab,
     setActiveTab,
     updateTab,
+    beginNavigation,
     setSplitDirection,
     setSecondaryActiveTab,
   };

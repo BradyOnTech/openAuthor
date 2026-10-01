@@ -138,6 +138,34 @@ describe("Writing Voice author workflow", () => {
     expect(screen.getByText(/Approve and save to use it/)).toBeTruthy();
   });
 
+  it("compares against the saved original and refines just one sample without applying it", async () => {
+    vi.mocked(getWritingVoiceWorkspace).mockResolvedValue({ ...workspace, previews: [preview] });
+    vi.mocked(getScene).mockResolvedValue({ id: "scene-1", body: "Newer scene text." } as SceneDetail);
+    const view = render(<WritingVoiceEditor />);
+    const source = await screen.findByRole("region", { name: "Original passage" });
+    expect(source.textContent).toContain(preview.source_text);
+    expect(source.textContent).not.toContain("Newer scene text.");
+    let card = screen.getByRole("article", { name: "Preview Kinetic" });
+    fireEvent.click(within(card).getByText("Refine this sample"));
+    fireEvent.change(within(card).getByRole("textbox", { name: "Revision feedback" }), { target: { value: "Keep the count unfinished; remove the added ending." } });
+    view.unmount(); render(<WritingVoiceEditor />);
+    card = await screen.findByRole("article", { name: "Preview Kinetic" });
+    expect((within(card).getByRole("textbox", { name: "Revision feedback" }) as HTMLTextAreaElement).value).toBe("Keep the count unfinished; remove the added ending.");
+    vi.mocked(writingVoiceAction).mockRejectedValueOnce(new Error("The scene changed after preview."));
+    fireEvent.click(within(card).getByRole("button", { name: "Generate refined sample" }));
+    await screen.findByText("Error: The scene changed after preview.");
+    expect((within(card).getByRole("textbox", { name: "Revision feedback" }) as HTMLTextAreaElement).value).toContain("count unfinished");
+    const refined = { ...preview, id: "refined", refinement: { preview_id: preview.id, direction_id: "direction-2", candidate: preview.directions[1].text, feedback: "Keep the count unfinished; remove the added ending." }, directions: [preview.directions[1]] };
+    vi.mocked(writingVoiceAction).mockResolvedValueOnce(refined);
+    fireEvent.click(within(card).getByRole("button", { name: "Generate refined sample" }));
+    await screen.findByText(/Refined sample saved separately/);
+    expect(writingVoiceAction).toHaveBeenLastCalledWith("/books/voice", "refine", expect.objectContaining({ preview_id: preview.id, direction_id: "direction-2", feedback: refined.refinement.feedback, provider: "local" }));
+    expect(screen.getByRole("region", { name: "Previous attempt" }).textContent).toContain(preview.directions[1].text);
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(editor.openTab).not.toHaveBeenCalled();
+    expect(vi.mocked(writingVoiceAction).mock.calls.every(([, action]) => action === "refine")).toBe(true);
+  });
+
   it("expands comparison and restores the previous layout on leaving", async () => {
     vi.mocked(getWritingVoiceWorkspace).mockResolvedValue({ ...workspace, previews: [preview] });
     const view = render(<WritingVoiceEditor />);

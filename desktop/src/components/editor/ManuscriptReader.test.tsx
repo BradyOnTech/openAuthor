@@ -17,7 +17,7 @@ const reading: ManuscriptReading = { schema_version: 1, scenes, word_count: 10, 
 ] };
 
 describe("manuscript reading", () => {
-  beforeEach(() => { vi.resetAllMocks(); editor.tabs = []; vi.mocked(getManuscriptReading).mockResolvedValue(reading); });
+  beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); editor.tabs = []; vi.mocked(getManuscriptReading).mockResolvedValue(reading); });
   afterEach(cleanup);
 
   it("reads chapters in saved order and fetches the current scene before opening its editor", async () => {
@@ -52,6 +52,16 @@ describe("manuscript reading", () => {
     fireEvent.click(screen.getByRole("button", { name: "Refresh reading copy" }));
     await screen.findByRole("main", { name: "Manuscript reading copy" });
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("returns to the selected chapter after navigation and after refreshing the reading copy", async () => {
+    const view = render(<ManuscriptReader />);
+    fireEvent.click(await screen.findByRole("button", { name: "Next chapter" }));
+    view.unmount(); render(<ManuscriptReader />);
+    await screen.findByRole("heading", { name: "Unassigned", level: 3 });
+    expect((screen.getByRole("combobox", { name: "Reading chapter" }) as HTMLSelectElement).value).toBe("unassigned");
+    fireEvent.click(screen.getByRole("button", { name: "Refresh reading copy" }));
+    await screen.findByRole("heading", { name: "Unassigned", level: 3 });
   });
 
   it("bounds rendered prose to 25 scenes while retaining access to the rest of a long chapter", async () => {

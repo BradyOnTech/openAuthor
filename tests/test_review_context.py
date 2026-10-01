@@ -129,6 +129,11 @@ class ReviewContextTests(unittest.TestCase):
         self.assertIn(fact["id"], prompt)
         self.assertNotIn("PRIVATE-AUTHOR-NOTE", prompt)
       self.assertEqual(response["assistant_message"]["context_used"]["review"]["canon_fact_ids"], [fact["id"]])
+      receipt = response["assistant_message"]["context_used"]["review"]
+      self.assertEqual(receipt["scope"], "adaptive")
+      self.assertEqual(receipt["scene_titles"], ["Choice"])
+      self.assertFalse(receipt["selected_text_included"])
+      self.assertEqual(receipt["retrieval_result_count"], 0)
       log = json.loads((paths.root / drafted["draft"]["log_path"]).read_text())
       self.assertEqual((log["context_scene_radius"], log["codex_limit"]), (1, 8))
 

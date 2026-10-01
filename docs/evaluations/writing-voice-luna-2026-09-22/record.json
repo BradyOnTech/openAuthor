@@ -1,0 +1,633 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "failed_cases": [],
+  "generations": [
+    {
+      "run_id": "gen-d65d557a0ea9",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 8907,
+      "output_tokens": 674,
+      "latency_ms": 24573,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-4bbd3eefc448",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 8910,
+      "output_tokens": 676,
+      "latency_ms": 15766,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-f31f8d1e6a68",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12581,
+      "output_tokens": 634,
+      "latency_ms": 20526,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-bbd2f339860d",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12598,
+      "output_tokens": 765,
+      "latency_ms": 88684,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-aad6898fd6ce",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12601,
+      "output_tokens": 783,
+      "latency_ms": 17314,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-5a4403949f5b",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12601,
+      "output_tokens": 741,
+      "latency_ms": 28082,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-ddbffb8ac405",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12566,
+      "output_tokens": 875,
+      "latency_ms": 30826,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-1c1657c89a82",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12569,
+      "output_tokens": 721,
+      "latency_ms": 16101,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-af32e6c22ffa",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 8898,
+      "output_tokens": 833,
+      "latency_ms": 31501,
+      "provider_attempts": 1,
+      "error_category": ""
+    }
+  ],
+  "strict_review": false,
+  "provider": "openai-codex",
+  "requested_model": "gpt-5.6-luna",
+  "case_ids": [
+    "action-interrupted-choice",
+    "dialogue-withheld-knowledge",
+    "introspection-restrained-control"
+  ],
+  "seed": 41,
+  "corpus_sha256": "cba260ffcc68b0bb05c9a6c343dcffd9fc7fbb911f71665e5d503c781dbccba4",
+  "implementation_sha256": "0b7491e6229aeb17364fa7966df711f226dae0b3bdeca0c9bd13cc9ac50bf75a",
+  "generation_calls": 9,
+  "candidate_count": 9,
+  "changed_candidates": 9,
+  "quality_verdict": "Not assessed. Human comparison required.",
+  "criteria": {
+    "voice_fit": "Does the prose serve the selected Writing Voice without becoming mechanical?",
+    "readability": "Is the action and meaning clear, with purposeful rhythm?",
+    "emotional_effect": "Is the intended feeling earned through this scene?",
+    "character_distinction": "Does dialogue and perception belong to this character?",
+    "consistency": "Are facts, POV, tense, knowledge and protected details preserved?"
+  },
+  "cases": [
+    {
+      "id": "action-interrupted-choice",
+      "title": "The brake",
+      "mode": "action",
+      "pov": "Mara",
+      "source": "The ferry struck the chain sideways. Mara felt the deck shudder under her feet and saw the winch begin to turn. The handle caught Ivo across the wrist. He made a small sound and sat down hard.\n\nThere were six passengers behind the rope. Six, and the boy who had crawled beneath it. Mara began to count them again, but the brake lever snapped back and she had to catch it with both hands. She had not reached the boy.\n\nIvo tried to stand. His right hand folded against his coat.\n\n\"Stay there.\"\n\n\"Splendid plan.\" He sounded annoyed about the weather.\n\nThe chain was running out. Beyond its last painted link the ferry would turn broadside to the sluice. Mara could hold the brake or reach the boy; the space between them was just wider than her body. She felt very frightened. She shouted at the nearest passenger to get him, but the woman only gripped the rope harder.\n\nMara let one hand leave the lever. The brake moved an inch. She put her hand back.\n\n\"Use your belt,\" Ivo said.\n\nShe pulled it free and threw the buckle end. It landed short of the boy, who watched it without moving. Mara drew breath to tell him what to do. The chain hit its last painted link.",
+      "instruction": "Clarify the physical action and deepen the choice through Mara's attention. Preserve the interrupted count and unresolved ending; do not manufacture a rescue.",
+      "facts": [
+        "Six passengers are behind the rope; the boy is additional and beneath it.",
+        "Ivo's right wrist is injured; he suggests the belt, but cannot execute the rescue.",
+        "Mara's recount is interrupted before she reaches the boy.",
+        "The belt lands short; the boy is not rescued by the end."
+      ],
+      "quality_questions": [
+        "Can you track the lever, chain and boy without rereading?",
+        "Does fear emerge from Mara's constrained choice rather than extra emotion labels?",
+        "Does Ivo's dry response remain different from Mara's commands?",
+        "Does urgency vary sentence rhythm instead of making every sentence a fragment?"
+      ],
+      "protected_phrases": [
+        "Splendid plan."
+      ],
+      "markers": [
+        "Mara",
+        "Ivo",
+        "boy",
+        "belt"
+      ],
+      "calibration_error": "Changing 'began to count' to a completed count changes an event even when every name and number survives.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "The ferry struck the chain sideways. The deck shuddered under Mara\u2019s feet. Ahead of her, the winch jerked into motion, and its handle swung across Ivo\u2019s wrist. He made a small sound and sat down hard.\n\nSix passengers stood behind the rope. Six\u2014and the boy who had crawled beneath it. Mara started counting them again, forcing her eyes from one face to the next, but before she reached the boy, the brake lever snapped back. She caught it with both hands.\n\nIvo tried to stand. His right hand folded against his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain was running out. When the last painted link passed the winch, the ferry would swing broadside into the sluice. Mara could keep both hands on the brake, or reach the boy. The space between them was only a little wider than her body, but it might as well have been the river.\n\nShe looked at the boy. He was still beneath the rope, watching her. The nearest passenger had one hand on it. Mara shouted for the woman to get him. The woman only gripped the rope harder.\n\nMara let go with one hand. The lever shifted an inch. The ferry lurched beneath her. She caught the brake again.\n\n\u201cUse your belt,\u201d Ivo said.\n\nShe pulled it free and threw the buckle end toward the boy. It struck the deck short of him. He watched it without moving.\n\nMara drew breath to tell him what to do.\n\nThe chain hit its last painted link.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-af32e6c22ffa",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself.",
+            "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+          ],
+          "observations": []
+        },
+        {
+          "label": "B",
+          "text": "The ferry struck the chain sideways. The deck shuddered beneath Mara\u2019s feet. Somewhere below, the winch began to turn, and its handle caught Ivo across the right wrist. He made a small sound and sat down hard.\n\nSix passengers stood behind the rope. Six, and the boy who had crawled beneath it. Mara started counting them again\u2014one, two\u2014then the brake lever snapped back. She caught it with both hands. She had not reached the boy.\n\nIvo tried to stand. His right hand folded against his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain ran out link by link. Beyond its last painted mark, the ferry would turn broadside to the sluice. Mara could hold the brake, or reach the boy. The space between them was only a little wider than her body, but it might as well have been the width of the river. Fear pressed coldly beneath her ribs.\n\n\u201cGet him!\u201d she shouted at the nearest passenger.\n\nThe woman only gripped the rope harder. Her knuckles paled.\n\nMara let go with one hand. The brake shifted an inch beneath the other. The ferry answered with a low, dragging lurch. She seized the lever again.\n\n\u201cUse your belt,\u201d Ivo said.\n\nHis voice came from the deck behind her. He could not do it himself; his injured hand remained closed against his coat.\n\nMara pulled the belt free. The buckle struck her palm, cold and heavy, and she threw it beneath the rope. It landed short of the boy.\n\nHe watched it without moving.\n\nFor one moment Mara saw the distance between them\u2014not as space, but as the thing she had chosen each time she kept both hands on the brake. She drew breath to tell him what to do.\n\nThe chain struck its last painted link.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-ddbffb8ac405",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "Concrete sensory detail carries the reflective, restrained atmosphere, while the figurative language stays focused on Mara\u2019s immediate dilemma.",
+              "excerpt": "Fear pressed coldly beneath her ribs."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The physical sequence is explicit: the sideways impact, injured wrist, brake movement, belt throw, and final chain link remain easy to track.",
+              "excerpt": "Mara let go with one hand. The brake shifted an inch beneath the other."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Mara\u2019s fear and responsibility deepen through her attention to the distance she cannot cross, without resolving the danger.",
+              "excerpt": "She had not reached the boy."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Mara\u2019s perception stays practical and self-accusing, while Ivo\u2019s dry humor remains intact despite his injury.",
+              "excerpt": "\u201cSplendid plan.\u201d He sounded annoyed about the weather."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The six passengers remain distinct from the additional boy; the interrupted recount, Ivo\u2019s injured right wrist, his belt suggestion, and the unresolved ending are preserved. No external continuity beyond the supplied scene was available to verify.",
+              "excerpt": "Six passengers stood behind the rope. Six, and the boy who had crawled beneath it."
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "text": "The ferry struck the chain sideways. The deck jumped under Mara\u2019s feet. Above them, the winch lurched into motion, and its handle caught Ivo across the wrist. He made a small sound and dropped hard onto the deck.\n\nSix passengers stood behind the rope. Six\u2014and the boy who had crawled beneath it. Mara started counting them again, but the brake lever kicked back. She caught it in both hands before it tore free. She had not reached the boy.\n\nIvo tried to stand. His right hand folded against his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain ran through the winch, link by painted link. When the last one disappeared, the ferry would swing broadside into the sluice. Mara could hold the brake, or reach the boy. The gap between the lever and the rope was only a little wider than her body, but it might as well have been the width of the river.\n\nShe was very frightened. She shouted to the nearest passenger to get him.\n\nThe woman only gripped the rope harder.\n\nMara let go with one hand. The brake lever shifted an inch. The ferry lurched toward the sluice. She clamped her hand back onto it.\n\n\u201cUse your belt,\u201d Ivo said.\n\nShe pulled it free and threw the buckle end. It struck the deck short of the boy. He watched it without moving.\n\nMara drew breath to tell him what to do.\n\nThe chain struck its last painted link.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-1c1657c89a82",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose keeps the urgency close and concrete, with varied sentence pressure rather than constant clipped fragments.",
+              "excerpt": "The chain ran through the winch, link by painted link. When the last one disappeared, the ferry would swing broadside into the sluice."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The competing actions are made spatially explicit: Mara must control the lever while the boy remains beyond her reach.",
+              "excerpt": "Mara could hold the brake, or reach the boy. The gap between the lever and the rope was only a little wider than her body"
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Fear is tied to Mara\u2019s physical decision and its immediate consequence, while the failed appeal to the passenger increases isolation.",
+              "excerpt": "The brake lever shifted an inch. The ferry lurched toward the sluice. She clamped her hand back onto it."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo\u2019s injured state limits him to advice, and his dry remark preserves his distinct subtextual humor.",
+              "excerpt": "\u201cSplendid plan.\u201d He sounded annoyed about the weather."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves six passengers behind the rope, the additional boy beneath it, Ivo\u2019s injured right wrist, the interrupted recount, and the unresolved belt attempt; continuity remains uncertain because no wider canon establishes the ferry\u2019s mechanics.",
+              "excerpt": "Six passengers stood behind the rope. Six\u2014and the boy who had crawled beneath it."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dialogue-withheld-knowledge",
+      "title": "The spare key",
+      "mode": "dialogue",
+      "pov": "Ivo",
+      "source": "Mara set a cup in front of Ivo. It was the one with the chipped blue rim, which meant she expected him to stay. He kept his coat on.\n\n\"Did you open the storehouse?\" she asked.\n\n\"I opened a great many things yesterday. A drawer. An unfortunate letter.\"\n\nShe turned the cup until the chip faced him.\n\nIvo had hidden the spare key inside the bellows before dawn. She had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to remember whether the bellows had been hanging straight.\n\n\"The storehouse,\" she said.\n\n\"No.\"\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where the key was. He wished she would ask almost anything except whether he had seen her brother.\n\n\"Then somebody used yours.\"\n\nHe lifted the cup with his left hand. The tea touched the sore place behind his teeth. He put it down without drinking.\n\n\"You could change the lock.\"\n\n\"I could.\"\n\nShe took off her own coat and hung it beside the door. Ivo looked at the empty peg beside it. He had come to return a favor and leave. Now she was taking bread from the tin, cutting two uneven slices as if the question had been settled.",
+      "instruction": "Sharpen subtext and distinguish the speakers without adding a confession, accusation or revelation. Keep the close-third Ivo viewpoint and past tense.",
+      "facts": [
+        "Ivo hid the spare key in the bellows before dawn.",
+        "Ivo did not open the storehouse; he gave the other key to Mara's brother.",
+        "Ivo is unsure what Mara knows. Her private knowledge is not established.",
+        "The conversation ends without confession or discovery of the spare key."
+      ],
+      "quality_questions": [
+        "Can the speakers be distinguished without adding ornate dialogue tags?",
+        "Do the cup and bread carry pressure rather than become explained symbols?",
+        "Is Ivo's uncertainty maintained without narrating Mara's thoughts?",
+        "Does humor function as evasion rather than an interchangeable quip?"
+      ],
+      "protected_phrases": [
+        "I could."
+      ],
+      "markers": [
+        "Ivo",
+        "Mara",
+        "bellows",
+        "brother"
+      ],
+      "calibration_error": "Saying Mara knows the key is in the bellows violates viewpoint and invents knowledge, although all lexical markers still pass.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "Mara set the chipped blue-rimmed cup in front of Ivo. The cup meant stay. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup. The chip faced him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay. The workshop window had been dark. Unless she had come back. He tried to see the bellows as he\u2019d left them\u2014hanging straight, or not quite?\n\n\u201cThe storehouse.\u201d\n\n\u201cNo.\u201d\n\nThat was true. He had given the other key to her brother. He wanted her to ask where it was. He wanted her to ask anything else.\n\n\u201cThen somebody used yours.\u201d\n\nNot a question. He lifted the cup with his left hand. Tea touched the sore place behind his teeth. He set it down.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe took off her coat and hung it beside the door.\n\nThe empty peg beside hers pulled his eye. He had come to return a favor and leave. The door was still there. So was the cup.\n\nMara opened the bread tin and cut two uneven slices. No hurry. No explanation. She put one in front of him.\n\nIvo looked at it.\n\n\u201cYou\u2019re staying?\u201d\n\n\u201cApparently.\u201d\n\n\u201cGood.\u201d\n\nShe sat down with the other slice. He kept his coat on.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-aad6898fd6ce",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose uses close pressure, concrete objects, and varied sentence length to create urgency without making every line clipped.",
+              "excerpt": "The empty peg beside hers pulled his eye. He had come to return a favor and leave. The door was still there. So was the cup."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The physical actions clarify the exchange and make the implied stakes legible while leaving Mara\u2019s knowledge uncertain.",
+              "excerpt": "Not a question. He lifted the cup with his left hand. Tea touched the sore place behind his teeth. He set it down."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Ivo\u2019s wish to be asked about the key, followed by Mara\u2019s practical decision to feed him, turns the scene toward trapped, uneasy intimacy without resolving it.",
+              "excerpt": "He wanted her to ask where it was. He wanted her to ask anything else."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo deflects with dry, sideways humor and guarded perception; Mara speaks plainly and exerts control through small decisions rather than explanation.",
+              "excerpt": "\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves past tense and close-third Ivo viewpoint; he did not open the storehouse, hid the spare key in the bellows before dawn, gave the other key to Mara\u2019s brother, and remains unsure what Mara knows. The scene ends without confession, discovery, or locating the spare key.",
+              "excerpt": "Before dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay. The workshop window had been dark. Unless she had come back."
+            }
+          ]
+        },
+        {
+          "label": "B",
+          "text": "Mara set a cup before Ivo. The chipped blue rim faced him. She used that cup when she meant him to stay.\n\nHe kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened several things yesterday. A drawer. A letter I would have left closed.\u201d\n\nShe turned the cup until the chip pointed at him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had watched him leave the quay, but the workshop window had been dark. Unless she had returned. He tried to see the bellows as they had been hanging\u2014straight, or not quite.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat was true. He had given the other key to her brother. He wanted her to ask where it was. He wanted her to ask anything but whether he had seen her brother.\n\n\u201cThen someone used yours.\u201d\n\nHer voice made it neither question nor conclusion.\n\nIvo lifted the cup in his left hand. The tea touched the sore place behind his teeth. He set it down.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her coat and hung it beside the door.\n\nThe empty peg beside hers held his attention. He had come to return a favor and leave. Now she took bread from the tin and cut two uneven slices, calmly enough to suggest that the matter had moved somewhere he could not follow.\n\n\u201cTea?\u201d she asked.\n\nHe looked at the cup. \u201cI\u2019m not staying.\u201d\n\nMara put the knife down. \u201cYou\u2019re wearing your coat.\u201d\n\nFor a moment, neither of them touched the bread.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-bbd2f339860d",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "Sensory details carry the tension, with restrained figurative language and deliberate pacing; the imagery stays tied to objects in the room.",
+              "excerpt": "The chipped blue rim faced him. She used that cup when she meant him to stay."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The scene\u2019s actions and implications remain clear, while the short exchanges create controlled pauses around the unasked question.",
+              "excerpt": "Her voice made it neither question nor conclusion."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "The unease grows through small refusals and domestic gestures rather than confession or overt confrontation.",
+              "excerpt": "Now she took bread from the tin and cut two uneven slices, calmly enough to suggest that the matter had moved somewhere he could not follow."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo deflects with dry, evasive phrasing and focuses anxiously on physical details; Mara speaks plainly and uses practical actions to hold the scene in place.",
+              "excerpt": "\u201cI opened several things yesterday. A drawer. A letter I would have left closed.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves close-third Ivo, past tense, the hidden spare key, the unused storehouse, the key given to Mara\u2019s brother, and Ivo\u2019s uncertainty about Mara\u2019s knowledge. The scene ends without confession, discovery, or establishing what Mara privately knows.",
+              "excerpt": "Before dawn, Ivo had hidden the spare key inside the bellows."
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "text": "Mara set a cup in front of Ivo. The chipped blue rim faced him. She used that cup when she expected a visit to last. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup until the chip faced him again.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had returned. He tried to remember whether the bellows had hung straight.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. He had given the other key to her brother. He wanted her to ask where it was. He wanted her to ask almost anything else instead of whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nThe words were mild. That made them worse.\n\nIvo lifted the cup with his left hand. Tea touched the sore place behind his teeth. He set it down without drinking.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe took off her coat and hung it beside the door. Ivo looked at the empty peg next to it.\n\nHe had come to return a favor and leave. Mara opened the bread tin and cut two uneven slices, as if his leaving had never been part of the arrangement.\n\nHe watched the knife come down. \u201cYou expecting someone?\u201d\n\n\u201cI am expecting you to eat.\u201d\n\nIt was not an answer. She put the first slice on his side of the table.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-5a4403949f5b",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose stays direct and concrete while allowing restrained dry humor and setup to carry the tension.",
+              "excerpt": "\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d"
+            },
+            {
+              "criterion": "readability",
+              "observation": "Spatial actions and the sequence of the key, cup, coat, and bread remain clear, with varied sentence rhythm.",
+              "excerpt": "She took off her coat and hung it beside the door. Ivo looked at the empty peg next to it."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "The scene\u2019s pressure comes from withheld questions and ordinary hospitality turning into quiet control, without resolving the threat.",
+              "excerpt": "The words were mild. That made them worse."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo deflects with dry humor and watches for implications; Mara answers practically and refuses to explain herself.",
+              "excerpt": "\u201cI am expecting you to eat.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "Close-third past tense is maintained. Ivo hid the spare key in the bellows, did not open the storehouse, gave the other key to Mara\u2019s brother, and remains unsure what Mara knows. No confession, discovery, or revelation occurs.",
+              "excerpt": "Before dawn, Ivo had hidden the spare key inside the bellows."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "introspection-restrained-control",
+      "title": "The second place",
+      "mode": "introspection",
+      "pov": "Mara",
+      "source": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip, and she worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could put it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. She listened through the pause now.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb across it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covering it with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+      "instruction": "Explore the selected voice with restraint. This is a preservation control: keep strong passages if changing them would weaken the emotional turn. Do not resolve the disappearance or explain every gesture.",
+      "facts": [
+        "Mara's father has been missing for eleven days; his death is not established.",
+        "Market day was yesterday; the letter has not been sealed.",
+        "The bowl is marked but not cracked.",
+        "She crosses out the first line without replacing it; one bowl remains covered on the table."
+      ],
+      "quality_questions": [
+        "Does the shift from expectation toward uncertainty remain legible without naming a stage of grief?",
+        "Are the repeated washing and checking purposeful rather than removed as redundancy?",
+        "Does the final restraint survive the selected direction?",
+        "Is imagery grounded in Mara's immediate objects instead of generic darkness, storms or shattered hearts?"
+      ],
+      "protected_phrases": [
+        "Not a crack."
+      ],
+      "markers": [
+        "Mara",
+        "eleven",
+        "letter",
+        "bowl"
+      ],
+      "calibration_error": "A faster version is not automatically better. Declaring the father dead would invalidate the scene even if the prose were elegant.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip. She worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could put it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. She listened through the pause now.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb across it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covering it with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-f31f8d1e6a68",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The revision keeps the selected voice direct and concrete, with restrained emotional pressure and clear setup/payoff.",
+              "excerpt": "She listened through the pause now."
+            },
+            {
+              "criterion": "readability",
+              "observation": "Spatial actions remain easy to follow, and the shortened rice-grain sentence gives the opening a measured rhythm without adding explanation.",
+              "excerpt": "The bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "The feeling is earned through repetition, absence, and the incomplete letter; the disappearance remains unresolved.",
+              "excerpt": "The first line said he would be back by market day. Market day had been yesterday."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "There is no dialogue in the passage; Mara's character emerges through her counting, practical habits, and refusal to replace the crossed-out promise.",
+              "excerpt": "She did not write another."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The revision preserves Mara's POV and past tense, her father's eleven-day disappearance without establishing death, the unsealed letter, the marked but uncracked bowl, and the covered bowl left on the table. Continuity remains uncertain because the supplied context gives no established codex entry or broader scene history.",
+              "excerpt": "She put one in the cupboard and left the other on the table, covering it with a clean cloth."
+            }
+          ]
+        },
+        {
+          "label": "B",
+          "text": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip, and she worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could set it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. She listened through the pause now.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb across it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covering it with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-d65d557a0ea9",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The restrained, atmospheric voice remains grounded in physical details rather than added decoration. The repetition of washing and touching carries the emotional weight.",
+              "excerpt": "A grain of rice clung beneath the lip, and she worked at it with her thumbnail until it came free."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The action stays clear, while short sentences control the deliberate pauses around the bell and the bowl.",
+              "excerpt": "One note, a pause, another."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "The scene earns its turn through withheld acknowledgment: Mara removes the hopeful sentence but cannot yet replace it.",
+              "excerpt": "Then she crossed out the first line of the letter. She did not write another."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Mara\u2019s perception is defined by counting, clerical language, and attention to small physical flaws; there is no dialogue to distinguish in this passage.",
+              "excerpt": "It took up less room than the others."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves Mara\u2019s close POV, past tense, the eleven-day disappearance without establishing death, yesterday\u2019s market day, the unsealed letter, the marked but uncracked bowl, and the covered bowl left on the table. Continuity remains uncertain beyond the supplied context because no accepted canon or nearby-scene details are provided.",
+              "excerpt": "The bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack."
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "text": "Mara washed the second bowl before she remembered there was no reason to. She had rinsed it once already. A grain of rice clung beneath the lip. She worried it loose with her thumbnail and watched it fall.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could set it beside a date on a form and still leave space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note. A pause. Another. For years she had complained that her father came home between the notes, when she was trying to count. Now she listened through the pause.\n\nThe bowl slipped. She caught it against the sink. A white mark streaked the glaze. Not a crack. She ran her thumb over it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table beneath a clean cloth. Then she crossed out the first line of the letter.\n\nShe did not write another.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-4bbd3eefc448",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The revision sharpens pressure through concrete actions and varied sentence rhythm while retaining the passage\u2019s restraint; it avoids resolving the disappearance or adding melodrama.",
+              "excerpt": "The bowl slipped. She caught it against the sink. A white mark streaked the glaze. Not a crack."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The sequence of washing, listening, catching, drying, and revising remains clear. Shorter beats gather momentum around the bowl and letter.",
+              "excerpt": "Mara dried both bowls. She put one in the cupboard and left the other on the table beneath a clean cloth."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "The feeling is earned through the mismatch between habit and changed circumstances, especially the pause in the bell and the abandoned letter.",
+              "excerpt": "The first line said he would be back by market day. Market day had been yesterday."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Mara\u2019s perception stays close and practical: she notices forms, measurements, residue, glaze, and the exact wording that can no longer stand.",
+              "excerpt": "Missing was the word the harbor office used. It took up less room than the others."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The revision preserves Mara\u2019s POV, past tense, the eleven-day absence, the unsealed letter, yesterday\u2019s market day, the marked but uncracked bowl, and the covered bowl left on the table. Her father\u2019s death remains unestablished; the supplied context also notes that Mara is absent from the codex, so broader character continuity remains uncertain.",
+              "excerpt": "Then she crossed out the first line of the letter.\n\nShe did not write another."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

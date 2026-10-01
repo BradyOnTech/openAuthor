@@ -23,6 +23,18 @@ const snapshot: MobileSnapshot = {
 };
 
 describe("MobileAssistantTools", () => {
+  it("lists scenes for voice in published Plan order with chapter context", async () => {
+    const second = { ...snapshot.scenes[0]!, id: "scene-2", title: "Arrival", chapter_title: "Before dawn", act_title: "Winter" };
+    const project = SnapshotProject.open({ ...snapshot, reading_order: "plan", scenes: [second, snapshot.scenes[0]!] });
+    const tools = new MobileAssistantTools(project, async () => "queued");
+    const listed = await tools.execute("scene_list", {});
+    expect(listed.order_basis).toContain("not necessarily story chronology");
+    expect((listed.scenes as Array<{ id: string }>).map((row) => row.id)).toEqual(["scene-2", "scene-1"]);
+    expect((listed.scenes as unknown[])[0]).toMatchObject({ chapter_title: "Before dawn", act_title: "Winter" });
+    expect(project.search("Before dawn")[0]?.sourceId).toBe("scene-2");
+    expect(SnapshotProject.open(snapshot).readingOrder()).toContain("Downloaded scene order");
+  });
+
   it("answers read-only tools from the immutable snapshot", async () => {
     const tools = new MobileAssistantTools(SnapshotProject.open(snapshot), async () => "queued");
     await expect(tools.execute("scene_list", {})).resolves.toMatchObject({ revision: "rev-42" });

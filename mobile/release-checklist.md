@@ -26,6 +26,11 @@
 - [ ] Real OpenAI voice on iPhone Safari/home-screen and Android Chrome/installed
   mode: permission denial, cancellation, playback, Bluetooth, interruptions,
   background stop, reconnect, and expired-session behavior.
+- [x] Simulated-media rendered-browser checks cover denial, pending-permission
+  cancellation, context-before-audio, mute, interruption, disconnect/playback
+  retry, tab exit and background cleanup. See the
+  [preflight and paired test](../docs/evaluations/2026-09-22-voice-preflight.md);
+  this does not check real audio, permissions or physical phone behavior.
 - [x] Local phone-sized Chrome PWA test: cold downloaded-book access and capture
   with expired credentials, no hosted requests in downloaded mode, explicit
   verified reconnect, offline sign-out lock/auth cleanup, retained captures and

@@ -1,6 +1,6 @@
 # Author journey readiness
 
-Updated 2026-09-11. Working product assessment, not a release certificate.
+Updated 2026-09-29. Working product assessment, not a release certificate.
 
 ## Purpose
 
@@ -20,17 +20,26 @@ phone, or live-model quality.
 | Author's job | Available now | Evidence and remaining gap |
 | --- | --- | --- |
 | Start a book | New project; previewed Markdown/TXT/DOCX/Scrivener import | Browser verifies heading-based Markdown import with unchanged source. Full format fidelity and packaged file dialogs remain open. |
-| Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Browser verifies planning, navigation in Plan order and actual save/focus/reopen. Planning-draft retention and long-session ergonomics need more work. |
-| Read the book | New read-only chapter view, chapter navigation, direct return to editing | Browser verifies reordered prose; core includes unassigned scenes. Long chapters render at most 25 scenes per page. Persistent reading position remains an improvement. |
+| Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Browser verifies planning, navigation in Plan order and actual save/focus/reopen. Retained brief/structure/metadata drafts and stale-save checks are implemented; long-session ergonomics and crash recovery remain gates. |
+| Read the book | Desktop chapter reader and saved position; mobile Plan-ordered scenes, chapter labels, Previous/Next and direct discussion | Browser verifies desktop position restoration and mobile reading through reversed file order, chapter search and unassigned scenes. Older mobile snapshots retain their downloaded order. Long desktop chapters render at most 25 scenes per page. Mobile position restoration and physical-device reading remain open. |
 | Discuss and retain ideas | Scoped copilot, retrieval/citations, note/suggestion/experiment promotion; one-request Memory permission and context receipts | Browser verifies scene/chapter/character focus, regeneration, Memory permission, saving a note and the chapter/accepted-canon/Storyline receipt. Shared text/desktop-voice context includes brief, Plan order, relevant accepted facts and active experiment intent. Estimated assembled-input budgeting and oversized-request recovery are tested; exact provider token accounting, ongoing voice-session limits and novel-scale judgment remain gates. |
 | Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Creative quality and multi-file crash recovery remain unproven. |
-| Shape writing quality | Editable Writing Voice, original craft presets, review-first exemplar analysis, bounded sample comparisons and author assessments | Browser verifies approval, offline comparison/assessment/reopen, chat promotion and the approved voice receipt. Provider-seam tests verify analysis, creative candidates, exact Change Set handoff and apply/undo. Live prose quality and mobile profile projection remain open. |
-| Manage story knowledge | Structured entries, temporal facts/relationships, evidence, suggestion review, diagnostics | Browser creates/edits an entry and finds it alongside prose. Rich canon workflows have core/rendered tests; usefulness on a substantial book remains unproven. |
+| Shape writing quality | Editable Writing Voice, original craft presets, review-first exemplar analysis, bounded sample comparisons and author assessments; approved mobile profile projection | Browser verifies approval, offline comparison/assessment/reopen, chat promotion and the approved voice receipt. The encrypted phone journey now verifies profile publication, display and reopening; controller tests check its voice context. Live prose quality remains open. |
+| Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy and usefulness on a full original novel remain unproven. |
 | Explore alternatives | Storylines, comparison, selective integration into Changes | Browser exercises an original six-scene alternate ending, returns to Primary, integrates one of two changed scenes, verifies the other is unchanged and undoes. Clean scene tabs reload the active Storyline; comprehensive unsaved-navigation policy remains open. |
 | Finish the book | Word and Markdown export with loss reports | Both now follow Plan order, with unassigned scenes last. Browser exports/re-reads Word; core checks both formats. Export remains scene-oriented, not a typesetting feature. |
-| Work on mobile | Encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths | Existing companion browser/core checks plus 86 current mobile tests, including privacy filtering of older downloaded snapshots. Hosted delivery, physical iOS/Android voice, interruption/audio routing and native credential migration remain gates. |
+| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion browser/core checks plus 96 current mobile tests cover privacy, source/knowledge preservation, context limits and voice scene-list order. The encrypted browser journey verifies fact refresh, reading navigation and scene-specific discussion handoff. Hosted delivery, physical iOS/Android voice, interruption/audio routing and native credential migration remain gates. |
 
 ## Connected author journey and reading
+
+The September 22 pass closes a saved-idea handoff: Copilot's **View saved note**
+opens the exact note in Plan, where the author can search its text or scene,
+filter project/scene notes, open the scene, and choose **Plan a revision**.
+The existing Change Set form receives editable note text and scene selection.
+Opening it makes no provider call and does not change prose. The expanded
+browser/real-Python journey verifies the handoff through pending revision,
+unchanged source prose, export and reopening. Focused rendered coverage checks
+project-note filtering, missing scenes, retained Plan text and dirty scene tabs.
 
 - Added the connected import → plan → read → Memory → search → copilot → note →
   export → reopen browser journey in `desktop/e2e/book-journey.spec.ts`.
@@ -65,6 +74,13 @@ phone, or live-model quality.
 
 ## Memory permission and usable scoped discussion
 
+- Canon & Continuity now exposes recorded passages and source-scene navigation
+  for both facts and findings. Needs attention includes deferred findings;
+  reviewed decisions remain accessible and editable with a reason. Preparing a
+  revision copies the finding and author review notes into the existing form;
+  it makes no provider call and does not mark the finding fixed. Failure to load
+  diagnostics offers a retry instead of claiming there are no findings.
+
 - A shared projection now enforces Memory visibility and excludes private notes
   for new context, generation and tool reads. Stale indexes cannot bypass current
   access. Legacy/changed voice preparation must be refreshed before connecting.
@@ -79,6 +95,29 @@ phone, or live-model quality.
   the precise policy, evidence, transcript and offline-revocation limits.
 
 ## Next priorities
+
+The September 29 writing iteration adds the saved original to comparison and
+targeted, recoverable feedback for refining one candidate into a separate attempt.
+Public-core coverage exercises refinement through staging, apply and undo;
+browser coverage verifies the honest offline baseline, retained assessments and
+reopening. A three-sample Luna dialogue rerun preserves the ending but still has
+craft/fidelity concerns; see its
+[assessment](evaluations/writing-voice-luna-2026-09-29-dialogue/assessment.md).
+The [fresh live refinement](evaluations/writing-refinement-luna-2026-09-29/assessment.md)
+verified apply/undo but only partially followed the craft feedback. Author review
+and a connected-chapter evaluation remain necessary before claiming the workflow
+reliably improves writing. Keep subsequent work on meaningful
+revisions and preserved author intent, not a new layer of scoring or orchestration.
+
+The [September 22 walkthrough](evaluations/2026-09-22-author-walkthrough.md)
+records the ranked findings and current follow-up order. Mobile capture drafts
+and reading focus/scroll now survive tab switching within the open book, with
+warnings before leaving an unfinished capture. Desktop document tabs retain
+readable labels on a 1024px laptop. The phone Assistant keeps status and privacy
+feedback visible, with expandable context details. Browser checks verify these
+repairs, including an encrypted capture's failed-save/retry path. Reload/crash
+retention, real-device audio, native interaction and full accessibility remain
+separate gates; prioritize these and literary usefulness over further feature breadth.
 
 The September 11 [Writing Voice workflow](writing-voice.md) implements the author's
 approved prose-quality feature. It separates book prose from copilot personality,

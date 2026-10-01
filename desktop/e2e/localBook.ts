@@ -14,7 +14,7 @@ const repository = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export async function localBook(page: Page) {
   const sandbox = await realpath(await mkdtemp(join(tmpdir(), "openauthor-journey-")));
   const projectRoot = join(sandbox, "The Lantern Cartographer");
-  const env = { ...process.env, PYTHONPATH: repository, OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "", OPENROUTER_API_KEY: "" };
+  const env = { ...process.env, PYTHONPATH: repository, OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "", OPENROUTER_API_KEY: "", OPENAUTHOR_CODEX_HOME: join(sandbox, "codex") };
   const python = process.env.OPENAUTHOR_TEST_PYTHON || "python3";
   const pending = new Set<Promise<unknown>>();
   const errors: string[] = [];
@@ -32,6 +32,11 @@ export async function localBook(page: Page) {
     await mkdir(cwd, { recursive: true });
     const provider = args.indexOf("--provider");
     if (provider >= 0 && args[provider + 1] !== "local") throw new Error("Only the offline provider is allowed.");
+    const requestJson = args.indexOf("--request-json");
+    if (requestJson >= 0) {
+      const requested = JSON.parse(args[requestJson + 1]).provider;
+      if (requested && requested !== "local") throw new Error("Only the offline provider is allowed.");
+    }
     if (args[0] === "init") scopedPath(args[1]);
     for (const option of args[0] === "manuscript" ? ["--source", "--target"] : []) {
       const index = args.indexOf(option);

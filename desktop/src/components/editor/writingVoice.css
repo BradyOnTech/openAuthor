@@ -25,3 +25,4 @@
 .writing-voice__comparisons details label { margin: 12px 0; }
 .writing-voice__prose { white-space: pre-wrap; font-family: var(--font-prose); font-size: 16px; }
 .writing-voice__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.writing-voice__reference { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-elevated); overflow-wrap: anywhere; }

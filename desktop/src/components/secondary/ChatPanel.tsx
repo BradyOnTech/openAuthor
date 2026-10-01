@@ -711,6 +711,7 @@ function ChatMessage({
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [savingArtifact, setSavingArtifact] = useState<"memory" | "note" | "storyline" | null>(null);
   const [savedArtifact, setSavedArtifact] = useState("");
+  const [savedNoteId, setSavedNoteId] = useState("");
 
   const citations = message.role === "assistant" ? messageCitations(message) : [];
   const vcs = messageVcs(message);
@@ -772,7 +773,8 @@ function ChatMessage({
         await queueStoryMemorySuggestion(projectRoot, { title, content: message.content, sceneId: proposalSceneId });
         setSavedArtifact("Queued in Story Memory for review.");
       } else if (kind === "note") {
-        await addSceneNote(projectRoot, { title, content: message.content, sceneId: proposalSceneId });
+        const note = await addSceneNote(projectRoot, { title, content: message.content, sceneId: proposalSceneId });
+        setSavedNoteId(String(note.id));
         setSavedArtifact(proposalSceneId ? "Saved as a scene note." : "Saved as a project note.");
       } else {
         await createStoryline(projectRoot, {
@@ -909,6 +911,7 @@ function ChatMessage({
         </div>
       )}
       {savedArtifact && <div className="chat-message__usage">✓ {savedArtifact}</div>}
+      {savedNoteId && <button className="chat-action-btn" onClick={() => openTab({ id: "plan", kind: "plan", label: "Plan", data: { noteId: savedNoteId } })}>View saved note</button>}
 
       {diffOpen && diff && (
         <div className="chat-diff-panel">

@@ -72,6 +72,7 @@ from .planning import (
   assign_scene,
   get_plan,
   get_manuscript_reading,
+  get_plan_workspace,
   preview_scene_move,
   update_brief,
   update_scene_metadata,
@@ -124,6 +125,7 @@ from .canon import (
   add_setup,
   disposition_diagnostic,
   list_canon_facts,
+  update_canon_fact,
   list_arc_states,
   list_open_questions,
   list_setups,
@@ -142,7 +144,7 @@ from .storylines import (
   update_storyline_status,
 )
 from .style_profile import build_style_profile, get_style_profile, save_style_profile
-from .writing_voice import voice_workspace, suggest_voice, preview_voice, review_voice_preview, stage_voice_preview
+from .writing_voice import voice_workspace, suggest_voice, preview_voice, refine_voice_preview, review_voice_preview, stage_voice_preview
 from .product_signals import (
   get_local_product_dashboard,
   get_product_signal_settings,
@@ -474,20 +476,25 @@ def build_parser() -> argparse.ArgumentParser:
   plan_brief.add_argument("--theme", action="append", default=None, dest="themes")
   plan_brief.add_argument("--style-guide", default=None)
   plan_brief.add_argument("--outline", default=None)
+  plan_brief.add_argument("--expected-version", default=None)
+  plan_brief.add_argument("--clear-themes", action="store_true")
   plan_brief.add_argument("--json", action="store_true", help="Output JSON.")
   plan_act = plan_sub.add_parser("act-add", help="Add an act.")
   plan_act.add_argument("--title", required=True)
   plan_act.add_argument("--synopsis", default="")
+  plan_act.add_argument("--expected-workspace", default=None)
   plan_act.add_argument("--json", action="store_true", help="Output JSON.")
   plan_chapter = plan_sub.add_parser("chapter-add", help="Add a chapter to an act.")
   plan_chapter.add_argument("--act", required=True, dest="act_id")
   plan_chapter.add_argument("--title", required=True)
   plan_chapter.add_argument("--synopsis", default="")
+  plan_chapter.add_argument("--expected-workspace", default=None)
   plan_chapter.add_argument("--json", action="store_true", help="Output JSON.")
   plan_assign = plan_sub.add_parser("scene-assign", help="Assign or reorder a scene.")
   plan_assign.add_argument("--scene", required=True, dest="scene_id")
   plan_assign.add_argument("--chapter", default=None, dest="chapter_id")
   plan_assign.add_argument("--before", default=None, dest="before_scene_id")
+  plan_assign.add_argument("--expected-workspace", default=None)
   plan_assign.add_argument("--json", action="store_true", help="Output JSON.")
   plan_preview = plan_sub.add_parser("scene-preview", help="Preview structural consequences before moving a scene.")
   plan_preview.add_argument("--scene", required=True, dest="scene_id")
@@ -498,11 +505,14 @@ def build_parser() -> argparse.ArgumentParser:
   plan_scene_meta.add_argument("--scene", required=True, dest="scene_id")
   plan_scene_meta.add_argument("--timeline", default=None, dest="timeline_position")
   plan_scene_meta.add_argument("--label", action="append", default=None, dest="labels")
+  plan_scene_meta.add_argument("--expected-version", default=None)
+  plan_scene_meta.add_argument("--clear-labels", action="store_true")
   plan_scene_meta.add_argument("--json", action="store_true", help="Output JSON.")
   plan_beat = plan_sub.add_parser("beat-add", help="Add a planned beat to a scene.")
   plan_beat.add_argument("--scene", required=True, dest="scene_id")
   plan_beat.add_argument("--summary", required=True)
   plan_beat.add_argument("--status", default="planned")
+  plan_beat.add_argument("--expected-workspace", default=None)
   plan_beat.add_argument("--json", action="store_true", help="Output JSON.")
   plan_note = plan_sub.add_parser("note-add", help="Save a durable project or scene note.")
   plan_note.add_argument("--content", required=True)
@@ -550,7 +560,13 @@ def build_parser() -> argparse.ArgumentParser:
   memory_fact_add.add_argument("--json", action="store_true", help="Output JSON.")
   memory_fact_list = memory_sub.add_parser("fact-list", help="List Canon Facts.")
   memory_fact_list.add_argument("--status", choices=["accepted", "suggested", "rejected"], default=None)
+  memory_fact_list.add_argument("--for-editing", action="store_true", help="Include transient guarded-save versions.")
   memory_fact_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_fact_update = memory_sub.add_parser("fact-update", help="Correct or withdraw a Canon Fact without changing manuscript prose.")
+  memory_fact_update.add_argument("--id", required=True)
+  memory_fact_update.add_argument("--expected-version", required=True)
+  memory_fact_update.add_argument("--changes-json", required=True)
+  memory_fact_update.add_argument("--json", action="store_true", help="Output JSON.")
   memory_arc_add = memory_sub.add_parser("arc-add", help="Add an evidence-backed Character Arc State.")
   memory_arc_add.add_argument("--character", required=True)
   memory_arc_add.add_argument("--dimension", required=True)
@@ -656,7 +672,7 @@ def build_parser() -> argparse.ArgumentParser:
   style_build.add_argument("--json", action="store_true", help="Output JSON.")
   style_workspace = style_sub.add_parser("workspace", help="Get Writing Voice controls and the approved profile.")
   style_workspace.add_argument("--json", action="store_true")
-  for name in ("save", "suggest", "preview", "review", "stage"):
+  for name in ("save", "suggest", "preview", "refine", "review", "stage"):
     action = style_sub.add_parser(name, help=f"Writing Voice: {name}.")
     action.add_argument("--request-json", required=True)
     action.add_argument("--json", action="store_true")
@@ -1367,9 +1383,9 @@ def _run(args: argparse.Namespace) -> int:
 
   if args.command == "plan":
     if args.plan_command == "get":
-      row = get_plan(paths)
+      row = get_plan_workspace(paths)
     elif args.plan_command == "brief":
-      if all(value is None for value in (
+      if not args.clear_themes and all(value is None for value in (
         args.synopsis, args.genre, args.themes, args.style_guide, args.outline
       )):
         raise OpenAuthorError("No project brief updates provided.")
@@ -1377,20 +1393,22 @@ def _run(args: argparse.Namespace) -> int:
         paths,
         synopsis=args.synopsis,
         genre=args.genre,
-        themes=args.themes,
+        themes=[] if args.clear_themes else args.themes,
         style_guide=args.style_guide,
         outline=args.outline,
+        expected_version=json.loads(args.expected_version) if args.expected_version is not None else None,
       )
     elif args.plan_command == "act-add":
-      row = add_act(paths, title=args.title, synopsis=args.synopsis)
+      row = add_act(paths, title=args.title, synopsis=args.synopsis, expected_workspace=args.expected_workspace)
     elif args.plan_command == "chapter-add":
-      row = add_chapter(paths, act_id=args.act_id, title=args.title, synopsis=args.synopsis)
+      row = add_chapter(paths, act_id=args.act_id, title=args.title, synopsis=args.synopsis, expected_workspace=args.expected_workspace)
     elif args.plan_command == "scene-assign":
       row = assign_scene(
         paths,
         scene_id=args.scene_id,
         chapter_id=args.chapter_id,
         before_scene_id=args.before_scene_id,
+        expected_workspace=args.expected_workspace,
       )
     elif args.plan_command == "scene-preview":
       row = preview_scene_move(
@@ -1400,16 +1418,17 @@ def _run(args: argparse.Namespace) -> int:
         before_scene_id=args.before_scene_id,
       )
     elif args.plan_command == "scene-meta":
-      if args.timeline_position is None and args.labels is None:
+      if args.timeline_position is None and args.labels is None and not args.clear_labels:
         raise OpenAuthorError("No scene planning metadata updates provided.")
       row = update_scene_metadata(
         paths,
         scene_id=args.scene_id,
         timeline_position=args.timeline_position,
-        labels=args.labels,
+        labels=[] if args.clear_labels else args.labels,
+        expected_version=json.loads(args.expected_version) if args.expected_version is not None else None,
       )
     elif args.plan_command == "beat-add":
-      row = add_beat(paths, scene_id=args.scene_id, summary=args.summary, status=args.status)
+      row = add_beat(paths, scene_id=args.scene_id, summary=args.summary, status=args.status, expected_workspace=args.expected_workspace)
     elif args.plan_command == "note-add":
       row = add_scene_note(paths, content=args.content, scene_id=args.scene_id, title=args.title, source=args.source)
     else:
@@ -1453,7 +1472,9 @@ def _run(args: argparse.Namespace) -> int:
         scope=args.scope,
       )
     elif args.memory_command == "fact-list":
-      row = list_canon_facts(paths, status=args.status)
+      row = list_canon_facts(paths, status=args.status, for_editing=args.for_editing)
+    elif args.memory_command == "fact-update":
+      row = update_canon_fact(paths, args.id, expected_version=args.expected_version, changes=json.loads(args.changes_json))
     elif args.memory_command == "arc-add":
       row = add_arc_state(paths, character_entity_id=args.character, dimension=args.dimension, value=args.value, scene_id=args.scene, excerpt=args.excerpt, state_type=args.state_type)
     elif args.memory_command == "arc-list":
@@ -1554,7 +1575,7 @@ def _run(args: argparse.Namespace) -> int:
       row = build_style_profile(paths, scene_ids=args.scene_ids)
     elif args.style_command == "workspace":
       row = voice_workspace(paths)
-    elif args.style_command in {"save", "suggest", "preview", "review", "stage"}:
+    elif args.style_command in {"save", "suggest", "preview", "refine", "review", "stage"}:
       try:
         request = json.loads(args.request_json)
       except ValueError as error:
@@ -1567,8 +1588,10 @@ def _run(args: argparse.Namespace) -> int:
         row = suggest_voice(paths, request=request)
       elif args.style_command == "preview":
         row = preview_voice(paths, request=request)
+      elif args.style_command == "refine":
+        row = refine_voice_preview(paths, request=request)
       elif args.style_command == "review":
-        row = review_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""), review=request.get("review", {}))
+        row = review_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""), review=request.get("review", {}), expected_review=request.get("expected_review"))
       else:
         row = stage_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""))
     else:

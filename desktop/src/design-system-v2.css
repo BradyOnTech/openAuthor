@@ -829,24 +829,26 @@ body {
 
 .tab-bar {
   display: flex;
+  flex-shrink: 0;
   align-items: stretch;
   height: var(--tab-bar-height);
   background: var(--bg-base);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none;
+  scrollbar-width: thin;
   z-index: var(--z-tab-bar);
 }
 
 .tab-bar::-webkit-scrollbar {
-  display: none;
+  height: 4px;
 }
 
 .tab {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  min-width: 0;
+  min-width: 100px;
   max-width: 200px;
   font-size: var(--text-sm);
   color: var(--text-secondary);
@@ -859,6 +861,7 @@ body {
 
 .tab__select {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: var(--space-2);
   min-width: 0;

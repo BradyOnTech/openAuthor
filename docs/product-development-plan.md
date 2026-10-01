@@ -10,6 +10,134 @@ journey through import, planning, Memory, search, copilot notes and export. Futu
 iterations must advance whole writing tasks alongside safety fixes; feature
 inventory and green unit tests alone do not establish a useful application.
 
+### Current execution checkpoint — 2026-09-29
+
+Writing Voice now completes a smaller author-directed iteration: compare with
+the saved original, give targeted feedback to one sample, retain the previous
+attempt, then queue the chosen prose for ordinary Change Set review/apply/undo.
+Refinement does not learn a profile or change prose automatically. Source/version
+checks protect newer writing and other Storylines; unfinished feedback is retained.
+See [Writing Voice](writing-voice.md) for usage and boundaries.
+
+The [Luna dialogue followup](evaluations/writing-voice-luna-2026-09-29-dialogue/assessment.md)
+produced three samples without the earlier added closing exchanges, but still
+showed physical-staging and restraint weaknesses. This is a small uncontrolled
+comparison, not proof of general literary improvement. A
+[fresh-scene live refinement](evaluations/writing-refinement-luna-2026-09-29/assessment.md)
+also verified apply/undo but only partial compliance with craft feedback. Next
+assess these samples with the author, then a connected chapter and original-book
+revision. The North Star is not marked complete: full-book usefulness, physical
+companion testing, recovery and clean-machine distribution remain open gates.
+
+### September 22 checkpoint
+
+The [voice preflight and paired-test plan](evaluations/2026-09-22-voice-preflight.md)
+now cover rendered voice controls with simulated media. A reproduced terminal
+disconnect/playback failure left stale controls; the repair restores Start while
+preserving the error and stopping media. Real phone audio and approved deployment
+remain open. A nine-call subscription-only Luna run produced a
+[comparison packet](evaluations/writing-voice-luna-2026-09-22/review.md) and
+[assistant critique](evaluations/writing-voice-luna-2026-09-22/assessment.md).
+Results are mixed, especially invented dialogue ending beats; author judgments
+remain pending. Next: paired literary review, then an approved phone connection
+and physical acceptance pass—not additional infrastructure or automatic rewrites.
+
+The [author-workflow walkthrough](evaluations/2026-09-22-author-walkthrough.md)
+now adds smaller-laptop and exploratory mobile navigation checks to the existing
+connected journeys. It fixes lost unfinished captures on tab changes, lost
+mobile reading focus/scroll, collapsed desktop document tabs, and voice status
+hidden below long context explanations. Book exit/sign-out warn about unfinished
+captures; draft/reading retention is in-memory, not crash recovery. No new
+infrastructure was added. Browser coverage does not establish native or real-phone
+voice behavior; actual companion delivery and useful writing remain the next gates.
+
+The companion's reading flow now uses the desktop's existing manuscript-reading
+projection. Newly published scenes follow Plan order with unassigned scenes at
+the end, and retain act/chapter labels. Mobile supports Previous/Next, scene
+position, chapter-name search and **Discuss this scene**. The existing voice
+scene-list tool reports the same order and labels, explicitly distinguishing
+reading order from story chronology. Older downloads retain their recorded order
+until republished. This adds no mobile editing, new service or persistence layer;
+mobile reading-position restoration across restarts remains separate work.
+
+The mobile companion now receives the approved Writing Voice through the existing
+encrypted snapshot and device-local context builder. Its Assistant shows the
+downloaded profile, distinguishes manuscript style from speaking personality,
+and explains the publish/reopen/restart cycle. Missing profiles in older snapshots
+remain explicit. Required profile and selected-scene content must fit in full
+before a voice transport is created; authors can clear scene focus to retry.
+Local encrypted-publication/browser and controller tests cover this path, not
+live-model quality, deployed hosting or physical-device audio.
+
+Mobile snapshots also reuse desktop's privacy-filtered accepted Canon Facts.
+New sessions receive scene-relevant facts (or all eligible facts with no scene
+focus), including exact evidence, validity and character-knowledge states. The
+phone reports the selected count and missing-source warnings. Withdrawals take
+effect after publication and reopening, not retroactively in downloaded copies
+or running sessions. Required facts are included whole or block connection when
+over budget. This stays inside the existing snapshot/context workflow; chapter
+synopses and Storyline intent, broader on-demand fact retrieval and real-device acceptance
+remain separate work.
+
+Canon Facts can now be corrected, withdrawn and restored in Canon & Continuity.
+Authors can edit the value, predicate, validity boundaries and existing source
+passages. Withdrawn facts remain inspectable but are excluded from newly assembled
+canon context and fact-based diagnostics; earlier conversations are not rewritten.
+Accepted corrections require exact passages in current saved scenes. Fact- and
+Storyline-scoped version checks prevent stale corrections from overwriting newer
+Memory, and the shared project lock protects concurrent Memory writers. This is
+not semantic verification, a complete fact-history UI or crash recovery for drafts.
+
+Canon & Continuity now connects findings to evidence and revision. Authors can
+expand recorded passages on facts and diagnostics, open their scenes, filter
+findings by attention/reviewed state, and save or revise a decision with notes.
+Deferred findings stay in Needs attention. **Plan a revision** carries the finding
+and the author's review notes into the existing editable Change Set form. Multiple
+affected scenes require an explicit target choice. A review decision is not proof
+that a check's underlying condition has been corrected.
+
+The 64-scene browser journey now exercises a possible POV knowledge leak, early
+and later source navigation, saved/reopened decisions, return to Needs attention,
+and revision preparation with unchanged manuscript prose. Recorded evidence is
+explicitly distinguished from verification against the current scene. This adds
+usability to the existing deterministic checks; novel-scale judgment and broader
+continuity detection remain unproven.
+
+Saved Copilot ideas now connect back to writing: **View saved note** opens and
+focuses the note in Plan. Notes sit near the brief, support text/scene search and
+scene/project filtering, open their scene, and prefill an editable Change Set
+request through **Plan a revision**. The author still chooses when to generate
+and reviews the resulting changes. Existing note storage and proposal generation
+are reused; no new backend, note schema or project mutation is added.
+
+Refreshing a newly saved note keeps unfinished Plan drafts. Returning to an open
+scene preserves its existing tab and guarded draft. The connected browser journey
+now follows discussion → saved note → search → scene → editable revision request
+→ pending Change Set, with unchanged prose before application. This addresses the
+documented daily-writing gap of finding and acting on saved ideas.
+
+Next prove actual companion delivery and useful editorial outcomes, followed by
+recovery/distribution gates and observed accessibility friction. Do not let more
+small context additions displace the deployment/device acceptance journey.
+Keep choosing connected author tasks and reuse existing workflows before adding
+new infrastructure.
+
+### Previous execution checkpoint — 2026-09-13
+
+The current sequence has completed the bounded Terra action-scene review,
+proposal review/apply/undo browser coverage, and a more transparent chat context
+receipt. The action packet preserves generated prose for author comparison while
+keeping strict evidence validation in the evaluator. The proposal loop is
+passing through real Python-backed browser journeys, including stale/conflict
+handling and undo. Chat responses now identify the scope, scenes, nearby scenes,
+selected passage and retrieved-evidence count used for the request.
+
+The next product work remains end-to-end usefulness rather than another isolated
+panel: verify Story Memory on a substantial manuscript, run the mobile companion
+against a deployed gateway and real devices, and then close recovery,
+accessibility, packaging and hosted-security gates. Local green tests and a PWA
+build do not establish those external or physical-device outcomes.
+
 ## Approved working direction — 2026-09-07
 
 The author accepted the recap and vision: a desktop studio trusted with the
@@ -147,8 +275,9 @@ conversational personality is separate from manuscript prose style.
 See [Writing Voice](writing-voice.md) for the workflow, bounds, persistence,
 provider/local differences and verification. The shared projection reaches text
 copilot, desktop voice preparation, planning, whole-scene drafting, hunk revision
-and merge generation. Mobile's independent snapshot/context adapter still needs
-the profile. Generic presets express craft traits, not author imitation.
+and merge generation. The September 22 mobile snapshot/context adapter now carries
+the approved projection too; publishing and reopening are required to refresh it.
+Generic presets express craft traits, not author imitation.
 
 Next pair this workflow with the non-templated editorial-quality exercise: compare
 short original scenes, judge character distinction and intended emotional effect,
@@ -158,6 +287,43 @@ literary quality. Live evaluation needs agreed manuscript scope and spending.
 Keep retained reading/review/Plan state and the bounded companion experiment in
 the next delivery sequence; do not replace them with more style controls before
 testing whether these controls produce useful writing.
+
+### Session continuity and quality evaluation — 2026-09-12
+
+Implemented the approved reading/Plan/assessment recovery work through one local
+working-copy journal. Reading restores a scene-relative position; Plan preserves
+unfinished brief, structure and metadata fields; Writing Voice preserves unsaved
+ratings/notes. Book/Storyline scoping and original-value save checks keep recovered
+drafts from silently overwriting newer saved work. The connected browser test also
+found and fixed a delayed first-scene navigation taking focus from the reader.
+See [session continuity](session-continuity.md).
+
+The [writing-quality evaluation](writing-quality-evaluation.md) now uses three
+original action/dialogue/introspection scenes, nine anonymous samples, explicit
+fact checks and separate human craft judgments. The existing subscription
+connector is reused. The author allows only ChatGPT subscription usage, otherwise
+offline—not API-key providers. OpenAuthor's own account check was unauthenticated,
+so the actual run was offline and produced unchanged baselines; no literary
+improvement is claimed. The craft prompt is more explicit, but its generated
+results still need a subscription run and author review. Review the saved
+[baseline packet](evaluations/writing-voice-local-2026-09-12/review.md) and
+[keyed record](evaluations/writing-voice-local-2026-09-12/record.json).
+
+The author subsequently signed in and approved Luna or Terra. Both were returned
+by the existing subscription runtime; the live exercise explicitly used Terra.
+It found a presentation-quote validation bug and a runner partial-result loss bug,
+now repaired with regressions. The final bounded run accepted six dialogue and
+introspection candidates, while action still failed validation. See the
+[live assessment and remaining limits](evaluations/writing-voice-terra-2026-09-12-attempt-3/assessment.md).
+Generated variations are modest, and semantic slips can survive lexical checks;
+no general writing-quality claim or automatic learning is justified.
+
+Next: capture and resolve the remaining rejected-result case and obtain the
+author's blind preferences on the saved samples; then
+advance the bounded desktop-connected mobile companion experiment and remaining
+mobile context parity. Do not add more voice controls on the assumption that
+workflow tests prove the current ones produce good prose. Recovery here is local
+working-copy continuity, not cross-device sync or durable crash transactions.
 
 ## Delivery status
 

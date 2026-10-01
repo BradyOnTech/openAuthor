@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { useEditor, type EditorTab } from "../../contexts/EditorContext";
 
 const KIND_ICONS: Record<string, string> = {
@@ -11,6 +12,17 @@ const KIND_ICONS: Record<string, string> = {
 
 export function TabBar() {
   const { tabs, activeTabId, setActiveTab, closeTab } = useEditor();
+  const bar = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const reveal = () => element.querySelector(".tab--active")?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    reveal();
+    if (typeof ResizeObserver === "undefined") return;
+    const resize = new ResizeObserver(reveal);
+    resize.observe(element);
+    return () => resize.disconnect();
+  }, [activeTabId, tabs.length]);
 
   if (tabs.length === 0) return null;
 
@@ -22,7 +34,7 @@ export function TabBar() {
   }
 
   return (
-    <div className="tab-bar" role="tablist" aria-label="Open documents and workspaces">
+    <div ref={bar} className="tab-bar" role="tablist" aria-label="Open documents and workspaces">
       {tabs.map((tab) => (
         <div
           key={tab.id}

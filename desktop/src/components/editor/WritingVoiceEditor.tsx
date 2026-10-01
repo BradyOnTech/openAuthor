@@ -5,6 +5,9 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { useUI } from "../../contexts/UIContext";
 import { availableProviders, defaultProvider } from "../../providerSelection";
+import { VoiceAssessment } from "./VoiceAssessment";
+import { VoiceRefinement } from "./VoiceRefinement";
+import { readPosition, retentionKey, savePosition } from "../../workspaceRetention";
 import "./writingVoice.css";
 
 const emptyProfile = (): StyleProfile => ({ schema_version: 2, name: "My book's voice", description: "", traits: {}, guidance: [], avoid: [], exemplar_scene_ids: [], exemplar_digests: {}, observations: [], metrics: {}, created_at: "" });
@@ -83,6 +86,10 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
       if (!active) return;
       setWorkspace(loaded);
       setPreview(loaded.previews?.[0] || null);
+      try {
+        const previous = readPosition(retentionKey(projectRoot, loaded.scope, "voice-preview-selection"), (value): value is string => typeof value === "string");
+        if (previous) setPreview(loaded.previews.find((row) => row.id === previous) || loaded.previews[0] || null);
+      } catch { setNotice("Preview selection could not be restored. Assessment drafts are retained separately."); }
       setDraft(loaded.profile || emptyProfile());
       setBaseVersion(loaded.profile?.version || ""); setBaseScope(loaded.scope);
       setSelected(loaded.profile?.exemplar_scene_ids || []);
@@ -148,7 +155,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
     await run("preview", async () => {
       const directions = [draft, ...comparisons.map((id) => workspace!.presets.find((preset) => preset.id === id)!)];
       const result = await writingVoiceAction<VoicePreview>(projectRoot, "preview", { scene_id: sceneId, source_text: source, instruction: intent, directions, provider, model });
-      setPreview(result);
+      choosePreview(result);
       setWorkspace((value) => value && ({ ...value, previews: [result, ...(value.previews || [])].slice(0, 5) }));
       setNotice("Previews are separate from your manuscript and approved profile. Review them before choosing a direction.");
     });
@@ -161,18 +168,12 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
       openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title, data: proposal });
     });
   }
-  function reviewEdit(id: string, change: Partial<VoicePreview["directions"][number]["author_review"]>) {
-    setPreview((value) => value && ({ ...value, directions: value.directions.map((direction) => direction.id === id ? { ...direction, author_review: { ...direction.author_review, ...change } } : direction) }));
-  }
-  async function saveAssessment(directionId: string) {
-    const current = preview;
-    const direction = current?.directions.find((row) => row.id === directionId);
-    if (!current || !direction) return;
-    await run(`review:${directionId}`, async () => {
-      const saved = await writingVoiceAction<VoicePreview>(projectRoot, "review", { preview_id: current.id, direction_id: directionId, review: direction.author_review });
-      setWorkspace((value) => value && ({ ...value, previews: value.previews.map((row) => row.id === saved.id ? saved : row) }));
-      setNotice("Your assessment was saved with this preview. No voice traits were learned automatically.");
-    });
+  function choosePreview(value: VoicePreview | null) {
+    setPreview(value);
+    if (workspace) {
+      try { savePosition(retentionKey(projectRoot, workspace.scope, "voice-preview-selection"), value?.id || ""); }
+      catch { setNotice("Could not retain your preview selection on this device."); }
+    }
   }
 
   return <div className="writing-voice">
@@ -215,22 +216,36 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
         <fieldset disabled={!!busy}><legend>Compare draft profile with</legend>{workspace.presets.map((preset) => <label key={preset.id}><input type="checkbox" checked={comparisons.includes(preset.id)} disabled={sameDirection(draft, preset) || (!comparisons.includes(preset.id) && comparisons.length >= 2)} onChange={(event) => setComparisons(event.target.checked ? [...comparisons, preset.id] : comparisons.filter((id) => id !== preset.id))} />{preset.name}</label>)}</fieldset>
         <button className="btn btn--primary" disabled={!!busy || !source.trim() || !comparisons.length} onClick={() => void compare()}>{busy === "preview" ? "Generating short previews…" : `Compare ${comparisons.length + 1} short previews`}</button>
         {provider === "local" && <p className="writing-voice__muted">Local mode repeats your source as a baseline. It cannot demonstrate literary quality or produce creative voice variations.</p>}
-        {!!workspace.previews?.length && <label>Reopen saved previews<select className="input" value={preview?.id || ""} onChange={(event) => setPreview(workspace.previews.find((row) => row.id === event.target.value) || null)}><option value="">Choose a saved comparison…</option>{workspace.previews.map((row) => <option key={row.id} value={row.id}>{row.scene_id} · {row.directions.map((direction) => direction.profile.name).join(" / ")}</option>)}</select></label>}
+        {!!workspace.previews?.length && <label>Reopen saved previews<select className="input" disabled={!!busy} value={preview?.id || ""} onChange={(event) => choosePreview(workspace.previews.find((row) => row.id === event.target.value) || null)}><option value="">Choose a saved comparison…</option>{workspace.previews.map((row, index) => <option key={row.id} value={row.id}>{index + 1}. {row.scene_id} · {row.refinement ? "Refined · " : ""}{row.directions.map((direction) => direction.profile.name).join(" / ")}</option>)}</select></label>}
       </section>
       {preview && <section className="writing-voice__section"><div className="writing-voice__section-heading"><h2>Compare and judge</h2><button className="btn btn--sm" onClick={() => {
         if (expanded) restoreLayout();
         else { previousLayout.current = { sidebar: sidebarOpen, secondary: secondarySidebarOpen, panel: panelOpen }; setSidebarOpen(false); setSecondarySidebarOpen(false); setPanelOpen(false); }
         setExpanded(!expanded);
       }}>{expanded ? "Restore workspace layout" : "Expand comparison"}</button></div><p>Source: {preview.scene_id}. Measurements describe prose shape, not writing quality. Each assessment below is yours to approve.</p>
+        <section aria-label="Original passage" className="writing-voice__reference"><h3>Original passage</h3>
+          <p className="writing-voice__muted">Saved when this comparison was created, not a live view of the manuscript. Keeping the original is a valid choice; no action is needed.</p>
+          <p className="writing-voice__prose">{preview.source_text}</p>
+          {preview.instruction && <p><strong>Requested direction:</strong> {preview.instruction}</p>}
+        </section>
+        {preview.refinement && <section aria-label="Previous attempt" className="writing-voice__reference"><h3>Previous attempt</h3>
+          <p className="writing-voice__prose">{preview.refinement.candidate}</p>
+          <p><strong>Your revision feedback:</strong> {preview.refinement.feedback}</p>
+        </section>}
         <div className="writing-voice__comparisons">{preview.directions.map((direction) => <article key={direction.id} aria-label={`Preview ${direction.profile.name}`}>
           <h3>{direction.profile.name}</h3><p className="writing-voice__prose">{direction.text}</p>
           <p className="writing-voice__muted">{direction.measures.words} words · {direction.measures.average_sentence_words} words/sentence · {direction.measures.dialogue_passages} dialogue passages</p>
           {direction.warnings.map((warning) => <p className="writing-voice__muted" key={warning}>{warning}</p>)}
-          {direction.observations.map((row, index) => <blockquote key={index}><strong>{row.criterion.replace(/_/g, " ")}</strong><p>{row.observation}</p><q>{row.excerpt}</q></blockquote>)}
-          <details><summary>Your quality assessment</summary>{Object.entries(workspace.criteria).map(([key, criterion]) => <label key={key}>{criterion}<select className="input" value={direction.author_review.ratings[key] || "unreviewed"} onChange={(event) => reviewEdit(direction.id, { ratings: { ...direction.author_review.ratings, [key]: event.target.value } })}><option value="unreviewed">Not judged yet</option><option value="works">Works for this scene</option><option value="needs_revision">Needs revision</option></select></label>)}
-            <label>Assessment notes<textarea className="input" maxLength={3000} rows={3} value={direction.author_review.notes} onChange={(event) => reviewEdit(direction.id, { notes: event.target.value })} /></label>
-            <button className="btn" disabled={!!busy} onClick={() => void saveAssessment(direction.id)}>Save assessment</button>
-          </details>
+          {!!direction.observations.length && <details><summary>Generator self-review — not independent evidence</summary>{direction.observations.map((row, index) => <blockquote key={index}><strong>{row.criterion.replace(/_/g, " ")}</strong><p>{row.observation}</p><q>{row.excerpt}</q></blockquote>)}</details>}
+          <VoiceAssessment key={`${projectRoot}:${workspace.scope}:${preview.id}:${direction.id}`} project={projectRoot} scope={workspace.scope} previewId={preview.id} direction={direction} criteria={workspace.criteria} onSaved={(saved) => {
+            setWorkspace((value) => value && ({ ...value, previews: value.previews.map((row) => row.id === saved.id ? saved : row) }));
+            setPreview((value) => value?.id === saved.id ? saved : value);
+          }} />
+          <VoiceRefinement key={`refine:${projectRoot}:${workspace.scope}:${preview.id}:${direction.id}`} project={projectRoot} scope={workspace.scope} previewId={preview.id} direction={direction} provider={provider} model={model} disabled={!!busy} onBusy={(value) => setBusy(value ? "refine" : "")} onRefined={(result) => {
+            choosePreview(result);
+            setWorkspace((value) => value && ({ ...value, previews: [result, ...value.previews].slice(0, 5) }));
+            setNotice("Refined sample saved separately. Compare it with the original and previous attempt before queueing a Change Set. Your manuscript and approved voice are unchanged.");
+          }} />
           <div className="writing-voice__actions"><button className="btn" disabled={!!busy} onClick={() => { edit(direction.profile); setNotice("Direction copied into your draft profile. Approve and save to use it for this book."); }}>Use as draft voice</button>
             <button className="btn btn--primary" disabled={!!busy || direction.text === preview.source_text} onClick={() => void stage(direction.id)}>Queue sample as Change Set</button></div>
         </article>)}</div>

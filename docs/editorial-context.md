@@ -54,6 +54,16 @@ silently deleted or demoted. Presence is an exact-text check, not semantic proof
 of the fact or of its validity range. The model must not assume that the author
 and every character know the same things.
 
+Authors can correct or withdraw facts in **Story Memory → Canon & Continuity**.
+Withdrawn facts keep their identity and recorded sources and can be restored.
+Withdrawal excludes them from newly assembled accepted-canon context and
+fact-based diagnostics, but does not redact earlier messages or independently
+written prose. Saving an accepted correction requires the recorded excerpts to
+match current saved scenes; this is not semantic proof. Concurrent corrections
+and Storyline changes invalidate the loaded edit version rather than silently
+overwriting the saved fact. An unfinished correction survives a failed save in
+the open editor, but is not a durable draft across navigation or app restart.
+
 Context and generation selection run under the existing project read/transaction
 lock, not across provider calls. Scene neighborhoods now share the Plan-ordered
 reading/export source, with unassigned scenes retained last.
@@ -81,9 +91,31 @@ wire-format accounting, billing or a guarantee against model context errors.
 Per-response limits and initial admission do not bound a continuously growing
 voice session, later client control events or total session spending.
 
-The mobile snapshot reader has its own device-local context builder. Its current
-Memory projection remains tested, but the richer editorial context described
-here is not yet projected into mobile voice. Saved voice packs may also become
+The mobile snapshot reader has its own device-local context builder. New snapshots
+now carry the approved Writing Voice projection; the Assistant names the
+downloaded profile, and complete profile plus focused prose must fit before
+starting a session. Older snapshots have no inferred profile. Refresh requires
+desktop publication, phone reopening and a new session. This local content budget
+does not bound full requests, later tool reads or session cost. Its Memory
+privacy projection remains tested. New snapshots now include accepted facts
+through desktop's existing privacy-filtered review projection, with no `ask`
+permissions. Mobile rechecks subject/character visibility, selects scene-relevant
+facts and verifies exact evidence against downloaded scene bodies. The selected
+facts retain scope, confidence, validity and character knowledge. They are
+required context: none are clipped or silently dropped for budget. The Assistant
+shows their count and missing-source warnings; older snapshots explicitly lack
+this field. With no focused scene all eligible facts are selected. Subjectless
+facts are always relevant; focused subject/character mentions or source scenes
+make linked facts relevant. Selection is not proof of exhaustive relevance.
+
+Publication/reopening is required to pick up corrections or withdrawals. Offline
+copies cannot discover newer desktop edits or permission changes. Selection
+does not redact freely authored prose mentioning the same information. New mobile
+snapshots preserve desktop Plan reading order and act/chapter titles; the existing
+scene-list tool exposes that order without treating it as in-world chronology.
+Chapter synopses, authored timeline labels and Storyline intent, and retrieval of additional Canon Facts during a running mobile
+session, remain unimplemented; existing read tools still serve scenes and entity
+search. Saved desktop voice packs may also become
 stale after author edits; the existing pre-session Memory stamp is not a general
 scene/canon/Storyline freshness certificate. A new profile check refuses desktop
 voice negotiation when Writing Voice changed since preparation. Already sent

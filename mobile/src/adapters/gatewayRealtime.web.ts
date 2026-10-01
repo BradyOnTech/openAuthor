@@ -19,7 +19,7 @@ export function gatewayRealtimeDependencies(input: GatewaySessionInput): MobileR
     playRemote: async (stream) => {
       audio.srcObject = stream as MediaStream;
       try { await audio.play(); }
-      catch { throw new Error("Your browser blocked voice playback. End the session, then tap Start voice to try again."); }
+      catch { throw new Error("Your browser blocked voice playback. Tap Start voice to try again."); }
     },
     cleanup: () => { audio.pause(); audio.srcObject = null; peer = null; },
   };

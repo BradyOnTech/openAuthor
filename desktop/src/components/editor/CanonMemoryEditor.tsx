@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   addCanonFact,
   addNarrativeSetup,
@@ -11,13 +11,19 @@ import {
   runCanonDiagnostics,
   listCharacterArcStates,
   addCharacterArcState,
+  getScene,
 } from "../../api";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import type { CanonDiagnostic, CanonFact, CharacterArcState, NarrativeSetup, OpenQuestion } from "../../types";
+import { useEditor } from "../../contexts/EditorContext";
+import type { CanonDiagnostic, CanonFact, CharacterArcState, NarrativeSetup, OpenQuestion, SceneSummary } from "../../types";
+import { ContinuityReview } from "./ContinuityReview";
+import { CanonFactCard } from "./CanonFactCard";
 
 export function CanonMemoryEditor() {
   const { projectRoot, scenes, codexEntities, setError, setMessage } = useWorkspace();
+  const { tabs, setActiveTab, beginNavigation, openTab } = useEditor();
   const [facts, setFacts] = useState<CanonFact[]>([]);
+  const [factFilter, setFactFilter] = useState("accepted");
   const [setups, setSetups] = useState<NarrativeSetup[]>([]);
   const [questions, setQuestions] = useState<OpenQuestion[]>([]);
   const [diagnostics, setDiagnostics] = useState<CanonDiagnostic[]>([]);
@@ -36,25 +42,49 @@ export function CanonMemoryEditor() {
   const [arcValue, setArcValue] = useState("");
   const [arcType, setArcType] = useState<"observed" | "planned">("observed");
   const [busy, setBusy] = useState(false);
+  const mutationPending = useRef(false);
+  const loadSequence = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  useEffect(() => { void load(); }, [projectRoot]);
+  useEffect(() => { void load(); return () => { ++loadSequence.current; }; }, [projectRoot]);
 
   async function load() {
+    const sequence = ++loadSequence.current;
+    setLoading(true);
+    setLoadError("");
     try {
       const [nextFacts, nextSetups, nextQuestions, nextArcStates, report] = await Promise.all([
         listCanonFacts(projectRoot), listNarrativeSetups(projectRoot), listOpenQuestions(projectRoot), listCharacterArcStates(projectRoot), runCanonDiagnostics(projectRoot),
       ]);
+      if (sequence !== loadSequence.current) return;
       setFacts(nextFacts); setSetups(nextSetups); setQuestions(nextQuestions); setArcStates(nextArcStates); setDiagnostics(report.diagnostics);
     } catch (error) {
-      setError(`Failed to load Canon Memory: ${error instanceof Error ? error.message : String(error)}`);
+      if (sequence === loadSequence.current) setLoadError(`Failed to load Canon Memory: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }
 
   async function mutate(action: () => Promise<unknown>, message: string) {
+    if (mutationPending.current) return;
+    mutationPending.current = true;
     setBusy(true);
     try { await action(); await load(); setMessage(message); }
     catch (error) { setError(`Canon Memory update failed: ${error instanceof Error ? error.message : String(error)}`); }
-    finally { setBusy(false); }
+    finally { mutationPending.current = false; setBusy(false); }
+  }
+
+  async function openScene(scene: SceneSummary) {
+    const tabId = `scene:${scene.id}`;
+    if (tabs.some((tab) => tab.id === tabId)) { setActiveTab(tabId); return; }
+    const isCurrent = beginNavigation();
+    try {
+      const detail = await getScene(projectRoot, scene.id);
+      if (isCurrent()) openTab({ id: tabId, kind: "scene", label: detail.title, data: detail });
+    } catch (error) {
+      if (isCurrent()) setError(`Failed to open evidence scene: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   const entityName = (id: string) => codexEntities.find((row) => row.id === id)?.name || "Story";
@@ -63,8 +93,10 @@ export function CanonMemoryEditor() {
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "var(--space-6)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: "var(--space-5)" }}>
           <div><div style={eyebrow}>Evidence-backed story truth</div><h1 style={pageTitle}>Canon & Continuity</h1></div>
-          <button className="btn" disabled={busy} onClick={() => void load()}>Run Diagnostics</button>
+          <button className="btn" disabled={busy || loading} onClick={() => void load()}>{loading ? "Checking…" : "Run Diagnostics"}</button>
         </div>
+
+        {loadError && <p role="alert">{loadError} Use Run Diagnostics to retry.</p>}
 
         <section style={panelStyle}>
           <h2 style={sectionTitle}>Add Canon Fact</h2>
@@ -85,8 +117,23 @@ export function CanonMemoryEditor() {
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
-          <section style={panelStyle}><h2 style={sectionTitle}>Canon Facts <span style={countStyle}>{facts.length}</span></h2>{facts.map((fact) => <article key={fact.id} style={rowStyle}><strong>{entityName(fact.subject_entity_id)} · {fact.predicate}</strong><div style={valueStyle}>{fact.value}</div><div style={metaStyle}>{fact.validity.from_scene_id || "beginning"} → {fact.validity.to_scene_id || "ongoing"} · {fact.evidence.length} source{fact.evidence.length === 1 ? "" : "s"}</div></article>)}</section>
-          <section style={panelStyle}><h2 style={sectionTitle}>Continuity Diagnostics <span style={countStyle}>{diagnostics.length}</span></h2>{diagnostics.map((diagnostic) => <article key={diagnostic.id} style={{ ...rowStyle, borderLeft: `3px solid var(--${diagnostic.severity === "error" ? "danger" : diagnostic.severity === "warning" ? "warning" : "info"})` }}><strong>{diagnostic.title}</strong><div style={valueStyle}>{diagnostic.message}</div><div style={metaStyle}>{diagnostic.evidence.length} evidence passage{diagnostic.evidence.length === 1 ? "" : "s"}{diagnostic.disposition ? ` · ${diagnostic.disposition.disposition}` : ""}</div>{!diagnostic.disposition && <div style={{ display: "flex", gap: 5, marginTop: 7 }}>{(["intentional", "dismissed", "deferred"] as const).map((disposition) => <button key={disposition} className="btn btn--sm" onClick={() => void mutate(() => disposeCanonDiagnostic(projectRoot, diagnostic.id, disposition), `Marked ${disposition}.`)}>{disposition}</button>)}</div>}</article>)}</section>
+          <section aria-label="Canon Facts" style={panelStyle}>
+            <h2 style={sectionTitle}>Canon Facts <span style={countStyle}>{facts.filter((fact) => fact.status === "accepted").length} accepted</span></h2>
+            <select className="select" aria-label="Filter Canon Facts" value={factFilter} onChange={(event) => setFactFilter(event.target.value)}>
+              <option value="accepted">Accepted canon</option><option value="suggested">Needs review</option><option value="rejected">Withdrawn</option><option value="all">All facts</option>
+            </select>
+            {!facts.some((fact) => factFilter === "all" || fact.status === factFilter) && <p style={metaStyle}>No facts in this view.</p>}
+            {facts.map((fact) => <div key={fact.id} hidden={factFilter !== "all" && fact.status !== factFilter}>
+              <CanonFactCard fact={fact} subjectName={entityName(fact.subject_entity_id)} scenes={scenes} projectRoot={projectRoot} disabled={busy || loading || Boolean(loadError)} onOpenScene={(scene) => void openScene(scene)} onSaved={(updated) => {
+                setFacts((rows) => rows.map((row) => row.id === updated.id ? updated : row));
+                setMessage(updated.status === "rejected" ? "Fact withdrawn. Its text and evidence are kept under Withdrawn." : "Canon Fact corrected.");
+                void load();
+              }} />
+            </div>)}
+          </section>
+          {loading && !diagnostics.length ? <p role="status">Checking continuity…</p> : !loadError && <ContinuityReview diagnostics={diagnostics} scenes={scenes} busy={busy || loading} onOpenScene={(scene) => void openScene(scene)} onRevise={(diagnostic, targetId, instruction) => {
+            openTab({ id: `generate:continuity:${diagnostic.id}`, kind: "generate", label: "Revise continuity", data: { sceneId: targetId, instruction } });
+          }} onReview={(id, disposition, notes) => void mutate(() => disposeCanonDiagnostic(projectRoot, id, disposition, notes), "Continuity review saved.")} />}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>

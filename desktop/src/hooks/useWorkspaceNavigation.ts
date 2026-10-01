@@ -12,10 +12,11 @@ import { useWorkspace } from "../contexts/WorkspaceContext";
  */
 export function useWorkspaceNavigation() {
   const { setActiveView, setSidebarOpen } = useUI();
-  const { tabs, activeTabId, openTab, setActiveTab } = useEditor();
+  const { tabs, activeTabId, openTab, setActiveTab, beginNavigation } = useEditor();
   const { projectRoot, scenes, setError } = useWorkspace();
 
   return useCallback(async (view: ActivityView) => {
+    const isCurrent = beginNavigation();
     setActiveView(view);
     setSidebarOpen(true);
 
@@ -47,13 +48,15 @@ export function useWorkspaceNavigation() {
       // The workbench becomes usable before its background scene-list refresh
       // completes. A navigation request must still open the saved manuscript.
       const availableScenes = scenes.length ? scenes : await listScenes(projectRoot);
-      if (!availableScenes.length) return;
+      if (!isCurrent() || !availableScenes.length) return;
       const scene = await getScene(projectRoot, availableScenes[0].id);
+      if (!isCurrent()) return;
       openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title, data: scene });
     } catch (error) {
+      if (!isCurrent()) return;
       setError(`Failed to open the manuscript: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }, [activeTabId, openTab, projectRoot, scenes, setActiveTab, setActiveView, setError, setSidebarOpen, tabs]);
+  }, [activeTabId, beginNavigation, openTab, projectRoot, scenes, setActiveTab, setActiveView, setError, setSidebarOpen, tabs]);
 }
 
 export function focusNewSceneTitle() {

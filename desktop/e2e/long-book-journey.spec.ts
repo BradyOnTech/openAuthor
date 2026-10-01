@@ -119,6 +119,91 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByText("Context used", { exact: true }).click();
     await expect(page.getByText("1 accepted canon fact supplied.", { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("distant-evidence-in-chat.png") });
+
+    // Inspect a specific knowledge finding through the author-facing Memory
+    // screen, then revisit the saved decision and prepare an editable revision.
+    const mara = await json(["codex", "add", "--type", "character", "--name", "Mara"]);
+    await json(["memory", "fact-add", "--predicate", "Hidden tide key", "--value", "tide key was hidden beneath the western bridge",
+      "--evidence-json", JSON.stringify([{ scene_id: "scene-0001", excerpt: "Only Ivo knew the tide key was hidden beneath the western bridge." }]),
+      "--knowledge-json", JSON.stringify([{ character_entity_id: mara.id, state: "does_not_know", from_scene_id: "scene-0032" }])]);
+    await page.getByRole("button", { name: "Close side panel" }).click();
+    await page.getByRole("button", { name: /^Story Memory \(/ }).click();
+    await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();
+    const findings = page.getByRole("region", { name: "Continuity findings" });
+    const finding = findings.getByRole("article", { name: "Possible POV knowledge leak" });
+    await expect(finding).toBeVisible();
+    await finding.getByText("Review evidence (2)", { exact: true }).click();
+    await expect(finding).toContainText("Only Ivo knew the tide key was hidden beneath the western bridge.");
+    await finding.getByRole("button", { name: "Open scene: Knowledge Before Its Time" }).click();
+    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(fixture.originals["scene-0032"] + "\n");
+    await page.getByRole("tab", { name: "Canon & Continuity", exact: true }).click();
+    await finding.getByText("Record review decision", { exact: true }).click();
+    await finding.getByRole("combobox", { name: "Decision", exact: true }).selectOption("intentional");
+    await finding.getByRole("textbox", { name: "Review notes" }).fill("Consider whether Mara is bluffing here.");
+    await finding.getByRole("button", { name: "Save review decision" }).click();
+    await expect(page.getByText("Continuity review saved.", { exact: true })).toBeVisible();
+    await expect(finding).toBeHidden();
+    await findings.getByRole("combobox", { name: "Filter continuity findings" }).selectOption("reviewed");
+    await expect(finding).toContainText("Author decision: Intentional");
+    await page.reload();
+    await page.getByRole("button", { name: /^Story Memory \(/ }).click();
+    await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();
+    await findings.getByRole("combobox", { name: "Filter continuity findings" }).selectOption("reviewed");
+    await finding.getByText("Update review decision", { exact: true }).click();
+    await expect(finding.getByRole("textbox", { name: "Review notes" })).toHaveValue("Consider whether Mara is bluffing here.");
+    await finding.getByRole("combobox", { name: "Decision", exact: true }).selectOption("deferred");
+    await finding.getByRole("textbox", { name: "Review notes" }).fill("Compare this with the later reservoir confession before rewriting.");
+    await finding.getByRole("button", { name: "Save review decision" }).click();
+    await expect(finding).toBeHidden();
+    await findings.getByRole("combobox", { name: "Filter continuity findings" }).selectOption("attention");
+    await expect(finding).toContainText("Author decision: Review later");
+    await finding.getByText("Review evidence (2)", { exact: true }).click();
+    await page.screenshot({ path: testInfo.outputPath("continuity-evidence-review.png") });
+    await finding.getByRole("button", { name: "Plan a revision" }).click();
+    await expect(page.getByRole("combobox", { name: "Scene", exact: true })).toHaveValue("scene-0032");
+    await expect(page.getByRole("textbox", { name: "What should change?" })).toHaveValue(/Possible POV knowledge leak/);
+    await expect(page.getByRole("textbox", { name: "What should change?" })).toHaveValue(/only if the finding is valid/);
+    await expect(page.getByRole("textbox", { name: "What should change?" })).toHaveValue(/Compare this with the later reservoir confession before rewriting/);
+    expect(await json(["proposal", "list"])).toHaveLength(2);
+    const report = await json(["memory", "diagnose"]);
+    const knowledgeFinding = report.diagnostics.find((row: any) => row.code === "pov_knowledge_leak");
+    expect(knowledgeFinding.disposition).toMatchObject({ disposition: "deferred", notes: "Compare this with the later reservoir confession before rewriting." });
+
+    // An obsolete Memory fact can be withdrawn without rewriting the novel,
+    // then inspected and restored only with current supporting text.
+    await page.getByRole("tab", { name: "Canon & Continuity", exact: true }).click();
+    const facts = page.getByRole("region", { name: "Canon Facts", exact: true });
+    const fact = facts.getByRole("article", { name: "Story: Hidden tide key", exact: true });
+    await fact.getByRole("button", { name: "Correct or withdraw fact" }).click();
+    await fact.getByRole("combobox", { name: "Canon status" }).selectOption("rejected");
+    await fact.getByRole("button", { name: "Save fact correction" }).click();
+    await expect(page.getByText("Fact withdrawn. Its text and evidence are kept under Withdrawn.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Run Diagnostics", exact: true })).toBeEnabled();
+    await expect(findings.getByRole("status")).toHaveText("0 of 0 findings · 0 need attention");
+    const withdrawn = (await json(["memory", "fact-list"])).find((row: any) => row.predicate === "Hidden tide key");
+    expect(withdrawn.status).toBe("rejected");
+    expect(withdrawn.evidence).toHaveLength(1);
+    await page.reload();
+    await page.getByRole("button", { name: /^Story Memory \(/ }).click();
+    await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();
+    await facts.getByRole("combobox", { name: "Filter Canon Facts" }).selectOption("rejected");
+    await expect(fact).toContainText("Excluded from new Copilot canon context");
+    await fact.getByRole("button", { name: "Correct or withdraw fact" }).click();
+    await fact.getByRole("combobox", { name: "Canon status" }).selectOption("accepted");
+    await fact.getByRole("textbox", { name: "Supporting passage 1" }).fill("This passage was never in the book.");
+    await fact.getByRole("button", { name: "Save fact correction" }).click();
+    await expect(fact.getByRole("alert")).toContainText("supporting passage is missing");
+    await expect(fact.getByRole("textbox", { name: "Supporting passage 1" })).toHaveValue("This passage was never in the book.");
+    await fact.getByRole("textbox", { name: "Supporting passage 1" }).fill("Only Ivo knew the tide key was hidden beneath the western bridge.");
+    await fact.getByRole("button", { name: "Save fact correction" }).click();
+    await expect(page.getByText("Canon Fact corrected.", { exact: true })).toBeVisible();
+    await facts.getByRole("combobox", { name: "Filter Canon Facts" }).selectOption("accepted");
+    await expect(fact).toContainText("Accepted canon");
+    await expect(findings.getByRole("article", { name: "Possible POV knowledge leak" })).toBeVisible();
+    const restored = (await json(["memory", "fact-list"])).find((row: any) => row.id === withdrawn.id);
+    expect(restored.status).toBe("accepted");
+    expect(restored.evidence).toEqual(withdrawn.evidence);
+    await page.screenshot({ path: testInfo.outputPath("correctable-canon.png") });
     // Public scene reads confirm that discussing evidence and undoing the two
     // chosen revisions left every scene's prose unchanged.
     for (const id of Object.keys(fixture.originals)) expect((await json(["scene", "get", "--id", id])).body.trim()).toBe(fixture.originals[id]);

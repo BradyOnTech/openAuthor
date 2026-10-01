@@ -16,7 +16,8 @@ help:
 	@echo "  make test   - Run Python tests"
 	@echo "  make test-scale - Generate the large-project fixture and enforce performance budgets"
 	@echo "  make test-canon-eval - Measure Canon diagnostic precision and recall"
-	@echo "  make test-editorial-eval - Measure Editorial Pass improvement and canon safety"
+	@echo "  make test-editorial-eval - Check deterministic Editorial Pass pattern regressions"
+	@echo "  make test-writing-quality - Run original-scene Writing Voice baselines offline"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
 	@echo "  make test-all - Run Python, desktop, contracts, gateway, and mobile checks"
@@ -78,6 +79,10 @@ test-canon-eval:
 
 test-editorial-eval:
 	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_editorial_passes.py
+
+.PHONY: test-writing-quality
+test-writing-quality:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_writing_voice.py
 
 test-desktop:
 	@echo "Running desktop tests..."

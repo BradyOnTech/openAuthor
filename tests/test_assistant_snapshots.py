@@ -13,12 +13,104 @@ from openauthor.assistant.snapshots import (
   write_mobile_snapshot_staging,
 )
 from openauthor.codex import add_entity
+from openauthor.canon import add_canon_fact, list_canon_facts, update_canon_fact
 from openauthor.project import initialize_project
 from openauthor.revisions import create_revision
-from openauthor.scenes import add_scene
+from openauthor.scenes import add_scene, update_scene
+from openauthor.style_profile import save_style_profile, voice_context
+from openauthor.planning import add_act, add_chapter, assign_scene
 
 
 class AssistantSnapshotTests(unittest.TestCase):
+  def test_snapshot_uses_desktop_plan_order_and_keeps_unassigned_prose(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Out of file order", project_id="ordered-book")
+      for title in ("Discovery", "Arrival", "Loose scene"):
+        add_scene(paths, title=title, body=f"Original {title} prose.")
+      act = add_act(paths, title="Winter")
+      arrival = add_chapter(paths, act_id=act["id"], title="Before the bell")
+      discovery = add_chapter(paths, act_id=act["id"], title="The key")
+      assign_scene(paths, scene_id="scene-0002", chapter_id=arrival["id"])
+      assign_scene(paths, scene_id="scene-0001", chapter_id=discovery["id"])
+      create_revision(paths, "Reading order")
+      first = project_mobile_snapshot(paths, selected_project_id="ordered-book")
+      self.assertEqual(first.snapshot["reading_order"], "plan")
+      self.assertEqual([row["id"] for row in first.snapshot["scenes"]], ["scene-0002", "scene-0001", "scene-0003"])
+      self.assertEqual([row["chapter_title"] for row in first.snapshot["scenes"]], ["Before the bell", "The key", "Unassigned scenes"])
+      self.assertEqual([row["act_title"] for row in first.snapshot["scenes"]], ["Winter", "Winter", ""])
+      self.assertEqual([row["body"].strip() for row in first.snapshot["scenes"]], ["Original Arrival prose.", "Original Discovery prose.", "Original Loose scene prose."])
+      assign_scene(paths, scene_id="scene-0002", chapter_id=discovery["id"])
+      reordered = project_mobile_snapshot(paths, selected_project_id="ordered-book")
+      self.assertEqual([row["id"] for row in reordered.snapshot["scenes"]], ["scene-0001", "scene-0002", "scene-0003"])
+      self.assertNotEqual(first.manifest["content_sha256"], reordered.manifest["content_sha256"])
+      self.assertEqual(first.snapshot["revision"], reordered.snapshot["revision"])
+
+  def test_snapshot_canon_reuses_privacy_and_retains_evidence_and_knowledge(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Canon book", project_id="canon-book")
+      add_scene(paths, title="Key", body="Mara found the brass key.")
+      mara = add_entity(paths, kind="character", name="Mara", notes="PRIVATE-NOTES")
+      hidden = add_entity(paths, kind="character", name="Hidden", ai_visibility="exclude")
+      ask = add_entity(paths, kind="character", name="Ask", ai_visibility="ask")
+      fact = add_canon_fact(paths, subject_entity_id=mara, predicate="key", value="brass",
+        evidence=[{"scene_id": "scene-0001", "excerpt": "Mara found the brass key."}],
+        valid_from_scene_id="scene-0001", knowledge=[
+          {"character_entity_id": mara, "state": "believes", "from_scene_id": "scene-0001"},
+          {"character_entity_id": hidden, "state": "knows"},
+        ])
+      for subject, status in [(hidden, "accepted"), (ask, "accepted"), (mara, "suggested"), (mara, "rejected")]:
+        add_canon_fact(paths, subject_entity_id=subject, predicate="omit", value="PRIVATE-OR-UNAPPROVED",
+          status=status, evidence=[{"scene_id": "scene-0001", "excerpt": "Mara found the brass key."}])
+      create_revision(paths, "Canon snapshot")
+      first = project_mobile_snapshot(paths, selected_project_id="canon-book")
+      facts = first.snapshot["accepted_canon"]
+      self.assertEqual([row["id"] for row in facts], [fact["id"]])
+      self.assertEqual(facts[0]["validity"]["from_scene_id"], "scene-0001")
+      self.assertEqual(facts[0]["knowledge"], [{"character_entity_id": mara, "character_name": "Mara", "state": "believes", "from_scene_id": "scene-0001"}])
+      self.assertEqual(facts[0]["evidence"][0]["verification"], "excerpt_present")
+      self.assertNotIn("PRIVATE-", json.dumps(facts))
+      update_scene(paths, scene_identifier="scene-0001", body="The source was revised.")
+      revised = project_mobile_snapshot(paths, selected_project_id="canon-book")
+      self.assertEqual(revised.snapshot["accepted_canon"][0]["evidence"][0]["verification"], "excerpt_missing")
+      current = next(row for row in list_canon_facts(paths, for_editing=True) if row["id"] == fact["id"])
+      update_canon_fact(paths, fact["id"], expected_version=current["edit_version"], changes={"status": "rejected"})
+      withdrawn = project_mobile_snapshot(paths, selected_project_id="canon-book")
+      self.assertEqual(withdrawn.snapshot["accepted_canon"], [])
+      self.assertNotEqual(withdrawn.manifest["content_sha256"], revised.manifest["content_sha256"])
+      self.assertEqual(len(first.snapshot["accepted_canon"]), 1)
+
+  def test_only_approved_voice_projection_is_published_and_changes_snapshot_digest(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Voice book", project_id="voice-book")
+      add_scene(paths, title="Opening", body="A bell rings.")
+      create_revision(paths, "Voice baseline")
+      before = project_mobile_snapshot(paths, selected_project_id="voice-book")
+      self.assertIsNone(before.snapshot["writing_voice"])
+      profile = save_style_profile(paths, expected_version="", profile={
+        "name": "Winter restraint", "description": "Emotion through choices.",
+        "traits": {"emotion": "restrained", "dialogue": "subtextual"},
+        "guidance": ["Keep action spatially clear."], "avoid": ["Melodrama."],
+        "exemplar_scene_ids": ["scene-0001"],
+        "observations": [{"scene_id": "scene-0001", "aspect": "sound", "observation": "analysis-not-for-mobile", "excerpt": "A bell rings."}],
+        "metrics": {"private_analysis": "not-for-mobile"},
+      })
+      previews = paths.project_dir / "workspace" / "voice-previews"
+      previews.mkdir(parents=True)
+      (previews / "draft.json").write_text('{"name":"unapproved-draft"}', encoding="utf-8")
+      published = project_mobile_snapshot(paths, selected_project_id="voice-book")
+      self.assertEqual(published.snapshot["writing_voice"], voice_context(profile))
+      self.assertEqual(published.snapshot["revision"], before.snapshot["revision"])
+      self.assertNotEqual(published.manifest["content_sha256"], before.manifest["content_sha256"])
+      for field in ("observations", "exemplar_scene_ids", "exemplar_digests", "metrics", "version"):
+        self.assertNotIn(field, published.snapshot["writing_voice"])
+      self.assertNotIn("analysis-not-for-mobile", published.plaintext_bytes.decode())
+      self.assertNotIn("unapproved-draft", published.plaintext_bytes.decode())
+      changed = save_style_profile(paths, expected_version=profile["version"], profile={**profile, "name": "New approved direction"})
+      latest = project_mobile_snapshot(paths, selected_project_id="voice-book")
+      self.assertEqual(latest.snapshot["writing_voice"], voice_context(changed))
+      self.assertNotEqual(latest.manifest["content_sha256"], published.manifest["content_sha256"])
+      self.assertEqual(published.snapshot["writing_voice"]["name"], "Winter restraint")
+
   def test_projection_rejects_a_project_without_a_revision_anchor(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(

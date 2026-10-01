@@ -5,7 +5,7 @@ import { addEditorialPass, draftProposal, generateProposal, getStyleProfile, lis
 import type { ProposalProvider } from "../../types";
 import { availableProviders, defaultProvider } from "../../providerSelection";
 
-export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }) {
+export function GenerateProposal({ initialSceneId, initialInstruction = "", tabId = "generate" }: { initialSceneId?: string; initialInstruction?: string; tabId?: string }) {
   const { projectRoot, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
     useWorkspace();
   const { openTab, closeTab } = useEditor();
@@ -15,7 +15,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
   }, [runtimeConfig]);
 
   const [sceneId, setSceneId] = useState(initialSceneId ?? scenes[0]?.id ?? "");
-  const [instruction, setInstruction] = useState("");
+  const [instruction, setInstruction] = useState(initialInstruction);
   const [provider, setProvider] = useState<ProposalProvider>("local");
   const providerWasSelected = useRef(false);
   const [model, setModel] = useState("");
@@ -114,7 +114,7 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
       }
       setMessage(groupId ? `${proposals.length} coordinated Change Sets ready. Review each scene, then apply the group atomically from Changes.` : alternativeCount === 1 ? `Change Set ready: review each hunk before applying.` : `${alternativeCount} creative directions ready to compare.`);
       await Promise.all([refreshProposals(), refreshRuns()]);
-      closeTab("generate");
+      closeTab(tabId);
       if (proposals.length === 1 || groupId) {
         const proposal = proposals[0];
         openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || proposal.id.slice(0, 8), data: proposal });
@@ -133,7 +133,8 @@ export function GenerateProposal({ initialSceneId }: { initialSceneId?: string }
       style={{
         padding: "var(--space-6) var(--space-8)",
         background: "var(--bg-surface)",
-        minHeight: "100%",
+        flex: 1,
+        minHeight: 0,
         overflow: "auto",
       }}
     >

@@ -635,6 +635,15 @@ def send_chat_message(
     "retrieval": context_pack.provider_context.get("retrieval", {}),
     "profile": profile,
     "review": {
+      "scope": context_pack.scope,
+      "scene_titles": [
+        item.source_title or item.source_ref for item in context_pack.items if item.kind == "scene"
+      ],
+      "nearby_scene_titles": [
+        item.source_title or item.source_ref for item in context_pack.items if item.kind == "nearby_scene"
+      ],
+      "selected_text_included": any(item.kind == "selection" for item in context_pack.items),
+      "retrieval_result_count": len(context_pack.citations),
       "chapter_titles": [row["title"] for row in prompt_context["narrative_frame"]["chapters"]],
       "canon_fact_ids": [row["id"] for row in prompt_context["accepted_canon"]],
       "storyline_name": prompt_context["active_storyline"].get("name", ""),

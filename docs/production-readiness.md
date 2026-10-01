@@ -786,6 +786,350 @@ No live inference, private manuscript uploads, deployment, new network exposure
 or physical-device tests were performed. Literary quality still needs independent
 author judgment on original or authorized prose with an agreed evaluation budget.
 
+### 2026-09-12 — Session continuity and original-scene quality evaluation
+
+Implemented shared local working-copy retention for Plan briefs, act/chapter/beat
+drafts, scene planning metadata and unfinished Writing Voice assessments. Reading
+restores a chapter/page and scene-relative scroll offset, including locating a
+moved scene. Saves preserve newer typing and use original-value/Storyline
+preconditions; stale drafts require explicit comparison and reconciliation.
+See [session continuity](session-continuity.md) for storage and concurrency limits.
+
+The connected reload journey revealed a late first-scene fetch taking focus from
+the reader. A 13 ms hook/real-editor-context regression reproduced the wrong
+active tab before repair. Editor-owned navigation receipts now invalidate that
+obsolete completion when a later tab/navigation choice occurs. The original
+browser journey and focused regression pass. The full desktop suite also caught
+a saved-metadata card display regression, repaired without weakening its test.
+No temporary diagnostic instrumentation remains.
+
+The [writing-quality exercise](writing-quality-evaluation.md) uses three original
+action/dialogue/introspection scenes, nine blinded samples, explicit scene facts,
+and independent human craft judgments. The actual run at this checkpoint was
+offline: nine unchanged baselines and zero inference calls. The existing ChatGPT
+subscription connector and priority logic were confirmed present; its account
+check was unauthenticated, not a missing implementation. No API-key provider,
+credential copying or private manuscript upload was used. Subsequent authorized
+sign-in and live results must be recorded separately from this offline evidence.
+
+Fresh final-code verification: `make test-all` passes 267 Python, 230 desktop,
+19 contract, 28 gateway and 86 mobile tests (630 total), including package
+typechecks and gateway build. The desktop production build passes. All ten
+desktop/real-Python browser journeys pass together (1.9 minutes); recovered Plan,
+resumed reading and recovered-assessment screenshots were inspected. Native tests
+pass nine cases; the explicit real-Keychain round trip remains ignored. Repository
+and whitespace checks pass. No capability is marked release-ready.
+
+This is not physical-mobile, signed-distribution or power-loss recovery evidence.
+Local drafts are plaintext, per-device working data, not encrypted synchronization.
+The strengthened craft instructions have reached the provider interface in tests,
+but their effect on generated prose still requires a subscription run and author
+judgment. Full-book style evaluation and companion context parity remain open.
+
+### 2026-09-12 — Authenticated Terra evaluation and quote-format repair
+
+After author-requested sign-in, the existing app-server reported authenticated
+ChatGPT mode and listed both approved models, Luna and Terra. The evaluation used
+explicit `gpt-5.6-terra` through `openai-codex`; it did not change provider defaults
+or use API-key providers/private manuscripts. The first failed attempt exposed
+loss of partial evaluation reports. The runner now records rejected comparisons,
+retains safe per-call provenance, continues only the fixed remaining scene cases
+without retry, and exits nonzero for a partial result.
+
+A one-call diagnostic showed an exact evidence sentence surrounded by extra
+presentation quotes. The public preview now removes one matching quote pair only
+when all enclosed text occurs verbatim in the candidate. Existing dialogue quotes
+remain intact; fabricated, empty and ellipsis-shortened evidence stays rejected.
+The captured case's focused public-workflow regression failed before the repair
+and passes after it. No diagnostic instrumentation remains in application code.
+
+The final run made seven recorded subscription calls and accepted six candidates
+across dialogue and introspection. Action still failed its evidence check; its
+remaining mismatch is not diagnosed. The
+[label-blind assistant assessment](evaluations/writing-voice-terra-2026-09-12-attempt-3/assessment.md)
+notes preserved restraint but modest style differences and some dialogue detail
+slippage. Author assessments remain empty. This is partial live integration and
+creative-output evidence, not a passed literary-quality gate or model comparison.
+
+Fresh verification after the repair: `make test-all` passes 270 Python, 230 desktop,
+19 contract, 28 gateway and 86 mobile tests (633 total), including package checks.
+The desktop production build and repository/whitespace checks pass. The earlier
+ten connected desktop browser journeys and native tests were not rerun in this
+follow-up; no native or frontend behavior was changed by the quote-format repair.
+No physical-mobile or release-readiness claim is added.
+
+### 2026-09-13 — bounded voice review, proposal loop and context receipts
+
+The remaining Writing Voice action case was rerun as a bounded, best-effort
+Terra preview using only the original fixture scene and the authenticated
+ChatGPT subscription. Three variants were retained for human review in the
+[action packet](evaluations/writing-voice-terra-2026-09-13-action/review.md),
+with an [assistant assessment](evaluations/writing-voice-terra-2026-09-13-action/assessment.md).
+The app now preserves valid generated prose when provider self-review metadata
+is malformed, while the strict evaluator continues to reject that metadata.
+One variant advances the interrupted count and remains unsafe to select without
+author repair; no author verdict is inferred.
+
+The real-Python browser journeys for proposal review/apply/undo, conflict-safe
+reconciliation, distant evidence and context receipts pass. Chat receipts now
+show scope, included scene titles, nearby scenes, whether a selected passage was
+included and the number of retrieved evidence results, so an author can inspect
+what reached the response rather than trusting an opaque context label.
+
+Fresh verification passes: `make test-all` (274 Python, 230 desktop, 19
+contract, 28 gateway and 86 mobile tests), desktop and gateway builds,
+`make check`, and the phone-sized mobile PWA build plus Chromium companion
+journey. This is local/browser evidence only. Published hosting, deployed auth
+and RLS, physical-device voice, signed native builds, and author judgments on
+creative quality remain open release gates.
+
+### 2026-09-22 — saved ideas back into revision
+
+Saved notes are now searchable and filterable within Plan, beside the brief.
+Copilot provides a direct **View saved note** link. A note can open its scene or
+prefill the existing Change Set form with its exact text and scene, allowing the
+author to edit both before generation. The handoff creates no changes until the
+author requests them; generated prose remains pending ordinary review.
+
+New rendered checks cover search/filter behavior, exact note handoff, unavailable
+scenes and a note refresh while the author has an unfinished Plan brief. Plan
+navigation reactivates an already-open scene instead of replacing its draft;
+asynchronous scene loads respect later navigation. Note-specific generation tabs
+close correctly when their Change Set is ready.
+
+Verification: all 234 desktop tests pass, the desktop production build passes
+(with Vite's advisory about a bundle above 500 kB), and the expanded connected
+book journey passes through saved-note search, revision preparation, offline
+generation, export and reopening. The 64-scene coordinated-review journey also
+passes. An initial browser run correctly rejected a no-op offline revision; the
+final fixture explicitly selects a passage supported by the deterministic
+provider. No live inference was used. Python/mobile/gateway suites were not
+rerun for this frontend-only change. No deployment or physical-device result is
+implied.
+
+### 2026-09-22 — continuity evidence, review decisions and revision handoff
+
+Canon Facts and Continuity Diagnostics expose their recorded excerpts and named
+source-scene links. The diagnostics view separates findings needing attention
+from reviewed findings; deferred decisions remain actionable. Authors can save
+review notes, change an earlier decision and prepare a scene-specific revision
+in the ordinary Change Set form. The request carries the finding and author
+notes and explicitly asks for validation before revision. It does not generate,
+apply, change canon or mark a finding fixed automatically. For several affected
+scenes, the author chooses the target first.
+
+The browser/real-Python 64-scene workload now verifies the knowledge-leak path:
+early and later evidence, scene opening, review decision/reason persistence across
+reload, return to Needs attention and the editable revision handoff. All scene
+bodies and the existing proposal count remain unchanged by those actions.
+Rendered tests cover multiple-scene selection, missing sources, deferred and
+reviewed filtering, dirty-tab preservation, failed-save note retention and report
+failure/retry. Recorded excerpts are labeled as such and are not a current-source
+verification claim. The existing diagnostic engine remains heuristic.
+
+Final-code verification: 239 desktop tests pass, the production build passes
+with the existing Vite bundle-size advisory, and the expanded 64-scene browser
+journey passes. Repository and whitespace checks pass. The screenshot of the
+evidence/review screen was inspected. No live inference or deployment was used;
+Python/mobile/gateway suites were not rerun for these frontend changes.
+
+### 2026-09-22 — correctable and withdrawable Canon Facts
+
+Canon & Continuity now offers **Correct or withdraw fact**, with editable
+predicate/value, validity boundaries and existing evidence passages. Filters
+separate accepted, needs-review and withdrawn facts. Withdrawal preserves the
+record and sources while removing it from new accepted-canon context and
+fact-based diagnostics. Restoration checks exact excerpts against current saved
+scenes. Earlier conversations retain their original context; this is not semantic
+verification or a complete fact-history interface.
+
+The CLI requires a fact/workspace/Storyline edit version. Conflicting updates are
+rejected without overwriting the current record; failed UI saves retain entered
+text while the editor remains open. All public Memory read/write operations now
+cooperate with the existing project lock so concurrent questions, facts, setups,
+arcs and decisions do not lose each other's records. No schema migration or new
+storage service was needed. Unfinished fact edits are not durable across
+navigation/restart, and fact corrections do not create named Revisions.
+
+The expanded 64-scene browser/real-engine journey verifies withdrawal, reload,
+invalid-evidence rejection and successful restoration, with all 64 scene bodies
+unchanged. It also exposed a Change Set form whose 100% minimum height collapsed
+the tab bar. The diagnosing-bugs workflow reduced that to a separate browser
+regression; making the form fill and scroll within the available editor space
+fixes the navigation failure. Both browser journeys now pass, and the restored
+canon screenshot was inspected.
+
+Verification: 281 Python tests, 242 desktop tests, production frontend build,
+repository checks and whitespace checks pass. The existing Vite bundle-size
+advisory remains. No live inference, API spending, deployment or physical-device
+testing was used. Mobile/gateway suites were not rerun for this desktop/core change.
+
+### 2026-09-22 — approved Writing Voice in the mobile companion
+
+New mobile snapshots reuse the core's approved `voice_context` projection. Name,
+description, traits, guidance and avoidances are covered by the snapshot's
+content digest and existing encryption. Exemplar analysis, preview drafts and
+filesystem-scoped edit versions are not added. The mobile reader allowlists and
+validates these fields, retaining compatibility with older snapshots that lack
+the optional profile. Unknown extra profile fields cannot reach model context.
+
+The phone Assistant identifies the downloaded profile and distinguishes its
+manuscript guidance from Copilot's conversational voice. Refresh requires an
+explicit desktop publication, online phone reopening and a new session; this is
+not live desktop synchronization. Existing controller wiring supplies the full
+profile before enabling microphone input. The 12,000-character local content
+limit now admits the profile and selected scene in full or rejects before
+transport creation. The author can clear scene focus in Assistant to retry.
+Optional search excerpts remain bounded; full-request/token/session accounting,
+Plan/canon parity and physical-device audio are separate gates.
+
+Verification: 282 Python tests, mobile typecheck and all 91 mobile tests pass.
+The locally simulated hosted browser journey uses real Python projection,
+desktop encryption, phone SDK/storage/decryption and verifies profile display,
+reopening and encrypted capture handoff. Hosted HTTP is simulated; neither live
+provider voice nor production authorization is certified. The preview PWA build
+and phone-sized browser/offline-shell journey pass. The profile screen screenshot
+was inspected. Repository/whitespace checks pass. No paid inference, deployment
+or network exposure beyond local test servers was used. Desktop/gateway unit
+suites were not rerun; their production code was unchanged in this iteration.
+
+### 2026-09-22 — accepted story facts in mobile voice context
+
+Published mobile snapshots now reuse `build_review_context`'s accepted-only,
+privacy-filtered facts without granting one-request Memory permissions. Projection
+is bounded to 5,000 eligible facts by default. The phone rechecks local subject
+and character visibility, selects facts relevant to the focused scene (or all
+eligible facts without focus), and preserves validity, knowledge, confidence,
+scope and exact source passages. It recomputes evidence presence against the
+downloaded prose; matching text is not semantic proof or desktop freshness.
+Suggested/withdrawn facts and facts linked to unavailable/private subjects cannot
+enter the new canon context. This does not redact independently authored prose.
+
+The initial session context includes the complete selected canon alongside Writing
+Voice and focused prose, or refuses connection when they exceed the existing
+local content budget. There are no new model tools, storage services or mobile
+editing screens. The Assistant displays a selected-fact count and missing-source
+warning; older snapshots explicitly say accepted facts are unavailable. Existing
+read tools still retrieve scenes/entities, not additional canon. Plan/Storyline
+intent and broader on-demand canon retrieval remain separate work.
+
+Verification: 283 Python tests, mobile typecheck and 95 mobile tests pass, including
+privacy, scene relevance, knowledge preservation, source revalidation, malformed
+records, whole-content budgeting and pre-transport refusal. The real-encryption
+browser journey verifies an outdated fact remaining in an open downloaded copy,
+then disappearing after desktop withdrawal, publication and phone reopening.
+Its stale-source warning clears and scene prose remains intact. The hosted HTTP
+backend is simulated; no live voice or production authorization is certified.
+PWA build and preview/offline browser checks pass. The refreshed-facts phone
+screenshot was inspected. Repository and whitespace checks pass. No paid model
+calls, deployment or physical-device testing occurred. Desktop/gateway unit
+suites were not rerun for this mobile/core change.
+
+### 2026-09-22 — mobile reading order and scene-to-discussion navigation
+
+Snapshot publication now reuses `get_manuscript_reading`: the same ordered saved
+prose used by the desktop reader, with unassigned scenes retained at the end.
+Only act/chapter labels and a Plan-order marker are added to the mobile payload;
+local workspace identity and full Plan documents are not copied. The snapshot
+digest changes when chapter placement/order changes even without a new Revision.
+
+The phone scene list shows chapter labels and searches those labels. The reader
+shows scene position, Previous/Next controls and **Discuss this scene**, opening
+Assistant with that exact scene selected. Changing scenes remounts the reader at
+the top. Existing voice scene-list reads use the same order and chapter labels,
+with an explicit warning that reading order need not be story chronology. Older
+snapshots retain and identify their existing downloaded order; publishing again
+is required for current Plan order. No new service, model tool, manuscript write
+path or reading-position storage was introduced.
+
+Verification: 284 Python tests, mobile typecheck and 96 mobile tests pass. The
+local encrypted-publication browser journey verifies reversed file order,
+chapter search, both navigation directions, first/last boundaries, unassigned
+prose and reader-to-Assistant scope. The preview PWA build and offline browser
+journey exercise navigation and discussion handoff with a legacy snapshot.
+The phone reader screenshot was inspected. Repository/whitespace checks pass.
+Hosted HTTP remains simulated; no paid inference, deployment or physical-device
+audio test occurred. Mobile position restoration across restarts, richer Plan
+intent and actual device acceptance remain open. Desktop/gateway unit suites
+were not rerun for this mobile/core change.
+
+### 2026-09-22 — author walkthrough and navigation repairs
+
+The [walkthrough report](evaluations/2026-09-22-author-walkthrough.md) records
+reproductions, fixes and the next product priorities. Browser testing exposed
+unfinished captures disappearing on tab changes, loss of mobile reading focus,
+desktop tab labels shrinking to 13 pixels, and mobile voice status falling below
+the visible area. Passive reading/capture views now retain their open-book state;
+leaving unfinished captures requires confirmation and pending saves block exit.
+Desktop tabs scroll with readable widths and reveal the active document. Mobile
+status/privacy feedback stays beside voice controls, with expandable context
+details and browser-supported accessibility states.
+
+This is in-memory navigation retention, not restart/crash recovery. Only passive
+views are kept mounted; leaving Assistant still stops voice. A failed local
+outbox insert retains the text and error, and retry produces one encrypted item.
+No new service, persistence schema, paid inference, network exposure or deployment
+was introduced. Computer controls were not available; this was a browser/Python
+walkthrough with screenshot inspection, not native or physical-device acceptance.
+
+Verification: 284 Python tests, 242 desktop tests, 96 mobile tests/typecheck,
+11 desktop browser journeys and 5 mobile browser journeys pass. Desktop and PWA
+builds, repository checks and whitespace checks pass; the existing desktop
+over-500-kB chunk advisory remains. Gateway/native tests were not rerun in this
+UI-focused pass. Physical-device audio and creative writing quality remain open.
+
+### 2026-09-22 — voice preflight and writing comparison
+
+The
+[voice preflight](evaluations/2026-09-22-voice-preflight.md) records a repaired
+stale-session UI bug and simulated-browser coverage of microphone cancellation,
+mute, interruption, disconnect/playback retry and foreground cleanup. Mobile's
+96 tests/typecheck, gateway's 28 tests/typecheck/build, 15 desktop voice tests,
+nine offline evaluation tests, all five mobile browser journeys and the PWA build
+pass. Expo Doctor reports 20/21 checks, with eight
+patch-version mismatches documented for the next native-build preparation.
+The nine-sample Luna subscription evaluation completed; literary quality and
+fidelity still need author review. No live voice, physical-phone acceptance,
+deployment or paid API inference occurred. Approved HTTPS/backend setup and
+separate live-voice spending permission remain prerequisites for paired audio.
+
+### 2026-09-29 — author directed writing refinement
+
+Writing Voice now displays the saved original, permits targeted feedback on one
+candidate and saves the refined prose as a new, unreviewed attempt. The previous
+attempt and feedback remain visible. Feedback drafts use the existing recovery
+journal; generator self-review is collapsed rather than placed ahead of author
+judgment. No new model service, automatic learning or manuscript write path was
+introduced. The shared core and CLI preserve the original scene/version through
+repeated attempts and use the ordinary Change Set review/apply/undo path.
+
+Validation: 289 Python tests, 243 desktop tests, all 11 desktop browser journeys,
+the production desktop build, repository checks and whitespace checks pass.
+Core tests use provider-boundary responses to exercise refinement, invalid
+feedback/output, unchanged prior assessments, different Storylines, pre-call
+staleness, edits during generation, exact application and undo. The browser
+journey uses real Python with offline baselines and confirms the source display,
+refinement, retained assessment, unchanged prose and reopening. Its screenshot
+was inspected. These mechanics do not establish creative quality.
+
+The initial full desktop run failed one existing scene-save shortcut test; that
+test passed three isolated runs and the complete rerun. No save behavior or test
+assertion was changed to hide the intermittent failure. Keep it on the regression
+watchlist. Python emitted subprocess/file ResourceWarnings around a sandboxed
+authentication check; tests passed, but this is not a clean lifecycle audit.
+The existing over-500-kB bundle advisory remains. Mobile/gateway suites were not
+rerun for this desktop/core writing change.
+
+The [dialogue followup](evaluations/writing-voice-luna-2026-09-29-dialogue/assessment.md)
+records three subscription-only Luna samples: the old added-ending behavior was
+absent, while staging and restraint concerns remain. This is not proof of full-book
+quality. A separate [fresh-scene live refinement](evaluations/writing-refinement-luna-2026-09-29/assessment.md)
+used three more Luna subscription calls and verified exact apply/undo on a
+disposable book. Its feedback compliance was partial, so creative quality remains
+an author-review gate. This pass used six subscription calls in total, no API-key
+inference and no real-manuscript edits. Author acceptance across a connected
+chapter, actual phone delivery and clean-machine distribution remain open.
+
 ### Full-product sequence
 
 1. Establish manuscript safety across all editing surfaces and pending operations.

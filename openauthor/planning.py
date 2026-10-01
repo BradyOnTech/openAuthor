@@ -7,6 +7,7 @@ from typing import Any
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .project_locks import serialized_project_access
 from .scenes import list_scenes, list_scene_details
+from .scene_edits import workspace_edit_scope
 
 PLAN_SCHEMA_VERSION = 2
 
@@ -80,13 +81,34 @@ def get_plan(paths: ProjectPaths) -> dict[str, Any]:
 
 
 @serialized_project_access
+def get_plan_workspace(paths: ProjectPaths) -> dict[str, Any]:
+  return {**get_plan(paths), "workspace": workspace_edit_scope(paths)[0]}
+
+
+def _check_plan_edit(paths: ProjectPaths, expected: Any, current: Any) -> None:
+  if expected is None:
+    return
+  if not isinstance(expected, dict) or expected.get("workspace") != workspace_edit_scope(paths)[0]:
+    raise OpenAuthorError("The Plan belongs to another Storyline. Your local draft was kept; reopen Plan in the intended Storyline.")
+  if "value" not in expected or expected["value"] != current:
+    raise OpenAuthorError("These planning details changed since you started editing. Your local draft was kept. Review the saved version before replacing it.")
+
+
+def _check_plan_scope(paths: ProjectPaths, expected_workspace: str | None) -> None:
+  if expected_workspace is not None and expected_workspace != workspace_edit_scope(paths)[0]:
+    raise OpenAuthorError("Storyline changed. Reopen Plan in the intended Storyline; your local draft was kept.")
+
+
+@serialized_project_access
 def update_scene_metadata(
   paths: ProjectPaths,
   *,
   scene_id: str,
   timeline_position: str | None = None,
   labels: list[str] | None = None,
+  expected_version: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+  _check_plan_edit(paths, expected_version, _read_plan(paths)["scene_metadata"].get(scene_id, {"timeline_position": "", "labels": []}))
   plan = get_plan(paths)
   if scene_id not in {str(scene["id"]) for scene in list_scenes(paths)}:
     raise OpenAuthorError(f"Unknown scene '{scene_id}'.")
@@ -224,7 +246,9 @@ def update_brief(
   themes: list[str] | None = None,
   style_guide: str | None = None,
   outline: str | None = None,
+  expected_version: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+  _check_plan_edit(paths, expected_version, _read_plan(paths)["brief"])
   plan = get_plan(paths)
   brief = plan["brief"]
   for key, value in {
@@ -242,7 +266,8 @@ def update_brief(
 
 
 @serialized_project_access
-def add_act(paths: ProjectPaths, *, title: str, synopsis: str = "") -> dict[str, Any]:
+def add_act(paths: ProjectPaths, *, title: str, synopsis: str = "", expected_workspace: str | None = None) -> dict[str, Any]:
+  _check_plan_scope(paths, expected_workspace)
   if not title.strip():
     raise OpenAuthorError("Act title is required.")
   plan = get_plan(paths)
@@ -259,7 +284,8 @@ def add_act(paths: ProjectPaths, *, title: str, synopsis: str = "") -> dict[str,
 
 
 @serialized_project_access
-def add_chapter(paths: ProjectPaths, *, act_id: str, title: str, synopsis: str = "") -> dict[str, Any]:
+def add_chapter(paths: ProjectPaths, *, act_id: str, title: str, synopsis: str = "", expected_workspace: str | None = None) -> dict[str, Any]:
+  _check_plan_scope(paths, expected_workspace)
   if not title.strip():
     raise OpenAuthorError("Chapter title is required.")
   plan = get_plan(paths)
@@ -285,7 +311,9 @@ def assign_scene(
   scene_id: str,
   chapter_id: str | None,
   before_scene_id: str | None = None,
+  expected_workspace: str | None = None,
 ) -> dict[str, Any]:
+  _check_plan_scope(paths, expected_workspace)
   plan = get_plan(paths)
   if scene_id not in {str(scene["id"]) for scene in list_scenes(paths)}:
     raise OpenAuthorError(f"Unknown scene '{scene_id}'.")
@@ -319,7 +347,9 @@ def add_beat(
   scene_id: str,
   summary: str,
   status: str = "planned",
+  expected_workspace: str | None = None,
 ) -> dict[str, Any]:
+  _check_plan_scope(paths, expected_workspace)
   if not summary.strip():
     raise OpenAuthorError("Beat summary is required.")
   plan = get_plan(paths)
@@ -387,6 +417,7 @@ def get_manuscript_reading(paths: ProjectPaths) -> dict[str, Any]:
     sections.append({"id": "unassigned", "title": "Unassigned scenes", "act_title": "", "scene_ids": plan["unassigned_scene_ids"]})
   return {
     "schema_version": 1,
+    "workspace": workspace_edit_scope(paths)[0],
     "sections": sections,
     "scenes": scenes,
     "word_count": sum(len(scene["body"].split()) for scene in scenes),

@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "failed_cases": [],
+  "generations": [
+    {
+      "run_id": "gen-4b5fd3d3398a",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 10401,
+      "output_tokens": 718,
+      "latency_ms": 16030,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-288970985766",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14136,
+      "output_tokens": 690,
+      "latency_ms": 15551,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-2c5b170984d6",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14138,
+      "output_tokens": 744,
+      "latency_ms": 17344,
+      "provider_attempts": 1,
+      "error_category": ""
+    }
+  ],
+  "strict_review": false,
+  "provider": "openai-codex",
+  "requested_model": "gpt-5.6-terra",
+  "case_ids": [
+    "action-interrupted-choice"
+  ],
+  "seed": 41,
+  "corpus_sha256": "cba260ffcc68b0bb05c9a6c343dcffd9fc7fbb911f71665e5d503c781dbccba4",
+  "implementation_sha256": "0b7491e6229aeb17364fa7966df711f226dae0b3bdeca0c9bd13cc9ac50bf75a",
+  "generation_calls": 3,
+  "candidate_count": 3,
+  "changed_candidates": 3,
+  "quality_verdict": "Not assessed. Human comparison required.",
+  "criteria": {
+    "voice_fit": "Does the prose serve the selected Writing Voice without becoming mechanical?",
+    "readability": "Is the action and meaning clear, with purposeful rhythm?",
+    "emotional_effect": "Is the intended feeling earned through this scene?",
+    "character_distinction": "Does dialogue and perception belong to this character?",
+    "consistency": "Are facts, POV, tense, knowledge and protected details preserved?"
+  },
+  "cases": [
+    {
+      "id": "action-interrupted-choice",
+      "title": "The brake",
+      "mode": "action",
+      "pov": "Mara",
+      "source": "The ferry struck the chain sideways. Mara felt the deck shudder under her feet and saw the winch begin to turn. The handle caught Ivo across the wrist. He made a small sound and sat down hard.\n\nThere were six passengers behind the rope. Six, and the boy who had crawled beneath it. Mara began to count them again, but the brake lever snapped back and she had to catch it with both hands. She had not reached the boy.\n\nIvo tried to stand. His right hand folded against his coat.\n\n\"Stay there.\"\n\n\"Splendid plan.\" He sounded annoyed about the weather.\n\nThe chain was running out. Beyond its last painted link the ferry would turn broadside to the sluice. Mara could hold the brake or reach the boy; the space between them was just wider than her body. She felt very frightened. She shouted at the nearest passenger to get him, but the woman only gripped the rope harder.\n\nMara let one hand leave the lever. The brake moved an inch. She put her hand back.\n\n\"Use your belt,\" Ivo said.\n\nShe pulled it free and threw the buckle end. It landed short of the boy, who watched it without moving. Mara drew breath to tell him what to do. The chain hit its last painted link.",
+      "instruction": "Clarify the physical action and deepen the choice through Mara's attention. Preserve the interrupted count and unresolved ending; do not manufacture a rescue.",
+      "facts": [
+        "Six passengers are behind the rope; the boy is additional and beneath it.",
+        "Ivo's right wrist is injured; he suggests the belt, but cannot execute the rescue.",
+        "Mara's recount is interrupted before she reaches the boy.",
+        "The belt lands short; the boy is not rescued by the end."
+      ],
+      "quality_questions": [
+        "Can you track the lever, chain and boy without rereading?",
+        "Does fear emerge from Mara's constrained choice rather than extra emotion labels?",
+        "Does Ivo's dry response remain different from Mara's commands?",
+        "Does urgency vary sentence rhythm instead of making every sentence a fragment?"
+      ],
+      "protected_phrases": [
+        "Splendid plan."
+      ],
+      "markers": [
+        "Mara",
+        "Ivo",
+        "boy",
+        "belt"
+      ],
+      "calibration_error": "Changing 'began to count' to a completed count changes an event even when every name and number survives.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "The ferry struck the chain sideways. The deck jumped beneath Mara\u2019s boots, and the winch began to turn.\n\nThe handle whipped around and caught Ivo across the right wrist. He made a small sound and went down hard, his shoulder against the rail.\n\nBehind the rope stood six passengers. Six\u2014and the boy, who had crawled beneath it. Mara began again. One, two, three\u2014\n\nThe brake lever snapped back. She caught it with both hands before it tore free. She had not reached the boy.\n\nIvo tried to rise. His right hand folded against his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain was running out through the winch. Past its last painted link, the ferry would swing broadside toward the sluice. Mara could keep both hands on the brake, or leave it long enough to reach for the boy. The gap between them was wider than her body.\n\nShe was very frightened.\n\n\u201cGet him!\u201d she shouted at the nearest passenger.\n\nThe woman only gripped the rope harder.\n\nMara took one hand from the lever. The brake slipped an inch beneath the other. The ferry answered with a low, turning groan. She put her hand back.\n\n\u201cUse your belt,\u201d Ivo said.\n\nMara pulled it free, braced one hand on the lever, and threw the buckle end under the rope. It landed short of the boy. He watched it without moving.\n\nMara drew breath to tell him what to do.\n\nThe chain hit its last painted link.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-2c5b170984d6",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself.",
+            "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose stays direct and concrete, using the ferry\u2019s machinery to carry the setting without added exposition.",
+              "excerpt": "The chain was running out through the winch. Past its last painted link, the ferry would swing broadside toward the sluice."
+            },
+            {
+              "criterion": "readability",
+              "observation": "Mara\u2019s physical options are stated at the moment they matter, and the lever\u2019s movement makes the cost of releasing it legible.",
+              "excerpt": "Mara could keep both hands on the brake, or leave it long enough to reach for the boy."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Her fear is named once, then supported by the narrowing mechanical danger and the failed throw.",
+              "excerpt": "She was very frightened."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo\u2019s dry response remains intact despite his injured wrist, while Mara\u2019s attention stays fixed on counting, leverage, and the boy\u2019s position.",
+              "excerpt": "\u201cSplendid plan.\u201d He sounded annoyed about the weather."
+            }
+          ]
+        },
+        {
+          "label": "B",
+          "text": "The ferry struck the chain sideways. The deck gave a deep, jarring shudder beneath Mara\u2019s boots, and the winch began to turn with a wet iron complaint. Its handle swept round and caught Ivo across the right wrist.\n\nHe made a small sound. Then he sat down hard beside the housing, his right hand folding against his coat.\n\nBehind the rope stood six passengers. Six. And the boy, separate from them, crouched beneath it on the other side. Mara began again\u2014one, two, three\u2014but the brake lever snapped back toward her palms. She caught it with both hands before it could run free.\n\nShe had not reached the boy.\n\nIvo tried to stand. His face tightened; his right hand stayed pressed to his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain was running out through the winch. Beyond the last painted link, the ferry would swing broadside to the sluice. Mara could keep the brake down, or reach across the narrow gap to the boy. There was just more space between them than her body could span.\n\nFear came cleanly, without room for anything else.\n\nShe shouted at the nearest passenger to get him. The woman stared at the boy, then gripped the rope harder with both hands.\n\nMara took one hand from the lever. The brake lifted an inch beneath the other, the winch answering at once. She put her hand back.\n\n\u201cUse your belt,\u201d Ivo said.\n\nShe pulled it free, the buckle catching briefly on her coat, and threw that end toward the boy. It struck the deck short of him and lay there, its leather twitching with the ferry\u2019s movement. The boy watched it without moving.\n\nMara drew breath to tell him what to do.\n\nThe chain hit its last painted link.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-4b5fd3d3398a",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "Concrete sound and bodily sensation carry the atmosphere while the language stays restrained.",
+              "excerpt": "the winch began to turn with a wet iron complaint"
+            },
+            {
+              "criterion": "readability",
+              "observation": "The brake action is made explicit: releasing one hand allows the lever to lift and the winch to respond.",
+              "excerpt": "The brake lifted an inch beneath the other, the winch answering at once."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Mara\u2019s fear is stated briefly at the moment her choices narrow, without resolving the danger.",
+              "excerpt": "Fear came cleanly, without room for anything else."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo\u2019s dry remark remains intact in spirit and is contrasted with his inability to use his injured right hand.",
+              "excerpt": "\u201cSplendid plan.\u201d He sounded annoyed about the weather."
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The six passengers remain behind the rope; the boy is additional and beneath it. Mara\u2019s recount stops before him, and the belt lands short. Continuity beyond this supplied moment is uncertain because no accepted canon or nearby scenes were provided.",
+              "excerpt": "Six. And the boy, separate from them, crouched beneath it on the other side."
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "text": "The ferry struck the chain sideways. The deck jumped beneath Mara\u2019s boots. The winch began to turn.\n\nThe handle whipped across Ivo\u2019s right wrist. He made a small sound and went down hard, his hand folding against his coat.\n\nBehind the rope: six passengers. Mara counted them\u2014one, two, three\u2014then saw the boy beneath it. Six, and the boy. She started again, because she had to know who was there, but the brake lever snapped back.\n\nShe caught it with both hands. The lever tore at her palms. She had not reached the boy.\n\nIvo tried to stand. His right hand stayed tucked against his coat.\n\n\u201cStay there.\u201d\n\n\u201cSplendid plan.\u201d He sounded annoyed about the weather.\n\nThe chain ran out through the winch, link after link. Beyond the last painted link, the ferry would swing broadside to the sluice. Mara could keep the brake down or reach across the gap to the boy. The space was wider than her body. If she let go, even for a second\u2014\n\nShe was frightened. Not vaguely. Her arms were already shaking.\n\n\u201cGet him!\u201d she shouted at the nearest passenger.\n\nThe woman gripped the rope with both hands and stared past Mara.\n\nMara lifted one hand from the lever. The brake jumped an inch beneath the other. The ferry answered with a hard lurch.\n\nShe put her hand back.\n\n\u201cUse your belt,\u201d Ivo said.\n\nMara dragged it free, hooked the buckle in her fingers, and threw. It struck the deck short of the boy and skidded to a stop.\n\nHe watched it. Did not move.\n\nMara drew breath to tell him what to do.\n\nThe chain hit its last painted link.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-288970985766",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself.",
+            "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "Urgency comes from immediate physical pressures and varied sentence length, without adding melodrama.",
+              "excerpt": "The brake jumped an inch beneath the other. The ferry answered with a hard lurch."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The competing actions are explicit: Mara must hold the brake or reach the boy, and the belt\u2019s short landing remains clear.",
+              "excerpt": "Mara could keep the brake down or reach across the gap to the boy."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Mara\u2019s fear is grounded in the bodily cost of maintaining control rather than explained abstractly.",
+              "excerpt": "Her arms were already shaking."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo remains dryly sardonic despite injury, while Mara\u2019s attention stays practical and urgent.",
+              "excerpt": "\u201cSplendid plan.\u201d He sounded annoyed about the weather."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

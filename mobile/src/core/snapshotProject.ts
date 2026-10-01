@@ -1,3 +1,6 @@
+import { readWritingVoice, WRITING_VOICE_PURPOSE, type WritingVoice } from "./writingVoice";
+import { selectAcceptedCanon, type CanonContext } from "./acceptedCanon";
+
 export type ProjectIdentity = {
   projectId: string;
   revision: string;
@@ -12,6 +15,8 @@ export type SnapshotScene = {
   created_at: string;
   updated_at: string;
   body: string;
+  chapter_title?: string;
+  act_title?: string;
 };
 
 export type SnapshotEvidence = {
@@ -27,11 +32,14 @@ export type MobileSnapshot = {
   project_id: string;
   revision: string;
   scenes: readonly SnapshotScene[];
+  reading_order?: "plan";
   codex: {
     entities: readonly Record<string, unknown>[];
     relationships: readonly Record<string, unknown>[];
   };
   evidence: readonly SnapshotEvidence[];
+  writing_voice?: WritingVoice | null;
+  accepted_canon?: readonly Record<string, unknown>[];
 };
 
 export type SearchResult = {
@@ -52,6 +60,8 @@ export type MobileContextPack = {
   projectId: string;
   revision: string;
   utterance: string;
+  writingVoice?: { profile: WritingVoice; purpose: string };
+  acceptedCanon?: CanonContext;
   items: Array<{
     kind: SearchResult["kind"];
     sourceId: string;
@@ -148,6 +158,8 @@ export class SnapshotProject {
       if (ids.has(sceneId)) throw new Error(`Duplicate scene id '${sceneId}'.`);
       ids.add(sceneId);
     }
+    readWritingVoice(snapshot.writing_voice);
+    selectAcceptedCanon(snapshot);
     return new SnapshotProject(snapshot);
   }
 
@@ -160,6 +172,20 @@ export class SnapshotProject {
 
   listScenes(): SnapshotScene[] {
     return this.#snapshot.scenes.map((scene) => ({ ...scene }));
+  }
+
+  readingOrder(): string {
+    return this.#snapshot.reading_order === "plan"
+      ? "Desktop Plan reading order · not necessarily story chronology"
+      : "Downloaded scene order · republish from desktop for Plan order";
+  }
+
+  writingVoice(): WritingVoice | null {
+    return readWritingVoice(this.#snapshot.writing_voice);
+  }
+
+  acceptedCanon(sceneId?: string): CanonContext | undefined {
+    return selectAcceptedCanon(this.#snapshot, sceneId);
   }
 
   getScene(sceneId: string): SnapshotScene | null {
@@ -175,7 +201,7 @@ export class SnapshotProject {
     if (queryTokens.length === 0) return [];
     const results: SearchResult[] = [];
     for (const scene of this.#snapshot.scenes) {
-      const searchable = `${scene.title}\n${scene.summary}\n${scene.pov}\n${scene.body}`;
+      const searchable = `${scene.title}\n${scene.summary}\n${scene.pov}\n${scene.body}\n${scene.chapter_title ?? ""}\n${scene.act_title ?? ""}`;
       const score = scoreText(queryTokens, searchable);
       if (score === 0) continue;
       results.push({
@@ -222,18 +248,30 @@ export class SnapshotProject {
       throw new Error("Context character budget must be at least 64.");
     }
     const candidates: SearchResult[] = [];
+    const profile = this.writingVoice();
+    const writingVoice = profile ? { profile, purpose: WRITING_VOICE_PURPOSE } : undefined;
+    // Required preferences are admitted in full. This measures local context
+    // content, not provider tokens, the entire request or a session cost limit.
+    const voiceCharacters = writingVoice ? JSON.stringify(writingVoice).length : 0;
+    if (voiceCharacters > input.maxCharacters) {
+      throw new Error("The approved Writing Voice exceeds this voice session's context limit. Shorten the profile on desktop and publish a new snapshot before starting voice.");
+    }
+    const acceptedCanon = this.acceptedCanon(input.currentSceneId);
+    const canonCharacters = acceptedCanon ? JSON.stringify(acceptedCanon).length : 0;
+    if (voiceCharacters + canonCharacters > input.maxCharacters) {
+      throw new Error("Accepted story facts and Writing Voice exceed this voice session's context limit. Choose a more focused scene or review outdated facts on desktop, then publish a fresh snapshot.");
+    }
     if (input.currentSceneId) {
       const scene = this.#sceneById.get(input.currentSceneId);
-      if (scene) {
-        candidates.push({
-          kind: "scene",
-          sourceId: scene.id,
-          title: scene.title,
-          excerpt: scene.body || scene.summary,
-          score: Number.POSITIVE_INFINITY,
-          citation: evidenceFor(this.#snapshot, "scene", scene.id),
-        });
-      }
+      if (!scene) throw new Error("The selected scene is unavailable in this snapshot. Reopen the book and select a current scene.");
+      candidates.push({
+        kind: "scene",
+        sourceId: scene.id,
+        title: scene.title,
+        excerpt: scene.body || scene.summary,
+        score: Number.POSITIVE_INFINITY,
+        citation: evidenceFor(this.#snapshot, "scene", scene.id),
+      });
     }
     for (const result of this.search(input.utterance, 12)) {
       if (!candidates.some((item) => item.kind === result.kind && item.sourceId === result.sourceId)) {
@@ -241,11 +279,15 @@ export class SnapshotProject {
       }
     }
 
-    let remaining = input.maxCharacters;
+    let remaining = input.maxCharacters - voiceCharacters - canonCharacters;
     const items: MobileContextPack["items"] = [];
     for (const candidate of candidates) {
+      const focused = candidate.kind === "scene" && candidate.sourceId === input.currentSceneId;
+      if (focused && candidate.excerpt.length > remaining) {
+        throw new Error("The selected scene and Writing Voice exceed this voice session's context limit when combined with accepted story facts. Choose a shorter scene or discuss the book without a selected scene.");
+      }
       if (remaining <= 0) break;
-      const content = excerpt(candidate.excerpt, remaining);
+      const content = focused ? candidate.excerpt : excerpt(candidate.excerpt, remaining);
       if (!content) continue;
       items.push({
         kind: candidate.kind,
@@ -261,6 +303,8 @@ export class SnapshotProject {
       projectId: this.#snapshot.project_id,
       revision: this.#snapshot.revision,
       utterance: input.utterance,
+      ...(writingVoice ? { writingVoice } : {}),
+      ...(acceptedCanon ? { acceptedCanon } : {}),
       items,
       usedCharacters: input.maxCharacters - remaining,
       maxCharacters: input.maxCharacters,

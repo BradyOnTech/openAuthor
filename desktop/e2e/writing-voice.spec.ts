@@ -43,6 +43,7 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     await page.getByRole("button", { name: "Compare 3 short previews", exact: true }).click();
     const candidate = page.getByRole("article", { name: "Preview Harbor voice", exact: true });
     await expect(candidate).toBeVisible();
+    await expect(page.getByRole("region", { name: "Original passage" })).toContainText(before.body.trim());
     await expect(candidate.getByRole("button", { name: "Queue sample as Change Set" })).toBeDisabled();
     await candidate.getByText("Your quality assessment", { exact: true }).click();
     await candidate.getByRole("combobox").first().selectOption("works");
@@ -59,6 +60,19 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     expect(boxes[0]!.y).toBe(boxes[1]!.y);
     expect(boxes[1]!.y).toBe(boxes[2]!.y);
     await page.screenshot({ path: testInfo.outputPath("writing-voice-comparison.png") });
+    await candidate.getByText("Refine this sample", { exact: true }).click();
+    await candidate.getByRole("textbox", { name: "Revision feedback" }).fill("Keep the count unfinished. No new ending or dialogue.");
+    await candidate.getByRole("button", { name: "Generate refined sample", exact: true }).click();
+    await expect(page.getByText(/Refined sample saved separately/)).toBeVisible();
+    await expect(page.getByRole("region", { name: "Previous attempt" })).toContainText("Keep the count unfinished. No new ending or dialogue.");
+    await expect(page.getByRole("article")).toHaveCount(1);
+    await expect(candidate.getByRole("button", { name: "Queue sample as Change Set" })).toBeDisabled();
+    const refinement = (await json(["style", "workspace"])).previews[0];
+    expect(refinement.refinement.feedback).toBe("Keep the count unfinished. No new ending or dialogue.");
+    expect((await json(["style", "workspace"])).previews[1].directions[0].author_review.ratings.voice_fit).toBe("works");
+    expect(await json(["scene", "get", "--id", "scene-0001"])).toEqual(before);
+    await page.getByRole("heading", { name: "Compare and judge", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("writing-voice-refinement.png") });
     await page.reload();
     // The project and sidebars persist; reopen the voice workspace from copilot.
     if (await page.getByRole("button", { name: "Writing Voice", exact: true }).count() === 0) await page.getByRole("button", { name: "Assistant (Cmd+L)" }).click();

@@ -54,8 +54,9 @@ export class MobileAssistantTools {
     if (name === "scene.list" || name === "scene_list") {
       return {
         revision: identity.revision,
-        scenes: this.project.listScenes().map(({ id, title, summary, pov, status, updated_at }) => ({
-          id, title, summary, pov, status, updated_at,
+        order_basis: this.project.readingOrder(),
+        scenes: this.project.listScenes().map(({ id, title, summary, pov, status, updated_at, chapter_title, act_title }) => ({
+          id, title, summary, pov, status, updated_at, chapter_title, act_title,
         })),
       };
     }
