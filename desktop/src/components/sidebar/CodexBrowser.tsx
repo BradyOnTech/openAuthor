@@ -12,6 +12,8 @@ import {
 } from "../../api";
 import { orderCodexEntities } from "../../state";
 import type { CodexEntity } from "../../types";
+import { flushProjectSceneSaves } from "../../sceneSaveSession";
+import { EvidencePassages } from "../shared/EvidencePassages";
 
 const TYPE_ORDER: CodexEntity["type"][] = ["character", "location", "lore", "item", "faction", "event"];
 const belongsInSuggestionInbox = (suggestion: StoryMemorySuggestion) => suggestion.kind !== "relationship_create";
@@ -55,6 +57,7 @@ export function CodexBrowser() {
   async function handleScan() {
     setScanning(true);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before scanning Story Memory.");
       const report = await scanStoryMemory(projectRoot);
       setSuggestions(report.suggestions.filter((row) => row.status === "pending" && belongsInSuggestionInbox(row)));
       setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestion${report.pending === 1 ? "" : "s"} await${report.pending === 1 ? "s" : ""} review.`);
@@ -174,21 +177,22 @@ export function CodexBrowser() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn--sm" disabled={scanning} onClick={() => void handleScan()} style={{ width: "100%", marginTop: "var(--space-2)" }}>
+        <button className="btn btn--sm" disabled={scanning || bulkReviewing} onClick={() => void handleScan()} style={{ width: "100%", minHeight: 40, whiteSpace: "normal", marginTop: "var(--space-2)" }}>
           {scanning ? "Scanning…" : "Scan Manuscript for Memory"}
         </button>
-        <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
+        <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })} style={{ width: "100%", minHeight: 40, marginTop: "var(--space-2)" }}>
           Canon & Continuity
         </button>
-        <button className="btn btn--sm" onClick={() => openTab({ id: "memory:connections", kind: "connections", label: "Connection Map" })} style={{ width: "100%", marginTop: "var(--space-2)" }}>
+        <button className="btn btn--sm" onClick={() => openTab({ id: "memory:connections", kind: "connections", label: "Connection Map" })} style={{ width: "100%", minHeight: 40, marginTop: "var(--space-2)" }}>
           Connection Map
         </button>
       </div>
       <div className="sidebar__content">
         {suggestions.length > 0 && (
-          <div>
+          <div className="memory-suggestion-review">
             <div className="section-header"><span>Suggestion inbox</span><span className="section-header__count">({suggestions.length})</span></div>
-            <div style={{ display: "flex", gap: 5, padding: "0 var(--space-3) var(--space-2)" }}>
+            <p style={{ padding: "0 var(--space-3)", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.5 }}>Suggestions are heuristic, not established story truth. Review the passages before accepting.</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "0 var(--space-3) var(--space-2)" }}>
               <button className="btn btn--sm btn--primary" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("accepted")}>Accept all</button>
               <button className="btn btn--sm" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("deferred")}>Review later</button>
               <button className="btn btn--sm" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("rejected")}>Exclude all</button>
@@ -197,10 +201,11 @@ export function CodexBrowser() {
               <div key={suggestion.id} style={{ padding: "var(--space-3)", borderBottom: "1px solid var(--border)", background: "var(--warning-subtle)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                   <strong style={{ color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>{suggestion.name}</strong>
-                  <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)" }}>{Math.round(suggestion.confidence * 100)}%</span>
+                  <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)" }}>Unconfirmed</span>
                 </div>
-                <p style={{ margin: "6px 0", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.4 }}>{suggestion.evidence[0]?.excerpt}</p>
-                <div style={{ display: "flex", gap: 5 }}>
+                <p style={{ margin: "6px 0", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.4 }}>{suggestion.reason}</p>
+                <EvidencePassages evidence={suggestion.evidence} />
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                   <button className="btn btn--sm btn--primary" onClick={() => void decideSuggestion(suggestion.id, "accepted")}>Accept</button>
                   <button className="btn btn--sm" onClick={() => void decideSuggestion(suggestion.id, "deferred")}>Later</button>
                   <button className="btn btn--sm" onClick={() => void decideSuggestion(suggestion.id, "rejected")}>Reject</button>

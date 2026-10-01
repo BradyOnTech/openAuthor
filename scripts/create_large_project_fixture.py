@@ -12,13 +12,30 @@ from openauthor.retrieval import build_retrieval_index
 from openauthor.scenes import build_scene_markdown, scene_filename, scene_id
 
 
-def _scene_body(index: int) -> str:
+def _scene_body(index: int, total_scenes: int) -> str:
   chapter = ((index - 1) // 5) + 1
   return (
     f"Scene {index} opens in chapter {chapter} with a concrete objective and a source of resistance. "
     f"Character {((index - 1) % 24) + 1} notices a recurring object and makes a choice that changes "
     "the immediate situation. The closing beat creates a question for the next scene while preserving "
-    "the established point of view and timeline."
+    "the established point of view and timeline.\n\n"
+    f"Mara's eyes were {'green' if index == total_scenes else 'blue'}. "
+    "Mara crossed the empty courtyard and counted the windows above the arch. "
+    "The rain had washed the chalk from the stones, leaving only a pale border "
+    "where the market stalls had stood that morning. She carried the folded map "
+    "against her chest, beneath her coat, and listened for footsteps on the stairs. "
+    "A lantern moved behind the nearest window. The signal was early, but the "
+    "door remained shut. She waited beside the fountain until the sound of the "
+    "river swallowed the last cart rolling across the distant bridge.\n\n"
+    "Inside the passage, damp wool and candle smoke mingled with the smell of "
+    "fresh bread. Someone had left a bowl on the lowest step, covered with a "
+    "clean cloth. She moved it aside without lifting the cover. This was not "
+    "the meeting she had imagined, yet the familiar details made retreat feel "
+    "less reasonable than another minute of waiting. Beyond the closed door, "
+    "a chair scraped across the floor. She placed her palm against the wood "
+    "and rehearsed the question she had promised herself she would ask first. "
+    "The latch lifted before she reached the final word. Neither of them spoke "
+    "until the small light between them had stopped trembling in the draft."
   )
 
 
@@ -47,7 +64,7 @@ def create_large_project_fixture(
       summary=f"Deterministic regression fixture summary for scene {index}.",
       pov=f"Character {((index - 1) % max(entities, 1)) + 1}",
       status=("draft", "revised", "outline")[index % 3],
-      body=_scene_body(index),
+      body=_scene_body(index, scenes),
     )
     (paths.scenes_dir / scene_filename(index, title)).write_text(content, encoding="utf-8")
 

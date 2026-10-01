@@ -1,6 +1,7 @@
 import { updateScene } from "./api";
 import { clearSceneRecoveryDraft, writeSceneRecoveryDraft } from "./recoveryJournal";
 import type { SceneDetail } from "./types";
+import { isProjectBookChanging, withBookVersionBarrier } from "./bookOperationBarrier";
 
 type Snapshot = {
   title: string;
@@ -14,7 +15,6 @@ type Snapshot = {
 // Navigation may unmount an editor before its native save finishes. The queue
 // belongs to the project and scene, not to a particular React component.
 const sessions = new Map<string, SceneSaveSession>();
-const changingBooks = new Set<string>();
 
 export class SceneSaveSession {
   private state: Snapshot;
@@ -23,7 +23,7 @@ export class SceneSaveSession {
   private onSaved: (scene: SceneDetail, dirty: boolean) => void = () => {};
 
   constructor(readonly projectRoot: string, readonly sceneId: string, scene: SceneDetail) {
-    this.state = { title: scene.title, body: scene.body, saved: scene, saving: false, error: "", readOnly: changingBooks.has(projectRoot) };
+    this.state = { title: scene.title, body: scene.body, saved: scene, saving: false, error: "", readOnly: isProjectBookChanging(projectRoot) };
   }
 
   getSnapshot = (): Snapshot => this.state;
@@ -114,14 +114,14 @@ export async function flushProjectSceneSaves(projectRoot: string): Promise<boole
 }
 
 export async function withProjectBookChange<T>(projectRoot: string, change: () => Promise<T>): Promise<T> {
-  if (changingBooks.has(projectRoot)) throw new Error("Another book change is in progress.");
-  changingBooks.add(projectRoot);
+  if (isProjectBookChanging(projectRoot)) throw new Error("Another book change is in progress.");
   for (const session of sessions.values()) if (session.projectRoot === projectRoot) session.setReadOnly(true);
   try {
-    if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before changing book versions.");
-    return await change();
+    return await withBookVersionBarrier(projectRoot, async () => {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before changing book versions.");
+      return await change();
+    });
   } finally {
-    changingBooks.delete(projectRoot);
     for (const session of sessions.values()) if (session.projectRoot === projectRoot) session.setReadOnly(false);
   }
 }

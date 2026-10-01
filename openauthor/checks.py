@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 import re
+import unicodedata
 
 from .codex import list_entities
 from .project import ProjectPaths
@@ -11,7 +12,7 @@ SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
 
 
 def _normalize(value: str) -> str:
-  return value.strip().lower()
+  return unicodedata.normalize("NFC", value).strip().casefold()
 
 
 def _word_count(value: str) -> int:
@@ -21,9 +22,10 @@ def _word_count(value: str) -> int:
 def run_continuity_checks(paths: ProjectPaths) -> list[dict[str, str]]:
   scene_details = list_scene_details(paths)
   character_names = {
-    _normalize(row["name"])
+    _normalize(name)
     for row in list_entities(paths, kind="character")
-    if row.get("name")
+    for name in [row.get("name", ""), *row.get("aliases", [])]
+    if name
   }
 
   issues: list[dict[str, str]] = []

@@ -10,6 +10,7 @@ from typing import Any
 from .ai import DEFAULT_MODELS, SUPPORTED_PROVIDERS, _estimate_tokens, complete_chat
 from .checks import run_continuity_checks
 from .codex import add_entity, get_entity, list_entities, update_entity
+from .ai_visibility import current_privacy_history, memory_context_fingerprint, memory_for_ai
 from .git_ops import (
   create_branch,
   create_snapshot,
@@ -26,6 +27,8 @@ from .proposals import create_proposal
 from .retrieval import query_retrieval_index
 from .scenes import get_scene, list_scenes
 from .project_lock import project_write_lock
+from .story_context import story_plan_for_ai
+from .story_grounding import prepare_story_grounding, STORY_GROUNDING_INSTRUCTIONS
 
 _pending_messages: ContextVar[list[dict[str, Any]] | None] = ContextVar("pending_chat_messages", default=None)
 
@@ -654,6 +657,7 @@ def _resolve_context(
   explicit_scene_ids: list[str],
   selected_text: str,
   explicit_codex_ids: list[str],
+  memory_approvals: list[dict[str, str]] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
   include_current_scene = bool(profile.get("include_current_scene", True))
   include_selection = bool(profile.get("include_selection", True))
@@ -697,7 +701,7 @@ def _resolve_context(
     ]
     nearby_scene_rows = [get_scene(paths, item) for item in nearby_scene_ids]
 
-  codex_rows = list_entities(paths)
+  codex_rows = memory_for_ai(paths, memory_approvals)
   explicit_ids = {item.strip() for item in explicit_codex_ids if item.strip()}
   explicit_entity_ids: list[str] = []
   auto_entity_ids: list[str] = []
@@ -739,6 +743,12 @@ def _resolve_context(
     for entity in codex_rows
     if str(entity.get("id", "")).strip() in set(included_entity_ids)
   ]
+  # An author-selected one-turn permission also explicitly selects that entry,
+  # even if automatic matching or the thread's Memory preference is disabled.
+  for entity in codex_rows:
+    if any(grant["entity_id"] == entity["id"] for grant in memory_approvals or []) and entity["id"] not in included_entity_ids:
+      included_entity_ids.append(entity["id"])
+      included_codex.append(entity)
 
   retrieval_mode = str(profile.get("retrieval_mode", "off"))
   retrieval_payload: dict[str, Any] = {
@@ -796,6 +806,7 @@ def _resolve_context(
       retrieval_payload["error"] = str(error)
 
   context_for_prompt = {
+    "story_plan": story_plan_for_ai(paths, selected_scene_ids, book_scope=profile.get("scope") == "project"),
     "current_scene": selected_scene_rows,
     "nearby_scenes": nearby_scene_rows,
     "selected_text": selected_text if include_selection else "",
@@ -842,15 +853,22 @@ def _tool_classification(tool_name: str) -> str:
   return "write"
 
 
-def _execute_tool(paths: ProjectPaths, tool_name: str, args: dict[str, Any]) -> Any:
+def _execute_tool(
+  paths: ProjectPaths, tool_name: str, args: dict[str, Any],
+  *, memory_approvals: list[dict[str, str]] | None = None,
+) -> Any:
   if tool_name == "scene.list":
     return list_scenes(paths)
   if tool_name == "scene.get":
     return get_scene(paths, str(args.get("id", "")).strip())
   if tool_name == "codex.list":
-    return list_entities(paths)
+    return memory_for_ai(paths, memory_approvals)
   if tool_name == "codex.get":
-    return get_entity(paths, str(args.get("id", "")).strip())
+    entity_id = str(args.get("id", "")).strip()
+    entity = next((row for row in memory_for_ai(paths, memory_approvals) if row["id"] == entity_id), None)
+    if entity is None:
+      raise OpenAuthorError("Story Memory entry is unavailable to the Assistant. Ask the author to review its access settings.")
+    return entity
   if tool_name == "retrieval.query":
     return query_retrieval_index(
       paths,
@@ -999,7 +1017,7 @@ def send_chat_message(paths: ProjectPaths, *, request_id: str = "", is_cancelled
       _pending_messages.reset(token)
 
 
-def _send_chat_message(
+def preview_chat_context(
   paths: ProjectPaths,
   *,
   thread_id: str,
@@ -1009,9 +1027,15 @@ def _send_chat_message(
   selected_text: str = "",
   codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
-  on_delta: Any = None,
-  is_cancelled: Any = None,
+  memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
+  history_before_message_id: str = "",
 ) -> dict[str, Any]:
+  """Resolve the exact initial provider payload without contacting a provider.
+
+  Permissions are request parameters, never thread preferences or model args.
+  The fingerprint lets the desktop refuse to send a stale reviewed payload.
+  """
   thread = get_chat_thread(paths, thread_id)
   content = message.strip()
   if content == "":
@@ -1023,6 +1047,7 @@ def _send_chat_message(
     merged_profile.update(context_overrides)
   profile = _normalize_context_profile(merged_profile)
 
+  fingerprint = memory_context_fingerprint(paths, memory_approvals)
   prompt_context, context_used = _resolve_context(
     paths,
     profile=profile,
@@ -1031,23 +1056,35 @@ def _send_chat_message(
     explicit_scene_ids=scene_ids or [],
     selected_text=selected_text,
     explicit_codex_ids=codex_ids or [],
+    memory_approvals=memory_approvals,
   )
+  story_scene_ids = [current_scene_id] if current_scene_id else context_used["scene_ids"]
+  grounding = prepare_story_grounding(paths, story_scene_ids, memory_approvals=memory_approvals, story_approvals=story_approvals)
+  prompt_context["story_memory"] = grounding["context"]
+  context_used["story_scene_ids"] = story_scene_ids
+  transcript = list_chat_messages(paths, thread_id=thread_id)
+  if history_before_message_id:
+    boundary = next((index for index, row in enumerate(transcript) if row["id"] == history_before_message_id), None)
+    if boundary is None:
+      raise OpenAuthorError("The message being edited is no longer present. Review the conversation again.")
+    transcript = transcript[:boundary]
+  eligible_history = current_privacy_history(transcript, fingerprint)
+  context_used["privacy"] = {
+    "fingerprint": fingerprint,
+    "history_reset": len(eligible_history) != len(transcript),
+    "history_messages_omitted": len(transcript) - len(eligible_history),
+    "one_time_approval": bool(memory_approvals or story_approvals),
+  }
   history = _build_provider_history(
-    list_chat_messages(paths, thread_id=thread_id),
+    eligible_history,
     token_budget=int(profile.get("history_token_budget", 4000)),
   )
 
-  user_message = _append_chat_message(
-    paths,
-    thread_id=thread_id,
-    role="user",
-    content=content,
-    context_used=context_used,
-  )
   agent_mode = thread.get("mode") == "agent"
   system_prompt = (
     "You are openAuthor's fiction assistant. Stay grounded in provided context, "
     "be explicit about assumptions, and avoid direct manuscript mutation language."
+    + " " + STORY_GROUNDING_INSTRUCTIONS
   )
   if agent_mode:
     system_prompt = system_prompt + (
@@ -1063,6 +1100,59 @@ def _send_chat_message(
   )
   provider = str(thread.get("provider", "local"))
   model = str(thread.get("model", "")).strip() or DEFAULT_MODELS[provider]
+  payload = {
+    "system_prompt": system_prompt, "user_prompt": user_prompt, "history": history,
+    "context": prompt_context, "context_used": context_used, "provider": provider, "model": model,
+    "mode": thread.get("mode", "chat"),
+  }
+  payload["fingerprint"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+  payload["story_choices"] = grounding["choices"]
+  payload["estimated_input_tokens"] = _estimate_tokens(system_prompt + "\n" + "\n".join(row["content"] for row in history) + "\n" + user_prompt)
+  payload["history_messages_included"] = len(history)
+  payload["history_messages_omitted"] = len(transcript) - len(history)
+  payload["history_budget_limited"] = history != _build_provider_history(eligible_history, token_budget=10**12)
+  payload["memory_choices"] = [
+    {
+      "id": row["id"], "name": row["name"], "visibility": row.get("ai_visibility", "include"),
+      "details": [{"key": detail["key"], "visibility": detail.get("ai_visibility", "include")} for detail in row.get("details", [])],
+    }
+    for row in list_entities(paths)
+  ]
+  return payload
+
+
+def _send_chat_message(
+  paths: ProjectPaths,
+  *,
+  thread_id: str,
+  message: str,
+  current_scene_id: str = "",
+  scene_ids: list[str] | None = None,
+  selected_text: str = "",
+  codex_ids: list[str] | None = None,
+  context_overrides: dict[str, Any] | None = None,
+  on_delta: Any = None,
+  is_cancelled: Any = None,
+  memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
+  expected_context_fingerprint: str = "",
+) -> dict[str, Any]:
+  prepared = preview_chat_context(
+    paths, thread_id=thread_id, message=message, current_scene_id=current_scene_id,
+    scene_ids=scene_ids, selected_text=selected_text, codex_ids=codex_ids,
+    context_overrides=context_overrides, memory_approvals=memory_approvals, story_approvals=story_approvals,
+  )
+  if expected_context_fingerprint and expected_context_fingerprint != prepared["fingerprint"]:
+    raise OpenAuthorError("Context changed since the preview. Review context again before sending.")
+  content = message.strip()
+  context_used = prepared["context_used"]
+  profile = context_used["profile"]
+  fingerprint = context_used["privacy"]["fingerprint"]
+  history = prepared["history"]
+  system_prompt, user_prompt = prepared["system_prompt"], prepared["user_prompt"]
+  provider, model = prepared["provider"], prepared["model"]
+  agent_mode = prepared["mode"] == "agent"
+  user_message = _append_chat_message(paths, thread_id=thread_id, role="user", content=content, context_used=context_used)
   tools = _chat_tool_specs() if agent_mode else None
   agent_auto_read_only = bool(profile.get("agent_auto_read_only", True))
   turn_branch, turn_base_commit = _capture_vcs_anchor(paths)
@@ -1075,6 +1165,10 @@ def _send_chat_message(
   pending_tool_calls: list[dict[str, Any]] = []
 
   for _ in range(MAX_TOOL_ROUNDS):
+    if memory_context_fingerprint(paths, memory_approvals) != fingerprint:
+      raise OpenAuthorError("Story Memory access or content changed during this turn. Please send again with fresh context.")
+    if prepare_story_grounding(paths, context_used["story_scene_ids"], memory_approvals=memory_approvals, story_approvals=story_approvals)["context"] != prepared["context"]["story_memory"]:
+      raise OpenAuthorError("Canon or relationship context changed during this turn. Review fresh context before continuing.")
     if is_cancelled and is_cancelled():
       from .ai import ChatInterrupted
       raise ChatInterrupted("Chat turn interrupted by user.")
@@ -1119,7 +1213,7 @@ def _send_chat_message(
       }
       if classification == "read" and agent_auto_read_only:
         try:
-          result = _execute_tool(paths, internal_name, args)
+          result = _execute_tool(paths, internal_name, args, memory_approvals=memory_approvals)
           tool_row["executed"] = True
           tool_row["result_summary"] = _safe_summary(result)
           result_json = json.dumps(
@@ -1131,7 +1225,7 @@ def _send_chat_message(
             thread_id=thread_id,
             role="tool",
             content=result_json,
-            context_used={"tool_call_id": call["id"], "tool": internal_name},
+            context_used={"tool_call_id": call["id"], "tool": internal_name, "privacy": context_used["privacy"]},
           )
           executed_tool_messages.append(tool_message)
           tool_result_entries.append(

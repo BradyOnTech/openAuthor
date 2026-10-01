@@ -1,0 +1,66 @@
+{
+  "verified_at_utc": "2026-10-01T01:35:00Z",
+  "branch": "codex/production-authoring",
+  "base_head": "2fbe4f6d2750c615d4e658e2b04eab6491d1a4d9",
+  "scope": "Uncommitted working-tree fixes for revision input recovery, reviewed context consistency, and a targeted Memory extraction false positive",
+  "external_model_requests": 0,
+  "api_spend_usd": 0,
+  "data": "Synthetic manuscripts only",
+  "gates": {
+    "desktop": { "passed": 170, "test_files": 31 },
+    "python": { "discovered": 272, "passed": 271, "skipped": 1, "failed": 0 },
+    "skipped_contract": "Packaged subscription context test passed separately against a local endpoint",
+    "rust_passed": 7,
+    "frontend_build": "passed",
+    "repository_checks": "passed",
+    "git_diff_check": "passed",
+    "npm_reported_vulnerabilities": 0,
+    "macos": "Unsigned arm64 app and DMG rebuilt; packaged runtime and recovery checks passed",
+    "author_workflow": {
+      "run_id": "b49b4f74fb754965a71f07aef4103566",
+      "applied_matches_review": true,
+      "undo_byte_exact": true,
+      "backup_book_exact": true,
+      "backup_history_exact": true
+    }
+  },
+  "red_green_regressions": [
+    "Shell tab-switch and restart test initially lost instruction; passes with per-book and per-Storyline request journal",
+    "Unavailable-storage shell test initially lost input on navigation; passes with in-memory failure retention and retry",
+    "Generation session initially contacted the provider on start; now waits for durable edit-plan context approval",
+    "Reconciliation session initially sent immediately; now waits for durable reconciliation context approval",
+    "Four-sentence Memory probe initially suggested Beyond and Meanwhile as characters; contextual filtering removes those false positives while preserving genuine name usage"
+  ],
+  "context_contract": {
+    "operations": ["edit plan", "scene draft", "passage revision", "merge reconciliation"],
+    "shared_sources": ["saved Plan", "permitted Memory", "fresh or explicitly frozen Style Profile", "one-request approved Canon and relationships"],
+    "scope_disclosure": "Edit plans identify nearby scenes; draft and passage scope is narrower; reconciliation identifies both branches and the checked-out guidance branch",
+    "exact_payload_parity": "Core and CLI tests compare logged prompts with previewed prompts",
+    "freshness": "Changed context is rejected before transport; context changed during generation prevents publication",
+    "recovery": "Approvals and request identities are journaled before sending; retries preserve the request; an explicit new review clears grants and starts a new request"
+  },
+  "native_walkthrough": {
+    "app": "desktop/src-tauri/target/release/bundle/macos/openAuthor.app",
+    "fixture": "Large Project Regression Fixture",
+    "scene_id": "scene-0041",
+    "request_marker": "NATIVE_RECOVERY_20260930",
+    "tab_switch_preserved": ["instruction", "constraints", "protected text", "selected scene", "local provider"],
+    "full_restart_preserved": ["instruction", "constraints", "protected text", "selected scene", "local provider"],
+    "before_approval": "Edit-plan context screen opened; no generation log contained the request marker",
+    "after_plan_approval": "One local generation log; app paused at separate scene-draft context review",
+    "after_draft_approval": "Two local generation logs and a pending Change Set with two prose hunks; manuscript not applied",
+    "plan_run": "gen-1c0295a6447d",
+    "draft_run": "gen-e4b0365bfca5",
+    "proposal_id": "proposal-225b3994c3875a23f5b46c9d",
+    "both_logs_contained": ["NATIVE_REVIEW_STYLE", "author_selected_style_profile", "No new facts or objects"]
+  },
+  "remaining": [
+    "Independent editorial-quality evaluation, semantic continuity, multilingual traits, intentional changes, and character knowledge remain limited",
+    "Full-width evidence-first Memory and editorial review workspace is not implemented in this follow-up",
+    "Open tabs, caret and scroll position do not restore after restart",
+    "Storage-failure retention is in-process only; no crash-recovery guarantee while persistent storage is unavailable",
+    "Legacy external generation reruns must use a fresh context preview rather than bypassing approval",
+    "Native merge reconciliation was not exercised; core, CLI and desktop-session tests cover it",
+    "No new live-model quality, real-author pilot, clean Intel installation or signed-distribution validation"
+  ]
+}

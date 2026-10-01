@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   addPlanAct,
   addPlanBeat,
@@ -14,23 +14,55 @@ import {
 import { useEditor } from "../../contexts/EditorContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { CharacterArcState, ManuscriptPlan, PlanMovePreview, SceneSummary } from "../../types";
+import { useRecoverableDraft } from "../../recoverableDraft";
+import { DraftStatus } from "../shared/DraftStatus";
 
 const EMPTY_BRIEF: ManuscriptPlan["brief"] = {
   synopsis: "", genre: "", themes: [], style_guide: "", outline: "",
 };
 
+function validBrief(value: unknown): value is ManuscriptPlan["brief"] {
+  const brief = value as ManuscriptPlan["brief"] | null;
+  return !!brief && [brief.synopsis, brief.genre, brief.style_guide, brief.outline].every(value => typeof value === "string")
+    && Array.isArray(brief.themes) && brief.themes.every(value => typeof value === "string");
+}
+
+function validFormDrafts(value: unknown): value is Record<string, string> {
+  return !!value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every(item => typeof item === "string");
+}
+
 export function PlanEditor() {
-  const { projectRoot, scenes, codexEntities, setError, setMessage } = useWorkspace();
+  const { projectRoot, branches, scenes, codexEntities, refreshScenes, setError, setMessage } = useWorkspace();
   const { openTab } = useEditor();
+  const branch = branches?.find(row => row.current)?.name || "main";
+  const draftScope = JSON.stringify([projectRoot, branch]);
   const [plan, setPlan] = useState<ManuscriptPlan | null>(null);
-  const [brief, setBrief] = useState(EMPTY_BRIEF);
-  const [newAct, setNewAct] = useState("");
-  const [chapterDrafts, setChapterDrafts] = useState<Record<string, string>>({});
-  const [beatDrafts, setBeatDrafts] = useState<Record<string, string>>({});
+  const briefDraft = useRecoverableDraft(`openauthor.briefRecovery.v1:${draftScope}`, EMPTY_BRIEF, validBrief);
+  const brief = briefDraft.value;
+  const setBrief = briefDraft.session.edit;
+  const forms = useRecoverableDraft<Record<string, string>>(`openauthor.planFormRecovery.v1:${draftScope}`, {}, validFormDrafts);
+  const newAct = forms.value["act:new"] ?? "";
+  const changeForm = (key: string, value: string) => {
+    const next = { ...forms.session.getSnapshot().value, [key]: value };
+    if (!value) delete next[key];
+    forms.session.edit(next);
+  };
+  async function submitForm(key: string, action: (value: string) => Promise<unknown>, success: string) {
+    const submitted = forms.session.getSnapshot().value[key];
+    if (busy || !submitted?.trim()) return;
+    if (await runMutation(() => action(submitted.trim()), success)) {
+      forms.session.amend(current => {
+        const next = { ...current };
+        if (current[key] === submitted) delete next[key];
+        return next;
+      });
+    }
+  }
   const [draggedScene, setDraggedScene] = useState("");
   const [movePreview, setMovePreview] = useState<PlanMovePreview | null>(null);
   const [previewKey, setPreviewKey] = useState("");
   const [busy, setBusy] = useState(false);
+  const mutationPending = useRef(false);
   const [arcStates, setArcStates] = useState<CharacterArcState[]>([]);
 
   const scenesById = useMemo(() => new Map(scenes.map((scene) => [scene.id, scene])), [scenes]);
@@ -40,14 +72,14 @@ export function PlanEditor() {
 
   useEffect(() => {
     void loadPlan();
-  }, [projectRoot]);
+  }, [projectRoot, branch]);
 
   async function loadPlan() {
     if (!projectRoot) return;
     try {
       const [next, arcs] = await Promise.all([getManuscriptPlan(projectRoot), listCharacterArcStates(projectRoot)]);
       setPlan(next);
-      setBrief(next.brief);
+      briefDraft.session.acceptSaved(next.brief);
       setArcStates(arcs);
     } catch (error) {
       setError(`Failed to load plan: ${error instanceof Error ? error.message : String(error)}`);
@@ -55,15 +87,21 @@ export function PlanEditor() {
   }
 
   async function runMutation(action: () => Promise<unknown>, success: string) {
+    if (mutationPending.current) return false;
+    mutationPending.current = true;
     setBusy(true);
     try {
       await action();
       await loadPlan();
+      await refreshScenes();
       setError("");
       setMessage(success);
+      return true;
     } catch (error) {
       setError(`Plan update failed: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
     } finally {
+      mutationPending.current = false;
       setBusy(false);
     }
   }
@@ -147,12 +185,16 @@ export function PlanEditor() {
 
         <section style={panelStyle}>
           <h2 style={sectionTitle}>Project Brief</h2>
+          <DraftStatus {...briefDraft} onUseSaved={briefDraft.session.useSaved} onKeepDraft={briefDraft.session.keepDraft} />
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(220px, 1fr)", gap: "var(--space-3)" }}>
             <textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} />
             <div style={{ display: "grid", gap: "var(--space-2)" }}>
               <input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} />
-              <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={brief.themes.join(", ")} onChange={(event) => setBrief({ ...brief, themes: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) })} />
-              <button className="btn btn--primary" disabled={busy} onClick={() => void runMutation(() => updateProjectBrief(projectRoot, brief), "Project brief saved.")}>Save Brief</button>
+              <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={brief.themes.join(",")} onChange={(event) => setBrief({ ...brief, themes: event.target.value.split(",") })} />
+              <button className="btn btn--primary" disabled={busy || briefDraft.conflict} onClick={() => void runMutation(async () => {
+                const updated = await updateProjectBrief(projectRoot, { ...brief, themes: brief.themes.map(value => value.trim()).filter(Boolean) });
+                briefDraft.session.saved(brief, updated.brief);
+              }, "Project brief saved.")}>Save Brief</button>
             </div>
           </div>
           <textarea className="input" rows={3} aria-label="Style guide" placeholder="Style guide: voice, tense, prose boundaries…" style={{ marginTop: "var(--space-3)" }} value={brief.style_guide} onChange={(event) => setBrief({ ...brief, style_guide: event.target.value })} />
@@ -171,17 +213,12 @@ export function PlanEditor() {
         </section>}
 
         <div style={{ display: "flex", gap: "var(--space-2)", margin: "var(--space-5) 0 var(--space-3)" }}>
-          <input className="input" placeholder="New act title" value={newAct} onChange={(event) => setNewAct(event.target.value)} onKeyDown={(event) => {
-            if (event.key === "Enter" && newAct.trim()) {
-              void runMutation(() => addPlanAct(projectRoot, newAct.trim()), "Act added.");
-              setNewAct("");
-            }
+          <input className="input" placeholder="New act title" value={newAct} onChange={(event) => changeForm("act:new", event.target.value)} onKeyDown={(event) => {
+            if (event.key === "Enter") void submitForm("act:new", value => addPlanAct(projectRoot, value), "Act added.");
           }} />
-          <button className="btn btn--primary" disabled={busy || !newAct.trim()} onClick={() => {
-            void runMutation(() => addPlanAct(projectRoot, newAct.trim()), "Act added.");
-            setNewAct("");
-          }}>Add Act</button>
+          <button className="btn btn--primary" disabled={busy || !newAct.trim()} onClick={() => void submitForm("act:new", value => addPlanAct(projectRoot, value), "Act added.")}>Add Act</button>
         </div>
+        {forms.error ? <p role="alert">{forms.error}</p> : forms.dirty && <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>Unfinished act, chapter, and beat drafts are stored on this device. Add them when ready.</p>}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "var(--space-4)", alignItems: "start" }}>
           {plan.acts.map((act) => (
@@ -198,23 +235,14 @@ export function PlanEditor() {
                   <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>{chapter.position}. {chapter.title}</div>
                   {chapter.scene_ids.map((sceneId) => {
                     const scene = scenesById.get(sceneId);
-                    return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} chapterOptions={chapterOptions} currentChapterId={chapter.id} busy={busy} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
-                      const summary = (beatDrafts[sceneId] ?? "").trim();
-                      if (!summary) return;
-                      void runMutation(() => addPlanBeat(projectRoot, sceneId, summary), "Beat added.");
-                      setBeatDrafts({ ...beatDrafts, [sceneId]: "" });
-                    }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(chapter.id, sceneId)} onDrop={(event) => dropScene(event, chapter.id, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
+                    return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={forms.value[`beat:${sceneId}`] ?? ""} chapterOptions={chapterOptions} currentChapterId={chapter.id} busy={busy} onBeatDraft={(value) => changeForm(`beat:${sceneId}`, value)} onAddBeat={() => void submitForm(`beat:${sceneId}`, summary => addPlanBeat(projectRoot, sceneId, summary), "Beat added.")} onMetadataSave={(timelinePosition, labels) => runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(chapter.id, sceneId)} onDrop={(event) => dropScene(event, chapter.id, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
                   })}
                   {chapter.scene_ids.length === 0 && <DropHint text="Drop scenes here" />}
                 </div>
               ))}
               <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
-                <input className="input" placeholder="Chapter title" value={chapterDrafts[act.id] ?? ""} onChange={(event) => setChapterDrafts({ ...chapterDrafts, [act.id]: event.target.value })} />
-                <button className="btn" disabled={busy || !(chapterDrafts[act.id] ?? "").trim()} onClick={() => {
-                  const title = (chapterDrafts[act.id] ?? "").trim();
-                  void runMutation(() => addPlanChapter(projectRoot, act.id, title), "Chapter added.");
-                  setChapterDrafts({ ...chapterDrafts, [act.id]: "" });
-                }}>Add</button>
+                <input className="input" placeholder="Chapter title" value={forms.value[`chapter:${act.id}`] ?? ""} onChange={(event) => changeForm(`chapter:${act.id}`, event.target.value)} />
+                <button className="btn" disabled={busy || !(forms.value[`chapter:${act.id}`] ?? "").trim()} onClick={() => void submitForm(`chapter:${act.id}`, title => addPlanChapter(projectRoot, act.id, title), "Chapter added.")}>Add</button>
               </div>
             </section>
           ))}
@@ -225,12 +253,7 @@ export function PlanEditor() {
             <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", lineHeight: 1.5 }}>New and imported scenes stay here until you place them. Drag a card, or use its Move to control, to preview and change reading order.</p>
             {plan.unassigned_scene_ids.map((sceneId) => {
               const scene = scenesById.get(sceneId);
-              return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={beatDrafts[sceneId] ?? ""} chapterOptions={chapterOptions} currentChapterId={null} busy={busy} onBeatDraft={(value) => setBeatDrafts({ ...beatDrafts, [sceneId]: value })} onAddBeat={() => {
-                const summary = (beatDrafts[sceneId] ?? "").trim();
-                if (!summary) return;
-                void runMutation(() => addPlanBeat(projectRoot, sceneId, summary), "Beat added.");
-                setBeatDrafts({ ...beatDrafts, [sceneId]: "" });
-              }} onMetadataSave={(timelinePosition, labels) => void runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(null, sceneId)} onDrop={(event) => dropScene(event, null, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
+              return scene ? <SceneCard key={sceneId} scene={scene} metadata={plan.scene_metadata?.[sceneId]} beats={plan.beats.filter((beat) => beat.scene_id === sceneId)} beatDraft={forms.value[`beat:${sceneId}`] ?? ""} chapterOptions={chapterOptions} currentChapterId={null} busy={busy} onBeatDraft={(value) => changeForm(`beat:${sceneId}`, value)} onAddBeat={() => void submitForm(`beat:${sceneId}`, summary => addPlanBeat(projectRoot, sceneId, summary), "Beat added.")} onMetadataSave={(timelinePosition, labels) => runMutation(() => updatePlanSceneMetadata(projectRoot, sceneId, { timelinePosition, labels }), "Scene planning details saved.")} onOpen={() => void openScene(scene)} onDragStart={(event) => dragStart(event, sceneId)} onPreview={() => previewMove(null, sceneId)} onDrop={(event) => dropScene(event, null, sceneId)} onMovePreview={(chapterId) => previewSceneMove(sceneId, chapterId)} onMove={(chapterId) => moveScene(sceneId, chapterId)} /> : null;
             })}
             {plan.unassigned_scene_ids.length === 0 && <DropHint text={scenes.length === 0 ? "Create your first scene in Manuscript, then place it here." : "All scenes are placed"} />}
           </section>
@@ -266,7 +289,7 @@ function SceneCard({ scene, metadata, beats, beatDraft, chapterOptions, currentC
   busy: boolean;
   onBeatDraft: (value: string) => void;
   onAddBeat: () => void;
-  onMetadataSave: (timelinePosition: string, labels: string[]) => void;
+  onMetadataSave: (timelinePosition: string, labels: string[]) => Promise<boolean>;
   onOpen: () => void;
   onDragStart: (event: DragEvent) => void;
   onPreview: () => void;
@@ -274,14 +297,17 @@ function SceneCard({ scene, metadata, beats, beatDraft, chapterOptions, currentC
   onMovePreview: (chapterId: string | null) => void;
   onMove: (chapterId: string | null) => void;
 }) {
-  const [timelinePosition, setTimelinePosition] = useState(metadata?.timeline_position ?? "");
-  const [labels, setLabels] = useState((metadata?.labels ?? []).join(", "));
+  const { projectRoot, branches } = useWorkspace();
+  const savedMetadata = { timelinePosition: metadata?.timeline_position ?? "", labels: (metadata?.labels ?? []).join(", ") };
+  const recovery = useRecoverableDraft(`openauthor.scenePlanRecovery.v1:${JSON.stringify([projectRoot, branches?.find(row => row.current)?.name || "main", scene.id])}`, savedMetadata, validSceneMetadata);
+  const { timelinePosition, labels } = recovery.value;
+  const setTimelinePosition = (value: string) => recovery.session.edit({ ...recovery.value, timelinePosition: value });
+  const setLabels = (value: string) => recovery.session.edit({ ...recovery.value, labels: value });
   const [moveTarget, setMoveTarget] = useState(currentChapterId ?? "__unassigned__");
 
   useEffect(() => {
-    setTimelinePosition(metadata?.timeline_position ?? "");
-    setLabels((metadata?.labels ?? []).join(", "));
-  }, [metadata?.timeline_position, metadata?.labels?.join("\u0000")]);
+    recovery.session.acceptSaved(savedMetadata);
+  }, [metadata?.timeline_position, metadata?.labels?.join("\u0000"), recovery.session]);
 
   useEffect(() => {
     setMoveTarget(currentChapterId ?? "__unassigned__");
@@ -309,18 +335,28 @@ function SceneCard({ scene, metadata, beats, beatDraft, chapterOptions, currentC
       </div>}
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <input className="input" aria-label={`New beat for ${scene.title}`} placeholder="Add beat…" value={beatDraft} onChange={(event) => onBeatDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onAddBeat()} />
-        <button className="btn btn--sm" aria-label={`Add beat to ${scene.title}`} disabled={!beatDraft.trim()} onClick={onAddBeat}>+</button>
+        <button className="btn btn--sm" aria-label={`Add beat to ${scene.title}`} disabled={busy || !beatDraft.trim()} onClick={onAddBeat}>+</button>
       </div>
       <details style={{ marginTop: 8 }} onClick={(event) => event.stopPropagation()}>
         <summary style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)", cursor: "pointer" }}>Story time & labels</summary>
         <div style={{ display: "grid", gap: 6, marginTop: 7 }}>
+          <DraftStatus {...recovery} onUseSaved={recovery.session.useSaved} onKeepDraft={recovery.session.keepDraft} />
           <input className="input" aria-label={`Story time for ${scene.title}`} placeholder="Story time, e.g. Day 3 · dusk" value={timelinePosition} onChange={(event) => setTimelinePosition(event.target.value)} />
           <input className="input" aria-label={`Labels for ${scene.title}`} placeholder="Labels, comma separated" value={labels} onChange={(event) => setLabels(event.target.value)} />
-          <button className="btn btn--sm" onClick={() => onMetadataSave(timelinePosition, labels.split(",").map((value) => value.trim()).filter(Boolean))}>Save planning details</button>
+          <button className="btn btn--sm" disabled={busy || recovery.conflict} onClick={async () => {
+            const submitted = recovery.value;
+            const nextLabels = labels.split(",").map(value => value.trim()).filter(Boolean);
+            if (await onMetadataSave(timelinePosition, nextLabels)) recovery.session.saved(submitted, { timelinePosition: timelinePosition.trim(), labels: nextLabels.join(", ") });
+          }}>Save planning details</button>
         </div>
       </details>
     </article>
   );
+}
+
+function validSceneMetadata(value: unknown): value is { timelinePosition: string; labels: string } {
+  const row = value as { timelinePosition?: unknown; labels?: unknown } | null;
+  return !!row && typeof row.timelinePosition === "string" && typeof row.labels === "string";
 }
 
 function DropHint({ text }: { text: string }) {

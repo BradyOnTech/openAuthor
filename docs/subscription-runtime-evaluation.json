@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-30",
+  "runtime": "Bundled codex-cli 0.144.6 on macOS arm64",
+  "scope": "Automatic runtime context discovery, subscription delivery accounting and interrupted-turn safety. Synthetic content only.",
+  "findings": [
+    "Before repair, a local Responses wire capture contained an unreviewed global AGENTS instruction and the local skills catalog despite the app preview not including them.",
+    "A read-only sandbox and a no-shell instruction did not by themselves disable automatic instruction discovery.",
+    "project_doc_max_bytes=0 disables project instructions but this pinned runtime still loads global AGENTS instructions independently.",
+    "Some model catalog entries select orchestration tools independently of feature flags; disabling a feature does not prove the tool is absent.",
+    "Interrupted turns could previously return partial writing as successful output, and usage accounting retained only the last internal response. Requested model aliases were logged without the resolved model."
+  ],
+  "repairs": [
+    "Require the verified bundled runtime version before startup; an older or unverified override must not silently ignore privacy controls. The packaging contract must pass when deliberately changing the pin.",
+    "Launch and generation use an empty temporary working directory instead of the manuscript directory. Runtime directories are cleaned up on normal exit and startup failure.",
+    "The child does not inherit CODEX-prefixed desktop-session variables. Existing dedicated subscription credentials remain in place; no credentials or user configuration were copied or changed.",
+    "Disable automatic project instructions, skills instructions, memories, plugins, hooks, connectors and environment access. Explicit host writing instructions replace the default coding instructions.",
+    "Read the effective connector names and explicitly disable each before thread creation; an empty configuration table would not remove inherited entries.",
+    "Refuse global AGENTS.md or AGENTS.override.md in the dedicated Codex home before launching or generating, with actionable guidance. Do not delete or rewrite these files.",
+    "Keep model-selected orchestration scaffolding restricted to no environments or connector/file tools, disable runtime user-input requests and set one agent slot. The remaining scaffolding is disclosed as a limitation, not represented as a bare text API.",
+    "Only a completed turn can produce a usable response. Interrupted, failed, unknown and missing terminal statuses fail closed.",
+    "Retain requested and resolved models separately. Use the fresh thread's cumulative reported usage, including reported usage on incomplete turns in rolling budgets. Incomplete turns are not automatically retried."
+  ],
+  "verification": {
+    "core": "236 default-suite tests plus the separately executed real-runtime contract, for 237 distinct tests. The wire contract is opt-in in the default suite and required by the macOS packaging gate.",
+    "desktop": "152 tests passed across 28 files",
+    "rust": "7 tests passed",
+    "build": "Frontend and unsigned macOS app/DMG build passed; packaged Python recovery and the packaged Codex wire contract passed",
+    "repository_audit": "Passed; capability registry remains 0 release-ready",
+    "dependencies": "npm audit reported zero vulnerabilities",
+    "wire_contract": "Real pinned Codex binary connected to a loopback-only synthetic Responses endpoint, with synthetic book instructions, private prose, a skill catalog entry, inherited developer instructions and an unapproved MCP connector. No unreviewed marker, book path, skills catalog or file/connector capability declaration reached the captured request; the connector was not contacted.",
+    "failure_contract": "Synthetic stdio peer exercised the real subprocess/JSON-RPC bridge through selection generation. Interrupted output created no proposal, left prose unchanged, logged failure and resolved model, and counted 245 reported tokens toward the next request's budget gate.",
+    "packaging_gate": "scripts/verify_macos_bundle.sh now runs the wire test against the packaged core and packaged Codex binary; make codex-contract-check offers the same check for development"
+  },
+  "native_live_check": {
+    "provider": "openai-codex",
+    "requested_model": "codex-recommended",
+    "resolved_model": "gpt-5.6-sol",
+    "run_id": "gen-bd753187acc4",
+    "proposal_id": "proposal-9572e3174426fcb93826c195",
+    "action": "Shorten synthetic prose through the native selection preview and generation flow, then reject the result",
+    "reported_input_tokens": 2760,
+    "reported_output_tokens": 21,
+    "latency_ms": 5291,
+    "estimated_incremental_api_cost_usd": 0,
+    "billing_caveat": "Existing subscription quota was used; no API-key billing path was used. This is not a statement that subscription use is free.",
+    "comparison_run": "gen-d5f3becba0a8",
+    "comparison_input_tokens": 11543,
+    "identical_app_system_and_user_prompts_verified": true,
+    "manuscript_file_sha256_before_and_after_rejection": "a82902f0da57a2573bf36015ab2bae3c714f76e47a19aae1885beb3e24ca7108",
+    "outcome": "Existing sign-in worked without reauthentication. A reviewable replacement arrived; rejection left the manuscript byte-identical. No suggestion was applied."
+  },
+  "limitations_and_next_checks": [
+    "The subscription runtime still supplies protocol and model-selected orchestration scaffolding. The app preview is explicitly the app-supplied context, not a byte-for-byte preview of the complete provider request.",
+    "The empty working directory is not an operating-system sandbox. The wire contract checks the supported pinned configuration, not a compromised runtime or every custom/managed configuration variant.",
+    "Exercise forced model tool attempts and profile/managed configuration variants, including proving the no-additional-agent limit under adversarial tool requests.",
+    "Abrupt transport loss or local interruption before a usage notification may leave consumed quota unknown. Reported usage is not a hard preflight token cap; subscription max output remains a requested target.",
+    "The live test is a delivery/privacy smoke check, not an independent editorial quality benchmark. The prior expansion and critique weaknesses remain unresolved.",
+    "Continue safe scene-valid Canon and relationship grounding, full-context limits, other-provider truncation handling and broader native failure testing."
+  ],
+  "primary_references": [
+    "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+    "https://learn.chatgpt.com/docs/config-file/config-reference",
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://github.com/openai/codex/blob/rust-v0.144.6/codex-rs/core/src/agents_md.rs",
+    "https://github.com/openai/codex/blob/rust-v0.144.6/codex-rs/core/src/tools/mod.rs"
+  ],
+  "production_readiness_claim": false
+}

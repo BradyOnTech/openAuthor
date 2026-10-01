@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useSyncExternalStore } from "react";
 import { chatDeliverySession } from "../../chatDeliverySession";
+import { ChatContextReview } from "./ChatContextReview";
+import type { ChatSendPayload } from "../../api";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
@@ -109,9 +111,9 @@ function ThreadPanel() {
     await session.interrupt();
   }
 
-  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
+  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: Pick<ChatSendPayload, "memoryApprovals" | "expectedContextFingerprint">) {
     if (!activeChatThreadId || !text.trim()) return false;
-    return session.send({ threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope });
+    return session.send({ threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope, ...reviewed });
   }
 
   function handleStartEdit(message: ChatMessageRecord) {
@@ -119,7 +121,7 @@ function ThreadPanel() {
     setEditing({ messageId: message.id, text: message.content });
   }
 
-  async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
+  async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: Pick<ChatSendPayload, "memoryApprovals" | "expectedContextFingerprint">) {
     if (!activeChatThreadId || !text.trim() || delivery.pending) return false;
     if (editing) {
       const target = editing;
@@ -135,7 +137,7 @@ function ThreadPanel() {
         return false;
       }
     }
-    return performSend(text, sceneIds, codexIds, scope);
+    return performSend(text, sceneIds, codexIds, scope, reviewed);
   }
 
   async function handleRegenerate() {
@@ -730,6 +732,10 @@ function ChatMessage({
         <span className="chat-message__time">{formatTime(message.created_at)}</span>
       </div>
 
+      {message.role === "user" && (message.context_used as { privacy?: { history_reset?: boolean } }).privacy?.history_reset && (
+        <p className="chat-context-hints">Earlier replies were not resent because Memory changed or one-time permission expired. Your local conversation is preserved.</p>
+      )}
+
       {message.role === "tool" ? (
         <div className="chat-message__body chat-message__body--tool">
           {message.content}
@@ -982,13 +988,14 @@ function Composer({
   codexEntities: CodexEntity[];
   activeThread?: ChatThreadRecord;
   currentSceneId?: string;
-  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<boolean>;
+  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: Pick<ChatSendPayload, "memoryApprovals" | "expectedContextFingerprint">) => Promise<boolean>;
   onInterrupt: () => void;
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
   onCancelEdit: () => void;
 }) {
   const [text, setText] = useState("");
+  const [reviewPayload, setReviewPayload] = useState<ChatSendPayload | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [scope, setScope] = useState<AssistantScope>("project");
@@ -1111,9 +1118,7 @@ function Composer({
     }
   }
 
-  async function handleSend() {
-    if (!text.trim() || sending || recoveryPending || !threadId) return;
-
+  function composerPayload(): ChatSendPayload {
     const mentions = extractMentionIds(text, scenes, codexEntities);
     if (scope === "scene" && currentSceneId && !mentions.sceneIds.includes(currentSceneId)) mentions.sceneIds.push(currentSceneId);
     if (scope === "chapter") {
@@ -1122,11 +1127,27 @@ function Composer({
       }
     }
     if (scope === "character" && scopeId && !mentions.codexIds.includes(scopeId)) mentions.codexIds.push(scopeId);
-    const msg = text;
-    if (await onSend(msg, mentions.sceneIds, mentions.codexIds, scope)) {
+    return { threadId, message: text, currentSceneId, sceneIds: mentions.sceneIds, codexIds: mentions.codexIds, scope };
+  }
+
+  async function sendPayload(payload: ChatSendPayload) {
+    const msg = payload.message;
+    const sent = await onSend(msg, payload.sceneIds ?? [], payload.codexIds ?? [], payload.scope ?? "project", payload);
+    if (sent) {
       setText(current => current === msg ? "" : current);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
+    return sent;
+  }
+
+  async function handleSend() {
+    if (!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)) return;
+    const payload = composerPayload();
+    if (payload.codexIds?.some(id => codexEntities.find(entry => entry.id === id)?.ai_visibility === "ask")) {
+      setReviewPayload(payload);
+      return;
+    }
+    await sendPayload(payload);
   }
 
   const contextHints: string[] = [];
@@ -1141,6 +1162,8 @@ function Composer({
       contextHints.push("retrieval");
     }
   }
+
+  if (reviewPayload) return <ChatContextReview projectRoot={projectRoot} payload={reviewPayload} historyBeforeMessageId={editing?.messageId} onSend={sendPayload} onClose={() => setReviewPayload(null)} />;
 
   return (
     <div className="chat-composer-wrap">
@@ -1207,6 +1230,7 @@ function Composer({
           rows={1}
           disabled={!threadId || sending}
         />
+        <button className="btn btn--sm" style={{ minHeight: 40 }} onClick={() => setReviewPayload(composerPayload())} disabled={!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}>Context</button>
         {sending && streaming ? (
           <button className="btn btn--sm" onClick={onInterrupt} title="Interrupt this turn">
             Stop

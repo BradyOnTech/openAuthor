@@ -5,7 +5,7 @@
       "id": "conflict-and-knowledge",
       "scenes": [
         {"title": "Discovery", "pov": "Mara", "body": "Mara studies the North Gate."},
-        {"title": "Mural", "pov": "Ivo", "body": "The mural calls the gate red."},
+        {"title": "Mural", "pov": "Ivo", "body": "The mural calls the gate red. An inscription gives the passphrase NIGHTJAR."},
         {"title": "Leak", "pov": "Mara", "body": "The hidden passphrase is NIGHTJAR."}
       ],
       "entities": [

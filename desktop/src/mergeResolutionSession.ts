@@ -1,7 +1,8 @@
-import { resolveMergeConflict } from "./api";
+import { resolveMergeConflict, type RevisionAuthorization } from "./api";
 import type { ProposalRecord } from "./types";
 
-type Request = Parameters<typeof resolveMergeConflict>[1];
+export type MergeRequest = Parameters<typeof resolveMergeConflict>[1];
+type Request = MergeRequest;
 type Snapshot = { pending: Request | null; busy: boolean; error: string };
 const sessions = new Map<string, MergeResolutionSession>();
 
@@ -36,7 +37,7 @@ export class MergeResolutionSession {
 
   async start(input: Request): Promise<ProposalRecord | null> {
     if (this.state.pending || this.state.busy) return null;
-    const pending = { ...input, requestId: crypto.randomUUID() };
+    const pending = { ...input, authorization: undefined, requestId: crypto.randomUUID() };
     try {
       localStorage.setItem(this.key, JSON.stringify(pending));
       this.publish({ pending });
@@ -47,8 +48,32 @@ export class MergeResolutionSession {
     return this.retry();
   }
 
+  approve = async (authorization: RevisionAuthorization): Promise<ProposalRecord | null> => {
+    if (!this.state.pending || this.state.busy || this.state.pending.authorization || !authorization.fingerprint) return null;
+    try {
+      const pending = { ...this.state.pending, authorization };
+      localStorage.setItem(this.key, JSON.stringify(pending));
+      this.publish({ pending });
+    } catch {
+      this.publish({ error: "Context approval could not be saved for recovery. Nothing was sent; free storage and review again." });
+      return null;
+    }
+    return this.retry();
+  };
+
+  reviewAgain = () => {
+    if (!this.state.pending || this.state.busy) return;
+    try {
+      const pending = { ...this.state.pending, authorization: undefined, requestId: crypto.randomUUID() };
+      localStorage.setItem(this.key, JSON.stringify(pending));
+      this.publish({ pending, error: "" });
+    } catch {
+      this.publish({ error: "Could not save a fresh context review. The original request is retained; nothing was sent." });
+    }
+  };
+
   retry = async (): Promise<ProposalRecord | null> => {
-    if (!this.state.pending || this.state.busy) return null;
+    if (!this.state.pending?.authorization || this.state.busy) return null;
     this.publish({ busy: true, error: "" });
     try {
       return await resolveMergeConflict(this.projectRoot, this.state.pending!);

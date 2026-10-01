@@ -271,7 +271,9 @@ def _usage_rows(paths: ProjectPaths) -> list[dict[str, Any]]:
       payload = json.loads(log_file.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
       continue
-    if payload.get("status") != "succeeded":
+    if payload.get("status") != "succeeded" and not (
+      payload.get("status") == "failed" and payload.get("usage_reported") is True
+    ):
       continue
     usage = payload.get("usage", {})
     if not isinstance(usage, dict):

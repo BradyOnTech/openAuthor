@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_text, next_scene_index, utc_now
+from .reading_order import ordered_scene_ids
 
 
 def slugify(value: str) -> str:
@@ -176,10 +177,12 @@ def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
 
 
 def list_scene_details(paths: ProjectPaths) -> list[dict[str, str]]:
-  return [
+  rows = [
     _scene_detail(paths, scene_file)
     for scene_file in sorted(paths.scenes_dir.glob("*.md"))
   ]
+  positions = {scene_id: index for index, scene_id in enumerate(ordered_scene_ids(paths, [row["id"] for row in rows]))}
+  return sorted(rows, key=lambda row: positions[row["id"]])
 
 
 def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:

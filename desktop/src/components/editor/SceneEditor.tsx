@@ -1,20 +1,24 @@
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { sceneSaveSession } from "../../sceneSaveSession";
 import { clearSceneRecoveryDraft, readSceneRecoveryDraft, recoveryDraftMatchesScene } from "../../recoveryJournal";
-import type { SceneDetail } from "../../types";
+import type { CanonEvidence, ProposalProvider, SceneDetail } from "../../types";
+import { evidenceRange } from "../../evidenceRange";
+import { SelectionAssist } from "./SelectionAssist";
 
-export function SceneEditor({ scene }: { scene: SceneDetail }) {
+export function SceneEditor({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
   const { projectRoot } = useWorkspace();
-  return <SceneEditorSession key={`${projectRoot}:${scene.id}`} scene={scene} />;
+  return <SceneEditorSession key={`${projectRoot}:${scene.id}`} scene={scene} focusPassage={focusPassage} />;
 }
 
-function SceneEditorSession({ scene }: { scene: SceneDetail }) {
-  const { projectRoot, refreshScenes, setError } = useWorkspace();
-  const { updateTab, activeTabId } = useEditor();
+function SceneEditorSession({ scene, focusPassage }: { scene: SceneDetail; focusPassage?: CanonEvidence }) {
+  const { projectRoot, refreshScenes, refreshProposals, refreshRuns, runtimeConfig, branches, setError } = useWorkspace();
+  const { updateTab, activeTabId, openTab } = useEditor();
   const [session] = useState(() => sceneSaveSession(projectRoot, scene));
   const { title, body, saving, error, readOnly } = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [selection, setSelection] = useState<{ body: string; start: number; end: number } | null>(null);
   const [recoveryDraft, setRecoveryDraft] = useState(() => {
     if (session.dirty) return null;
     const draft = readSceneRecoveryDraft(projectRoot, scene.id);
@@ -26,11 +30,23 @@ function SceneEditorSession({ scene }: { scene: SceneDetail }) {
   useEffect(() => { session.acceptScene(scene); }, [scene, session]);
 
   useEffect(() => {
+    if (!focusPassage || !bodyRef.current) return;
+    const range = evidenceRange(session.getSnapshot().body, focusPassage);
+    if (range) {
+      bodyRef.current.focus();
+      bodyRef.current.setSelectionRange(...range);
+    } else {
+      setError("This evidence passage changed or is ambiguous. The scene is open; run a fresh scan before relying on the old passage.");
+    }
+    updateTab(`scene:${scene.id}`, { focusPassage: undefined });
+  }, [focusPassage, session, scene.id, setError, updateTab]);
+
+  useEffect(() => {
     let mounted = true;
     session.setOnSaved((updated, dirty) => {
       updateTab(activeTabId, { modified: dirty, label: updated.title || scene.id, data: updated });
-      if (mounted && !dirty) {
-        setRecoveryDraft(null);
+      if (!dirty) {
+        if (mounted) setRecoveryDraft(null);
         void refreshScenes();
       }
     });
@@ -80,10 +96,20 @@ function SceneEditorSession({ scene }: { scene: SceneDetail }) {
           }}>Discard</button>
         </div>
       )}
+      <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches.find(row => row.current)?.name ?? ""}
+        selection={selection?.body === body ? selection : null} disabled={readOnly || Boolean(recoveryDraft)}
+        providers={Object.entries(runtimeConfig?.providers ?? {}).filter(([, config]) => config.credential_present).map(([name]) => name as ProposalProvider)}
+        flush={session.flush} onResult={async proposal => {
+          await Promise.all([refreshProposals(), refreshRuns()]);
+          openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title, data: proposal });
+        }} />
       <div className="scene-editor__content">
         <input className="scene-editor__title" readOnly={readOnly} value={title} onChange={event => session.edit({ title: event.target.value })} placeholder="Scene title..." />
         <div className="scene-editor__divider" />
-        <textarea className="scene-editor__body" readOnly={readOnly} value={body} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
+        <textarea ref={bodyRef} className="scene-editor__body" aria-label="Scene prose" readOnly={readOnly} value={body} onSelect={event => {
+          const editor = event.currentTarget;
+          setSelection(editor.selectionEnd > editor.selectionStart ? { body: editor.value, start: editor.selectionStart, end: editor.selectionEnd } : null);
+        }} onChange={event => session.edit({ body: event.target.value })} placeholder="Begin writing..." />
       </div>
     </div>
   );

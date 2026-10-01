@@ -39,7 +39,7 @@ def _read_plan(paths: ProjectPaths) -> dict[str, Any]:
   return payload
 
 
-def get_plan(paths: ProjectPaths) -> dict[str, Any]:
+def get_plan(paths: ProjectPaths, *, persist: bool = True) -> dict[str, Any]:
   plan = _read_plan(paths)
   current_scene_ids = [str(scene["id"]) for scene in list_scenes(paths)]
   current = set(current_scene_ids)
@@ -73,7 +73,8 @@ def get_plan(paths: ProjectPaths) -> dict[str, Any]:
     for scene_id, value in plan.get("scene_metadata", {}).items()
     if scene_id in current and isinstance(value, dict)
   }
-  atomic_write_json(paths.structure_file, plan)
+  if persist:
+    atomic_write_json(paths.structure_file, plan)
   return plan
 
 

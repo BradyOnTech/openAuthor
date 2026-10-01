@@ -1,7 +1,7 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check
+.PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check codex-contract-check
 
 help:
 	@echo "Available targets:"
@@ -30,6 +30,7 @@ help:
 	@echo "  make runtime-check   - Verify the bundled Python and installed openAuthor core"
 	@echo "  make macos-bundle    - Build the macOS app bundle (requires runtime-prepare)"
 	@echo "  make macos-bundle-check - Verify the packaged runtime and app structure"
+	@echo "  make codex-contract-check - Verify subscription context against a local endpoint (no provider credits)"
 
 setup:
 	@echo "Checking local tooling..."
@@ -128,3 +129,6 @@ macos-bundle: runtime-check
 
 macos-bundle-check:
 	@./scripts/verify_macos_bundle.sh
+
+codex-contract-check:
+	@OPENAUTHOR_CODEX_CONTRACT_BIN="$(CURDIR)/desktop/src-tauri/resources/runtime/codex/bin/codex" PYTHONPATH=$(PYTHONPATH) python3 -m unittest discover -s tests -p test_codex_runtime_contract.py -v

@@ -20,6 +20,8 @@ export LC_CTYPE="en_US.UTF-8"
 "$RUNTIME/bin/python3" -I -c 'import openauthor, sqlite3; assert openauthor.__file__; assert sqlite3.sqlite_version'
 "$RUNTIME/bin/python3" -I -m openauthor --help >/dev/null
 "$RUNTIME/bin/python3" -I "$ROOT/scripts/verify_packaged_recovery.py"
+OPENAUTHOR_CODEX_CONTRACT_BIN="$APP/Contents/Resources/resources/runtime/codex/bin/codex" \
+  "$RUNTIME/bin/python3" -I -m unittest discover -s "$ROOT/tests" -p test_codex_runtime_contract.py -v
 
 if [[ "${OPENAUTHOR_REQUIRE_SIGNED_BUNDLE:-0}" == "1" ]]; then
   codesign --verify --deep --strict --verbose=2 "$APP"

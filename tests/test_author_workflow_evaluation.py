@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import io
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from openauthor.project import OpenAuthorError, atomic_write_json, resolve_project
 from openauthor.proposals import list_proposals, set_proposal_draft
@@ -37,6 +40,27 @@ def completed_decisions(output: Path, *, accept: bool = True) -> Path:
 
 
 class AuthorWorkflowEvaluationTests(unittest.TestCase):
+  def test_remote_evaluation_requires_the_exact_reviewed_context_even_with_consent(self) -> None:
+    from scripts.evaluate_author_workflow import preview_draft
+    with tempfile.TemporaryDirectory() as temporary:
+      root = Path(temporary)
+      output = root / "run"
+      prepare(output, manifest=approved_case(root, provider="openai", model="explicit-test-model"))
+      with patch("urllib.request.urlopen") as transport:
+        with self.assertRaisesRegex(OpenAuthorError, "[Rr]eview"):
+          generate(output, allow_provider=True)
+        context = preview_draft(output)
+        transport.assert_not_called()
+      reviewed = read_json(output / "draft-context.json")
+      sent = []
+      def response(request, **_kwargs):
+        sent.append(json.loads(request.data))
+        return io.BytesIO(json.dumps({"choices": [{"message": {"content": "Mara searched for Ivo. Mara waits."}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 100, "completion_tokens": 9}}).encode())
+      with patch.dict("os.environ", {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", side_effect=response):
+        result = generate(output, allow_provider=True, expected_context_fingerprint=context["fingerprint"])
+      self.assertEqual(result["status"], "awaiting_review")
+      self.assertEqual(sent[0]["messages"][1]["content"], reviewed["user_prompt"])
+
   def test_synthetic_import_review_apply_undo_and_backup_use_the_real_core(self) -> None:
     report = smoke()
     self.assertEqual(report["evidence_kind"], "synthetic_workflow")

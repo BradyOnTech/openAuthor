@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { BackupRestore } from "../BackupControls";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import {
@@ -7,7 +7,9 @@ import {
   pickManuscriptFile,
   previewManuscriptImport,
   type ManuscriptImportPreview,
+  type ImportCorrections,
 } from "../../api";
+import { ImportStructureReview } from "./ImportStructureReview";
 import { getProjectBinding } from "../../projectBindings";
 
 function isDesktopRuntime(): boolean {
@@ -90,6 +92,22 @@ export function WelcomeScreen() {
   });
   const [importPreview, setImportPreview] = useState<ManuscriptImportPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [importCorrections, setImportCorrections] = useState<ImportCorrections>({});
+  const [previewDirty, setPreviewDirty] = useState(false);
+  const previewRequest = useRef(0);
+  const resetPreview = useCallback(() => {
+    previewRequest.current += 1;
+    setPreviewBusy(false);
+    setImportPreview(null);
+    setImportCorrections({});
+    setPreviewDirty(false);
+  }, []);
+  const correctSection = useCallback((id: string, change: ImportCorrections[string]) => {
+    previewRequest.current += 1;
+    setPreviewBusy(false);
+    setImportCorrections(previous => ({ ...previous, [id]: { ...previous[id], ...change } }));
+    setPreviewDirty(true);
+  }, []);
   const [openState, setOpenState] = useState<OpenProjectState>({ kind: "idle" });
   const [notFoundName, setNotFoundName] = useState("");
   const [notFoundPath, setNotFoundPath] = useState("");
@@ -115,8 +133,9 @@ export function WelcomeScreen() {
   }, []);
 
   const handleCreate = useCallback(async () => {
+    if (form.importKind !== "none" && (!importPreview || previewDirty || previewBusy)) return;
     const importSource = form.importKind !== "none" && form.importPath.trim()
-      ? { kind: form.importKind, path: form.importPath.trim(), strategy: form.importStrategy }
+      ? { kind: form.importKind, path: form.importPath.trim(), strategy: form.importStrategy, corrections: importCorrections, expectedFingerprint: importPreview!.fingerprint }
       : undefined;
     const ok = await createAndOpenProject({
       name: form.name,
@@ -126,9 +145,9 @@ export function WelcomeScreen() {
     if (ok) {
       setShowNewForm(false);
       setForm({ name: "", savePath: "", importKind: "none", importPath: "", importStrategy: "auto", showImport: false });
-      setImportPreview(null);
+      resetPreview();
     }
-  }, [createAndOpenProject, form]);
+  }, [createAndOpenProject, form, importPreview, importCorrections, previewDirty, previewBusy, resetPreview]);
 
   const handleOpenProject = useCallback(async () => {
     const selectedPath = await browseFolder();
@@ -179,31 +198,35 @@ export function WelcomeScreen() {
       const selected = await browseFolder(form.importPath || undefined);
       if (selected) {
         setForm((prev) => ({ ...prev, importPath: selected }));
-        setImportPreview(null);
+        resetPreview();
       }
     } else {
       const selected = await pickManuscriptFile(form.importPath || undefined);
       if (selected) {
         setForm((prev) => ({ ...prev, importPath: selected }));
-        setImportPreview(null);
+        resetPreview();
       }
     }
-  }, [form.importKind, form.importPath]);
+  }, [form.importKind, form.importPath, resetPreview]);
 
   const handlePreviewImport = useCallback(async () => {
     if (!form.importPath.trim()) return;
+    const request = ++previewRequest.current;
     setPreviewBusy(true);
     try {
-      const preview = await previewManuscriptImport(form.importPath.trim(), form.importStrategy);
+      const preview = await previewManuscriptImport(form.importPath.trim(), form.importStrategy, importCorrections);
+      if (request !== previewRequest.current) return;
       setImportPreview(preview);
+      setPreviewDirty(false);
       setError("");
     } catch (e) {
-      setImportPreview(null);
+      if (request !== previewRequest.current) return;
+      setPreviewDirty(true);
       setError(`Import preview failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-      setPreviewBusy(false);
+      if (request === previewRequest.current) setPreviewBusy(false);
     }
-  }, [form.importPath, form.importStrategy, setError]);
+  }, [form.importPath, form.importStrategy, importCorrections, setError]);
 
   return (
     <div style={{
@@ -238,6 +261,8 @@ export function WelcomeScreen() {
       <div style={{
         width: "100%",
         maxWidth: 560,
+        maxHeight: "100dvh",
+        overflowY: "auto",
         display: "flex",
         flexDirection: "column",
         gap: "var(--space-6)",
@@ -442,7 +467,7 @@ export function WelcomeScreen() {
                       }}
                       onClick={() => {
                         setForm((prev) => ({ ...prev, importKind: "manuscript_file", importPath: "" }));
-                        setImportPreview(null);
+                        resetPreview();
                       }}
                     >
                       Manuscript File
@@ -455,7 +480,7 @@ export function WelcomeScreen() {
                       }}
                       onClick={() => {
                         setForm((prev) => ({ ...prev, importKind: "manuscript_folder", importPath: "", importStrategy: "files" }));
-                        setImportPreview(null);
+                        resetPreview();
                       }}
                     >
                       Folder / Scrivener
@@ -470,7 +495,7 @@ export function WelcomeScreen() {
                           value={form.importPath}
                           onChange={(e) => {
                             setForm((prev) => ({ ...prev, importPath: e.target.value }));
-                            setImportPreview(null);
+                            resetPreview();
                           }}
                           style={{ flex: 1 }}
                         />
@@ -484,7 +509,7 @@ export function WelcomeScreen() {
                           value={form.importStrategy}
                           onChange={(e) => {
                             setForm((prev) => ({ ...prev, importStrategy: e.target.value as NewProjectForm["importStrategy"] }));
-                            setImportPreview(null);
+                            resetPreview();
                           }}
                           aria-label="Import structure"
                         >
@@ -498,21 +523,10 @@ export function WelcomeScreen() {
                           disabled={!form.importPath.trim() || previewBusy}
                           onClick={() => void handlePreviewImport()}
                         >
-                          {previewBusy ? "Previewing..." : "Preview Structure"}
+                          {previewBusy ? "Previewing..." : importPreview ? "Update Preview" : "Preview Structure"}
                         </button>
                       </div>
-                      {importPreview && (
-                        <div style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "var(--space-2)", maxHeight: 150, overflowY: "auto" }}>
-                          <div style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", marginBottom: "var(--space-1)" }}>
-                            {importPreview.scene_count} scenes · {importPreview.word_count.toLocaleString()} words
-                          </div>
-                          {importPreview.scenes.map((scene) => (
-                            <div key={`${scene.position}-${scene.title}`} style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>
-                              {scene.position}. {scene.title} ({scene.word_count.toLocaleString()} words)
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {importPreview && <ImportStructureReview preview={importPreview} corrections={importCorrections} dirty={previewDirty} onChange={correctSection} />}
                     </div>
                   )}
                 </div>
@@ -524,7 +538,7 @@ export function WelcomeScreen() {
                 className="btn btn--primary"
                 disabled={
                   !form.name.trim() || !form.savePath.trim() || busy ||
-                  (form.importKind !== "none" && !importPreview)
+                  (form.importKind !== "none" && (!importPreview || previewDirty || previewBusy))
                 }
                 onClick={() => void handleCreate()}
               >

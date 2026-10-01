@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from collections import defaultdict
 from typing import Any
 
-from .codex import get_entity
+from .codex import get_entity, list_entities
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
-from .scenes import get_scene, list_scenes
+from .scenes import get_scene, list_scene_details, list_scenes
+from .story_observations import prose_trait_diagnostics
 
 CANON_SCHEMA_VERSION = 1
 FACT_STATUSES = {"accepted", "suggested", "rejected"}
 DIAGNOSTIC_DISPOSITIONS = {"fixed", "dismissed", "intentional", "deferred"}
+NONEXCLUSIVE_PREDICATES = {"is", "was", "has", "had", "owns", "knows", "believes", "can", "likes"}
 
 
 def _memory_path(paths: ProjectPaths):
@@ -33,9 +36,7 @@ def _default_memory() -> dict[str, Any]:
 def _read_memory(paths: ProjectPaths) -> dict[str, Any]:
   path = _memory_path(paths)
   if not path.exists():
-    payload = _default_memory()
-    atomic_write_json(path, payload)
-    return payload
+    return _default_memory()
   try:
     payload = json.loads(path.read_text(encoding="utf-8"))
   except (OSError, json.JSONDecodeError) as error:
@@ -60,11 +61,28 @@ def _clean_evidence(paths: ProjectPaths, evidence: list[dict[str, Any]]) -> list
       raise OpenAuthorError(f"Unknown evidence scene '{scene_id}'.")
     if not excerpt:
       raise OpenAuthorError("Canon evidence requires an excerpt.")
+    body = get_scene(paths, scene_id)["body"]
+    try:
+      start, end = int(row.get("start", 0)), int(row.get("end", 0))
+    except (TypeError, ValueError) as error:
+      raise OpenAuthorError("Evidence offsets must be character positions in the current scene.") from error
+    if start < 0 or end < start:
+      raise OpenAuthorError("Evidence offsets must be character positions in the current scene.")
+    if end > start:
+      if body[start:end] != excerpt:
+        raise OpenAuthorError("The selected evidence changed. Select the exact current passage again.")
+    else:
+      start = body.find(excerpt)
+      if start < 0:
+        raise OpenAuthorError("Evidence must be an exact passage from the current scene. Open the scene and copy the supporting words.")
+      if body.find(excerpt, start + 1) >= 0:
+        raise OpenAuthorError("This evidence excerpt occurs more than once. Include more surrounding words or provide exact selection offsets.")
+      end = start + len(excerpt)
     cleaned.append({
       "scene_id": scene_id,
       "excerpt": excerpt,
-      "start": int(row.get("start", 0)),
-      "end": int(row.get("end", 0)),
+      "start": start,
+      "end": end,
     })
   if not cleaned:
     raise OpenAuthorError("A Canon Fact requires at least one manuscript evidence passage.")
@@ -138,6 +156,30 @@ def list_canon_facts(paths: ProjectPaths, *, status: str | None = None) -> list[
   if status:
     rows = [row for row in rows if row.get("status") == status]
   return rows
+
+
+def review_canon_fact(
+  paths: ProjectPaths,
+  fact_id: str,
+  *,
+  disposition: str,
+  evidence: list[dict[str, Any]] | None = None,
+  expected_updated_at: str | None = None,
+) -> dict[str, Any]:
+  if disposition not in {"accepted", "rejected"}:
+    raise OpenAuthorError("A Canon Fact review must accept or retire the fact.")
+  memory = _read_memory(paths)
+  fact = next((row for row in memory["facts"] if row["id"] == fact_id), None)
+  if fact is None:
+    raise OpenAuthorError(f"Unknown Canon Fact '{fact_id}'.")
+  if expected_updated_at is not None and fact["updated_at"] != expected_updated_at:
+    raise OpenAuthorError("This Canon Fact changed since you opened it. Reload and review the current evidence before saving.")
+  if evidence is not None or disposition == "accepted":
+    fact["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
+  fact["status"] = disposition
+  fact["updated_at"] = utc_now()
+  _write_memory(paths, memory)
+  return fact
 
 
 def add_setup(
@@ -274,9 +316,48 @@ def _validity_range(fact: dict[str, Any], positions: dict[str, int]) -> tuple[in
   return start, end
 
 
+def resolve_fact_knowledge(fact: dict[str, Any], scene_ids: list[str], positions: dict[str, int]) -> list[dict[str, Any]]:
+  """Resolve author-recorded knowledge in current reading order, retaining tied claims."""
+  validity = fact.get("validity", {})
+  boundaries = [validity.get("from_scene_id", ""), validity.get("to_scene_id", "")]
+  if any(boundary and boundary not in positions for boundary in boundaries):
+    return []
+  first, last = _validity_range(fact, positions)
+  applicable = [scene_id for scene_id in dict.fromkeys(scene_ids) if scene_id in positions and first <= positions[scene_id] <= last]
+  rows = [row for row in fact.get("knowledge", []) if row.get("state") in {"knows", "believes", "does_not_know"}
+    and (not row.get("from_scene_id") or row["from_scene_id"] in positions)]
+  result = []
+  for row in rows:
+    start = positions.get(row.get("from_scene_id", ""), -1)
+    later = [positions[other["from_scene_id"]] for other in rows if other.get("character_entity_id") == row.get("character_entity_id")
+      and other.get("from_scene_id") in positions and positions[other["from_scene_id"]] > start]
+    end = min(later, default=10**9)
+    targets = [scene_id for scene_id in applicable if start <= positions[scene_id] < end]
+    if targets:
+      result.append({**row, "applies_to_scene_ids": targets})
+  return result
+
+
 def _diagnostic_id(code: str, refs: list[str]) -> str:
   digest = hashlib.sha256(f"{code}:{':'.join(sorted(refs))}".encode("utf-8")).hexdigest()[:16]
   return f"memory-diagnostic-{digest}"
+
+
+def _knowledge_mention(body: str, value: str, names: set[str]) -> re.Match[str] | None:
+  # Match original text so evidence offsets survive Unicode case changes.
+  pattern = (r"(?<!\w)" if value[0].isalnum() or value[0] == "_" else "") + re.escape(value)
+  pattern += r"(?!\w)" if value[-1].isalnum() or value[-1] == "_" else ""
+  subject = "|".join(re.escape(name) for name in names if name)
+  ignorance = re.compile(rf"(?<!\w)(?:{subject}|I|he|she|they)\s+(?:"
+    r"(?:did|does|do)\s+not\s+know|(?:didn|doesn|don)['’]t\s+know|"
+    r"(?:was|were|is|are)\s+unaware|(?:had|has|have)\s+no\s+idea|knew\s+nothing)\b", re.IGNORECASE)
+  for match in re.finditer(pattern, body, re.IGNORECASE):
+    # Suppress only explicit ignorance in this clause, not unrelated negation
+    # elsewhere in the sentence or later affirmative mentions of the same fact.
+    prefix = re.split(r"[.!?;\n]|\b(?:but|however|yet)\b", body[:match.start()], flags=re.IGNORECASE)[-1]
+    if not ignorance.search(prefix):
+      return match
+  return None
 
 
 def run_canon_diagnostics(
@@ -287,7 +368,25 @@ def run_canon_diagnostics(
   memory = _read_memory(paths)
   positions = _scene_positions(paths)
   facts = [row for row in memory["facts"] if row.get("status") == "accepted"]
-  diagnostics: list[dict[str, Any]] = []
+  scenes = list_scene_details(paths)
+  scene_bodies = {scene["id"]: scene["body"] for scene in scenes}
+  diagnostics = prose_trait_diagnostics(scenes, list_entities(paths))
+  source_records = [("Canon Fact", row, row["evidence"]) for row in facts]
+  source_records.extend(("Setup or payoff", row, [item for item in [row.get("setup_evidence"), row.get("payoff_evidence")] if item]) for row in memory["setups"])
+  source_records.extend(("Character Arc", row, [row["evidence"]]) for row in memory.get("arcs", []))
+  for kind, record, passages in source_records:
+    missing = [item for item in passages if not item.get("excerpt") or item["excerpt"] not in scene_bodies.get(item.get("scene_id"), "")]
+    if missing:
+      diagnostics.append({
+        "id": _diagnostic_id("stale_evidence", [record["id"]]),
+        "code": "stale_evidence",
+        "severity": "warning",
+        "title": "Source evidence needs review",
+        "message": f"{kind} evidence no longer appears in its cited scene, or was never an exact quote. Review the current prose before relying on this record. The author-owned record has not been changed.",
+        "fact_ids": [record["id"]] if kind == "Canon Fact" else [],
+        "scene_ids": list(dict.fromkeys(item["scene_id"] for item in missing)),
+        "evidence": missing,
+      })
   groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
   for fact in facts:
     groups[(fact.get("subject_entity_id", ""), fact["predicate"].casefold())].append(fact)
@@ -309,7 +408,8 @@ def run_canon_diagnostics(
         left_range = _validity_range(left, positions)
         right_range = _validity_range(right, positions)
         overlaps = max(left_range[0], right_range[0]) <= min(left_range[1], right_range[1])
-        if overlaps and left["value"].casefold() != right["value"].casefold():
+        exclusive = left["predicate"].casefold().strip() not in NONEXCLUSIVE_PREDICATES
+        if exclusive and overlaps and left["value"].casefold() != right["value"].casefold():
           diagnostics.append({
             "id": _diagnostic_id("conflicting_facts", [left["id"], right["id"]]),
             "code": "conflicting_facts",
@@ -354,8 +454,9 @@ def run_canon_diagnostics(
       })
 
   entities: dict[str, dict[str, Any]] = {}
+  scenes_by_id = {scene["id"]: scene for scene in scenes}
   for fact in facts:
-    for knowledge in fact.get("knowledge", []):
+    for knowledge in resolve_fact_knowledge(fact, list(positions), positions):
       if knowledge.get("state") != "does_not_know":
         continue
       character_id = knowledge["character_entity_id"]
@@ -363,25 +464,23 @@ def run_canon_diagnostics(
         entities[character_id] = get_entity(paths, character_id)
       character = entities[character_id]
       names = {character["name"].casefold(), *(str(alias).casefold() for alias in character.get("aliases", []))}
-      from_position = positions.get(knowledge.get("from_scene_id", ""), 0)
-      for scene_summary in list_scenes(paths):
-        if positions[scene_summary["id"]] < from_position:
-          continue
-        scene = get_scene(paths, scene_summary["id"])
+      for scene_id in knowledge["applies_to_scene_ids"]:
+        scene = scenes_by_id[scene_id]
         if scene.get("pov", "").casefold() not in names:
           continue
         value = fact["value"]
         body = scene.get("body", "")
-        if value.casefold() in body.casefold():
+        mention = _knowledge_mention(body, value, names)
+        if mention:
           diagnostics.append({
             "id": _diagnostic_id("pov_knowledge_leak", [fact["id"], character_id, scene["id"]]),
             "code": "pov_knowledge_leak",
             "severity": "warning",
             "title": "Possible POV knowledge leak",
-            "message": f"{character['name']} is marked as not knowing '{value}', but the fact appears in their POV scene.",
+            "message": f"{character['name']} is marked as not knowing '{value}', but this phrase appears in their POV scene. A mention alone does not prove they know it; review the narrative context.",
             "fact_ids": [fact["id"]],
             "scene_ids": [scene["id"]],
-            "evidence": [*fact["evidence"], {"scene_id": scene["id"], "excerpt": value, "start": body.casefold().find(value.casefold()), "end": body.casefold().find(value.casefold()) + len(value)}],
+            "evidence": [*fact["evidence"], {"scene_id": scene["id"], "excerpt": mention.group(), "start": mention.start(), "end": mention.end()}],
           })
 
   manuscript_length = len(positions)
@@ -412,6 +511,10 @@ def run_canon_diagnostics(
     ]
   return {
     "generated_at": utc_now(),
+    "coverage": {
+      "method": "Local, limited pattern checks plus author-recorded Canon, knowledge, setups and arcs.",
+      "limitations": ["Not a comprehensive plot, timeline, motivation or prose-quality analysis.", "Physical-detail warnings are unconfirmed observations, not Canon Facts.", "Knowledge checks match literal phrases and a limited set of English ignorance expressions; dialogue and paraphrases still require author review."],
+    },
     "affected_scene_ids": affected_scene_ids or [],
     "incremental": affected_scene_ids is not None,
     "diagnostics": diagnostics,

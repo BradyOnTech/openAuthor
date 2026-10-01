@@ -11,6 +11,13 @@ from openauthor.scenes import add_scene
 
 
 class ContinuityChecksTests(unittest.TestCase):
+  def test_pov_accepts_an_existing_character_alias(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Alias POV")
+      add_entity(paths, kind="character", name="Élodie Marchand", aliases=["Élodie"])
+      add_scene(paths, title="One", summary="Waiting", pov="Élodie", body="She walked through the empty station and waited by the door until morning.")
+      self.assertEqual(run_continuity_checks(paths), [])
+
   def test_continuity_checks_detect_expected_issues(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

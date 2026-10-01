@@ -9,6 +9,7 @@ from statistics import mean
 from typing import Any, Callable
 
 from .checks import run_continuity_checks
+from .canon import run_canon_diagnostics
 from .codex import ensure_codex, list_entities, replace_runtime_codex_from_snapshot
 from .generations import audit_generation_pins, list_generation_runs
 from .git_ops import get_branch_workspace_status, initialize_git, run_git
@@ -304,6 +305,10 @@ def collect_performance_baseline(
     lambda: run_continuity_checks(paths),
     repeat,
   )
+  story_analysis_samples, story_analysis = _timed_samples(
+    lambda: run_canon_diagnostics(paths),
+    repeat,
+  )
 
   return {
     "checked_at": utc_now(),
@@ -315,6 +320,7 @@ def collect_performance_baseline(
       "entities": len(project_workspace["entities"]),
       "search_results": len(search_rows),
       "continuity_issues": len(analysis_rows),
+      "story_continuity_issues": len(story_analysis["diagnostics"]),
     },
     "metrics": [
       _metric_row("scene_list", scene_samples),
@@ -326,6 +332,7 @@ def collect_performance_baseline(
       _metric_row("scene_save", scene_save_samples),
       _metric_row("project_search", project_search_samples),
       _metric_row("continuity_analysis", analysis_samples),
+      _metric_row("story_continuity_analysis", story_analysis_samples),
     ],
     "retrieval": retrieval_status,
   }

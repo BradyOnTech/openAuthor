@@ -7,6 +7,7 @@ from pathlib import Path
 
 from openauthor.hardening import collect_performance_baseline
 from openauthor.project import resolve_project
+from openauthor.scenes import list_scene_details
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,6 +42,8 @@ class ScaleFixtureTests(unittest.TestCase):
       self.assertEqual(report["counts"]["scenes"], 12)
       self.assertEqual(report["counts"]["proposals"], 8)
       self.assertEqual(report["counts"]["generation_runs"], 6)
+      self.assertGreaterEqual(sum(len(scene["body"].split()) for scene in list_scene_details(resolve_project(root))), 12 * 250)
+      self.assertEqual(report["counts"]["story_continuity_issues"], 1)
 
 
 if __name__ == "__main__":

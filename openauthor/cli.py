@@ -13,6 +13,9 @@ from .ai import (
   generate_proposal,
   generate_proposal_draft,
   regenerate_change_hunk,
+  preview_proposal_revision,
+  preview_proposal_generation,
+  preview_merge_resolution,
 )
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .backups import create_backup, restore_backup, verify_backup
@@ -32,6 +35,7 @@ from .chat import (
   list_chat_threads,
   rename_chat_thread,
   send_chat_message,
+  preview_chat_context,
   truncate_chat_messages,
   update_chat_thread,
 )
@@ -128,6 +132,7 @@ from .canon import (
   list_open_questions,
   list_setups,
   resolve_setup,
+  review_canon_fact,
   run_canon_diagnostics,
 )
 from .storylines import (
@@ -141,7 +146,7 @@ from .storylines import (
   switch_storyline,
   update_storyline_status,
 )
-from .style_profile import build_style_profile, get_style_profile
+from .style_profile import build_style_profile, get_style_profile, set_style_profile_reference
 from .product_signals import (
   get_local_product_dashboard,
   get_product_signal_settings,
@@ -177,10 +182,13 @@ def build_parser() -> argparse.ArgumentParser:
   manuscript_preview = manuscript_sub.add_parser("preview", help="Preview detected manuscript structure without writing scenes.")
   manuscript_preview.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
   manuscript_preview.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_preview.add_argument("--corrections", default="{}", help="JSON object mapping preview section IDs to role/title corrections.")
   manuscript_preview.add_argument("--json", action="store_true", help="Output JSON.")
   manuscript_import = manuscript_sub.add_parser("import", help="Import a previously reviewed manuscript structure.")
   manuscript_import.add_argument("--source", required=True, help="Markdown, TXT, DOCX, Scrivener, or folder source.")
   manuscript_import.add_argument("--strategy", choices=["auto", "files", "headings", "single"], default="auto")
+  manuscript_import.add_argument("--corrections", default="{}", help="Reviewed section role/title corrections as JSON.")
+  manuscript_import.add_argument("--expected-fingerprint", default=None, help="Refuse import if the reviewed source or corrections changed.")
   manuscript_import.add_argument("--json", action="store_true", help="Output JSON.")
   manuscript_export = manuscript_sub.add_parser("export", help="Export the manuscript with a loss report.")
   manuscript_export.add_argument("--format", choices=["markdown", "docx"], required=True)
@@ -271,6 +279,13 @@ def build_parser() -> argparse.ArgumentParser:
 
   proposal_parser = subparsers.add_parser("proposal", help="Manage AI proposal queue.")
   proposal_sub = proposal_parser.add_subparsers(dest="proposal_command", required=True)
+  for selection_action in ("selection-preview", "selection-generate"):
+    selection_parser = proposal_sub.add_parser(selection_action, help="Preview or generate a range-anchored selection edit.")
+    selection_parser.add_argument("--input-json", required=True, help="Selection range, action, provider and one-turn permissions.")
+    selection_parser.add_argument("--json", action="store_true")
+    if selection_action == "selection-generate":
+      selection_parser.add_argument("--expected-fingerprint", required=True)
+      selection_parser.add_argument("--request-id", required=True)
   proposal_add = proposal_sub.add_parser("add", help="Create proposal.")
   proposal_add.add_argument("--title", required=True, help="Proposal title.")
   proposal_add.add_argument("--instruction", required=True, help="Change instruction.")
@@ -305,6 +320,9 @@ def build_parser() -> argparse.ArgumentParser:
   )
   proposal_draft.add_argument("--id", required=True, help="Proposal id.")
   proposal_draft.add_argument("--request-id", default="", help="Reuse this id to recover the same draft delivery.")
+  proposal_draft.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
+  proposal_draft.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
+  proposal_draft.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -340,9 +358,20 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_hunk_regenerate.add_argument("--hunk", required=True, help="Change Hunk id.")
   proposal_hunk_regenerate.add_argument("--provider", choices=sorted(SUPPORTED_PROVIDERS), default="local")
   proposal_hunk_regenerate.add_argument("--model", default=None)
+  proposal_hunk_regenerate.add_argument("--temperature", type=float, default=0.3)
+  proposal_hunk_regenerate.add_argument("--max-output-tokens", type=int, default=700)
   proposal_hunk_regenerate.add_argument("--feedback", default="", help="Author feedback for this hunk revision.")
   proposal_hunk_regenerate.add_argument("--request-id", default="", help="Reuse this id to recover the same hunk regeneration.")
+  proposal_hunk_regenerate.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
+  proposal_hunk_regenerate.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
+  proposal_hunk_regenerate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
   proposal_hunk_regenerate.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_preview = proposal_sub.add_parser("revision-preview", help="Preview scene or passage revision context without contacting a provider.")
+  revision_preview.add_argument("--input-json", required=True, help="Revision parameters including proposal_id and optional hunk_id.")
+  revision_preview.add_argument("--json", action="store_true")
+  generation_preview = proposal_sub.add_parser("generation-preview", help="Review the exact edit-plan request locally before generation.")
+  generation_preview.add_argument("--input-json", required=True)
+  generation_preview.add_argument("--json", action="store_true")
   proposal_rebase = proposal_sub.add_parser("rebase", help="Carry safe Change Hunks onto the current scene.")
   proposal_rebase.add_argument("--id", required=True, help="Proposal id.")
   proposal_rebase.add_argument("--json", action="store_true", help="Output JSON.")
@@ -354,6 +383,9 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
   proposal_generate.add_argument("--request-id", default="", help="Reuse this id to recover the same proposal delivery.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
+  proposal_generate.add_argument("--memory-approvals", default="[]")
+  proposal_generate.add_argument("--story-approvals", default="[]")
+  proposal_generate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from generation-preview; required for external AI providers.")
   proposal_generate.add_argument("--title", default="", help="Optional proposal title override.")
   proposal_generate.add_argument(
     "--constraint",
@@ -560,6 +592,12 @@ def build_parser() -> argparse.ArgumentParser:
   memory_fact_list = memory_sub.add_parser("fact-list", help="List Canon Facts.")
   memory_fact_list.add_argument("--status", choices=["accepted", "suggested", "rejected"], default=None)
   memory_fact_list.add_argument("--json", action="store_true", help="Output JSON.")
+  memory_fact_review = memory_sub.add_parser("fact-review", help="Re-link current evidence or retire a Canon Fact without deleting its history.")
+  memory_fact_review.add_argument("--id", required=True)
+  memory_fact_review.add_argument("--disposition", choices=["accepted", "rejected"], required=True)
+  memory_fact_review.add_argument("--evidence-json", default=None)
+  memory_fact_review.add_argument("--expected-updated-at", default=None)
+  memory_fact_review.add_argument("--json", action="store_true", help="Output JSON.")
   memory_arc_add = memory_sub.add_parser("arc-add", help="Add an evidence-backed Character Arc State.")
   memory_arc_add.add_argument("--character", required=True)
   memory_arc_add.add_argument("--dimension", required=True)
@@ -662,7 +700,12 @@ def build_parser() -> argparse.ArgumentParser:
   style_get.add_argument("--json", action="store_true", help="Output JSON.")
   style_build = style_sub.add_parser("build", help="Rebuild from selected exemplar scenes.")
   style_build.add_argument("--scene", action="append", required=True, dest="scene_ids")
+  style_build.add_argument("--expected-fingerprint")
   style_build.add_argument("--json", action="store_true", help="Output JSON.")
+  style_reference = style_sub.add_parser("reference", help="Choose current sources or deliberately retain frozen measurements.")
+  style_reference.add_argument("--mode", choices=["current", "frozen"], required=True)
+  style_reference.add_argument("--expected-fingerprint", required=True)
+  style_reference.add_argument("--json", action="store_true", help="Output JSON.")
 
   snapshot_parser = subparsers.add_parser("snapshot", help="Git-backed snapshot workflow.")
   snapshot_sub = snapshot_parser.add_subparsers(dest="snapshot_command", required=True)
@@ -716,6 +759,9 @@ def build_parser() -> argparse.ArgumentParser:
   branch_conflicts.add_argument("--base", required=True, help="Base branch/ref.")
   branch_conflicts.add_argument("--head", required=True, help="Head branch/ref.")
   branch_conflicts.add_argument("--json", action="store_true", help="Output JSON.")
+  merge_preview = branch_sub.add_parser("resolve-preview", help="Review reconciliation context locally before contacting a provider.")
+  merge_preview.add_argument("--input-json", required=True)
+  merge_preview.add_argument("--json", action="store_true")
   branch_resolve = branch_sub.add_parser(
     "resolve",
     help="Draft an AI-reconciled version of a conflicted scene as a proposal.",
@@ -733,6 +779,9 @@ def build_parser() -> argparse.ArgumentParser:
   )
   branch_resolve.add_argument("--model", default=None, help="Model override.")
   branch_resolve.add_argument("--request-id", default="", help="Reuse this id to recover the same reconciliation.")
+  branch_resolve.add_argument("--memory-approvals", default="[]")
+  branch_resolve.add_argument("--story-approvals", default="[]")
+  branch_resolve.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from resolve-preview; required for external AI providers.")
   branch_resolve.add_argument(
     "--temperature", type=float, default=0.3, help="Sampling temperature (default: 0.3)."
   )
@@ -1099,6 +1148,11 @@ def build_parser() -> argparse.ArgumentParser:
     default=None,
   )
   chat_send.add_argument("--json", action="store_true", help="Output JSON.")
+  chat_send.add_argument("--memory-approvals", default="[]", help="JSON array of one-time Ask first permissions (entity_id and optional detail_key).")
+  chat_send.add_argument("--story-approvals", default="[]", help="JSON array of Canon Fact or relationship ids approved for this request only.")
+  chat_send.add_argument("--expected-context-fingerprint", default="", help="Require the context reviewed with chat context.")
+  chat_context = chat_sub.add_parser("context", parents=[chat_send], add_help=False, help="Preview the exact initial AI context without contacting a provider.")
+  chat_context.add_argument("--history-before-message-id", default="", help="Preview a replacement for an earlier message.")
 
   chat_message = chat_sub.add_parser("message", help="Manage chat messages.")
   chat_message_sub = chat_message.add_subparsers(dest="chat_message_command", required=True)
@@ -1313,8 +1367,14 @@ def _run(args: argparse.Namespace) -> int:
       print(json.dumps(row, indent=2))
     return 0
 
+  if args.command == "manuscript" and args.manuscript_command in {"preview", "import"}:
+    try:
+      import_corrections = json.loads(args.corrections)
+    except json.JSONDecodeError as error:
+      raise OpenAuthorError(f"Invalid import corrections JSON: {error}") from error
+
   if args.command == "manuscript" and args.manuscript_command == "preview":
-    row = preview_manuscript_import(Path(args.source), strategy=args.strategy)
+    row = preview_manuscript_import(Path(args.source), strategy=args.strategy, corrections=import_corrections)
     if args.json:
       print(json.dumps(row))
     else:
@@ -1369,7 +1429,7 @@ def _run(args: argparse.Namespace) -> int:
 
   if args.command == "manuscript":
     if args.manuscript_command == "import":
-      row = import_manuscript(paths, Path(args.source), strategy=args.strategy)
+      row = import_manuscript(paths, Path(args.source), strategy=args.strategy, corrections=import_corrections, expected_fingerprint=args.expected_fingerprint)
     elif args.manuscript_command == "export":
       row = export_manuscript(paths, Path(args.target), format=args.format)
     else:
@@ -1469,6 +1529,10 @@ def _run(args: argparse.Namespace) -> int:
       )
     elif args.memory_command == "fact-list":
       row = list_canon_facts(paths, status=args.status)
+    elif args.memory_command == "fact-review":
+      row = review_canon_fact(paths, args.id, disposition=args.disposition,
+        evidence=json.loads(args.evidence_json) if args.evidence_json is not None else None,
+        expected_updated_at=args.expected_updated_at)
     elif args.memory_command == "arc-add":
       row = add_arc_state(paths, character_entity_id=args.character, dimension=args.dimension, value=args.value, scene_id=args.scene, excerpt=args.excerpt, state_type=args.state_type)
     elif args.memory_command == "arc-list":
@@ -1566,7 +1630,9 @@ def _run(args: argparse.Namespace) -> int:
     if args.style_command == "get":
       row = get_style_profile(paths)
     elif args.style_command == "build":
-      row = build_style_profile(paths, scene_ids=args.scene_ids)
+      row = build_style_profile(paths, scene_ids=args.scene_ids, expected_fingerprint=args.expected_fingerprint)
+    elif args.style_command == "reference":
+      row = set_style_profile_reference(paths, mode=args.mode, expected_fingerprint=args.expected_fingerprint)
     else:
       raise OpenAuthorError(f"Unsupported Style Profile command: {args.style_command}")
     if args.json:
@@ -1725,6 +1791,17 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
   if args.command == "proposal":
+    if args.proposal_command in {"selection-preview", "selection-generate"}:
+      from .selection_editing import preview_selection, generate_selection
+      try:
+        selection_args = json.loads(args.input_json)
+        if not isinstance(selection_args, dict):
+          raise ValueError("Expected an object")
+        row = (preview_selection(paths, **selection_args) if args.proposal_command == "selection-preview" else generate_selection(paths, **selection_args, expected_fingerprint=args.expected_fingerprint, request_id=args.request_id))
+      except (TypeError, ValueError) as error:
+        raise OpenAuthorError(f"Invalid selection input: {error}") from error
+      print(json.dumps(row))
+      return 0
     if args.proposal_command == "add":
       proposal_id = create_proposal(
         paths,
@@ -1790,7 +1867,24 @@ def _run(args: argparse.Namespace) -> int:
         print(f"Edited {args.hunk}")
       return 0
 
+    if args.proposal_command in {"revision-preview", "generation-preview"}:
+      try:
+        inputs = json.loads(args.input_json)
+        if not isinstance(inputs, dict):
+          raise ValueError("Revision parameters must be an object.")
+        preview = preview_proposal_revision if args.proposal_command == "revision-preview" else preview_proposal_generation
+        row = preview(paths, **inputs)
+      except (ValueError, TypeError) as error:
+        raise OpenAuthorError(f"Invalid revision preview: {error}") from error
+      print(json.dumps(row, indent=None if args.json else 2))
+      return 0
+
     if args.proposal_command == "hunk-regenerate":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = regenerate_change_hunk(
         paths,
         request_id=args.request_id,
@@ -1798,7 +1892,12 @@ def _run(args: argparse.Namespace) -> int:
         hunk_id=args.hunk,
         provider=args.provider,
         model=args.model,
+        temperature=args.temperature,
+        max_output_tokens=args.max_output_tokens,
         feedback=args.feedback,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -1823,6 +1922,11 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.proposal_command == "draft":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_proposal_draft(
         paths,
         request_id=args.request_id,
@@ -1831,6 +1935,9 @@ def _run(args: argparse.Namespace) -> int:
         model=args.model,
         temperature=args.temperature,
         max_output_tokens=args.max_output_tokens,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -1856,6 +1963,11 @@ def _run(args: argparse.Namespace) -> int:
       return 0
 
     if args.proposal_command == "generate":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_proposal(
         paths,
         request_id=args.request_id,
@@ -1875,6 +1987,9 @@ def _run(args: argparse.Namespace) -> int:
         constraints=args.constraint,
         protected_elements=args.protect,
         change_group_id=args.change_group,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -2047,7 +2162,23 @@ def _run(args: argparse.Namespace) -> int:
         print(f"auto\t{path}")
       return 0
 
+    if args.branch_command == "resolve-preview":
+      try:
+        inputs = json.loads(args.input_json)
+        if not isinstance(inputs, dict):
+          raise ValueError("Reconciliation parameters must be an object.")
+        row = preview_merge_resolution(paths, **inputs)
+      except (ValueError, TypeError) as error:
+        raise OpenAuthorError(f"Invalid reconciliation preview: {error}") from error
+      print(json.dumps(row, indent=None if args.json else 2))
+      return 0
+
     if args.branch_command == "resolve":
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
       row = generate_merge_resolution(
         paths,
         request_id=args.request_id,
@@ -2058,6 +2189,9 @@ def _run(args: argparse.Namespace) -> int:
         model=args.model,
         temperature=args.temperature,
         max_output_tokens=args.max_output_tokens,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
+        expected_context_fingerprint=args.expected_context_fingerprint,
       )
       if args.json:
         print(json.dumps(row))
@@ -2250,11 +2384,23 @@ def _run(args: argparse.Namespace) -> int:
         f"Unsupported chat thread command: {args.chat_thread_command}"
       )
 
-    if args.chat_command == "send":
+    if args.chat_command in {"send", "context"}:
       context_overrides = _chat_context_overrides(args)
-      row = send_chat_message(
+      try:
+        memory_approvals = json.loads(args.memory_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Memory permissions must be a valid JSON array.") from error
+      try:
+        story_approvals = json.loads(args.story_approvals)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Story permissions must be a valid JSON array.") from error
+      operation = send_chat_message if args.chat_command == "send" else preview_chat_context
+      extra = {"request_id": args.request_id, "expected_context_fingerprint": args.expected_context_fingerprint} if args.chat_command == "send" else {"history_before_message_id": args.history_before_message_id}
+      row = operation(
         paths,
-        request_id=args.request_id,
+        **extra,
+        memory_approvals=memory_approvals,
+        story_approvals=story_approvals,
         thread_id=args.thread,
         message=args.message,
         current_scene_id=args.current_scene,
@@ -2263,6 +2409,9 @@ def _run(args: argparse.Namespace) -> int:
         codex_ids=args.codex_id or [],
         context_overrides=context_overrides if context_overrides else None,
       )
+      if args.chat_command == "context":
+        print(json.dumps(row, indent=None if args.json else 2))
+        return 0
       if args.json:
         print(json.dumps(row))
         return 0
@@ -2567,10 +2716,11 @@ def main(argv: list[str] | None = None) -> int:
   args = parser.parse_args(argv)
   try:
     author_edits = {
+      "style": {"build", "reference"},
       "scene": {"add", "update"},
       "plan": {"brief", "act-add", "chapter-add", "scene-assign", "scene-meta", "beat-add", "note-add"},
       "codex": {"add", "update", "relationship-add", "relationship-delete"},
-      "memory": {"review", "correct", "suggest", "fact-add", "arc-add", "setup-add", "setup-payoff", "question-add", "dispose"},
+      "memory": {"review", "correct", "suggest", "fact-add", "fact-review", "arc-add", "setup-add", "setup-payoff", "question-add", "dispose"},
     }
     action = getattr(args, f"{args.command}_command", "")
     if action in author_edits.get(args.command, set()):

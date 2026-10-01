@@ -901,6 +901,45 @@ body {
   position: relative;
 }
 
+.selection-assist {
+  flex: 0 0 auto;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+.selection-assist__toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.selection-assist button, .selection-assist input:not([type="checkbox"]), .selection-assist select, .selection-assist summary,
+.selection-review ~ .review-card__actions button { min-height: 40px; }
+.selection-assist__panel { max-height: 48vh; overflow: auto; display: grid; gap: 12px; padding: 12px 0; }
+.selection-assist label { display: grid; gap: 6px; }
+.selection-assist fieldset label { display: flex; align-items: center; min-height: 40px; }
+.selection-assist__preview { display: grid; gap: 8px; font-variant-numeric: tabular-nums; }
+.selection-assist blockquote, .selection-assist pre, .selection-review blockquote { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.selection-assist blockquote { max-height: 120px; overflow: auto; font-family: var(--font-prose); }
+.selection-assist pre { font-size: var(--text-xs); }
+.selection-assist p, .selection-review p { text-wrap: pretty; line-height: 1.5; }
+.story-context-choices { border: 0; margin: 0; padding: 0; min-width: 0; }
+.story-context-choices legend { font-weight: 600; }
+.story-context-choices__list { max-height: 320px; overflow-y: auto; }
+.story-context-choices__entry + .story-context-choices__entry { border-top: 1px solid var(--border-subtle); }
+.story-context-choices label { display: flex; align-items: center; gap: 8px; min-height: 40px; overflow-wrap: anywhere; }
+.story-context-choices input { flex-shrink: 0; }
+.story-context-choices__entry p { margin: 0 0 12px 24px; color: var(--text-secondary); }
+.selection-review__comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
+.selection-review h3 { text-wrap: balance; }
+.revision-context-review { background: var(--bg-surface); color: var(--text-primary); padding: 16px; display: grid; gap: 12px; }
+.revision-context-review h3 { text-wrap: balance; }
+.revision-context-review p { line-height: 1.5; text-wrap: pretty; }
+.revision-context-review fieldset { border: 0; min-width: 0; padding: 0; }
+.revision-context-review label { display: flex; gap: 8px; align-items: center; min-height: 40px; overflow-wrap: anywhere; }
+.revision-context-review button, .revision-context-review summary { min-height: 40px; }
+.revision-context-review footer { display: flex; flex-wrap: wrap; gap: 8px; }
+.revision-context-review__count { font-variant-numeric: tabular-nums; }
+.revision-context-review pre, .revision-context-review__feedback { white-space: pre-wrap; overflow-wrap: anywhere; }
+.revision-context-review pre { max-height: 280px; overflow: auto; }
 .scene-editor__content {
   max-width: var(--editor-max-width);
   margin: 0 auto;
@@ -3209,3 +3248,47 @@ button.status-bar__item {
     right: 0;
   }
 }
+/* Context review is a bounded panel, with enough room for keyboard and touch targets. */
+.chat-context-review {
+  padding: var(--space-4);
+  overflow-y: auto;
+  max-height: 70vh;
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--border-default);
+}
+.chat-context-review header, .chat-context-review footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.chat-context-review h3, .chat-context-review h4 { text-wrap: balance; margin: 12px 0 8px; }
+.chat-context-review p { margin: 8px 0; text-wrap: pretty; }
+.chat-context-review__prompt { white-space: pre-wrap; }
+.chat-context-review__count { font-variant-numeric: tabular-nums; }
+.chat-context-review fieldset { border: 0; padding: 0; margin: 0; }
+.chat-context-review label { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.chat-context-review__detail { padding-left: 20px; }
+.chat-context-review button, .chat-context-review summary { min-height: 40px; }
+.chat-context-review summary { display: list-item; padding-top: 10px; cursor: pointer; }
+.chat-context-review pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow-y: auto; }
+.chat-context-review footer { margin-top: 12px; }
+.import-structure-review { padding: 12px; border-radius: 16px; box-shadow: 0 0 0 1px var(--border-subtle); font-size: var(--text-sm); }
+.import-structure-review p, .import-structure-review li { text-wrap: pretty; overflow-wrap: anywhere; }
+.import-structure-review__summary { font-variant-numeric: tabular-nums; }
+.import-structure-review__sections { max-height: 320px; overflow-y: auto; }
+.import-structure-review__section { padding: 12px 0; border-top: 1px solid var(--border-subtle); }
+.import-structure-review__fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.import-structure-review__fields label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 150px; min-width: 0; }
+.import-structure-review input, .import-structure-review select, .import-structure-review summary { min-height: 40px; }
+.import-structure-review summary { cursor: pointer; align-content: center; }
+.memory-suggestion-review button { min-height: 40px; }
+.memory-suggestion-review p { text-wrap: pretty; }
+.memory-suggestion-review strong { overflow-wrap: anywhere; }
+.canon-fact-review { margin-top: 8px; font-size: var(--text-sm); }
+.canon-fact-review summary { min-height: 40px; padding-top: 10px; cursor: pointer; overflow-wrap: anywhere; }
+.canon-fact-review p { color: var(--text-secondary); line-height: 1.5; text-wrap: pretty; }
+.canon-fact-review label { display: grid; gap: 4px; }
+.canon-fact-review button, .canon-fact-review select, .canon-fact-review textarea { min-height: 40px; }
+.canon-memory-editor button, .canon-memory-editor input, .canon-memory-editor select { min-height: 40px; }
