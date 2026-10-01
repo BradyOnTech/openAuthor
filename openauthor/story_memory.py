@@ -24,6 +24,8 @@ NAME_TITLES = {
   "general", "inspector", "king", "lady", "lord", "prince", "princess",
   "professor", "queen", "sir",
 }
+SENTENCE_TRANSITIONS = {"meanwhile", "however", "nevertheless", "therefore", "afterward", "finally", "suddenly", "instead"}
+SPATIAL_OPENERS = {"beyond", "beneath", "above", "across", "behind", "beside", "between", "inside", "outside", "through", "under"}
 RELATION_PATTERNS = {
   "trusts": r"trusts?",
   "distrusts": r"(?:distrusts?|does\s+not\s+trust)",
@@ -72,6 +74,16 @@ def _proper_name_mentions(body: str):
   while index < len(words):
     first = words[index]
     if not capitalized(first[0]):
+      index += 1
+      continue
+    # Capitalization alone is not evidence of a person. Suppress grammatical
+    # openers without banning the same spelling when it is used as a name.
+    following = words[index + 1] if index + 1 < len(words) else None
+    separator = body[first[2]:following[1]] if following else body[first[2]:]
+    transition = first[0].casefold() in SENTENCE_TRANSITIONS and separator.lstrip().startswith(",")
+    spatial = (first[0].casefold() in SPATIAL_OPENERS and following is not None
+      and separator.isspace() and following[0].casefold() in {"the", "a", "an", "his", "her", "their", "our", "my", "this", "that"})
+    if transition or spatial:
       index += 1
       continue
     end_index = index

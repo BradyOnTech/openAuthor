@@ -18,6 +18,16 @@ from openauthor.story_memory import (
 
 
 class StoryMemorySuggestionTests(unittest.TestCase):
+  def test_sentence_openers_do_not_become_characters_but_can_still_be_names(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Editorial precision")
+      add_scene(paths, title="Gate", body="Beyond the gate, Mara waited. Beyond the river, Mara listened. Meanwhile, the clock stopped. Meanwhile, the bell rang.")
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      self.assertEqual([row["name"] for row in rows], ["Mara"])
+      add_scene(paths, title="Names", body="Beyond waited. Beyond listened. Meanwhile spoke. Meanwhile returned.")
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      self.assertEqual({row["name"] for row in rows}, {"Mara", "Beyond", "Meanwhile"})
+
   def test_single_scene_refresh_keeps_manuscript_wide_character_identity(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Stable Incremental Identity")
