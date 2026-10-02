@@ -13,6 +13,7 @@ BOOTSTRAP = """
 create role anon nologin;
 create role authenticated nologin;
 create role supabase_auth_admin nologin;
+create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (
   id uuid primary key, instance_id uuid, aud text, role text, email text,
@@ -86,6 +87,17 @@ def main() -> None:
       run(psql + ["-f", str(root / "supabase/tests/realtime_rate_limit_fixtures.sql")], stdout=subprocess.DEVNULL)
       run(psql + ["-f", str(root / "supabase/tests/mobile_active_authority.sql")], stdout=subprocess.DEVNULL)
       print("Live Auth-session, workspace, project and key authority SQL checks passed.", flush=True)
+      for name, migration in (
+        ("mobile_recovery_snapshot.sql", "20261002150000_mobile_recovery_snapshot.sql"),
+        ("mobile_project_deletion.sql", "20261002160000_mobile_project_deletion.sql"),
+      ):
+        if args.migration_through and args.migration_through < migration:
+          continue
+        run(psql + ["-f", str(root / "supabase/tests" / name)], stdout=subprocess.DEVNULL)
+        print(f"{name}: real PostgreSQL checks passed.", flush=True)
+      if not args.migration_through or args.migration_through >= "20261002160000_mobile_project_deletion.sql":
+        run(["python3", str(root / "scripts/verify_project_deletion_concurrency.py"),
+          "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
       if args.sql_only:
         return
       environment = {**os.environ, "OPENAUTHOR_TEST_PG_SOCKET": str(socket), "OPENAUTHOR_TEST_PG_DATA": str(data), "OPENAUTHOR_TEST_PG_BIN": str(args.pg_bin)}
