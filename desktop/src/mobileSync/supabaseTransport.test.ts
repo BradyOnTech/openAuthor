@@ -73,6 +73,26 @@ async function snapshotFixture(): Promise<EncryptedMobileSnapshot> {
   };
 }
 
+function publicationRow(snapshot: EncryptedMobileSnapshot) {
+  return {
+    snapshot_id: snapshot.snapshot_id, project_id: snapshot.manifest.project_id,
+    project_revision: snapshot.manifest.revision, key_version: snapshot.key_version, schema_version: snapshot.schema_version,
+    object_bucket: snapshot.object.bucket, object_path: snapshot.object.path,
+    object_byte_length: snapshot.object.byte_length, object_sha256: snapshot.object.sha256,
+    manifest_algorithm: "aes-256-gcm-v1", manifest_nonce: bytea(base64ToBytes(snapshot.hosted_manifest.nonce_base64)),
+    manifest_ciphertext: bytea(base64ToBytes(snapshot.hosted_manifest.ciphertext_base64)),
+    manifest_ciphertext_sha256: snapshot.hosted_manifest.ciphertext_sha256,
+    created_by_device_id: "40000000-0000-4000-8000-000000000001",
+  };
+}
+
+function publicationTransport(fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) {
+  return new SupabaseMobileSyncTransport({
+    supabaseUrl: "https://example.supabase.co", publishableKey: "public", userAccessToken: "synthetic-session",
+    deviceId: "40000000-0000-4000-8000-000000000001", fetch,
+  });
+}
+
 describe("SupabaseMobileSyncTransport", () => {
   it("refreshes authorization for each RPC and stops before fetch when identity verification fails", async () => {
     let token = "first";
@@ -359,7 +379,7 @@ describe("SupabaseMobileSyncTransport", () => {
       if (url.includes("/storage/v1/object/")) {
         return new Response(JSON.stringify({ Key: snapshot.object.path }), { status: 200 });
       }
-      return new Response(JSON.stringify({ snapshot_id: snapshot.snapshot_id }), {
+      return new Response(JSON.stringify(publicationRow(snapshot)), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
@@ -428,7 +448,60 @@ describe("SupabaseMobileSyncTransport", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("deletes the uploaded object when snapshot metadata publication fails", async () => {
+  it("preserves committed snapshot ciphertext when the publication reply is lost", async () => {
+    const snapshot = await snapshotFixture();
+    let storedCiphertext: string | null = null;
+    let published = false;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) {
+        if (init?.method === "DELETE") storedCiphertext = null;
+        else storedCiphertext = String(init?.body);
+        return new Response("{}", { status: 200 });
+      }
+      if (url.endsWith("/mobile_publish_snapshot")) {
+        published = true;
+        throw new TypeError("Reply lost after metadata commit");
+      }
+      return new Response("[]", { status: 200 });
+    });
+    const transport = new SupabaseMobileSyncTransport({
+      supabaseUrl: "https://example.supabase.co", publishableKey: "public", userAccessToken: "synthetic-session",
+      deviceId: "40000000-0000-4000-8000-000000000001", fetch: fetchMock,
+    });
+    await transport.publishSnapshot(snapshot).catch(() => {});
+    expect(published).toBe(true);
+    expect(storedCiphertext).toBe(snapshot.ciphertext_base64);
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "DELETE")).toHaveLength(0);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/mobile_publish_snapshot"))).toHaveLength(1);
+  });
+
+  it("acknowledges an exact one-row PostgREST publication array without extra readback", async () => {
+    const snapshot = await snapshotFixture();
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify([publicationRow(snapshot)]), { status: 200 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/mobile_list_snapshot_manifests"))).toBe(false);
+  });
+
+  it.each(["empty", "multiple", "malformed", "nested"])("does not acknowledge a %s successful publication array without positive readback", async (shape) => {
+    const snapshot = await snapshotFixture();
+    const row = publicationRow(snapshot);
+    const result = shape === "empty" ? [] : shape === "multiple" ? [row, row] : shape === "malformed" ? [null] : [[row]];
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify(url.endsWith("/mobile_publish_snapshot") ? result : []), { status: 200 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).rejects.toThrow(/published state is unconfirmed.*retained/i);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("retains ciphertext after an explicitly rejected publication request without claiming publication failed", async () => {
     const snapshot = await snapshotFixture();
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === "POST" && String(_input).includes("/storage/v1/object/")) {
@@ -437,6 +510,7 @@ describe("SupabaseMobileSyncTransport", () => {
       if (init?.method === "DELETE") {
         return new Response("", { status: 200 });
       }
+      if (String(_input).endsWith("/mobile_list_snapshot_manifests")) return new Response("[]", { status: 200 });
       return new Response('{"message":"not authorized"}', { status: 403 });
     });
     const transport = new SupabaseMobileSyncTransport({
@@ -448,21 +522,117 @@ describe("SupabaseMobileSyncTransport", () => {
     });
 
     await expect(transport.publishSnapshot(snapshot)).rejects.toThrow(
-      "Supabase mobile sync RPC failed (403)."
+      /request was rejected.*published state is unconfirmed.*retained/i
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    const [deleteUrl, deleteInit] = fetchMock.mock.calls[2];
-    expect(deleteUrl).toBe(
-      `https://example.supabase.co/storage/v1/object/mobile-encrypted-sync/${snapshot.object.path}`
-    );
-    expect(deleteInit).toMatchObject({
-      method: "DELETE",
-      headers: {
-        apikey: "publishable-key",
-        Authorization: "Bearer user-access-token",
-      },
-    });
+    expect(String(fetchMock.mock.calls[2][0])).toContain("mobile_list_snapshot_manifests");
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("not authorized");
+  });
+
+  it.each(["lost reply", "invalid successful JSON", "incomplete successful row", "server error"])("acknowledges an exact committed readback after %s, without republishing", async (outcome) => {
+    const snapshot = await snapshotFixture();
+    const stored = publicationRow(snapshot);
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      if (url.endsWith("/mobile_list_snapshot_manifests")) return new Response(JSON.stringify([stored]), { status: 200 });
+      if (outcome === "lost reply") throw new TypeError("Reply lost after commit");
+      if (outcome === "invalid successful JSON") return new Response("unreadable", { status: 200 });
+      if (outcome === "incomplete successful row") return new Response(JSON.stringify({ snapshot_id: snapshot.snapshot_id }), { status: 200 });
+      return new Response("server failed after commit", { status: 500 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).resolves.toBeUndefined();
+    expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/mobile_publish_snapshot"))).toHaveLength(1);
+    expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/mobile_list_snapshot_manifests"))).toHaveLength(1);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it.each(["missing", "unavailable", "malformed"])("retains ciphertext when an uncertain publication has %s readback", async (readback) => {
+    const snapshot = await snapshotFixture();
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      if (url.endsWith("/mobile_publish_snapshot")) return new Response("upstream-error-with-secret", { status: 500 });
+      if (readback === "unavailable") throw new TypeError("readback-auth-secret");
+      return new Response(readback === "missing" ? "[]" : '{"snapshot_id":"wrong-shape"}', { status: 200 });
+    });
+    const pending = publicationTransport(fetch).publishSnapshot(snapshot);
+    await expect(pending).rejects.toThrow(/published state is unconfirmed.*retained.*no automatic retry/i);
+    await expect(pending).rejects.not.toThrow(/secret|upstream-error|readback-auth/);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it.each(["unavailable", "wrong snapshot", "malformed", "duplicate identity"])("retains ciphertext after a lost successful body and %s readback", async (outcome) => {
+    const snapshot = await snapshotFixture();
+    const stored = publicationRow(snapshot);
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      if (url.endsWith("/mobile_publish_snapshot")) return new Response("incomplete-body", { status: 200 });
+      if (outcome === "unavailable") throw new TypeError("Network lost during readback");
+      if (outcome === "wrong snapshot") return new Response(JSON.stringify([{ ...stored, snapshot_id: "50000000-0000-4000-8000-000000000002" }]), { status: 200 });
+      return new Response(JSON.stringify(outcome === "duplicate identity" ? [stored, stored] : [null]), { status: 200 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).rejects.toThrow(/published state is unconfirmed.*retained/i);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/mobile_publish_snapshot"))).toHaveLength(1);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it.each(["project_id", "project_revision", "key_version", "schema_version", "object_bucket", "object_path", "object_byte_length", "object_sha256", "manifest_algorithm", "manifest_nonce", "manifest_ciphertext", "manifest_ciphertext_sha256", "created_by_device_id"])("refuses to acknowledge a colliding committed snapshot with different %s", async (field) => {
+    const snapshot = await snapshotFixture();
+    const stored: Record<string, unknown> = publicationRow(snapshot);
+    stored[field] = typeof stored[field] === "number" ? Number(stored[field]) + 1 : "different";
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes("/storage/v1/object/")) return new Response("{}", { status: 200 });
+      if (String(input).endsWith("/mobile_publish_snapshot")) return new Response("conflict", { status: 409 });
+      return new Response(JSON.stringify([stored]), { status: 200 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).rejects.toThrow(/conflicting.*identity.*retained/i);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("preserves ciphertext when a 403 and missing readback race another publisher's delayed commit", async () => {
+    const snapshot = await snapshotFixture();
+    let objectPresent = false;
+    let commitConcurrent!: () => void;
+    let stored: ReturnType<typeof publicationRow> | null = null;
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/storage/v1/object/")) {
+        objectPresent = init?.method !== "DELETE";
+        return new Response("{}", { status: 200 });
+      }
+      if (url.endsWith("/mobile_publish_snapshot")) {
+        commitConcurrent = () => { stored = publicationRow(snapshot); };
+        return new Response("forbidden", { status: 403 });
+      }
+      return new Response(JSON.stringify(stored ? [stored] : []), { status: 200 });
+    });
+    await expect(publicationTransport(fetch).publishSnapshot(snapshot)).rejects.toThrow(/request was rejected.*published state is unconfirmed/i);
+    commitConcurrent();
+    expect(stored).not.toBeNull();
+    expect(objectPresent).toBe(true);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it.each(["exact", "collision", "missing"])("treats an existing storage object as %s only through positive publication readback", async (state) => {
+    const snapshot = await snapshotFixture();
+    const stored = publicationRow(snapshot);
+    if (state === "collision") stored.object_sha256 = "c".repeat(64);
+    const fetch = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes("/storage/v1/object/")) return new Response("already exists", { status: 409 });
+      return new Response(JSON.stringify(state === "missing" ? [] : [stored]), { status: 200 });
+    });
+    const pending = publicationTransport(fetch).publishSnapshot(snapshot);
+    if (state === "exact") await expect(pending).resolves.toBeUndefined();
+    else await expect(pending).rejects.toThrow(/conflicting|unconfirmed/i);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/mobile_publish_snapshot"))).toHaveLength(0);
+    expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
   });
 });

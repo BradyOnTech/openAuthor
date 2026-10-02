@@ -26,7 +26,7 @@ export interface RateLimitDecision {
 }
 
 export interface SessionRateLimiter {
-  consume(key: string, nowMs: number): RateLimitDecision;
+  consume(key: string, nowMs: number, request: SessionAuthorizationRequest): RateLimitDecision | Promise<RateLimitDecision>;
 }
 
 export interface RealtimeTool {

@@ -5,6 +5,37 @@ on:
   pull_request:
 
 jobs:
+  shared-gateway-quota:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: "npm"
+          cache-dependency-path: gateway/package-lock.json
+      - name: Install isolated gateway and PostgreSQL dependencies
+        run: |
+          npm ci --prefix gateway
+          brew install postgresql@17
+      - name: Verify shared quotas with real local PostgreSQL and HTTP adapters
+        shell: bash
+        run: |
+          mkdir -p gateway/test-results
+          python scripts/verify_shared_gateway_limiter.py --pg-bin "$(brew --prefix postgresql@17)/bin" 2>&1 | tee gateway/test-results/shared-quota.txt
+      - name: Preserve shared quota evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-gateway-quota-evidence
+          path: gateway/test-results/shared-quota.txt
+          if-no-files-found: error
+
   full-gates:
     runs-on: macos-latest
     steps:

@@ -25,7 +25,6 @@ export interface GatewayConfig {
   rateLimit: {
     limit: number;
     windowMs: number;
-    maxKeys: number;
   };
   policy: GatewayPolicy;
 }
@@ -258,7 +257,6 @@ export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfi
         1_000,
         86_400_000,
       ),
-      maxKeys: boundedInteger(environment, "GATEWAY_RATE_MAX_KEYS", 10_000, 100, 1_000_000),
     },
     policy: {
       allowedOrigins: allowedOrigins(environment),

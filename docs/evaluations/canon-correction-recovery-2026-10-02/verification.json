@@ -1,0 +1,96 @@
+{
+  "evaluation": "Canon assertion correction recovery",
+  "date": "2026-10-02",
+  "scope": "Authored synthetic fixture in a disposable book; no live provider or private author data",
+  "diagnosis": {
+    "confirmed_cause": "Correction and loaded baseline existed only in component-local state; no durable journal",
+    "red_command": "cd desktop && npx vitest run src/components/editor/CanonFactCard.recovery.test.tsx",
+    "red_assertions": [
+      "expected green, received blue after unmount/recreate",
+      "original editVersion journal absent"
+    ],
+    "record": "red.txt"
+  },
+  "verification": {
+    "focused": {
+      "command": "cd desktop && npx vitest run src/components/editor/CanonFactCard.recovery.test.tsx src/components/editor/CanonFactCard.test.tsx src/recoverableDraft.test.ts",
+      "passed": 25,
+      "files": 3,
+      "record": "focused.txt"
+    },
+    "typecheck": {
+      "command": "cd desktop && npx tsc --noEmit",
+      "exit_code": 0
+    },
+    "browser": {
+      "command": "OPENAUTHOR_BROWSER_EXECUTABLE=~/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell npx playwright test e2e/canon-correction-recovery.spec.ts",
+      "passed": 1,
+      "duration_seconds": 12.3,
+      "real_python_core": true,
+      "record": "browser.txt"
+    }
+  },
+  "covered_boundaries": [
+    "all editable assertion fields",
+    "immediate durable write with original editVersion",
+    "navigation/unmount and persisted reload",
+    "book, actual Storyline and fact isolation",
+    "stale recovered save refused until explicit review",
+    "explicit cancel/discard and successful journal cleanup",
+    "failed save retention",
+    "newer reopened edits preserved after delayed completion",
+    "late completion cannot update another scoped editor",
+    "unreadable recovery record retained",
+    "storage failure warning and in-app retention",
+    "unchanged fixture manuscript",
+    "real core commit with delivery held across a later core update and same-mounted-card refresh",
+    "matching committed-current refresh acknowledgement",
+    "later authoritative snapshot and reviewed journal baseline cannot be downgraded",
+    "storage-failed shared session cannot adopt unmounted stale props"
+  ],
+  "limitations": [
+    "Browser reload is not a packaged-app force-quit test",
+    "Unavailable recovery storage cannot preserve a draft through process death",
+    "Exact evidence presence does not establish assertion meaning"
+  ],
+  "artifacts": [
+    "review.md",
+    "red.txt",
+    "focused.txt",
+    "browser.txt",
+    "recovered-canon-correction.png",
+    "stale-canon-correction.png",
+    "delayed-completion-red.txt",
+    "shared-session-red.txt"
+  ],
+  "source_sha256": {
+    "desktop/src/components/editor/CanonFactCard.tsx": "8833f2afe1766646b69ffeb52dcde45586b64d7d8ab1a040d4f5d512aa1d57db",
+    "desktop/src/components/editor/CanonFactCard.test.tsx": "700763f90d6fe48bfeb9097039573a0bcc9b5cb6412559c704c5a5189c0cae4c",
+    "desktop/src/components/editor/CanonFactCard.recovery.test.tsx": "fe72e9338b1cdc28269a219a7d8b5b7517d3dafb58026d54090cfeed5c4006d9",
+    "desktop/src/components/editor/CanonMemoryEditor.tsx": "8781e04743abf12e1e121d2d06f0f8a8ed9786471a81dd38334188a5b8538de7",
+    "desktop/e2e/canon-correction-recovery.spec.ts": "6811128530c17b13671863addd1c431475c5316ff529da39e0e18867b5ffa6fa",
+    "desktop/src/recoverableDraft.ts": "d19b5f9d18b770a369825baf33e0c0ae4c6ecd31275218323156fcf0ea0e1d8d",
+    "desktop/src/recoverableDraft.test.ts": "0230ae8cc39cc130575ebe228bb98e8f2007c41d1118e704ac59a23bf5755ce2"
+  },
+  "completion_diagnosis": {
+    "same_session_red": "delayed-completion-red.txt",
+    "storage_failed_shared_session_red": "shared-session-red.txt",
+    "confirmed_causes": [
+      "Completion guard did not compare later authoritative fact state",
+      "Recovery acknowledgement could downgrade a newer snapshot or reviewed journal baseline",
+      "Unmounted stale props could replace a storage-failed recovered session authority"
+    ],
+    "repair": "Optional guarded acknowledgement plus same mounted-session current-fact fence; preserve original correction/precondition when an older committed result is superseded"
+  },
+  "evidence_sha256": {
+    "review.md": "99d5d44d286d44d99b77db544795e3bb97c2658903d2379ade7c4dcbe26aa0cf",
+    "red.txt": "a57174602db964fc21ad830e379e0309af393f618b6b31f1100c72ddd4ae61f3",
+    "focused.txt": "4a784f1ad10799b6223e46d911c200ad1912524e5be7ecc58258dde9494bf4f7",
+    "browser.txt": "ae55f179df9755f45d42dc1294c4feb7eac465a1a9cbdd121f4235ae7c695583",
+    "recovered-canon-correction.png": "d3c784944691cbf956155e9a4905f395b18da07552d2dc4060a6ab07e0551d7b",
+    "stale-canon-correction.png": "bc6be4b2bfedd2ccbad608e9a6bffb5cfe5cea183120602cb0b943496b5d1748",
+    "delayed-completion-red.txt": "54beb90548e47900a0203278a571f7ed3226fadf396652e04a8c00bb2ff995c9",
+    "shared-session-red.txt": "12b22467c7ec4f235884726992e9b8b3a4d852a4e337e1a5c904b3dc60a830c3"
+  },
+  "screenshot_scope": "Retained from earlier passing navigation/reload/stale-comparison capture; final enhanced journey verifies delayed completion through assertions"
+}

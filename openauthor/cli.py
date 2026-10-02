@@ -586,6 +586,11 @@ def build_parser() -> argparse.ArgumentParser:
   memory_scan = memory_sub.add_parser("scan", help="Scan manuscript prose into a non-canon suggestion queue.")
   memory_scan.add_argument("--scene", action="append", default=None, dest="scene_ids")
   memory_scan.add_argument("--json", action="store_true", help="Output JSON.")
+  for action, help_text in (("scan-preview", "Review exact selected sources before an optional AI Memory scan."),
+      ("scan-ai", "Queue reviewed AI Memory candidates without accepting them.")):
+    reviewed_scan = memory_sub.add_parser(action, help=help_text)
+    reviewed_scan.add_argument("--request-json", required=True)
+    reviewed_scan.add_argument("--json", action="store_true", help="Output JSON.")
   memory_list = memory_sub.add_parser("list", help="List Story Memory suggestions.")
   memory_list.add_argument("--status", choices=["pending", "accepted", "rejected", "deferred"], default=None)
   memory_list.add_argument("--json", action="store_true", help="Output JSON.")
@@ -1566,7 +1571,25 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
   if args.command == "memory":
-    if args.memory_command == "scan":
+    if args.memory_command in {"scan-preview", "scan-ai"}:
+      try:
+        request = json.loads(args.request_json)
+      except ValueError as error:
+        raise OpenAuthorError("Memory scan request must be valid JSON.") from error
+      if not isinstance(request, dict):
+        raise OpenAuthorError("Memory scan request must be an object.")
+      allowed = {"scene_ids", "provider", "model"}
+      if args.memory_command == "scan-ai":
+        allowed.add("expected_fingerprint")
+      if set(request) - allowed:
+        raise OpenAuthorError("Memory scan request has unsupported fields.")
+      from .memory_scan import generate_memory_scan, preview_memory_scan
+      inputs = {"scene_ids": request.get("scene_ids", []), "provider": request.get("provider", "local"), "model": request.get("model", "")}
+      if args.memory_command == "scan-preview":
+        row = preview_memory_scan(paths, **inputs)
+      else:
+        row = generate_memory_scan(paths, **inputs, expected_fingerprint=request.get("expected_fingerprint", ""))
+    elif args.memory_command == "scan":
       row = extract_memory_suggestions(paths, scene_ids=args.scene_ids)
     elif args.memory_command == "list":
       row = list_memory_suggestions(paths, status=args.status)

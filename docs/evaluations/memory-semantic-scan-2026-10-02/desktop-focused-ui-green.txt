@@ -1,0 +1,13 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/components/editor/MemoryScanReview.test.tsx src/components/editor/MemorySuggestionReview.test.tsx src/memoryScanApi.test.ts src/providerSelection.test.ts
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  4 passed (4)
+      Tests  21 passed (21)
+   Start at  10:14:31
+   Duration  1.09s (transform 308ms, setup 0ms, import 587ms, tests 816ms, environment 1.11s)
+

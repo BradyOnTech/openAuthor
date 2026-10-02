@@ -1,0 +1,100 @@
+test_decisions_corrections_and_changed_source_guards_survive_ai_rescan (tests.test_memory_scan.MemoryScanTests.test_decisions_corrections_and_changed_source_guards_survive_ai_rescan) ... ERROR
+test_invalid_evidence_name_alias_type_and_unselected_sources_are_withheld (tests.test_memory_scan.MemoryScanTests.test_invalid_evidence_name_alias_type_and_unselected_sources_are_withheld) ... ERROR
+test_local_baseline_does_not_contact_provider_or_claim_semantic_accuracy (tests.test_memory_scan.MemoryScanTests.test_local_baseline_does_not_contact_provider_or_claim_semantic_accuracy) ... ERROR
+test_postflight_scene_changes_preserve_entire_queue (tests.test_memory_scan.MemoryScanTests.test_postflight_scene_changes_preserve_entire_queue) ... ERROR
+test_preview_is_provider_free_exact_bounded_and_excludes_private_and_ask_identity (tests.test_memory_scan.MemoryScanTests.test_preview_is_provider_free_exact_bounded_and_excludes_private_and_ask_identity) ... ERROR
+test_reviewed_interpretation_queues_uncased_names_without_mutating_prose_or_canon (tests.test_memory_scan.MemoryScanTests.test_reviewed_interpretation_queues_uncased_names_without_mutating_prose_or_canon) ... ERROR
+test_stale_prose_privacy_queue_or_storyline_refuses_before_provider (tests.test_memory_scan.MemoryScanTests.test_stale_prose_privacy_queue_or_storyline_refuses_before_provider) ... ERROR
+test_uncertain_type_requires_explicit_confirmation_and_corrections_survive_local_scan (tests.test_memory_scan.MemoryScanTests.test_uncertain_type_requires_explicit_confirmation_and_corrections_survive_local_scan) ... ERROR
+test_unique_exact_quote_can_reanchor_but_ambiguous_quote_is_withheld (tests.test_memory_scan.MemoryScanTests.test_unique_exact_quote_can_reanchor_but_ambiguous_quote_is_withheld) ... ERROR
+
+======================================================================
+ERROR: test_decisions_corrections_and_changed_source_guards_survive_ai_rescan (tests.test_memory_scan.MemoryScanTests.test_decisions_corrections_and_changed_source_guards_survive_ai_rescan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 149, in test_decisions_corrections_and_changed_source_guards_survive_ai_rescan
+    report, _ = self.run_scan([self.entity("小林"), self.entity("阿明")])
+                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 37, in run_scan
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_invalid_evidence_name_alias_type_and_unselected_sources_are_withheld (tests.test_memory_scan.MemoryScanTests.test_invalid_evidence_name_alias_type_and_unselected_sources_are_withheld)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 115, in test_invalid_evidence_name_alias_type_and_unselected_sources_are_withheld
+    self.entity("阿明", name="Invented"), self.entity("阿明", aliases=["Unsupported"]), self.entity("阿明", entity_type="person")]
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MemoryScanTests.entity() got multiple values for argument 'name'
+
+======================================================================
+ERROR: test_local_baseline_does_not_contact_provider_or_claim_semantic_accuracy (tests.test_memory_scan.MemoryScanTests.test_local_baseline_does_not_contact_provider_or_claim_semantic_accuracy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 165, in test_local_baseline_does_not_contact_provider_or_claim_semantic_accuracy
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_postflight_scene_changes_preserve_entire_queue (tests.test_memory_scan.MemoryScanTests.test_postflight_scene_changes_preserve_entire_queue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 101, in test_postflight_scene_changes_preserve_entire_queue
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_preview_is_provider_free_exact_bounded_and_excludes_private_and_ask_identity (tests.test_memory_scan.MemoryScanTests.test_preview_is_provider_free_exact_bounded_and_excludes_private_and_ask_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 61, in test_preview_is_provider_free_exact_bounded_and_excludes_private_and_ask_identity
+    update_entity(self.paths, entity_id=hidden["id"], ai_visibility="exclude")
+                                        ~~~~~~^^^^^^
+TypeError: string indices must be integers, not 'str'
+
+======================================================================
+ERROR: test_reviewed_interpretation_queues_uncased_names_without_mutating_prose_or_canon (tests.test_memory_scan.MemoryScanTests.test_reviewed_interpretation_queues_uncased_names_without_mutating_prose_or_canon)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 46, in test_reviewed_interpretation_queues_uncased_names_without_mutating_prose_or_canon
+    report, provider = self.run_scan([self.entity("小林"), self.entity("阿明")])
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 37, in run_scan
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_stale_prose_privacy_queue_or_storyline_refuses_before_provider (tests.test_memory_scan.MemoryScanTests.test_stale_prose_privacy_queue_or_storyline_refuses_before_provider)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 81, in test_stale_prose_privacy_queue_or_storyline_refuses_before_provider
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_uncertain_type_requires_explicit_confirmation_and_corrections_survive_local_scan (tests.test_memory_scan.MemoryScanTests.test_uncertain_type_requires_explicit_confirmation_and_corrections_survive_local_scan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 135, in test_uncertain_type_requires_explicit_confirmation_and_corrections_survive_local_scan
+    report, _ = self.run_scan([self.entity("North Gate", "location", alternative_types=["item"])])
+                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 37, in run_scan
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+======================================================================
+ERROR: test_unique_exact_quote_can_reanchor_but_ambiguous_quote_is_withheld (tests.test_memory_scan.MemoryScanTests.test_unique_exact_quote_can_reanchor_but_ambiguous_quote_is_withheld)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 124, in test_unique_exact_quote_can_reanchor_but_ambiguous_quote_is_withheld
+    report, _ = self.run_scan([shifted, ambiguous])
+                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/tests/test_memory_scan.py", line 37, in run_scan
+    from openauthor.memory_scan import generate_memory_scan
+ModuleNotFoundError: No module named 'openauthor.memory_scan'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.056s
+
+FAILED (errors=9)

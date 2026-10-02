@@ -1,0 +1,13 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/mobileSync/supabaseTransport.test.ts src/mobileSync/mobileSync.test.ts src/mobileSync/hostedCoordinator.test.ts src/mobileSync/projectKeyProvisioning.test.ts
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  4 passed (4)
+      Tests  61 passed (61)
+   Start at  10:38:43
+   Duration  535ms (transform 480ms, setup 0ms, import 589ms, tests 236ms, environment 0ms)
+

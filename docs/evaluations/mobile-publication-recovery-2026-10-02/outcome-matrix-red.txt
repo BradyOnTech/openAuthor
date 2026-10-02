@@ -1,0 +1,259 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/mobileSync/supabaseTransport.test.ts
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/mobileSync/supabaseTransport.test.ts (34 tests | 26 failed) 134ms
+     × preserves committed snapshot ciphertext when the publication reply is lost 4ms
+     × retains ciphertext after an explicitly rejected publication request without claiming publication failed 1ms
+     × acknowledges an exact committed readback after lost reply, without republishing 1ms
+     × acknowledges an exact committed readback after invalid successful JSON, without republishing 1ms
+     × acknowledges an exact committed readback after incomplete successful row, without republishing 2ms
+     × acknowledges an exact committed readback after server error, without republishing 1ms
+     × retains ciphertext when an uncertain publication has missing readback 1ms
+     × retains ciphertext when an uncertain publication has unavailable readback 1ms
+     × retains ciphertext when an uncertain publication has malformed readback 0ms
+     × refuses to acknowledge a colliding committed snapshot with different project_id 1ms
+     × refuses to acknowledge a colliding committed snapshot with different project_revision 0ms
+     × refuses to acknowledge a colliding committed snapshot with different key_version 0ms
+     × refuses to acknowledge a colliding committed snapshot with different schema_version 0ms
+     × refuses to acknowledge a colliding committed snapshot with different object_bucket 0ms
+     × refuses to acknowledge a colliding committed snapshot with different object_path 0ms
+     × refuses to acknowledge a colliding committed snapshot with different object_byte_length 0ms
+     × refuses to acknowledge a colliding committed snapshot with different object_sha256 0ms
+     × refuses to acknowledge a colliding committed snapshot with different manifest_algorithm 0ms
+     × refuses to acknowledge a colliding committed snapshot with different manifest_nonce 0ms
+     × refuses to acknowledge a colliding committed snapshot with different manifest_ciphertext 0ms
+     × refuses to acknowledge a colliding committed snapshot with different manifest_ciphertext_sha256 0ms
+     × refuses to acknowledge a colliding committed snapshot with different created_by_device_id 1ms
+     × preserves ciphertext when a 403 and missing readback race another publisher's delayed commit 0ms
+     × treats an existing storage object as exact only through positive publication readback 0ms
+     × treats an existing storage object as collision only through positive publication readback 0ms
+     × treats an existing storage object as missing only through positive publication readback 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > preserves committed snapshot ciphertext when the publication reply is lost
+AssertionError: expected null to be 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobH…' // Object.is equality
+
+- Expected:
+"AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKA=="
+
++ Received:
+null
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:474:30
+    472|     await transport.publishSnapshot(snapshot).catch(() => {});
+    473|     expect(published).toBe(true);
+    474|     expect(storedCiphertext).toBe(snapshot.ciphertext_base64);
+       |                              ^
+    475|     expect(fetchMock.mock.calls.filter(([, init]) => init?.method === …
+    476|     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > retains ciphertext after an explicitly rejected publication request without claiming publication failed
+AssertionError: expected [Function] to throw error matching /request was rejected.*published stat…/i but got 'Supabase mobile sync RPC failed (403).'
+
+- Expected:
+/request was rejected.*published state is unconfirmed.*retained/i
+
++ Received:
+"Supabase mobile sync RPC failed (403)."
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:499:53
+    497|     });
+    498|
+    499|     await expect(transport.publishSnapshot(snapshot)).rejects.toThrow(
+       |                                                     ^
+    500|       /request was rejected.*published state is unconfirmed.*retained/i
+    501|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > acknowledges an exact committed readback after lost reply, without republishing
+AssertionError: promise rejected "TypeError: Reply lost after commit" instead of resolving
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:71
+    519|       return new Response("server failed after commit", { status: 500 …
+    520|     });
+    521|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    522|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+    523|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+
+Caused by: TypeError: Reply lost after commit
+ ❯ SupabaseMobileSyncTransport.<anonymous> src/mobileSync/supabaseTransport.test.ts:516:43
+ ❯ SupabaseMobileSyncTransport.#rpc src/mobileSync/supabaseTransport.ts:181:33
+ ❯ SupabaseMobileSyncTransport.publishSnapshot src/mobileSync/supabaseTransport.ts:391:7
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > acknowledges an exact committed readback after invalid successful JSON, without republishing
+AssertionError: promise rejected "Error: Supabase mobile sync RPC returned …" instead of resolving
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:71
+    519|       return new Response("server failed after commit", { status: 500 …
+    520|     });
+    521|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    522|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+    523|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+
+Caused by: Error: Supabase mobile sync RPC returned invalid JSON.
+ ❯ SupabaseMobileSyncTransport.#rpc src/mobileSync/supabaseTransport.ts:196:13
+ ❯ SupabaseMobileSyncTransport.publishSnapshot src/mobileSync/supabaseTransport.ts:391:7
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > acknowledges an exact committed readback after incomplete successful row, without republishing
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:523:105
+    521|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+    522|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+    523|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+       |                                                                                                         ^
+    524|     expect(fetch.mock.calls.some(([, init]) => init?.method === "DELET…
+    525|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > acknowledges an exact committed readback after server error, without republishing
+AssertionError: promise rejected "Error: Supabase mobile sync RPC failed (5…" instead of resolving
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:71
+    519|       return new Response("server failed after commit", { status: 500 …
+    520|     });
+    521|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    522|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+    523|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+
+Caused by: Error: Supabase mobile sync RPC failed (500).
+ ❯ SupabaseMobileSyncTransport.#rpc src/mobileSync/supabaseTransport.ts:191:13
+ ❯ SupabaseMobileSyncTransport.publishSnapshot src/mobileSync/supabaseTransport.ts:391:7
+ ❯ src/mobileSync/supabaseTransport.test.ts:521:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > retains ciphertext when an uncertain publication has missing readback
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > retains ciphertext when an uncertain publication has unavailable readback
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > retains ciphertext when an uncertain publication has malformed readback
+AssertionError: expected [Function] to throw error matching /published state is unconfirmed.*reta…/i but got 'Supabase mobile sync RPC failed (500).'
+
+- Expected:
+/published state is unconfirmed.*retained.*no automatic retry/i
+
++ Received:
+"Supabase mobile sync RPC failed (500)."
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:536:71
+    534|       return new Response(readback === "missing" ? "[]" : '{"snapshot_…
+    535|     });
+    536|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    537|     expect(fetch).toHaveBeenCalledTimes(3);
+    538|     expect(fetch.mock.calls.some(([, init]) => init?.method === "DELET…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different project_id
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different project_revision
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different key_version
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different schema_version
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different object_bucket
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different object_path
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different object_byte_length
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different object_sha256
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different manifest_algorithm
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different manifest_nonce
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different manifest_ciphertext
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different manifest_ciphertext_sha256
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > refuses to acknowledge a colliding committed snapshot with different created_by_device_id
+AssertionError: expected [Function] to throw error matching /conflicting.*identity.*retained/i but got 'Supabase mobile sync RPC failed (409).'
+
+- Expected:
+/conflicting.*identity.*retained/i
+
++ Received:
+"Supabase mobile sync RPC failed (409)."
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:550:71
+    548|       return new Response(JSON.stringify([stored]), { status: 200 });
+    549|     });
+    550|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    551|     expect(fetch).toHaveBeenCalledTimes(3);
+    552|     expect(fetch.mock.calls.some(([, init]) => init?.method === "DELET…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > preserves ciphertext when a 403 and missing readback race another publisher's delayed commit
+AssertionError: expected [Function] to throw error matching /request was rejected.*published stat…/i but got 'Supabase mobile sync RPC failed (403).'
+
+- Expected:
+/request was rejected.*published state is unconfirmed/i
+
++ Received:
+"Supabase mobile sync RPC failed (403)."
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:572:71
+    570|       return new Response(JSON.stringify(stored ? [stored] : []), { st…
+    571|     });
+    572|     await expect(publicationTransport(fetch).publishSnapshot(snapshot)…
+       |                                                                       ^
+    573|     commitConcurrent();
+    574|     expect(stored).not.toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > treats an existing storage object as exact only through positive publication readback
+AssertionError: promise rejected "Error: Supabase snapshot upload failed (4…" instead of resolving
+ ❯ src/mobileSync/supabaseTransport.test.ts:588:48
+    586|     });
+    587|     const pending = publicationTransport(fetch).publishSnapshot(snapsh…
+    588|     if (state === "exact") await expect(pending).resolves.toBeUndefine…
+       |                                                ^
+    589|     else await expect(pending).rejects.toThrow(/conflicting|unconfirme…
+    590|     expect(fetch).toHaveBeenCalledTimes(2);
+
+Caused by: Error: Supabase snapshot upload failed (409).
+ ❯ SupabaseMobileSyncTransport.publishSnapshot src/mobileSync/supabaseTransport.ts:387:13
+ ❯ src/mobileSync/supabaseTransport.test.ts:588:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/26]⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > treats an existing storage object as collision only through positive publication readback
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > treats an existing storage object as missing only through positive publication readback
+AssertionError: expected [Function] to throw error matching /conflicting|unconfirmed/i but got 'Supabase snapshot upload failed (409).'
+
+- Expected:
+/conflicting|unconfirmed/i
+
++ Received:
+"Supabase snapshot upload failed (409)."
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:589:30
+    587|     const pending = publicationTransport(fetch).publishSnapshot(snapsh…
+    588|     if (state === "exact") await expect(pending).resolves.toBeUndefine…
+    589|     else await expect(pending).rejects.toThrow(/conflicting|unconfirme…
+       |                              ^
+    590|     expect(fetch).toHaveBeenCalledTimes(2);
+    591|     expect(fetch.mock.calls.filter(([url]) => String(url).endsWith("/m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/26]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  26 failed | 8 passed (34)
+   Start at  10:33:07
+   Duration  351ms (transform 110ms, setup 0ms, import 107ms, tests 134ms, environment 0ms)
+

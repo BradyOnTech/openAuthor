@@ -525,6 +525,7 @@ def extract_memory_suggestions(
         alias_suggestion
         and alias_suggestion.get("status") in {"pending", "deferred"}
         and not alias_suggestion.get("author_corrected")
+        and alias_suggestion.get("origin") != "ai_scan"
       ):
         previous.pop(alias_id)
   added = 0
@@ -542,6 +543,10 @@ def extract_memory_suggestions(
     suggestion_id = _suggestion_id(entity_type, name)
     candidate_ids.add(suggestion_id)
     current = previous.get(suggestion_id)
+    if current and current.get("origin") == "ai_scan":
+      # A local capitalization pass cannot reinterpret reviewed AI evidence or
+      # refresh its source stamp. Preserve it for a fresh, explicit AI review.
+      continue
     confidence = min(0.95, 0.45 + count * 0.08 + (0.15 if name in pov_names else 0))
     # Keep author-owned review metadata when prose evidence is refreshed. The
     # extraction pass is derived state: changing its timestamp alone must not
@@ -626,10 +631,13 @@ def extract_memory_suggestions(
   scanned_scene_ids = {scene["id"] for scene in scene_details}
   for suggestion_id, row in list(previous.items()):
     if suggestion_id in candidate_ids:
+      if row.get("origin") == "ai_scan":
+        continue
       for item in row.get("evidence", []):
         item["source_sha256"] = _evidence_fingerprint(source_scenes[item["scene_id"]], item)
     elif (row.get("kind") in {"entity_create", "canon_fact", "relationship_create"}
           and row.get("status") in {"pending", "deferred"} and not row.get("author_corrected")
+          and row.get("origin") != "ai_scan"
           and row.get("evidence") and (row.get("kind") == "entity_create" or all(item.get("scene_id") in scanned_scene_ids for item in row["evidence"]))):
       # Identity is refreshed across the book. Facts and relationships are
       # retired only when wholly supported by the selected scenes. Decisions
@@ -666,6 +674,8 @@ def review_memory_suggestion(
   created_entity_id = ""
   created_relationship_id = ""
   if disposition == "accepted":
+    if suggestion.get("classification_uncertain") and not suggestion.get("type_confirmed"):
+      raise OpenAuthorError("This entry's classification is uncertain. Correct and confirm its type before accepting it.")
     if suggestion.get("kind") in {"entity_create", "canon_fact", "relationship_create"}:
       for item in suggestion.get("evidence", []):
         current_scene = get_scene(paths, item["scene_id"])
@@ -749,6 +759,8 @@ def review_memory_suggestion(
       if other is suggestion or other.get("kind") not in {"entity_create", "memory_note"}:
         continue
       compatible_type = other.get("kind") == "memory_note" or other.get("entity_type") == accepted_entity["type"]
+      if other.get("classification_uncertain") and not other.get("type_confirmed"):
+        compatible_type = False
       if other.get("status") in {"pending", "deferred"} and compatible_type and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
         other["status"] = "accepted"
         other["decided_at"] = suggestion["decided_at"]
@@ -800,6 +812,8 @@ def correct_memory_suggestion(
   if not changed:
     raise OpenAuthorError("No Story Memory suggestion corrections provided.")
   suggestion["author_corrected"] = True
+  if entity_type is not None:
+    suggestion["type_confirmed"] = True
   suggestion["corrected_at"] = utc_now()
   suggestion["updated_at"] = utc_now()
   atomic_write_json(_suggestions_path(paths), store)

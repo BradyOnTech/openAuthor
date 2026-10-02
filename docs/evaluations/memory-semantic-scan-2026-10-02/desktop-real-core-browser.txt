@@ -1,0 +1,16 @@
+
+> openauthor-desktop@0.1.0 test:e2e
+> playwright test e2e/memory-semantic-scan.spec.ts --reporter=line
+
+[WebServer] (node:72776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:72778) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/memory-semantic-scan.spec.ts:11:1 › reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards
+  1 passed (7.6s)

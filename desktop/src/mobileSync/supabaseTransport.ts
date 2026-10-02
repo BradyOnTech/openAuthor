@@ -16,6 +16,21 @@ import {
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+class RpcHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Supabase mobile sync RPC failed (${status}).`);
+  }
+}
+
+function matchesPublication(value: unknown, expected: Record<string, string | number>): boolean {
+  // PostgREST represents a composite/table result as a JSON row array unless
+  // singular representation is selected. Accept exactly one full row only.
+  if (Array.isArray(value) && value.length === 1) value = value[0];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const row = value as Record<string, unknown>;
+  return Object.entries(expected).every(([field, wanted]) => row[field] === wanted);
+}
+
 export type SupabaseMobileSyncTransportOptions = {
   supabaseUrl: string;
   publishableKey: string;
@@ -188,13 +203,39 @@ export class SupabaseMobileSyncTransport implements
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      throw new Error(`Supabase mobile sync RPC failed (${response.status}).`);
+      throw new RpcHttpError(response.status);
     }
     try {
       return await response.json() as T;
     } catch {
       throw new Error("Supabase mobile sync RPC returned invalid JSON.");
     }
+  }
+
+  async #publicationReadback(expected: Record<string, string | number>): Promise<"confirmed" | "conflict" | "unknown"> {
+    try {
+      // This API is key-filtered and limited to the newest 100 rows. Presence
+      // can confirm exact publication; absence cannot prove there was no commit.
+      const rows = await this.#rpc<unknown>("mobile_list_snapshot_manifests", {
+        p_requesting_device_id: this.#deviceId,
+        p_project_id: expected.project_id,
+        p_limit: 100,
+      });
+      if (!Array.isArray(rows) || rows.length > 100 || rows.some(row => !row || typeof row !== "object" || Array.isArray(row))) return "unknown";
+      const matching = rows.filter(row => row.snapshot_id === expected.snapshot_id);
+      if (matching.length !== 1) return "unknown";
+      return matchesPublication(matching[0], expected) ? "confirmed" : "conflict";
+    } catch {
+      return "unknown";
+    }
+  }
+
+  async #reconcilePublication(expected: Record<string, string | number>, failure: unknown): Promise<void> {
+    const result = await this.#publicationReadback(expected);
+    if (result === "confirmed") return;
+    if (result === "conflict") throw new Error("A conflicting snapshot already uses this identity. Ciphertext was retained; no automatic retry was made.");
+    const rejected = failure instanceof RpcHttpError && failure.status >= 400 && failure.status < 500 && ![408, 429].includes(failure.status);
+    throw new Error(`${rejected ? "The publication request was rejected" : "The publication request could not be confirmed"}; its published state is unconfirmed. Ciphertext was retained; no automatic retry was made. Check the published snapshots before trying again.`);
   }
 
   async listProjectDevices(projectId: string): Promise<MobileProjectDevice[]> {
@@ -363,6 +404,20 @@ export class SupabaseMobileSyncTransport implements
       throw new Error("Encrypted hosted snapshot manifest integrity check failed.");
     }
 
+    // Capture the exact SQL immutable publication fields before any upload or
+    // authorization await. Positive responses/readback must agree with all of
+    // them, including the publishing device, rather than only the snapshot id.
+    const publication = {
+      snapshot_id: snapshot.snapshot_id, project_id: snapshot.manifest.project_id,
+      project_revision: snapshot.manifest.revision, key_version: snapshot.key_version, schema_version: snapshot.schema_version,
+      object_bucket: snapshot.object.bucket, object_path: snapshot.object.path,
+      object_byte_length: snapshot.object.byte_length, object_sha256: snapshot.object.sha256,
+      manifest_algorithm: "aes-256-gcm-v1", manifest_nonce: encodeBytea(manifestNonce),
+      manifest_ciphertext: encodeBytea(manifestCiphertext), manifest_ciphertext_sha256: snapshot.hosted_manifest.ciphertext_sha256,
+      created_by_device_id: this.#deviceId,
+    };
+    const ciphertext = snapshot.ciphertext_base64;
+
     const encodedPath = snapshot.object.path
       .split("/")
       .map((segment) => encodeURIComponent(segment))
@@ -381,39 +436,22 @@ export class SupabaseMobileSyncTransport implements
         "Content-Type": snapshot.object.content_type,
         "x-upsert": "false",
       },
-      body: snapshot.ciphertext_base64,
+      body: ciphertext,
     });
     if (!upload.ok) {
+      if (upload.status === 409) return this.#reconcilePublication(publication, new Error("Snapshot object already exists."));
       throw new Error(`Supabase snapshot upload failed (${upload.status}).`);
     }
 
     try {
-      await this.#rpc("mobile_publish_snapshot", {
-        p_requesting_device_id: this.#deviceId,
-        p_snapshot_id: snapshot.snapshot_id,
-        p_project_id: snapshot.manifest.project_id,
-        p_project_revision: snapshot.manifest.revision,
-        p_key_version: snapshot.key_version,
-        p_schema_version: snapshot.schema_version,
-        p_object_bucket: snapshot.object.bucket,
-        p_object_path: snapshot.object.path,
-        p_object_byte_length: snapshot.object.byte_length,
-        p_object_sha256: snapshot.object.sha256,
-        p_manifest_algorithm: "aes-256-gcm-v1",
-        p_manifest_nonce: encodeBytea(manifestNonce),
-        p_manifest_ciphertext: encodeBytea(manifestCiphertext),
-        p_manifest_ciphertext_sha256: snapshot.hosted_manifest.ciphertext_sha256,
-      });
+      const request = Object.fromEntries(Object.entries(publication).map(([field, value]) => [field === "created_by_device_id" ? "p_requesting_device_id" : `p_${field}`, value]));
+      const committed = await this.#rpc<unknown>("mobile_publish_snapshot", request);
+      if (!matchesPublication(committed, publication)) throw new Error("Snapshot publication returned incomplete or conflicting metadata.");
     } catch (error) {
-      try {
-        await this.#fetch(storageUrl, {
-          method: "DELETE",
-          headers: storageHeaders,
-        });
-      } catch {
-        // Preserve the publication failure; cleanup is best-effort under user RLS.
-      }
-      throw error;
+      // A failed response does not prove rollback, and a negative read can race
+      // another publisher. Storage DELETE has no atomic manifest/commit fence.
+      // Retain ciphertext until a trusted orphan/deletion lifecycle can decide.
+      return this.#reconcilePublication(publication, error);
     }
   }
 

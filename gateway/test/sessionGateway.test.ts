@@ -84,6 +84,44 @@ async function withGateway<T>(
   }
 }
 
+test("waits for shared quota before issuing and fails closed on uncertain shared commits", async () => {
+  let release: ((value: { allowed: boolean }) => void) | undefined;
+  const waiting = new Promise<{ allowed: boolean }>(resolve => { release = resolve; });
+  const deps = dependencies({
+    principalVerifier: { verify: async () => verifiedPrincipal() },
+    rateLimiter: { consume: async (_key, _now, request) => {
+      assert.equal(request.principal.bearerToken, "mobile-session-token");
+      assert.equal(request.projectId, "project-1");
+      return waiting;
+    } },
+  });
+  await withGateway(deps, async baseUrl => {
+    const response = fetch(`${baseUrl}/v1/realtime/sessions`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ project_id: "project-1", device_id: "ios-1", sdp: OFFER_SDP }),
+    });
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(deps.upstreamCalls.length, 0);
+    release?.({ allowed: true });
+    assert.equal((await response).status, 201);
+    assert.equal(deps.upstreamCalls.length, 1);
+  });
+  const unavailable = dependencies({
+    principalVerifier: { verify: async () => verifiedPrincipal() },
+    rateLimiter: { consume: async () => { throw new Error("private limiter failure"); } },
+  });
+  await withGateway(unavailable, async baseUrl => {
+    const response = await fetch(`${baseUrl}/v1/realtime/sessions`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ project_id: "project-1", device_id: "ios-1", sdp: OFFER_SDP }),
+    });
+    assert.equal(response.status, 500);
+    assert.equal((await response.text()).includes("private"), false);
+    assert.equal(unavailable.upstreamCalls.length, 0);
+    assert.equal(unavailable.audits.at(-1)?.outcome, "internal_error");
+  });
+});
+
 test("rejects an internally inconsistent gateway policy at startup", () => {
   assert.throws(
     () => createSessionGateway({
@@ -142,11 +180,13 @@ test("rejects an unauthenticated session request before contacting OpenAI", asyn
 });
 
 test("rejects a principal not authorized for the requested project and device", async () => {
+  let quotaContacts = 0;
   const deps = dependencies({
     principalVerifier: {
       verify: async () => verifiedPrincipal(),
     },
     authorizer: { authorize: async () => false },
+    rateLimiter: { consume: () => { quotaContacts += 1; return { allowed: true }; } },
   });
 
   await withGateway(deps, async (baseUrl) => {
@@ -164,6 +204,7 @@ test("rejects a principal not authorized for the requested project and device", 
     assert.equal(body.error.code, "forbidden");
     assert.equal(deps.upstreamCalls.length, 0);
     assert.equal(deps.audits.at(-1)?.outcome, "forbidden");
+    assert.equal(quotaContacts, 0);
   });
 });
 
@@ -323,7 +364,7 @@ test("rate limits session issuance before contacting OpenAI", async () => {
     assert.equal(response.headers.get("retry-after"), "27");
     assert.equal(body.error.code, "rate_limited");
     assert.equal(body.error.retry_after_seconds, 27);
-    assert.equal(authorizationCount, 0);
+    assert.equal(authorizationCount, 1);
     assert.equal(deps.upstreamCalls.length, 0);
     assert.equal(deps.audits.at(-1)?.outcome, "rate_limited");
   });

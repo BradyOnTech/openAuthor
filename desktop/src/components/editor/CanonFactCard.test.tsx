@@ -6,11 +6,11 @@ import type { CanonFact, SceneSummary } from "../../types";
 import { CanonFactCard } from "./CanonFactCard";
 
 vi.mock("../../api", () => ({ updateCanonFact: vi.fn() }));
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => { vi.resetAllMocks(); window.localStorage.clear(); });
 afterEach(cleanup);
 const scenes: SceneSummary[] = [{ id: "s1", title: "Gate", summary: "", pov: "Mara", status: "draft", path: "gate.md", created_at: "today", updated_at: "today" }];
 const fact: CanonFact = { id: "f1", edit_version: "loaded-version", subject_entity_id: "", predicate: "gate color", value: "blue", status: "accepted", confidence: 1, evidence: [{ scene_id: "s1", excerpt: "The gate was blue.", start: 0, end: 18 }], validity: { from_scene_id: "", to_scene_id: "" }, knowledge: [], scope: "project" };
-const props = { projectRoot: "/book", subjectName: "Story", scenes, disabled: false, onOpenScene: vi.fn(), onSaved: vi.fn() };
+const props = { projectRoot: "/book", branch: "main", subjectName: "Story", scenes, disabled: false, onOpenScene: vi.fn(), onSaved: vi.fn() };
 
 it("submits a correction against the originally loaded fact and retains input after failure", async () => {
   vi.mocked(updateCanonFact).mockRejectedValueOnce(new Error("Fact changed since you opened it."));

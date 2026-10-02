@@ -48,7 +48,9 @@
         "Main-editor Memory suggestion inbox with exact evidence, retained corrections and explicit refreshed review",
         "Entity-type correction refuses an incompatible existing identity before alias mutation",
         "Typed Memory values validate before new writes while unchanged legacy values remain readable and retained",
-        "Explicit scanning limits describe uncased names and person/place review"
+        "Explicit scanning limits describe uncased names and person/place review",
+        "Optional reviewed AI Memory scan interprets uncased names and entry types from selected exact prose; unverifiable candidates are withheld and unresolved type ambiguity requires explicit author confirmation",
+        "Direct accepted-fact correction drafts recover by book, Storyline and fact while preserving the loaded version and newer edits during delayed saves"
       ],
       "verification": [
         "tests/test_memory_review.py",
@@ -57,11 +59,18 @@
         "desktop/src/components/editor/MemorySuggestionReview.test.tsx",
         "tests/test_memory_detail_values.py",
         "desktop/src/StoryMemoryEditor.values.test.tsx",
-        "docs/evaluations/memory-values-2026-10-02/verification.json"
+        "docs/evaluations/memory-values-2026-10-02/verification.json",
+        "tests/test_memory_scan.py",
+        "tests/test_memory_scan_cli.py",
+        "desktop/src/components/editor/MemoryScanReview.test.tsx",
+        "desktop/src/components/editor/CanonFactCard.recovery.test.tsx",
+        "desktop/e2e/canon-correction-recovery.spec.ts",
+        "docs/evaluations/memory-semantic-scan-2026-10-02/core-verification.json",
+        "docs/evaluations/canon-correction-recovery-2026-10-02/verification.json"
       ],
       "remaining": [
         "Observe author review time, omissions and unwanted suggestions on fresh original prose",
-        "Improve uncased-script extraction and ambiguous capitalized entity types; their current limits are disclosed in the Inbox"
+        "Validate optional semantic extraction on fresh original prose and measure uncased-name omissions and ambiguous entry classifications; the automatic local capitalization heuristic still retains its disclosed limitations"
       ],
       "status": "in_progress"
     },
@@ -101,19 +110,26 @@
         "Cold/offline restart and idempotent capture retry",
         "Cross-window sign-out redaction",
         "Atomic encrypted SQLite snapshot/auth/recovery storage, verified legacy migration",
-        "Conditional migration and auth lease fences preserve refreshed data and prevent in-flight SDK refresh from restoring signed-out credentials"
+        "Conditional migration and auth lease fences preserve refreshed data and prevent in-flight SDK refresh from restoring signed-out credentials",
+        "Production gateway issuance quotas are database-owned and atomic across devices/books/replicas, rechecking queued device/project authority before consumption",
+        "Ambiguous encrypted snapshot publication outcomes retain ciphertext, acknowledge only exact committed metadata, and never automatically delete or retry publication"
       ],
       "verification": [
         "mobile/test/companionRecovery.test.ts",
         "mobile/e2e/hosted-companion.spec.ts",
         "mobile/test/nativeSnapshotMigration.test.mjs",
         "mobile/test/authStorageLease.test.ts",
-        "mobile/evidence/2026-10-02-reading-capture-recovery/review.md"
+        "mobile/evidence/2026-10-02-reading-capture-recovery/review.md",
+        "supabase/migrations/20261002120000_mobile_realtime_shared_rate_limit.sql",
+        "scripts/verify_shared_gateway_limiter.py",
+        "docs/evaluations/shared-gateway-limiter-2026-10-02/verification.json",
+        "docs/evaluations/mobile-publication-recovery-2026-10-02/verification.json"
       ],
       "remaining": [
         "Physical iPhone and Android reading, audio permission/routing, interruption/reconnect and cold restart",
         "Approved deployed connection: authorization, revocation, rotation, deletion and desktop review handoff",
-        "Real-device encrypted keys and credential migration acceptance"
+        "Real-device encrypted keys and credential migration acceptance",
+        "Finish continuous post-issuance voice policy, orphan-safe encrypted-object deletion lifecycle and desktop trusted/lost-device management UX; adopt and drill the new shared-quota migration in the approved deployment"
       ],
       "status": "in_progress"
     },
@@ -183,8 +199,8 @@
   "date": "2026-10-02",
   "local_verification": {
     "python_3_13": {
-      "discovered": 530,
-      "passed": 529,
+      "discovered": 548,
+      "passed": 547,
       "optional_runtime_skipped": 1
     },
     "actual_packaged_python_3_11": {
@@ -193,13 +209,14 @@
       "skipped": 0
     },
     "desktop": {
-      "tests": 406,
-      "files": 76,
+      "tests": 465,
+      "files": 79,
       "typecheck_build": "passed",
       "native_caret_repair": "passed actual keyboard insertion after SIGKILL",
       "webkit_focus_and_evidence_journeys": 2,
       "chromium_focus_and_evidence_journeys": 2,
-      "full_browser_journeys": 17
+      "full_browser_journeys": 19,
+      "full_browser_scope": "All 19 real-core browser workflows passed before the transport-only publication repair; the final 465-test suite includes that repair and 61 affected sync/provisioning checks."
     },
     "mobile": {
       "tests": 126,
@@ -254,16 +271,30 @@
       "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
       "unsigned_arm64": true,
       "release_certified": false
+    },
+    "gateway": {
+      "tests": 33,
+      "skipped": 0,
+      "typecheck_build": "passed",
+      "database": "Disposable PostgreSQL 17.11; shared quota and existing encrypted-sync RLS checks passed",
+      "deployed_supabase": "not_observed"
+    },
+    "mobile_publication": {
+      "affected_tests": 61,
+      "files": 4,
+      "live_provider_calls": 0,
+      "deployed_acceptance": "not_observed",
+      "guarantee": "No ciphertext deletion on failed/lost publication replies; exact metadata readback only; orphan lifecycle remains open"
     }
   },
   "known_code_gaps": [
     {
-      "name": "Uncased names and ambiguous entity types",
+      "name": "Residual automatic local Memory heuristic limitations",
       "evidence": [
         "openauthor/story_memory.py",
         "tests/test_memory_review.py"
       ],
-      "scope": "Current authored extraction cases preserve two uncased-name misses and two place/character type errors."
+      "scope": "The automatic capitalization-based local path retains two uncased-name misses and two place/character type errors in its authored cases. The optional reviewed semantic path is implemented and mechanically verified; provider accuracy on fresh original prose remains unmeasured."
     }
   ],
   "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",

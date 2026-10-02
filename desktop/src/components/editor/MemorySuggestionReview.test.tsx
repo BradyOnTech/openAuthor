@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { correctStoryMemorySuggestion, listStoryMemorySuggestions, reviewStoryMemorySuggestion, scanStoryMemory, type StoryMemorySuggestion } from "../../api";
+import { correctStoryMemorySuggestion, generateMemoryScan, previewMemoryScan, listStoryMemorySuggestions, reviewStoryMemorySuggestion, scanStoryMemory, type StoryMemorySuggestion } from "../../api";
 import { MemorySuggestionReview } from "./MemorySuggestionReview";
 
 const workspace = vi.hoisted(() => ({ projectRoot: "/book/memory-review", branches: [], scenes: [{ id: "s1", title: "The Crossing" }], refreshCodex: vi.fn(async () => {}), setMessage: vi.fn(), setError: vi.fn() }));
 const editor = vi.hoisted(() => ({ tabs: [], openTab: vi.fn(), updateTab: vi.fn(), setActiveTab: vi.fn(), beginNavigation: vi.fn(() => () => true) }));
 vi.mock("../../contexts/WorkspaceContext", () => ({ useWorkspace: () => workspace }));
 vi.mock("../../contexts/EditorContext", () => ({ useEditor: () => editor }));
-vi.mock("../../api", () => ({ correctStoryMemorySuggestion: vi.fn(), listStoryMemorySuggestions: vi.fn(), reviewStoryMemorySuggestion: vi.fn(), scanStoryMemory: vi.fn(), getScene: vi.fn() }));
+vi.mock("../../api", () => ({ correctStoryMemorySuggestion: vi.fn(), generateMemoryScan: vi.fn(), previewMemoryScan: vi.fn(), listStoryMemorySuggestions: vi.fn(), reviewStoryMemorySuggestion: vi.fn(), scanStoryMemory: vi.fn(), getScene: vi.fn() }));
 
 const suggestion: StoryMemorySuggestion = { id: "ferry", review_version: "review-v1", kind: "entity_create", entity_type: "character", name: "Last Ferry", description: "A place beside the harbor.", confidence: 0.95, reason: "Recorded capitalized name.", status: "pending", evidence: [{ scene_id: "s1", path: "s1.md", excerpt: "Mara waited at Last Ferry.", start: 0, end: 26 }] };
 let records: StoryMemorySuggestion[];
@@ -131,4 +131,50 @@ it("refuses unversioned suggestion records until they can be refreshed", async (
   expect((screen.getByRole("button", { name: "Correct" }) as HTMLButtonElement).disabled).toBe(true);
   expect(reviewStoryMemorySuggestion).not.toHaveBeenCalled();
   expect(scanStoryMemory).not.toHaveBeenCalled();
+});
+
+it("requires an explicit type correction before accepting an uncertain AI entry", async () => {
+  records = [{ ...suggestion, origin: "ai_scan", classification_uncertain: true, type_candidates: ["character", "location"], type_confirmed: false }];
+  render(<MemorySuggestionReview />);
+  await screen.findByRole("article", { name: "Review Last Ferry" });
+  expect((screen.getByRole("button", { name: "Accept" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText(/type is uncertain/i)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+  expect(reviewStoryMemorySuggestion).not.toHaveBeenCalled();
+  vi.mocked(correctStoryMemorySuggestion).mockImplementationOnce(async (_root, id, updates) => {
+    const updated = { ...records[0], ...updates, type_confirmed: true, review_version: "confirmed-type" };
+    records = [updated]; return updated;
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Correct" }));
+  fireEvent.change(screen.getByLabelText("Corrected Memory entry type"), { target: { value: "location" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+  await screen.findByText("Proposed location entry");
+  fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+  await waitFor(() => expect(reviewStoryMemorySuggestion).toHaveBeenCalledWith("/book/memory-review", "ferry", "accepted", "confirmed-type"));
+});
+
+it("keeps local scanning separate and returns reviewed scan results to the pending inbox", async () => {
+  records = [];
+  vi.mocked(previewMemoryScan).mockResolvedValue({ fingerprint: "reviewed-local", provider: "local", model: "local-deterministic", scope: "book-scope",
+    scenes: [{ scene_id: "s1", title: "The Crossing", body: "Mara crossed the river." }], accepted_entities: [], input_tokens_estimate: 100, response_token_reserve: 1000,
+    warnings: ["Local identity heuristics can refresh all saved scenes."] });
+  vi.mocked(generateMemoryScan).mockImplementationOnce(async () => {
+    records = [{ ...suggestion }];
+    return { scanned_scenes: 1, added: 1, refreshed: 0, pending: 1, suggestions: records, generation_id: "", warnings: [] };
+  });
+  render(<MemorySuggestionReview />);
+  await screen.findByText(/No suggestions need review/);
+  expect(screen.getByRole("button", { name: "Scan manuscript" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Review AI scan" }));
+  fireEvent.click(screen.getByLabelText("The Crossing"));
+  fireEvent.click(screen.getByRole("button", { name: "Preview scan sources" }));
+  await screen.findByText("Mara crossed the river.");
+  fireEvent.click(screen.getByRole("button", { name: "Run reviewed local scan" }));
+  await screen.findByText(/1 await review\. Suggestions remain unconfirmed/);
+  expect(screen.queryByRole("article", { name: "Review Last Ferry" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Close scan review" }));
+  await screen.findByRole("article", { name: "Review Last Ferry" });
+  expect(generateMemoryScan).toHaveBeenCalledWith("/book/memory-review", { scene_ids: ["s1"], provider: "local", model: "local-deterministic" }, "reviewed-local");
+  expect(reviewStoryMemorySuggestion).not.toHaveBeenCalled(); expect(scanStoryMemory).not.toHaveBeenCalled();
+  expect(workspace.setMessage).toHaveBeenCalledWith(expect.stringContaining("remain unconfirmed"));
 });

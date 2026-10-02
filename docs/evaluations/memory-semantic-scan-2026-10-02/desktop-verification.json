@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-02",
+  "scope": "CLI and desktop integration of optional reviewed semantic Memory scan; provider-free local browser evidence",
+  "external_provider_calls": 0,
+  "author_book_data_used": false,
+  "browser": {
+    "engine": "installed Chromium headless shell 1217",
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    },
+    "real_python_core": true,
+    "synthetic_fixture_scenes": 30,
+    "reviewed_scenes": 6,
+    "selected_saved_characters": "six full long bodies; <=36,000; asserted byte-for-byte as JS strings against public scene get",
+    "busy_test": "controlled browser transport pause then actual local CLI; no cancellation capability claimed"
+  },
+  "red_before_green": [
+    {
+      "check": "CLI public commands",
+      "tests": 4,
+      "failures_including_subtests": 6,
+      "reason": "scan-preview/scan-ai command paths absent"
+    },
+    {
+      "check": "desktop transport",
+      "tests": 1,
+      "failed": 1,
+      "reason": "previewMemoryScan wrapper absent"
+    },
+    {
+      "check": "rendered scan module",
+      "reason": "module absent, suite could not import; no behavior-test count claimed"
+    },
+    {
+      "check": "uncertain type acceptance",
+      "failed": 1,
+      "passed_existing": 8,
+      "reason": "Accept remained enabled for unconfirmed classification"
+    },
+    {
+      "check": "laptop review layout",
+      "failed": 1,
+      "reason": "Close scan review had viewport ratio 0 with 30 scene choices at1024x768"
+    }
+  ],
+  "commands": [
+    {
+      "command": "PYTHONPATH=. python3 -m unittest tests.test_memory_scan_cli -v",
+      "passed": 4
+    },
+    {
+      "command": "cd desktop && npm test -- src/components/editor/MemoryScanReview.test.tsx src/components/editor/MemorySuggestionReview.test.tsx src/memoryScanApi.test.ts src/providerSelection.test.ts",
+      "passed": 21,
+      "files": 4
+    },
+    {
+      "command": "cd desktop && npm exec -- tsc --noEmit",
+      "exit_code": 0
+    },
+    {
+      "command": "cd desktop && OPENAUTHOR_BROWSER_EXECUTABLE=~/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell npm run test:e2e -- e2e/memory-semantic-scan.spec.ts --reporter=line",
+      "passed": 1,
+      "duration_seconds": 7.6
+    },
+    {
+      "command": "git diff --check -- [owned tracked source paths]",
+      "exit_code": 0
+    }
+  ],
+  "verified": [
+    "Picker never automatically calls preview or inference; local Scan manuscript remains a separate action",
+    "Effective configured provider/model reused; reviewed selection/model/provider/config/project/Storyline changes clear Send authority",
+    "Full exact selected saved source, safe accepted identity names/types/aliases and token/warning metadata rendered before explicit Send",
+    "Preview and Send flush pending scene saves; failed flush/preview/send retains scene selection and requires renewed review",
+    "Busy duplicate-submit fence and stale mounted project/Storyline completion guard; current generic core command cannot be cancelled",
+    "Uncertain AI classification disables Accept until explicit Correct > Entry type > Save correction",
+    "Thirty scene choices and six long full source articles scroll at1024x768 while Preview/Send/Close remain in viewport",
+    "Cold browser preview leaves Memory queue empty; actual reviewed local Send queues pending suggestions without creating accepted entities/Canon Facts or changing prose",
+    "Closing review returns to refreshed Inbox; reopening retains scene choices and requires a fresh preview",
+    "External saved source change refuses stale browser Send without changing queue/Canon; chosen scope retained",
+    "Exact Chinese text and final lines survive rendered source preview; no unselected prose included in preview"
+  ],
+  "limits": [
+    "No real semantic provider/quality evaluation; local browser path only proves workflow and safety",
+    "Existing local heuristic still refreshes identities across all saved scenes; selected scene list limits facts/connections. This is disclosed before Send",
+    "Current generic native core_command API offers no active request cancellation; busy UI honestly disables Close and reports this",
+    "Scene/prose in reviewed selected sources is not automatically redacted; private/Ask-first identity projection is handled by the core",
+    "Browser transport exercises the actual Python CLI, not a signed native binary or physical device",
+    "Selected scan scope is retained during component lifetime/failures; no durable manuscript preview stored by this module"
+  ],
+  "source_sha256": {
+    "openauthor/cli.py": "3c8a0f92fdb2a217d1cbf94e69d92fc404e5522483c8135534dc8c757dfa2697",
+    "tests/test_memory_scan_cli.py": "bfc51d6bcdc098f11ac915eccc4e0574469751500f08f4f266af93ad583b38ab",
+    "desktop/src/api.ts": "45478299c8532531b5bb375dae5abf3babbd246cda02e42cb1d59fc0609adac8",
+    "desktop/src/components/editor/MemoryScanReview.tsx": "1f3616dd61f0f908b0954533aa0f1d3a19f017ecf2507f1d269e685be63f6260",
+    "desktop/src/components/editor/MemoryScanReview.css": "2935cfd2171419532bf198511a4a304b92307a150104b16b54620ce631314146",
+    "desktop/src/components/editor/MemoryScanReview.test.tsx": "802c2211d41111d394a85d8657db23f80902d40a5982f3dbd3cb24d8f06a531f",
+    "desktop/src/components/editor/MemorySuggestionReview.tsx": "5e771dc7bc7b97dd85e6ea603b3909894f94d936496fb5882606ae6309e1e6e1",
+    "desktop/src/components/editor/MemorySuggestionReview.test.tsx": "bfa5c83a43bf651f1744e57c465cd38c216be7774d0f1dedb422382be28ffc67",
+    "desktop/src/memoryScanApi.test.ts": "122cd23ce72a70f44db8c2133139be7ca19ee52c814ea45fe363af910ceae38f",
+    "desktop/e2e/memory-semantic-scan.spec.ts": "bc930e6b0dccf943ecfb31e08490345cc8bd0fd5eb7cc25cab93244595aee39f"
+  }
+}

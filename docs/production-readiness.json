@@ -15,10 +15,10 @@
         "Native selection and chat Canon controls use explicit per-request grants, invalidate reviewed payloads, expire on the next turn, and exclude private notes; verified in packaged local-provider logs.",
         "Scene drafting and passage regeneration now share exact reviewed context with one-request Memory/Canon grants; external providers require a matching fingerprint before contact, and changed guidance during generation preserves existing Changes. Native stale-preview rejection, restart, fresh draft review, and exact local-provider prompt parity verified in docs/revision-context-evaluation.json.",
         "October 2 focused passage/chapter critique uses reviewed source windows and fingerprints every supporting scene; changed chapter sources make the review stale. Approved Writing Voice context uses the privacy-gated craft projection, never raw unapproved samples; profile changes invalidate pre/postflight context. See tests/test_editorial_review.py and tests/test_selection_voice.py.",
-        "Current-source review confirms initial edit-plan and merge reconciliation already use shared reviewed guidance/Memory/Canon context, external preflight fingerprints and postflight checks; see tests/test_revision_context.py and openauthor/ai.py. Earlier implementation-gap wording is superseded."
+        "Current-source review confirms initial edit-plan and merge reconciliation already use shared reviewed guidance/Memory/Canon context, external preflight fingerprints and postflight checks; see tests/test_revision_context.py and openauthor/ai.py. Earlier implementation-gap wording is superseded.",
+        "Fresh-context chat recovery reconciles completed/indeterminate delivery, durably closes old IDs and resets grants before reviewed resend; current 17-journey browser checkpoint passes. See docs/evaluations/project-completion-2026-10-02/review.md."
       ],
       "remaining": [
-        "Add safe fresh-context recovery for stale pending chat requests, reconciling any existing completion receipt before a new send. Passage already offers review as a new request.",
         "Broader provider/runtime failure and managed-configuration audit remains an acceptance gate."
       ]
     },
@@ -45,12 +45,13 @@
         "Rendered Memory and Plan reopening regressions",
         "Plan/Memory/Canon writes and scene creation are guarded across version changes; 11 focused concurrency tests and a rendered save-then-Storyline regression",
         "Native held-lock test verifies a delayed brief save completes in Primary before the requested Storyline opens",
-        "October 2 native GUI force-quit/restart preserved a synthetic unfinished Plan draft and document tabs. The final current-source arm64 native walkthrough also recovered active Plan, unsaved Synopsis and new-act drafts, and verified caret typing through physical Tab/Shift-Tab after forced termination."
+        "October 2 native GUI force-quit/restart preserved a synthetic unfinished Plan draft and document tabs. The final current-source arm64 native walkthrough also recovered active Plan, unsaved Synopsis and new-act drafts, and verified caret typing through physical Tab/Shift-Tab after forced termination.",
+        "Typed Memory values reject new invalid JSON types/dates/references while unchanged legacy data and invalid editor drafts are retained. Direct Canon assertion corrections recover across navigation/restart with original-version and delayed-save safeguards. See docs/evaluations/memory-values-2026-10-02/ and canon-correction-recovery-2026-10-02/."
       ],
       "remaining": [
         "Audit stale read responses, direct scene-metadata edits and remaining non-editor mutation paths across Storyline/version switches",
         "Add navigation protection for unavailable recovery storage",
-        "Audit optimistic concurrency for external Memory edits and validate typed detail values"
+        "Audit optimistic concurrency for external Memory edits"
       ]
     },
     {
@@ -65,12 +66,12 @@
         "Markdown reading-order manifest round-trips scene metadata and hierarchy; DOCX preserves heading levels without stripping heading-like prose",
         "Both export formats state full-project omissions; export saves pending scene edits and shows the loss report",
         "12 manuscript IO regressions, CLI correction test and rendered import/export workflow tests",
-        "Native corrected four-scene/two-chapter import and both exports verified; both exported artifacts re-import with exact prose and titles"
+        "Native corrected four-scene/two-chapter import and both exports verified; both exported artifacts re-import with exact prose and titles",
+        "Empty parts/chapters, outline-only books and intentionally empty scenes now preserve exact public Markdown/marked-DOCX round-trip structure and titles. See docs/evaluations/outline-roundtrip-2026-10-02/. External Word-processor interoperability remains unobserved."
       ],
       "remaining": [
         "Harden new-project import retry and in-flight preview recovery UX",
-        "Audit interrupted export cleanup and snapshot consistency",
-        "Report empty hierarchy containers and deeper-heading flattening explicitly"
+        "Audit interrupted export cleanup and snapshot consistency"
       ]
     },
     {
@@ -117,7 +118,8 @@
         "Knowledge diagnostics now resolve latest scene-valid states, avoid key/monkey substring matches, suppress limited explicit English ignorance expressions, and anchor evidence in original Unicode text. Positive disclosures remain covered.",
         "September 30 historical Fresh eight-case product-review challenge replay: 4 expected outcomes after the three knowledge fixes, up from 1; natural paraphrases, Spanish traits, unrelated trait negation and explained dye changes remain unresolved. This authored set is not an accuracy benchmark.",
         "October 2 Memory review suppresses selected temporal/clausal openers and restrictive modifiers, supports reviewed entity-type correction, and checks source/suggestion/Storyline versions and conflicting typed identities. Fresh synthetic extraction evidence is retained in docs/evaluations/memory-review-2026-10-02/extraction.json; uncased scripts and ambiguous names remain limited.",
-        "October 1 replay now matches all eight authored continuity challenge outcomes, including natural paraphrase, Spanish traits, unrelated negation and explicit dye change. See docs/evaluations/editorial-workspace-2026-10-01/challenges.json. This does not measure general novel accuracy."
+        "October 1 replay now matches all eight authored continuity challenge outcomes, including natural paraphrase, Spanish traits, unrelated negation and explicit dye change. See docs/evaluations/editorial-workspace-2026-10-01/challenges.json. This does not measure general novel accuracy.",
+        "Optional reviewed semantic Memory scan supports exact-source candidates independent of capitalization. Unresolved type uncertainty requires explicit author confirmation and survives AI/local rescans. Authored provider fixtures verify guards, not model precision or recall; see docs/evaluations/memory-semantic-scan-2026-10-02/."
       ],
       "remaining": [
         "Broaden extraction and evaluation beyond narrow English physical-trait patterns; measure explanatory changes and more natural paraphrases",
@@ -175,12 +177,12 @@
       "evidence": [
         "Targeted native critique found a knowledge ambiguity that generic critique missed; expansion previously invented details.",
         "Explicit general, continuity, character-knowledge, motivation, pacing and voice modes are implemented for selected passages and Plan chapters. Exact reviewed quotes, visible uncertainty, strengths, limitations, source freshness and feedback-only apply refusal have backend/rendered coverage.",
-        "The fresh Ferry Ledger three-scene live critique identifies the planted key-knowledge gap without flagging an explicit hair-dye change or resolving the unopened ledger/ferry. The original strict parser withheld its sole finding; a local repair re-anchors only a unique exact quote in the same reviewed scene and discloses the correction. This is one authored fixture and one response, not novel-quality evidence."
+        "The fresh Ferry Ledger three-scene live critique identifies the planted key-knowledge gap without flagging an explicit hair-dye change or resolving the unopened ledger/ferry. The original strict parser withheld its sole finding; a local repair re-anchors only a unique exact quote in the same reviewed scene and discloses the correction. This is one authored fixture and one response, not novel-quality evidence.",
+        "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks."
       ],
       "remaining": [
         "Author assessment of the critique and retained/rejected changes against the original prose; no author acceptance was observed.",
-        "Additional fresh connected passages with subtler clues and negative controls; assess omissions, inventions, unnecessary interventions, voice and pacing. One focused character-knowledge run does not establish quality across review modes.",
-        "Finish the combined browser workflow gate; preserve the immutable original evidence-offset failure alongside the same-response revalidation."
+        "Additional fresh connected passages with subtler clues and negative controls; assess omissions, inventions, unnecessary interventions, voice and pacing. One focused character-knowledge run does not establish quality across review modes."
       ]
     },
     {
@@ -191,10 +193,10 @@
         "Native product review observed flat scene navigation, a dominant expanded brief, and cramped Memory evidence cards.",
         "October 2 compact saved Plan guidance, full-width source comparison, keyboard continuity triage, durable Memory correction drafts, reachable selection actions and exact-text word comparisons are implemented and rendered-tested.",
         "The combined browser run passed 13 journeys and exposed a stale Storyline-regeneration assertion; the corrected targeted rerun passed 2/2. Native GUI inspection preserved Plan/tab drafts after force quit and verified exact synthetic backup/restore; the final native caret repair subsequently passed physical Tab/Shift-Tab and typing after forced termination on the current-source arm64 bundle.",
-        "Final desktop suite passed 368 tests across 74 files. Native force-quit recovery reopened both document tabs and active Plan, retained unsaved Synopsis/new-act drafts, and resumed typing at the restored caret through Tab and Shift-Tab. This is a targeted local unsigned walkthrough, not full accessibility acceptance."
+        "Final desktop suite passed 368 tests across 74 files. Native force-quit recovery reopened both document tabs and active Plan, retained unsaved Synopsis/new-act drafts, and resumed typing at the restored caret through Tab and Shift-Tab. This is a targeted local unsigned walkthrough, not full accessibility acceptance.",
+        "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks."
       ],
       "remaining": [
-        "Finish the combined 15-journey browser workflow gate.",
         "Observe author review burden and longer writing sessions, including keyboard/VoiceOver, light/dark contrast, text scaling and recovery/error paths.",
         "Retain release limitations: rendered fixtures and a local unsigned native walkthrough are not clean-machine or broad accessibility acceptance."
       ]
@@ -208,7 +210,7 @@
         "Comparable projects provide design references for summaries, stale-memory invalidation and field-level context selection, not quality benchmarks.",
         "Approved Writing Voice examples/preferences and source-freshness checks are implemented. October 2 selection context regressions verify usable approved profiles, stale/frozen handling and omission of raw unapproved samples; broader language and chapter-memory acceptance remain open.",
         "Unicode retrieval and honest unsupported word-segmentation metrics are already implemented in openauthor/text_analysis.py, retrieval.py and style_profile.py; regression coverage in tests/test_retrieval_module.py and tests/test_style_profile_module.py supersedes the historical Chinese/zero-word failure.",
-        "Current extraction still relies on case heuristics; Chinese/Arabic uncased names are not recognized as entities. This is distinct from working Unicode exact-term retrieval."
+        "The automatic local scan retains capitalization-based uncased-name omissions. Optional reviewed semantic extraction now supports uncased source identities with exact evidence and author-confirmed uncertain types; live language accuracy remains unmeasured. This is distinct from working Unicode exact-term retrieval."
       ],
       "remaining": [
         "Evaluate the implemented approved voice examples and explicit preferences on fresh connected material; profile implementation alone does not establish literary usefulness.",
@@ -226,13 +228,14 @@
         "Earlier October 2 completed automated checkpoint: packaged Python suite 486 passed; Python 3.13 default discovery 485 passed plus 1 optional contract skip; desktop 361 tests across 73 files; mobile 126 tests across 27 files and all-platform Expo export; contracts 19 and gateway 28 tests/typecheck/build; native 10 passed with 1 macOS Keychain test ignored. Final caret and evidence-anchor follow-up verification is not included in these counts.",
         "Durable manuscript transactions are tested with real SIGKILL subprocesses at journal, scene, HEAD, proposal and commit stages, protecting newer external writing and Storyline identity. Committed-journal resolution preserves successful edits; identity-changing full Revision restore fails before writes. Explicit reviewed recovery fingerprints refuse third-writer races. See docs/manuscript-transactions.md.",
         "Native encrypted mobile migration and auth cleanup now handle refresh/migration races, vanished legacy files, pending SDK credential writes and cross-tab commit fences. Native-adapter tests use real SQLite/WebCrypto through ports; physical iOS/Android acceptance remains unobserved.",
-        "Dependency patches are compatible fast-uri 3.1.8 and brace-expansion 5.0.12. Current contracts/desktop/gateway audits report 0 vulnerabilities; mobile reports 5 high dependency entries from one unpatched node-forge advisory. Build-time/runtime vulnerable-path reachability is not established. See docs/evaluations/project-completion-2026-10-02/dependencies.json.",
+        "Dependency patches are compatible fast-uri 3.1.8 and brace-expansion 5.0.12. Current contracts/desktop/gateway audits report 0 vulnerabilities; mobile reports 5 high dependency entries from one unpatched node-forge advisory. Subsequent retained Forge analysis establishes affected-verifier reachability in installed Expo signing helpers. Current no-signing configuration exits offline and fresh web/iOS/Android exports omit affected modules; signed-runtime/future-config certification remains unobserved. See docs/evaluations/project-completion-2026-10-02/dependencies.json.",
         "Earlier October 2 arm64 provenance, embedded runtimes and real packaged-engine forced-kill recovery were recorded before the final caret rebuild. Native GUI synthetic backup/restore preserved exact prose and Plan/tab force-quit restart passed; subsequent final current-source caret evidence is recorded below. No signed or clean-machine certificate was produced.",
         "Final current-source packaged Python suite passed 494/494 with no skip; default Python 3.13 suite passed 493/494 with one optional contract skip. Final desktop passed 368 tests across 74 files. Exact packaged core SHA-256 is 21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92; bundled wire contract and five real SIGKILL recovery stages passed.",
-        "Final unsigned arm64 GUI forced-termination walkthrough recovered both tabs, active Plan, unsaved Synopsis/new-act drafts, and resumed physical Tab/Shift-Tab typing at the restored caret. The combined 15-journey browser rerun remains pending at this record."
+        "Earlier unsigned arm64 GUI forced-termination walkthrough recovered both tabs, active Plan, unsaved Synopsis/new-act drafts, and resumed physical Tab/Shift-Tab typing at the restored caret. At that historical checkpoint the combined 15-journey rerun was pending; the subsequent 17-journey checkpoint passed.",
+        "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks.",
+        "Latest local followup: default Python discovers 548 tests with 547 passing and one optional runtime skip; desktop passes 465 tests across 79 files plus typecheck/build. All 19 combined browser workflows pass; the subsequent transport-only publication repair passes 61 affected sync/provisioning checks. Shared gateway quota passes 33 tests against disposable PostgreSQL without skips. Separate evidence retains each boundary and source hashes."
       ],
       "remaining": [
-        "Finish combined 15-journey browser workflow gate; retain original failures and repaired follow-up evidence separately.",
         "Resolve the unpatched node-forge security finding with a supported patch or reviewed/tested mitigation plus vulnerable-path analysis; rerun audits and affected bundle checks.",
         "Complete author evaluation on fresh connected prose and observe Memory/review burden; local synthetic mechanics do not establish full-novel usefulness.",
         "Physical iPhone/Android voice, permissions, interruption/reconnect, audio routing and desktop handoff; approved deployment authorization, revocation, key rotation and deletion drills.",
@@ -243,22 +246,22 @@
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Final current-source packaged core, desktop suites, bundled recovery/wire contract and targeted native GUI caret/Plan/tab restart passed. Combined 15-journey browser rerun is underway.",
-    "python_tests_passed": 494,
-    "python_test_scope": "Final packaged Python suite 494/494 passed with no skip; current Python 3.13 default discovery 493/494 passed with one optional packaged-runtime contract skip. These interpreter runs exercise overlapping tests and are not additive counts.",
-    "desktop_tests_passed": 374,
-    "desktop_test_files_passed": 74,
+    "verification_stage": "Latest core, 465 desktop tests and production build passed. All 19 combined real-core browser workflows passed before the transport-only publication repair, whose 61 affected sync checks passed afterward. Native refresh is next; physical, signed and deployed acceptance remains open.",
+    "python_tests_passed": 547,
+    "python_test_scope": "Latest default Python 3.13 discovery: 548 tests, 547 passed and one optional bundled contract skip. The earlier packaged 530/530 checkpoint remains distinct until the new bundle is verified.",
+    "desktop_tests_passed": 465,
+    "desktop_test_files_passed": 79,
     "mobile_tests_passed": 126,
     "mobile_test_files_passed": 27,
     "contracts_tests_passed": 19,
-    "gateway_tests_passed": 28,
+    "gateway_tests_passed": 33,
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
     "frontend_build": "current-source arm64 native bundle built and inspected; desktop production build and all-platform Expo exports passed",
     "macos_unsigned_bundle_and_bundled_runtime": "Final arm64 exact core-source match verified; bundled wire contract and five real SIGKILL recovery stages passed. Native GUI exact synthetic backup/restore, Plan/tab draft restart and physical Tab/Shift-Tab caret typing observed. No signed/clean-machine certificate.",
-    "dependency_audit": "contracts 0, desktop 0, gateway 0; mobile 5 high entries from one unpatched node-forge GHSA-86w9-cpqp-85rv. Vulnerable-path build-time/runtime reachability not established.",
-    "dependency_evidence": "docs/evaluations/project-completion-2026-10-02/dependencies.json",
+    "dependency_audit": "Contracts, desktop and gateway: zero findings. Mobile: five high entries from one unpatched node-forge GHSA-86w9-cpqp-85rv at the retained audit. Installed Expo signing helpers reach the affected verifier; the current no-signing offline path exits and fresh platform exports omit affected modules. Signed-runtime/future-configuration certification remains unobserved.",
+    "dependency_evidence": "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
     "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
     "scale_gate": "Not rerun for this iteration; historical scale evidence remains in the September30 checkpoint and docs/product-review-followup-evidence.json.",
     "live_provider_api_estimated_cost_usd": 0.0,
@@ -281,7 +284,9 @@
       "Physical Tab/Shift-Tab and typing resume at restored, subsequently updated caret"
     ],
     "desktop_test_scope": "374 tests across74 files; replacement-safe caret regressions included",
-    "desktop_full_browser_journeys": "15/15 passed after immediate replacement and caret regression repairs"
+    "desktop_full_browser_journeys": "15/15 passed after immediate replacement and caret regression repairs",
+    "gateway_test_scope": "Disposable PostgreSQL 17.11 shared-quota/RLS checks: 33 tests passed without a skip, plus typecheck/build. Target deployed Supabase remains unobserved.",
+    "combined_desktop_browser_journeys": 19
   },
   "external_constraints": {
     "live_provider_spend_usd_max_total": 5,

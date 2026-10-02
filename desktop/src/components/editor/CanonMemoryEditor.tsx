@@ -161,7 +161,7 @@ export function CanonMemoryEditor() {
             </select>
             {!facts.some((fact) => factFilter === "all" || fact.status === factFilter) && <p style={metaStyle}>No facts in this view.</p>}
             {facts.map((fact) => <div key={fact.id} hidden={factFilter !== "all" && fact.status !== factFilter}>
-              <CanonFactCard fact={fact} subjectName={entityName(fact.subject_entity_id)} scenes={scenes} projectRoot={projectRoot} disabled={busy || loading || Boolean(loadError)} onOpenScene={(scene) => void openScene(scene)} onSaved={(updated) => {
+              <CanonFactCard fact={fact} subjectName={entityName(fact.subject_entity_id)} scenes={scenes} projectRoot={projectRoot} branch={branches?.find(row => row.current)?.name ?? ""} disabled={busy || loading || Boolean(loadError)} onOpenScene={(scene) => void openScene(scene)} onSaved={(updated) => {
                 setFacts((rows) => rows.map((row) => row.id === updated.id ? updated : row));
                 setMessage(updated.status === "rejected" ? "Fact withdrawn. Its text and evidence are kept under Withdrawn." : "Canon Fact corrected.");
                 void load();

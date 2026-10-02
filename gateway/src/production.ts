@@ -2,7 +2,7 @@ import type { Server } from "node:http";
 
 import { parseGatewayConfig, type GatewayConfig } from "./config.ts";
 import { OpenAIRealtimeUpstream } from "./openAIRealtimeUpstream.ts";
-import { FixedWindowSessionRateLimiter } from "./rateLimiter.ts";
+import { SupabaseRpcSessionRateLimiter } from "./supabaseRateLimiter.ts";
 import { createSessionGateway } from "./sessionGateway.ts";
 import {
   SupabaseJwksPrincipalVerifier,
@@ -67,7 +67,13 @@ export function createProductionGateway(
         rpcName: config.supabase.authorizationRpc,
         timeoutMs: config.supabase.authorizationTimeoutMs,
       }),
-      rateLimiter: new FixedWindowSessionRateLimiter(config.rateLimit),
+      rateLimiter: new SupabaseRpcSessionRateLimiter({
+        supabaseUrl: config.supabase.url,
+        publishableKey: config.supabase.publishableKey,
+        limit: config.rateLimit.limit,
+        windowMs: config.rateLimit.windowMs,
+        timeoutMs: config.supabase.authorizationTimeoutMs,
+      }),
       upstream: new OpenAIRealtimeUpstream({
         apiKey: config.openAI.apiKey,
         timeoutMs: config.openAI.timeoutMs,

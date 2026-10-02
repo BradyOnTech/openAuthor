@@ -74,7 +74,7 @@ The RPC must return the JSON boolean `true` only when `auth.uid()` is an active 
 
 `src/main.ts` is the executable entrypoint. It parses and bounds the environment,
 constructs the Supabase verifier and authorizer, OpenAI Realtime upstream, and
-fixed-window limiter, then starts the HTTP server. The server always advertises
+shared Supabase quota adapter, then starts the HTTP server. The server always advertises
 tool definitions from `MOBILE_REALTIME_TOOLS`;
 `REALTIME_ALLOWED_TOOL_NAMES` may only select a unique subset of those canonical
 names.
@@ -118,10 +118,45 @@ Use a separate high-entropy `SAFETY_IDENTIFIER_SECRET`; do not reuse
 tenant and principal identity. Raw account identifiers, JWTs, Supabase response
 bodies, and API keys are not forwarded or audited.
 
-For multiple gateway replicas, replace `FixedWindowSessionRateLimiter` through the
-`SessionRateLimiter` interface with an atomic shared-store implementation. The
-included limiter is bounded and suitable for one process, tests, and initial
-deployment.
+Production uses `SupabaseRpcSessionRateLimiter` through `SessionRateLimiter`.
+Apply `20261002120000_mobile_realtime_shared_rate_limit.sql` before enabling
+Realtime issuance. A user's enrolled devices and books share one atomic quota
+across every replica of this Supabase deployment. The RPC verifies the current
+device/Auth-session/project binding, owns its clock and serializes quota writes.
+It stores only user identity, window start and issuance count; no manuscript,
+JWT, SDP or OpenAI credential enters the quota tables.
+
+The administrator-owned `mobile_realtime_rate_policy` defaults to five issuance
+attempts per 60000 ms. `GATEWAY_RATE_LIMIT` and `GATEWAY_RATE_WINDOW_MS` assert
+that same policy; they cannot override it or reset a user's quota. For an
+approved policy change, update that private table using the database's trusted
+administrator tooling and deploy matching configuration to every replica.
+Authenticated/anonymous clients cannot read or update the tables, and the RPC
+accepts no user ID, quota key, clock or policy mutation. Missing migrations,
+policy mismatch, timeouts and malformed decisions refuse issuance with a generic
+500; there is no automatic retry or local fallback. A lost RPC response may have
+consumed a slot, as may a later upstream failure. Ordinary project authorization
+runs before quota contact, and the atomic SQL quota checks it again. The current
+`/healthz` remains liveness, not a database readiness probe.
+
+The exported `FixedWindowSessionRateLimiter` remains available for standalone
+local fixtures. Production never selects it. `GATEWAY_RATE_MAX_KEYS` no longer
+configures production; SQL retains one row per user and cascades it on Auth-user
+deletion. This quota limits issuance attempts, not concurrent session duration,
+continuous Realtime policy, billing or spend. Those controls remain separate.
+
+Run the real PostgreSQL/HTTP adapter check in a disposable local cluster:
+
+```sh
+python3 ../scripts/verify_shared_gateway_limiter.py --pg-bin /path/to/postgresql/bin
+```
+
+It exercises concurrent gateways/devices/books, revoked and stale sessions,
+policy mismatch, commit-response loss and actual database restart. It also
+reruns the existing encrypted-sync authorization SQL suite and the complete
+gateway checks. The separate `shared-gateway-quota` CI job invokes it and retains
+the raw result. No deployed stack is contacted; real PostgREST/Auth/Storage
+integration still needs deployment QA.
 
 ## Server-owned policy
 

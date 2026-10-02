@@ -1,0 +1,9 @@
+test_local_send_requires_review_and_keeps_candidates_unconfirmed (tests.test_memory_scan_cli.MemoryScanCliTests.test_local_send_requires_review_and_keeps_candidates_unconfirmed) ... ok
+test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) ... ok
+test_preview_exports_the_exact_chosen_source_without_queuing_or_editing (tests.test_memory_scan_cli.MemoryScanCliTests.test_preview_exports_the_exact_chosen_source_without_queuing_or_editing) ... ok
+test_stale_source_refuses_the_reviewed_cli_send (tests.test_memory_scan_cli.MemoryScanCliTests.test_stale_source_refuses_the_reviewed_cli_send) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.846s
+
+OK

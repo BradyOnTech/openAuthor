@@ -20,6 +20,7 @@ export {
   FixedWindowSessionRateLimiter,
   type FixedWindowRateLimiterOptions,
 } from "./rateLimiter.ts";
+export { SupabaseRpcSessionRateLimiter, type SupabaseRpcSessionRateLimiterOptions } from "./supabaseRateLimiter.ts";
 export {
   createSessionGateway,
   type SessionGatewayOptions,

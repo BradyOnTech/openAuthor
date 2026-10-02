@@ -1,0 +1,60 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx (10 tests | 1 failed | 9 skipped) 69ms
+   × does not downgrade a newer authoritative fact or clear its pending correction when an older save response arrives 68ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/CanonFactCard.recovery.test.tsx > does not downgrade a newer authoritative fact or clear its pending correction when an older save response arrives
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "confidence": 1,
+        "edit_version": "earlier-saved-version",
+        "evidence": Array [
+          Object {
+            "end": 18,
+            "excerpt": "The gate was blue.",
+            "scene_id": "s1",
+            "start": 0,
+          },
+        ],
+        "id": "f1",
+        "knowledge": Array [],
+        "predicate": "gate color",
+        "scope": "project",
+        "status": "accepted",
+        "subject_entity_id": "",
+        "validity": Object {
+          "from_scene_id": "",
+          "to_scene_id": "",
+        },
+        "value": "green",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx:158:29
+    156|   view.rerender(<CanonFactCard {...props} fact={newer} />);
+    157|   await act(async () => finish({ ...fact, value: "green", edit_version…
+    158|   expect(props.onSaved).not.toHaveBeenCalled();
+       |                             ^
+    159|   expect(screen.getByText("amber")).toBeTruthy();
+    160|   expect((screen.getByLabelText("Value") as HTMLTextAreaElement).value…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  10:13:26
+   Duration  678ms (transform 82ms, setup 0ms, import 195ms, tests 69ms, environment 335ms)
+

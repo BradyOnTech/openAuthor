@@ -25,8 +25,10 @@ Proposal planning and whole-scene prose drafting use this context too. Previousl
 drafting received only its edit plan, selected scene and selected style profile;
 it now also receives the neighboring scenes and allowed Memory. Generation logs
 record the actual one-scene radius and eight-entry Memory limit used by drafting.
-Hunk regeneration and merge resolution now receive the same approved Writing
-Voice guidance. They do not yet receive equivalent full canon/Plan context.
+Initial edit plans and merge reconciliation also use shared reviewed guidance,
+safe Memory, accepted Canon and Plan context, with source fingerprints checked
+before and after generation. Hunk regeneration includes approved Writing Voice
+through its reviewed revision context.
 
 Replies have an expandable **Context used** receipt: chapters, supplied canon
 count, active Storyline, approved voice name, evidence warnings and policy omissions. It records the
@@ -61,8 +63,12 @@ fact-based diagnostics, but does not redact earlier messages or independently
 written prose. Saving an accepted correction requires the recorded excerpts to
 match current saved scenes; this is not semantic proof. Concurrent corrections
 and Storyline changes invalidate the loaded edit version rather than silently
-overwriting the saved fact. An unfinished correction survives a failed save in
-the open editor, but is not a durable draft across navigation or app restart.
+overwriting the saved fact. Unfinished assertion, value, status, validity and
+evidence corrections now recover across navigation and app restart, scoped to
+the book, Storyline and fact. Recovery retains the original loaded version;
+changed saved facts require explicit comparison before keeping the correction.
+Failed or delayed saves cannot clear newer correction drafts. See the
+[recovery checks](evaluations/canon-correction-recovery-2026-10-02/review.md).
 
 Context and generation selection run under the existing project read/transaction
 lock, not across provider calls. Scene neighborhoods now share the Plan-ordered

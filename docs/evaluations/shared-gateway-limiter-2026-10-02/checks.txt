@@ -1,0 +1,254 @@
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  Supabase Storage schema is unavailable; bucket and storage.objects policies were not installed. Run supabase db reset in the Supabase stack to verify them.
+psql:~/Developer/openAuthor/supabase/tests/mobile_encrypted_sync_rls.sql:893: NOTICE:  Skipping Storage bucket/policy assertions outside the Supabase Storage stack
+Existing encrypted-sync authorization SQL suite passed.
+
+> openauthor-session-gateway@0.1.0 check
+> npm run typecheck && npm test && npm run build
+
+
+> openauthor-session-gateway@0.1.0 typecheck
+> tsc --noEmit
+
+
+> openauthor-session-gateway@0.1.0 test
+> node --experimental-strip-types --test test/*.test.ts
+
+TAP version 13
+# (node:69402) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: parses the minimal production environment with bounded server-owned defaults
+ok 1 - parses the minimal production environment with bounded server-owned defaults
+  ---
+  duration_ms: 1.153083
+  type: 'test'
+  ...
+# Subtest: fails closed for missing credentials and unsafe production configuration
+ok 2 - fails closed for missing credentials and unsafe production configuration
+  ---
+  duration_ms: 0.853708
+  type: 'test'
+  ...
+# Subtest: parses explicit safe policy and resource overrides
+ok 3 - parses explicit safe policy and resource overrides
+  ---
+  duration_ms: 0.15
+  type: 'test'
+  ...
+# (node:69403) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: mobile Realtime tools match the device-local read/propose boundary
+ok 4 - mobile Realtime tools match the device-local read/propose boundary
+  ---
+  duration_ms: 0.676417
+  type: 'test'
+  ...
+# (node:69404) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: posts multipart SDP and server session policy to the Realtime calls endpoint
+ok 5 - posts multipart SDP and server session policy to the Realtime calls endpoint
+  ---
+  duration_ms: 19.424917
+  type: 'test'
+  ...
+# Subtest: maps upstream failures to safe metadata without response bodies or API keys
+ok 6 - maps upstream failures to safe metadata without response bodies or API keys
+  ---
+  duration_ms: 0.756416
+  type: 'test'
+  ...
+# Subtest: cancels and rejects an oversized upstream SDP answer
+ok 7 - cancels and rejects an oversized upstream SDP answer
+  ---
+  duration_ms: 0.540416
+  type: 'test'
+  ...
+# Subtest: replaces network exceptions without leaking the API key or transport details
+ok 8 - replaces network exceptions without leaking the API key or transport details
+  ---
+  duration_ms: 0.206167
+  type: 'test'
+  ...
+# (node:69405) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: writes one content-free JSON line per audit event
+ok 9 - writes one content-free JSON line per audit event
+  ---
+  duration_ms: 0.80375
+  type: 'test'
+  ...
+# Subtest: starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
+ok 10 - starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
+  ---
+  duration_ms: 87.022041
+  type: 'test'
+  ...
+# (node:69406) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: limits each opaque key and resets at the next window
+ok 11 - limits each opaque key and resets at the next window
+  ---
+  duration_ms: 0.9245
+  type: 'test'
+  ...
+# (node:69407) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: waits for shared quota before issuing and fails closed on uncertain shared commits
+ok 12 - waits for shared quota before issuing and fails closed on uncertain shared commits
+  ---
+  duration_ms: 63.681375
+  type: 'test'
+  ...
+# Subtest: rejects an internally inconsistent gateway policy at startup
+ok 13 - rejects an internally inconsistent gateway policy at startup
+  ---
+  duration_ms: 0.25575
+  type: 'test'
+  ...
+# Subtest: reports liveness without authentication or dependency access
+ok 14 - reports liveness without authentication or dependency access
+  ---
+  duration_ms: 8.6945
+  type: 'test'
+  ...
+# Subtest: rejects an unauthenticated session request before contacting OpenAI
+ok 15 - rejects an unauthenticated session request before contacting OpenAI
+  ---
+  duration_ms: 3.790542
+  type: 'test'
+  ...
+# Subtest: rejects a principal not authorized for the requested project and device
+ok 16 - rejects a principal not authorized for the requested project and device
+  ---
+  duration_ms: 32.32125
+  type: 'test'
+  ...
+# Subtest: rejects a request whose device differs from the verified JWT binding
+ok 17 - rejects a request whose device differs from the verified JWT binding
+  ---
+  duration_ms: 6.126583
+  type: 'test'
+  ...
+# Subtest: issues a mobile SDP answer with server-clamped Realtime policy
+ok 18 - issues a mobile SDP answer with server-clamped Realtime policy
+  ---
+  duration_ms: 3.845542
+  type: 'test'
+  ...
+# Subtest: rate limits session issuance before contacting OpenAI
+ok 19 - rate limits session issuance before contacting OpenAI
+  ---
+  duration_ms: 2.954042
+  type: 'test'
+  ...
+# Subtest: never leaks permanent credentials or raw upstream errors
+ok 20 - never leaks permanent credentials or raw upstream errors
+  ---
+  duration_ms: 9.668166
+  type: 'test'
+  ...
+# Subtest: rejects browser origins outside the allowlist before authentication
+ok 21 - rejects browser origins outside the allowlist before authentication
+  ---
+  duration_ms: 47.5605
+  type: 'test'
+  ...
+# Subtest: rejects oversized requests before authorization or upstream work
+ok 22 - rejects oversized requests before authorization or upstream work
+  ---
+  duration_ms: 9.217708
+  type: 'test'
+  ...
+# Subtest: rejects an SDP offer above the server-owned SDP limit
+ok 23 - rejects an SDP offer above the server-owned SDP limit
+  ---
+  duration_ms: 1.54025
+  type: 'test'
+  ...
+# Subtest: times out a stalled request body before authorization or upstream work
+ok 24 - times out a stalled request body before authorization or upstream work
+  ---
+  duration_ms: 29.549375
+  type: 'test'
+  ...
+# Subtest: contains audit-sink failures without failing or leaking a successful session
+ok 25 - contains audit-sink failures without failing or leaking a successful session
+  ---
+  duration_ms: 1.752875
+  type: 'test'
+  ...
+# Subtest: maps unexpected dependency failures to a structured content-free error
+ok 26 - maps unexpected dependency failures to a structured content-free error
+  ---
+  duration_ms: 2.126209
+  type: 'test'
+  ...
+# (node:69408) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real SQL quota is shared atomically across gateway replicas/devices/books and survives database restart
+ok 27 - real SQL quota is shared atomically across gateway replicas/devices/books and survives database restart
+  ---
+  duration_ms: 844.770583
+  type: 'test'
+  ...
+# (node:69410) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: verifies a device-bound Supabase access token through JWKS
+ok 28 - verifies a device-bound Supabase access token through JWKS
+  ---
+  duration_ms: 342.775042
+  type: 'test'
+  ...
+# Subtest: fails closed before RPC for a different device and hides hosted failures
+ok 29 - fails closed before RPC for a different device and hides hosted failures
+  ---
+  duration_ms: 1.013833
+  type: 'test'
+  ...
+# Subtest: authorizes a JWT-bound device through the hosted Supabase RPC
+ok 30 - authorizes a JWT-bound device through the hosted Supabase RPC
+  ---
+  duration_ms: 0.467042
+  type: 'test'
+  ...
+# (node:69411) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: uses the verified device JWT and expected policy without client clocks or quota keys
+ok 31 - uses the verified device JWT and expected policy without client clocks or quota keys
+  ---
+  duration_ms: 98.439083
+  type: 'test'
+  ...
+# Subtest: returns shared retry timing and refuses a mismatched verified device before contact
+ok 32 - returns shared retry timing and refuses a mismatched verified device before contact
+  ---
+  duration_ms: 0.538292
+  type: 'test'
+  ...
+# Subtest: fails closed for missing migration, transport loss, malformed/oversized decisions without leaking bodies or tokens
+ok 33 - fails closed for missing migration, transport loss, malformed/oversized decisions without leaking bodies or tokens
+  ---
+  duration_ms: 4.314458
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1075.170584
+
+> openauthor-session-gateway@0.1.0 build
+> tsc -p tsconfig.build.json
+

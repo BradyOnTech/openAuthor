@@ -73,15 +73,20 @@ export class RecoverableDraft<T> {
     }
   };
 
-  saved = (submitted: T, latest: T) => {
+  saved = (submitted: T, latest: T, expectedLatest?: T) => {
     // An editor can be closed/reopened while this save is in flight. Preserve
     // newer journaled edits instead of clearing another mounted editor's draft.
     let value = this.state.value;
     try {
       const journal = this.read();
+      // A guarded save acknowledgement must not downgrade a later authoritative
+      // refresh or a newer baseline explicitly reviewed in another editor.
+      if (expectedLatest !== undefined && journal && !equal(journal.base, this.state.base) && !equal(journal.base, latest)) return false;
       if (journal && equal(value, submitted) && !equal(journal.value, submitted)) value = journal.value;
     } catch { /* The in-memory draft remains authoritative when storage fails. */ }
+    if (expectedLatest !== undefined && !equal(this.state.latest, expectedLatest) && !equal(this.state.latest, latest)) return false;
     this.publish({ base: latest, latest, value: equal(value, submitted) ? latest : value, recovered: false, conflict: false }, true);
+    return true;
   };
 
   useSaved = () => { this.publish({ base: this.state.latest, value: this.state.latest, recovered: false, conflict: false }, true); };

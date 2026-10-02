@@ -1,0 +1,53 @@
+
+> openauthor-desktop@0.1.0 test:e2e
+> playwright test e2e/memory-semantic-scan.spec.ts --reporter=line
+
+[WebServer] (node:71041) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:71043) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/memory-semantic-scan.spec.ts:11:1 › reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards
+  1) e2e/memory-semantic-scan.spec.ts:11:1 › reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards 
+
+    Error: expect(locator).toBeInViewport() failed
+
+    Locator:  getByRole('region', { name: 'Memory suggestion review' }).getByRole('region', { name: 'Reviewed AI Memory scan' }).getByRole('button', { name: 'Close scan review' })
+    Expected: in viewport
+    Received: viewport ratio 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeInViewport" getByRole('region', { name: 'Memory suggestion review' }).getByRole('region', { name: 'Reviewed AI Memory scan' }).getByRole('button', { name: 'Close scan review' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: 'Memory suggestion review' }).getByRole('region', { name: 'Reviewed AI Memory scan' }).getByRole('button', { name: 'Close scan review' })
+        14 × locator resolved to <button class="btn btn--ghost">Close scan review</button>
+           - unexpected value "viewport ratio 0"
+
+
+      43 |     await scan.getByRole("button", { name: "Review AI scan" }).click();
+      44 |     const close = scan.getByRole("button", { name: "Close scan review" });
+    > 45 |     await expect(close).toBeInViewport();
+         |                         ^
+      46 |     await scan.getByRole("combobox", { name: "Scan provider" }).selectOption("local");
+      47 |     for (let index = 1; index <= 6; index++) await scan.getByRole("checkbox", { name: `Harbor scene ${index}`, exact: true }).check();
+      48 |     await expect(scan.getByRole("checkbox", { name: "Harbor scene 7", exact: true })).toBeDisabled();
+        at ~/Developer/openAuthor/desktop/e2e/memory-semantic-scan.spec.ts:45:25
+
+    Error Context: test-results/memory-semantic-scan-revie-1b94a--with-stale-and-busy-guards/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/memory-semantic-scan-revie-1b94a--with-stale-and-busy-guards/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/memory-semantic-scan-revie-1b94a--with-stale-and-busy-guards/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    e2e/memory-semantic-scan.spec.ts:11:1 › reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards 

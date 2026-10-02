@@ -118,6 +118,6 @@ test("parses explicit safe policy and resource overrides", () => {
   ]);
   assert.deepEqual(config.policy.allowedToolNames, ["scene_list", "retrieval_query"]);
   assert.equal(config.policy.semanticVadEagerness, "medium");
-  assert.deepEqual(config.rateLimit, { limit: 9, windowMs: 120_000, maxKeys: 10_000 });
+  assert.deepEqual(config.rateLimit, { limit: 9, windowMs: 120_000 });
   assert.equal(config.policy.issuanceTtlSeconds, 45);
 });

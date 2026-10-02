@@ -7,6 +7,7 @@ import { DraftStatus } from "../shared/DraftStatus";
 import { EvidencePassages } from "../shared/EvidencePassages";
 import type { MemoryViewRequest } from "./MemoryWorkspace";
 import type { CodexEntity } from "../../types";
+import { MemoryScanReview } from "./MemoryScanReview";
 
 type Status = StoryMemorySuggestion["status"];
 type Correction = { name: string; detail: string; predicate: string; entityType: CodexEntity["type"] | ""; reviewVersion: string };
@@ -38,6 +39,8 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
   const [filter, setFilter] = useState<Status | "all">(request?.suggestionId ? "pending" : preference.filter);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef(false);
   const loadSequence = useRef(0);
@@ -49,6 +52,8 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
   const decidable = selected?.status === "pending" || selected?.status === "deferred";
   const hasCurrentVersion = Boolean(selected?.review_version);
   const correctionStale = Boolean(correction && correction.reviewVersion !== selected?.review_version);
+  const actionBusy = busy || aiBusy;
+  const typeNeedsConfirmation = Boolean(selected?.kind === "entity_create" && selected.classification_uncertain && !selected.type_confirmed);
   useEffect(() => {
     try { localStorage.setItem(preferenceKey, JSON.stringify({ selectedId: selected?.id || selectedId, filter })); }
     catch { /* Selection preferences contain no corrections or book content. */ }
@@ -71,7 +76,7 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
     finally { if (sequence === loadSequence.current) setLoading(false); }
   }
   async function mutate(action: () => Promise<unknown>) {
-    if (pending.current) return;
+    if (pending.current || aiBusy) return;
     pending.current = true; setBusy(true); setError("");
     try {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending manuscript writing before reviewing Memory.");
@@ -88,7 +93,7 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
     });
   }
   function decide(disposition: Exclude<Status, "pending">) {
-    if (!selected || !decidable || correction || !hasCurrentVersion) return;
+    if (!selected || !decidable || correction || !hasCurrentVersion || disposition === "accepted" && typeNeedsConfirmation) return;
     const submitted = selected;
     void mutate(async () => {
       const updated = await reviewStoryMemorySuggestion(projectRoot, submitted.id, disposition, submitted.review_version);
@@ -103,7 +108,7 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
     correctionDrafts.session.edit({ ...correctionDrafts.value, [selected.id]: { name: selected.name, detail: selected.kind === "canon_fact" ? selected.value || "" : selected.description || "", predicate: selected.predicate || "", entityType: selected.entity_type || "", reviewVersion: selected.review_version } });
   }
   function changeCorrection(changes: Partial<Correction>) {
-    if (!selected || !correction || busy) return;
+    if (!selected || !correction || actionBusy) return;
     correctionDrafts.session.edit({ ...correctionDrafts.value, [selected.id]: { ...correction, ...changes } });
   }
   function discardCorrection(id: string) {
@@ -126,11 +131,15 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
   }
 
   return <section className="memory-inbox" aria-label="Memory suggestion review">
-    <header className="memory-inbox__header"><div><h1>Memory suggestions</h1><p>Compare the recorded passages with the proposed entry. Suggestions are heuristic and remain unconfirmed until you accept them. Connections are reviewed in Connection Map.</p></div><button className="btn" disabled={busy || loading} onClick={scan}>Scan manuscript</button></header>
-    <details><summary>What scanning can miss</summary><p>Scanning uses capitalized names and saved POV names. Names in scripts without capital letters may be missed; add those entries in Memory. Check whether each proposed entry is a person, place or another type, and correct its type before accepting.</p></details>
-    <div className="memory-inbox__filters"><label>Show <select className="select" aria-label="Filter Memory suggestions" value={filter} onChange={event => setFilter(event.target.value as Status | "all")}>
+    <header className="memory-inbox__header"><div><h1>Memory suggestions</h1><p>Compare the recorded passages with the proposed entry. Suggestions may be incomplete and remain unconfirmed until you accept them. Connections are reviewed in Connection Map.</p></div><button className="btn" disabled={actionBusy || loading} onClick={scan}>Scan manuscript</button></header>
+    <details><summary>What scanning can miss</summary><p>Scan manuscript uses local capitalized-name and saved-POV heuristics; names in scripts without capital letters may be missed. Review AI scan can interpret the scenes you choose, including uncased names, but may still miss or misclassify entries. Exact source quotations support review; they do not prove the interpretation. Check each entry's type and correct it before accepting. You can also add entries directly in Memory.</p></details>
+    <MemoryScanReview disabled={busy || loading} onBusyChange={setAiBusy} onOpenChange={setScanOpen} onQueued={async report => {
+      setFilter("pending"); await load();
+      setMessage(`Scanned ${report.scanned_scenes} scenes. ${report.added} new suggestions remain unconfirmed until you review them.`);
+    }} />
+    {!scanOpen && <><div className="memory-inbox__filters"><label>Show <select className="select" aria-label="Filter Memory suggestions" value={filter} onChange={event => setFilter(event.target.value as Status | "all")}>
       {statuses.map(status => <option key={status} value={status}>{statusNames[status]}</option>)}<option value="all">All decisions</option>
-    </select></label><span role="status">{rows.length} {filter === "pending" ? "awaiting review" : "in this view"}</span><button className="btn btn--sm" disabled={busy || loading} onClick={() => void load()}>Refresh suggestions</button></div>
+    </select></label><span role="status">{rows.length} {filter === "pending" ? "awaiting review" : "in this view"}</span><button className="btn btn--sm" disabled={actionBusy || loading} onClick={() => void load()}>Refresh suggestions</button></div>
     {(correctionDrafts.dirty || correctionDrafts.error || correctionDrafts.conflict) && <DraftStatus {...correctionDrafts} onUseSaved={correctionDrafts.session.useSaved} onKeepDraft={correctionDrafts.session.keepDraft} />}
     {error && <p role="alert">{error}</p>}
     {loading && !suggestions.length ? <p role="status">Loading suggestions…</p> : !rows.length ? <p className="memory-inbox__empty">{filter === "pending" ? "No suggestions need review. Scan the manuscript to find possible entries; an empty inbox is not proof that Memory is complete." : "No suggestions in this view. Choose another filter to revisit a decision."}</p> : <div className="memory-inbox__layout">
@@ -142,20 +151,21 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
         <div className="memory-inbox__body" tabIndex={0} role="region" aria-label="Suggestion and source passages">
           <p className="memory-inbox__status">{kindNames[selected.kind]} · {statusNames[selected.status]}</p><h2>{selected.name}</h2>
           {selected.kind === "entity_create" && <p>Proposed {selected.entity_type || "story"} entry</p>}
+          {typeNeedsConfirmation && <p role="alert">This entry's type is uncertain{selected.type_candidates?.length ? ` (${selected.type_candidates.join(", ")})` : ""}. Choose Correct, review the Entry type and Save correction before accepting.</p>}
           <p className="memory-inbox__statement">{selected.kind === "canon_fact" ? `${selected.subject_name || selected.name} · ${selected.predicate}: ${selected.value}` : selected.description}</p>
           {selected.reason && <p>{selected.reason}</p>}
           {decidable && !hasCurrentVersion && <p role="alert">This suggestion has no current review version. Refresh suggestions before making a decision.</p>}
           {correction && !decidable && <p role="alert">This suggestion was {statusNames[selected.status].toLowerCase()} while your correction was unfinished. Your draft is kept for reference; it cannot change the recorded decision.</p>}
           <h3>Recorded evidence</h3><p>Open a source to compare this suggestion with the current manuscript.</p>
           {selected.evidence.length ? <EvidencePassages evidence={selected.evidence} /> : <p>No manuscript passage was recorded. Treat this as an idea to verify before adding it to Memory.</p>}
-          {correction && <fieldset disabled={busy || !decidable} className="memory-inbox__correction"><legend>Correct this suggestion</legend><label>Name<input className="input" aria-label="Corrected suggestion name" value={correction.name} onChange={event => changeCorrection({ name: event.target.value })} /></label>{selected.kind === "entity_create" && <label>Entry type<select className="select" aria-label="Corrected Memory entry type" value={correction.entityType} onChange={event => changeCorrection({ entityType: event.target.value as CodexEntity["type"] })}>{entityTypes.map(type => <option key={type} value={type}>{type}</option>)}</select></label>}{selected.kind === "canon_fact" && <label>Fact predicate<input className="input" aria-label="Corrected fact predicate" value={correction.predicate} onChange={event => changeCorrection({ predicate: event.target.value })} /></label>}<label>{selected.kind === "canon_fact" ? "Fact value" : "Description or note"}<textarea className="input" rows={4} aria-label="Corrected suggestion detail" value={correction.detail} onChange={event => changeCorrection({ detail: event.target.value })} /></label>{decidable && <p>This correction stays unconfirmed until you accept the suggestion.</p>}{correctionStale && decidable && <div role="alert"><p>The saved suggestion or evidence changed. Your correction keeps its original review version. Compare the current suggestion and source passages above before saving.</p><button className="btn" disabled={busy || !hasCurrentVersion} onClick={() => changeCorrection({ reviewVersion: selected.review_version! })}>I reviewed updated evidence; keep my correction</button></div>}</fieldset>}
+          {correction && <fieldset disabled={actionBusy || !decidable} className="memory-inbox__correction"><legend>Correct this suggestion</legend><label>Name<input className="input" aria-label="Corrected suggestion name" value={correction.name} onChange={event => changeCorrection({ name: event.target.value })} /></label>{selected.kind === "entity_create" && <label>Entry type<select className="select" aria-label="Corrected Memory entry type" value={correction.entityType} onChange={event => changeCorrection({ entityType: event.target.value as CodexEntity["type"] })}>{entityTypes.map(type => <option key={type} value={type}>{type}</option>)}</select></label>}{selected.kind === "canon_fact" && <label>Fact predicate<input className="input" aria-label="Corrected fact predicate" value={correction.predicate} onChange={event => changeCorrection({ predicate: event.target.value })} /></label>}<label>{selected.kind === "canon_fact" ? "Fact value" : "Description or note"}<textarea className="input" rows={4} aria-label="Corrected suggestion detail" value={correction.detail} onChange={event => changeCorrection({ detail: event.target.value })} /></label>{decidable && <p>This correction stays unconfirmed until you accept the suggestion.</p>}{correctionStale && decidable && <div role="alert"><p>The saved suggestion or evidence changed. Your correction keeps its original review version. Compare the current suggestion and source passages above before saving.</p><button className="btn" disabled={actionBusy || !hasCurrentVersion} onClick={() => changeCorrection({ reviewVersion: selected.review_version! })}>I reviewed updated evidence; keep my correction</button></div>}</fieldset>}
         </div>
         <footer className="memory-inbox__actions" aria-label="Suggestion decisions">
-          {correction && <><button className="btn btn--primary" disabled={busy || loading || !decidable || !hasCurrentVersion || correctionStale || !correction.name.trim() || selected.kind === "canon_fact" && (!correction.detail.trim() || !correction.predicate.trim())} onClick={saveCorrection}>Save correction</button><button className="btn" disabled={busy} onClick={() => discardCorrection(selected.id)}>Cancel correction</button></>}
-          <div role="group" aria-label="Memory review actions"><button className="btn btn--primary" disabled={busy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={() => decide("accepted")}>Accept</button><button className="btn" disabled={busy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={startCorrection}>Correct</button><button className="btn" disabled={busy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={() => decide("deferred")}>Later</button><button className="btn btn--ghost" disabled={busy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={() => decide("rejected")}>Reject</button></div>
+          {correction && <><button className="btn btn--primary" disabled={actionBusy || loading || !decidable || !hasCurrentVersion || correctionStale || !correction.name.trim() || selected.kind === "canon_fact" && (!correction.detail.trim() || !correction.predicate.trim())} onClick={saveCorrection}>Save correction</button><button className="btn" disabled={actionBusy} onClick={() => discardCorrection(selected.id)}>Cancel correction</button></>}
+          <div role="group" aria-label="Memory review actions"><button className="btn btn--primary" disabled={actionBusy || loading || !decidable || !hasCurrentVersion || Boolean(correction) || typeNeedsConfirmation} onClick={() => decide("accepted")}>Accept</button><button className="btn" disabled={actionBusy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={startCorrection}>Correct</button><button className="btn" disabled={actionBusy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={() => decide("deferred")}>Later</button><button className="btn btn--ghost" disabled={actionBusy || loading || !decidable || !hasCurrentVersion || Boolean(correction)} onClick={() => decide("rejected")}>Reject</button></div>
           <small>{decidable ? "Only Accept adds this reviewed suggestion to Story Memory." : `Decision recorded: ${statusNames[selected.status]}.`}</small>
         </footer>
       </article>}
-    </div>}
+    </div>}</>}
   </section>;
 }

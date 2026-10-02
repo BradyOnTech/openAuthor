@@ -1,0 +1,37 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/components/editor/MemoryScanReview.test.tsx
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/MemoryScanReview.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/MemoryScanReview.test.tsx [ src/components/editor/MemoryScanReview.test.tsx ]
+Error: Failed to resolve import "./MemoryScanReview" from "src/components/editor/MemoryScanReview.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: ~/Developer/openAuthor/desktop/src/components/editor/MemoryScanReview.test.tsx:5:0
+  12 |  const __vi_import_1__ = await import("@testing-library/react");
+  13 |  const __vi_import_2__ = await import("../../api");
+  14 |  const __vi_import_3__ = await import("./MemoryScanReview");
+     |                                       ^
+  15 |  
+  16 |  
+ ❯ TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  09:56:13
+   Duration  478ms (transform 0ms, setup 0ms, import 0ms, tests 0ms, environment 337ms)
+

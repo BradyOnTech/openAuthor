@@ -3,9 +3,10 @@
 Status: local implementation and verification advanced; the six acceptance
 priorities remain in progress. This is not a release certificate.
 
-The remaining work is primarily literary and delivery acceptance: a connected
-chapter assessed by the author, observed Memory review workload, physical phone
-use, and signed Mac installation, upgrade and accessibility checks. The
+Remaining work includes editorial/Voice judgment, fresh-prose Memory evaluation,
+continuous companion voice policy, safe deletion and device management. Physical
+phone use and signed Mac installation, upgrade and accessibility checks are
+also required. The
 [requirements ledger](requirements.json) records each outcome and its remaining
 gate separately.
 
@@ -62,14 +63,22 @@ behavior, interruption, reconnect and accessibility remain unobserved.
 
 ## Verification and its limits
 
-The current core suite passes 529 of 530 discovered tests on Python 3.13, with
-one optional bundled-runtime check skipped. All 530 pass using the actual packaged Python 3.11 runtime.
-Desktop has 406 passing tests across 76 files plus
-TypeScript and production build checks; mobile has 126 across 27 files plus
-TypeScript, one hosted journey and four preview journeys. Contracts has 19
-passing tests; gateway has 28 plus its typecheck/build. All 17 final desktop
-browser journeys pass, including book, Memory permission and Storyline
-workflows. The unchanged authoring and caret journeys also pass in WebKit.
+The latest core suite discovers 548 tests on Python 3.13: 547 pass and one
+optional bundled-runtime check is skipped. Desktop passes 465 tests across 79
+files plus TypeScript and the production build. All 19 combined desktop browser
+journeys pass against the real core, including the new reviewed Memory scan and
+Canon correction recovery/delayed-completion journey. Gateway passes 33 tests
+with no skip against the disposable PostgreSQL fixture, plus typecheck/build and
+the existing encrypted-sync authorization checks. The 19 browser journeys
+precede the final transport-only publication repair; its 61 affected sync tests
+and the final full desktop suite pass afterward.
+
+The earlier packaged Python 3.11 checkpoint passed all 530 tests. Mobile's
+unchanged checkpoint has 126 across 27 files, TypeScript, one hosted journey and
+four preview journeys. Contracts' unchanged checkpoint has 19 passing tests.
+The unchanged authoring and caret journeys previously passed in WebKit.
+Current native repackaging is recorded separately below when complete; these
+interpreter and browser counts overlap and are not additive quality measures.
 
 The refreshed arm64 application contains byte-for-byte committed core source and pinned
 Python/Codex/Git runtimes. The [bundle report](native-bundle.json) records hashes,
@@ -91,18 +100,42 @@ Contracts, desktop and gateway audits are clean. Mobile still reports five high
 entries propagated from one unpatched node-forge advisory. The
 [dependency review](dependency-review.md) records the remaining release gate.
 
-## Concrete code work still open
+## Current implementation and remaining code
 
 A current-source review separates these gaps from older defects already fixed:
 
-- Memory extraction still misses uncased names and misclassifies some capitalized
-  places. The Inbox now describes those scanning limits. Author review effort
-  remains unmeasured.
+- The automatic local Memory heuristic still misses uncased names and
+  misclassifies some capitalized places. An optional reviewed AI scan now
+  supports language-independent, exact-source candidates and uncertain types;
+  malformed evidence is withheld and unresolved type ambiguity requires author
+  confirmation. Local provider-response fixtures verify the workflow, not model
+  accuracy. Fresh prose and observed author review effort remain required. See
+  the [scan checks](../memory-semantic-scan-2026-10-02/core-review.md).
+- Direct accepted-fact corrections now recover across navigation and restart,
+  retain their loaded version, and preserve newer edits during delayed saves.
+  The [real-core journey](../canon-correction-recovery-2026-10-02/review.md)
+  verifies recovery, stale refusal, explicit comparison and guarded save.
 - The fresh Writing Voice alternatives introduce uncertainty about Ivo leaving,
   while only the boat's departure is uncertain in the source. One adds symbolic
   explanation. Specific refinement feedback is prepared; a fourth subscription
   call awaits approval because the three-call allowance has been used. Read the
   [paired packet](../connected-voice-2026-10-02/review.md) before assessing quality.
+
+Companion production issuance quotas now use an atomic database-owned counter
+shared across devices, books and gateway replicas. A queued request rechecks
+device/project authority after obtaining its quota lock. Real PostgreSQL checks
+cover concurrent gateways, restart, lost responses and queued revocation; see
+the [quota evidence](../shared-gateway-limiter-2026-10-02/review.md). The migration
+and matching database policy must be adopted in the approved deployment before
+running this production gateway. Continuous post-issuance policy, the full
+encrypted-object deletion lifecycle and device-management UX remain open.
+
+A separate publication repair prevents deletion of committed ciphertext after a
+lost metadata response. It validates exact committed metadata and uses one
+positive-only readback after an uncertain reply, without retrying publication
+or deleting the object. Definite rejection can still leave an orphan, requiring
+the full trusted lifecycle above. See the
+[publication regression](../mobile-publication-recovery-2026-10-02/review.md).
 
 Typed Memory values now reject invalid numbers, booleans, dates, lists and
 references before mutation, while preserving untouched legacy values and invalid

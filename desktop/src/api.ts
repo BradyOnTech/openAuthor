@@ -218,7 +218,7 @@ export async function runCoreCommand(
     style: ["get"],
     plan: ["get", "scene-preview"],
     codex: ["get", "list", "relationship-list"],
-    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose"],
+    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose", "scan-preview"],
   };
   if ((reads[args[0]] && !reads[args[0]].includes(args[1])) || (args[0] === "scene" && args[1] === "add")) {
     if (args[0] === "scene" && args[1] === "update") return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
@@ -1852,6 +1852,11 @@ export async function deleteCodexRelationship(projectRoot: string, relationshipI
 export type StoryMemorySuggestion = {
   id: string;
   review_version?: string;
+  classification_uncertain?: boolean;
+  type_candidates?: CodexEntity["type"][];
+  type_confirmed?: boolean;
+  origin?: "ai_scan";
+  generation_id?: string;
   kind: "entity_create" | "canon_fact" | "memory_note" | "relationship_create";
   entity_type?: CodexEntity["type"];
   name: string;
@@ -1877,6 +1882,22 @@ export type StoryMemorySuggestion = {
 
 export async function scanStoryMemory(projectRoot: string): Promise<{ scanned_scenes: number; added: number; refreshed: number; pending: number; suggestions: StoryMemorySuggestion[] }> {
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan", "--json"]));
+}
+
+export type MemoryScanRequest = { scene_ids: string[]; provider: ProposalProvider; model: string };
+export type MemoryScanPreview = {
+  fingerprint: string; provider: ProposalProvider; model: string; scope: string;
+  scenes: Array<{ scene_id: string; title: string; body: string }>;
+  accepted_entities: Array<{ id: string; type: CodexEntity["type"]; name: string; aliases: string[] }>;
+  input_tokens_estimate: number; response_token_reserve: number; warnings: string[];
+};
+export type MemoryScanReport = { scanned_scenes: number; added: number; refreshed: number; pending: number;
+  suggestions: StoryMemorySuggestion[]; generation_id: string; warnings: string[] };
+export async function previewMemoryScan(projectRoot: string, request: MemoryScanRequest): Promise<MemoryScanPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan-preview", "--request-json", JSON.stringify(request), "--json"]));
+}
+export async function generateMemoryScan(projectRoot: string, request: MemoryScanRequest, fingerprint: string): Promise<MemoryScanReport> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan-ai", "--request-json", JSON.stringify({ ...request, expected_fingerprint: fingerprint }), "--json"]));
 }
 
 export async function listStoryMemorySuggestions(projectRoot: string, status: StoryMemorySuggestion["status"] = "pending"): Promise<StoryMemorySuggestion[]> {

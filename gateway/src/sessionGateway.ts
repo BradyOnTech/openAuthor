@@ -324,13 +324,33 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
       return;
     }
 
+    const authorized = await dependencies.authorizer.authorize({
+      principal,
+      projectId: input.projectId,
+      deviceId: input.deviceId,
+    });
+    if (!authorized) {
+      await writeAudit(dependencies, {
+        event: "realtime_session_issuance",
+        requestId,
+        occurredAt: dependencies.clock.now().toISOString(),
+        outcome: "forbidden",
+        statusCode: 403,
+        ...auditIdentity(policy, principal, input),
+      });
+      sendError(response, 403, "forbidden", "This project or device is not authorized.", requestId);
+      return;
+    }
+
     const now = dependencies.clock.now();
     const rateLimitKey = opaqueHash(
       policy.safetyIdentifierSecret,
       "rate-limit",
       `${principal.tenantId}\0${principal.subject}`,
     );
-    const rateLimit = dependencies.rateLimiter.consume(rateLimitKey, now.getTime());
+    const rateLimit = await dependencies.rateLimiter.consume(rateLimitKey, now.getTime(), {
+      principal, projectId: input.projectId, deviceId: input.deviceId,
+    });
     if (!rateLimit.allowed) {
       const retryAfterSeconds = rateLimit.retryAfterSeconds ?? 1;
       await writeAudit(dependencies, {
@@ -350,24 +370,6 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
           retry_after_seconds: retryAfterSeconds,
         },
       });
-      return;
-    }
-
-    const authorized = await dependencies.authorizer.authorize({
-      principal,
-      projectId: input.projectId,
-      deviceId: input.deviceId,
-    });
-    if (!authorized) {
-      await writeAudit(dependencies, {
-        event: "realtime_session_issuance",
-        requestId,
-        occurredAt: dependencies.clock.now().toISOString(),
-        outcome: "forbidden",
-        statusCode: 403,
-        ...auditIdentity(policy, principal, input),
-      });
-      sendError(response, 403, "forbidden", "This project or device is not authorized.", requestId);
       return;
     }
 

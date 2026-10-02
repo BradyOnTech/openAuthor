@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-02",
+  "status": "implemented_locally_deployment_adoption_open",
+  "scope": "authorized shared quota fallback; unsafe cleanup worker not implemented",
+  "source_base_commit": "f5d2a349f804b73973d7770634caaf86a062a0eb",
+  "source_state": "uncommitted shared worktree source identified by hashes",
+  "runtime": {
+    "node": "v22.17.0",
+    "python": "3.13.2",
+    "postgres": "postgres (PostgreSQL) 17.11 (Homebrew)"
+  },
+  "command": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+  "checks": {
+    "gateway_tests": {
+      "discovered": 33,
+      "passed": 33,
+      "skipped": 0
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_encrypted_sync_authorization_sql": "passed",
+    "concurrent_adapters": {
+      "requests": 24,
+      "allowed": 5,
+      "denied": 19,
+      "shared_devices": 2,
+      "shared_books": 2
+    },
+    "live_gateway_servers": {
+      "servers": 2,
+      "requests": 24,
+      "http_201": 5,
+      "http_429": 19,
+      "synthetic_upstream_calls": 5
+    },
+    "queued_revocation": [
+      "device",
+      "workspace_membership"
+    ],
+    "queued_revocation_result": "refused; counter unchanged at 0; no additional upstream call",
+    "database_restart": "actual pg_ctl fast restart; exhausted quota retained",
+    "lost_committed_response": "refused locally; consumed once; no automatic retry",
+    "policy_update_privileges": "authenticated direct UPDATE refused",
+    "stale_session_revoked_device_wrong_project": "refused",
+    "missing_migration_malformed_oversized_transport_errors": "fail closed"
+  },
+  "red_evidence": {
+    "initial": "initial-red.txt",
+    "queued_authority": "queued-revocation-red.txt",
+    "queued_failure": "201 after a device was revoked while its request waited for the quota row"
+  },
+  "green_evidence": "checks.txt",
+  "ci": {
+    "job": "shared-gateway-quota",
+    "workflow": ".github/workflows/ci.yml",
+    "remote_run_observed": false,
+    "integration_skip_without_disposable_database": true
+  },
+  "local_only": {
+    "provider_calls": 0,
+    "deployed_calls": 0,
+    "real_secrets_used": false,
+    "author_manuscripts_used": false,
+    "fixture_jwt_claims_injected": true,
+    "real_gotrue_postgrest_storage": false
+  },
+  "rollout": {
+    "migration": "20261002120000_mobile_realtime_shared_rate_limit.sql",
+    "default_limit": 5,
+    "default_window_ms": 60000,
+    "policy_owner": "trusted database administrator",
+    "must_align_all_gateway_environment": true,
+    "deployed_adoption_observed": false
+  },
+  "open": [
+    "continuous Realtime policy and post-issuance revocation",
+    "session duration/concurrency/spend controls and funding decision",
+    "target PostgREST/Auth/RLS rollout verification",
+    "safe lifecycle freeze/orphan Storage cleanup/metadata finalization",
+    "physical-device and signed-release acceptance"
+  ],
+  "source_sha256": {
+    ".github/workflows/ci.yml": "6b6e29f35f70811b5cd372f3fb8d13ca91c2c67595b584e06becbcf8f75c0041",
+    "gateway/README.md": "55bcc2017524422a0b21d647f7835810df2febc0da5d10684ec9edcaa1f4ec5e",
+    "gateway/config.example.env": "71b1abfb43a8ea98b6e8fd4208b0e75eb6039d4a0c286fb8f44ecd34b821c6b1",
+    "gateway/src/config.ts": "bd0a1137f26f5887f52caf9cc780aab8ba9c71ed8b07dbd95d809a90c3638890",
+    "gateway/src/index.ts": "a1b18ef357870b8c914b1dad7c6dd14e080f1192ac5602ce559179ac13d38eee",
+    "gateway/src/production.ts": "85c987a44fc118cfcd0b8a0c393e51d702359585cecf32328fa8d94ef1321102",
+    "gateway/src/sessionGateway.ts": "315f248e6e81eb675c721f3e020ec177bbc3a4c757474515bf603ded1efd0648",
+    "gateway/src/types.ts": "f888b7f5bc6113f88e8697327010bdee2e5d27d249710c59bb14c7e7e25b0dd1",
+    "gateway/src/supabaseRateLimiter.ts": "b406900ce09f7fb2b3fb26a78ea6885fdbf84956da9d4bf86a29052dd191cc18",
+    "gateway/test/config.test.ts": "1d37e9829bac2b54df14e8e9ae9ae5b9c209af555fca58fc76101697bb932050",
+    "gateway/test/sessionGateway.test.ts": "a6634e900a40ae02cf79d325fb8cfdf760cd28578a543bc396018dec0b36cb97",
+    "gateway/test/supabaseRateLimiter.test.ts": "bf379e2944134bf0949b153318ab81d838fba7f9f92a1be7d4195b1ed29969ef",
+    "gateway/test/sharedRateLimit.postgres.test.ts": "4247f1bced729e2abc39070283d98f41464286f28b045a591b61a386e94716ce",
+    "scripts/verify_shared_gateway_limiter.py": "0adbf56aa57980fca7d2d7122df99436714b711fb7e9686300c7cec39acf0e21",
+    "supabase/migrations/20261002120000_mobile_realtime_shared_rate_limit.sql": "677f347c71ad77e0a1e32b23a1e3f47c0083eec2b722f158c1ea8582483b4a68",
+    "supabase/tests/realtime_rate_limit_fixtures.sql": "851dade214e5d8e4fbe6b78f9058f0811209a96738f7b7a9cd543f80d275aa17"
+  },
+  "evidence_sha256": {
+    "checks.txt": "31fdc6c104ec67db08284e8988f1bf6a56b65ffef7e74d89e786a189f9b14370",
+    "initial-red.txt": "0e8ae4ebf301eeb608094f0ff3d4143883fb7376513c13224df6d0a8dc4ec86b",
+    "queued-revocation-red.txt": "e1c8da6989717479066208ccb240da229732f7250f5bd8acd9cfe4c518f30c4b"
+  }
+}
