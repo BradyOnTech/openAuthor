@@ -1,0 +1,13 @@
+{
+  "README.md": "9789577079ffe38bef18343ee1362e678dea4b3ccb58cca61e50585fbe4faa3d",
+  "advisory.json": "73bcf25239a94b367493107ccc79e4181a4b41d6899a3d63035b69bdf9d72952",
+  "assessment.json": "f6d439c4516ef6219d44bac2191fbc0f6c5894da254d539a44111271cdf67ed1",
+  "initial-npm-config-refusal.txt": "e9530b89d6bfaeb481c5e63b2a2549da53bea98cf7b7454e82ed39cf56d0fa1d",
+  "installed-tree.json": "9b11464d3c39087052df794c9f952f354646adae8d464b47263f2e4a3e3c4c24",
+  "npm-audit.json": "c5ed6b267cc61fa2ec196b090fccc5448d3d28d66ff8cfe73ce55a693d1d33e0",
+  "offline-preflight.json": "7d72cdfb87d36c814fe323d33c8043fd7eef893e92b34dd9238872314dd4c952",
+  "recheck.py": "fa7fdb3be0005af3ae050485bcc41d62788b8b5b997858e9266021093a397c7b",
+  "results.json": "c621813657db4fff8bd52ea2fbf98d43942db796837cf8029511694d19add63c",
+  "upstream-packages.json": "46ee70a205d2a50a5510e77197276c8dee8b03634e34e0f7e7296e7f84b2b5d7",
+  "upstream-pull.json": "264810ed985560cbb8623eef17aabd278d1f969d89bf15088ea0c4e850f1f7da"
+}

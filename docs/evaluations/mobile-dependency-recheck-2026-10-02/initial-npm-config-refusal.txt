@@ -1,0 +1,10 @@
+The first collection attempt did not complete an audit. npm refused loading
+the same /dev/null configuration path as both the user and global config:
+
+Exit prior to config file resolving
+cause
+double-loading config "/dev/null" as "global", previously loaded as "user"
+
+This is a collection-command failure, not a new dependency result. The
+collector now creates two distinct empty configuration files in its disposable
+directory and continues to use the public registry explicitly.

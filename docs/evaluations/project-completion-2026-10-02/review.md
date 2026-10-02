@@ -1,6 +1,6 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `e7712d3`; all six
+Status: **in progress**. The latest implementation is `9d31cf8`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
@@ -32,7 +32,21 @@ without skips. Source hashes were unchanged across the final run. Independent
 Standards and Spec re-reviews have zero open findings; 240 packet hash checks
 matched, and the account raw log is preserved under a tracked compressed name.
 
-The writing, Memory, tab and mobile-build work below belongs to the preceding
+Reviewed retained-project corrections now reconcile moves and exact independently
+finalized deletions after account freeze. Original destructive choices and key
+rotation thresholds remain intact; corrections invalidate prior cleanup approval.
+Desktop selection and confirmation bind a fresh review and exact amendment UUID.
+Lost replies resolve through the bare durable receipt before current progress,
+including for accounts enrolled without a hosted book. Malformed error replies
+remain unresolved. The [amendment integration packet](../account-amendment-integration-2026-10-02/README.md)
+records 626 desktop tests, nine journeys per browser, nine SQL suites and
+24 concurrency/isolation controls alongside 94/94 gateway tests without skips.
+All 83 captured inputs remained unchanged and match the implementation commit.
+Standards and Spec re-reviews have zero open findings; the two initial Spec
+findings have failing regression controls and passing final coverage.
+
+The earlier cloud checkpoint above retains its `e7712d3` scope. The writing,
+Memory, tab and mobile-build work below belongs to the preceding
 `0cd77bd` iteration; its unchanged core/mobile/native results retain that scope.
 
 Writing Voice can now receive exact author-defined facts, knowledge limits,
@@ -81,9 +95,9 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Desktop | Current 590 tests in 88 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
-| Account/key-recovery browser workflows | Current 6/6 Chromium and 6/6 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
-| Gateway/database | Current 94/94, no skip; TypeScript/build; eight SQL suites and 16 concurrency controls | Disposable PostgreSQL/HTTP fixture; six real database/process voice cases |
+| Desktop | Current 626 tests in 88 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
+| Account/key-recovery browser workflows | Current 9/9 Chromium and 9/9 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
+| Gateway/database | Current 94/94, no skip; TypeScript/build; nine SQL suites and 24 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; six real database/process voice cases |
 | Python 3.13 | Prior 0cd77bd: 577/577, no skip | Unchanged core; not rerun this iteration |
 | Actual bundled Python 3.11.15 | Prior 0cd77bd: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
 | Writing browser workflows | Prior 0cd77bd: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows; not current account journeys |
@@ -131,9 +145,10 @@ intent and a separate verifier role. Target backing versions, upload queues and
 in-flight upload absence must be independently checked before finalization.
 The local HTTP fixture represents metadata, not physical backend purge.
 Multi-project account orchestration is now implemented and locally verified.
-Actual backing purge and Auth acceptance remain deployment gates. A retained
-shared project moved or deleted after review can block its immutable intent;
-a reviewed amendment or operator reconciliation workflow remains open.
+Actual backing purge and Auth acceptance remain deployment gates. Reviewed
+retention amendments now cover exact moves and independently finalized deletions.
+Unknown absence without a permanent attested deletion receipt still requires
+operator evidence and cannot be inferred from empty metadata.
 
 ## Remaining work
 
@@ -147,14 +162,19 @@ a reviewed amendment or operator reconciliation workflow remains open.
    GUI crash/restore acceptance.
 4. Approved deployed reading, encrypted capture, voice interruption/reconnect,
    cold restart and desktop handoff on physical iPhone and Android.
-5. Remaining cloud code and infrastructure: account-intent amendment after
-   retained-project changes, safe no-snapshot key recovery, unknown upstream
-   allocation reconciliation and target backing/queue verification. Then drill
+5. Remaining cloud code and infrastructure: safe no-snapshot key recovery,
+   unknown upstream allocation reconciliation and target backing/queue
+   verification, including operator evidence for unknown absent projects. Then drill
    deployed authorization/revocation/rotation, independent controller operations
    and deletion. Complete control outages and provider media/billing cleanup
    retain their explicit limits.
 6. Supported mobile dependency repair, Developer ID signing/notarization, clean
    Apple Silicon and Intel installation/upgrades, and signed credential checks.
+
+The [latest dependency recheck](../mobile-dependency-recheck-2026-10-02/README.md)
+still reports five high entries from one unpatched advisory and found no
+supported released remedy in the inspected official packages. No dependency or
+signing setting was changed; existing export containment does not clear the gate.
 
 No valid signing identities are available locally. Current tooling has only
 CommandLineTools and cannot use devicectl or adb; this is not proof that no user

@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "118641f6d651144740ce52a6fa8f0befbea92ff7",
+  "implementation_identity": "Archived migration 21 and verifier/test source SHA-256 fingerprints; the new implementation was not committed when this packet ran.",
+  "verified_on": "2026-10-02",
+  "postgres": "17.11 (Homebrew)",
+  "execution": "Both retained baseline and current outputs executed from tested-source.tar.gz in new disposable Unix-socket clusters with fsync enabled.",
+  "archive_unchanged_after_replay": true,
+  "source_files": 23,
+  "baseline": {
+    "migrations_applied": 13,
+    "assertions": 3,
+    "exit_code": 0,
+    "observed_gap": "Moved retained shared project after auth_ready refuses Auth deletion (55000); repeating preparation preserves stale cleanup and no reviewed amendment interface exists. The baseline harness intentionally asserts this broken behavior."
+  },
+  "current": {
+    "migrations_applied": 14,
+    "sql_suites": 3,
+    "amendment_assertions": 45,
+    "account_regression_assertions": 39,
+    "voice_regression_assertions": 38,
+    "concurrency_controls": 8,
+    "queued_lock_controls": 7,
+    "stale_snapshot_controls": 1,
+    "failures": 0,
+    "skips": 0,
+    "exit_code": 0
+  },
+  "controls": [
+    "No-effect resolution refusal, no partial audit from mixed valid/foreign batches, immutable original inventory/dispositions/action/outbox/child routes.",
+    "Moved retained scope after auth_ready resets deleting and invalidates both stale expected intent and prior accepted cleanup digests.",
+    "Exact read-only amendment UUID lookup remains valid after a later revision supersedes the receipt.",
+    "Separately approved finalized project receipt is attached only with exact project/job/backend digest, absent metadata and no surviving Storage metadata; no new destructive child is created.",
+    "Original key rotation threshold persists; unknown absence and invented purge receipts remain unresolved.",
+    "Owned live Auth review requires no active device; foreign, expired and elevated actors refuse; foreign names and member/device details are absent from allowlisted output.",
+    "Held movement, competing amendments, amendment versus stale verifier/Auth deletion, remaining-owner DELETE versus preparation/Auth, destination-owner loss, session loss during wait and stale snapshots."
+  ],
+  "review": {
+    "material_findings_open": 0,
+    "scope": "Read-only migration 21, SQL assertions and race controls against repository conventions and lifecycle safety; the apply-response integration mismatch was corrected in the separately owned desktop lane."
+  },
+  "retained_pre_green_outputs": {
+    "pre-green-test-cast-failure.txt.gz": "Initial current run stopped at a test-expression cast error; parentheses were corrected without weakening the privacy assertion.",
+    "sandbox-start-refusal.txt.gz": "Sandbox shared-memory refusal before any SQL execution.",
+    "fixture-start-refusal.txt.gz": "Fixture server startup refusal before SQL; the fixture was moved to a shorter private temporary path."
+  },
+  "limitations": [
+    "Synthetic Auth/session records and simulated independent operator digests do not certify deployed Auth behavior or backing-object purge.",
+    "No Storage HTTP, provider, deployment, private book or real account operation was performed.",
+    "An unknown absent project without a permanent independently attested receipt still requires operator evidence; this amendment does not infer ownership or deletion.",
+    "The amendment does not change original shared-history retention, offline copies, signed-URL lifetimes, project destructive consent or independent voice closure requirements.",
+    "Desktop/browser, native Keychain/signing, physical devices and target scheduling remain outside this focused SQL checkpoint."
+  ],
+  "artifacts": {
+    "current-green.txt.gz": "bbd3e03df4e55b5758bf98d623e4614ec1627b77d4c5e4f382dfef80f53e0712",
+    "pre-green-test-cast-failure.txt.gz": "b5950f52ddcbee9c35db7da0c5660d6d678eb70fac3dbe8b4189ec47433357f5",
+    "baseline-red.txt.gz": "3bfb20e1a8799515a6e2649278ca926ec99a293bf15f7ae16666529c45173584",
+    "source-sha256.json": "65f9ec261a5031e27533d63a249f4e084eefce16152c62c8cfdb8290f64ec3e6",
+    "sandbox-start-refusal.txt.gz": "3a8a8266588c38593b84ee8077d6e711082e754fba5f5fc992931ef3740ce311",
+    "README.md": "54309b44b19fbfd54eb8f7bf11e5196e07e7b47bc5627eba908d2729c56bf205",
+    "evaluate.py": "ee3f23584b5e7dd1e6f61aeeb5f14e2eafcc0d80801d28fd7f0c82c13cc3a622",
+    "tested-source.tar.gz": "d3c9c37706c01080ab9296afbfd4b99a75d23f63cc4ee1e76f2c1d8794f94eb2",
+    "fixture-start-refusal.txt.gz": "218e6e4209d4ef2d3fe32f0039b0d85b68cf62b870b9dfa09486fc4fdbd19d61"
+  }
+}

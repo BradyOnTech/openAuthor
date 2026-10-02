@@ -25,19 +25,28 @@ build alone satisfies this goal.
 | Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds pass; unsigned arm64 runtime verification belongs to the prior 0cd77bd native checkpoint. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest checkpoint — 2026-10-02, `e7712d3`
+## Latest checkpoint — 2026-10-02, `9d31cf8`
 
-Production readiness remains **in progress**. Reviewed multi-project account
-deletion and its desktop review flow are now implemented. An independent known-call
-controller provides durable scope/deadline enforcement and restart recovery;
-unresolved voice cleanup blocks account finalization. Workspace bootstrap and
-registry RLS now preserve existing roles and enforce live unfrozen membership.
-The [combined packet](evaluations/cloud-lifecycle-integration-2026-10-02/README.md)
-records 94/94 gateway tests without skips, eight SQL suites and 16 actual database
-concurrency controls against unchanged captured inputs. Current desktop checks
-pass 590 tests in 88 files, TypeScript/build and six account/key-recovery journeys
-in each browser. Independent Standards and Spec re-reviews have zero open findings.
-These are local results with synthetic provider, Auth and Storage boundaries.
+Production readiness remains **in progress**. Reviewed retention amendments now
+reconcile a moved shared project or an exact independently finalized deletion
+after account freeze. Original destructive choices and key-rotation thresholds
+remain intact. Explicit desktop review binds a fresh digest and amendment UUID;
+lost replies reconcile through the exact durable receipt before current progress.
+Accepted corrections invalidate prior cleanup approval. Unknown absent-project
+scope still requires independent permanent evidence.
+
+The [current integration packet](evaluations/account-amendment-integration-2026-10-02/README.md)
+records 626 desktop tests in 88 files, TypeScript/production build, nine journeys
+in each Chromium/WebKit engine, nine SQL suites, 24 concurrency/isolation controls
+and 94/94 gateway tests without skips. All 83 captured inputs remained unchanged
+and match committed source. Independent Standards and Spec re-reviews have zero
+open findings after two regression-proven Spec repairs. These are local results
+with synthetic provider, Auth and Storage boundaries.
+
+The prior `e7712d3` cloud checkpoint implemented reviewed multi-project account
+deletion, independent known-call control and current registry authority. Its
+[retained packet](evaluations/cloud-lifecycle-integration-2026-10-02/README.md)
+keeps its separate eight-suite/16-control scope.
 
 The preceding `0cd77bd` pass repairs lost
 Writing Voice preservation constraints, unsupported candidate-only consistency assessments,
@@ -60,13 +69,18 @@ unobserved. The machine record preserves previous checkpoints.
 
 Author literary judgment and fresh-prose Memory workload remain unobserved.
 Required work also includes physical phones, approved deployment/backing drills,
-account-intent amendment after retained shared-project changes, safe no-snapshot
-key recovery, unknown provider-allocation reconciliation, independent-controller
+safe no-snapshot key recovery, unknown provider-allocation reconciliation, independent-controller
 deployment, signing/notarization, clean Mac installs/upgrades and full native
 accessibility. Strict expiry during complete control outages and final provider
 media/billing cleanup remain unestablished. No new provider call occurred; the fourth synthetic Voice
 refinement still awaits approval after automatic review rejected it beyond the
 three-call allowance.
+
+The [current dependency recheck](evaluations/mobile-dependency-recheck-2026-10-02/README.md)
+still reports five high entries from one unpatched Forge advisory. No supported
+released remedy was found in the inspected official packages. The installed
+dependency and signing settings remain unchanged; existing export containment
+does not clear this release gate.
 
 ## Iteration record
 

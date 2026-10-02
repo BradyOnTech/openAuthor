@@ -1,0 +1,234 @@
+{
+  "node-forge": {
+    "name": "node-forge",
+    "version": "1.4.0",
+    "registry_url": "https://registry.npmjs.org/node-forge/latest",
+    "dependencies": {},
+    "git_head": "fa385f92440879601240020f158bed68e444e83a",
+    "archive_url": "https://registry.npmjs.org/node-forge/-/node-forge-1.4.0.tgz",
+    "integrity": "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
+    "integrity_verified": true,
+    "archive_sha256": "bf9d7ca0d774235354697bd4b5e642af6505e7ce2066762c3b855138cf870820",
+    "inspected_files": {
+      "package/lib/rsa.js": {
+        "sha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+        "matches": [
+          {
+            "line": 267,
+            "text": "// validator for a DigestInfo structure"
+          },
+          {
+            "line": 269,
+            "text": "name: 'DigestInfo',"
+          },
+          {
+            "line": 274,
+            "text": "name: 'DigestInfo.DigestAlgorithm',"
+          },
+          {
+            "line": 279,
+            "text": "name: 'DigestInfo.DigestAlgorithm.algorithmIdentifier',"
+          },
+          {
+            "line": 286,
+            "text": "name: 'DigestInfo.DigestAlgorithm.parameters',"
+          },
+          {
+            "line": 296,
+            "text": "name: 'DigestInfo.digest',"
+          },
+          {
+            "line": 305,
+            "text": "* Wrap digest in DigestInfo object."
+          },
+          {
+            "line": 309,
+            "text": "* DigestInfo ::= SEQUENCE {"
+          },
+          {
+            "line": 1112,
+            "text": "* signature is an OCTET STRING that holds a DigestInfo."
+          },
+          {
+            "line": 1114,
+            "text": "* DigestInfo ::= SEQUENCE {"
+          },
+          {
+            "line": 1130,
+            "text": "*          'NONE' or null for none, DigestInfo will not be expected, but"
+          },
+          {
+            "line": 1166,
+            "text": "// d is ASN.1 BER-encoded DigestInfo"
+          },
+          {
+            "line": 1171,
+            "text": "// validate DigestInfo structure and element count"
+          },
+          {
+            "line": 1175,
+            "text": "obj.value.length !== 2) {"
+          },
+          {
+            "line": 1178,
+            "text": "'DigestInfo value.');"
+          },
+          {
+            "line": 1206,
+            "text": "'DigestInfo value. ' +"
+          },
+          {
+            "line": 1316,
+            "text": "*          'NONE' or null for none, DigestInfo will not be used but"
+          }
+        ]
+      }
+    }
+  },
+  "@expo/code-signing-certificates": {
+    "name": "@expo/code-signing-certificates",
+    "version": "0.0.7",
+    "registry_url": "https://registry.npmjs.org/@expo%2Fcode-signing-certificates/latest",
+    "dependencies": {
+      "node-forge": "^1.4.0"
+    },
+    "git_head": "82466a5bc6226a2a2da6a04bfbc904b21d83054a",
+    "archive_url": "https://registry.npmjs.org/@expo/code-signing-certificates/-/code-signing-certificates-0.0.7.tgz",
+    "integrity": "sha512-zP0tnfqrFFRL8INtOaQ6XwEYfdIpIH9vrEo7y0bHQGQa50z4/QWXE5CI4nRUHxqFW4MVWOwXFg1hom1aAZHNkQ==",
+    "integrity_verified": true,
+    "archive_sha256": "91a222e59e712ed091769860092a710a7df62e69fbf8e9b3c45b26ff3e30f246",
+    "inspected_files": {
+      "package/build/main.js": {
+        "sha256": "677bb9dab63300b52ead2263e54f1ffbbd292faaa1d7f166d0535a49eec54a74",
+        "matches": [
+          {
+            "line": 22,
+            "text": "const node_forge_1 = require(\"node-forge\");"
+          },
+          {
+            "line": 180,
+            "text": "const isValid = certificate.verify(certificate);"
+          },
+          {
+            "line": 206,
+            "text": "const isValidSignature = certificate.publicKey.verify(digest.digest().getBytes(), digestSignature);"
+          },
+          {
+            "line": 247,
+            "text": "(0, assert_1.default)(csr.verify(), 'CSR not self-signed');"
+          }
+        ]
+      }
+    }
+  },
+  "@expo/cli": {
+    "name": "@expo/cli",
+    "version": "57.0.27",
+    "registry_url": "https://registry.npmjs.org/@expo%2Fcli/latest",
+    "dependencies": {
+      "ws": "^8.12.1",
+      "arg": "^5.0.2",
+      "ora": "^3.4.0",
+      "zod": "^3.25.76",
+      "glob": "^13.0.0",
+      "send": "^0.19.0",
+      "toqr": "^0.1.1",
+      "chalk": "^4.0.0",
+      "debug": "^4.3.4",
+      "getenv": "^2.0.0",
+      "semver": "^7.6.0",
+      "accepts": "^1.3.8",
+      "ci-info": "^3.3.0",
+      "connect": "^3.7.0",
+      "prompts": "^2.3.2",
+      "slugify": "^1.3.4",
+      "progress": "^2.0.3",
+      "@expo/env": "~2.4.3",
+      "multitars": "^1.0.2",
+      "picomatch": "^4.0.4",
+      "wrap-ansi": "^7.0.0",
+      "node-forge": "^1.3.3",
+      "@expo/metro": "~56.0.2",
+      "@expo/plist": "^0.8.1",
+      "compression": "^1.7.4",
+      "expo-server": "^57.0.3",
+      "lan-network": "^0.2.1",
+      "@expo/config": "~57.0.9",
+      "resolve-from": "^5.0.0",
+      "@expo/devcert": "^1.2.1",
+      "@expo/log-box": "^57.0.4",
+      "bplist-parser": "^0.3.1",
+      "pretty-format": "^29.7.0",
+      "terminal-link": "^2.1.1",
+      "@expo/xcpretty": "^4.4.4",
+      "bplist-creator": "0.1.0",
+      "fetch-nodeshim": "^0.4.10",
+      "@expo/json-file": "^11.0.1",
+      "@expo/osascript": "^2.7.1",
+      "@expo/ws-tunnel": "^2.0.0",
+      "dnssd-advertise": "^1.1.4",
+      "npm-package-arg": "^11.0.0",
+      "@expo/image-utils": "^0.11.5",
+      "@expo/spawn-async": "^1.8.0",
+      "stacktrace-parser": "^0.1.10",
+      "@expo/metro-config": "~57.0.12",
+      "@expo/schema-utils": "^57.0.2",
+      "agent-cli-detector": "0.1.7",
+      "structured-headers": "^0.4.1",
+      "@expo/require-utils": "^57.0.5",
+      "@expo/router-server": "^57.0.11",
+      "@expo/config-plugins": "~57.0.9",
+      "@expo/inline-modules": "^0.1.7",
+      "@expo/metro-file-map": "^57.0.3",
+      "sandbox-cli-detector": "^0.2.0",
+      "@expo/package-manager": "^1.13.1",
+      "@expo/prebuild-config": "^57.0.16",
+      "@react-native/dev-middleware": "0.86.3",
+      "@expo/code-signing-certificates": "^0.0.6"
+    },
+    "git_head": "9349d1457178dd9cccb8bdd3aed47473c49134e1",
+    "archive_url": "https://registry.npmjs.org/@expo/cli/-/cli-57.0.27.tgz",
+    "integrity": "sha512-Jauk4chxmpVG5ElrMLTCwjFP20jbYU7PB4l3LYV8j+4e/3HU5jdl7qTQ4eVy1AaDUE9Ia2NCQ5A9kar2V1gaLg==",
+    "integrity_verified": true,
+    "archive_sha256": "7af6768df41f493197b99026f39563d2cb63791624556f222b4e78379e8ca6bf",
+    "inspected_files": {
+      "package/build/src/utils/codesigning.js": {
+        "sha256": "935fadac6f1dc56bc088acb04416d1fc83bd70505f368b87dd210d0aa4617de2",
+        "matches": []
+      }
+    }
+  },
+  "expo": {
+    "name": "expo",
+    "version": "57.0.26",
+    "registry_url": "https://registry.npmjs.org/expo/latest",
+    "dependencies": {
+      "@expo/cli": "^57.0.27",
+      "expo-font": "~57.0.4",
+      "expo-asset": "~57.0.18",
+      "@expo/metro": "~56.0.2",
+      "@expo/config": "~57.0.9",
+      "@expo/log-box": "^57.0.4",
+      "pretty-format": "^29.7.0",
+      "react-refresh": "^0.14.2",
+      "@babel/runtime": "^7.20.0",
+      "@expo/devtools": "~57.0.1",
+      "expo-constants": "~57.0.20",
+      "expo-keep-awake": "~57.0.2",
+      "expo-file-system": "~57.0.7",
+      "@expo/dom-webview": "~57.0.1",
+      "@expo/fingerprint": "^0.20.13",
+      "babel-preset-expo": "~57.0.13",
+      "expo-modules-core": "~57.0.20",
+      "@expo/metro-config": "~57.0.12",
+      "whatwg-url-minimum": "^0.1.2",
+      "@expo/config-plugins": "~57.0.9",
+      "@ungap/structured-clone": "^1.3.0",
+      "expo-modules-autolinking": "~57.0.13",
+      "@expo/local-build-cache-provider": "^57.0.8"
+    },
+    "git_head": "ad1efa3fa5802156660198ba5d787f91014d8df3",
+    "archive_url": "https://registry.npmjs.org/expo/-/expo-57.0.26.tgz",
+    "integrity": "sha512-U1rsFwcuZNnU61Z/YLnnVC/ZqP0wpxh/rCKUMff3ot/rhLpxFY1zxEqu4vyaexyvBAB1mwpl9lA/ltcHBoQGyg=="
+  }
+}

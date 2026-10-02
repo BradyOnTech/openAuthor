@@ -48,7 +48,11 @@ session, but deliberately requires no active device. It therefore reports an
 accepted request after its device is revoked. It exposes job phases and per-project
 handoff, key-rotation, and backend-verification blockers without lease tokens.
 Exact begin replay may reconcile the original request after revocation; clients
-must not automatically retry an uncertain destructive submission.
+must not automatically retry an uncertain destructive submission. Current status
+adds `original_inventory_sha256`, `amendment_revision` and the latest amendment
+receipt. `inventory_sha256` identifies the current effective intent; at revision
+zero it equals the original review hash. Begin replay remains bound to the
+immutable original hash and dispositions while returning current progress.
 
 ## Worker and verifier boundaries
 
@@ -73,15 +77,34 @@ For retained encrypted projects, the remaining owner uses the existing atomic ke
 rotation/envelope workflow. A merely retired key or changed metadata cannot satisfy
 the gate: an active key version greater than the exact reviewed prior maximum is
 required. Shared ownership and rotation are rechecked at preparation and in the
-Auth transaction. If a retained project is independently removed or moved during
-this process, its reviewed retention prerequisites no longer match; account
-finalization refuses. Such changed retained scope requires operator review and an
-extension to the disposition workflow, rather than inferred deletion consent.
+Auth transaction. When an originally retained project moves or is independently
+deleted, the author can explicitly [review and amend the retained scope](account-deletion-amendments.md).
+The amendment preflight requires a current live Auth session and no active device.
+It exposes historical names, old/current workspace IDs, rotation and owner
+prerequisites, and exact independent deletion evidence without foreign names,
+membership lists or ciphertext. Nothing is selected by default.
+
+A selected correction binds the fresh review digest, loaded revision and exact
+amendment UUID. It records the exact current workspace with another live owner,
+or attaches the absent project's exact permanent finalized deletion receipt and
+positive backing-verification digest. Original project actions, own-outbox choices,
+workspace dispositions, rotation thresholds and child jobs remain immutable; no
+new destructive child is created. Unknown absence or a missing receipt stays
+blocked pending operator evidence. Metadata absence alone does not certify purge.
+
+An accepted correction returns the account job to `deleting` and invalidates
+prior cleanup approval. Apply returns only the durable amendment receipt. A lost
+reply requires read-only lookup of that exact UUID, including superseded receipts,
+before current progress; an older job status cannot establish success. Known
+rolled-back PostgreSQL refusals require a fresh review. Unknown transport or
+malformed responses retain the pending UUID and block another submission.
 
 After project verification and any shared handoff/rotation, the independent
 verifier calls
 `mobile_prepare_account_auth_finalization(job_id, reviewed_inventory_sha256,
-cleanup_verification_sha256)`. The cleanup digest identifies the separately held
+cleanup_verification_sha256)`. The reviewed argument must equal the current
+effective `inventory_sha256`; stale original hashes and invalidated cleanup
+digests are refused after an amendment. The cleanup digest identifies the separately held
 operator evidence for account access, backing/queue cleanup, orphan attribution,
 and retention. SQL checks scope and child receipts, removes own recipient
 envelopes, acknowledgments, device public keys/session bindings, membership and

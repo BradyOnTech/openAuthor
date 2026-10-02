@@ -1,0 +1,14 @@
+{
+  "README.md": "3387272f4c8f1833824720ee78c6d813fd3d709082f3094a0fcc54c93a44a5e6",
+  "chromium-green.txt.gz": "d3741edd75893fed87ff7df6f410182728ea4794a8fee342b5f45f3640cd62f5",
+  "client-interface-red.txt.gz": "e6cf66543f8f8adf3a79c4b352d641d51a594ce911727e450e17c7f256514783",
+  "combined-green.txt.gz": "0b3195c52134a34ff87c91b94b465b47c3a433f92e27dce4977050aed14dd908",
+  "desktop-build-green.txt.gz": "ac927a19710a65fd64d8f593e99c7eb21735e96e6f1b07edf453bac1f322c965",
+  "desktop-green.txt.gz": "006f23e0c59dbb4fa0b048dd339170e6667f4b3d14ee0c573e084de81377a574",
+  "results.json": "d997f4ec5e1b24a3b8f5cd13e60e9c3741e2c2286e2e03cf878b87bf90bbef8d",
+  "reviewed-corrections-laptop-webkit.png": "626816e2780b2fd9c647e3dcc1800f91d785858ac96ee41b9c3a1a47b2ecc174",
+  "source-sha256.json": "6a6d4060ccd748d0421c23a8749a520e527b8919f701ab4c509e476d157992bf",
+  "spec-regressions-red.txt.gz": "cac8109b5f913377af32368071bb4a4dc1306f84b006c3d3fac8b3fe1c9aa71b",
+  "tested-source.tar.gz": "9f1494ff01d47436f7946a5f2adca34cd21dc13a3b10e2de75b740024b49a516",
+  "webkit-green.txt.gz": "8cf072a377ffb3e0cc24d61972016c3ebcf05276454037d2ceacac961efdfff4"
+}
