@@ -66,7 +66,8 @@
         "desktop/src/components/editor/CanonFactCard.recovery.test.tsx",
         "desktop/e2e/canon-correction-recovery.spec.ts",
         "docs/evaluations/memory-semantic-scan-2026-10-02/core-verification.json",
-        "docs/evaluations/canon-correction-recovery-2026-10-02/verification.json"
+        "docs/evaluations/canon-correction-recovery-2026-10-02/verification.json",
+        "docs/evaluations/project-completion-2026-10-02/native-gui-memory-preview.json"
       ],
       "remaining": [
         "Observe author review time, omissions and unwanted suggestions on fresh original prose",
@@ -204,8 +205,8 @@
       "optional_runtime_skipped": 1
     },
     "actual_packaged_python_3_11": {
-      "discovered": 530,
-      "passed": 530,
+      "discovered": 548,
+      "passed": 548,
       "skipped": 0
     },
     "desktop": {
@@ -216,7 +217,8 @@
       "webkit_focus_and_evidence_journeys": 2,
       "chromium_focus_and_evidence_journeys": 2,
       "full_browser_journeys": 19,
-      "full_browser_scope": "All 19 real-core browser workflows passed before the transport-only publication repair; the final 465-test suite includes that repair and 61 affected sync/provisioning checks."
+      "full_browser_scope": "All 19 real-core browser workflows passed before the transport-only publication repair; the final 465-test suite includes that repair and 61 affected sync/provisioning checks.",
+      "native_memory_preview": "Read-only exact full source preview and reachable controls verified in rebuilt native app; no inference"
     },
     "mobile": {
       "tests": 126,
@@ -267,8 +269,9 @@
       "refinement": "approval_pending"
     },
     "native_bundle": {
-      "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
-      "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
+      "source_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+      "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+      "application_sha256": "21fedbc26d0c97e7921f434240d736c1a056e0ca98fb9bfec9fe9b37341eb161",
       "unsigned_arm64": true,
       "release_certified": false
     },
@@ -297,7 +300,7 @@
       "scope": "The automatic capitalization-based local path retains two uncased-name misses and two place/character type errors in its authored cases. The optional reviewed semantic path is implemented and mechanically verified; provider accuracy on fresh original prose remains unmeasured."
     }
   ],
-  "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+  "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
   "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",

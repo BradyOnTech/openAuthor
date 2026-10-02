@@ -246,9 +246,9 @@
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Latest core, 465 desktop tests and production build passed. All 19 combined real-core browser workflows passed before the transport-only publication repair, whose 61 affected sync checks passed afterward. Native refresh is next; physical, signed and deployed acceptance remains open.",
-    "python_tests_passed": 547,
-    "python_test_scope": "Latest default Python 3.13 discovery: 548 tests, 547 passed and one optional bundled contract skip. The earlier packaged 530/530 checkpoint remains distinct until the new bundle is verified.",
+    "verification_stage": "Current source committed; actual packaged core 548/548, default core 547/548 with one optional skip, desktop 465 tests/build and 19 combined browser workflows passed. Shared gateway quota: 33 tests and SQL/RLS passed. Final native exact-source preview and retained tabs/Plan drafts observed. Physical, signed and deployed acceptance remains open.",
+    "python_tests_passed": 548,
+    "python_test_scope": "Actual packaged Python 3.11 suite: 548 passed, no skip. Default Python 3.13 discovery: 547 passed and one optional runtime skip. Interpreter runs overlap.",
     "desktop_tests_passed": 465,
     "desktop_test_files_passed": 79,
     "mobile_tests_passed": 126,
@@ -258,8 +258,8 @@
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
-    "frontend_build": "current-source arm64 native bundle built and inspected; desktop production build and all-platform Expo exports passed",
-    "macos_unsigned_bundle_and_bundled_runtime": "Final arm64 exact core-source match verified; bundled wire contract and five real SIGKILL recovery stages passed. Native GUI exact synthetic backup/restore, Plan/tab draft restart and physical Tab/Shift-Tab caret typing observed. No signed/clean-machine certificate.",
+    "frontend_build": "Production frontend and unsigned arm64 app rebuilt from committed source; unchanged all-platform Expo exports retain their earlier evidence.",
+    "macos_unsigned_bundle_and_bundled_runtime": "Exact committed core source, runtime contract and five real SIGKILL stages passed. Current native read-only Memory source preview and retained tabs/Plan drafts verified. Earlier caret/backup GUI evidence keeps its own binary identity. Signed/clean-machine acceptance remains open.",
     "dependency_audit": "Contracts, desktop and gateway: zero findings. Mobile: five high entries from one unpatched node-forge GHSA-86w9-cpqp-85rv at the retained audit. Installed Expo signing helpers reach the affected verifier; the current no-signing offline path exits and fresh platform exports omit affected modules. Signed-runtime/future-configuration certification remains unobserved.",
     "dependency_evidence": "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
     "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
@@ -286,7 +286,8 @@
     "desktop_test_scope": "374 tests across74 files; replacement-safe caret regressions included",
     "desktop_full_browser_journeys": "15/15 passed after immediate replacement and caret regression repairs",
     "gateway_test_scope": "Disposable PostgreSQL 17.11 shared-quota/RLS checks: 33 tests passed without a skip, plus typecheck/build. Target deployed Supabase remains unobserved.",
-    "combined_desktop_browser_journeys": 19
+    "combined_desktop_browser_journeys": 19,
+    "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442"
   },
   "external_constraints": {
     "live_provider_spend_usd_max_total": 5,

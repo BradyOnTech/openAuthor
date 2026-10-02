@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-02",
+  "source_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+  "application_sha256": "21fedbc26d0c97e7921f434240d736c1a056e0ca98fb9bfec9fe9b37341eb161",
+  "observation_method": "Actual macOS app via Cua accessibility tree and inline screenshots; curated observations, no screenshot files exported",
+  "scope": "Unsigned arm64 development app; disposable Native recovery acceptance book; read-only preview and document navigation",
+  "verified": {
+    "saved_scene": "The Ferry Office; exact previously saved 26-word prose retained",
+    "reopened_document_tabs": [
+      "The Ferry Office",
+      "Plan"
+    ],
+    "retained_synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "retained_new_act": "A still unfinished act",
+    "scan_preview": "Selected The Ferry Office and invoked Preview scan sources; exact full prose visible after scrolling",
+    "provider_model": "openai-codex / codex-recommended; unchanged account settings",
+    "preview_app_context_tokens_estimate": 593,
+    "accepted_identities_included": 0,
+    "suggestions_before_after": [
+      1,
+      1
+    ],
+    "reachable_footer": [
+      "Preview scan sources",
+      "Send reviewed AI scan",
+      "Close scan review"
+    ],
+    "end_state": "Preview closed without Send; temporary Memory tab closed; original two tabs and Saved scene left open"
+  },
+  "inference_requests": 0,
+  "prose_or_canon_mutations": 0,
+  "limits": [
+    "Earlier native caret/forced-termination observations keep their original binary identities.",
+    "No physical phone, signed/clean-machine, full VoiceOver or literary acceptance is claimed."
+  ]
+}

@@ -73,12 +73,13 @@ the existing encrypted-sync authorization checks. The 19 browser journeys
 precede the final transport-only publication repair; its 61 affected sync tests
 and the final full desktop suite pass afterward.
 
-The earlier packaged Python 3.11 checkpoint passed all 530 tests. Mobile's
-unchanged checkpoint has 126 across 27 files, TypeScript, one hosted journey and
+All 548 tests pass without a skip using the rebuilt application's actual
+packaged Python 3.11 runtime. Mobile's unchanged checkpoint has 126 across 27 files, TypeScript, one hosted journey and
 four preview journeys. Contracts' unchanged checkpoint has 19 passing tests.
 The unchanged authoring and caret journeys previously passed in WebKit.
-Current native repackaging is recorded separately below when complete; these
-interpreter and browser counts overlap and are not additive quality measures.
+The refreshed unsigned arm64 bundle matches committed core source byte-for-byte
+and passes its runtime contract and five forced-termination recovery stages.
+These interpreter and browser counts overlap and are not additive quality measures.
 
 The refreshed arm64 application contains byte-for-byte committed core source and pinned
 Python/Codex/Git runtimes. The [bundle report](native-bundle.json) records hashes,
@@ -175,4 +176,4 @@ broken current workflow.
 Successful requests, synthetic fixtures, exports and passing tests cannot
 substitute for these author, physical-device and clean-machine outcomes.
 
-The latest packaged reopen also retains both tabs, the saved 26-word disposable scene and its unfinished Plan synopsis/new-act title. The [current bundle report](native-bundle.json) identifies commit `4c953ff` and its binary; earlier caret and backup observations keep their distinct binary identities.
+The latest packaged reopen retains both tabs, the saved 26-word disposable scene and its unfinished Plan synopsis/new-act title. Its read-only Memory preview shows the full selected source and keeps the footer reachable after scrolling, with the suggestion count unchanged and no inference request. The [current bundle report](native-bundle.json) identifies commit `d5aea8a` and its binary; [native preview observations](native-gui-memory-preview.json) record this bounded walkthrough. Earlier caret and backup observations keep their distinct binary identities; the prior [4c953ff bundle report](native-bundle-4c953ff.json) is retained.

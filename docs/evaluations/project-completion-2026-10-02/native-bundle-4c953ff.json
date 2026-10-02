@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "bundled_core_source": "exact_match",
+  "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
+  "architecture": "arm64",
+  "python": "3.11.15",
+  "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+  "workflow_run_id": "",
+  "signed_bundle_required": false,
+  "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate",
+  "release_certified": false,
+  "manual_gates": {
+    "clean_machine_install": "not_observed",
+    "packaged_gui_author_workflow": "not_observed",
+    "signed_gui_forced_termination": "not_observed",
+    "upgrade_from_released_version": "not_observed",
+    "voiceover_keyboard_contrast": "not_observed"
+  },
+  "source_checkout_clean": true,
+  "application": {
+    "identifier": "com.openauthor.desktop",
+    "version": "0.1.0"
+  },
+  "runtime_manifests": {
+    "python": {
+      "schema_version": 1,
+      "python_version": "3.11.15",
+      "python_build_release": "20260510",
+      "architecture": "aarch64",
+      "source_asset": "cpython-3.11.15+20260510-aarch64-apple-darwin-install_only.tar.gz",
+      "sha256": "03bcedae9b19a48888d7dc8ba064f73f6efaaf2b13f6a8e1a1bcc062df13e855"
+    },
+    "codex": {
+      "schema_version": 1,
+      "codex_version": "0.144.6",
+      "architecture": "aarch64-apple-darwin",
+      "source_asset": "codex-0.144.6-darwin-arm64.tgz",
+      "sha512": "eb382f87bd0ccc1352793d7b1c48523ab9a618664600acd20bbc7a240abe79d90991d3d803d3f4235b46eda278f46941901c6e0be30a047d6a9bafb60a085cc3"
+    }
+  },
+  "binaries": {
+    "application": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52"
+    },
+    "python": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c"
+    },
+    "codex": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "80a3933d11a9d13ef806aa24f7bb8afc9169cfe4e9b09d6da6a92922cbde9cff"
+    },
+    "git": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "4387eed8ef6f08893a676a2971235f72707f886ee0ebd28b71e7482caa91d655"
+    }
+  }
+}
