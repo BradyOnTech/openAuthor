@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { getScene, getWritingVoiceWorkspace, writingVoiceAction, type StyleProfile, type VoicePreview, type WritingVoiceWorkspace } from "../../api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getScene, getWritingVoiceWorkspace, writingVoiceAction, type StyleProfile, type VoicePreservation, type VoicePreview, type WritingVoiceWorkspace } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
@@ -7,6 +7,7 @@ import { useUI } from "../../contexts/UIContext";
 import { availableProviders, defaultProvider } from "../../providerSelection";
 import { VoiceAssessment } from "./VoiceAssessment";
 import { VoiceRefinement } from "./VoiceRefinement";
+import { preservationError, SavedVoicePreservation, VoicePreservationInput } from "./VoicePreservation";
 import { readPosition, retentionKey, savePosition } from "../../workspaceRetention";
 import "./writingVoice.css";
 
@@ -32,12 +33,13 @@ function recoveredDraft(value: unknown): value is { draft: StyleProfile; brief: 
 }
 
 export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: string }) {
-  const { projectRoot, scenes, runtimeConfig, refreshProposals, setMessage } = useWorkspace();
+  const { projectRoot, scenes, branches, runtimeConfig, refreshProposals, setMessage } = useWorkspace();
   const { openTab, updateTab } = useEditor();
   const { sidebarOpen, secondarySidebarOpen, panelOpen, setSidebarOpen, setSecondarySidebarOpen, setPanelOpen } = useUI();
   const previousLayout = useRef<{ sidebar: boolean; secondary: boolean; panel: boolean } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [workspace, setWorkspace] = useState<WritingVoiceWorkspace | null>(null);
+  const [loadedContext, setLoadedContext] = useState("");
   const [draft, setDraft] = useState<StyleProfile>(emptyProfile);
   const [baseVersion, setBaseVersion] = useState("");
   const [baseScope, setBaseScope] = useState("");
@@ -51,14 +53,33 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
   const [intent, setIntent] = useState("Explore this voice while preserving events, POV, tense and facts.");
   const [comparisons, setComparisons] = useState<string[]>(["kinetic", "atmospheric"]);
   const [preview, setPreview] = useState<VoicePreview | null>(null);
+  const [preservationDraft, setPreservationDraft] = useState<{ key: string; rows: VoicePreservation[] } | null>(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [reload, setReload] = useState(0);
   const [discard, setDiscard] = useState(false);
   const requestSerial = useRef(0);
+  const operationSerial = useRef(0);
+  const mounted = useRef(false);
+  const loadedBook = useRef("");
+  const workingProfiles = useRef(new Map<string, { draft: StyleProfile; brief: string; selected: string[]; version: string; scope: string; dirty: boolean }>());
   const providerWasSelected = useRef(false);
   const storageKey = `openauthor:writing-voice-draft:v2:${projectRoot}`;
+  const storyline = branches?.find((row) => row.current)?.name || "";
+  const contextIdentity = JSON.stringify([projectRoot, storyline]);
+  const activeContext = useRef(contextIdentity);
+  activeContext.current = contextIdentity;
+  const workspaceCurrent = loadedContext === contextIdentity;
+  const preservationKey = workspace && workspaceCurrent ? retentionKey(projectRoot, workspace.scope, `voice-preservation:${sceneId}`) : "";
+  const preservation = preservationDraft?.key === preservationKey ? preservationDraft.rows : [];
+  const preservationReady = preservationDraft?.key === preservationKey;
+  const preservationIssue = preservationError(preservation, source);
+  const retainPreservation = useCallback((key: string, rows: VoicePreservation[]) => setPreservationDraft({ key, rows }), []);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    if (workspace && workspaceCurrent && loadedBook.current === projectRoot) workingProfiles.current.set(projectRoot, { draft, brief, selected, version: baseVersion, scope: baseScope, dirty });
+  }, [projectRoot, workspace, workspaceCurrent, draft, brief, selected, baseVersion, baseScope, dirty]);
   function restoreLayout() {
     const previous = previousLayout.current;
     if (!previous) return;
@@ -71,28 +92,43 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
   }, [setSidebarOpen, setSecondarySidebarOpen, setPanelOpen]);
   useEffect(() => { if (!providerWasSelected.current && runtimeConfig) setProvider(defaultProvider(runtimeConfig).id); }, [runtimeConfig]);
   useEffect(() => {
-    if (!workspace) return;
+    if (!workspace || !workspaceCurrent) return;
     setComparisons((current) => {
       const available = workspace.presets.filter((preset) => !sameDirection(draft, preset)).map((preset) => preset.id);
       const kept = current.filter((id) => available.includes(id));
       if (kept.length === current.length) return current;
       return [...kept, ...available.filter((id) => !kept.includes(id))].slice(0, current.length);
     });
-  }, [draft, workspace]);
+  }, [draft, workspace, workspaceCurrent]);
 
   useEffect(() => {
     let active = true;
+    const owner = contextIdentity;
+    ++operationSerial.current;
+    setBusy("");
+    setError(""); setNotice(""); setDiscard(false);
+    setWorkspace(null); setPreview(null); setPreservationDraft(null);
     void getWritingVoiceWorkspace(projectRoot).then((loaded) => {
-      if (!active) return;
+      if (!active || activeContext.current !== owner) return;
+      loadedBook.current = projectRoot;
+      setLoadedContext(owner);
       setWorkspace(loaded);
       setPreview(loaded.previews?.[0] || null);
       try {
         const previous = readPosition(retentionKey(projectRoot, loaded.scope, "voice-preview-selection"), (value): value is string => typeof value === "string");
         if (previous) setPreview(loaded.previews.find((row) => row.id === previous) || loaded.previews[0] || null);
       } catch { setNotice("Preview selection could not be restored. Assessment drafts are retained separately."); }
+      const retained = workingProfiles.current.get(projectRoot);
+      if (retained?.dirty) {
+        setDraft(retained.draft); setBaseVersion(retained.version); setBaseScope(retained.scope);
+        setBrief(retained.brief); setSelected(retained.selected); setDirty(true);
+        setNotice("Kept your unsaved Writing Voice draft with its original book and Storyline version.");
+        return;
+      }
       setDraft(loaded.profile || emptyProfile());
       setBaseVersion(loaded.profile?.version || ""); setBaseScope(loaded.scope);
       setSelected(loaded.profile?.exemplar_scene_ids || []);
+      setBrief(initialBrief);
       setDirty(!!initialBrief);
       try {
         const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
@@ -104,41 +140,47 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
           setNotice("The local voice draft is invalid and could not be restored. The approved profile is unchanged.");
         }
       } catch { setNotice("Local draft recovery is unavailable. Save your profile before leaving this screen."); }
-    }).catch((reason) => { if (active) setError(String(reason)); });
+    }).catch((reason) => { if (active && activeContext.current === owner) setError(String(reason)); });
     return () => { active = false; };
-  }, [projectRoot, storageKey, initialBrief, reload]);
+  }, [projectRoot, storageKey, initialBrief, reload, storyline]);
 
   useEffect(() => {
+    if (!workspace || !workspaceCurrent || loadedBook.current !== projectRoot) return;
     updateTab("writing-voice", { modified: dirty });
-    if (!dirty || !workspace) return;
+    if (!dirty) return;
     try { localStorage.setItem(storageKey, JSON.stringify({ draft, brief, selected, version: baseVersion, scope: baseScope })); }
     catch { setNotice("Your draft could not be retained locally. Save before leaving this screen."); }
-  }, [draft, brief, selected, baseVersion, baseScope, dirty, workspace, storageKey, updateTab]);
+  }, [projectRoot, draft, brief, selected, baseVersion, baseScope, dirty, workspace, workspaceCurrent, storageKey, updateTab]);
 
-  useEffect(() => { if (!sceneId && scenes[0]) setSceneId(scenes[0].id); }, [scenes, sceneId]);
+  useEffect(() => { if (!scenes.some((row) => row.id === sceneId)) setSceneId(scenes[0]?.id || ""); }, [scenes, sceneId]);
   useEffect(() => {
     const serial = ++requestSerial.current;
+    const owner = contextIdentity;
     if (!sceneId) { setSource(""); return; }
     setSource("");
     void getScene(projectRoot, sceneId).then((scene) => {
-      if (serial !== requestSerial.current) return;
+      if (serial !== requestSerial.current || activeContext.current !== owner) return;
       const words = [...scene.body.matchAll(/\S+/g)];
       const end = words[179] ? words[179].index! + words[179][0].length : scene.body.length;
       setSource(scene.body.slice(0, end).trim());
-    }).catch((reason) => { if (serial === requestSerial.current) setError(String(reason)); });
+    }).catch((reason) => { if (serial === requestSerial.current && activeContext.current === owner) setError(String(reason)); });
     return () => { ++requestSerial.current; };
-  }, [projectRoot, sceneId]);
+  }, [projectRoot, sceneId, storyline]);
 
   function edit(change: Partial<StyleProfile>) { setDraft((value) => ({ ...value, ...change })); setDirty(true); }
-  async function run(name: string, action: () => Promise<void>) {
+  async function run(name: string, action: (current: () => boolean) => Promise<void>) {
     if (busy) return;
+    const owner = contextIdentity;
+    const serial = ++operationSerial.current;
+    const current = () => mounted.current && activeContext.current === owner && operationSerial.current === serial;
     setBusy(name); setError("");
-    try { await action(); } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
-    finally { setBusy(""); }
+    try { await action(current); } catch (reason) { if (current()) setError(reason instanceof Error ? reason.message : String(reason)); }
+    finally { if (current()) setBusy(""); }
   }
   async function save() {
-    await run("save", async () => {
+    await run("save", async (current) => {
       const profile = await writingVoiceAction<StyleProfile>(projectRoot, "save", { profile: draft, expected_version: baseVersion, scope: baseScope });
+      if (!current()) return;
       setDraft(profile); setBaseVersion(profile.version || ""); setDirty(false);
       setWorkspace((value) => value && ({ ...value, profile }));
       try { localStorage.removeItem(storageKey); } catch { /* The saved core profile remains authoritative. */ }
@@ -146,24 +188,30 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
     });
   }
   async function suggest() {
-    await run("analysis", async () => {
+    await run("analysis", async (current) => {
       const result = await writingVoiceAction<{ profile: StyleProfile; message: string }>(projectRoot, "suggest", { profile: draft, brief, scene_ids: selected, provider, model });
+      if (!current()) return;
       edit(result.profile); setNotice(result.message + " This is an unsaved proposal.");
     });
   }
   async function compare() {
-    await run("preview", async () => {
+    if (!preservationReady || preservationIssue) { setError(preservationIssue || "Wait for the scene's preservation instructions to load."); return; }
+    await run("preview", async (current) => {
       const directions = [draft, ...comparisons.map((id) => workspace!.presets.find((preset) => preset.id === id)!)];
-      const result = await writingVoiceAction<VoicePreview>(projectRoot, "preview", { scene_id: sceneId, source_text: source, instruction: intent, directions, provider, model });
+      const result = await writingVoiceAction<VoicePreview>(projectRoot, "preview", { scene_id: sceneId, source_text: source, instruction: intent, directions, provider, model, preservation });
+      if (!current()) return;
       choosePreview(result);
       setWorkspace((value) => value && ({ ...value, previews: [result, ...(value.previews || [])].slice(0, 5) }));
       setNotice("Previews are separate from your manuscript and approved profile. Review them before choosing a direction.");
     });
   }
   async function stage(directionId: string) {
-    await run(`stage:${directionId}`, async () => {
-      const proposal = await writingVoiceAction<ProposalRecord>(projectRoot, "stage", { preview_id: preview!.id, direction_id: directionId });
+    await run(`stage:${directionId}`, async (current) => {
+      const proposal = await writingVoiceAction<ProposalRecord>(projectRoot, "stage", { preview_id: preview!.id, direction_id: directionId,
+        ...(preview!.preservation_fingerprint ? { expected_preservation_fingerprint: preview!.preservation_fingerprint } : {}) });
+      if (!current()) return;
       await refreshProposals();
+      if (!current()) return;
       setMessage("Voice sample queued as a Change Set. Review its hunks before applying; the book's voice was not changed.");
       openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title, data: proposal });
     });
@@ -185,7 +233,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
       <button className="btn" onClick={() => { try { localStorage.removeItem(storageKey); } catch { setError("Could not remove the local draft; keep a copy before retrying."); return; } setDirty(false); setDiscard(false); setError(""); setReload((value) => value + 1); }}>Discard draft and reload</button><button className="btn" onClick={() => setDiscard(false)}>Keep draft</button>
     </div>}
     {notice && <p className="writing-voice__notice" role="status">{notice}</p>}
-    {!workspace ? <p>Loading Writing Voice…</p> : <>
+    {!workspace || !workspaceCurrent ? <p>Loading Writing Voice…</p> : <>
       <section className="writing-voice__section">
         <div className="writing-voice__section-heading"><h2>1. Define this book’s voice</h2><span>{dirty ? "Unsaved draft" : workspace.profile ? "Approved profile" : "No profile approved"}</span></div>
         <label>Start with a preset<select className="input" aria-label="Writing Voice preset" defaultValue="" disabled={!!busy} onChange={(event) => {
@@ -213,8 +261,9 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
         <label>Preview scene<select className="input" value={sceneId} disabled={!!busy} onChange={(event) => { setSceneId(event.target.value); setPreview(null); }}>{scenes.map((scene) => <option key={scene.id} value={scene.id}>{scene.title}</option>)}</select></label>
         <label>Exact excerpt to preview (up to 400 words)<textarea className="input" rows={5} value={source} disabled={!!busy} onChange={(event) => setSource(event.target.value)} /></label>
         <label>Scene-specific direction<textarea className="input" rows={2} maxLength={2000} value={intent} disabled={!!busy} onChange={(event) => setIntent(event.target.value)} /></label>
+        <VoicePreservationInput key={preservationKey} retentionId={preservationKey} source={source} disabled={!!busy} onChange={retainPreservation} />
         <fieldset disabled={!!busy}><legend>Compare draft profile with</legend>{workspace.presets.map((preset) => <label key={preset.id}><input type="checkbox" checked={comparisons.includes(preset.id)} disabled={sameDirection(draft, preset) || (!comparisons.includes(preset.id) && comparisons.length >= 2)} onChange={(event) => setComparisons(event.target.checked ? [...comparisons, preset.id] : comparisons.filter((id) => id !== preset.id))} />{preset.name}</label>)}</fieldset>
-        <button className="btn btn--primary" disabled={!!busy || !source.trim() || !comparisons.length} onClick={() => void compare()}>{busy === "preview" ? "Generating short previews…" : `Compare ${comparisons.length + 1} short previews`}</button>
+        <button className="btn btn--primary" disabled={!!busy || !source.trim() || !comparisons.length || !preservationReady || !!preservationIssue} onClick={() => void compare()}>{busy === "preview" ? "Generating short previews…" : `Compare ${comparisons.length + 1} short previews`}</button>
         {provider === "local" && <p className="writing-voice__muted">Local mode repeats your source as a baseline. It cannot demonstrate literary quality or produce creative voice variations.</p>}
         {!!workspace.previews?.length && <label>Reopen saved previews<select className="input" disabled={!!busy} value={preview?.id || ""} onChange={(event) => choosePreview(workspace.previews.find((row) => row.id === event.target.value) || null)}><option value="">Choose a saved comparison…</option>{workspace.previews.map((row, index) => <option key={row.id} value={row.id}>{index + 1}. {row.scene_id} · {row.refinement ? "Refined · " : ""}{row.directions.map((direction) => direction.profile.name).join(" / ")}</option>)}</select></label>}
       </section>
@@ -228,6 +277,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
           <p className="writing-voice__prose">{preview.source_text}</p>
           {preview.instruction && <p><strong>Requested direction:</strong> {preview.instruction}</p>}
         </section>
+        <SavedVoicePreservation rows={preview.preservation || []} />
         {preview.refinement && <section aria-label="Previous attempt" className="writing-voice__reference"><h3>Previous attempt</h3>
           <p className="writing-voice__prose">{preview.refinement.candidate}</p>
           <p><strong>Your revision feedback:</strong> {preview.refinement.feedback}</p>
@@ -236,12 +286,16 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
           <h3>{direction.profile.name}</h3><p className="writing-voice__prose">{direction.text}</p>
           <p className="writing-voice__muted">{direction.measures.words} words · {direction.measures.average_sentence_words} words/sentence · {direction.measures.dialogue_passages} dialogue passages</p>
           {direction.warnings.map((warning) => <p className="writing-voice__muted" key={warning}>{warning}</p>)}
-          {!!direction.observations.length && <details><summary>Generator self-review — not independent evidence</summary>{direction.observations.map((row, index) => <blockquote key={index}><strong>{row.criterion.replace(/_/g, " ")}</strong><p>{row.observation}</p><q>{row.excerpt}</q></blockquote>)}</details>}
+          {!!direction.observations.length && <details><summary>Generator self-review — not independent evidence</summary>{direction.observations.map((row, index) => <blockquote key={index}><strong>{row.criterion.replace(/_/g, " ")}</strong><p>{row.observation}</p>
+            {row.source_excerpt && <div><strong>Original quotation</strong><p><q>{row.source_excerpt}</q></p></div>}
+            <div><strong>Candidate quotation</strong><p><q>{row.excerpt}</q></p></div>
+          </blockquote>)}</details>}
           <VoiceAssessment key={`${projectRoot}:${workspace.scope}:${preview.id}:${direction.id}`} project={projectRoot} scope={workspace.scope} previewId={preview.id} direction={direction} criteria={workspace.criteria} onSaved={(saved) => {
+            if (!mounted.current || activeContext.current !== contextIdentity) return;
             setWorkspace((value) => value && ({ ...value, previews: value.previews.map((row) => row.id === saved.id ? saved : row) }));
             setPreview((value) => value?.id === saved.id ? saved : value);
           }} />
-          <VoiceRefinement key={`refine:${projectRoot}:${workspace.scope}:${preview.id}:${direction.id}`} project={projectRoot} scope={workspace.scope} previewId={preview.id} direction={direction} provider={provider} model={model} disabled={!!busy} onBusy={(value) => setBusy(value ? "refine" : "")} onRefined={(result) => {
+          <VoiceRefinement key={`refine:${projectRoot}:${workspace.scope}:${preview.id}:${direction.id}`} project={projectRoot} scope={workspace.scope} previewId={preview.id} preservationFingerprint={preview.preservation_fingerprint} direction={direction} provider={provider} model={model} disabled={!!busy} onBusy={(value) => setBusy(value ? "refine" : "")} onRefined={(result) => {
             choosePreview(result);
             setWorkspace((value) => value && ({ ...value, previews: [result, ...value.previews].slice(0, 5) }));
             setNotice("Refined sample saved separately. Compare it with the original and previous attempt before queueing a Change Set. Your manuscript and approved voice are unchanged.");

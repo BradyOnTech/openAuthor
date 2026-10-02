@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { writingVoiceAction, type VoicePreview } from "../../api";
 import { useRetainedDraft } from "../../hooks/useRetainedDraft";
 import { retentionKey } from "../../workspaceRetention";
@@ -6,23 +6,40 @@ import { RecoveryNotice } from "./RecoveryNotice";
 
 const validFeedback = (value: unknown): value is string => typeof value === "string" && value.length <= 2000;
 
-export function VoiceRefinement({ project, scope, previewId, direction, provider, model, disabled, onBusy, onRefined }: {
+type Props = {
   project: string; scope: string; previewId: string; direction: VoicePreview["directions"][number];
+  preservationFingerprint?: string;
   provider: string; model: string; disabled: boolean; onBusy: (value: boolean) => void; onRefined: (value: VoicePreview) => void;
-}) {
+};
+export function VoiceRefinement(props: Props) {
+  return <RetainedVoiceRefinement key={JSON.stringify([props.project, props.scope, props.previewId, props.direction.id])} {...props} />;
+}
+function RetainedVoiceRefinement({ project, scope, previewId, preservationFingerprint, direction, provider, model, disabled, onBusy, onRefined }: Props) {
   const feedback = useRetainedDraft(retentionKey(project, scope, `voice-refinement:${previewId}:${direction.id}`), "", validFeedback);
   const [error, setError] = useState("");
+  const mounted = useRef(false);
+  const pending = useRef(false);
+  const identity = JSON.stringify([project, scope, previewId, direction.id, preservationFingerprint]);
+  const activeIdentity = useRef(identity);
+  activeIdentity.current = identity;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   async function refine() {
-    if (disabled || !feedback.value.trim()) return;
+    if (disabled || pending.current || !feedback.value.trim()) return;
+    const owner = identity;
+    const submitted = feedback.value;
+    const current = () => mounted.current && activeIdentity.current === owner;
+    pending.current = true;
     onBusy(true); setError("");
     try {
       const result = await writingVoiceAction<VoicePreview>(project, "refine", {
-        preview_id: previewId, direction_id: direction.id, feedback: feedback.value, provider, model,
+        preview_id: previewId, direction_id: direction.id, feedback: submitted, provider, model,
+        ...(preservationFingerprint ? { expected_preservation_fingerprint: preservationFingerprint } : {}),
       });
-      feedback.discard();
+      if (!current()) return;
+      feedback.change((value) => value === submitted ? "" : value);
       onRefined(result);
-    } catch (reason) { setError(String(reason)); }
-    finally { onBusy(false); }
+    } catch (reason) { if (current()) setError(String(reason)); }
+    finally { pending.current = false; if (current()) onBusy(false); }
   }
   return <details open={feedback.restored || undefined}>
     <summary>Refine this sample</summary>

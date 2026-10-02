@@ -1748,7 +1748,12 @@ def _run(args: argparse.Namespace) -> int:
       elif args.style_command == "review":
         row = review_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""), review=request.get("review", {}), expected_review=request.get("expected_review"))
       else:
-        row = stage_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""))
+        if "preservation" in request:
+          raise OpenAuthorError("Stage the preservation contract from the saved preview. Start a fresh comparison to change author constraints.")
+        if "expected_preservation_fingerprint" in request and request["expected_preservation_fingerprint"] is None:
+          raise OpenAuthorError("The reviewed preservation fingerprint must be text.")
+        row = stage_voice_preview(paths, preview_id=request.get("preview_id", ""), direction_id=request.get("direction_id", ""),
+          expected_preservation_fingerprint=request.get("expected_preservation_fingerprint"))
     else:
       raise OpenAuthorError(f"Unsupported Style Profile command: {args.style_command}")
     if args.json:

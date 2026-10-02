@@ -10,6 +10,8 @@ from typing import Any
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .project_locks import project_lock, serialized_project_access
 from .scene_edits import workspace_edit_scope
+from .revision_preservation import (PRESERVATION_FIELDS, check_expected_preservation, missing_protected_wording,
+  preservation_fingerprint, validate_preservation)
 from .scenes import get_scene
 from .style_profile import DIMENSIONS, PRESETS, QUALITY_CRITERIA, VOICE_GUIDANCE, get_style_profile, validate_profile, voice_context
 
@@ -129,7 +131,50 @@ def _read_preview(paths: ProjectPaths, preview_id: str) -> dict[str, Any]:
     raise OpenAuthorError("Writing Voice preview is unavailable.") from error
   if not isinstance(record, dict) or record.get("id") != preview_id or record.get("schema_version") != 1 or not isinstance(record.get("directions"), list):
     raise OpenAuthorError("Writing Voice preview has invalid metadata.")
+  binding_path = _preservation_binding_path(paths, preview_id)
+  if binding_path.exists() or PRESERVATION_FIELDS.intersection(record):
+    try:
+      binding = json.loads(binding_path.read_text(encoding="utf-8"))
+      if (not isinstance(binding, dict) or set(binding) != {"schema_version", "preview_id", "preservation_fingerprint"}
+          or type(binding["schema_version"]) is not int or binding["schema_version"] != 1 or binding["preview_id"] != preview_id
+          or not PRESERVATION_FIELDS.issubset(record) or type(record["preservation_schema_version"]) is not int or record["preservation_schema_version"] != 1):
+        raise ValueError("Invalid preservation metadata")
+      clauses = validate_preservation(record["preservation"], source=record["source_text"])
+      fingerprint = preservation_fingerprint(record, clauses)
+      if fingerprint != record["preservation_fingerprint"] or fingerprint != binding["preservation_fingerprint"]:
+        raise ValueError("Preservation contract changed")
+    except (OSError, ValueError, TypeError, KeyError, OpenAuthorError) as error:
+      raise OpenAuthorError("Writing Voice preservation metadata changed or is incomplete. The candidate was kept; reopen a valid preview or generate a fresh comparison.") from error
   return record
+
+
+def _preservation_binding_path(paths: ProjectPaths, preview_id: str):
+  _preview_path(paths, preview_id)
+  return paths.workspace_dir / "voice-preservation" / f"{preview_id}.json"
+
+
+def _save_new_preview(paths: ProjectPaths, record: dict[str, Any]) -> None:
+  # Call under the project lock. The immutable local binding precedes the preview:
+  # interruption can leave an orphan binding, never a preview silently downgraded
+  # to legacy. This is recovery metadata, not integrity against editing both files.
+  path = _preview_path(paths, record["id"])
+  binding = _preservation_binding_path(paths, record["id"])
+  if path.exists() or binding.exists():
+    raise OpenAuthorError("Writing Voice preview identity already exists. The earlier comparison was preserved; generate a fresh comparison.")
+  atomic_write_json(binding, {"schema_version": 1, "preview_id": record["id"], "preservation_fingerprint": record["preservation_fingerprint"]})
+  atomic_write_json(path, record)
+
+
+def _literal_assessment_excerpt(value: Any, *, text: str, name: str) -> str:
+  quote = _bounded(value, name, 600)
+  if quote and quote not in text:
+    for opening, closing in [('“', '”'), ('"', '"'), ('‘', '’'), ("'", "'")]:
+      if quote.startswith(opening) and quote.endswith(closing) and quote[1:-1] and quote[1:-1] in text:
+        quote = quote[1:-1]
+        break
+  if not quote or quote not in text:
+    raise OpenAuthorError(f"The provider's prose assessment quoted text absent from its {name.lower()}.")
+  return quote
 
 
 def preview_voice(paths: ProjectPaths, *, request: dict[str, Any]) -> dict[str, Any]:
@@ -142,6 +187,10 @@ def refine_voice_preview(paths: ProjectPaths, *, request: dict[str, Any]) -> dic
     raise OpenAuthorError("Describe what to keep or change in this sample before refining it.")
   with project_lock(paths):
     original = _read_preview(paths, request.get("preview_id", ""))
+    if "expected_preservation_fingerprint" in request:
+      check_expected_preservation(original, request["expected_preservation_fingerprint"])
+    if "preservation" in request and validate_preservation(request["preservation"], source=original["source_text"]) != original.get("preservation", []):
+      raise OpenAuthorError("Refinement must keep the original preservation contract. Start a fresh comparison to change author constraints.")
     direction = next((row for row in original["directions"] if row["id"] == request.get("direction_id")), None)
     if direction is None:
       raise OpenAuthorError("Unknown Writing Voice direction.")
@@ -150,6 +199,7 @@ def refine_voice_preview(paths: ProjectPaths, *, request: dict[str, Any]) -> dic
     "instruction": original["instruction"], "directions": [direction["profile"]],
     "provider": request.get("provider", "local"), "model": request.get("model", ""),
     "strict_review": request.get("strict_review", False),
+    "preservation": original.get("preservation", []),
   }, refinement={"preview_id": original["id"], "direction_id": direction["id"],
     "candidate": direction["text"], "feedback": feedback}, expected_scene_version=original["scene_version"])
 
@@ -161,6 +211,7 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
   instruction = _bounded(request.get("instruction", "Explore the voice without changing events."), "Preview instruction", 2000)
   if not source or len(source.split()) > 400:
     raise OpenAuthorError("Select a nonempty passage of at most 400 words for short previews.")
+  preservation = validate_preservation(request.get("preservation", []), source=source)
   directions = request.get("directions", [])
   if not isinstance(directions, list) or len(directions) not in ({1} if refinement else {2, 3}):
     raise OpenAuthorError("Compare two or three Writing Voice directions.")
@@ -192,6 +243,9 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
       reply = _model_json(paths, provider=provider, model=request.get("model", ""), task=(
         "Rewrite only the supplied short source passage in the selected Writing Voice. Preserve events, names, facts, POV, tense and knowledge. "
         "Keep unfinished actions unfinished, uncertain beliefs uncertain, and withheld knowledge withheld. "
+        "Follow every explicit author preservation constraint unchanged. Keep each uncertainty's original subject, domain and degree; do not broaden it to other people or events. "
+        "The selected original passage and explicit preservation constraints govern this revision; background context constrains consistency, not new material to insert. "
+        "Preserve protected_text literally. If a constraint cannot be met, state the limitation in self-review; do not silently replace it with a different interpretation. "
         "Preserve each speaker's individual habits and the scene's emotional turn; manuscript voice is not a reason to make everyone sound alike. "
         "Use concrete attention, choices and subtext where appropriate, without explaining every gesture or adding generic metaphors. "
         "Vary rhythm to serve this moment, not a uniform sentence length. Keep intentional repetitions and strong passages when rewriting would weaken them. "
@@ -199,10 +253,11 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
         "Do not invent physical staging to justify a stylistic change. "
         "If refinement is supplied, use its candidate as a draft and its feedback to make a focused revision; the original source remains the authority for events and knowledge. "
         "Retain successful wording unless the feedback or selected voice calls for changing it. "
-        "Return JSON {text:string,observations:[{criterion,observation,excerpt}]}. No more than 500 prose words. "
+        "Return JSON {text:string,observations:[{criterion,observation,excerpt,source_excerpt}]}. No more than 500 prose words. "
         "For each review criterion give a concrete self-review with an exact excerpt from your candidate; acknowledge uncertain continuity. "
+        "For consistency observations also cite an exact nonempty source_excerpt from the selected original, pairing it with the candidate excerpt so the author can compare meaning. "
         "These are observations for author judgment, never numerical quality scores."
-      ), payload={"source": source, "instruction": instruction, "writing_voice": voice_context(profile), "context": context,
+      ), payload={"source": source, "instruction": instruction, "preservation": preservation, "writing_voice": voice_context(profile), "context": context,
                   "criteria": QUALITY_CRITERIA, **({"refinement": refinement} if refinement else {})})
       text = _bounded(reply["data"].get("text"), "Preview prose", 8000)
       if not text or len(text.split()) > 500:
@@ -218,18 +273,11 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
           try:
             if not isinstance(row, dict) or row.get("criterion") not in QUALITY_CRITERIA:
               raise OpenAuthorError("The provider returned an unknown review criterion.")
-            quote = _bounded(row.get("excerpt", ""), "Assessment excerpt", 600)
-            # Providers sometimes wrap a citation in presentation quotes. Remove
-            # exactly one matching pair only when the enclosed evidence is literal;
-            # real dialogue quotes already present in the candidate stay intact.
-            if quote and quote not in text:
-              for opening, closing in [('“', '”'), ('"', '"'), ('‘', '’'), ("'", "'")]:
-                if quote.startswith(opening) and quote.endswith(closing) and quote[1:-1] and quote[1:-1] in text:
-                  quote = quote[1:-1]
-                  break
-            if not quote or quote not in text:
-              raise OpenAuthorError("The provider's prose assessment quoted text absent from its candidate.")
-            observations.append({"criterion": row["criterion"], "observation": _bounded(row.get("observation", ""), "Assessment", 600), "excerpt": quote})
+            quote = _literal_assessment_excerpt(row.get("excerpt", ""), text=text, name="Candidate")
+            observation = {"criterion": row["criterion"], "observation": _bounded(row.get("observation", ""), "Assessment", 600), "excerpt": quote}
+            if row["criterion"] == "consistency" or "source_excerpt" in row:
+              observation["source_excerpt"] = _literal_assessment_excerpt(row.get("source_excerpt", ""), text=source, name="Source")
+            observations.append(observation)
           except OpenAuthorError as error:
             if not review_error:
               review_error = str(error)
@@ -237,8 +285,10 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
               review_warnings.append("Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself.")
       if strict_review and review_error:
         raise OpenAuthorError(review_error)
-      warnings = ["Provider self-review is not independent validation. Check character voice and factual consistency yourself.", *review_warnings]
+      warnings = ["Provider self-review is not independent semantic validation. Literal quotations show where to compare; judge character knowledge, facts and uncertainty yourself.", *review_warnings]
       generation_id = reply["generation_id"]
+    for wording in missing_protected_wording(preservation, text):
+      warnings.append("Missing protected wording: " + json.dumps(wording, ensure_ascii=False) + ". Refine this candidate to restore the exact wording before sending it for review.")
     variants.append({"id": f"direction-{index + 1}", "profile": profile, "text": text,
                      "observations": observations, "warnings": warnings, "generation_id": generation_id,
                      "measures": prose_measures(text), "author_review": {"ratings": {}, "notes": ""}})
@@ -247,8 +297,10 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
             "provider": provider, "model": request.get("model", ""), "created_at": utc_now(), "directions": variants}
   if refinement:
     record["refinement"] = refinement
+  record.update({"preservation": preservation, "preservation_schema_version": 1,
+    "preservation_fingerprint": preservation_fingerprint(record, preservation)})
   with project_lock(paths):
-    atomic_write_json(_preview_path(paths, record["id"]), record)
+    _save_new_preview(paths, record)
   return record
 
 
@@ -273,20 +325,31 @@ def review_voice_preview(paths: ProjectPaths, *, preview_id: str, direction_id: 
 
 
 @serialized_project_access
-def stage_voice_preview(paths: ProjectPaths, *, preview_id: str, direction_id: str) -> dict[str, Any]:
+def stage_voice_preview(paths: ProjectPaths, *, preview_id: str, direction_id: str, expected_preservation_fingerprint: str | None = None) -> dict[str, Any]:
   from .proposals import create_proposal, get_proposal, list_proposals, set_proposal_draft
   record = _read_preview(paths, preview_id)
+  if expected_preservation_fingerprint is not None:
+    check_expected_preservation(record, expected_preservation_fingerprint)
   direction = next((row for row in record["directions"] if row["id"] == direction_id), None)
   if direction is None:
     raise OpenAuthorError("Unknown Writing Voice direction.")
+  missing = missing_protected_wording(record.get("preservation", []), direction["text"])
+  if missing:
+    raise OpenAuthorError("Restore the exact protected wording before sending this candidate for review: " + json.dumps(missing, ensure_ascii=False))
+  def checked_handoff(proposal: dict[str, Any]) -> dict[str, Any]:
+    if any(proposal.get("generation", {}).get(key) != record[key] for key in PRESERVATION_FIELDS if key in record):
+      raise OpenAuthorError("The staged proposal's preservation provenance changed or is incomplete. Review the existing proposal; it was not replaced.")
+    return proposal
   if direction.get("proposal_id"):
-    return get_proposal(paths, direction["proposal_id"])
+    return checked_handoff(get_proposal(paths, direction["proposal_id"]))
   # Recover a completed or interrupted handoff if recording its link failed.
   # Never rebuild a Change Set that the author has already reviewed or edited.
   previous = next((row for row in list_proposals(paths)
     if row.get("source") == "writing_voice_preview"
     and row.get("generation", {}).get("preview_id") == preview_id
     and row.get("generation", {}).get("direction_id") == direction_id), None)
+  if previous:
+    checked_handoff(previous)
   if previous and (previous.get("change_set") or previous.get("proposed_body") or previous["status"] != "pending"):
     direction["proposal_id"] = previous["id"]
     atomic_write_json(_preview_path(paths, preview_id), record)
@@ -300,8 +363,11 @@ def stage_voice_preview(paths: ProjectPaths, *, preview_id: str, direction_id: s
     raise OpenAuthorError("The preview passage no longer matches one scene location.")
   proposal_id = previous["id"] if previous else create_proposal(paths, title=f"Voice preview: {direction['profile']['name']}", scene_id=scene["id"],
     instruction=record["instruction"] + ("\nAuthor revision feedback: " + record["refinement"]["feedback"] if record.get("refinement") else "")
-      + "\nWriting Voice: " + json.dumps(voice_context(direction["profile"])),
-    source="writing_voice_preview", generation={"provider": record["provider"], "model": record["model"], "preview_id": preview_id, "direction_id": direction_id})
+      + "\nWriting Voice: " + json.dumps(voice_context(direction["profile"]))
+      + ("\nAuthor preservation constraints (exact wording): " + json.dumps(record["preservation"], ensure_ascii=False) if record.get("preservation") else ""),
+    source="writing_voice_preview", generation={"provider": record["provider"], "model": record["model"], "preview_id": preview_id, "direction_id": direction_id,
+      "source_text": record["source_text"], "source_scene_version": record["scene_version"], "voice_observations": direction["observations"],
+      **{key: record[key] for key in PRESERVATION_FIELDS if key in record}})
   result = set_proposal_draft(paths, proposal_id=proposal_id,
     proposed_body=scene["body"].replace(record["source_text"], direction["text"], 1))
   direction["proposal_id"] = proposal_id

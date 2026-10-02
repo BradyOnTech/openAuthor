@@ -5,7 +5,9 @@
   "main": "index.ts",
   "scripts": {
     "web": "expo start --web",
-    "build:web": "expo export --clear --platform web && node scripts/build-pwa.mjs",
+    "build:web": "node scripts/build-security.mjs export --platform web && node scripts/build-pwa.mjs",
+    "build:security": "node scripts/build-security.mjs preflight",
+    "build:export": "node scripts/build-security.mjs export",
     "test:e2e": "playwright test",
     "test:e2e:hosted": "playwright test --config playwright.hosted.config.ts",
     "build:test-hosted": "node scripts/build-hosted-test.mjs",

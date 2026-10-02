@@ -1,6 +1,7 @@
+import { useId } from "react";
 import { useEditor, type RevisionDraft } from "../../contexts/EditorContext";
 import { useUI } from "../../contexts/UIContext";
-import { TabBar } from "./TabBar";
+import { TabBar, editorTabId, editorPanelId } from "./TabBar";
 import { SceneDocument } from "./SceneDocument";
 import { ManuscriptReader } from "./ManuscriptReader";
 import { ProposalReview } from "./ProposalReview";
@@ -19,17 +20,19 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
 
 export function EditorArea() {
+  const idPrefix = useId();
   const { tabs, activeTabId } = useEditor();
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
   return (
     <div className="editor-area">
-      <TabBar />
-      {activeTab ? (
-        <EditorContent tab={activeTab} />
-      ) : (
-        <EmptyState />
-      )}
+      <TabBar idPrefix={idPrefix} />
+      {tabs.map(tab => (
+        <div key={tab.id} className="editor-panel" id={editorPanelId(idPrefix, tab.id)} role="tabpanel" aria-labelledby={editorTabId(idPrefix, tab.id)} tabIndex={0} hidden={tab.id !== activeTabId}>
+          {tab.id === activeTabId && <EditorContent tab={tab} />}
+        </div>
+      ))}
+      {!activeTab && <EmptyState />}
     </div>
   );
 }
@@ -120,7 +123,7 @@ function EmptyState() {
           : "Open a scene and return to the sentence where you left off."}
       </div>
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
-        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
+        <button data-editor-empty-action className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
         <button className="btn" onClick={() => void navigateTo("plan")}>Plan the story</button>
       </div>
       <div style={{ display: "flex", gap: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: "var(--space-3)" }}>

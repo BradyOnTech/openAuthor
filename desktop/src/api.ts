@@ -2144,14 +2144,21 @@ export type WritingVoiceWorkspace = {
   criteria: Record<string, string>;
   previews: VoicePreview[];
 };
+export type VoicePreservation = {
+  kind: "fact" | "knowledge" | "uncertainty" | "protected_text" | "end_beat";
+  text: string;
+};
 export type VoicePreview = {
   id: string; scene_id: string; source_text: string; provider: string;
   instruction?: string;
+  preservation?: VoicePreservation[];
+  preservation_schema_version?: 1;
+  preservation_fingerprint?: string;
   refinement?: { preview_id: string; direction_id: string; candidate: string; feedback: string };
   directions: Array<{
     id: string; profile: StyleProfile; text: string; warnings: string[]; proposal_id?: string;
     measures: { words: number; average_sentence_words: number; dialogue_passages: number };
-    observations: Array<{ criterion: string; observation: string; excerpt: string }>;
+    observations: Array<{ criterion: string; observation: string; excerpt: string; source_excerpt?: string }>;
     author_review: { ratings: Record<string, string>; notes: string };
   }>;
 };

@@ -1,0 +1,72 @@
+{
+  "contract-red.txt": {
+    "raw_archive": "contract-red.txt.raw.gz",
+    "raw_sha256": "dadfebc0dc23b4f67723980e17225985b2cc64034bcc070231a41c5b79069c9f",
+    "archive_sha256": "4a5f0dd0e86e472887f69821a3c8d8fc02081e3e8cbeb73a0cfe1cf36581d810",
+    "display_sha256": "dadfebc0dc23b4f67723980e17225985b2cc64034bcc070231a41c5b79069c9f",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "packaged-python-tests.txt": {
+    "raw_archive": "packaged-python-tests.txt.raw.gz",
+    "raw_sha256": "f11bc29d58fc62d6e04e473cd01aa5b2c103b2b1f670c28183ebb5e17b9f95ad",
+    "archive_sha256": "edff1b8aaa3a46bebc1271743178c1b5fb80ccd4161a988fc98773b8db8cd223",
+    "display_sha256": "f11bc29d58fc62d6e04e473cd01aa5b2c103b2b1f670c28183ebb5e17b9f95ad",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "full-core-tests.txt": {
+    "raw_archive": "full-core-tests.txt.raw.gz",
+    "raw_sha256": "ccd718786e10efc7b3d457319b9b1977a7ccf74c531847c0a8cea1ec423e9f34",
+    "archive_sha256": "c98424718940d0a83f069597feebd5887fedaa7626fc63420f90d891ac03f3b4",
+    "display_sha256": "fdf39d12f660d7eb1b01480a1569e2238ce442ac70ebbc6ef043ce79a43e9657",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "full-core-tests-loopback.txt": {
+    "raw_archive": "full-core-tests-loopback.txt.raw.gz",
+    "raw_sha256": "8c79e73ce9dfaef8e7b83b48e13620cfe68be1949713f51edccf6924e53fd5d4",
+    "archive_sha256": "07254b46f1113eb6f0613d215d470113de0ac7f812cb70bca67d7cee9a02a288",
+    "display_sha256": "8c79e73ce9dfaef8e7b83b48e13620cfe68be1949713f51edccf6924e53fd5d4",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "packaged-python-tests-complete.txt": {
+    "raw_archive": "packaged-python-tests-complete.txt.raw.gz",
+    "raw_sha256": "28a3089bd866ccb7d7f6e4bf852c4c1dce6ae550d3edc87c59fb7c9bd8922a3d",
+    "archive_sha256": "45d0d0e99169769e48dbe103dee840fc58ac17231f6422fb87879421dc71ae6f",
+    "display_sha256": "28a3089bd866ccb7d7f6e4bf852c4c1dce6ae550d3edc87c59fb7c9bd8922a3d",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "desktop-focused.txt": {
+    "raw_archive": "desktop-focused.txt.raw.gz",
+    "raw_sha256": "a0657bc264efec6b1d3072972dc04ce3285347b1bcf8e60f456fb167c1a7c51c",
+    "archive_sha256": "4aa8038b0249d5766bc6dc6982a61a90669c5577be98276c8b9a09d8bf626b1f",
+    "display_sha256": "a0657bc264efec6b1d3072972dc04ce3285347b1bcf8e60f456fb167c1a7c51c",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "packaged-python-tests-final.txt": {
+    "raw_archive": "packaged-python-tests-final.txt.raw.gz",
+    "raw_sha256": "af4c88d8a8a5630272383d52df198e57ac62a0aa3f43a0ebe25826a0bd17b856",
+    "archive_sha256": "da16987a56f195da3a8906803578cf6b2d242055416e86fb7f084b0780f7aa4f",
+    "display_sha256": "af4c88d8a8a5630272383d52df198e57ac62a0aa3f43a0ebe25826a0bd17b856",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "replay-output.txt": {
+    "raw_archive": "replay-output.txt.raw.gz",
+    "raw_sha256": "6940408c0ff5a247722b3d823f73c1df5162b6395c757407bb03bf3128f0f4d2",
+    "archive_sha256": "633cde99f3218088a55d4e9fdfc60fb2ec8b81e017aaf13c06c6e83c7c891b8f",
+    "display_sha256": "6940408c0ff5a247722b3d823f73c1df5162b6395c757407bb03bf3128f0f4d2",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "full-core-tests-final.txt": {
+    "raw_archive": "full-core-tests-final.txt.raw.gz",
+    "raw_sha256": "5d9f0362b9fca45890ff4273a7755d1123cf41fc93388b241b5aa8152d0dd083",
+    "archive_sha256": "70751654279ddf3ca64bdf1f27c664e0b0d6c2dc7036e5981e2ac1524b6893f8",
+    "display_sha256": "5d9f0362b9fca45890ff4273a7755d1123cf41fc93388b241b5aa8152d0dd083",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "focused-tests.txt": {
+    "raw_archive": "focused-tests.txt.raw.gz",
+    "raw_sha256": "7020be9cb4c840d86a5f049d88476f0a82638e23d867acd87ed6bc1a77493124",
+    "archive_sha256": "c481fc32b99ded86b93852a759f10544a3873a9b49b25e1ba5a4d3da9ffab9b0",
+    "display_sha256": "7020be9cb4c840d86a5f049d88476f0a82638e23d867acd87ed6bc1a77493124",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  }
+}

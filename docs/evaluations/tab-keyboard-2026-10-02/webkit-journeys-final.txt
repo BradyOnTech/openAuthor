@@ -1,0 +1,14 @@
+
+Running 5 tests using 1 worker
+
+  ✓  1 [webkit] › e2e/caret-keyboard.spec.ts:5:1 › keyboard focus resumes a saved caret after restart while pointer placement remains authoritative (11.6s)
+  ✓  2 [webkit] › e2e/daily-review-polish.spec.ts:4:1 › keeps saved planning compact, recovers edits, and exposes passage actions beside long context (13.8s)
+  ✓  3 [webkit] › e2e/editorial-workspace.spec.ts:4:1 › restores tabs and caret and reviews current evidence in a wide workspace (11.8s)
+  ✓  4 [webkit] › e2e/memory-review-workspace.spec.ts:4:1 › scans cold Memory, reviews evidence, corrects a type, refuses stale decisions, and reopens review history (11.3s)
+  ✓  5 [webkit] › e2e/tab-keyboard.spec.ts:4:1 › keyboard tabs preserve writing, defer activation and retain focus after closing (6.2s)
+
+  5 passed (56.3s)
+[WebServer] (node:31633) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:31635) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

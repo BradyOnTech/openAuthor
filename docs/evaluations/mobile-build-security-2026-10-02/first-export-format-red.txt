@@ -1,0 +1,42 @@
+
+> openauthor-mobile@0.1.0 build:export
+> node scripts/build-security.mjs export --platform all --output-dir /private/tmp/openauthor-forge-guard-export-2026-10-02
+
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 12882ms index.ts (399 modules)
+Android Bundled 18129ms index.ts (874 modules)
+iOS Bundled 22930ms index.ts (863 modules)
+
+› web bundles (2):
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js (1.4MB)
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js.map (4.6MB)
+
+› android bundles (2):
+_expo/static/js/android/index-f51237c2551f3515e1efb710df183f0a.hbc (2.5MB)
+_expo/static/js/android/index-f51237c2551f3515e1efb710df183f0a.hbc.map (6.2MB)
+
+› ios bundles (2):
+_expo/static/js/ios/index-e1fe866e1c45b9ab68fd942da81ace2b.hbc (2.5MB)
+_expo/static/js/ios/index-e1fe866e1c45b9ab68fd942da81ace2b.hbc.map (6.2MB)
+
+› Files (2):
+index.html (1.2KB)
+metadata.json (244B)
+
+Exported: /private/tmp/openauthor-forge-guard-export-2026-10-02
+Export inspection incomplete

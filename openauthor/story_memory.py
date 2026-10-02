@@ -44,6 +44,77 @@ RELATION_PATTERNS = {
   "is child of": r"(?:is|was)\s+(?:the\s+)?(?:son|daughter|child)\s+of",
 }
 SYMMETRIC_RELATIONS = {"is sibling of"}
+STATEMENT_BOUNDARIES = ".!?;\n。！？"
+UNCERTAINTY_MARKERS = r"if|unless|whether|perhaps|maybe|possibly|apparently|allegedly"
+REPORTING_MARKERS = (r"suppose[ds]?|imagin(?:e[ds]?|ing)|dream(?:s|ed|t)|said|says|"
+  r"claim(?:s|ed)|report(?:s|ed)|thought|thinks|believ(?:es?|ed)|wonder(?:s|ed)|hope(?:s|d)")
+NONASSERTIVE_PREFIX = re.compile(
+  rf"\b(?:{UNCERTAINTY_MARKERS}|{REPORTING_MARKERS})\b"
+  r"|\b(?:not\s+true|not\s+the\s+case|false)\s+that\b", re.IGNORECASE,
+)
+NONASSERTIVE_CLAUSE = re.compile(
+  rf"\b(?:{UNCERTAINTY_MARKERS})\b|\baccording\s+to\b|,[^,]*\b(?:{REPORTING_MARKERS})\b", re.IGNORECASE,
+)
+
+
+def _unquoted_prose(body: str) -> str:
+  """Exclude dialogue claims without shifting their original source offsets."""
+  result = list(body)
+  closing = ""
+  for index, char in enumerate(body):
+    apostrophe = (char in "'’" and index > 0 and index + 1 < len(body)
+      and body[index - 1].isalnum() and body[index + 1].isalnum())
+    if closing:
+      result[index] = "\n" if char == "\n" else " "
+      if char == closing and not apostrophe:
+        preceding = index - 1
+        while preceding >= 0 and body[preceding] == "\\":
+          preceding -= 1
+        if (index - 1 - preceding) % 2 == 0:
+          closing = ""
+    elif (char in {'"', "“", "‘", "'"} and not apostrophe
+          and (char != "'" or index == 0 or not body[index - 1].isalnum())):
+      closing = {"“": "”", "‘": "’"}.get(char, char)
+      result[index] = " "
+  return "".join(result)
+
+
+def _without_known_identities(prose: str, entities: list[dict[str, Any]]) -> str:
+  owners: dict[str, set[str]] = defaultdict(set)
+  labels: dict[str, str] = {}
+  for entity in entities:
+    for value in [entity["name"], *entity.get("aliases", [])]:
+      label = str(value).strip()
+      if label:
+        key = unicodedata.normalize("NFC", label).casefold()
+        owners[key].add(entity["id"])
+        labels[label] = key
+  unambiguous = [label for label, key in labels.items() if len(owners[key]) == 1]
+  if not unambiguous:
+    return prose
+  pattern = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(label) for label in sorted(unambiguous, key=len, reverse=True)) + r")(?!\w)", re.IGNORECASE)
+  result = list(prose)
+  for match in pattern.finditer(prose):
+    result[match.start():match.end()] = ["\n" if char == "\n" else " " for char in match.group(0)]
+  return "".join(result)
+
+
+def _asserted_statement(prose: str, identity_free: str, start: int, subject_end: int, end: int) -> bool:
+  # Local patterns identify direct statements, not the truth of speech, guesses
+  # or conditional clauses. Keep unrelated semicolon-separated prose available.
+  beginning = 1 + max(prose.rfind(char, 0, start) for char in STATEMENT_BOUNDARIES)
+  endings = [prose.find(char, end) for char in STATEMENT_BOUNDARIES]
+  ending = min([position for position in endings if position >= 0], default=len(prose))
+  if ending < len(prose) and prose[ending] in "?？":
+    return False
+  prefix = prose[beginning:start]
+  # An indirect complement is not a direct declaration, regardless of whether
+  # its reporting verb is in the small marker vocabulary. Keep preceding prose
+  # intact: a known person named Perhaps is not permission to ignore "Perhaps X".
+  if re.search(r"\bthat\s*$", prefix, re.IGNORECASE):
+    return False
+  return not (NONASSERTIVE_PREFIX.search(prefix)
+    or NONASSERTIVE_CLAUSE.search(prefix + identity_free[subject_end:ending]))
 
 
 def _proper_name_mentions(body: str):
@@ -196,8 +267,13 @@ def _relationship_candidates(
   candidates: dict[str, dict[str, Any]] = {}
   for scene in scenes:
     body = str(scene.get("body", ""))
+    prose = _unquoted_prose(body)
+    identity_free = _without_known_identities(prose, entities)
     for relation, pattern in compiled:
-      for match in pattern.finditer(body):
+      for match in pattern.finditer(prose):
+        if (body[match.start():match.end()] != match.group(0)
+            or not _asserted_statement(prose, identity_free, match.start(), match.end("source"), match.end())):
+          continue
         source = unambiguous.get(match.group("source").casefold())
         target = unambiguous.get(match.group("target").casefold())
         if source is None or target is None or source["id"] == target["id"]:
@@ -436,6 +512,8 @@ def extract_memory_suggestions(
         "end": 0,
       })
     body = str(scene.get("body", ""))
+    prose = _unquoted_prose(body)
+    identity_free = _without_known_identities(prose, entities)
     for name, mention_start, mention_end in _proper_name_mentions(body):
       if name in NAME_STOPWORDS or len(name) < 3:
         continue
@@ -468,12 +546,17 @@ def extract_memory_suggestions(
         if identity is None or identity["id"] != entity["id"]:
           continue
         pattern = re.compile(
-          rf"\b{re.escape(entity_name)}\s+(is|was|has|owns|knows|believes|lives\s+in)\s+([^.!?\n]{{2,120}})",
+          rf"\b{re.escape(entity_name)}\s+(is|was|has|owns|knows|believes|lives\s+in)\s+([^.!?;\n。！？]{{2,120}})",
           flags=re.IGNORECASE,
         )
-        for match in pattern.finditer(body):
+        for match in pattern.finditer(prose):
+          if (body[match.start():match.end()] != match.group(0)
+              or not _asserted_statement(prose, identity_free, match.start(), match.start() + len(entity_name), match.end())):
+            continue
           predicate = " ".join(match.group(1).lower().split())
           value = match.group(2).strip(" ,;:")
+          if not value:
+            continue
           suggestion_id = _fact_suggestion_id(entity["id"], predicate, value)
           fact_candidates[suggestion_id] = {
             "id": suggestion_id,

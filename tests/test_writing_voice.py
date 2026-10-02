@@ -332,7 +332,7 @@ class WritingVoiceTests(unittest.TestCase):
       ('"The count broke off before the boy."', 'The count broke off before the boy.'),
       ('“Splendid plan.”', '“Splendid plan.”')]:
       with self.subTest(excerpt=excerpt), patch("openauthor.ai._call_provider", return_value=self.provider_result({"text": text,
-        "observations": [{"criterion": "consistency", "observation": "The count remains unfinished.", "excerpt": excerpt}]})):
+        "observations": [{"criterion": "consistency", "observation": "The count remains unfinished.", "excerpt": excerpt, "source_excerpt": "Mara began to count the boats."}]})):
         record = preview_voice(self.paths, request=self.preview_request(provider="openai-codex"))
         self.assertEqual(record["directions"][0]["observations"][0]["excerpt"], expected)
 

@@ -8,7 +8,7 @@ const env = {
   EXPO_PUBLIC_GATEWAY_URL: "https://companion-gateway.test",
 };
 for (const args of [
-  ["node_modules/expo/bin/cli", "export", "--clear", "--platform", "web", "--output-dir", ".expo/hosted-e2e"],
+  ["scripts/build-security.mjs", "export", "--platform", "web", "--output-dir", ".expo/hosted-e2e"],
   ["scripts/build-pwa.mjs", ".expo/hosted-e2e"],
 ]) {
   const result = spawnSync(process.execPath, args, { env, stdio: "inherit" });

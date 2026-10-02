@@ -221,3 +221,30 @@ and fixes [GHSA-w5hq-g745-h8pq](https://github.com/uuidjs/uuid/security/advisori
 `test/nativeBuildCompatibility.test.mjs` exercises Xcode parsing, identifier
 generation and serialization against the installed dependency graph. Remove the
 override when an upstream Xcode dependency supplies a patched version itself.
+
+### Current export security gate
+
+`npm run build:web` and `npm run build:test-hosted` run the build-security guard
+before exporting. `npm run build:security` checks the fully resolved production
+dotenv/config-plugin configuration offline. Use `npm run build:export --
+--platform all --output-dir .expo/release-inspection` for a guarded all-platform
+Metro export.
+
+The installed Expo signing tooling still reaches node-forge's affected verifier
+under [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv).
+Until that gate is reviewed and resolved, the guard refuses configuration of
+`updates.codeSigningCertificate`, `updates.codeSigningMetadata` or an EAS project
+ID, including values supplied by dynamic config and plugins. The EAS ID also
+enables Expo-root development-signing branches, so this check intentionally
+blocks newly linking an EAS project. It changes no signing settings or crypto.
+
+The guard verifies the three inspected installed signing-header branches return
+without network access, then inspects source maps for every exported Metro
+bundle and requested platform. Forge, the certificate helper or Expo signing
+modules make the export fail. A successful export records bundle/map hashes and
+module counts in `security-build.json`; maps are removed before PWA asset
+caching. This contains the currently unused tooling path. `npm audit` still
+reports the advisory and remains a mandatory failing CI gate. Direct Expo
+commands bypass this wrapper; native signing, EAS services and store artifacts
+require their separate release checks. See the
+[current verification](../docs/evaluations/mobile-build-security-2026-10-02/README.md).

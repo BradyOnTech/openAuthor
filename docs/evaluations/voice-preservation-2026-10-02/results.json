@@ -1,0 +1,55 @@
+{
+  "evidence_kind": "synthetic_offline_preservation_contract",
+  "new_provider_calls": 0,
+  "author_data_untouched": true,
+  "head": "230222fc69d49f7b0668b6bd6d164feec64b9595",
+  "focused_tests": {
+    "command": "python3 -m unittest tests.test_voice_preservation tests.test_writing_voice",
+    "passed": 51,
+    "new_preservation_tests": 19,
+    "existing_voice_tests": 32
+  },
+  "source_sha256": {
+    "openauthor/revision_preservation.py": "fb43fa9a27ffe33d439e523f53c6c8c5b7236aa78c635cbbfc889bc28d072f21",
+    "openauthor/writing_voice.py": "ebb77c5eb2be464be8259874afc60bb4424644434f66d1ba48670aa4fcb66fe2",
+    "openauthor/cli.py": "6081b86b0379f70ea64e92e84b7043f04b0ecc3c6e25b467094500121a54af20",
+    "scripts/evaluate_connected_voice.py": "834acf889dd3d9c54a4bcac5eb8af464aa3f2de952f8af617b43d90e65c16a09",
+    "scripts/evaluate_voice_preservation.py": "e041055e8b041dbd0cafa8a0a7a27ac1c2824384e959a50de4a63be7c4e7d816",
+    "tests/test_voice_preservation.py": "a845e0c6c7d5083acfabe29f7c8fa9e7ca0f43bf4cce644426525a167f03881f",
+    "tests/test_writing_voice.py": "fecae0db3e0a6f287a74ac6b4178aa0156cbdc32272f607c33f32da460a8920b"
+  },
+  "evidence_sha256": {
+    "contract-red.txt": "dadfebc0dc23b4f67723980e17225985b2cc64034bcc070231a41c5b79069c9f",
+    "replay.json": "6940408c0ff5a247722b3d823f73c1df5162b6395c757407bb03bf3128f0f4d2",
+    "README.md": "2ad528298aff5cbe224ddaa1ac96c78afad9fedfb3c70ae1bf0f26ea6b2eef09",
+    "replay-output.txt": "6940408c0ff5a247722b3d823f73c1df5162b6395c757407bb03bf3128f0f4d2",
+    "focused-tests.txt": "7020be9cb4c840d86a5f049d88476f0a82638e23d867acd87ed6bc1a77493124",
+    "public-red.txt.gz": "aa25e6d68ce80c59ac6d5a9ea62b84ada6defe979ecdda626d4e56c93e0e6449",
+    "provider-inputs.json": "8db4e0c17701860ef94fe4d17ac54235f1468dc9ea411091a05edfe75630ead7",
+    "replay-preview.json": "d776654e54512f71df371abc18a72eb5f2f1dafe77493e19cb48a8349f8a6b35"
+  },
+  "semantic_verification": "not_certified",
+  "human_author_acceptance": "not_observed",
+  "live_quality_after_fix": "not_observed",
+  "root_final_checks": {
+    "python_3_13": {
+      "passed": 577,
+      "skipped": 0,
+      "log": "full-core-tests-final.txt"
+    },
+    "packaged_python_3_11": {
+      "passed": 577,
+      "skipped": 0,
+      "log": "packaged-python-tests-complete.txt",
+      "installed_core_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "harness": "Load installed core in isolated interpreter, verify byte equality, then add repository-only evaluation/test helpers."
+    },
+    "independent_review": {
+      "standards_findings": 0,
+      "spec_initial_findings": 1,
+      "spec_fixed": 1,
+      "spec_remaining": 0
+    },
+    "provider_calls": 0
+  }
+}

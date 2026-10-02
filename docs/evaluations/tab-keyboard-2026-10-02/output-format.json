@@ -1,0 +1,93 @@
+{
+  "browser-journeys.txt": {
+    "raw_archive": "browser-journeys.txt.raw.gz",
+    "raw_sha256": "dbdcb249df19928fec2df6fdbab37ba114d2da7a2bb8706851cdb7cf2423a7aa",
+    "archive_sha256": "184532b3c6eb11e22e1512703fba55a5a3a7bfefe23fb634c5d0a95b1192da71",
+    "display_sha256": "dbdcb249df19928fec2df6fdbab37ba114d2da7a2bb8706851cdb7cf2423a7aa",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "webkit-journeys.txt": {
+    "raw_archive": "webkit-journeys.txt.raw.gz",
+    "raw_sha256": "6fffbe7c71808445105907b49ec20eff39cafa8a6bd86018b94e83489e8e55eb",
+    "archive_sha256": "a94fc1247299e382e78783161f9ed80d2299f282235b7d1257461b1348853179",
+    "display_sha256": "6fffbe7c71808445105907b49ec20eff39cafa8a6bd86018b94e83489e8e55eb",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "chromium-journeys-final.txt": {
+    "raw_archive": "chromium-journeys-final.txt.raw.gz",
+    "raw_sha256": "e94b89144395d5a997e2ffa5c0746370cbba3acc438a6fbc5eca7f4e775742a6",
+    "archive_sha256": "89c4d3ce23ebd9f3e5aa623ef654db64c4efd76a76d06a029fd227a5cb83a44f",
+    "display_sha256": "e94b89144395d5a997e2ffa5c0746370cbba3acc438a6fbc5eca7f4e775742a6",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "desktop-suite-final.txt": {
+    "raw_archive": "desktop-suite-final.txt.raw.gz",
+    "raw_sha256": "a8738ed60ca73372dc3943e80e12ebaea1b4da58633c7754ddc9069a7e4d6afa",
+    "archive_sha256": "2a61f31414be803c04028b8abe8f681f5b4cba946cc2cd0bb31d5ad8ed394645",
+    "display_sha256": "a686c8e7b00b21146ee535718a829c8124ebfbf9dfa5e1365243e431cf2c1524",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "webkit-journeys-final.txt": {
+    "raw_archive": "webkit-journeys-final.txt.raw.gz",
+    "raw_sha256": "3624b6965695de1f049b856f3fa054bebafd0f901ab823f408c4dec142f44d61",
+    "archive_sha256": "0813fc907710026f09aa97042a70a057f2d293dc3771f994e9fad9e174528680",
+    "display_sha256": "3624b6965695de1f049b856f3fa054bebafd0f901ab823f408c4dec142f44d61",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "baseline-tests.txt": {
+    "raw_archive": "baseline-tests.txt.raw.gz",
+    "raw_sha256": "ce797558bfbcae0088714e8a653fb03650aecef606c7dffe2782788f5c51ba40",
+    "archive_sha256": "7c9d1d8a075f62324257cbf9b589a5490e6d122eabd7fd9443e0a6b235145e63",
+    "display_sha256": "2ae38a8df52e553b3e7bc867f75323b7a180ce5d8e626e4007c43c3c3561b1fd",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "desktop-suite-complete.txt": {
+    "raw_archive": "desktop-suite-complete.txt.raw.gz",
+    "raw_sha256": "e64e78eb9e0396dfc91c1da8692ef282a03a5a3362a6cff53303475737f19f02",
+    "archive_sha256": "eb9e09a22b65bc168269f64a5aa04353cd5ce8f8c069127d924b63c09dd708aa",
+    "display_sha256": "1ce7f2616e69261763e39f0c6f9c12f842b01d4d72f7351d38268b7dedaf38fd",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "webkit-journeys-complete.txt": {
+    "raw_archive": "webkit-journeys-complete.txt.raw.gz",
+    "raw_sha256": "37c07c34e2b625d5ce83fb5708242f3a9416b115eca20173a29604687bd3a9f7",
+    "archive_sha256": "a8cb4777dfb66ad125fb54c819ac2e0ceb510dfe93fc1ee407f27c2773916586",
+    "display_sha256": "37c07c34e2b625d5ce83fb5708242f3a9416b115eca20173a29604687bd3a9f7",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "webkit-journeys-corrected.txt": {
+    "raw_archive": "webkit-journeys-corrected.txt.raw.gz",
+    "raw_sha256": "aa4a245b94a6ad9405887b15bf45cca1b6d003b4b82ab96a3bf01066c8702d05",
+    "archive_sha256": "0b8c0e4f1b742b5f10e874a51efee04bac9e1ae505bf4b7a6029da0684fa11d2",
+    "display_sha256": "ef9aa6c2af288464bfd328f79b1b33dafc8373536aecb2ab33d9871c8b0c345b",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "focused-tests.txt": {
+    "raw_archive": "focused-tests.txt.raw.gz",
+    "raw_sha256": "83ff002b688d14cfb6eca85250168ade581594a8a248c37eed0f2f5defbc2f13",
+    "archive_sha256": "6b4b5861195995b6aab573a31758af2e040a002f49e4fee5adcaf66301496f46",
+    "display_sha256": "e79ee1e779d2d7d8b576b363b16a212b2b402b7cf75d2e472637c54ff06fe580",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "desktop-suite.txt": {
+    "raw_archive": "desktop-suite.txt.raw.gz",
+    "raw_sha256": "2ee259aec27bde106726dacc6a40a56703318ae79bff4de9fe440ed20fe5cfbe",
+    "archive_sha256": "a2351685a96adf1ec788a31dd4c42f30590c68029c4e4043fa773e1f49ace0a2",
+    "display_sha256": "0cbf7fadf66489ca2f1756904323459a5bc02053d0b71ffdd158ea9e4dc39247",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "desktop-build-final.txt": {
+    "raw_archive": "desktop-build-final.txt.raw.gz",
+    "raw_sha256": "35eb5ba3a6b78b00e0853744287895439de6b507306276278d2a7e49ad64b776",
+    "archive_sha256": "fcf4617986287594350e9b1dd857006cdffcec8133a734e6ccd8772d2e172b4f",
+    "display_sha256": "d91125cc889b44ca772e70039a6eee11e49db20fe415b6869d3bf45e94b24544",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "browser-journeys-escalated.txt": {
+    "raw_archive": "browser-journeys-escalated.txt.raw.gz",
+    "raw_sha256": "5f43cd3edd9c140b48552b32a6e818ae7af0eb0e31a01bc7812bba0f22770193",
+    "archive_sha256": "37d32e577b206f1cd73cd5be6d1b68421dd7ddd40f266052cd30fb1f7232f47d",
+    "display_sha256": "5f43cd3edd9c140b48552b32a6e818ae7af0eb0e31a01bc7812bba0f22770193",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  }
+}

@@ -1,0 +1,7 @@
+Installed core source SHA256: 671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440
+Packaged Python: 3.11.15 installed package: ~/Developer/openAuthor/desktop/src-tauri/resources/runtime/python/lib/python3.11/site-packages/openauthor
+Traceback (most recent call last):
+  File "<string>", line 9, in <module>
+  File "~/Developer/openAuthor/desktop/src-tauri/resources/runtime/python/lib/python3.11/unittest/loader.py", line 332, in discover
+    raise ImportError('Start directory is not importable: %r' % start_dir)
+ImportError: Start directory is not importable: '~/Developer/openAuthor/tests'

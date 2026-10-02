@@ -1,0 +1,23 @@
+{
+  "baseline": {
+    "cases": 31,
+    "matched_cases": 7,
+    "extra_statements": 29,
+    "missed_statements": 1,
+    "invalid_evidence": 0
+  },
+  "current": {
+    "cases": 31,
+    "matched_cases": 31,
+    "extra_statements": 0,
+    "missed_statements": 0,
+    "invalid_evidence": 0
+  },
+  "existing_name_cases": {
+    "expected_entities": 27,
+    "matched_entities": 25,
+    "extra_entities": 0,
+    "missed_entities": 2,
+    "type_errors": 2
+  }
+}

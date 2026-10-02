@@ -1,0 +1,15 @@
+{
+  "source": "\"The witness said \\\"Elin trusts Tomas\\\" yesterday,\" Leah said. Elin owns the blue ribbon.",
+  "claims": [
+    [
+      "relationship_create",
+      "trusts",
+      null
+    ],
+    [
+      "canon_fact",
+      null,
+      "the blue ribbon"
+    ]
+  ]
+}

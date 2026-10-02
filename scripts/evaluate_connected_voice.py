@@ -47,8 +47,9 @@ def prepare(output: Path, provider: str, model: str) -> None:
       f"scene-{index:04d}": get_scene(paths, f"scene-{index:04d}")["body"] for index in range(1, 4)},
     "approval_kind": "synthetic evaluator action; human author approval not observed",
     "author_review": "not_observed", "literary_quality": "unassessed", "provider_call_limit": 3}
+  request["preservation"] = [{"kind": "fact", "text": fact} for fact in fixture["protected_facts"]]
   write(output, "request.json", request)
-  write(output, "preview-context.json", {"source": source, "instruction": fixture["instruction"], "context": context})
+  write(output, "preview-context.json", {"source": source, "instruction": fixture["instruction"], "preservation": request["preservation"], "context": context})
   write(output, "reading.json", fixture)
 
 
@@ -94,19 +95,21 @@ def run(output: Path, action: str, allow_provider: bool, feedback_file: Path | N
       if not profile or not profile["usable_for_ai"]:
         raise RuntimeError("A verified synthetic profile is required before comparison.")
       preview = preview_voice(paths, request={**provider, "scene_id": request["source_scene_id"],
-        "source_text": request["source_text"], "instruction": request["instruction"], "directions": [profile, PRESETS[1]]})
+        "source_text": request["source_text"], "instruction": request["instruction"], "preservation": request.get("preservation", []), "directions": [profile, PRESETS[1]]})
       write(output, "comparison.json", preview)
     elif action == "refine":
       comparison = json.loads((output / "comparison.json").read_text())
       feedback = feedback_file.read_text().strip() if feedback_file else request["feedback"]
       write(output, "refinement-input.json", {"feedback": feedback, "reviewer": "assistant evaluator; human author review not observed"})
       result = refine_voice_preview(paths, request={**provider, "preview_id": comparison["id"],
-        "direction_id": "direction-1", "feedback": feedback})
+        "direction_id": "direction-1", "feedback": feedback,
+        **({"expected_preservation_fingerprint": comparison["preservation_fingerprint"]} if "preservation_fingerprint" in comparison else {})})
       write(output, "refined.json", result)
     else:
       result = json.loads((output / "refined.json").read_text())
       profile_before = get_style_profile(paths)
-      proposal = stage_voice_preview(paths, preview_id=result["id"], direction_id="direction-1")
+      proposal = stage_voice_preview(paths, preview_id=result["id"], direction_id="direction-1",
+        expected_preservation_fingerprint=result.get("preservation_fingerprint"))
       assert get_scene(paths, request["source_scene_id"])["body"] == originals[request["source_scene_id"]]
       apply_proposal(paths, proposal_id=proposal["id"])
       expected = originals[request["source_scene_id"]].replace(request["source_text"], result["directions"][0]["text"], 1)

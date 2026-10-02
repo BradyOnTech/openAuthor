@@ -1,0 +1,42 @@
+{
+  "advisory": "GHSA-86w9-cpqp-85rv",
+  "dependency_audit_gate": "open",
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0"
+  },
+  "signing_header_checks": 3,
+  "network_attempts": 0,
+  "scope": "Current Metro module/config containment; signed and native acceptance unverified",
+  "platforms": [
+    "web",
+    "ios",
+    "android"
+  ],
+  "map_count": 3,
+  "bundles": [
+    {
+      "file": "_expo/static/js/android/index-f54a2d33bb6a6cb1b04e8aa87ba5b895.hbc",
+      "platform": "android",
+      "source_count": 848,
+      "bundle_sha256": "78bbe9a945a170aa9de20ba36146e2e080da896ca0b353c42b405e7bc8a6c9a5",
+      "map_sha256": "1ed96b9f440eb863f603f039d21759ea80c232e8efc697b7daff57f74b83615a"
+    },
+    {
+      "file": "_expo/static/js/ios/index-224cb3a6972e579bc85647b823ef02c7.hbc",
+      "platform": "ios",
+      "source_count": 850,
+      "bundle_sha256": "147f3897dd6b01c7bf992e0bd386d2c54554c43e6b568d188def540eb9b5a556",
+      "map_sha256": "4a30c746ae32218a5ddbb2837800f124a829b0a3214667c94e8e437a8d256fcb"
+    },
+    {
+      "file": "_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js",
+      "platform": "web",
+      "source_count": 404,
+      "bundle_sha256": "cece65a7c2763d22e4da53cecccf80e64888eaa02995458273d5269948cfa808",
+      "map_sha256": "2da7a6b2a175f5cea1ee6c39517fb4fd88a708d24fa6f86f3f3fed701441bee9"
+    }
+  ]
+}

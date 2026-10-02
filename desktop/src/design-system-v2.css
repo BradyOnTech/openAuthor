@@ -824,6 +824,17 @@ body {
   background: var(--bg-deep);
 }
 
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-panel[hidden] { display: none; }
+
 
 /* ── Tab Bar ───────────────────────────────────────────────────── */
 

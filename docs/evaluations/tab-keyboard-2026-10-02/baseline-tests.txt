@@ -1,0 +1,181 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/TabBar.keyboard.test.tsx (3 tests | 3 failed) 137ms
+   × arrows wrap without changing the document until Enter or Space activates it 69ms
+   × offers one tab and its close action in the tab sequence, then reenters at the selected document 33ms
+   × closing a keyboard-focused document retains focus on a surviving tab or the empty workspace action 34ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  12:53:04
+   Duration  914ms (transform 89ms, setup 0ms, import 228ms, tests 137ms, environment 463ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/TabBar.keyboard.test.tsx > arrows wrap without changing the document until Enter or Space activates it
+AssertionError: expected <button type="button" …(4)>…(3)</button> to be <button type="button" …(4)>…(2)</button> // Object.is equality
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  <button
+-   aria-label="Memory"
+-   aria-selected="true"
++   aria-label="Ferry, unsaved changes"
++   aria-selected="false"
+    class="tab__select"
+    role="tab"
+    type="button"
+  >
+    <span
+@@ -12,8 +12,12 @@
+      ○
+    </span>
+    <span
+      class="tab__label"
+    >
+-     Memory
++     Ferry
+    </span>
++   <span
++     aria-hidden="true"
++     class="tab__modified"
++   />
+  </button>
+
+ ❯ src/components/editor/TabBar.keyboard.test.tsx:32:34
+     30|   await user.tab();
+     31|   await user.tab();
+     32|   expect(document.activeElement).toBe(screen.getByRole("tab", { name: …
+       |                                  ^
+     33|   await user.keyboard("{ArrowLeft}");
+     34|   expect(document.activeElement).toBe(screen.getByRole("tab", { name: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/components/editor/TabBar.keyboard.test.tsx > offers one tab and its close action in the tab sequence, then reenters at the selected document
+AssertionError: expected <button type="button" …(2)></button> to be <button type="button" …(2)></button> // Object.is equality
+
+- Expected
++ Received
+
+  <button
+-   aria-label="Close Plan"
++   aria-label="Close Ferry"
+    class="tab__close"
+    type="button"
+  >
+    ×
+  </button>
+
+ ❯ src/components/editor/TabBar.keyboard.test.tsx:53:34
+     51|   await user.keyboard("{ArrowLeft}");
+     52|   await user.tab();
+     53|   expect(document.activeElement).toBe(screen.getByRole("button", { nam…
+       |                                  ^
+     54|   await user.tab();
+     55|   expect(document.activeElement).toBe(screen.getByRole("tabpanel"));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/components/editor/TabBar.keyboard.test.tsx > closing a keyboard-focused document retains focus on a surviving tab or the empty workspace action
+AssertionError: expected <body><div>…(1)</div></body> to be <button type="button" …(4)>…(2)</button> // Object.is equality
+
+- Expected
++ Received
+
+@@ -1,5 +1,21 @@
++ <body>
++   <div>
++     <div
++       class="editor-area"
++     >
++       <button>
++         Before tabs
++       </button>
++       <div
++         aria-label="Open documents and workspaces"
++         class="tab-bar"
++         role="tablist"
++       >
++         <div
++           class="tab"
++         >
+            <button
+              aria-label="Plan"
+              aria-selected="false"
+              class="tab__select"
+              role="tab"
+@@ -13,7 +29,59 @@
+              </span>
+              <span
+                class="tab__label"
+              >
+                Plan
++             </span>
++           </button>
++           <button
++             aria-label="Close Plan"
++             class="tab__close"
++             type="button"
++           >
++             ×
++           </button>
++         </div>
++         <div
++           class="tab tab--active"
++         >
++           <button
++             aria-label="Memory"
++             aria-selected="true"
++             class="tab__select"
++             role="tab"
++             type="button"
++           >
++             <span
++               aria-hidden="true"
++               class="tab__icon"
++             >
++               ○
++             </span>
++             <span
++               class="tab__label"
++             >
++               Memory
+              </span>
+            </button>
++           <button
++             aria-label="Close Memory"
++             class="tab__close"
++             type="button"
++           >
++             ×
++           </button>
++         </div>
++       </div>
++       <div
++         aria-label="Current document"
++         role="tabpanel"
++         tabindex="0"
++       >
++         memory
++       </div>
++       <button>
++         After workspace
++       </button>
++     </div>
++   </div>
++ </body>
+
+ ❯ src/components/editor/TabBar.keyboard.test.tsx:66:34
+     64|   await user.tab(); await user.tab(); await user.tab();
+     65|   await user.keyboard("{Enter}");
+     66|   expect(document.activeElement).toBe(screen.getByRole("tab", { name: …
+       |                                  ^
+     67|   expect(screen.getByRole("tabpanel").textContent).toBe("plan");
+     68|   await user.tab(); await user.keyboard("{Enter}");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯

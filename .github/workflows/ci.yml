@@ -71,6 +71,10 @@ jobs:
       - name: Audit all JavaScript dependencies
         run: make js-audit
 
+      - name: Inspect current mobile export signing configuration
+        if: always()
+        run: npm run build:security --prefix mobile
+
       - name: Run repository checks
         run: make check
 
@@ -127,6 +131,8 @@ jobs:
           path: |
             desktop/test-results/
             mobile/test-results/
+            mobile/dist/security-build.json
+            mobile/.expo/hosted-e2e/security-build.json
           if-no-files-found: ignore
 
       - name: Tauri backend check
