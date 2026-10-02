@@ -63,8 +63,7 @@ behavior, interruption, reconnect and accessibility remain unobserved.
 ## Verification and its limits
 
 The current core suite passes 529 of 530 discovered tests on Python 3.13, with
-one optional bundled-runtime check skipped. The prior packaged Python 3.11
-checkpoint passed all 494 then-current tests; its source is being refreshed.
+one optional bundled-runtime check skipped. All 530 pass using the actual packaged Python 3.11 runtime.
 Desktop has 406 passing tests across 76 files plus
 TypeScript and production build checks; mobile has 126 across 27 files plus
 TypeScript, one hosted journey and four preview journeys. Contracts has 19
@@ -72,7 +71,7 @@ passing tests; gateway has 28 plus its typecheck/build. All 17 final desktop
 browser journeys pass, including book, Memory permission and Storyline
 workflows. The unchanged authoring and caret journeys also pass in WebKit.
 
-The arm64 application contains byte-for-byte reviewed core source and pinned
+The refreshed arm64 application contains byte-for-byte committed core source and pinned
 Python/Codex/Git runtimes. The [bundle report](native-bundle.json) records hashes,
 architecture and the unobserved manual gates. It is an unsigned development
 bundle. No Developer ID identity is available locally, and no clean Intel or
@@ -142,3 +141,5 @@ broken current workflow.
 
 Successful requests, synthetic fixtures, exports and passing tests cannot
 substitute for these author, physical-device and clean-machine outcomes.
+
+The latest packaged reopen also retains both tabs, the saved 26-word disposable scene and its unfinished Plan synopsis/new-act title. The [current bundle report](native-bundle.json) identifies commit `4c953ff` and its binary; earlier caret and backup observations keep their distinct binary identities.

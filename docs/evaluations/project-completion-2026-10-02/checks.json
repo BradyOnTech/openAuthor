@@ -12,12 +12,11 @@
     },
     {
       "check": "actual_packaged_core",
-      "discovered": 494,
-      "passed": 494,
+      "discovered": 530,
+      "passed": 530,
       "skipped": 0,
-      "log_sha256": "00830a7ae2eb3ed1e69d1ac929c012947d92d6b86180e7b510b9db1217cfcd63",
-      "development_log_path": "/private/tmp/openauthor-packaged-core-reviewed-final-2026-10-02.log",
-      "checkpoint": "previous implementation; packaged verification will be refreshed"
+      "log_sha256": "5b0b58b0a52a0cf53fff683314a72df1bc1219d1be72fa89cb8fd84c73b3d20b",
+      "development_log_path": "/private/tmp/openauthor-packaged-core-new-gaps-2026-10-02.log"
     },
     {
       "check": "desktop_unit",
@@ -55,5 +54,12 @@
     "No signed/clean-machine distribution or upgrade",
     "No full native accessibility certification"
   ],
-  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
+  "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+  "native_bundle": {
+    "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+    "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
+    "application_sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52",
+    "recovery_stages": 5,
+    "verification": "passed exact-source, packaged recovery and pinned Codex runtime contract"
+  }
 }

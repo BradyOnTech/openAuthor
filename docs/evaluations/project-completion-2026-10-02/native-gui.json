@@ -41,5 +41,15 @@
     "earlier_backup_restore_bundle_application_sha256": "e6216ce7f8131fedcf44d44d3104d45ab82c6e4b77be625f55d49c0f354c7d21",
     "final_core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92"
   },
-  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
+  "current_bundle_reopen": {
+    "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+    "application_sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52",
+    "book": "/private/tmp/openauthor-native-acceptance-2026-10-02",
+    "observed": "Native reopened the same saved 26-word scene and both Scene/Plan tabs; Plan retained its unsaved synopsis and new act title. No prose or Plan was saved by the walkthrough.",
+    "recovered_synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "recovered_act_title": "A still unfinished act",
+    "source_prose_unchanged": true,
+    "scope": "Targeted unsigned development bundle; previous SIGKILL caret and backup observations retain their own earlier binary identities."
+  }
 }

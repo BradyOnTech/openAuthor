@@ -188,10 +188,9 @@
       "optional_runtime_skipped": 1
     },
     "actual_packaged_python_3_11": {
-      "discovered": 494,
-      "passed": 494,
-      "skipped": 0,
-      "checkpoint": "previous implementation; packaged verification will be refreshed"
+      "discovered": 530,
+      "passed": 530,
+      "skipped": 0
     },
     "desktop": {
       "tests": 406,
@@ -249,6 +248,12 @@
       "literary_acceptance": "not_observed",
       "initial_alternatives": "require_revision",
       "refinement": "approval_pending"
+    },
+    "native_bundle": {
+      "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+      "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
+      "unsigned_arm64": true,
+      "release_certified": false
     }
   },
   "known_code_gaps": [
@@ -261,7 +266,7 @@
       "scope": "Current authored extraction cases preserve two uncased-name misses and two place/character type errors."
     }
   ],
-  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
+  "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
   "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",

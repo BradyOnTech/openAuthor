@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "bundled_core_source": "exact_match",
-  "core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92",
+  "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
   "architecture": "arm64",
   "python": "3.11.15",
-  "source_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
+  "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
   "workflow_run_id": "",
   "signed_bundle_required": false,
   "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate",
@@ -43,7 +43,7 @@
       "architectures": [
         "arm64"
       ],
-      "sha256": "486733f4b506fd2c13ed0241ef7e622e074481e95afffda100341ffde99fb48f"
+      "sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52"
     },
     "python": {
       "architectures": [
