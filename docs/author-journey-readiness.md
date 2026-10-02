@@ -10,6 +10,18 @@ physical phones, native accessibility and signed clean-machine distribution
 remain open. Native testing also found a first-focus caret regression; the repaired bundle
 now passes actual keyboard insertion after forced termination. The detailed assessment below retains the earlier journey evidence.
 
+The latest [recovery checkpoint](evaluations/no-snapshot-recovery-integration-2026-10-02/README.md)
+at `8aaf17d` also authenticates newly provisioned recovery keys before the first
+snapshot and closes exact journaled voice calls lost before database attachment.
+The mobile App removes recovery material on identity replacement and restores
+prior local state after late writes.243 local mobile checks, two Chrome App
+journeys and one selected WebKit recovery/redaction journey pass. Native storage
+race controls use mocks; physical devices and deployed recovery remain open.
+Legacy keys without an independent witness and unknown pre-journal allocations
+retain their explicit limits. Tabs/caret restoration and the wider evidence-first
+workspace are implemented; fresh-author quality, review burden, long sessions,
+accessibility and signed clean-machine acceptance remain required.
+
 ## Purpose
 
 openAuthor is a private, local-first novel-writing studio. The author plans and
@@ -36,7 +48,7 @@ phone, or live-model quality.
 | Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The main-editor inbox now verifies retained corrections, person/place repair, exact evidence and stale-review refusal. The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy, uncased-name extraction and review workload on original prose remain open. |
 | Explore alternatives | Storylines, comparison, selective integration into Changes | Browser exercises an original six-scene alternate ending, returns to Primary, integrates one of two changed scenes, verifies the other is unchanged and undoes. Clean scene tabs reload the active Storyline; comprehensive unsaved-navigation policy remains open. |
 | Finish the book | Word and Markdown export with loss reports | Both now follow Plan order, with unassigned scenes last. Browser exports/re-reads Word; core checks both formats. Export remains scene-oriented, not a typesetting feature. |
-| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion checks now include 126 tests plus hosted and preview browser journeys. Encrypted cold-restart reading/capture retention, atomic native migration and late-refresh sign-out fencing pass local checks; iOS/Android/web exports pass. Real keys and migration on devices, approved deployed authorization, physical voice, interruption/audio routing and accessibility remain gates. |
+| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion checks now include 243 tests in 34 files, two current hosted Chrome App journeys and one selected WebKit recovery/redaction journey. Encrypted cold-restart reading/capture retention, atomic native migration and late-refresh sign-out fencing pass local checks; Current guarded web App build passes; prior iOS/Android exports retain their 0cd77bd scope. Real keys and migration on devices, approved deployed authorization, physical voice, interruption/audio routing and accessibility remain gates. |
 
 ## Connected author journey and reading
 

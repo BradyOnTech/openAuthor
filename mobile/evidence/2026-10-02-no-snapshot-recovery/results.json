@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-10-02T21:47:32.022501+00:00",
+  "input_count": 150,
+  "unchanged": 150,
+  "changed": [],
+  "missing": [],
+  "mobile_check": {
+    "files": 34,
+    "passed": 243,
+    "failed": 0,
+    "typecheck": "passed"
+  },
+  "chromium_app": {
+    "passed": 2,
+    "failed": 0,
+    "browser": "installed Google Chrome",
+    "synthetic_hosted_boundaries": true
+  },
+  "webkit_recovery_app": {
+    "passed": 1,
+    "failed": 0,
+    "service_workers": "blocked in recovery fixture",
+    "synthetic_hosted_boundaries": true
+  },
+  "negative_controls": {
+    "late_key_write": {
+      "failed_expected": 5,
+      "passed": 20,
+      "kind": "retrospective disabled post-write fences"
+    },
+    "local_authorization": {
+      "failed_expected": 2,
+      "deselected": 15,
+      "kind": "retrospective disabled post-write fences"
+    }
+  },
+  "build": "index-49c4913ae4c7a7a9703a57d7e8182046.js"
+}

@@ -236,7 +236,8 @@
         "Earlier local followup, before0cd77bd: default Python discovers 548 tests with 547 passing and one optional runtime skip; desktop passes 465 tests across 79 files plus typecheck/build. All 19 combined browser workflows pass; the subsequent transport-only publication repair passes 61 affected sync/provisioning checks. Shared gateway quota passes 33 tests against disposable PostgreSQL without skips. Separate evidence retains each boundary and source hashes.",
         "Prior0cd77bd checkpoint:577/577 on both interpreters, desktop564/86, mobile181/30, six real-core workflows in each Chromium/WebKit; exact committed unsigned app, runtime contract and five packaged-engine SIGKILL stages. Actual native normal reopen/manual tab observations only. Author/physical/signed/deployed acceptance open. See current completion review and latest_automated_checkpoint.",
         "Prior e7712d3 frontend/cloud checkpoint: 590 desktop tests in 88 files; 94/94 gateway tests without skips; eight SQL suites, 16 real database concurrency controls, six real PG/HTTP/process voice cases and six account/key-recovery browser journeys per engine. Exact inputs were hashed before and unchanged after the combined run. No current-source native, deployed, physical-device or signed acceptance is claimed.",
-        "Current 9d31cf8 retained-project amendment checkpoint: 626 desktop tests in 88 files, 9/9 Chromium and 9/9 WebKit account/key-recovery journeys, 94/94 gateway with no skips, nine SQL suites and 24 concurrency/isolation controls. All 83 captured inputs unchanged and match the committed source. Independent Standards and Spec re-reviews have zero open findings. No current-source native, deployed, physical-device, author or signed acceptance is claimed. See docs/evaluations/account-amendment-integration-2026-10-02/results.json."
+        "Current 9d31cf8 retained-project amendment checkpoint: 626 desktop tests in 88 files, 9/9 Chromium and 9/9 WebKit account/key-recovery journeys, 94/94 gateway with no skips, nine SQL suites and 24 concurrency/isolation controls. All 83 captured inputs unchanged and match the committed source. Independent Standards and Spec re-reviews have zero open findings. No current-source native, deployed, physical-device, author or signed acceptance is claimed. See docs/evaluations/account-amendment-integration-2026-10-02/results.json.",
+        "Current source8aaf17d:657 desktop,22 contracts,100 gateway,243 mobile tests; desktop11 journeys/engine, mobileChrome2/WebKit1 selected recovery/redaction,10 SQL suites/37 controls. Packets: docs/evaluations/no-snapshot-recovery-integration-2026-10-02/results.json; mobile/evidence/2026-10-02-no-snapshot-recovery/results.json"
       ],
       "remaining": [
         "Resolve the unpatched node-forge security finding with a supported patch or reviewed/tested mitigation plus vulnerable-path analysis; rerun audits and affected bundle checks.",
@@ -244,25 +245,25 @@
         "Physical iPhone/Android voice, permissions, interruption/reconnect, audio routing and desktop handoff; approved deployment authorization, revocation, key rotation and deletion drills.",
         "Owner-supplied Developer ID signing/notarization, architecture-specific clean Apple Silicon/Intel installation, signed-app credentials, upgrades when a released version exists, and full native accessibility acceptance.",
         "Maintain explicit physical power-loss and noncooperating external-writer limits; do not declare production readiness.",
-        "Complete safe no-snapshot key recovery and unknown provider-allocation reconciliation; drill independent controller operations and reviewed retention amendments against the actual deployment. Unknown absent projects still require permanent independently attested deletion evidence."
+        "Drill current verifier-based recovery and journaled-call reconciliation in the approved deployment. Legacy unwitnessed keys, provider allocation before valid Location/durable journal, lost accepted receipts, total control outages and unknown absent-project scope still require positive independent evidence; reviewed rotation restores future access only."
       ]
     }
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Current reviewed retained-project amendments: desktop 626/88, gateway 94/94 with no skips, nine SQL suites, 24 concurrency/isolation controls and nine account/key-recovery browser journeys per engine. All 83 captured inputs unchanged and match the commit. Older core/mobile/native outcomes keep their source scope; author, physical-device, signed and deployed acceptance remains open.",
+    "verification_stage": "Current no-snapshot key and journaled-voice recovery: desktop657/90, contracts22, gateway100/no skips,10 SQL suites/37 aggregate controls,11 desktop journeys per browser; mobile243/34, Chrome2 App journeys and WebKit1 selected recovery/redaction journey. All364 root inputs match commit;150 mobile inputs unchanged. Author/physical/deployed/signed gates remain open.",
     "python_tests_passed": 577,
     "python_test_scope": "577/577 on Python3.13 and actual bundled Python3.11.15, no skips; interpreter runs overlap.",
-    "desktop_tests_passed": 626,
-    "desktop_test_files_passed": 88,
-    "mobile_tests_passed": 181,
-    "mobile_test_files_passed": 30,
-    "contracts_tests_passed": 19,
-    "gateway_tests_passed": 94,
+    "desktop_tests_passed": 657,
+    "desktop_test_files_passed": 90,
+    "mobile_tests_passed": 243,
+    "mobile_test_files_passed": 34,
+    "contracts_tests_passed": 22,
+    "gateway_tests_passed": 100,
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
-    "frontend_build": "Current desktop production frontend and gateway builds passed. Guarded mobile exports and unsigned native app remain earlier 0cd77bd evidence.",
+    "frontend_build": "Current desktop/gateway production builds and guarded Expo web App build pass. Current iOS/Android exports not rerun; unsigned native app remains historical0cd77bd.",
     "macos_unsigned_bundle_and_bundled_runtime": "0cd77bd exact source/core, pinned runtimes, wire contract and five SIGKILL stages passed; native manual tab controls and recovered scene/Plan drafts observed on normal reopen. Earlier caret/backup drills retain their original app identity. No release certificate.",
     "dependency_audit": "Current read-only mobile recheck still reports five high entries from one unpatched node-forge advisory; no supported released remedy found. Offline guard containment remains separate prior export evidence, with no dependency/signing change. Other packages retain earlier clean audits.",
     "dependency_evidence": "docs/evaluations/mobile-dependency-recheck-2026-10-02/results.json",
@@ -280,38 +281,40 @@
     "python313_tests_passed": 577,
     "python313_tests_skipped": 0,
     "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
-    "combined_browser_gate": "Nine current synthetic account/key-recovery journeys per browser; prior real-core writing journeys retain their 0cd77bd scope.",
+    "combined_browser_gate": "11 desktop account/key-recovery journeys per engine; mobileChrome2 full App and WebKit1 selected recovery/redaction. Older real-core workflows retain0cd77bd scope.",
     "native_gui_observations": [
       "Normal reopening retained exact synthetic saved scene and both writing/Plan tabs.",
       "Unfinished Synopsis and new-act drafts retained; no save/discard.",
       "Manual tab focus, activation, named panel entry and neighboring focus after closing read-only workspace observed."
     ],
-    "desktop_test_scope": "Current source: 626 tests across 88 files, TypeScript and production frontend build.",
-    "desktop_full_browser_journeys": "9/9 Chromium and 9/9 WebKit account/key-recovery journeys.",
-    "gateway_test_scope": "Current frozen source: 94/94, zero skips, disposable PostgreSQL 17.11, TypeScript/build; synthetic provider/Storage/Auth boundaries.",
-    "combined_desktop_browser_journeys": 9,
-    "implementation_commit": "9d31cf8647d3afd996c3f8ddb8c0df99022f1ed4",
+    "desktop_test_scope": "Current source657 tests/90 files, TypeScript/production frontend build.",
+    "desktop_full_browser_journeys": "11/11 Chrome and11/11 WebKit.",
+    "gateway_test_scope": "100/100 with zero skips; TypeScript/build, disposable PostgreSQL17.11 and synthetic HTTP/provider.",
+    "combined_desktop_browser_journeys": 11,
+    "implementation_commit": "8aaf17de9fb0503e5fad6879b631561318798d0c",
     "native_application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
     "browser_engine_runs": {
-      "chromium": 9,
-      "webkit": 9
+      "chromium": 11,
+      "webkit": 11
     },
     "new_live_provider_calls": 0,
     "independent_review_open_findings": 0,
     "independent_documentation_review": "Current code Standards and Spec re-reviews have zero open findings. Final evidence and shared documentation integrity audit is recorded in the integration packet.",
     "current_source_native_acceptance": "not_observed; native_application_sha256 and native_gui_observations below belong to 0cd77bd",
-    "unchanged_core_mobile_native_scope": "Python, mobile, contracts and Rust counts below remain separately scoped prior evidence; not rerun in this iteration.",
-    "cloud_evidence": "docs/evaluations/account-amendment-integration-2026-10-02/results.json",
-    "sql_suites": 9,
-    "real_database_concurrency_controls": 24,
-    "captured_source_files": 83,
+    "cloud_evidence": "docs/evaluations/no-snapshot-recovery-integration-2026-10-02/results.json",
+    "sql_suites": 10,
+    "real_database_concurrency_controls": 37,
+    "captured_source_files": 364,
     "captured_inputs_unchanged": true,
     "independent_review": {
       "standards_open": 0,
       "spec_initial": 2,
       "spec_fixed": 2,
       "spec_open": 0
-    }
+    },
+    "unchanged_core_native_scope": "Python/Rust/native counts remain historical0cd77bd, not rerun; desktop/contracts/gateway/mobile have current separately scoped results.",
+    "mobile_evidence": "mobile/evidence/2026-10-02-no-snapshot-recovery/results.json",
+    "mobile_scope": "Local rendered app/production crypto and disposable PostgreSQL; synthetic Auth/RPC/Storage/provider. Native mobile storage races use platform mocks; no current-source signed/native/physical/deployed/author acceptance."
   },
   "external_constraints": {
     "live_provider_spend_usd_max_total": 5,
@@ -488,6 +491,71 @@
       "current_source_native_acceptance": "not_observed; native_application_sha256 and native_gui_observations below belong to 0cd77bd",
       "unchanged_core_mobile_native_scope": "Python, mobile, contracts and Rust counts below remain separately scoped prior evidence; not rerun in this iteration.",
       "cloud_evidence": "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
+    },
+    {
+      "date": "2026-10-02",
+      "verification_stage": "Current reviewed retained-project amendments: desktop 626/88, gateway 94/94 with no skips, nine SQL suites, 24 concurrency/isolation controls and nine account/key-recovery browser journeys per engine. All 83 captured inputs unchanged and match the commit. Older core/mobile/native outcomes keep their source scope; author, physical-device, signed and deployed acceptance remains open.",
+      "python_tests_passed": 577,
+      "python_test_scope": "577/577 on Python3.13 and actual bundled Python3.11.15, no skips; interpreter runs overlap.",
+      "desktop_tests_passed": 626,
+      "desktop_test_files_passed": 88,
+      "mobile_tests_passed": 181,
+      "mobile_test_files_passed": 30,
+      "contracts_tests_passed": 19,
+      "gateway_tests_passed": 94,
+      "rust_tests_passed": 10,
+      "rust_tests_ignored": 1,
+      "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
+      "frontend_build": "Current desktop production frontend and gateway builds passed. Guarded mobile exports and unsigned native app remain earlier 0cd77bd evidence.",
+      "macos_unsigned_bundle_and_bundled_runtime": "0cd77bd exact source/core, pinned runtimes, wire contract and five SIGKILL stages passed; native manual tab controls and recovered scene/Plan drafts observed on normal reopen. Earlier caret/backup drills retain their original app identity. No release certificate.",
+      "dependency_audit": "Current read-only mobile recheck still reports five high entries from one unpatched node-forge advisory; no supported released remedy found. Offline guard containment remains separate prior export evidence, with no dependency/signing change. Other packages retain earlier clean audits.",
+      "dependency_evidence": "docs/evaluations/mobile-dependency-recheck-2026-10-02/results.json",
+      "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
+      "scale_gate": "No new full-product scale gate. Memory sample before root quote/suffix refinements retains its explicit source hash; historical full-product scale evidence remains separate.",
+      "live_provider_api_estimated_cost_usd": 0.0,
+      "live_provider_usage_scope": "One authenticated subscription call on a fresh synthetic three-scene chapter; gen-74db96940b37; resolved gpt-5.6-sol;4620 input / 2411 output tokens; one attempt. API estimate is not proof of subscription billing or exact monetary cost.",
+      "live_selection_evaluation": "Raw critique caught planted unexplained character knowledge and preserved explicit change/ambiguity. Original evidence finding was withheld for a one-character offset error; same-response exact-quote recovery locally verified. Assistant assessment only; author acceptance absent.",
+      "completion_evidence": "docs/evaluations/project-completion-2026-10-02/requirements.json",
+      "literary_assessment": "docs/evaluations/connected-editorial-2026-10-02/assessment.md",
+      "production_readiness_claim": false,
+      "python_tests_discovered": 577,
+      "python_tests_skipped": 0,
+      "packaged_python_tests_last_passed": 577,
+      "python313_tests_passed": 577,
+      "python313_tests_skipped": 0,
+      "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "combined_browser_gate": "Nine current synthetic account/key-recovery journeys per browser; prior real-core writing journeys retain their 0cd77bd scope.",
+      "native_gui_observations": [
+        "Normal reopening retained exact synthetic saved scene and both writing/Plan tabs.",
+        "Unfinished Synopsis and new-act drafts retained; no save/discard.",
+        "Manual tab focus, activation, named panel entry and neighboring focus after closing read-only workspace observed."
+      ],
+      "desktop_test_scope": "Current source: 626 tests across 88 files, TypeScript and production frontend build.",
+      "desktop_full_browser_journeys": "9/9 Chromium and 9/9 WebKit account/key-recovery journeys.",
+      "gateway_test_scope": "Current frozen source: 94/94, zero skips, disposable PostgreSQL 17.11, TypeScript/build; synthetic provider/Storage/Auth boundaries.",
+      "combined_desktop_browser_journeys": 9,
+      "implementation_commit": "9d31cf8647d3afd996c3f8ddb8c0df99022f1ed4",
+      "native_application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
+      "browser_engine_runs": {
+        "chromium": 9,
+        "webkit": 9
+      },
+      "new_live_provider_calls": 0,
+      "independent_review_open_findings": 0,
+      "independent_documentation_review": "Current code Standards and Spec re-reviews have zero open findings. Final evidence and shared documentation integrity audit is recorded in the integration packet.",
+      "current_source_native_acceptance": "not_observed; native_application_sha256 and native_gui_observations below belong to 0cd77bd",
+      "unchanged_core_mobile_native_scope": "Python, mobile, contracts and Rust counts below remain separately scoped prior evidence; not rerun in this iteration.",
+      "cloud_evidence": "docs/evaluations/account-amendment-integration-2026-10-02/results.json",
+      "sql_suites": 9,
+      "real_database_concurrency_controls": 24,
+      "captured_source_files": 83,
+      "captured_inputs_unchanged": true,
+      "independent_review": {
+        "standards_open": 0,
+        "spec_initial": 2,
+        "spec_fixed": 2,
+        "spec_open": 0
+      }
     }
   ],
   "companion_checkpoint_2026_10_02": {
@@ -742,5 +810,47 @@
     "input_hashes_unchanged": true,
     "evidence": "docs/evaluations/mobile-dependency-recheck-2026-10-02/results.json",
     "scope": "Read-only current official metadata, integrity-verified public package inspection, installed-tree audit and offline preflight. No dependency/signing change; prior Metro containment and native/mobile counts were not rerun."
+  },
+  "recovery_checkpoint": {
+    "date": "2026-10-02",
+    "implementation_commit": "8aaf17de9fb0503e5fad6879b631561318798d0c",
+    "desktop_tests": 657,
+    "desktop_files": 90,
+    "contracts_tests": 22,
+    "gateway_tests": 100,
+    "gateway_skipped": 0,
+    "sql_suites": 10,
+    "concurrency_and_isolation_controls": 37,
+    "verifier_sql_assertions": 49,
+    "verifier_queued_controls": 12,
+    "verifier_isolation_refusals": 1,
+    "voice_real_pg_http_process_cases": 9,
+    "desktop_browser_journeys": {
+      "chromium": 11,
+      "webkit": 11
+    },
+    "mobile_tests": 243,
+    "mobile_files": 34,
+    "mobile_browser_journeys": {
+      "chromium_full_app": 2,
+      "webkit_selected_recovery_redaction": 1
+    },
+    "nonmobile_inputs_unchanged_and_committed": 364,
+    "mobile_inputs_unchanged": 150,
+    "mobile_evidence_hashes": 42,
+    "independent_review": {
+      "standards_open": 0,
+      "spec_initial": 2,
+      "spec_fixed": 2,
+      "spec_open": 0
+    },
+    "new_provider_calls": 0,
+    "deployed_mutations": 0,
+    "release_certified": false,
+    "evidence": [
+      "docs/evaluations/no-snapshot-recovery-integration-2026-10-02/results.json",
+      "mobile/evidence/2026-10-02-no-snapshot-recovery/results.json"
+    ],
+    "scope": "Local rendered app/production crypto and disposable PostgreSQL; synthetic Auth/RPC/Storage/provider. Native mobile storage races use platform mocks; no current-source signed/native/physical/deployed/author acceptance."
   }
 }

@@ -1,0 +1,216 @@
+{
+  "sealed_at": "2026-10-02T21:48:51.619314+00:00",
+  "file_count": 42,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 5228,
+      "sha256": "97d843d2c142898c125fc1be054d7402391bcf31635fdd0259dff7c25d3d8993"
+    },
+    {
+      "path": "built-web/index-49c4913ae4c7a7a9703a57d7e8182046.js",
+      "bytes": 1406838,
+      "sha256": "eff19df106e53ba5ce2f5d26e60584540d834562c85484c017bda74fe6b5ad10"
+    },
+    {
+      "path": "built-web/index.html",
+      "bytes": 1890,
+      "sha256": "f98d669f6cc7119b098b0bcc29faa2d9c6586a650feb4766f060f2fa2c47e9d3"
+    },
+    {
+      "path": "built-web/manifest.webmanifest",
+      "bytes": 394,
+      "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8"
+    },
+    {
+      "path": "built-web/pwa-register.js",
+      "bytes": 182,
+      "sha256": "db1018a5115e06d8963b987d825adc6dbd9397291b31eeb77e3c1971c662b648"
+    },
+    {
+      "path": "built-web/service-worker.js",
+      "bytes": 1479,
+      "sha256": "2075d5884358450d148c6043c14665dab076f9ddcb8ad5e98678836c90e96b01"
+    },
+    {
+      "path": "chromium-app/compact-assistant.png",
+      "bytes": 197873,
+      "sha256": "ec50d5b2893ac701ff963b6632ed285e8bfdd6370676eba703e35386af66e27d"
+    },
+    {
+      "path": "chromium-app/downloaded-writing-voice.png",
+      "bytes": 197726,
+      "sha256": "eb751a9514de6e9fe25a8e6b7f4d3934def660927241badee010a690d98ea16f"
+    },
+    {
+      "path": "chromium-app/no-snapshot-key-recovery.png",
+      "bytes": 276119,
+      "sha256": "325ba4581516f42275433da82048a42f1bec44f4296ad3a1957790ad6bdb6e51"
+    },
+    {
+      "path": "chromium-app/offline-captures.png",
+      "bytes": 189808,
+      "sha256": "4efaf79598cbc127dbfdee71bf4910b2b88bcfb62d9c38a6c35707f0f006e9f0"
+    },
+    {
+      "path": "chromium-app/paired-companion.png",
+      "bytes": 162339,
+      "sha256": "7de6e4739747a073d7d7e7998161010ec79bfc43d99ab7076e0cc6ef5e83832a"
+    },
+    {
+      "path": "chromium-app/plan-ordered-reader.png",
+      "bytes": 168979,
+      "sha256": "d76b7cb6990d8522a3ff80292c816eaf15a8dc64765b1349c6cc14222b53cbaa"
+    },
+    {
+      "path": "chromium-app/readable-pending-capture.png",
+      "bytes": 144830,
+      "sha256": "f151747d5fec575d50d28f4be9f98b799b06268aae2acc45c67a3238e0b53edd"
+    },
+    {
+      "path": "chromium-app/recovered-unfinished-capture.png",
+      "bytes": 172708,
+      "sha256": "e5454434cd451a7cc4c3261446b00bb56d30dba5041123d6695929f82eed1715"
+    },
+    {
+      "path": "chromium-app/recovery-redacted-after-session-replacement.png",
+      "bytes": 146870,
+      "sha256": "ddd03133d0c14b9806ddbf5919b71deb14f6a214e0164f1cb07c20d927ce8403"
+    },
+    {
+      "path": "chromium-app/refreshed-story-facts.png",
+      "bytes": 191574,
+      "sha256": "76046d5269c268864e591916c8346076b8f0d41c5cc6dfb54cded03a4e77c6a5"
+    },
+    {
+      "path": "chromium-app/voice-controls-simulated.png",
+      "bytes": 185793,
+      "sha256": "5d96fe42862d6a5073df019375bc030523eea477c39ed7a8599353450cc7e3cf"
+    },
+    {
+      "path": "chromium-app/voice-policy-fail-closed.png",
+      "bytes": 230070,
+      "sha256": "ef59033f3c5de18935b4905028495ebe88494250d45750d5d73de689bc61a8db"
+    },
+    {
+      "path": "independent-root-spec-review.md",
+      "bytes": 2647,
+      "sha256": "7d886abeb6bb381283f577ed1f3a45d3c645198f1a60c12cbd85c27682a282c2"
+    },
+    {
+      "path": "logs/chromium-executable-configuration-error.raw.gz",
+      "bytes": 932,
+      "sha256": "adbb5c6b45cfa92e472f345bce5ad3fb4803b50de12899c73734a21c86e7681d"
+    },
+    {
+      "path": "logs/final-chromium-app.raw.gz",
+      "bytes": 672,
+      "sha256": "ce6bcc1085d0157dcdc28108dbe2d9f4a50fe0492394ff5701a3c9829783045f"
+    },
+    {
+      "path": "logs/final-mobile-check.raw.gz",
+      "bytes": 370,
+      "sha256": "024170ea8fa36f293f5d1c34fcc7848d9d407a8d73bfab423de3ccfd1ded13d7"
+    },
+    {
+      "path": "logs/final-webkit-recovery-app.raw.gz",
+      "bytes": 556,
+      "sha256": "b76fc3cab50ba9aec5816faff55c956d815ded74bec2e9ede721d5d9162f52df"
+    },
+    {
+      "path": "logs/fixture-invalid-jwt.raw.gz",
+      "bytes": 1078,
+      "sha256": "59520ef86760409b0e181254f29605707d10f8586e8543d73cd114baa17382f8"
+    },
+    {
+      "path": "logs/historical-hosted-recovery-red.raw.gz",
+      "bytes": 1420,
+      "sha256": "a3ab76dc6391f86f7335f292ccc526da75768f91736eec80516b1ac397a2269c"
+    },
+    {
+      "path": "logs/historical-positive-ack-ui-red.raw.gz",
+      "bytes": 1207,
+      "sha256": "43b3bec8655a0b8673ac783e4fb8eb2bd0a954353673649081a02a1750158068"
+    },
+    {
+      "path": "logs/historical-storage-and-test-control-red.raw.gz",
+      "bytes": 1337,
+      "sha256": "5382d581b39c383edd627cc3854bf68158ef9a9c6129f1bb6e26683b09eae5de"
+    },
+    {
+      "path": "logs/initial-missing-crypto-module-red.raw.gz",
+      "bytes": 481,
+      "sha256": "1ae05af581cff01af6ff37b4bf6b0113a0150a01b7096b9e2010fbcd775a30c9"
+    },
+    {
+      "path": "logs/monitor-voice-regression-fixed.raw.gz",
+      "bytes": 370,
+      "sha256": "abe6ebfe0ba2c20227180d1fda658a6190a8018584ecadafcea83c76eaa837ac"
+    },
+    {
+      "path": "logs/retrospective-late-key-write-negative.raw.gz",
+      "bytes": 1513,
+      "sha256": "97372b8c13893bb6682f4d51be730a1a61f317ca62ab1f915c22c0a01dd764bf"
+    },
+    {
+      "path": "logs/retrospective-local-authorization-negative.raw.gz",
+      "bytes": 889,
+      "sha256": "77ccd1b1809dd6c09ef91481d5e86416d98858692a75823a64d11f1f73afd4f8"
+    },
+    {
+      "path": "logs/webkit-service-worker-routing-limitation.raw.gz",
+      "bytes": 1474,
+      "sha256": "4343cd020826c06d0aea90ad347aa077a7b8fb36a463db3def6fd4464b7cb383"
+    },
+    {
+      "path": "negative-controls/late-key-write/metadata.json",
+      "bytes": 728,
+      "sha256": "9be7061c9914dbf94dfbeb391bc3af468457211263a3cec6df4f83fa46ad2285"
+    },
+    {
+      "path": "negative-controls/late-key-write/mutated-fixture.tar.gz",
+      "bytes": 118814,
+      "sha256": "ddc3196769e403fc6d7c12b5c05df641067271c3f319ae1606e636f68c17712b"
+    },
+    {
+      "path": "negative-controls/local-authorization/metadata.json",
+      "bytes": 761,
+      "sha256": "73f31602cca30825d55822d0759aae9603d32f1b1823fa0ea57cb8f2aafd452c"
+    },
+    {
+      "path": "negative-controls/local-authorization/mutated-fixture.tar.gz",
+      "bytes": 189146,
+      "sha256": "89a0fc716ba65f6f0e1091f2674aba83d38a61d4822281e66cc35833097092c3"
+    },
+    {
+      "path": "results.json",
+      "bytes": 902,
+      "sha256": "8d395ece890547c7af5e5e4cb5e8276d04c694fea7eed066b21a4b515de146a1"
+    },
+    {
+      "path": "tested-inputs.json",
+      "bytes": 26000,
+      "sha256": "e23452449fcfa4ebfe52733f26eaf3b0d1edb2e2c2367f7b2c10946050451fd5"
+    },
+    {
+      "path": "tested-inputs.tar.gz",
+      "bytes": 298578,
+      "sha256": "46e84c0cff2e9c891a6d59024e3b39b14123c6cb4436ae347ecc864c5ea77da9"
+    },
+    {
+      "path": "verify.py",
+      "bytes": 754,
+      "sha256": "0db046d63a67f0ca296f0c5f4841dfc47c9dc079805de486a9750f10f3d0993e"
+    },
+    {
+      "path": "webkit-app/no-snapshot-key-recovery.png",
+      "bytes": 287762,
+      "sha256": "5f397dea1897f29732da4be1eae6257bae82568ec7ce00fd769ae5a678555d10"
+    },
+    {
+      "path": "webkit-app/recovery-redacted-after-session-replacement.png",
+      "bytes": 187025,
+      "sha256": "31b15ab4b7b9a487d96826b0987442e258e03f50690c2df66cd8b099405551c0"
+    }
+  ]
+}

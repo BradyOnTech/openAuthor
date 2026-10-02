@@ -25,7 +25,36 @@ build alone satisfies this goal.
 | Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds pass; unsigned arm64 runtime verification belongs to the prior 0cd77bd native checkpoint. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest checkpoint — 2026-10-02, `9d31cf8`
+## Latest checkpoint — 2026-10-02, `8aaf17d`
+
+New desktop key provisioning now records an immutable authenticated witness
+atomically with reviewed device envelopes. Desktop and mobile can verify a
+recovery key before any snapshot exists; publication remains explicit. Guarded
+mobile key and authorization commits restore prior state after late identity
+replacement, and the App removes entered recovery material. Legacy keys without
+an envelope, authenticated snapshot or witness remain unprovable; reviewed new
+rotation restores future access without recovering unavailable historical ciphertext.
+
+Known voice IDs journaled before SQL attachment now recover through closed-first
+attachment and independent accepted closure. Managed creation retains durable
+lease-UUID correlation. Before valid Location or durable journal, lost accepted
+receipts and complete control outages remain unresolved.
+
+The [recovery integration packet](evaluations/no-snapshot-recovery-integration-2026-10-02/README.md)
+records 657 desktop tests / 90 files,22 contract tests,100 gateway tests without
+skips,10 SQL suites / 37 aggregate concurrency/isolation controls, and 11 desktop
+journeys in each Chrome/WebKit engine. All 364 captured inputs stayed unchanged
+and match the source commit. The
+[mobile packet](../mobile/evidence/2026-10-02-no-snapshot-recovery/README.md)
+records 243 tests / 34 files, TypeScript, two full Chrome App journeys and one selected
+WebKit recovery/redaction journey using the same built bundle; 150 inputs stayed
+unchanged and 42 evidence hashes matched. Independent Standards and Spec reviews
+have zero open findings after two mobile repairs. Native mobile storage races
+use platform mocks, and Expo crypto uses its web implementation; no physical,
+deployed, current native GUI/Keychain, signed or author acceptance is inferred.
+Current iOS/Android exports were not rerun. All six priorities remain in progress.
+
+### Prior checkpoint — 2026-10-02, `9d31cf8`
 
 Production readiness remains **in progress**. Reviewed retention amendments now
 reconcile a moved shared project or an exact independently finalized deletion
@@ -69,7 +98,7 @@ unobserved. The machine record preserves previous checkpoints.
 
 Author literary judgment and fresh-prose Memory workload remain unobserved.
 Required work also includes physical phones, approved deployment/backing drills,
-safe no-snapshot key recovery, unknown provider-allocation reconciliation, independent-controller
+deployed verifier recovery and unresolved legacy/unknown-provider boundaries, independent-controller
 deployment, signing/notarization, clean Mac installs/upgrades and full native
 accessibility. Strict expiry during complete control outages and final provider
 media/billing cleanup remain unestablished. No new provider call occurred; the fourth synthetic Voice

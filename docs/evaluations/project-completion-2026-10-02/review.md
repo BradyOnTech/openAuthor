@@ -1,11 +1,36 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `9d31cf8`; all six
+Status: **in progress**. The latest implementation is `8aaf17d`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
 ## Latest repairs and evidence
+
+Current verifier-based recovery works before the first snapshot for newly
+provisioned keys. Mobile candidate and explicit authorization writes now roll
+back after late SDK identity replacement, while the App redacts recovery material
+and preserves deliberately selected offline eligibility. Legacy keys without any
+independent witness still cannot be proven; rotation restores future access only.
+Journaled exact voice IDs now recover before SQL attachment through independent
+accepted closure. Unknown pre-Location/pre-journal allocation and complete control
+outages remain explicit limits.
+
+The [current integration](../no-snapshot-recovery-integration-2026-10-02/README.md)
+passes 657 desktop tests / 90 files,22 contracts,100 gateway/no skips,10 SQL suites,
+37 aggregate controls and 11 journeys in each desktop browser. All 364 captured
+inputs match committed source. The
+[mobile packet](../../../mobile/evidence/2026-10-02-no-snapshot-recovery/README.md)
+passes 243 tests / 34 files, two Chrome App journeys and one selected WebKit
+recovery/redaction journey on the same built bundle; 150 inputs unchanged and 42
+hashes verified. Both review axes have zero open findings after two mobile
+repairs. These results do not establish physical native crypto/storage, approved
+deployment, signed/native GUI, fresh-author judgment or release readiness.
+Current mobile platform exports cover web; older iOS/Android/native results
+retain their original checkpoint scopes.
+
+The earlier cloud and account paragraphs below retain their `e7712d3` and
+`9d31cf8` evidence scopes.
 
 The reviewed multi-project account lifecycle now captures exact dispositions,
 acknowledges retained shared history, freezes authority and composes separately
@@ -95,13 +120,13 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Desktop | Current 626 tests in 88 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
-| Account/key-recovery browser workflows | Current 9/9 Chromium and 9/9 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
-| Gateway/database | Current 94/94, no skip; TypeScript/build; nine SQL suites and 24 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; six real database/process voice cases |
+| Desktop | Current 657 tests in 90 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
+| Account/key-recovery browser workflows | Current 11/11 Chromium and 11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
+| Gateway/database | Current 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; nine real database/process voice cases |
 | Python 3.13 | Prior 0cd77bd: 577/577, no skip | Unchanged core; not rerun this iteration |
 | Actual bundled Python 3.11.15 | Prior 0cd77bd: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
 | Writing browser workflows | Prior 0cd77bd: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows; not current account journeys |
-| Mobile | Prior 0cd77bd: 181 tests in 30 files; guarded platform builds pass | Unchanged mobile; no physical phones or deployed acceptance |
+| Mobile | Current 243 tests in 34 files, TypeScript and guarded web App build; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; prior 0cd77bd iOS/Android exports retain their scope; no physical phones or deployed acceptance |
 | Native arm64 app | Prior 0cd77bd: exact core, runtime contract and five packaged-engine SIGKILL stages | Unsigned development app; no current frontend or clean-machine certificate |
 | Independent review | Current zero open Standards or Spec findings | Local implementation review, not release acceptance |
 
@@ -162,9 +187,9 @@ operator evidence and cannot be inferred from empty metadata.
    GUI crash/restore acceptance.
 4. Approved deployed reading, encrypted capture, voice interruption/reconnect,
    cold restart and desktop handoff on physical iPhone and Android.
-5. Remaining cloud code and infrastructure: safe no-snapshot key recovery,
-   unknown upstream allocation reconciliation and target backing/queue
-   verification, including operator evidence for unknown absent projects. Then drill
+5. Deployed verifier recovery, legacy keys without an independent witness,
+   unknown pre-Location/pre-journal allocation and target backing/queue
+   verification, including operator evidence for unknown absent projects. Drill
    deployed authorization/revocation/rotation, independent controller operations
    and deletion. Complete control outages and provider media/billing cleanup
    retain their explicit limits.

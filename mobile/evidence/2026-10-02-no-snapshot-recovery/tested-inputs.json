@@ -1,0 +1,759 @@
+{
+  "baseline": "2ed7f6da",
+  "captured_at": "2026-10-02T21:42:28.270847+00:00",
+  "head": "2ed7f6da2497312d7a52f8734cff550a72dcf9e7",
+  "node": "v22.17.0",
+  "input_count": 150,
+  "inputs": [
+    {
+      "path": "contracts/README.md",
+      "bytes": 5860,
+      "sha256": "765b837153f9ca9c689e88fcc22db0d2a4c55fe59bee84a0d26a69c2609b6c73"
+    },
+    {
+      "path": "contracts/fixtures/assistant-turn.v1.json",
+      "bytes": 932,
+      "sha256": "341da7d9a3a460f2ae77538cad9d9f107fc15d3c6e5659b67983c73bc32044d2"
+    },
+    {
+      "path": "contracts/fixtures/context-pack-projection.v1.json",
+      "bytes": 691,
+      "sha256": "8342f56e6a64638f173a315ab42b7bb32cffc3b616fe71bdfc2504cf1d35756d"
+    },
+    {
+      "path": "contracts/fixtures/context-pack-reference.v1.json",
+      "bytes": 284,
+      "sha256": "e2f1c07b5a5ae71cbc23d1420a9e5bcfad328e28f8854effb687cf562c6c14f4"
+    },
+    {
+      "path": "contracts/fixtures/device-enrollment.v1.json",
+      "bytes": 740,
+      "sha256": "e2f256134a15f0cd9bffc0848d453d9f689af976cafec7ff0d81cd38546aac59"
+    },
+    {
+      "path": "contracts/fixtures/encrypted-snapshot-blob-metadata.v1.json",
+      "bytes": 615,
+      "sha256": "f15567e98124a624456187704de2495d347542398c1ef9e32bd9206e1c48df36"
+    },
+    {
+      "path": "contracts/fixtures/mobile-snapshot-envelope.v1.json",
+      "bytes": 1288,
+      "sha256": "0d89649288fc0cb4574d59ac32c5a0854c7209d9c73ed4d5b9c280c1f2b4c8c3"
+    },
+    {
+      "path": "contracts/fixtures/mobile-snapshot-manifest.v1.json",
+      "bytes": 257,
+      "sha256": "b546ece77118ddcfffdad94cdced64a0e07fb47439ccbb9fae61b4f4280a10a6"
+    },
+    {
+      "path": "contracts/fixtures/outbox-envelope.v1.json",
+      "bytes": 628,
+      "sha256": "81a8973f9bd92ca7363cdb7ab0ce1aa99b9b04eab996f36326d8d8afa7bfe6b6"
+    },
+    {
+      "path": "contracts/fixtures/project-key-envelope.v1.json",
+      "bytes": 660,
+      "sha256": "c54ead529824696a83046ecc89fb30988afb672098e713c1c6e66adc85ee6350"
+    },
+    {
+      "path": "contracts/fixtures/tool-call.v1.json",
+      "bytes": 468,
+      "sha256": "a6cff937bda8e6b107a4866da2059dc514c36b23f34d666424d15f0784b49ac1"
+    },
+    {
+      "path": "contracts/fixtures/tool-outcome.v1.json",
+      "bytes": 486,
+      "sha256": "678de757475cb6b41e2e9a36339c45f58c56c9ff2df6fe873c65710c6293ab12"
+    },
+    {
+      "path": "contracts/fixtures/voice-session.v1.json",
+      "bytes": 837,
+      "sha256": "6690e105565fb384d7bc9993116c522d35a1fd8b73b30bc3cdef58d19960e2fb"
+    },
+    {
+      "path": "contracts/package-lock.json",
+      "bytes": 3654,
+      "sha256": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279"
+    },
+    {
+      "path": "contracts/package.json",
+      "bytes": 573,
+      "sha256": "6b8f7fd01390c53ab7f58622c4295a1e318416ecd3581398761bf4586d1aec96"
+    },
+    {
+      "path": "contracts/schemas/assistant-turn.v1.schema.json",
+      "bytes": 2451,
+      "sha256": "06ac26a86f9fc0e47125deffbe27cb01fc30bb0a2a6fa14a5905b66c74c1f10f"
+    },
+    {
+      "path": "contracts/schemas/common.v1.schema.json",
+      "bytes": 1190,
+      "sha256": "12559cf072cf53eb27871cd81afb6484f00a3e80c5f140f2f72156c8ff41ffe4"
+    },
+    {
+      "path": "contracts/schemas/context-pack-projection.v1.schema.json",
+      "bytes": 2308,
+      "sha256": "c9c05096c27645463d9d69b9ce1647515b456ecc164066cb2294ff102864f244"
+    },
+    {
+      "path": "contracts/schemas/context-pack-reference.v1.schema.json",
+      "bytes": 902,
+      "sha256": "707c36db2eec974248d24e49f8d053c15eeb98446b280fd61cf5698b95a4743c"
+    },
+    {
+      "path": "contracts/schemas/device-enrollment.v1.schema.json",
+      "bytes": 2143,
+      "sha256": "20b44290f20137bc1f691f02273c6b4d73cef08809b202b6daf8c4c184f57936"
+    },
+    {
+      "path": "contracts/schemas/encrypted-snapshot-blob-metadata.v1.schema.json",
+      "bytes": 1667,
+      "sha256": "2d607dad63b2f34a69771febf71a899dcbb814e4f0e2e9ee75f670deff0ae81c"
+    },
+    {
+      "path": "contracts/schemas/mobile-snapshot-envelope.v1.schema.json",
+      "bytes": 1231,
+      "sha256": "dbfb2ace673a4d26b858201afad9cefac4ec3043782729d9d8ebf67abbb3289a"
+    },
+    {
+      "path": "contracts/schemas/mobile-snapshot-manifest.v1.schema.json",
+      "bytes": 887,
+      "sha256": "b3b8194bb2272a09c1515ec48b3ac82dec81bf173b6d279ea9fe26b13b776859"
+    },
+    {
+      "path": "contracts/schemas/outbox-envelope.v1.schema.json",
+      "bytes": 1942,
+      "sha256": "412b912e770bfe0cfab8cad40977fba4fbce38544583b55d2d2a06516d9f7d99"
+    },
+    {
+      "path": "contracts/schemas/project-key-envelope.v1.schema.json",
+      "bytes": 1538,
+      "sha256": "0bc2b18be27045ce40559c6f0553aba29b81e9051ccac73a4a84d41798218fd9"
+    },
+    {
+      "path": "contracts/schemas/project-key-verifier.v1.schema.json",
+      "bytes": 1040,
+      "sha256": "a66b5d528d9b44f30dfa6454686c438bab66fee918eb62ca3ac0489b7563d1db"
+    },
+    {
+      "path": "contracts/schemas/tool-call.v1.schema.json",
+      "bytes": 1430,
+      "sha256": "23b9e1a4d907e57966cc8cf0631696c3faa67fb1ad34a099c64491b271b5d2a2"
+    },
+    {
+      "path": "contracts/schemas/tool-outcome.v1.schema.json",
+      "bytes": 2401,
+      "sha256": "75f78871346609d0999d4d50e092f11e155b9b1f9a8670336d9f88c549dbb7e9"
+    },
+    {
+      "path": "contracts/schemas/voice-session.v1.schema.json",
+      "bytes": 1817,
+      "sha256": "4a8be95e5161dabaad27f83e969e41516d48ba016908dc3874815329a4164125"
+    },
+    {
+      "path": "contracts/src/index.ts",
+      "bytes": 18453,
+      "sha256": "0842c90fa0aff9436482c04acc7cefb8990b49a8437e434e8e965e0d0c25c0f1"
+    },
+    {
+      "path": "contracts/src/types.ts",
+      "bytes": 7787,
+      "sha256": "0c76e6686ee62e0e5546ecf2401c49a81b04c51a44785a0859bbab03293a4a4e"
+    },
+    {
+      "path": "contracts/test/contracts.test.ts",
+      "bytes": 12795,
+      "sha256": "032f9dff6e11426b53601845e17ba6da587b1111acd588e30bac3a16e764e0fd"
+    },
+    {
+      "path": "contracts/test/projectKeyVerifier.test.ts",
+      "bytes": 2242,
+      "sha256": "7fc92eaebe58efee2c0f31b14d27677742f62b2ef4991751c75e6204149c842e"
+    },
+    {
+      "path": "contracts/tsconfig.json",
+      "bytes": 456,
+      "sha256": "c8a8a19dfba7c3f1ded2860af12568065a4382b501b9c9294451dc7e126f0e4f"
+    },
+    {
+      "path": "mobile/.env.example",
+      "bytes": 293,
+      "sha256": "a5a923b1011e489857b7c4229f5849f6cb043aeddc819be16d98249459522929"
+    },
+    {
+      "path": "mobile/App.tsx",
+      "bytes": 52975,
+      "sha256": "df1b7d01ac0263b0b3a443972dbf2eef36c91416f836cf42d47adfd7a4430fd2"
+    },
+    {
+      "path": "mobile/PRIVACY.md",
+      "bytes": 2302,
+      "sha256": "012a9f72b4d72e16fa5c989f093783928b9046c8451d038468f75fc75a5748f3"
+    },
+    {
+      "path": "mobile/README.md",
+      "bytes": 15701,
+      "sha256": "376030a4df6e71eed8e692281284368ec7db6ce0d5ff2e2a474fce5cfcd5f4a5"
+    },
+    {
+      "path": "mobile/app.json",
+      "bytes": 1737,
+      "sha256": "6b4595e91d9785ec19455d039d668c62f03fb9c7327f5d1ff6c2a812cba63a5f"
+    },
+    {
+      "path": "mobile/e2e/companion.spec.ts",
+      "bytes": 8687,
+      "sha256": "279d5d2e22a48a8a9b78803a291d138b3bfd05f304b593caa640cc193be48a44"
+    },
+    {
+      "path": "mobile/e2e/hosted-companion.spec.ts",
+      "bytes": 47770,
+      "sha256": "e0381b2fea2abcdcd8bfbf33b6f3d96e6e98e081d717f399a5cdc26a7d351bd8"
+    },
+    {
+      "path": "mobile/e2e/project_fixture.py",
+      "bytes": 3973,
+      "sha256": "603385c3deca66bdca2be025a14b78c5273204319058c2ab665be62123c926e1"
+    },
+    {
+      "path": "mobile/e2e/voiceControls.ts",
+      "bytes": 13153,
+      "sha256": "bdc97cf5ec4f28b8310d9996b786398bf8281e3947f78ec1b195ecacaee4ec3f"
+    },
+    {
+      "path": "mobile/eas.json",
+      "bytes": 402,
+      "sha256": "6d46bcbded5224fabd27cb6c5b8e98a44189277bbfa41bbaa0d2dcb44af46b48"
+    },
+    {
+      "path": "mobile/index.ts",
+      "bytes": 101,
+      "sha256": "3c87f11c5dfcdcf20361d011834a570d10c3142549ad1eba90053f9c9430d65f"
+    },
+    {
+      "path": "mobile/node_modules/@supabase/auth-js/package.json",
+      "bytes": 1653,
+      "sha256": "8d257c1e8537383d235e323e940917d9df5882dc1181b958d31105bbc24e3649"
+    },
+    {
+      "path": "mobile/node_modules/@supabase/auth-js/src/GoTrueClient.ts",
+      "bytes": 249667,
+      "sha256": "b673c2a3900877241f96860d602173f7459b4250f95cca44174c6245fd07805c"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/package.json",
+      "bytes": 1122,
+      "sha256": "1f3b67e567033f3cb1451169437197df34185088fedc5e6520cd1beffd104d23"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/Crypto.ts",
+      "bytes": 8297,
+      "sha256": "c83e4dd1b7a031658ab2a916303cb8c5ef30fa6b0aedef44c99a1a077a177791"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/Crypto.types.ts",
+      "bytes": 1007,
+      "sha256": "2d754ae02c4525cdc9eb55df08f7a0def4729a73621bdfc092201d6e89f2f276"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/ExpoCrypto.ts",
+      "bytes": 108,
+      "sha256": "cb50d879d9826e173c7de79a55b6da7434dd7d466c1fe7f113b160069e24f7ba"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/ExpoCrypto.web.ts",
+      "bytes": 2276,
+      "sha256": "9f235b58f8729a093e89a817a21083544761f21d5b68354e3de63c3df3f37927"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/aes/ExpoCryptoAES.ts",
+      "bytes": 5635,
+      "sha256": "e352d65c9a08a22b2b43e75012562ecdee6d0ea389824f49b55612a1cac3565a"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/aes/ExpoCryptoAES.web.ts",
+      "bytes": 7834,
+      "sha256": "ae23ee419b8825132383e33645b86188c9894ae6b72bcf3914a3fe52699b1ee5"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/aes/aes.types.ts",
+      "bytes": 3093,
+      "sha256": "34880981a0dc29873d623ad51764e2ad9dc73aa86ebaf11db9739b36c09713c5"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/aes/index.ts",
+      "bytes": 5810,
+      "sha256": "69ab6bf425cd22175f296e9c03bc7118e33c64dd4513f6b111b4e01f359347dd"
+    },
+    {
+      "path": "mobile/node_modules/expo-crypto/src/aes/web-utils.ts",
+      "bytes": 1569,
+      "sha256": "f1639c03fad7f31a26b13edb7082ed4dfbf7a895015b484a4254f50ea7879fdd"
+    },
+    {
+      "path": "mobile/package-lock.json",
+      "bytes": 279384,
+      "sha256": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968"
+    },
+    {
+      "path": "mobile/package.json",
+      "bytes": 2013,
+      "sha256": "63f9c9b11eaa2eb5cbe6ca3ec7cef4fe42c71b7c99f92af41cac4432005cdd3f"
+    },
+    {
+      "path": "mobile/playwright.config.ts",
+      "bytes": 706,
+      "sha256": "a6741b7d9c7671f1d86497f176174856ba790d454b34f754f5278030150dc6eb"
+    },
+    {
+      "path": "mobile/playwright.hosted.config.ts",
+      "bytes": 556,
+      "sha256": "44ad68dba900ee4cc4565b72e70446f330ee8df065e45e92b25b636f1982bc27"
+    },
+    {
+      "path": "mobile/public/icon.png",
+      "bytes": 2415,
+      "sha256": "c037af31e4ff314c2880a54ba48b83111ac29025c6294c178ca794df025647ba"
+    },
+    {
+      "path": "mobile/public/manifest.webmanifest",
+      "bytes": 394,
+      "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8"
+    },
+    {
+      "path": "mobile/release-checklist.md",
+      "bytes": 7072,
+      "sha256": "9030b3a12a2fdffbfa9388829d8800b5264fdf4885f2eb65eee16aaa264b198c"
+    },
+    {
+      "path": "mobile/scripts/build-hosted-test.mjs",
+      "bytes": 695,
+      "sha256": "db4b8566d2c573a8a70d5b4bc8d5c3c341309cea3481cbca37073c20fa4ee582"
+    },
+    {
+      "path": "mobile/scripts/build-pwa.mjs",
+      "bytes": 3666,
+      "sha256": "ef8ca449cc10b811af819ccce4f884383afba7fb6aeb67a84865fb66940fb18b"
+    },
+    {
+      "path": "mobile/scripts/build-security.mjs",
+      "bytes": 9248,
+      "sha256": "4760488b9e03241c3a14ed51f823d98c1fad18d450c7ccaa02ec6632e557e3fc"
+    },
+    {
+      "path": "mobile/src/adapters/browserStorage.ts",
+      "bytes": 14628,
+      "sha256": "84c0e9c77b9cc968b442c30d576d842fb4df1136c198a1778c935ab64710c001"
+    },
+    {
+      "path": "mobile/src/adapters/downloadedBookStore.ts",
+      "bytes": 2899,
+      "sha256": "e1b62fbcc0c6fafaeeaaec75ecfa85132c8481a05cf53c05915932931317340d"
+    },
+    {
+      "path": "mobile/src/adapters/downloadedBookStore.web.ts",
+      "bytes": 1286,
+      "sha256": "cca2d13ade573c2bc1728d724800c01d436e93229b57a9e4960b951270dfd7d4"
+    },
+    {
+      "path": "mobile/src/adapters/encryptedSnapshotCache.ts",
+      "bytes": 7606,
+      "sha256": "5e77be1885dfe18995842d7cfa76975602ba61f41fd1b625a45d3b55b4ed64ba"
+    },
+    {
+      "path": "mobile/src/adapters/encryptedSnapshotCache.web.ts",
+      "bytes": 1680,
+      "sha256": "4f8e325ca66601f5afc7ebdafee9ffb5f2e3f5678b4de090bc6338e6fb0825b5"
+    },
+    {
+      "path": "mobile/src/adapters/expoProjectCipher.ts",
+      "bytes": 3959,
+      "sha256": "6a0dbadcb9dd3136240e02371e0af9397d8f9927ff1ff434bd542fde8f05e928"
+    },
+    {
+      "path": "mobile/src/adapters/expoSecrets.ts",
+      "bytes": 5291,
+      "sha256": "857af3d31d1bb40f55d9dda8a504fa87ff26a1c95791ac3672af6522e3dd08a3"
+    },
+    {
+      "path": "mobile/src/adapters/expoSecrets.web.ts",
+      "bytes": 2598,
+      "sha256": "2fe9bfc1512a558596b572e87b02d0011c52abcb511e91ba1efdd2dc48445b1b"
+    },
+    {
+      "path": "mobile/src/adapters/gatewayRealtime.ts",
+      "bytes": 1793,
+      "sha256": "6ec2379c47ac685f20a47cb35b898e3885da84546f8768e9d61d399bbf6d0afd"
+    },
+    {
+      "path": "mobile/src/adapters/gatewayRealtime.web.ts",
+      "bytes": 1308,
+      "sha256": "51843aa80fdceca3ae090b7e5d1d2ffebed268403a14ad203282317ec5f299a8"
+    },
+    {
+      "path": "mobile/src/adapters/gatewaySession.ts",
+      "bytes": 3547,
+      "sha256": "c6d102ef4d7315c81f82408422d7ec7d26469920431906d371bb72d0e812b43e"
+    },
+    {
+      "path": "mobile/src/adapters/projectKeyVerifier.ts",
+      "bytes": 2314,
+      "sha256": "dbf688e5b4429efbf7093df9140bd454f89490f319ee61d21ac061fef05eef75"
+    },
+    {
+      "path": "mobile/src/adapters/snapshotManifest.ts",
+      "bytes": 1987,
+      "sha256": "04a3148bc555c96ec5fa85c4bb090058dc90b9686866861f01f26ade86901d63"
+    },
+    {
+      "path": "mobile/src/adapters/sodiumDeviceCrypto.ts",
+      "bytes": 1648,
+      "sha256": "35b631a56eb101fedc1b9fabb2cd6132b715662c7aaa1b143645e99fd13c873a"
+    },
+    {
+      "path": "mobile/src/adapters/sodiumDeviceCrypto.web.ts",
+      "bytes": 1212,
+      "sha256": "f1eadb3fc0757aca92333978c50d0b5a12a5afc0b88433854d837524dad557bf"
+    },
+    {
+      "path": "mobile/src/adapters/sqliteOutboxStore.ts",
+      "bytes": 10537,
+      "sha256": "79e3a7e3e910b9d11e5ff5bcd6fdc58dad7829342d22e5207768ca86d831d935"
+    },
+    {
+      "path": "mobile/src/adapters/sqliteOutboxStore.web.ts",
+      "bytes": 2419,
+      "sha256": "3831718e4e3df332b20a61888324678bd8b87ce2915f382ccc9697f468e330a2"
+    },
+    {
+      "path": "mobile/src/adapters/supabaseAdapters.ts",
+      "bytes": 26379,
+      "sha256": "d897c74621b0a487774e3e04ff0577a9a8ed5cbe69168812ae58d3a689cc92a0"
+    },
+    {
+      "path": "mobile/src/adapters/supabaseClient.ts",
+      "bytes": 1384,
+      "sha256": "2a879c29c3f56ade7676a22a22a6016142ea91a6f39ad7692ca416e44c83707c"
+    },
+    {
+      "path": "mobile/src/adapters/supabaseClient.web.ts",
+      "bytes": 1212,
+      "sha256": "7d679106ab4104f6516604fd3a166d76204476b5d58ee9f94333e2de4ddfd774"
+    },
+    {
+      "path": "mobile/src/app/hostedRuntime.ts",
+      "bytes": 33891,
+      "sha256": "f43388df463efead6a377d246d3ba812a536109ba7de39ee3e72debbfe30d1cc"
+    },
+    {
+      "path": "mobile/src/app/previewRuntime.ts",
+      "bytes": 3964,
+      "sha256": "2e8c5d79363f4600212297dcfe4936fe62a529cddbb4e28e5aa9996e3ca8ee0a"
+    },
+    {
+      "path": "mobile/src/app/runtime.ts",
+      "bytes": 438,
+      "sha256": "689eb1273f09e84f4aec4a2095a682e3b4b42136442ceec5f62ddfc5c8abe1f7"
+    },
+    {
+      "path": "mobile/src/app/types.ts",
+      "bytes": 2214,
+      "sha256": "2ce0469958a29f94633a866dc20539ec894f8077b2a6cd92a937909a5000f9f4"
+    },
+    {
+      "path": "mobile/src/config.ts",
+      "bytes": 3704,
+      "sha256": "0f6f6ffc8d25fa579e2298948e8b63aff61455eb04f22b0f802d533590d991db"
+    },
+    {
+      "path": "mobile/src/core/acceptedCanon.ts",
+      "bytes": 4698,
+      "sha256": "bbc4f4d85ebbd4ea73bcca47fa10e6ba647cdc33dcfe887115c1620cb5fb6d14"
+    },
+    {
+      "path": "mobile/src/core/authStorageKey.ts",
+      "bytes": 437,
+      "sha256": "e99a12e5094cb0e419632f0b900e69c27858d3259cd0c424e73bf64bc3c9a971"
+    },
+    {
+      "path": "mobile/src/core/companionRecovery.ts",
+      "bytes": 4848,
+      "sha256": "91c6db941d5a2d49921e6dbcf86e5d98a0df17bc99e83714889ed038959b3ee1"
+    },
+    {
+      "path": "mobile/src/core/deviceEnrollment.ts",
+      "bytes": 12486,
+      "sha256": "9735c9e1041f5c3aad6713394594be4b0c9e8fdac0630e4f10b8cb34a8e6bab8"
+    },
+    {
+      "path": "mobile/src/core/encryptedAuthStorage.ts",
+      "bytes": 5526,
+      "sha256": "f07c1b864dcfa7638cfa786f373a773950f3719e5149f62e5741a8ec47823d05"
+    },
+    {
+      "path": "mobile/src/core/hostedLifecycle.ts",
+      "bytes": 983,
+      "sha256": "d6f5c183189c9b2240081af9c5c8b7ffbf8b6625f1743341a30758a983098d18"
+    },
+    {
+      "path": "mobile/src/core/localCompanion.ts",
+      "bytes": 7172,
+      "sha256": "a52933b0f7637d4cbdb953bad02fc1bb5f7e63cf7c91b5fe6013565257893367"
+    },
+    {
+      "path": "mobile/src/core/mobileAssistant.ts",
+      "bytes": 3395,
+      "sha256": "3e3395515a1dfb201f8c6da8052afa0acec7d9b7c7e10e83a32bb8f7cbcd535e"
+    },
+    {
+      "path": "mobile/src/core/outbox.ts",
+      "bytes": 7149,
+      "sha256": "6cb29fb642931ed710c48dfc2e9924e6e188d6a25fef4e71bd1b422fcb87604a"
+    },
+    {
+      "path": "mobile/src/core/outboxReview.ts",
+      "bytes": 4657,
+      "sha256": "c711a481ddc968ef76981b428a2f214239e0df5903af69adb76b667a1ec6cdb1"
+    },
+    {
+      "path": "mobile/src/core/projectRecovery.ts",
+      "bytes": 3412,
+      "sha256": "24de1fce9e06abc266a659df8787053f2d48203d3f7f664ecd696c9f3f92829b"
+    },
+    {
+      "path": "mobile/src/core/recoveryKey.ts",
+      "bytes": 1663,
+      "sha256": "16ade5f579c64d633b5d458e4e4e1b98e6b48b3cbcd00109ac3f205bf54358ce"
+    },
+    {
+      "path": "mobile/src/core/snapshotProject.ts",
+      "bytes": 11184,
+      "sha256": "d6803354da5988612f04337acaf540220de9568b3f4d3a031196761ba34470a8"
+    },
+    {
+      "path": "mobile/src/core/snapshotSync.ts",
+      "bytes": 5734,
+      "sha256": "756296e0b79e87079f08203690fa5e05a5c33a58f7e9d3ff128b16f7c86db703"
+    },
+    {
+      "path": "mobile/src/core/writingVoice.ts",
+      "bytes": 2717,
+      "sha256": "274054d023b4c4d5bf56671f41c50861778caa02ea24cc5f59c685a207fb4046"
+    },
+    {
+      "path": "mobile/src/voice/realtimeEvents.ts",
+      "bytes": 4538,
+      "sha256": "44fae97135ae4d9d8a6dc691c8fe27b6c630f69a28e1eec35423882e626bf2c0"
+    },
+    {
+      "path": "mobile/src/voice/realtimeTransport.ts",
+      "bytes": 8966,
+      "sha256": "ab4cbcf81fb5e82a0bc55009f6ffd4a081413a3c4099ed3f96d51b771700f793"
+    },
+    {
+      "path": "mobile/src/voice/voiceController.ts",
+      "bytes": 4237,
+      "sha256": "7917a646f6a73c112f3dd92fe11d09652f91525cfd3dcbd9a0254f52e1eebfcf"
+    },
+    {
+      "path": "mobile/src/voice/voiceLease.ts",
+      "bytes": 1554,
+      "sha256": "8cd60078c627caa01e0bd768136d67bd6d9192e93f160624054b68b68f11d6f4"
+    },
+    {
+      "path": "mobile/src/voice/voicePolicySession.ts",
+      "bytes": 5229,
+      "sha256": "b64eadfa96177a865d80a425aa0f8554fe2d3c328975c3a3d70d010ea38e43e8"
+    },
+    {
+      "path": "mobile/src/voice/voiceSession.ts",
+      "bytes": 3145,
+      "sha256": "8909920408ba46e51caa66370a72ac29341f0fef7259f543fa2283de2b17bc9b"
+    },
+    {
+      "path": "mobile/test/acceptedCanon.test.ts",
+      "bytes": 5282,
+      "sha256": "bb6ddd373f72107d1111dc10a9cf5a478efa86be46974a430429046f7e1a9357"
+    },
+    {
+      "path": "mobile/test/authStorageLease.test.ts",
+      "bytes": 5852,
+      "sha256": "902a5c7a170e110f6db4dc5c2c2f9ddbd60166ec1d8f4838c524aad5f1cb9a76"
+    },
+    {
+      "path": "mobile/test/browserStorage.test.ts",
+      "bytes": 4760,
+      "sha256": "f24481fe351d0ac10c5690343665aca928f7a46394786a6f87f5e71e166e1571"
+    },
+    {
+      "path": "mobile/test/buildSecurity.test.mjs",
+      "bytes": 8901,
+      "sha256": "160c20f28da156d9fca5a4adef3a494ac1acfd1107427e9c1482df18054a7c83"
+    },
+    {
+      "path": "mobile/test/companionRecovery.test.ts",
+      "bytes": 7016,
+      "sha256": "0d50e747f834cf44e553cb40dd5e88a202bf87cb9a21549a7ab9b8bbe2af1e6f"
+    },
+    {
+      "path": "mobile/test/deviceEnrollment.test.ts",
+      "bytes": 11444,
+      "sha256": "d5354f9d67c168204b0da08d79bf463398de4ae24b021409071d29beff75a3d5"
+    },
+    {
+      "path": "mobile/test/downloadedBookStore.test.ts",
+      "bytes": 2637,
+      "sha256": "d384c718cc10d2e9c623ac12a38278f1da4804d72e1d0fa21e959bdc9baae8a2"
+    },
+    {
+      "path": "mobile/test/encryptedAuthStorage.test.ts",
+      "bytes": 8127,
+      "sha256": "239fc5a9038cced35213d969b803aa38c02cbe808020680e10f9b6ba9bc19f10"
+    },
+    {
+      "path": "mobile/test/gatewaySession.test.ts",
+      "bytes": 4640,
+      "sha256": "7c1ba0a20e5d5a903708c1bec40fd29af369a49395fec2daa4b2cc878b5c5c57"
+    },
+    {
+      "path": "mobile/test/hostedKeyRecovery.test.ts",
+      "bytes": 18387,
+      "sha256": "ba2cc5a7e46c1cd90d6b45fbab003b911c37d6ec3448123b839b1484277761bb"
+    },
+    {
+      "path": "mobile/test/hostedRuntime.test.ts",
+      "bytes": 1301,
+      "sha256": "f781adb7149d307d939b34d0a3b7c9b9c96006fb7f6a4a721e0ec4e5899d3114"
+    },
+    {
+      "path": "mobile/test/hostedVoiceLifetime.test.ts",
+      "bytes": 15225,
+      "sha256": "b41c3c7ba6cc7910a5cafc4db2dbe012763a3193a4e8df5dfa044510566ee271"
+    },
+    {
+      "path": "mobile/test/localCompanion.test.ts",
+      "bytes": 8261,
+      "sha256": "42450daba2197384af0c3b1ba7358340107b737e02025b10b7f9637be61c97e7"
+    },
+    {
+      "path": "mobile/test/mobileAssistant.test.ts",
+      "bytes": 3017,
+      "sha256": "ffe2036f4788838dc08ffe1ad2302a635e2005e527069441e9632c9e2452d5ea"
+    },
+    {
+      "path": "mobile/test/nativeBuildCompatibility.test.mjs",
+      "bytes": 1393,
+      "sha256": "c4ce9d21dbffab0c5634d711d4a04b16e8c7bf31093dfb1be58add0acc65ecab"
+    },
+    {
+      "path": "mobile/test/nativeProjectKeyPersistence.test.ts",
+      "bytes": 4795,
+      "sha256": "f68791ed50eff3a19b65ca4910f7cc49a3e1ae0f7d15f38c6bdca541267aa1ad"
+    },
+    {
+      "path": "mobile/test/nativeSnapshotMigration.test.mjs",
+      "bytes": 8399,
+      "sha256": "59085fb279f58880bc4d2c3d7c9ad4def4c2fe08dc3d08181cba1fe1070c2892"
+    },
+    {
+      "path": "mobile/test/outbox.test.ts",
+      "bytes": 3973,
+      "sha256": "dbf2cc8be4b3dc63a717faf0673b23603f9be70bba87109345e103c68e35c8b5"
+    },
+    {
+      "path": "mobile/test/outboxReview.test.ts",
+      "bytes": 7766,
+      "sha256": "9e00b8bd91613b6ca79394dbb2cc71785ee4ceea3311372de27d1be4eda471a8"
+    },
+    {
+      "path": "mobile/test/projectKeyPersistence.test.ts",
+      "bytes": 8707,
+      "sha256": "9f03c660f47449602cb058996cbb9a923772380b20b045d39d951090032675e3"
+    },
+    {
+      "path": "mobile/test/projectKeyVerifier.test.ts",
+      "bytes": 4362,
+      "sha256": "18876c8d48ef680c2db14a0059338c6906306ab41574e237f2c2e7e857e37a47"
+    },
+    {
+      "path": "mobile/test/projectRecovery.test.ts",
+      "bytes": 2014,
+      "sha256": "ecc2f375b9429ae11b8c8f6468f017e76fcea58cdf57087579281b45fcd2547f"
+    },
+    {
+      "path": "mobile/test/realtimeTransport.test.ts",
+      "bytes": 6383,
+      "sha256": "3b28ab149ef888f32ec7603c72e45c88c87ceb647dabd16b3a9c3b33325ef6ec"
+    },
+    {
+      "path": "mobile/test/recoveryKey.test.ts",
+      "bytes": 609,
+      "sha256": "19b2ecaee3315e10f14eea0ce176e0fc2798eedb32b65bc1d8ec9b9b04876db5"
+    },
+    {
+      "path": "mobile/test/snapshotProject.test.ts",
+      "bytes": 6808,
+      "sha256": "2616bce00282e16a2c9b834450bcb3f0e3e84ca0e330111d7135965db7997a11"
+    },
+    {
+      "path": "mobile/test/snapshotSync.test.ts",
+      "bytes": 3176,
+      "sha256": "610347bf33f3cf965363c818f35724d126f3ecb9100647b2a5668ad0c38332e6"
+    },
+    {
+      "path": "mobile/test/sodiumDeviceCrypto.test.ts",
+      "bytes": 1654,
+      "sha256": "1748e6b2cdc1184ffaa39b96aff7f0a021ad6e951ff71da0f4236d79fac10f7f"
+    },
+    {
+      "path": "mobile/test/sqliteOutboxStore.test.ts",
+      "bytes": 4848,
+      "sha256": "bfb6803e63d7e1d8905c65f2cb9ffa7522b1b317d04b927c97f70b3ae9ade3e6"
+    },
+    {
+      "path": "mobile/test/sqliteRecoveryDurability.test.mjs",
+      "bytes": 5661,
+      "sha256": "bd4e7dc90fa475c3f9ea4c29783b52cd56f2a33302986c3a50cf7bfa988bd518"
+    },
+    {
+      "path": "mobile/test/supabaseAdapters.test.ts",
+      "bytes": 16179,
+      "sha256": "943794cc760d1c6326088a9b17ad470399ea26199e7df63f01d32755aa590c19"
+    },
+    {
+      "path": "mobile/test/supabaseConfig.test.ts",
+      "bytes": 1807,
+      "sha256": "d8417551fe5e12cf4590c8ff0b85cd178f48653e1e6be9de7b272d232b2c8978"
+    },
+    {
+      "path": "mobile/test/voiceController.test.ts",
+      "bytes": 7353,
+      "sha256": "848c14e047ef2542a5eae72b4f62737c1e851848d873b9238afb143e94ba9444"
+    },
+    {
+      "path": "mobile/test/voicePolicySession.test.ts",
+      "bytes": 5882,
+      "sha256": "5ab8dfd817069b65e664355fbd684bdae2fe84ae74fe43b917aee802feaf8025"
+    },
+    {
+      "path": "mobile/test/voiceSession.test.ts",
+      "bytes": 1399,
+      "sha256": "0637453f9e819f95426e4abd0da51d63e91c1f5c9674848a85663cbb579baa01"
+    },
+    {
+      "path": "mobile/test/writingVoiceFixture.ts",
+      "bytes": 435,
+      "sha256": "70ea00bcfd0e195b24f69fef112d162e777cbccc17edcb4f17d5efb8f1852c02"
+    },
+    {
+      "path": "mobile/tsconfig.json",
+      "bytes": 281,
+      "sha256": "d242c9767e63ba4f44ed8327f217eeae92618d09762743bf7e31c5c81105c4bd"
+    },
+    {
+      "path": "mobile/vitest.config.mts",
+      "bytes": 128,
+      "sha256": "54dbdfd0f04362c1bdc3279c0643e70b08c0188a04387c6aa5977913523aa149"
+    }
+  ]
+}

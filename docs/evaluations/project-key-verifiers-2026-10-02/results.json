@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-02",
+  "recorded_at_utc": "2026-10-02T21:13:07Z",
+  "baseline_commit": "2ed7f6da2497312d7a52f8734cff550a72dcf9e7",
+  "implementation_state": "Migration22 and dedicated verifier source changes uncommitted when tested; exact archived hashes identify the tested implementation.",
+  "scope": "Actual disposable Unix-socket PostgreSQL authorization, atomicity, receipt, lock and metadata purge evidence. No existing or deployed database changed; opaque fixture bytes do not certify client AES authentication, deployed Storage purge, physical devices or native/signing acceptance.",
+  "runtime": {
+    "postgresql": "17.11 (Homebrew)",
+    "python": "3.13.2",
+    "fsync": true,
+    "tcp_listener": false
+  },
+  "checks": {
+    "baseline_behavior": {
+      "assertions": 3,
+      "status": "passed",
+      "meaning": "Reproduces legacy atomically provisioned envelope with no snapshot or project-bound key witness."
+    },
+    "baseline_interface_red": {
+      "exit_code": 1,
+      "postgres_exit_code": 3,
+      "status": "expected failure",
+      "meaning": "New rotation function absent at baseline; interface existence evidence only."
+    },
+    "current_verifier_sql": {
+      "assertions": 49,
+      "passed": 49,
+      "failed": 0,
+      "skipped": 0
+    },
+    "queued_transactions": {
+      "controls": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "Each observes competing PID wait_event_type=Lock before release."
+    },
+    "isolation_refusal": {
+      "controls": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "sqlstate": "25000",
+      "scope": "Repeatable-read verifier preflight refuses stale lifecycle snapshot."
+    },
+    "sql_regressions": {
+      "suites": [
+        "mobile_encrypted_sync_rls.sql",
+        "mobile_recovery_snapshot.sql",
+        "mobile_project_deletion.sql"
+      ],
+      "status": "passed"
+    },
+    "source_stability": {
+      "captured_inputs": 27,
+      "changed_inputs": [],
+      "status": "unchanged before/after final baseline and current runs"
+    },
+    "archive_replay": {
+      "status": "passed",
+      "verifier_sql_assertions": 49,
+      "baseline_behavior_controls": 3,
+      "queued_controls": 12,
+      "isolation_controls": 1,
+      "sql_regression_suites": 3,
+      "source": "All27 archived fingerprints checked before extracted-source replay in a fresh disposable PostgreSQL17.11 cluster."
+    }
+  },
+  "source_files": [
+    "supabase/migrations/20260225180000_project_registry_rbac.sql",
+    "supabase/migrations/20260225182000_workspace_bootstrap.sql",
+    "supabase/migrations/20260830190000_mobile_encrypted_sync.sql",
+    "supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql",
+    "supabase/migrations/20260907120000_mobile_browser_platform.sql",
+    "supabase/migrations/20261002120000_mobile_realtime_shared_rate_limit.sql",
+    "supabase/migrations/20261002140000_mobile_active_authority.sql",
+    "supabase/migrations/20261002150000_mobile_recovery_snapshot.sql",
+    "supabase/migrations/20261002160000_mobile_project_deletion.sql",
+    "supabase/migrations/20261002170000_registry_bootstrap.sql",
+    "supabase/migrations/20261002180000_mobile_account_deletion.sql",
+    "supabase/migrations/20261002190000_mobile_voice_control.sql",
+    "supabase/migrations/20261002200000_registry_read_authority.sql",
+    "supabase/migrations/20261002210000_mobile_account_deletion_amendments.sql",
+    "supabase/migrations/20261002220000_mobile_project_key_verifiers.sql",
+    "supabase/tests/mobile_project_key_verifiers.sql",
+    "supabase/tests/mobile_project_key_verifiers_baseline.sql",
+    "supabase/tests/mobile_encrypted_sync_rls.sql",
+    "supabase/tests/realtime_rate_limit_fixtures.sql",
+    "supabase/tests/mobile_recovery_snapshot.sql",
+    "supabase/tests/mobile_project_deletion.sql",
+    "scripts/verify_project_key_verifiers.py",
+    "scripts/verify_project_key_verifiers_concurrency.py",
+    "scripts/verify_project_deletion_concurrency.py",
+    "scripts/verify_account_deletion_concurrency.py",
+    "scripts/verify_shared_gateway_limiter.py",
+    "docs/no-snapshot-key-recovery.md"
+  ],
+  "artifacts": {
+    "README.md": "f1b1b709dd995cbbe98e97392e06695e15c07c27e431f50e8e6d608a5caee683",
+    "archive-replay.txt.raw.gz": "3862df943e473b63e6c0aba8ea849dd605483c4d360618b337401ef73669f2ba",
+    "baseline-final.txt.raw.gz": "0f518910bd61b332e582e034035fe361a53e0a253e545274b0550eae9063eacc",
+    "baseline-interface-red.txt.raw.gz": "af70d46b0edd914676e3e79cb23d2b90ac799b136265a1d3fd11e2d7165edaa4",
+    "design-review.md": "8be415d70fb989cb4a52c59a2e558bf1d96dc2a864662e0460971119b57ff067",
+    "evaluate.py": "97f17f8605b4d867353340226feff9a1b32bb80dbb6be09aa59d0d44638f67e3",
+    "first-green.txt.raw.gz": "d971c0227436491341e3da7818763288f25b27608c9e39f2093fd23df632adb7",
+    "postgres-final.txt.raw.gz": "52adc80904d92144e86560a37dee2a992d366639e53f006505394b78cd5bc6e8",
+    "source-sha256.json": "0d0afe5ef9769c497942dbfb3ececb41b741dd8cdef0231fd6910cc8f33fa35e",
+    "tested-source.tar.gz": "cd2ccf880645a54ce940d41e6cb2ad05bf6445cf79fdc28e02a036c2c6547818"
+  },
+  "limits": [
+    "SQL cannot prove the opaque envelopes and witness use the same raw key; correct provisioning remains the existing trusted-client seam.",
+    "Legacy keys without independently verified envelope, current snapshot or registered witness cannot be authenticated from OA1 alone; no candidate-driven backfill.",
+    "Existing legacy RPC remains compatible and can still create unwitnessed versions.",
+    "Reviewed rotation restores future access and does not recover inaccessible historical ciphertext/pending captures.",
+    "Synthetic Storage metadata and attestation do not certify remote blob purge."
+  ]
+}

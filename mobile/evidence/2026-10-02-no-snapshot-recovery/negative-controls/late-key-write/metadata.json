@@ -1,0 +1,13 @@
+{
+  "kind": "rollback-disabled negative control",
+  "note": "Retrospective controlled mutation of current tested sources, not an original historical run. Both acceptance fences are intentionally omitted while all proof and pre-write checks remain.",
+  "directory": "/private/tmp/openauthor-mobile-verifier-negative-bvx27170/mobile",
+  "mutations": [
+    "Remove native post-SecureStore scope fence",
+    "Remove browser post-IndexedDB-completion fence and rollback"
+  ],
+  "mutated_source_sha256": {
+    "mobile/src/adapters/expoSecrets.ts": "7aef93b87a5b426134729858d9d4e8f75b6f20c3ba49768dd4de44d7bf623cc9",
+    "mobile/src/adapters/browserStorage.ts": "e25e9e8c73f1c03eb0e021877319f46b40efefa57fb2050a91e1f93837d3b1ff"
+  }
+}
