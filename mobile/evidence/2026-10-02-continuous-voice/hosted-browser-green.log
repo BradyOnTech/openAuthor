@@ -1,0 +1,37 @@
+
+> openauthor-mobile@0.1.0 test:e2e:hosted
+> playwright test --config playwright.hosted.config.ts
+
+[WebServer] (node:10095) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10099) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:09] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:10101) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /_expo/static/js/web/index-2f5c5a98f60272b7771c992396736e98.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /pwa-register.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /service-worker.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /_expo/static/js/web/index-2f5c5a98f60272b7771c992396736e98.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /icon.png HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /index.html HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /manifest.webmanifest HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:10] "GET /pwa-register.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:11] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:12] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:12] "GET /service-worker.js HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:13] "GET /service-worker.js HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:14] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:15] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:15] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:15] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:16] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:16] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:24:17] "GET / HTTP/1.1" 200 -
+  ✓  1 e2e/hosted-companion.spec.ts:14:5 › a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review (8.1s)
+
+  1 passed (15.7s)

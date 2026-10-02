@@ -1,0 +1,34 @@
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 11682ms index.ts (399 modules)
+iOS Bundled 15779ms index.ts (866 modules)
+Android Bundled 19683ms index.ts (877 modules)
+
+› web bundles (1):
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js (1.4MB)
+
+› ios bundles (1):
+_expo/static/js/ios/index-224cb3a6972e579bc85647b823ef02c7.hbc (3MB)
+
+› android bundles (1):
+_expo/static/js/android/index-f54a2d33bb6a6cb1b04e8aa87ba5b895.hbc (3MB)
+
+› Files (2):
+index.html (1.2KB)
+metadata.json (244B)
+
+Exported: .expo/continuous-voice-export

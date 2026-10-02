@@ -1,0 +1,12 @@
+
+> openauthor-mobile@0.1.0 test
+> vitest run test/gatewaySession.test.ts test/voiceController.test.ts test/realtimeTransport.test.ts
+
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+
+ Test Files  3 passed (3)
+      Tests  18 passed (18)
+   Start at  11:08:10
+   Duration  208ms (transform 150ms, setup 0ms, import 196ms, tests 93ms, environment 0ms)

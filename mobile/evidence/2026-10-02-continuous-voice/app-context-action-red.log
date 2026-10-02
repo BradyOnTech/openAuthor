@@ -1,0 +1,74 @@
+
+> openauthor-mobile@0.1.0 test:e2e:hosted
+> playwright test --config playwright.hosted.config.ts
+
+[WebServer] (node:9038) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:9046) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:36] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:9048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:37] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:37] "GET /_expo/static/js/web/index-876ddbf7e10f6b33bef654500c8ce96a.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:37] "GET /pwa-register.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:37] "GET /service-worker.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:37] "GET /_expo/static/js/web/index-876ddbf7e10f6b33bef654500c8ce96a.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:38] "GET /icon.png HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:38] "GET /index.html HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:38] "GET /manifest.webmanifest HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:38] "GET /pwa-register.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:38] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:39] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:39] "GET /service-worker.js HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [02/Oct/2026 11:21:40] "GET /service-worker.js HTTP/1.1" 304 -
+  ✘  1 e2e/hosted-companion.spec.ts:14:5 › a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review (8.5s)
+
+
+  1) e2e/hosted-companion.spec.ts:14:5 › a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByRole('button', { name: 'Discuss without a selected scene', exact: true })
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" getByRole('button', { name: 'Discuss without a selected scene', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Discuss without a selected scene', exact: true })
+        14 × locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" aria-label="Discuss without a selected scene" class="css-g5y9jx r-12vffkv r-1awozwy r-1txcine r-1777fci r-1a1dyw r-c1r04b r-1ml3abn r-284m6k r-1niwhzg r-1ixy2ou r-rs99b7 r-tnni59">…</button>
+           - unexpected value "disabled"
+
+
+       at voiceControls.ts:170
+
+      168 |   await page.getByRole("button", { name: "Show context details", exact: true }).click();
+      169 |   const clearScene = page.getByRole("button", { name: "Discuss without a selected scene", exact: true });
+    > 170 |   await expect(clearScene).toBeEnabled();
+          |                            ^
+      171 |   const sentBeforeSwitch = await page.evaluate(() => (window as any).__voiceProbe.sent.length);
+      172 |   await clearScene.click();
+      173 |   await expect(start).toBeVisible();
+        at exerciseVoiceControls (~/Developer/openAuthor/mobile/e2e/voiceControls.ts:170:28)
+        at ~/Developer/openAuthor/mobile/e2e/hosted-companion.spec.ts:188:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/hosted/hosted-companion-a-new-pho-cdc08-ncrypted-capture-for-review/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/hosted/hosted-companion-a-new-pho-cdc08-ncrypted-capture-for-review/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hosted/hosted-companion-a-new-pho-cdc08-ncrypted-capture-for-review/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hosted/hosted-companion-a-new-pho-cdc08-ncrypted-capture-for-review/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/hosted-companion.spec.ts:14:5 › a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review
