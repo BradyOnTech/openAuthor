@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cloudConfiguration, desktopAccount } from "../../cloud/account";
 import { deploymentScope, nativeSecrets } from "../../cloud/secretStore";
-import { createAccountDeletionClient, type AccountDeletionChoices, type AccountDeletionReview, type AccountDeletionStatus } from "../../cloud/accountDeletion";
+import { ACCOUNT_RETENTION_MAX_SELECTION, createAccountDeletionClient, type AccountDeletionChoices, type AccountDeletionReview, type AccountDeletionStatus, type AccountRetentionReview, type AccountRetentionResolution } from "../../cloud/accountDeletion";
 
 type Identity = { userId: string; deviceId: string } | null;
 export function AccountDeletionPanel({ identity, disabled, onRequested, onRequestPending }: { identity: Identity; disabled: boolean; onRequested(): void; onRequestPending?(): void }) {
@@ -13,17 +13,22 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
+  const [retentionReview, setRetentionReview] = useState<AccountRetentionReview | null>(null);
+  const [selectedRetention, setSelectedRetention] = useState<string[]>([]);
+  const [retentionConfirmed, setRetentionConfirmed] = useState(false);
+  const [uncertainRetention, setUncertainRetention] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const mounted = useRef(false), serial = useRef(0), running = useRef(false);
   const scope = JSON.stringify([identity?.userId, identity?.deviceId]);
   const activeScope = useRef(scope); activeScope.current = scope;
-  const client = useRef<{ key: string; value: ReturnType<typeof createAccountDeletionClient> } | null>(null);
+  const client = useRef<{ userId: string; deviceId?: string; value: ReturnType<typeof createAccountDeletionClient> } | null>(null);
   const unsubscribe = useRef<(() => void) | undefined>();
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; serial.current++; unsubscribe.current?.(); }; }, []);
   function clear() {
     serial.current++; running.current = false; client.current = null;
     setReview(null); setChoices(null); setProgress(null); setAccountId(""); setAcknowledged(false); setConfirmed(false); setBusy(false); setUncertain(false); setError(""); setNotice("");
+    setRetentionReview(null); setSelectedRetention([]); setRetentionConfirmed(false); setUncertainRetention(false);
   }
   useEffect(clear, [scope]);
   async function load(mode: "status" | "review") {
@@ -36,10 +41,23 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
       const session = await account.session(identity ? { userId: identity.userId } : undefined);
       if (!current()) return;
       if (!session || identity && session.userId !== identity.userId) throw new Error("Sign in to the companion account you intend to review.");
-      const key = JSON.stringify([session.userId, identity?.deviceId]);
-      if (client.current?.key !== key) client.current = { key, value: createAccountDeletionClient(account, { userId: session.userId, deviceId: identity?.deviceId }) };
+      if (client.current?.userId !== session.userId || identity && client.current?.deviceId !== identity.deviceId) {
+        client.current = { userId: session.userId, deviceId: identity?.deviceId, value: createAccountDeletionClient(account, { userId: session.userId, deviceId: identity?.deviceId }) };
+      }
       unsubscribe.current?.(); unsubscribe.current = account.onIdentityChange?.(() => { if (mounted.current) clear(); });
       let value = client.current.value;
+      if (uncertainRetention) {
+        const reconciled = await value.resolveAmendment();
+        if (!current()) return;
+        setAccountId(session.userId); setProgress(reconciled.progress); onRequested();
+        if (reconciled.receipt) {
+          setUncertainRetention(false); setRetentionReview(null); setSelectedRetention([]); setRetentionConfirmed(false);
+          setNotice(`Shared-book correction ${reconciled.receipt.revision} is confirmed. Current request revision: ${reconciled.progress.amendment_revision}. Independent account cleanup approval must match the current revision.`);
+        } else {
+          setNotice("The existing account request does not confirm this correction. Keep the pending review and check again; no correction was retried.");
+        }
+        return;
+      }
       const owned = await value.current();
       if (!current()) return;
       setAccountId(session.userId); setProgress(owned);
@@ -56,7 +74,7 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
         const { enrollDesktopAccount } = await import("../../cloud/desktopEnrollment");
         const enrolled = await enrollDesktopAccount({ scope: await deploymentScope(config.url), userId: session.userId, account, secrets: nativeSecrets });
         if (!current()) return;
-        client.current = { key: JSON.stringify([enrolled.userId, enrolled.deviceId]), value: createAccountDeletionClient(account, enrolled) };
+        client.current = { ...enrolled, value: createAccountDeletionClient(account, enrolled) };
         value = client.current.value;
         unsubscribe.current = account.onIdentityChange?.(() => { if (mounted.current) clear(); });
       }
@@ -72,6 +90,40 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
   }
   const blockedOwnership = review?.inventory.workspaces.some(row => row.role === "owner" && row.other_members > 0 && row.other_owners === 0) ?? false;
   const retained = choices?.projects.some(row => row.action === "retain") ?? false;
+  async function reviewRetention() {
+    if (disabled || running.current || uncertainRetention || !progress || !client.current) return;
+    const operation = ++serial.current;
+    const current = () => mounted.current && activeScope.current === scope && operation === serial.current;
+    running.current = true; setBusy(true); setError(""); setNotice(""); setRetentionReview(null); setSelectedRetention([]); setRetentionConfirmed(false);
+    try {
+      const next = await client.current.value.amendmentPreflight(progress.job_id);
+      if (!current()) return;
+      setRetentionReview(next);
+      if (!next.projects.some(row => row.allowed_resolution)) setNotice("No changed shared-book scope has a verified correction available. Review the remaining ownership, rotation or deletion-verification blockers.");
+    } catch (reason) { if (current()) setError(reason instanceof Error ? reason.message : "Shared-book scope review is unavailable."); }
+    finally { if (current()) { running.current = false; setBusy(false); } }
+  }
+  async function amendRetention() {
+    if (disabled || running.current || uncertainRetention || !retentionReview || !retentionConfirmed || !selectedRetention.length || !client.current) return;
+    const operation = ++serial.current;
+    const current = () => mounted.current && activeScope.current === scope && operation === serial.current;
+    const captured = retentionReview, value = client.current.value;
+    const resolutions: AccountRetentionResolution[] = captured.projects.filter(row => selectedRetention.includes(row.project_id)).map(row => row.allowed_resolution === "retain_current_scope"
+      ? { project_id: row.project_id, resolution: "retain_current_scope", workspace_id: row.current_workspace_id! }
+      : { project_id: row.project_id, resolution: "attach_finalized_deletion", project_job_id: row.independent_deletion!.job_id, backend_verification_sha256: row.independent_deletion!.backend_verification_sha256! });
+    running.current = true; setBusy(true); setError(""); setRetentionConfirmed(false); setUncertainRetention(true); onRequestPending?.();
+    try {
+      const result = await value.amend(captured, resolutions);
+      if (!current()) return;
+      setProgress(result); setRetentionReview(null); setSelectedRetention([]); setUncertainRetention(false);
+      setNotice("Shared-book correction confirmed. Fresh independent account cleanup approval is required before finalization."); onRequested();
+    } catch (reason) { if (current()) {
+      setUncertainRetention(value.amendmentPending);
+      if (!value.amendmentPending) { setRetentionReview(null); setSelectedRetention([]); }
+      setError(reason instanceof Error ? reason.message : "The correction outcome is unconfirmed.");
+    } }
+    finally { if (current()) { running.current = false; setBusy(false); } }
+  }
   async function begin() {
     if (disabled || running.current || uncertain || !review || !choices || !confirmed || retained && !acknowledged || blockedOwnership || !client.current) return;
     const operation = ++serial.current;
@@ -92,7 +144,7 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
     <section aria-label="Hosted account deletion review" style={{ display: "grid", gap: 10, marginTop: 10 }}>
       <p style={small}>Review every hosted workspace and book before requesting deletion. Local manuscript folders stay on this computer. Shared contributions can remain with other members; downloaded or imported copies cannot be recalled here.</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        <button className="btn btn--sm" disabled={disabled || busy || uncertain} onClick={() => void load("review")}>Review hosted account deletion</button>
+        <button className="btn btn--sm" disabled={disabled || busy || uncertain || uncertainRetention} onClick={() => void load("review")}>Review hosted account deletion</button>
         <button className="btn btn--sm" disabled={disabled || busy} onClick={() => void load("status")}>Check account deletion status</button>
       </div>
       {busy && <p role="status">Checking the reviewed account…</p>}
@@ -100,6 +152,7 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {uncertain && <p role="status">The request may have reached the server. Check account status before continuing. No automatic retry was made.</p>}
+      {uncertainRetention && <p role="status">The shared-book correction may have reached the server. Only its exact durable receipt can confirm it. Check account status; no automatic retry was made.</p>}
       {review && choices && <>
         <h3 style={{ margin: 0, fontSize: "var(--text-sm)" }}>Exact hosted inventory</h3>
         <ul style={{ paddingLeft: 20, margin: 0 }}>{review.inventory.workspaces.map(row => <li key={row.workspace_id}>
@@ -135,10 +188,29 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
       </>}
       {progress && <div role="region" aria-label="Account deletion progress">
         <p>Request <code>{progress.job_id}</code>: {progress.phase.replace(/_/g, " ")}</p>
-        <ul>{progress.projects.map(row => <li key={row.project_id}>{row.name ?? row.project_id}: {row.phase.replace(/_/g, " ")}{row.blockers.length > 0 && ` — ${row.blockers.join(", ")}`}</li>)}</ul>
+        {progress.amendment_revision !== undefined && <p style={small}>Reviewed request revision: {progress.amendment_revision}</p>}
+        <ul>{progress.projects.map(row => <li key={row.project_id}>{row.name ?? row.project_id}: {row.resolution === "independently_deleted" ? "Independent project deletion receipt recorded" : row.phase.replace(/_/g, " ")}{row.blockers.length > 0 && ` — ${row.blockers.join(", ")}`}</li>)}</ul>
         {progress.blockers.length > 0 && <p role="status">Required before finalization: {progress.blockers.join(", ")}</p>}
         <p style={small}>This status remains available while the initiating device is revoked. A pending phase does not certify backend deletion or final provider teardown.</p>
+        {progress.amendment_revision !== undefined && progress.phase !== "finalized" && progress.projects.some(row => row.action === "retain") && <button className="btn btn--sm" disabled={disabled || busy || uncertainRetention} onClick={() => void reviewRetention()}>Review changed shared books</button>}
       </div>}
+      {retentionReview && <section aria-label="Changed shared-book scope review" style={{ display: "grid", gap: 10 }}>
+        <h3 style={{ margin: 0, fontSize: "var(--text-sm)" }}>Review shared-book corrections</h3>
+        <p style={small}>Review from request revision {retentionReview.base_revision}. Your original deletion and pending-capture decisions remain in force. These corrections create no new book deletion request. Select up to {ACCOUNT_RETENTION_MAX_SELECTION} changed books per correction.</p>
+        {retentionReview.projects.map(row => <div key={row.project_id} style={{ overflowWrap: "anywhere" }}>
+          <strong>{row.name ?? "Previously accessible shared book"}</strong><br /><code>{row.project_id}</code>
+          <p style={small}>Originally reviewed workspace: <code>{row.reviewed_workspace_id}</code><br />Current recorded scope: <code>{row.effective_workspace_id ?? "Independent deletion recorded"}</code><br />Current hosted workspace: <code>{row.current_workspace_id ?? "Project metadata absent"}</code></p>
+          {row.current_workspace_id && <p style={small}>{row.remaining_owner ? "Another live owner remains." : "A live remaining owner is required."}{row.needs_rotation && ` Original key rotation requirement: newer than version ${row.previous_key_version}; current active version ${row.active_key_version ?? "unavailable"}.`}</p>}
+          {row.independent_deletion && <p style={small}>Independent deletion request <code>{row.independent_deletion.job_id}</code>: {row.independent_deletion.phase.replace(/_/g, " ")}.<br />Backing verification receipt: <code>{row.independent_deletion.backend_verification_sha256 ?? "not verified"}</code></p>}
+          {row.blockers.length > 0 && <p style={small}>{row.blockers.join("; ")}</p>}
+          {row.allowed_resolution ? <label style={small}><input type="checkbox" disabled={busy || uncertainRetention || selectedRetention.length >= ACCOUNT_RETENTION_MAX_SELECTION && !selectedRetention.includes(row.project_id)} checked={selectedRetention.includes(row.project_id)} onChange={event => {
+            setSelectedRetention(event.target.checked ? [...selectedRetention, row.project_id] : selectedRetention.filter(id => id !== row.project_id)); setRetentionConfirmed(false);
+          }} /> {row.allowed_resolution === "retain_current_scope" ? "Use this current workspace for retained shared history" : "Record this exact independently finalized deletion receipt"}</label>
+            : <p style={small}>No correction is available for this row.</p>}
+        </div>)}
+        <label style={small}><input type="checkbox" checked={retentionConfirmed} disabled={busy || uncertainRetention || !selectedRetention.length} onChange={event => setRetentionConfirmed(event.target.checked)} /> I reviewed the selected shared-book corrections and understand that fresh independent account cleanup approval is required.</label>
+        <button className="btn btn--sm" disabled={disabled || busy || uncertainRetention || !selectedRetention.length || !retentionConfirmed} onClick={() => void amendRetention()}>Confirm reviewed shared-book corrections</button>
+      </section>}
     </section>
   </details>;
 }

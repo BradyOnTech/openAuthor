@@ -12,6 +12,10 @@ export interface CompanionAccount {
 }
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/** An explicit PostgREST transaction rejection, never a transport failure. */
+export class CompanionRpcRefusal extends Error {
+  constructor() { super("Companion setup was refused by the backend. Review current hosted state before submitting a new request."); this.name = "CompanionRpcRefusal"; }
+}
 
 function tokenClaims(session: CloudSession): Record<string, unknown> | undefined {
   try {
@@ -90,7 +94,12 @@ export function createCompanionAccount(client: SupabaseClient): CompanionAccount
     },
     async rpc(name, params) {
       const result = await client.rpc(name, params);
-      if (result.error) throw new Error("Companion setup was refused by the backend. Check project access and device enrollment.");
+      if (result.error) {
+        const nullableText = (value: unknown) => value === null || typeof value === "string" && value.length <= 8192;
+        if (result.data === null && Number.isInteger(result.status) && result.status >= 400 && result.status <= 599 && ["40001", "42501", "22023", "25000", "55000"].includes(result.error.code)
+          && typeof result.error.message === "string" && result.error.message.trim().length > 0 && result.error.message.length <= 4096 && nullableText(result.error.details) && nullableText(result.error.hint)) throw new CompanionRpcRefusal();
+        throw new Error("Companion setup was refused by the backend. Check project access and device enrollment.");
+      }
       return result.data;
     },
   };

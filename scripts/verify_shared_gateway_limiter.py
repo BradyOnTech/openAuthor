@@ -94,6 +94,7 @@ def main() -> None:
         ("mobile_account_deletion.sql", "20261002180000_mobile_account_deletion.sql"),
         ("mobile_voice_control.sql", "20261002190000_mobile_voice_control.sql"),
         ("registry_read_authority.sql", "20261002200000_registry_read_authority.sql"),
+        ("mobile_account_deletion_amendments.sql", "20261002210000_mobile_account_deletion_amendments.sql"),
       ):
         if args.migration_through and args.migration_through < migration:
           continue
@@ -107,6 +108,9 @@ def main() -> None:
           "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
       if not args.migration_through or args.migration_through >= "20261002180000_mobile_account_deletion.sql":
         run(["python3", str(root / "scripts/verify_account_deletion_concurrency.py"),
+          "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
+      if not args.migration_through or args.migration_through >= "20261002210000_mobile_account_deletion_amendments.sql":
+        run(["python3", str(root / "scripts/verify_account_deletion_amendments_concurrency.py"),
           "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
       if args.sql_only:
         return

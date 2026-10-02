@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cloudSessionId, createAuthStorage, createCompanionAccount } from "./account";
+import { CompanionRpcRefusal, cloudSessionId, createAuthStorage, createCompanionAccount } from "./account";
 import { deploymentScope, nativeSecrets } from "./secretStore";
 
 const userId = "10000000-0000-4000-8000-000000000001";
@@ -48,6 +48,33 @@ describe("desktop companion account", () => {
     expect(f.client.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     f.client.rpc.mockResolvedValue({ data: null, error: { message: "raw manuscript or token" } } as never);
     await expect(f.account.rpc("name", {})).rejects.toThrow("refused by the backend");
+  });
+
+  it.each([400, 500])("identifies only an explicit SQL transaction refusal with HTTP status %s", async status => {
+    const f = fixture();
+    f.client.rpc.mockResolvedValue({ status, data: null, error: { code: "40001", message: "raw private state", details: null, hint: null } } as never);
+    await expect(f.account.rpc("mobile_amend_account_deletion", {})).rejects.toBeInstanceOf(CompanionRpcRefusal);
+    await expect(f.account.rpc("mobile_amend_account_deletion", {})).rejects.not.toThrow("raw private state");
+  });
+  it.each([
+    { status: 0, data: null, error: { code: "40001" } },
+    { status: 200, data: null, error: { code: "40001" } },
+    { status: 400, data: null, error: { code: "PGRST000" } },
+    { status: 400, data: {}, error: { code: "40001" } },
+  ])("keeps transport, malformed or contradictory failures unconfirmed: %j", async response => {
+    const f = fixture(); f.client.rpc.mockResolvedValue(response as never);
+    await expect(f.account.rpc("mobile_amend_account_deletion", {})).rejects.not.toBeInstanceOf(CompanionRpcRefusal);
+  });
+  it.each([
+    { code: "40001", details: null, hint: null },
+    { code: "40001", message: 7, details: null, hint: null },
+    { code: "40001", message: "", details: null, hint: null },
+    { code: "40001", message: "Refused", hint: null },
+    { code: "40001", message: "Refused", details: {}, hint: null },
+    { code: "40001", message: "Refused", details: null, hint: [] },
+  ])("withholds definitive classification for malformed PostgREST errors: %j", async error => {
+    const f = fixture(); f.client.rpc.mockResolvedValue({ status: 400, data: null, error } as never);
+    await expect(f.account.rpc("mobile_amend_account_deletion", {})).rejects.not.toBeInstanceOf(CompanionRpcRefusal);
   });
 
   it("retains a review on same-session refocus and notifies only identity/session changes", async () => {
