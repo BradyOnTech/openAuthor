@@ -26,10 +26,10 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
       for scene in case["scenes"]:
         add_scene(paths, title=scene["title"], pov=scene.get("pov", ""), body=scene["body"])
       entity_ids = {
-        row["key"]: add_entity(paths, kind=row["type"], name=row["name"])
-        for row in case["entities"]
+        row["key"]: add_entity(paths, kind=row["type"], name=row["name"], aliases=row.get("aliases", []))
+        for row in case.get("entities", [])
       }
-      for fact in case["facts"]:
+      for fact in case.get("facts", []):
         add_canon_fact(
           paths,
           subject_entity_id=entity_ids[fact["subject"]],
@@ -62,9 +62,11 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
         false_positive += max(0, actual[code] - expected[code])
         false_negative += max(0, expected[code] - actual[code])
       case_results.append({"id": case["id"], "expected": dict(expected), "actual": dict(actual)})
-  precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 1.0
-  recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 1.0
+  precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else None
+  recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else None
   return {
+    "evidence_kind": corpus.get("evidence_kind", "synthetic_seeded_canon_regression"),
+    "limitations": corpus.get("limitations", "Facts are supplied manually; this does not measure manuscript extraction or live-model quality."),
     "corpus": str(corpus_path),
     "cases": case_results,
     "true_positive": true_positive,
@@ -76,4 +78,4 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
-  print(json.dumps(evaluate(), indent=2))
+  print(json.dumps({"seeded_canon": evaluate(), "unseeded_prose": evaluate(ROOT / "tests" / "fixtures" / "prose_continuity_evaluation.json")}, indent=2))

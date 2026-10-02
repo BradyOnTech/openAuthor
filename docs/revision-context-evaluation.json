@@ -1,0 +1,84 @@
+{
+  "date": "2026-09-30",
+  "scope": "Reviewed scene drafting and passage regeneration; implementation after the follow-up product review",
+  "production_readiness_claim": false,
+  "base_commit": "59b2c24",
+  "approved_content": "Synthetic test manuscripts only",
+  "new_remote_calls": 0,
+  "new_api_spend_usd": 0,
+  "new_local_calls": 3,
+  "implementation": {
+    "shared_context": [
+      "Saved Plan and style guidance",
+      "Edit plan and original intent",
+      "Hard constraints and protected elements",
+      "Visibility-filtered Story Memory and explicit one-request permissions",
+      "Explicitly selected scene-valid Canon and relationships"
+    ],
+    "safety": [
+      "External providers require a reviewed fingerprint",
+      "Guidance, source, proposal and privacy changes invalidate review",
+      "Changed context during generation preserves existing Changes",
+      "Whole Memory entries omitted over 12000-character budget with disclosure",
+      "Total request over 80000 characters refused before provider contact"
+    ],
+    "desktop": [
+      "Every scene draft pauses for its own context review",
+      "Review permissions journaled before sending",
+      "Retries preserve request identity and approved context",
+      "New draft review clears permissions and assigns a new request id while retaining the plan",
+      "Restart resumes the pending step",
+      "Compact Memory disclosure and visible scene/provider/limits"
+    ],
+    "cli": "revision-preview handles whole scenes and passages; draft and hunk-regenerate forward exact permissions and settings",
+    "evaluation_runner": "preview-draft saves exact local context; external generate requires recorded consent, allow-provider and a matching reviewed fingerprint"
+  },
+  "automated": {
+    "python_default_passed": 255,
+    "python_default_skipped": 1,
+    "packaged_local_endpoint_contract_passed": 1,
+    "desktop_passed": 159,
+    "rust_passed": 7,
+    "frontend_build": "passed",
+    "repository_checks": "passed",
+    "npm_reported_vulnerabilities": 0
+  },
+  "native": {
+    "platform": "macOS arm64, unsigned current bundle with bundled Python and pinned subscription runtime",
+    "fixture_root": "/var/folders/lv/hpnkkh6j7sx0jkx0fvl_r38w0000gn/T/openauthor-product-audit-b464dvu5/native-book",
+    "fixture_retention": "Temporary QA directory, not a durable backup",
+    "scene_id": "scene-0041",
+    "proposal_id": "proposal-0e0577b18d7fe4cca2e965b8",
+    "plan_run_id": "gen-7e0f283dcc5c",
+    "draft": {
+      "runId": "gen-a0fe769ff908",
+      "systemMatches": true,
+      "userMatches": true
+    },
+    "passage": {
+      "runId": "gen-d2eb80aaa038",
+      "systemMatches": true,
+      "userMatches": true,
+      "provider": "local",
+      "proposedOnly": true,
+      "otherHunkUnchanged": true
+    },
+    "stale_style_preview": "Changing saved style guidance after preview produced 'Revision context changed ... nothing was sent'; no draft attached",
+    "restart_and_fresh_review": "Recovered journal after native restart. Start new draft review retained the original edit plan, displayed local provider and current style guidance, and succeeded.",
+    "total_proposals_before": 2,
+    "total_proposals_after": 3,
+    "manuscript_changed": false,
+    "scene_file_sha256": "f77dc084cf8264156d1e57fa3800a3f7a0d467bbfa03ec1d4290168025cf9204",
+    "style_marker": "NATIVE_REVIEW_STYLE",
+    "native_canon_permission_selection": "No Canon records in this fixture. Exact granted Canon context covered by core/CLI tests; existing native selection/chat evidence retained separately.",
+    "visual": "Dark native layout inspected. Collapsed Memory list and compact pending-review header place Refresh, Generate and Cancel in the initial viewport."
+  },
+  "remaining": [
+    "Initial edit-plan generation and merge reconciliation still lack this reviewed-context flow.",
+    "Native recovered generation panel still displays disabled default form values below the authoritative restored review; improve clarity.",
+    "Stale chat/passage recovery and legacy request-journal migration need further audit.",
+    "Footer word-count refresh, language handling and stale Style Profile issues from the follow-up review remain open.",
+    "Broader focused editorial, chapter navigation, resume location, inspectable summaries and independent quality evaluation remain open.",
+    "No claim of clean Intel installation, signed distribution, a real-author pilot, comprehensive failure recovery or general prose quality."
+  ]
+}

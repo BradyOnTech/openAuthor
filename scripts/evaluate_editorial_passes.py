@@ -67,15 +67,17 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
   task_count = len(results)
   return {
     "assessment_scope": "Deterministic pattern regression, not literary quality or semantic canon validation.",
+    "evidence_kind": "synthetic_local_adapter_regression",
+    "limitations": "Tiny deterministic pattern tests do not measure author voice, manuscript quality, or live providers.",
     "corpus": str(corpus_path),
     "task_count": task_count,
     "pass_count": len({row["pass_id"] for row in results}),
     "genres": sorted({row["genre"] for row in results}),
     "improved_tasks": improved,
-    "improvement_rate": improved / task_count if task_count else 0.0,
-    "issue_reduction_rate": (total_before - total_after) / total_before if total_before else 0.0,
+    "improvement_rate": improved / task_count if task_count else None,
+    "issue_reduction_rate": (total_before - total_after) / total_before if total_before else None,
     "canon_errors": canon_errors,
-    "canon_error_rate": canon_errors / task_count if task_count else 0.0,
+    "canon_error_rate": canon_errors / task_count if task_count else None,
     "cases": results,
   }
 

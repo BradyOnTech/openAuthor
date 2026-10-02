@@ -4,7 +4,7 @@
 
 - Platform: macOS first (`aarch64` + `x86_64`).
 - Packaging path: Tauri bundle output from `desktop/src-tauri/target/release/bundle/`.
-- Runtime: pinned Python 3.11 and Codex app-server distributions inside the app bundle; users do not install Python, Node, or Codex.
+- Runtime: pinned Python 3.11, Codex app-server, and local Git distributions inside the app bundle; users do not install Python, Node, Codex, or Git.
 - Gate required before packaging:
   - `make desktop-smoke`
   - `make test-scale`
@@ -66,7 +66,7 @@ make macos-bundle
 make macos-bundle-check
 ```
 
-`runtime-prepare` downloads pinned python-build-standalone and Codex assets, verifies their recorded checksums, and installs the openAuthor core. The Tauri build fails closed when either runtime is missing. Local bundles are not distributable releases: the `release-macos` workflow requires Apple Developer ID credentials, signs and notarizes both architectures, and verifies the sealed bundle before leaving artifacts in a draft prerelease.
+`runtime-prepare` downloads pinned python-build-standalone and Codex assets, verifies their recorded checksums, installs the openAuthor core, and builds checksum-pinned Git source on the native architecture. Git's license and corresponding source ship alongside the binary. Runtime verification exercises Storylines and backup recovery with system tools absent from PATH. The Tauri build fails closed when a required runtime is missing. Local bundles are not distributable releases: the `release-macos` workflow requires Apple Developer ID credentials, signs and notarizes both architectures, and verifies the sealed bundle before leaving artifacts in a draft prerelease. The separate `package-macos` workflow builds unsigned internal-test artifacts on native arm64 and Intel runners without requiring those credentials.
 
 ## Smoke checklist (macOS)
 
@@ -132,7 +132,7 @@ make desktop-tauri
 - Run the measured Canon and Editorial gates: `make test-canon-eval` and `make test-editorial-eval`.
 
 10. Record known product gaps:
-- The current product now provides one-click revision undo, staged Markdown/TXT/DOCX/Scrivener import, Markdown/DOCX export, crash recovery, startup repair, and a verified embedded Python runtime. It does not yet provide credential-verified signed/notarized artifacts, both-architecture clean-machine evidence, or rendered packaged-app automation.
+- The product provides ordinary-edit Revisions, named versions, portable verified backups, revision undo, staged Markdown/TXT/DOCX/Scrivener import, Markdown/DOCX export, recovery drafts, startup repair, and embedded runtimes. Local arm64 native GUI smoke evidence is recorded in `docs/reliability-delivery.md`; credential-verified signed/notarized artifacts, both-architecture clean-machine evidence, and an unattended packaged GUI gate remain unverified.
 - Do not approve a public release solely because this manual checklist and unit gates pass.
 
 11. Drill scene recovery:

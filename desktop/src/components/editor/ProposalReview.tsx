@@ -1,41 +1,75 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { GenerationAssessment } from "../common/GenerationAssessment";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, draftProposal, editProposalHunk, rebaseProposal, rejectProposal, regenerateProposalHunk, undoProposal, getScene, updateProposalHunk } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, type RevisionAuthorization } from "../../api";
+import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
+import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
+import { RevisionContextReview } from "./RevisionContextReview";
 
 type Props = {
   proposal: ProposalRecord;
 };
 
-export function ProposalReview({ proposal }: Props) {
-  const { projectRoot, runtimeConfig, refreshProposals, refreshScenes, setError, setMessage } =
+export function ProposalReview({ proposal: initial }: Props) {
+  const { projectRoot, runtimeConfig, scenes, branches, refreshProposals, refreshScenes, setError, setMessage } =
     useWorkspace();
   const { openTab, updateTab } = useEditor();
+  const [proposal, setProposal] = useState(initial);
+  useEffect(() => setProposal(initial), [initial]);
   const [busy, setBusy] = useState("");
+  const [selectionVerified, setSelectionVerified] = useState(!initial.selection);
+  const [selectionRefresh, setSelectionRefresh] = useState(0);
+  useEffect(() => {
+    if (!initial.selection || busy) return;
+    let current = true;
+    setSelectionVerified(false);
+    void getProposal(projectRoot, initial.id).then(updated => {
+      if (current) { setProposal(updated); setSelectionVerified(true); }
+    }).catch(error => { if (current) setError(`Could not verify this selection: ${error instanceof Error ? error.message : String(error)}`); });
+    return () => { current = false; };
+  }, [projectRoot, initial.id, Boolean(initial.selection), scenes, branches, busy, selectionRefresh, setError]);
   const [confirmForce, setConfirmForce] = useState(false);
   const [editingHunkId, setEditingHunkId] = useState("");
   const [editedHunkText, setEditedHunkText] = useState("");
   const [feedbackHunkId, setFeedbackHunkId] = useState("");
   const [hunkFeedback, setHunkFeedback] = useState("");
+  const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
+  const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
+  const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
+  const hunkSession = useMemo(() => proposalGenerationSession(projectRoot, `${initial.id}:hunks`), [projectRoot, initial.id]);
+  const hunkState = useSyncExternalStore(hunkSession.subscribe, hunkSession.getSnapshot);
+  const view = useRef({ mounted: true, key: "" });
+  const viewKey = JSON.stringify([projectRoot, initial.id]);
+  view.current.key = viewKey;
+  useEffect(() => {
+    view.current.mounted = true;
+    return () => { view.current.mounted = false; };
+  }, []);
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
     defaultProvider(runtimeConfig).id;
 
   function syncTab(updated: ProposalRecord) {
+    setProposal(updated);
     updateTab(`proposal:${updated.id}`, { data: updated });
   }
 
-  async function handleDraft() {
+  async function handleDraft(authorization?: RevisionAuthorization) {
     setBusy("draft");
     try {
-      const updated = await draftProposal(projectRoot, {
-        proposalId: proposal.id,
-        provider: draftProvider,
-      });
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending writing before drafting.");
+      const results = authorization && draftState.reviewTask ? await draftSession.approveDraft(draftState.reviewTask.index, authorization)
+        : draftState.job ? await draftSession.retry() : await draftSession.start([{
+        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+      }], proposal.id);
+      if (!results || !view.current.mounted || view.current.key !== viewKey) return;
+      const updated = results[0];
       syncTab(updated);
+      draftSession.clear();
       setMessage("Draft ready — review the revised scene text below, then apply.");
       await refreshProposals();
     } catch (e) {
@@ -46,14 +80,23 @@ export function ProposalReview({ proposal }: Props) {
   }
 
   async function handleApply() {
-    const needsForce = Boolean(proposal.stale && proposal.proposed_body);
+    const needsForce = Boolean(!proposal.selection && proposal.stale && proposal.proposed_body);
     if (needsForce && !confirmForce) {
       setConfirmForce(true);
       return;
     }
     setBusy("apply");
     try {
-      const updated = await applyProposal(projectRoot, proposal.id, "", needsForce);
+      const apply = async () => {
+        const updated = await applyProposal(projectRoot, proposal.id, "", needsForce);
+        if (updated.applied_changes) {
+          const scene = await getScene(projectRoot, proposal.scene_id);
+          sceneSaveSession(projectRoot, scene).acceptScene(scene);
+          updateTab(`scene:${scene.id}`, { data: scene, label: scene.title, modified: false });
+        }
+        return updated;
+      };
+      const updated = await withProjectBookChange(projectRoot, apply);
       syncTab(updated);
       setMessage(
         updated.applied_changes
@@ -98,11 +141,18 @@ export function ProposalReview({ proposal }: Props) {
     }
   }
 
-  async function handleRegenerateHunk(hunkId: string, feedback = "") {
+  async function handleRegenerateHunk(hunkId: string, feedback = "", authorization?: RevisionAuthorization) {
+    if (!hunkState.job && !authorization) { setHunkReview({ id: hunkId, feedback }); return; }
     setBusy(hunkId);
+    setHunkReview(null);
     try {
-      const updated = await regenerateProposalHunk(projectRoot, proposal.id, hunkId, draftProvider, undefined, feedback);
-      syncTab(updated);
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending writing before revising a passage.");
+      const results = hunkState.job ? await hunkSession.retry() : await hunkSession.start([{
+        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+      }], proposal.id, { id: hunkId, feedback, authorization });
+      if (!results || !view.current.mounted || view.current.key !== viewKey) return;
+      syncTab(results[0]);
+      hunkSession.clear();
       setFeedbackHunkId("");
       setHunkFeedback("");
       setMessage("Change hunk regenerated; review its replacement before applying.");
@@ -149,9 +199,14 @@ export function ProposalReview({ proposal }: Props) {
   async function handleUndo() {
     setBusy("undo");
     try {
-      const updated = await undoProposal(projectRoot, proposal.id);
+      const undo = async () => {
+        const updated = await undoProposal(projectRoot, proposal.id);
+        const scene = await getScene(projectRoot, updated.scene_id);
+        sceneSaveSession(projectRoot, scene).acceptScene(scene);
+        return { updated, scene };
+      };
+      const { updated, scene } = await withProjectBookChange(projectRoot, undo);
       syncTab(updated);
-      const scene = await getScene(projectRoot, updated.scene_id);
       openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene });
       setMessage("Change undone — the scene was restored and a new revision recorded.");
       await Promise.all([refreshProposals(), refreshScenes()]);
@@ -260,8 +315,8 @@ export function ProposalReview({ proposal }: Props) {
                     <span style={{ marginLeft: "var(--space-2)", fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>{hunk.rationale}</span>
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-1)" }}>
-                    <button className="btn btn--ghost btn--sm" aria-label={`Edit change hunk ${hunk.order}`} disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
-                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
+                    <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setEditingHunkId(hunk.id); setEditedHunkText(hunk.after_text); }}>Edit</button>
+                    <button className="btn btn--ghost btn--sm" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy || Boolean(hunkState.job)} onClick={() => void handleRegenerateHunk(hunk.id)}>Regenerate</button>
                     <button className="btn btn--ghost btn--sm" disabled={busy === hunk.id} onClick={() => { setFeedbackHunkId(hunk.id); setHunkFeedback(""); }}>Comment</button>
                     <button
                       className={`btn btn--sm ${hunk.decision === "accepted" ? "btn--success" : "btn--ghost"}`}
@@ -294,13 +349,16 @@ export function ProposalReview({ proposal }: Props) {
                 )}
                 {feedbackHunkId === hunk.id && (
                   <div style={{ padding: "var(--space-3)", background: "var(--bg-elevated)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                    <textarea className="input" rows={3} value={hunkFeedback} onChange={(event) => setHunkFeedback(event.target.value)} placeholder="What should this passage do differently?" aria-label={`Revision comment for hunk ${hunk.order}`} />
+                    <textarea className="input" rows={3} disabled={hunkState.busy || Boolean(hunkState.job)} value={hunkFeedback} onChange={(event) => setHunkFeedback(event.target.value)} placeholder="What should this passage do differently?" aria-label={`Revision comment for hunk ${hunk.order}`} />
                     <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                      <button className="btn btn--primary btn--sm" disabled={busy === hunk.id || !hunkFeedback.trim()} onClick={() => void handleRegenerateHunk(hunk.id, hunkFeedback)}>Revise hunk</button>
+                      <button className="btn btn--primary btn--sm" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy || Boolean(hunkState.job) || !hunkFeedback.trim()} onClick={() => void handleRegenerateHunk(hunk.id, hunkFeedback)}>Revise hunk</button>
                       <button className="btn btn--ghost btn--sm" onClick={() => setFeedbackHunkId("")}>Cancel</button>
                     </div>
                   </div>
                 )}
+                {hunkReview?.id === hunk.id && <RevisionContextReview key={JSON.stringify([projectRoot, proposal.id, hunk.id, hunkReview.feedback])}
+                  projectRoot={projectRoot} proposalId={proposal.id} hunkId={hunk.id} provider={draftProvider} feedback={hunkReview.feedback}
+                  onSend={authorization => handleRegenerateHunk(hunk.id, hunkReview.feedback, authorization)} onClose={() => setHunkReview(null)} />}
               </div>
             ))}
             {changeSet.hunks.length === 0 && (
@@ -310,7 +368,19 @@ export function ProposalReview({ proposal }: Props) {
         </div>
       )}
 
-      {hasDraft && !changeSet && (
+      {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
+        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
+        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
+        <div className="selection-review__comparison">
+          <div><strong>Before</strong><blockquote>{proposal.selection.before}</blockquote></div>
+          <div><strong>{proposal.selection.action === "critique" ? "Feedback" : "After"}</strong><blockquote>{proposal.selection.feedback || proposal.selection.after}</blockquote></div>
+        </div>
+        {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
+        {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
+        <button className="btn" style={{ minHeight: 40 }} disabled={Boolean(busy)} onClick={() => setSelectionRefresh(value => value + 1)}>Refresh selection status</button>
+      </section>}
+
+      {hasDraft && !changeSet && !proposal.selection && (
         <div className="review-card__section">
           <div className="review-card__section-title">
             Drafted scene text {proposal.draft ? `(${proposal.draft.provider}/${proposal.draft.model})` : ""}
@@ -344,7 +414,7 @@ export function ProposalReview({ proposal }: Props) {
           <span>{gen.input_tokens} in / {gen.output_tokens} out</span>
           {gen.latency_ms != null && <span>{(gen.latency_ms / 1000).toFixed(1)}s</span>}
           {gen.estimated_cost_usd != null && <span>${gen.estimated_cost_usd.toFixed(4)}</span>}
-          {gen.quality_tier && <span className={`badge badge--${gen.quality_tier === "high" ? "applied" : gen.quality_tier === "low" ? "error" : "warning"}`}>{gen.quality_tier}</span>}
+          <GenerationAssessment tier={gen.quality_tier} />
         </div>
       )}
 
@@ -357,18 +427,39 @@ export function ProposalReview({ proposal }: Props) {
         </div>
       )}
 
+      {(hunkState.job || hunkState.error) && <section aria-label="Hunk regeneration recovery" className="review-card__section" style={{ display: "grid", gap: 12 }}>
+        <strong>{hunkState.busy ? "Regenerating passage…" : "Passage revision needs recovery"}</strong>
+        {hunkState.job?.tasks[0].hunk?.feedback && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{hunkState.job.tasks[0].hunk.feedback}</p>}
+        {hunkState.error && <p role="alert">{hunkState.error}</p>}
+        <p>Saved results are reused. An interrupted request without a saved result may incur another provider charge. Discarding this request keeps existing changes and prose.</p>
+        {hunkState.job && <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || hunkState.busy} onClick={() => void handleRegenerateHunk(hunkState.job!.tasks[0].hunk!.id)}>Retry passage revision</button>
+          <button className="btn" style={{ minHeight: 40 }} disabled={hunkState.busy} onClick={hunkSession.clear}>Discard passage request</button>
+        </div>}
+      </section>}
+
+      {draftState.reviewTask && !draftState.busy && <RevisionContextReview key={`${draftState.job!.id}:${draftState.reviewTask.index}`}
+        projectRoot={projectRoot} proposalId={draftState.reviewTask.proposalId} provider={draftState.reviewTask.input.provider}
+        model={draftState.reviewTask.input.model} onSend={handleDraft} onClose={draftSession.clear} />}
+
       {proposal.status === "pending" && (
         <div className="review-card__actions">
+          {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
+          {draftState.error && !draftState.busy && draftState.job?.tasks.find(task => !task.drafted)?.authorization && <>
+            <button className="btn" style={{ minHeight: 40 }} onClick={draftSession.reviewDraftAgain}>Start new draft review</button>
+            <p>A new review retains this edit plan, clears permissions and starts a new request. Earlier provider charges still apply.</p>
+          </>}
+          {draftState.job && !draftState.busy && <button className="btn" style={{ minHeight: 40 }} onClick={draftSession.clear}>Discard draft request</button>}
           {proposal.stale && changeSet && (
             <button className="btn btn--primary" disabled={busy === "rebase"} onClick={() => void handleRebase()}>
               {busy === "rebase" ? "Rebasing…" : "Rebase safe hunks"}
             </button>
           )}
-          {proposal.scene_id && proposal.source !== "merge_resolution" && (
-            <button className="btn btn--primary" disabled={busy === "draft"} onClick={handleDraft}>
-              {busy === "draft"
+          {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && (
+            <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={() => void handleDraft()}>
+              {draftState.busy
                 ? "Drafting..."
-                : hasDraft
+                : draftState.job ? "Retry draft" : hasDraft
                   ? "Regenerate Change Set"
                   : "Build Change Set"}
             </button>
@@ -376,7 +467,7 @@ export function ProposalReview({ proposal }: Props) {
           {proposal.source !== "merge_resolution" && hasDraft && (
             <button
               className="btn btn--success"
-              disabled={busy === "apply" || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
+              disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale)) || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
               onClick={handleApply}
               title="Write the drafted text into the scene and record before/after revisions"
             >
@@ -384,10 +475,10 @@ export function ProposalReview({ proposal }: Props) {
                 ? "Applying..."
                 : confirmForce
                   ? "Scene changed — apply anyway?"
-                  : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
+                  : proposal.selection ? "Accept selected replacement" : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
             </button>
           )}
-          <button className="btn btn--danger" disabled={busy === "reject"} onClick={handleReject}>
+          <button className="btn btn--danger" disabled={Boolean(busy)} onClick={handleReject}>
             Reject
           </button>
           {proposal.scene_id && (
@@ -399,7 +490,7 @@ export function ProposalReview({ proposal }: Props) {
       {proposal.status !== "pending" && proposal.scene_id && (
         <div className="review-card__actions">
           {proposal.status === "applied" && proposal.applied_changes && !proposal.undone_at && (
-            <button className="btn btn--primary" disabled={busy === "undo"} onClick={handleUndo}>
+            <button className="btn btn--primary" disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale))} onClick={handleUndo}>
               {busy === "undo" ? "Undoing..." : "Undo change"}
             </button>
           )}

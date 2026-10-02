@@ -28,6 +28,7 @@ from .chat import (
   list_chat_messages,
   list_chat_threads,
   regenerate_chat_turn,
+  preview_chat_context,
   send_chat_message,
   truncate_chat_messages,
 )
@@ -43,6 +44,21 @@ from .assistant.mobile_outbox import (
 from .project import OpenAuthorError, ProjectPaths, utc_now
 
 PROTOCOL_VERSION = 1
+
+
+def _chat_context_params(params: dict[str, Any]) -> dict[str, Any]:
+  return {
+    "thread_id": str(params.get("thread_id", "")).strip(),
+    "message": str(params.get("message", "")),
+    "current_scene_id": str(params.get("current_scene_id", "")),
+    "scene_ids": [str(item) for item in params.get("scene_ids", [])] if isinstance(params.get("scene_ids"), list) else None,
+    "selected_text": str(params.get("selected_text", "")),
+    "codex_ids": [str(item) for item in params.get("codex_ids", [])] if isinstance(params.get("codex_ids"), list) else None,
+    "approved_codex_ids": params.get("approved_codex_ids"),
+    "context_overrides": params.get("context_overrides") if isinstance(params.get("context_overrides"), dict) else None,
+    "memory_approvals": params.get("memory_approvals"),
+    "story_approvals": params.get("story_approvals"),
+  }
 
 
 class _FrameWriter:
@@ -321,6 +337,12 @@ class ChatSidecarServer:
       self._workers.append(worker)
       worker.start()
       return
+    if method == "chat.context":
+      self._respond_call(request_id, lambda: preview_chat_context(
+        self._paths, **_chat_context_params(params),
+        history_before_message_id=str(params.get("history_before_message_id", "")),
+      ))
+      return
 
     self._writer.respond(
       request_id,
@@ -388,35 +410,27 @@ class ChatSidecarServer:
         {"request_id": request_id, "thread_id": thread_id, "text": text},
       )
 
-    scene_ids = params.get("scene_ids")
-    codex_ids = params.get("codex_ids")
-    context_overrides = params.get("context_overrides")
     try:
-      common = {
-        "thread_id": thread_id,
-        "message": str(params.get("message", "")),
-        "current_scene_id": str(params.get("current_scene_id", "")),
-        "scene_ids": [str(item) for item in scene_ids] if isinstance(scene_ids, list) else None,
-        "selected_text": str(params.get("selected_text", "")),
-        "codex_ids": [str(item) for item in codex_ids] if isinstance(codex_ids, list) else None,
-        "approved_codex_ids": [str(item) for item in params.get("approved_codex_ids", [])] if isinstance(params.get("approved_codex_ids"), list) else None,
-        "context_overrides": context_overrides if isinstance(context_overrides, dict) else None,
-        "on_delta": on_delta,
-      }
+      common = {**_chat_context_params(params),
+        "approved_codex_ids": params.get("approved_codex_ids"), "on_delta": on_delta}
       replacement_from = str(params.get("replace_from_message_id", "")).strip()
       if replacement_from:
         result = regenerate_chat_turn(
           self._paths,
           from_message_id=replacement_from,
           replacement_turn_id=turn_id,
+          expected_context_fingerprint=str(params.get("expected_context_fingerprint", "")),
+          is_cancelled=cancel.is_set,
           **common,
         )
       else:
         result = send_chat_message(
           self._paths,
-          turn_id=turn_id,
-          channel=str(params.get("channel", "text")).strip() or "text",
           **common,
+          turn_id=turn_id, channel=str(params.get("channel", "text")),
+          expected_context_fingerprint=str(params.get("expected_context_fingerprint", "")),
+          request_id=str(params.get("delivery_id") or request_id),
+          is_cancelled=cancel.is_set,
         )
       assistant_message = result.get("assistant_message", {})
       emit_assistant_event(
@@ -439,7 +453,7 @@ class ChatSidecarServer:
         request_id,
         error={"message": str(error), "category": "interrupted"},
       )
-    except OpenAuthorError as error:
+    except (OpenAuthorError, OSError, ValueError) as error:
       try:
         status = AssistantTurnStore(self._paths).get(turn_id).status
       except OpenAuthorError:

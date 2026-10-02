@@ -96,7 +96,9 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await page.getByRole("combobox", { name: "Assistant conversation scope" }).selectOption("chapter");
     await page.getByRole("combobox", { name: "Assistant chapter scope" }).selectOption({ label: "The Choice" });
     await page.getByPlaceholder("Type a message... (@ to mention)").fill("Does Mara's choice resolve the ending without erasing Ivo's agency?");
-    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: "Context", exact: true }).click();
+    await page.getByRole("checkbox", { name: /Allow Canon fact:.*for this request/ }).check();
+    await page.getByRole("button", { name: "Send reviewed context", exact: true }).click();
     await expect(page.getByRole("button", { name: "Save as…", exact: true })).toBeVisible();
     const threads = await json(["chat", "thread", "list"]);
     const messages = await json(["chat", "message", "list", "--thread", threads[0].id]);
@@ -105,8 +107,8 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     const pack = await readFile(join(projectRoot, ".openauthor", "workspace", "chats", "context-packs", `${reply.context_used.context_pack.id}.json`), "utf8");
     expect(JSON.parse(pack).provider_context.project_brief.style_guide).toContain("blind right eye");
     const reviewContext = JSON.parse(pack).provider_context;
-    expect(reviewContext.accepted_canon.map((fact: any) => fact.id)).toEqual([canon.id]);
-    expect(reviewContext.accepted_canon[0].evidence[0].verification).toBe("excerpt_present");
+    expect(reviewContext.accepted_canon).toEqual([]);
+    expect(reviewContext.story_memory.facts.map((fact: any) => fact.id)).toEqual([canon.id]);
     expect(reviewContext.active_storyline.experiment_brief.protected_constraints).toContain("Seven families survive.");
     expect(reviewContext.narrative_frame.focus_scene_ids).toEqual(["scene-0005", "scene-0006"]);
     await page.getByText("Context used", { exact: true }).click();
@@ -127,6 +129,9 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await page.getByRole("button", { name: "Return to Primary", exact: true }).click();
     await expect(page.getByText("Primary manuscript", { exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
+    // Primary restores its own working tabs; explicitly return to the ferry
+    // scene to compare it with the experiment's version.
+    await page.getByRole("button", { name: /The Ferry Debt DRA/ }).click();
     await expect(prose).toHaveValue(originalFerry.body);
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(originalEnding.body);
     await page.getByRole("button", { name: /^Storylines \(/ }).click();
@@ -142,7 +147,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     expect((await json(["scene", "get", "--id", "scene-0004"])).body).toBe(originalFerry.body);
     await page.screenshot({ path: testInfo.outputPath("selected-ending-integrated.png") });
     await page.getByRole("button", { name: "Undo change", exact: true }).click();
-    await expect(page.getByText("undone", { exact: true }).first()).toBeVisible();
+    await expect(prose).toHaveValue(originalEnding.body);
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(originalEnding.body);
     expect(book.errors).toEqual([]);
   } finally {

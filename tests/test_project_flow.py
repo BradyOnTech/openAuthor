@@ -15,6 +15,146 @@ from openauthor.cli import main
 
 
 class OpenAuthorFlowTests(unittest.TestCase):
+  def test_style_cli_references_are_reviewed_and_versioned(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      for args in [["init", str(root)], ["scene", "add", "--title", "Gate", "--body", "Mara waited."]]:
+        self.assertEqual(self.run_cli(args, root)[0], 0)
+      code, output, error = self.run_cli(["style", "build", "--scene", "scene-0001", "--json"], root)
+      self.assertEqual(code, 0, error)
+      original = json.loads(output)
+      code, output, error = self.run_cli(["style", "reference", "--mode", "frozen", "--expected-fingerprint", original["fingerprint"], "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertEqual(json.loads(output)["reference_mode"], "frozen")
+      code, output, error = self.run_cli(["revision", "list", "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(any("Style reference" in row["message"] for row in json.loads(output)))
+
+  def test_chat_cli_carries_reviewed_canon_permissions(self) -> None:
+    from openauthor.canon import add_canon_fact
+    from openauthor.chat import create_chat_thread
+    from openauthor.project import initialize_project
+    from openauthor.scenes import add_scene
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root, name="Reviewed Canon")
+      add_scene(paths, title="Gate", body="The gate is blue.")
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="gate color", value="blue", evidence=[{"scene_id": "scene-0001", "excerpt": "The gate is blue."}])
+      thread = create_chat_thread(paths, title="Review", provider="local", mode="chat")
+      args = ["--thread", thread["id"], "--message", "Discuss the gate.", "--current-scene", "scene-0001", "--story-approvals", json.dumps([fact["id"]]), "--json"]
+      code, output, error = self.run_cli(["chat", "context", *args], root)
+      self.assertEqual(code, 0, error)
+      preview = json.loads(output)
+      self.assertEqual([row["id"] for row in preview["context"]["story_memory"]["facts"]], [fact["id"]])
+      code, output, error = self.run_cli(["chat", "send", *args, "--expected-context-fingerprint", preview["fingerprint"]], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(json.loads(output)["user_message"]["context_used"]["privacy"]["one_time_approval"])
+
+  def test_canon_review_cli_preserves_identity_and_recoverable_history(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      for args in [["init", str(root)], ["scene", "add", "--title", "Gate", "--body", "The gate is blue."]]:
+        code, _, error = self.run_cli(args, root)
+        self.assertEqual(code, 0, error)
+      code, output, error = self.run_cli(["memory", "fact-add", "--predicate", "color", "--value", "blue", "--evidence-json", json.dumps([{"scene_id": "scene-0001", "excerpt": "The gate is blue."}]), "--json"], root)
+      self.assertEqual(code, 0, error)
+      fact = json.loads(output)
+      code, _, error = self.run_cli(["memory", "fact-review", "--id", fact["id"], "--disposition", "rejected", "--expected-updated-at", "stale", "--json"], root)
+      self.assertNotEqual(code, 0)
+      self.assertIn("changed", error)
+      code, output, error = self.run_cli(["memory", "fact-review", "--id", fact["id"], "--disposition", "rejected", "--expected-updated-at", fact["updated_at"], "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertEqual(json.loads(output)["id"], fact["id"])
+      self.assertEqual(json.loads(output)["status"], "rejected")
+      code, output, error = self.run_cli(["revision", "list", "--json"], root)
+      self.assertEqual(code, 0, error)
+      self.assertTrue(any("fact-review" in row["message"] for row in json.loads(output)))
+
+  def test_import_cli_applies_reviewed_corrections_and_checks_fingerprint(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      source = root / "novel.md"
+      source.write_text("# Opening\n\nThe gate opens.\n\n# Ending\n\nIt closes.", encoding="utf-8")
+      corrections = json.dumps({"section-0001": {"title": "First Light"}})
+      args = ["--source", str(source), "--corrections", corrections, "--json"]
+      code, output, error = self.run_cli(["manuscript", "preview", *args], root)
+      self.assertEqual(code, 0, error)
+      preview = json.loads(output)
+      project = root / "book"
+      self.assertEqual(self.run_cli(["init", str(project)], root)[0], 0)
+      code, _, error = self.run_cli(["manuscript", "import", *args, "--expected-fingerprint", preview["fingerprint"]], project)
+      self.assertEqual(code, 0, error)
+      code, output, error = self.run_cli(["scene", "list", "--json"], project)
+      self.assertEqual(json.loads(output)[0]["title"], "First Light")
+      code, _, error = self.run_cli(["manuscript", "preview", "--source", str(source), "--corrections", "broken-json"], root)
+      self.assertEqual(code, 2)
+      self.assertIn("corrections", error)
+
+  def test_backup_cli_restores_from_outside_a_project(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      project = root / "original"
+      project.mkdir()
+      for args in (["init", str(project)], ["scene", "add", "--title", "Opening", "--body", "Portable words"], ["backup", "create", "--target", str(root / "novel.zip"), "--json"]):
+        code, _, error = self.run_cli(args, project)
+        self.assertEqual(code, 0, error)
+      for args in (["backup", "verify", "--source", str(root / "novel.zip"), "--json"], ["backup", "restore", "--source", str(root / "novel.zip"), "--target", str(root / "restored"), "--json"]):
+        code, out, error = self.run_cli(args, root)
+        self.assertEqual(code, 0, error)
+        self.assertTrue(json.loads(out)["verified"])
+      code, out, error = self.run_cli(["scene", "get", "--id", "scene-0001", "--json"], root / "restored")
+      self.assertEqual(code, 0, error)
+      self.assertIn("Portable words", json.loads(out)["body"])
+
+  def test_named_version_captures_prose_plan_and_story_memory(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      commands = [
+        ["init", str(root)],
+        ["scene", "add", "--title", "Opening", "--body", "Mara guards the gate."],
+        ["plan", "brief", "--synopsis", "Original premise"],
+        ["codex", "add", "--type", "character", "--name", "Mara", "--description", "Gatekeeper"],
+        ["revision", "save", "--message", "Before the alternate ending", "--json"],
+      ]
+      for args in commands:
+        code, out, err = self.run_cli(args, root)
+        self.assertEqual(code, 0, err)
+      version = json.loads(out)
+      self.assertEqual(version["message"], "Before the alternate ending")
+      self.assertEqual(version["kind"], "manual")
+      self.assertIn("manuscript/structure.json", version["manifest"])
+      self.assertIn("codex/codex.json", version["manifest"])
+      self.assertTrue(any(path.startswith("manuscript/scenes/") for path in version["manifest"]))
+
+  def test_manual_scene_saves_create_recoverable_versions(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      for args in [
+        ["init", str(root)],
+        ["scene", "add", "--title", "Opening", "--body", "First draft"],
+        ["scene", "update", "--id", "scene-0001", "--body", "Second draft"],
+        ["scene", "update", "--id", "scene-0001", "--body", "Third draft"],
+      ]:
+        code, out, err = self.run_cli(args, root)
+        self.assertEqual(code, 0, err)
+      code, out, err = self.run_cli(["revision", "list", "--json"], root)
+      rows = json.loads(out)
+      self.assertGreaterEqual(len(rows), 3)
+      from openauthor.project import resolve_project
+      from openauthor.revisions import get_revision, read_file_at_revision
+      paths = resolve_project(root)
+      versions = []
+      for row in rows:
+        for path in get_revision(paths, row["id"])["manifest"]:
+          if path.startswith("manuscript/scenes/"):
+            versions.append(read_file_at_revision(paths, row["id"], path))
+      for prose in ("First draft", "Second draft", "Third draft"):
+        self.assertTrue(any(prose in version for version in versions), prose)
+      code, _, err = self.run_cli(["scene", "update", "--id", "scene-0001", "--body", "Third draft"], root)
+      self.assertEqual(code, 0, err)
+      _, unchanged, _ = self.run_cli(["revision", "list", "--json"], root)
+      self.assertEqual([row["id"] for row in json.loads(unchanged)], [row["id"] for row in rows])
+
   def run_cli(self, argv: list[str], cwd: Path) -> tuple[int, str, str]:
     old_cwd = Path.cwd()
     stdout = io.StringIO()

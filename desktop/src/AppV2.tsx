@@ -139,8 +139,9 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
 }
 
 function ProjectScopedEditor({ children }: { children: React.ReactNode }) {
-  const { activeProjectId } = useWorkspace();
-  return <EditorProvider key={activeProjectId || "welcome"}>{children}</EditorProvider>;
+  const { activeProjectId, projectRoot, branches } = useWorkspace();
+  const scope = branches.find(row => row.current)?.name || "main";
+  return <EditorProvider key={activeProjectId || "welcome"} projectRoot={projectRoot} scope={scope}>{children}</EditorProvider>;
 }
 
 export function AppV2() {

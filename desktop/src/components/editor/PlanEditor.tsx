@@ -11,6 +11,7 @@ import {
   updateProjectBrief,
 } from "../../api";
 import { useEditor } from "../../contexts/EditorContext";
+import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { CharacterArcState, ManuscriptPlan, PlanMovePreview, SceneSummary } from "../../types";
 import { useRetainedDraft } from "../../hooks/useRetainedDraft";
@@ -92,6 +93,7 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
     mutationPending.current = true;
     setBusy(true);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending writing before updating the plan.");
       await action();
       acknowledge?.();
       if (await loadPlan()) setError("");
@@ -221,7 +223,7 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
             <textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} />
             <div style={{ display: "grid", gap: "var(--space-2)" }}>
               <input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} />
-              <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={brief.themes.join(", ")} onChange={(event) => setBrief({ ...brief, themes: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) })} />
+              <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={retained.value.themesText ?? brief.themes.join(", ")} onChange={(event) => { const themesText = event.target.value; retained.change(old => ({ ...old, brief: { ...brief, themes: themesText.split(",").map(value => value.trim()).filter(Boolean) }, baseline: old.baseline || plan.brief, themesText })); }} />
               <button className="btn btn--primary" disabled={busy} onClick={saveBrief}>Save Brief</button>
             </div>
           </div>

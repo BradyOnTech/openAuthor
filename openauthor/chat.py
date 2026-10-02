@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import uuid
 from pathlib import Path
 from typing import Any
 
+from .model_input import estimate_tokens as _estimate_tokens
 from .ai import ChatInterrupted, DEFAULT_MODELS, SUPPORTED_PROVIDERS, complete_chat
 from .assistant.history import HistoryPolicy, build_history_window
 from .assistant.context import (
+  ContextPack,
   ContextRequest,
   build_context_pack,
   context_policy_from_profile,
@@ -17,7 +20,13 @@ from .assistant.locks import serialize_assistant_thread_mutation
 from .assistant.tool_runs import ToolRunStore
 from .assistant.turns import AssistantTurn, AssistantTurnStore
 from .checks import run_continuity_checks
-from .codex import add_entity, update_entity
+from .codex import add_entity, list_entities, update_entity
+from .ai_visibility import current_privacy_history, memory_context_fingerprint, memory_for_ai
+from .project_lock import project_write_lock
+from .story_grounding import prepare_story_grounding, STORY_GROUNDING_INSTRUCTIONS
+from contextvars import ContextVar
+
+_pending_messages: ContextVar[list[dict[str, Any]] | None] = ContextVar("pending_chat_messages", default=None)
 from .memory_context import get_assistant_memory, list_assistant_memory, memory_for_assistant
 from .git_ops import (
   create_branch,
@@ -420,6 +429,10 @@ def _append_chat_message(
     row["thread_id"] = thread_id
     row["channel"] = channel
     row["turn_position"] = turn_position
+  pending = _pending_messages.get()
+  if pending is not None:
+    pending.append(row)
+    return row
   message_path = _thread_messages_path(paths, thread_id)
   message_path.parent.mkdir(parents=True, exist_ok=True)
   with message_path.open("a", encoding="utf-8") as handle:
@@ -444,15 +457,19 @@ def _tool_classification(tool_name: str) -> str:
   return DEFAULT_TOOL_REGISTRY.legacy_classification(tool_name)
 
 
-def _execute_tool(paths: ProjectPaths, tool_name: str, args: dict[str, Any], *, approved_codex_ids: tuple[str, ...] = ()) -> Any:
+def _execute_tool(paths: ProjectPaths, tool_name: str, args: dict[str, Any], *, approved_codex_ids: tuple[str, ...] = (), memory_approvals: list[dict[str, str]] | None = None) -> Any:
   if tool_name == "scene.list":
     return list_scenes(paths)
   if tool_name == "scene.get":
     return get_scene(paths, str(args.get("id", "")).strip())
   if tool_name == "codex.list":
-    return list_assistant_memory(paths, approved_ids=approved_codex_ids)
+    return memory_for_ai(paths, memory_approvals) if memory_approvals is not None else list_assistant_memory(paths, approved_ids=approved_codex_ids)
   if tool_name == "codex.get":
-    return get_assistant_memory(paths, str(args.get("id", "")).strip(), approved_ids=approved_codex_ids)
+    if memory_approvals is None:
+      return get_assistant_memory(paths, str(args.get("id", "")).strip(), approved_ids=approved_codex_ids)
+    entity = next((row for row in memory_for_ai(paths, memory_approvals) if row["id"] == str(args.get("id", "")).strip()), None)
+    if entity is None: raise OpenAuthorError("Story Memory entry is unavailable to the Assistant.")
+    return entity
   if tool_name == "retrieval.query":
     return query_retrieval_index(
       paths,
@@ -572,8 +589,314 @@ def _completed_turn_result(
   }
 
 
+def _chat_lock_resource(thread_id: str) -> str:
+  return "chat-" + hashlib.sha256(thread_id.encode()).hexdigest()
+
+
+
+def _chat_delivery_folder(paths: ProjectPaths, thread_id: str) -> Path:
+  return paths.chats_dir / "deliveries" / hashlib.sha256(thread_id.encode()).hexdigest()
+
+
+
+def _recover_chat_deliveries(paths: ProjectPaths, thread_id: str) -> None:
+  folder = _chat_delivery_folder(paths, thread_id)
+  for stored in sorted([*folder.glob("*.json"), *(folder / "tools").glob("*.json")]):
+    receipt = json.loads(stored.read_text(encoding="utf-8"))
+    if receipt.get("status") != "executing":
+      _complete_chat_receipt(paths, stored, receipt)
+      _publish_chat_receipt(paths, thread_id, stored, receipt)
+
+
+
+def _complete_chat_receipt(paths: ProjectPaths, receipt_path: Path, receipt: dict[str, Any]) -> None:
+  completion = receipt.get("turn_completion")
+  if not completion or receipt["result"].get("turn", {}).get("status") == "completed":
+    return
+  store = AssistantTurnStore(paths)
+  turn = store.get(completion["turn_id"])
+  if turn.status != "completed":
+    turn = store.complete(**completion)
+  receipt["result"]["turn"] = turn.to_dict()
+  atomic_write_json(receipt_path, receipt)
+
+
+def _publish_chat_receipt(paths: ProjectPaths, thread_id: str, receipt_path: Path, receipt: dict[str, Any]) -> None:
+  if receipt.get("published"):
+    return
+  messages = list_chat_messages(paths, thread_id=thread_id)
+  known = {row["id"] for row in messages}
+  replace_from = receipt.get("replace_from_message_id", "")
+  if replace_from:
+    boundary = next((index for index, row in enumerate(messages) if row["id"] == replace_from), None)
+    if boundary is not None:
+      messages = messages[:boundary] + receipt["messages"]
+      atomic_write_text(_thread_messages_path(paths, thread_id), "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in messages))
+    elif not all(row["id"] in known for row in receipt["messages"]):
+      raise OpenAuthorError("The message being replaced is no longer present. Review the conversation again.")
+    # If the boundary is gone and all replacement ids are present, the atomic
+    # transcript write succeeded before receipt finalization was interrupted.
+  else:
+    messages.extend(row for row in receipt["messages"] if row["id"] not in known)
+    atomic_write_text(_thread_messages_path(paths, thread_id), "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in messages))
+  original_turn_id = receipt.get("superseded_turn_id", "")
+  if original_turn_id:
+    store = AssistantTurnStore(paths)
+    try:
+      original = store.get(original_turn_id)
+    except OpenAuthorError:
+      original = None
+    if original is not None and original.status == "completed":
+      store.supersede(original_turn_id, superseded_by=receipt["result"]["turn"]["turn_id"])
+  receipt["published"] = True
+  atomic_write_json(receipt_path, receipt)
+
+
+
 @serialize_assistant_thread_mutation
-def send_chat_message(
+def send_chat_message(paths: ProjectPaths, *, thread_id: str, request_id: str = "", is_cancelled: Any = None,
+  replace_from_message_id: str = "", **kwargs: Any) -> dict[str, Any]:
+  """Publish a turn once, even when its response is lost and delivery is retried.
+
+  Failed/cancelled keyed turns never publish partial messages or pending tools.
+  A durable completed receipt precedes transcript publication, closing the
+  process-exit window between provider completion and response delivery.
+  """
+  request_id = request_id or kwargs.get("turn_id") or uuid.uuid4().hex
+  kwargs["thread_id"] = thread_id
+  if replace_from_message_id:
+    kwargs["history_before_message_id"] = replace_from_message_id
+  get_chat_thread(paths, thread_id)
+  fingerprint = hashlib.sha256(json.dumps({key: value for key, value in kwargs.items() if key not in {"on_delta", "turn_id"}}, sort_keys=True).encode()).hexdigest()
+  key = hashlib.sha256(f"{thread_id}:{request_id}".encode()).hexdigest()
+  folder = _chat_delivery_folder(paths, thread_id)
+  receipt_path = folder / f"{key}.json"
+  attempt_path = folder / "attempts" / f"{key}.json"
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)):
+    # Repair completed deliveries before accepting another turn in this chat.
+    _recover_chat_deliveries(paths, thread_id)
+    if receipt_path.exists():
+      receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+      if receipt["fingerprint"] != fingerprint:
+        raise OpenAuthorError("A chat request id cannot be reused for different content.")
+      return receipt["result"]
+    original_turn_id = ""
+    if replace_from_message_id:
+      original = next((row for row in list_chat_messages(paths, thread_id=thread_id)
+                       if row["id"] == replace_from_message_id), None)
+      if original is None:
+        raise OpenAuthorError("The message being replaced is no longer present. Review the conversation again.")
+      original_turn_id = str(original.get("turn_id", ""))
+    logical_turn_id = str(kwargs.get("turn_id") or f"turn-{key[:32]}")
+    attempt_turn_id = logical_turn_id
+    owns_attempt = attempt_path.exists()
+    if owns_attempt:
+      attempt = json.loads(attempt_path.read_text(encoding="utf-8"))
+      if attempt["fingerprint"] != fingerprint:
+        raise OpenAuthorError("A chat request id cannot be reused for different content.")
+      attempt_turn_id = attempt["turn_id"]
+    turn_store = AssistantTurnStore(paths)
+    try:
+      previous_turn = turn_store.get(attempt_turn_id)
+    except OpenAuthorError:
+      previous_turn = None
+    if previous_turn is not None:
+      # Reusing a turn id must retain its original request contract, including
+      # callers whose old turn predates the delivery-attempt journal.
+      turn_store.claim(
+        turn_id=attempt_turn_id, thread_id=thread_id, channel=str(kwargs.get("channel", "text")),
+        request={
+          "message": str(kwargs["message"]).strip(),
+          "current_scene_id": kwargs.get("current_scene_id", ""),
+          "scene_ids": list(kwargs.get("scene_ids") or []),
+          "selected_text": kwargs.get("selected_text", ""),
+          "codex_ids": list(kwargs.get("codex_ids") or []),
+          "approved_codex_ids": list(kwargs.get("approved_codex_ids") or []),
+          "context_overrides": dict(kwargs.get("context_overrides") or {}),
+        },
+      )
+    if previous_turn is not None and owns_attempt and previous_turn.status in {"accepted", "running"}:
+      # The thread lock proves this delivery's previous writer has stopped.
+      # Without a durable result, a crashed attempt may require a paid retry.
+      previous_turn = turn_store.fail(attempt_turn_id, message="Delivery stopped before its result was saved.", category="interrupted_delivery")
+    if previous_turn is not None and previous_turn.status in {"failed", "interrupted"}:
+      attempt_turn_id = f"turn-{uuid.uuid4().hex}"
+    atomic_write_json(attempt_path, {
+      "schema_version": 1, "fingerprint": fingerprint,
+      "logical_turn_id": logical_turn_id, "turn_id": attempt_turn_id,
+    })
+    kwargs["turn_id"] = attempt_turn_id
+    pending: list[dict[str, Any]] = []
+    token = _pending_messages.set(pending)
+    try:
+      result = _send_chat_message(paths, is_cancelled=is_cancelled, **kwargs)
+      if is_cancelled and is_cancelled():
+        raise ChatInterrupted("Chat turn interrupted by user.")
+      turn_completion = result.pop("_turn_completion", None)
+      receipt = {"schema_version": 1, "fingerprint": fingerprint, "result": result, "messages": pending, "published": False}
+      if replace_from_message_id:
+        receipt["replace_from_message_id"] = replace_from_message_id
+        receipt["superseded_turn_id"] = original_turn_id
+      if turn_completion is not None:
+        receipt["turn_completion"] = turn_completion
+      atomic_write_json(receipt_path, receipt)
+      _complete_chat_receipt(paths, receipt_path, receipt)
+      _publish_chat_receipt(paths, thread_id, receipt_path, receipt)
+      return receipt["result"]
+    except Exception as error:
+      # A result saved in a receipt is recoverable even if finalization or
+      # publication fails. Without it, retain a failed attempt so Retry can
+      # start another attempt under the same logical delivery identity.
+      if not receipt_path.exists():
+        try:
+          turn = turn_store.get(attempt_turn_id)
+          if turn.status in {"accepted", "running"}:
+            if isinstance(error, ChatInterrupted):
+              turn_store.interrupt(attempt_turn_id, message=str(error))
+            else:
+              turn_store.fail(attempt_turn_id, message=str(error), category=str(getattr(error, "category", "core_error")))
+        except (OpenAuthorError, OSError):
+          pass
+      raise
+    finally:
+      _pending_messages.reset(token)
+
+
+
+def _chat_memory_grants(paths: ProjectPaths, codex_ids: list[str] | None,
+  approved_codex_ids: list[str] | None, memory_approvals: list[dict[str, str]] | None) -> list[dict[str, str]]:
+  if memory_approvals is not None and not isinstance(memory_approvals, list):
+    raise OpenAuthorError("Memory permissions must be a list of entry or detail selections.")
+  grants = list(memory_approvals or [])
+  approved = set(approved_codex_ids or []).intersection(codex_ids or [])
+  for entity in list_entities(paths):
+    if entity["id"] not in approved:
+      continue
+    get_assistant_memory(paths, entity["id"], approved_ids=approved)
+    if entity.get("ai_visibility") == "ask":
+      grant = {"entity_id": entity["id"]}
+      if grant not in grants: grants.append(grant)
+    for detail in entity.get("details", []):
+      if detail.get("ai_visibility") == "ask":
+        grant = {"entity_id": entity["id"], "detail_key": detail["key"]}
+        if grant not in grants: grants.append(grant)
+  return grants
+
+
+def preview_chat_context(
+  paths: ProjectPaths,
+  *,
+  thread_id: str,
+  message: str,
+  current_scene_id: str = "",
+  scene_ids: list[str] | None = None,
+  selected_text: str = "",
+  codex_ids: list[str] | None = None,
+  context_overrides: dict[str, Any] | None = None,
+  memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
+  history_before_message_id: str = "",
+  approved_codex_ids: list[str] | None = None,
+  channel: str = "text",
+) -> dict[str, Any]:
+  """Resolve the exact initial provider payload without contacting a provider.
+
+  Permissions are request parameters, never thread preferences or model args.
+  The fingerprint lets the desktop refuse to send a stale reviewed payload.
+  """
+  thread = get_chat_thread(paths, thread_id)
+  content = message.strip()
+  if content == "":
+    raise OpenAuthorError("message cannot be empty.")
+
+  thread_profile = thread.get("context_profile", {})
+  merged_profile = dict(thread_profile) if isinstance(thread_profile, dict) else {}
+  if isinstance(context_overrides, dict):
+    merged_profile.update(context_overrides)
+  profile = _normalize_context_profile(merged_profile)
+
+  memory_approvals = _chat_memory_grants(paths, codex_ids, approved_codex_ids, memory_approvals)
+  fingerprint = memory_context_fingerprint(paths, memory_approvals)
+  transcript = list_chat_messages(paths, thread_id=thread_id)
+  if history_before_message_id:
+    boundary = next((index for index, row in enumerate(transcript) if row["id"] == history_before_message_id), None)
+    if boundary is None:
+      raise OpenAuthorError("The message being edited is no longer present. Review the conversation again.")
+    transcript = transcript[:boundary]
+  eligible_history = current_privacy_history(transcript, fingerprint)
+  history = _build_provider_history(
+    eligible_history,
+    token_budget=int(profile.get("history_token_budget", 4000)),
+  )
+
+  context_pack = build_context_pack(paths, ContextRequest(
+    thread_id=thread_id, channel=channel, utterance=content, scope=profile["scope"],
+    current_scene_id=current_scene_id, selected_text=selected_text,
+    explicit_scene_ids=tuple(scene_ids or []), explicit_codex_ids=tuple(codex_ids or []),
+    approved_codex_ids=tuple(approved_codex_ids or []), memory_approvals=tuple(memory_approvals or []),
+    story_approvals=tuple(story_approvals or []), history=tuple(history), agent_mode=thread.get("mode") == "agent", bound_brief=True,
+  ), context_policy_from_profile(profile))
+  prompt_context = context_pack.provider_context
+  history = context_pack.history
+  context_used = {
+    "scene_ids": [item.source_ref for item in context_pack.items if item.kind == "scene"],
+    "nearby_scene_ids": [item.source_ref for item in context_pack.items if item.kind == "nearby_scene"],
+    "codex_entity_ids": [item.source_ref for item in context_pack.items if item.kind == "codex"],
+    "retrieval": prompt_context.get("retrieval", {}), "profile": profile,
+    "context_pack": {"id": context_pack.pack_id, "budget": context_pack.budget, "citations": context_pack.citations},
+    "review": {"scope": context_pack.scope, "scene_titles": [item.source_title for item in context_pack.items if item.kind == "scene"],
+      "nearby_scene_titles": [item.source_title for item in context_pack.items if item.kind == "nearby_scene"],
+      "selected_text_included": bool(prompt_context.get("selected_text")), "retrieval_result_count": len(context_pack.citations),
+      "chapter_titles": [row["title"] for row in prompt_context["narrative_frame"]["chapters"]],
+      "canon_fact_ids": list(dict.fromkeys([row["id"] for row in prompt_context["accepted_canon"]] + [row["id"] for row in prompt_context["story_memory"]["facts"]])),
+      "storyline_name": prompt_context["active_storyline"].get("name", ""),
+      "writing_voice_name": prompt_context.get("writing_voice", {}).get("name", ""),
+      "warnings": prompt_context["review_warnings"], "omitted_item_count": len(context_pack.degradations)},
+  }
+  story_scene_ids = prompt_context["narrative_frame"]["focus_scene_ids"]
+  grounding = prepare_story_grounding(paths, story_scene_ids, memory_approvals=memory_approvals, story_approvals=story_approvals)
+  context_used["story_scene_ids"] = story_scene_ids
+  context_used["privacy"] = {
+    "fingerprint": fingerprint,
+    "history_reset": len(eligible_history) != len(transcript),
+    "history_messages_omitted": len(transcript) - len(eligible_history),
+    "one_time_approval": bool(memory_approvals or story_approvals),
+  }
+  if channel == "text":
+    system_prompt = context_pack.model_input["system_prompt"]
+    user_prompt = context_pack.model_input["user_prompt"]
+  else:
+    # Voice-origin turns recorded through the completion adapter retain the
+    # shared voice Context Pack rather than treating it as a text-shaped pack.
+    system_prompt = context_pack.model_input["instructions"]
+    user_prompt = content
+  provider = str(thread.get("provider", "local"))
+  model = str(thread.get("model", "")).strip() or DEFAULT_MODELS[provider]
+  payload = {
+    "system_prompt": system_prompt, "user_prompt": user_prompt, "history": history,
+    "context": prompt_context, "context_used": context_used, "provider": provider, "model": model,
+    "mode": thread.get("mode", "chat"),
+  }
+  payload["fingerprint"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+  payload["story_choices"] = grounding["choices"]
+  payload["context_pack_id"] = context_pack.pack_id
+  payload["estimated_input_tokens"] = _estimate_tokens(system_prompt + "\n" + "\n".join(row["content"] for row in history) + "\n" + user_prompt)
+  payload["history_messages_included"] = len(history)
+  payload["history_messages_omitted"] = len(transcript) - len(history)
+  payload["history_budget_limited"] = history != _build_provider_history(eligible_history, token_budget=10**12)
+  payload["memory_choices"] = [
+    {
+      "id": row["id"], "name": row["name"], "visibility": row.get("ai_visibility", "include"),
+      "details": [{"key": detail["key"], "visibility": detail.get("ai_visibility", "include")} for detail in row.get("details", [])],
+    }
+    for row in list_entities(paths)
+  ]
+  return payload
+
+
+
+@serialize_assistant_thread_mutation
+def _send_chat_message(
   paths: ProjectPaths,
   *,
   thread_id: str,
@@ -587,78 +910,26 @@ def send_chat_message(
   on_delta: Any = None,
   turn_id: str = "",
   channel: str = "text",
+  memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
+  expected_context_fingerprint: str = "",
+  history_before_message_id: str = "",
+  is_cancelled: Any = None,
 ) -> dict[str, Any]:
+  memory_approvals = _chat_memory_grants(paths, codex_ids, approved_codex_ids, memory_approvals)
+  prepared = preview_chat_context(paths, thread_id=thread_id, message=message, current_scene_id=current_scene_id,
+    scene_ids=scene_ids, selected_text=selected_text, codex_ids=codex_ids, approved_codex_ids=approved_codex_ids,
+    context_overrides=context_overrides, memory_approvals=memory_approvals, story_approvals=story_approvals,
+    history_before_message_id=history_before_message_id, channel=channel)
+  if expected_context_fingerprint and expected_context_fingerprint != prepared["fingerprint"]:
+    raise OpenAuthorError("Context changed since the preview. Review context again before sending.")
+  from .assistant.context import load_context_pack
+  context_pack = load_context_pack(paths, prepared["context_pack_id"])
   thread = get_chat_thread(paths, thread_id)
   content = message.strip()
-  if content == "":
-    raise OpenAuthorError("message cannot be empty.")
-
-  thread_profile = thread.get("context_profile", {})
-  merged_profile = dict(thread_profile) if isinstance(thread_profile, dict) else {}
-  if isinstance(context_overrides, dict):
-    merged_profile.update(context_overrides)
-  profile = _normalize_context_profile(merged_profile)
-
-  history = _build_provider_history(
-    list_chat_messages(paths, thread_id=thread_id),
-    token_budget=int(profile.get("history_token_budget", 4000)),
-  )
-  context_pack = build_context_pack(
-    paths,
-    ContextRequest(
-      thread_id=thread_id,
-      channel=channel,
-      utterance=content,
-      scope=str(profile.get("scope", "adaptive")),
-      current_scene_id=current_scene_id,
-      selected_text=selected_text,
-      explicit_scene_ids=tuple(scene_ids or []),
-      explicit_codex_ids=tuple(codex_ids or []),
-      approved_codex_ids=tuple(approved_codex_ids or []),
-      history=tuple(history),
-      agent_mode=thread.get("mode") == "agent",
-    ),
-    context_policy_from_profile(profile),
-  )
-  history = context_pack.history
-  prompt_context = context_pack.provider_context
-  context_used = {
-    "scene_ids": [
-      item.source_ref for item in context_pack.items if item.kind == "scene"
-    ],
-    "nearby_scene_ids": [
-      item.source_ref for item in context_pack.items if item.kind == "nearby_scene"
-    ],
-    "codex_entity_ids": [
-      item.source_ref for item in context_pack.items if item.kind == "codex"
-    ],
-    "retrieval": context_pack.provider_context.get("retrieval", {}),
-    "profile": profile,
-    "review": {
-      "scope": context_pack.scope,
-      "scene_titles": [
-        item.source_title or item.source_ref for item in context_pack.items if item.kind == "scene"
-      ],
-      "nearby_scene_titles": [
-        item.source_title or item.source_ref for item in context_pack.items if item.kind == "nearby_scene"
-      ],
-      "selected_text_included": any(item.kind == "selection" for item in context_pack.items),
-      "retrieval_result_count": len(context_pack.citations),
-      "chapter_titles": [row["title"] for row in prompt_context["narrative_frame"]["chapters"]],
-      "canon_fact_ids": [row["id"] for row in prompt_context["accepted_canon"]],
-      "storyline_name": prompt_context["active_storyline"].get("name", ""),
-      "writing_voice_name": prompt_context.get("writing_voice", {}).get("name", ""),
-      "warnings": prompt_context["review_warnings"],
-      "omitted_item_count": len(context_pack.degradations),
-    },
-    "context_pack": {
-      "id": context_pack.pack_id,
-      "project_revision": context_pack.project_revision,
-      "citations": context_pack.citations,
-      "budget": context_pack.budget,
-    },
-  }
-
+  history = prepared["history"]
+  context_used = prepared["context_used"]
+  profile = context_used["profile"]
   normalized_turn_id = turn_id.strip() or f"turn-{uuid.uuid4().hex}"
   turn_store = AssistantTurnStore(paths)
   turn_claim = turn_store.claim(
@@ -704,9 +975,9 @@ def send_chat_message(
   turn_message_ids = [str(user_message["id"])]
   generation_ids: list[str] = []
   agent_mode = thread.get("mode") == "agent"
-  system_prompt = context_pack.model_input["system_prompt"]
-  user_prompt = context_pack.model_input["user_prompt"]
-  tools = context_pack.model_input["tools"] or None
+  system_prompt = prepared["system_prompt"]
+  user_prompt = prepared["user_prompt"]
+  tools = (context_pack.model_input["tools"] if channel == "text" else DEFAULT_TOOL_REGISTRY.provider_specs(channel=channel) if agent_mode else []) or None
   agent_auto_read_only = bool(profile.get("agent_auto_read_only", True))
   turn_branch, turn_base_commit = _capture_vcs_anchor(paths)
   turn_vcs = {"branch": turn_branch, "base_commit": turn_base_commit}
@@ -719,6 +990,11 @@ def send_chat_message(
 
   for round_index in range(MAX_TOOL_ROUNDS):
     try:
+      if is_cancelled and is_cancelled(): raise ChatInterrupted("Chat turn interrupted by user.")
+      if memory_context_fingerprint(paths, memory_approvals) != context_used["privacy"]["fingerprint"]:
+        raise OpenAuthorError("Story Memory access or content changed during this turn. Review fresh context.")
+      if prepare_story_grounding(paths, context_used["story_scene_ids"], memory_approvals=memory_approvals, story_approvals=story_approvals)["context"] != prepared["context"]["story_memory"]:
+        raise OpenAuthorError("Canon or relationship context changed during this turn. Review fresh context.")
       completion = complete_chat(
         paths,
         provider=provider,
@@ -737,6 +1013,7 @@ def send_chat_message(
         turn_id=normalized_turn_id,
         round_index=round_index,
       )
+      if is_cancelled and is_cancelled(): raise ChatInterrupted("Chat turn interrupted by user.")
     except ChatInterrupted as error:
       turn_store.interrupt(normalized_turn_id, message=str(error))
       raise
@@ -775,7 +1052,7 @@ def send_chat_message(
       }
       if classification == "read" and agent_auto_read_only:
         try:
-          result = _execute_tool(paths, internal_name, args, approved_codex_ids=tuple(set(approved_codex_ids or []).intersection(codex_ids or [])))
+          result = _execute_tool(paths, internal_name, args, approved_codex_ids=tuple(set(approved_codex_ids or []).intersection(codex_ids or [])), memory_approvals=memory_approvals)
           tool_row["executed"] = True
           tool_row["result_summary"] = _safe_summary(result)
           result_json = json.dumps(
@@ -861,17 +1138,17 @@ def send_chat_message(
     )
     conversation.extend(tool_result_entries)
 
-  completed_turn = turn_store.complete(
-    normalized_turn_id,
-    message_ids=turn_message_ids,
-    generation_ids=generation_ids,
-    pending_tool_call_ids=[
+  turn_completion = {
+    "turn_id": normalized_turn_id,
+    "message_ids": turn_message_ids,
+    "generation_ids": generation_ids,
+    "pending_tool_call_ids": [
       str(call.get("id", ""))
       for call in pending_tool_calls
       if str(call.get("id", "")).strip()
     ],
-    context_pack_id=context_pack.pack_id,
-  )
+    "context_pack_id": context_pack.pack_id,
+  }
   _touch_thread(paths, thread_id)
   return {
     "thread": get_chat_thread(paths, thread_id),
@@ -879,7 +1156,8 @@ def send_chat_message(
     "assistant_message": assistant_message,
     "tool_messages": executed_tool_messages,
     "pending_tool_calls": pending_tool_calls,
-    "turn": completed_turn.to_dict(),
+    "turn": turn_store.get(normalized_turn_id).to_dict(),
+    "_turn_completion": turn_completion,
   }
 
 
@@ -898,6 +1176,10 @@ def regenerate_chat_turn(
   approved_codex_ids: list[str] | None = None,
   context_overrides: dict[str, Any] | None = None,
   on_delta: Any = None,
+  memory_approvals: list[dict[str, str]] | None = None,
+  story_approvals: list[str] | None = None,
+  expected_context_fingerprint: str = "",
+  is_cancelled: Any = None,
 ) -> dict[str, Any]:
   """Replace a settled turn as one replay-safe thread mutation."""
 
@@ -909,7 +1191,12 @@ def regenerate_chat_turn(
     existing = store.get(replacement_id)
   except OpenAuthorError:
     existing = None
-  if existing is not None:
+  messages = list_chat_messages(paths, thread_id=thread_id)
+  replaced = next(
+    (row for row in messages if row.get("id") == from_message_id),
+    None,
+  )
+  if existing is not None and replaced is None:
     return send_chat_message(
       paths,
       thread_id=thread_id,
@@ -923,50 +1210,36 @@ def regenerate_chat_turn(
       on_delta=on_delta,
       turn_id=replacement_id,
       channel="text",
+      memory_approvals=memory_approvals,
+      story_approvals=story_approvals,
+      expected_context_fingerprint=expected_context_fingerprint,
+      is_cancelled=is_cancelled,
+      replace_from_message_id=from_message_id,
     )
 
-  messages = list_chat_messages(paths, thread_id=thread_id)
-  replaced = next(
-    (row for row in messages if row.get("id") == from_message_id),
-    None,
-  )
   if replaced is None:
     raise OpenAuthorError(
       f"Message '{from_message_id}' not found in thread '{thread_id}'."
     )
-  original_turn_id = str(replaced.get("turn_id", "")).strip()
-  message_path = _thread_messages_path(paths, thread_id)
-  original_content = message_path.read_text(encoding="utf-8")
-  truncate_chat_messages(
+  return send_chat_message(
     paths,
     thread_id=thread_id,
-    from_message_id=from_message_id,
+    message=message,
+    current_scene_id=current_scene_id,
+    scene_ids=scene_ids,
+    selected_text=selected_text,
+    codex_ids=codex_ids,
+    approved_codex_ids=approved_codex_ids,
+    context_overrides=context_overrides,
+    on_delta=on_delta,
+    turn_id=replacement_id,
+    channel="text",
+    memory_approvals=memory_approvals,
+    story_approvals=story_approvals,
+    expected_context_fingerprint=expected_context_fingerprint,
+    is_cancelled=is_cancelled,
+    replace_from_message_id=from_message_id,
   )
-  try:
-    result = send_chat_message(
-      paths,
-      thread_id=thread_id,
-      message=message,
-      current_scene_id=current_scene_id,
-      scene_ids=scene_ids,
-      selected_text=selected_text,
-      codex_ids=codex_ids,
-      approved_codex_ids=approved_codex_ids,
-      context_overrides=context_overrides,
-      on_delta=on_delta,
-      turn_id=replacement_id,
-      channel="text",
-    )
-  except BaseException:
-    atomic_write_text(message_path, original_content)
-    _touch_thread(paths, thread_id)
-    raise
-  if original_turn_id:
-    try:
-      store.supersede(original_turn_id, superseded_by=replacement_id)
-    except OpenAuthorError:
-      pass
-  return result
 
 
 @serialize_assistant_thread_mutation
@@ -976,6 +1249,39 @@ def execute_pending_tool_call(
   thread_id: str,
   assistant_message_id: str,
   tool_index: int,
+) -> dict[str, Any]:
+  key = hashlib.sha256(f"{assistant_message_id}:{tool_index}".encode()).hexdigest()
+  receipt_path = _chat_delivery_folder(paths, thread_id) / "tools" / f"{key}.json"
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)), project_write_lock(paths):
+    get_chat_thread(paths, thread_id)
+    _recover_chat_deliveries(paths, thread_id)
+    if receipt_path.exists():
+      receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+      if receipt.get("status") == "executing":
+        raise OpenAuthorError("This tool may already have changed the book before its result was saved. Review the book and Revisions before requesting another change; automatic replay is disabled.")
+      return receipt["result"]
+    pending: list[dict[str, Any]] = []
+    token = _pending_messages.set(pending)
+    try:
+      result = _execute_pending_tool_call(
+        paths, thread_id=thread_id, assistant_message_id=assistant_message_id, tool_index=tool_index,
+        before_execute=lambda: atomic_write_json(receipt_path, {"status": "executing"}),
+      )
+      receipt = {"schema_version": 1, "result": result, "messages": pending, "published": False}
+      atomic_write_json(receipt_path, receipt)
+      _publish_chat_receipt(paths, thread_id, receipt_path, receipt)
+      return result
+    finally:
+      _pending_messages.reset(token)
+
+
+def _execute_pending_tool_call(
+  paths: ProjectPaths,
+  *,
+  thread_id: str,
+  assistant_message_id: str,
+  tool_index: int,
+  before_execute: Any = lambda: None,
 ) -> dict[str, Any]:
   if tool_index < 0:
     raise OpenAuthorError("tool_index must be >= 0.")
@@ -1019,6 +1325,7 @@ def execute_pending_tool_call(
         if row.get("role") == "tool"
         and isinstance(row.get("context_used"), dict)
         and row["context_used"].get("tool_call_id") == tool_call_id
+        and row["context_used"].get("from_message_id") == assistant_message_id
       ),
       None,
     )
@@ -1053,6 +1360,7 @@ def execute_pending_tool_call(
   tool_run = run_store.mark_running(tool_run)
   _, before_commit = _capture_vcs_anchor(paths)
   try:
+    before_execute()
     result = _execute_tool(paths, tool_name, args)
   except BaseException as error:
     run_store.fail(tool_run, error)

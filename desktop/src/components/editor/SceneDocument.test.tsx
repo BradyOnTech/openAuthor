@@ -24,7 +24,7 @@ function Harness({ modified = false }: { modified?: boolean }) {
 }
 
 describe("scene activation", () => {
-  beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); vi.mocked(getScene).mockResolvedValue(current); });
+  beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); workspace.projectRoot = `/books/fixture-${crypto.randomUUID()}`; vi.mocked(getScene).mockResolvedValue(current); });
   afterEach(cleanup);
 
   it("loads the current Storyline before permitting edits and saves against its version", async () => {

@@ -264,6 +264,7 @@ fn validate_core_args(args: &[String]) -> Result<(), String> {
     "auth",
     "manuscript",
     "revision",
+    "backup",
     "plan",
     "memory",
     "search",
@@ -550,10 +551,16 @@ fn pick_export_target(format: String, starting_path: Option<String>) -> Result<O
       .set_file_name("manuscript.docx")
       .save_file()
       .map(|path| path.to_string_lossy().to_string()))
+  } else if format == "backup" {
+    Ok(dialog
+      .add_filter("openAuthor Backup", &["zip"])
+      .set_file_name("novel.openauthor.zip")
+      .save_file()
+      .map(|path| path.to_string_lossy().to_string()))
   } else if format == "markdown" {
     Ok(dialog.pick_folder().map(|path| path.to_string_lossy().to_string()))
   } else {
-    Err("Export format must be markdown or docx.".to_string())
+    Err("Export format must be markdown, docx, or backup.".to_string())
   }
 }
 
@@ -568,7 +575,15 @@ fn project_status(project_root: String) -> Result<ProjectStatus, String> {
 }
 
 #[tauri::command]
-fn core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandResponse, String> {
+async fn core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandResponse, String> {
+  // Python commands can wait for disk, providers, or another book writer.
+  // Keep both the native event loop and async executor responsive while they do.
+  tauri::async_runtime::spawn_blocking(move || execute_core_command(project_root, args))
+    .await
+    .map_err(|error| format!("Core command worker failed: {error}"))?
+}
+
+fn execute_core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandResponse, String> {
   validate_core_args(&args)?;
   let root = resolve_project_root(&project_root);
   if !root.exists() {
@@ -642,16 +657,57 @@ mod tests {
   }
 
   fn command(root: &PathBuf, args: &[&str]) -> CoreCommandResponse {
-    core_command(
+    tauri::async_runtime::block_on(core_command(
       root.to_string_lossy().to_string(),
       args.iter().map(|item| item.to_string()).collect(),
-    )
+    ))
     .expect("Tauri core command bridge")
   }
 
   fn json_output(response: CoreCommandResponse) -> Value {
     assert_eq!(response.status, 0, "core stderr: {}", response.stderr);
     serde_json::from_str(response.stdout.trim()).expect("valid core JSON")
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn native_bridge_yields_while_a_book_write_waits_for_another_process() {
+    struct WakeIgnore;
+    impl std::task::Wake for WakeIgnore { fn wake(self: Arc<Self>) {} }
+
+    let root = temporary_project_root("blocked-write");
+    json_output(command(&root, &["init", ".", "--name", "Pending Save", "--json"]));
+    let mut locker = python_command(&python_candidates(&root)[0], &root);
+    configure_runtime_environment(&mut locker);
+    let mut child = locker.arg("-c").arg(r#"import fcntl, sys, select
+import os
+os.makedirs('.openauthor/workspace/locks', exist_ok=True)
+with open('.openauthor/workspace/locks/project.lock', 'a+') as handle:
+  fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+  print('ready', flush=True)
+  select.select([sys.stdin], [], [], 5)
+"#).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().expect("hold synthetic book lock");
+    let mut ready = String::new();
+    BufReader::new(child.stdout.take().expect("lock output")).read_line(&mut ready).expect("lock ready signal");
+    assert_eq!(ready.trim(), "ready");
+
+    let started = std::time::Instant::now();
+    let mut pending = Box::pin(core_command(root.to_string_lossy().to_string(), vec!["plan".into(), "brief".into(), "--synopsis".into(), "Saved after the lock releases.".into(), "--json".into()]));
+    let waker = std::task::Waker::from(Arc::new(WakeIgnore));
+    let mut context = std::task::Context::from_waker(&waker);
+    let yielded = std::future::Future::poll(pending.as_mut(), &mut context).is_pending();
+    let poll_time = started.elapsed();
+    // Coherent manuscript reads share the write lock. Project discovery can
+    // still serve the shell while that saved-book transaction is pending.
+    let readable = project_status(root.to_string_lossy().to_string()).expect("project discovery remains available");
+    child.stdin.take().expect("lock input").write_all(b"\n").expect("release lock");
+    child.wait().expect("lock holder exits");
+    let saved = tauri::async_runtime::block_on(pending).expect("pending native command completes");
+    assert!(yielded, "the command must yield before waiting for the book lock");
+    assert!(poll_time < Duration::from_secs(2), "native command blocked its caller for {poll_time:?}");
+    assert!(readable.found, "project discovery remains available");
+    assert_eq!(saved.status, 0, "pending save completes after the lock releases");
+    fs::remove_dir_all(root).expect("remove synthetic book");
   }
 
   #[test]

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from openauthor.codex import add_entity, list_entities, list_relationships
 from openauthor.canon import list_canon_facts
-from openauthor.project import initialize_project
+from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene, update_scene
 from openauthor.story_memory import (
   correct_memory_suggestion,
@@ -18,6 +18,143 @@ from openauthor.story_memory import (
 
 
 class StoryMemorySuggestionTests(unittest.TestCase):
+  def test_sentence_openers_do_not_become_characters_but_can_still_be_names(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Editorial precision")
+      add_scene(paths, title="Gate", body="Beyond the gate, Mara waited. Beyond the river, Mara listened. Meanwhile, the clock stopped. Meanwhile, the bell rang.")
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      self.assertEqual([row["name"] for row in rows], ["Mara"])
+      add_scene(paths, title="Names", body="Beyond waited. Beyond listened. Meanwhile spoke. Meanwhile returned.")
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      self.assertEqual({row["name"] for row in rows}, {"Mara", "Beyond", "Meanwhile"})
+
+  def test_single_scene_refresh_keeps_manuscript_wide_character_identity(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Stable Incremental Identity")
+      add_scene(paths, title="First", body="Mara Voss waited by the gate. Mara held the key.")
+      add_scene(paths, title="Later", body="Mara crossed the river. Mara opened the door.")
+      first = extract_memory_suggestions(paths)
+      original = next(row for row in first["suggestions"] if row["kind"] == "entity_create")
+      update_scene(paths, scene_identifier="scene-0002", body="Mara crossed the river. Mara locked the door.")
+      refreshed = extract_memory_suggestions(paths, scene_ids=["scene-0002"])
+      people = [row for row in refreshed["suggestions"] if row["kind"] == "entity_create" and row["status"] == "pending"]
+      self.assertEqual([row["name"] for row in people], ["Mara Voss"])
+      self.assertEqual(people[0]["id"], original["id"])
+      self.assertIn("Mara", people[0]["aliases"])
+      self.assertEqual(refreshed["scanned_scenes"], 1)
+      review_memory_suggestion(paths, people[0]["id"], disposition="accepted")
+      self.assertEqual([row["name"] for row in list_entities(paths)], ["Mara Voss"])
+
+  def test_fact_extraction_does_not_assign_a_shared_alias_to_both_people(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Ambiguous Facts")
+      first = add_entity(paths, kind="character", name="Mara Voss", aliases=["Mara"])
+      add_entity(paths, kind="character", name="Mara Lynn", aliases=["Mara"])
+      add_scene(paths, title="One", body="Mara owns a sword. Mara Voss owns a horse.")
+      facts = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "canon_fact"]
+      self.assertEqual([(row["subject_entity_id"], row["value"]) for row in facts], [(first, "a horse")])
+
+  def test_pov_evidence_stays_valid_after_unrelated_prose_edits_but_not_a_pov_change(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="POV Evidence")
+      add_scene(paths, title="First", pov="Elara", body="She chose loyalty.")
+      suggestion = extract_memory_suggestions(paths)["suggestions"][0]
+      update_scene(paths, scene_identifier="scene-0001", body="She chose betrayal.")
+      refreshed = extract_memory_suggestions(paths)["suggestions"][0]
+      self.assertEqual(suggestion["evidence"], refreshed["evidence"])
+      update_scene(paths, scene_identifier="scene-0001", pov="Mara")
+      with self.assertRaisesRegex(OpenAuthorError, "changed.*scan"):
+        review_memory_suggestion(paths, suggestion["id"], disposition="accepted")
+      self.assertEqual(list_entities(paths), [])
+
+  def test_changed_prose_cannot_promote_stale_extraction_to_canon(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Fresh Evidence")
+      add_entity(paths, kind="location", name="North Gate")
+      add_scene(paths, title="First", body="North Gate is blue.")
+      first = next(row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "canon_fact")
+      update_scene(paths, scene_identifier="scene-0001", body="North Gate is red.")
+      with self.assertRaisesRegex(OpenAuthorError, "changed.*scan"):
+        review_memory_suggestion(paths, first["id"], disposition="accepted")
+      self.assertEqual(list_canon_facts(paths), [])
+      refreshed = extract_memory_suggestions(paths, scene_ids=["scene-0001"])
+      facts = [row for row in refreshed["suggestions"] if row["kind"] == "canon_fact" and row["status"] == "pending"]
+      self.assertEqual([row["value"] for row in facts], ["red"])
+      review_memory_suggestion(paths, facts[0]["id"], disposition="accepted")
+      self.assertEqual([row["value"] for row in list_canon_facts(paths)], ["red"])
+
+  def test_accepting_one_full_name_does_not_accept_another_full_name_with_shared_alias(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Separate Character Reviews")
+      add_scene(paths, title="First", body="Mara Voss came home. Mara slept.")
+      extract_memory_suggestions(paths, scene_ids=["scene-0001"])
+      add_scene(paths, title="Second", body="Mara Lynn came home. Mara left.")
+      suggestions = extract_memory_suggestions(paths, scene_ids=["scene-0002"])["suggestions"]
+      first = next(row for row in suggestions if row["name"] == "Mara Voss")
+      second = next(row for row in suggestions if row["name"] == "Mara Lynn")
+      self.assertNotIn("Mara", first["aliases"])
+      self.assertNotIn("Mara", second["aliases"])
+      review_memory_suggestion(paths, first["id"], disposition="accepted")
+      self.assertEqual(next(row for row in list_memory_suggestions(paths) if row["id"] == second["id"])["status"], "pending")
+      review_memory_suggestion(paths, second["id"], disposition="accepted")
+      self.assertEqual({row["name"] for row in list_entities(paths)}, {"Mara Voss", "Mara Lynn"})
+
+  def test_accept_does_not_pick_an_arbitrary_character_with_a_shared_alias(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Ambiguous Memory")
+      first_id = add_entity(paths, kind="character", name="Mara Voss", aliases=["Mara"])
+      add_entity(paths, kind="character", name="Mara Lynn", aliases=["Mara"])
+      suggestion = queue_memory_suggestion(paths, title="Mara", content="A keeper of keys.")
+      with self.assertRaisesRegex(OpenAuthorError, "ambiguous"):
+        review_memory_suggestion(paths, suggestion["id"], disposition="accepted")
+      self.assertEqual(len(list_entities(paths)), 2)
+      self.assertEqual(list_memory_suggestions(paths)[0]["status"], "pending")
+      correct_memory_suggestion(paths, suggestion["id"], name="Mara Voss")
+      accepted = review_memory_suggestion(paths, suggestion["id"], disposition="accepted")
+      self.assertEqual(accepted["created_entity_id"], first_id)
+
+  def test_decomposed_accents_possessives_and_honorific_periods_do_not_create_duplicate_people(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Equivalent Spellings")
+      prose = "E\u0301lodie Marchand waited. Élodie’s left hand hurt. Dr. Élodie Marchand stood up. Élodie's bag fell."
+      add_scene(paths, title="Morning", body=prose)
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      self.assertEqual([row["name"] for row in rows], ["Élodie Marchand"])
+      row = rows[0]
+      self.assertIn("Élodie", row["aliases"])
+      self.assertIn("Dr. Élodie Marchand", row["aliases"])
+      supported = {"E\u0301lodie Marchand", "Élodie", "Dr. Élodie Marchand"}
+      self.assertTrue(all(prose[item["start"]:item["end"]] in supported for item in row["evidence"]))
+
+  def test_honorific_first_and_last_name_variants_merge_only_when_unambiguous(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Honorific Memory")
+      add_scene(paths, title="Arrival", body="Captain Soren Vale waited. Soren carried the lamp. Vale watched the gate. Soren Vale lowered the lamp. Mara Voss waited. Mara Voss looked away. Mara Lynn waited. Mara Lynn stepped inside. Mara waited. Mara looked back.")
+      rows = [row for row in extract_memory_suggestions(paths)["suggestions"] if row["kind"] == "entity_create"]
+      names = {row["name"]: row for row in rows}
+      self.assertIn("Soren Vale", names)
+      self.assertEqual(set(names["Soren Vale"]["aliases"]), {"Captain Soren Vale", "Soren", "Vale"})
+      self.assertNotIn("Soren", names)
+      self.assertNotIn("Captain Soren Vale", names)
+      self.assertEqual(set(names), {"Soren Vale", "Mara Voss", "Mara Lynn", "Mara"})
+      self.assertNotIn("Mara", names["Mara Voss"]["aliases"])
+      self.assertNotIn("Mara", names["Mara Lynn"]["aliases"])
+
+  def test_unicode_names_keep_spelling_and_exact_evidence_offsets(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Unicode Memory")
+      prose = "Élodie Marchand entered the archive. Élodie opened it. Łukasz D’Ávila waited. Łukasz carried the bag. Anne-Marie O’Neill arrived. Anne-Marie took the key."
+      add_scene(paths, title="Arrival", body=prose)
+      suggestions = extract_memory_suggestions(paths)["suggestions"]
+      names = {row["name"]: row for row in suggestions if row["kind"] == "entity_create"}
+      for full, alias in [("Élodie Marchand", "Élodie"), ("Łukasz D’Ávila", "Łukasz"), ("Anne-Marie O’Neill", "Anne-Marie")]:
+        self.assertIn(full, names)
+        self.assertIn(alias, names[full]["aliases"])
+        for evidence in names[full]["evidence"]:
+          self.assertIn(prose[evidence["start"]:evidence["end"]], [full, alias])
+          self.assertEqual(evidence["anchor_text"], prose[evidence["start"]:evidence["end"]])
+      self.assertEqual(list_entities(paths), [])
+
   def test_assistant_insight_is_reviewable_before_becoming_memory(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Promoted Insight")

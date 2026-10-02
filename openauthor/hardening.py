@@ -9,12 +9,13 @@ from statistics import mean
 from typing import Any, Callable
 
 from .checks import run_continuity_checks
-from .codex import ensure_codex, list_entities
+from .canon import run_canon_diagnostics
+from .codex import ensure_codex, list_entities, replace_runtime_codex_from_snapshot
 from .generations import audit_generation_pins, list_generation_runs
 from .git_ops import get_branch_workspace_status, initialize_git, run_git
 from .project import OpenAuthorError, ProjectPaths, utc_now
 from .proposals import list_proposals
-from .revisions import ensure_revision_store, verify_revision_store
+from .revisions import ensure_revision_store, verify_revision_store, recover_interrupted_edit
 from .retrieval import get_retrieval_index_status
 from .scenes import get_scene, list_scene_details, list_scenes, update_scene
 
@@ -93,6 +94,16 @@ def collect_startup_health(
     not directory.is_dir()
     for directory in (paths.revision_objects_dir, paths.revision_records_dir)
   )
+  interrupted = (paths.workspace_dir / "author-edit.json").exists()
+  if interrupted:
+    if repair:
+      try:
+        recover_interrupted_edit(paths)
+        record("interrupted_edit", "ok", "Recovered the last completed book version.", repaired=True)
+      except (OpenAuthorError, OSError) as error:
+        record("interrupted_edit", "error", str(error), recovery="Restore the project from a verified backup.")
+    else:
+      record("interrupted_edit", "error", "A previous save was interrupted.", recovery="Recover the last completed book version before continuing.", repairable=True)
   repaired_revisions = False
   if repair and revision_directories_missing:
     ensure_revision_store(paths)
@@ -142,7 +153,10 @@ def collect_startup_health(
     codex_error = OpenAuthorError("Codex database is missing.")
   else:
     try:
-      ensure_codex(paths)
+      if codex_missing and repair:
+        replace_runtime_codex_from_snapshot(paths)
+      else:
+        ensure_codex(paths)
       list_entities(paths)
     except (OpenAuthorError, OSError) as error:
       codex_error = error
@@ -291,6 +305,10 @@ def collect_performance_baseline(
     lambda: run_continuity_checks(paths),
     repeat,
   )
+  story_analysis_samples, story_analysis = _timed_samples(
+    lambda: run_canon_diagnostics(paths),
+    repeat,
+  )
 
   return {
     "checked_at": utc_now(),
@@ -302,6 +320,7 @@ def collect_performance_baseline(
       "entities": len(project_workspace["entities"]),
       "search_results": len(search_rows),
       "continuity_issues": len(analysis_rows),
+      "story_continuity_issues": len(story_analysis["diagnostics"]),
     },
     "metrics": [
       _metric_row("scene_list", scene_samples),
@@ -313,6 +332,7 @@ def collect_performance_baseline(
       _metric_row("scene_save", scene_save_samples),
       _metric_row("project_search", project_search_samples),
       _metric_row("continuity_analysis", analysis_samples),
+      _metric_row("story_continuity_analysis", story_analysis_samples),
     ],
     "retrieval": retrieval_status,
   }

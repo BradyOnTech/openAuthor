@@ -3,13 +3,16 @@ from __future__ import annotations
 import hashlib
 import difflib
 import json
+import re
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from .codex import export_codex_json
+from .codex import export_codex_json, replace_runtime_codex_from_snapshot
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
 from .project_locks import serialized_project_access
+from .project_lock import project_write_lock
 from .scenes import split_scene_text
 
 REVISION_SCHEMA_VERSION = 1
@@ -20,6 +23,7 @@ STATIC_BOOK_PATHS = [
   ".openauthor/generation_budget_policy.json",
   ".openauthor/editorial_passes.json",
   ".openauthor/style_profile.json",
+  ".openauthor/last_import_report.json",
   "codex/codex.json",
   "codex/suggestions.json",
   "codex/memory.json",
@@ -39,10 +43,9 @@ def revision_head(paths: ProjectPaths) -> str:
 
 
 def _book_files(paths: ProjectPaths) -> list[Path]:
-  try:
-    export_codex_json(paths)
-  except OpenAuthorError:
-    pass
+  if not paths.codex_db.exists() and (paths.root / "codex/codex.json").is_file():
+    replace_runtime_codex_from_snapshot(paths)
+  export_codex_json(paths)
   files = [path for path in sorted(paths.scenes_dir.glob("*.md")) if path.is_file()]
   for relative in STATIC_BOOK_PATHS:
     candidate = paths.root / relative
@@ -66,6 +69,7 @@ def create_revision(
   *,
   kind: str = "manual",
   metadata: dict[str, Any] | None = None,
+  skip_unchanged: bool = False,
 ) -> str:
   ensure_revision_store(paths)
   manifest: dict[str, str] = {}
@@ -75,6 +79,8 @@ def create_revision(
 
   created_at = utc_now()
   parent = revision_head(paths)
+  if skip_unchanged and parent and get_revision(paths, parent).get("manifest") == manifest:
+    return parent
   identity_payload = {
     "parent": parent,
     "created_at": created_at,
@@ -101,10 +107,67 @@ def create_revision(
   return revision_id
 
 
+def _restore_book_manifest(paths: ProjectPaths, revision_id: str) -> None:
+  record = get_revision(paths, revision_id)
+  contents = {relative: read_file_at_revision(paths, revision_id, relative) for relative in record["manifest"]}
+  for relative in contents:
+    candidate = (paths.root / relative).resolve()
+    if not candidate.is_relative_to(paths.root.resolve()):
+      raise OpenAuthorError(f"Revision path escapes project: {relative}")
+  current = [path for path in paths.scenes_dir.glob("*.md") if path.is_file()]
+  current.extend(paths.root / relative for relative in STATIC_BOOK_PATHS)
+  for path in current:
+    if path.relative_to(paths.root).as_posix() not in contents:
+      path.unlink(missing_ok=True)
+  for relative, content in contents.items():
+    atomic_write_text(paths.root / relative, content)
+  replace_runtime_codex_from_snapshot(paths)
+  atomic_write_text(paths.revision_head_file, f"{revision_id}\n")
+
+
+def recover_interrupted_edit(paths: ProjectPaths) -> bool:
+  with project_write_lock(paths):
+    journal = paths.workspace_dir / "author-edit.json"
+    if not journal.exists():
+      return False
+    try:
+      transaction = json.loads(journal.read_text(encoding="utf-8"))
+      before = transaction["before"]
+      current = get_revision(paths, revision_head(paths))
+      committed = current.get("metadata", {}).get("edit_transaction_id") == transaction["id"]
+      if not committed:
+        _restore_book_manifest(paths, before)
+      journal.unlink()
+    except (KeyError, ValueError, OSError) as error:
+      raise OpenAuthorError(f"Interrupted edit recovery failed: {error}") from error
+    return True
+
+
+@contextmanager
+def checkpointed_edit(paths: ProjectPaths, message: str, *, kind: str = "author_edit", metadata: dict[str, Any] | None = None):
+  """Keep edits recoverable across command failure or process termination."""
+  with project_write_lock(paths):
+    recover_interrupted_edit(paths)
+    before = create_revision(paths, f"Before {message}", kind=f"{kind}_before", skip_unchanged=True)
+    journal = paths.workspace_dir / "author-edit.json"
+    transaction_id = uuid.uuid4().hex
+    atomic_write_json(journal, {"schema_version": 1, "id": transaction_id, "before": before})
+    try:
+      yield before
+      create_revision(paths, message, kind=kind, metadata={**(metadata or {}), "edit_transaction_id": transaction_id, "before_revision": before}, skip_unchanged=kind == "author_edit")
+      journal.unlink()
+    except (OpenAuthorError, OSError, ValueError):
+      _restore_book_manifest(paths, before)
+      journal.unlink(missing_ok=True)
+      raise
+
+
 def get_revision(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
   normalized = revision_id.strip()
   if not normalized:
     raise OpenAuthorError("Revision id cannot be empty.")
+  if not re.fullmatch(r"[0-9a-f]{64}", normalized):
+    raise OpenAuthorError(f"Invalid revision id '{normalized}'.")
   record_path = paths.revision_records_dir / f"{normalized}.json"
   if not record_path.exists():
     raise OpenAuthorError(f"Unknown revision '{normalized}'.")
@@ -112,8 +175,15 @@ def get_revision(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
     payload = json.loads(record_path.read_text(encoding="utf-8"))
   except (OSError, json.JSONDecodeError) as error:
     raise OpenAuthorError(f"Revision '{normalized}' is unreadable: {error}") from error
-  if payload.get("id") != normalized or payload.get("schema_version") != REVISION_SCHEMA_VERSION:
+  if not isinstance(payload, dict) or payload.get("id") != normalized or payload.get("schema_version") != REVISION_SCHEMA_VERSION:
     raise OpenAuthorError(f"Revision '{normalized}' has invalid metadata.")
+  manifest = payload.get("manifest")
+  if not isinstance(manifest, dict):
+    raise OpenAuthorError(f"Revision '{normalized}' has an invalid manifest.")
+  for relative, digest in manifest.items():
+    valid_path = relative in STATIC_BOOK_PATHS or (relative.startswith("manuscript/scenes/") and len(Path(relative).parts) == 3 and relative.endswith(".md"))
+    if not valid_path or ".." in Path(relative).parts or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+      raise OpenAuthorError(f"Revision '{normalized}' has an invalid object entry.")
   return payload
 
 
@@ -151,6 +221,7 @@ def verify_revision_store(paths: ProjectPaths) -> dict[str, Any]:
 
   errors: list[str] = []
   visited: set[str] = set()
+  verified_objects: set[str] = set()
   current = head
   while current:
     if current in visited:
@@ -163,9 +234,12 @@ def verify_revision_store(paths: ProjectPaths) -> dict[str, Any]:
       errors.append(str(error))
       break
     for relative, digest in record.get("manifest", {}).items():
-      object_path = paths.revision_objects_dir / str(digest)[:2] / str(digest)[2:]
-      if not object_path.exists():
-        errors.append(f"Missing revision object for '{relative}' in '{current}'.")
+      if digest not in verified_objects:
+        try:
+          read_file_at_revision(paths, current, relative)
+          verified_objects.add(digest)
+        except (OpenAuthorError, OSError) as error:
+          errors.append(str(error))
     current = str(record.get("parent", "")).strip()
   return {
     "ready": not errors,
@@ -199,7 +273,7 @@ def list_revisions(paths: ProjectPaths, *, limit: int = 50) -> list[dict[str, An
   return rows
 
 
-def compare_revisions(paths: ProjectPaths, base_revision: str, head_revision: str) -> dict[str, Any]:
+def compare_revisions(paths: ProjectPaths, base_revision: str, head_revision: str, *, include_unchanged: bool = False) -> dict[str, Any]:
   base = get_revision(paths, base_revision)
   head = get_revision(paths, head_revision)
   base_manifest = base.get("manifest", {})
@@ -208,11 +282,13 @@ def compare_revisions(paths: ProjectPaths, base_revision: str, head_revision: st
   for relative in sorted(set(base_manifest).union(head_manifest)):
     before_digest = str(base_manifest.get(relative, ""))
     after_digest = str(head_manifest.get(relative, ""))
-    if before_digest == after_digest:
+    if before_digest == after_digest and not include_unchanged:
       continue
     before = read_file_at_revision(paths, base_revision, relative) if before_digest else ""
     after = read_file_at_revision(paths, head_revision, relative) if after_digest else ""
-    if not before_digest:
+    if before_digest == after_digest:
+      status = "unchanged"
+    elif not before_digest:
       status = "added"
     elif not after_digest:
       status = "deleted"
@@ -234,7 +310,7 @@ def compare_revisions(paths: ProjectPaths, base_revision: str, head_revision: st
   return {
     "base_revision": base_revision,
     "head_revision": head_revision,
-    "changed_file_count": len(changed_files),
+    "changed_file_count": sum(file["status"] != "unchanged" for file in changed_files),
     "files": changed_files,
   }
 
@@ -261,37 +337,18 @@ def restore_revision(
     except ValueError as error:
       raise OpenAuthorError(f"Restore path escapes the project: {relative}") from error
 
-  before_revision = create_revision(
-    paths,
-    f"Before restoring {revision_id[:12]}",
-    kind="restore_before",
-    metadata={"restored_from": revision_id, "paths": selected},
-  )
-  previous: dict[str, str | None] = {}
+  # Validate every object before touching live files or the runtime database.
+  contents = {relative: read_file_at_revision(paths, revision_id, relative) for relative in selected}
+
   try:
-    for relative in selected:
-      destination = paths.root / relative
-      previous[relative] = destination.read_text(encoding="utf-8") if destination.exists() else None
-      atomic_write_text(destination, read_file_at_revision(paths, revision_id, relative))
-    restored_revision = create_revision(
-      paths,
-      f"Restore {revision_id[:12]}",
-      kind="restore",
-      metadata={
-        "restored_from": revision_id,
-        "restore_before_revision": before_revision,
-        "paths": selected,
-      },
-    )
+    with checkpointed_edit(paths, f"Restore {revision_id[:12]}", kind="restore", metadata={"restored_from": revision_id, "paths": selected}):
+      for relative in selected:
+        atomic_write_text(paths.root / relative, contents[relative])
+      if "codex/codex.json" in selected:
+        replace_runtime_codex_from_snapshot(paths)
   except (OSError, OpenAuthorError) as error:
-    for relative, content in previous.items():
-      destination = paths.root / relative
-      if content is None:
-        destination.unlink(missing_ok=True)
-      else:
-        atomic_write_text(destination, content)
     raise OpenAuthorError(f"Restore was rolled back: {error}") from error
-  record = get_revision(paths, restored_revision)
+  record = get_revision(paths, revision_head(paths))
   record["restored_from"] = revision_id
   record["restored_paths"] = selected
   return record

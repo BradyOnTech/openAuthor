@@ -1,7 +1,7 @@
 SHELL := /bin/zsh
 PYTHONPATH := .
 
-.PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check
+.PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check codex-contract-check
 .PHONY: install-desktop install-js test-contracts test-gateway test-mobile test-desktop-e2e js-audit
 .PHONY: mobile-web mobile-web-build test-mobile-e2e test-mobile-hosted-e2e
 
@@ -18,6 +18,7 @@ help:
 	@echo "  make test-canon-eval - Measure Canon diagnostic precision and recall"
 	@echo "  make test-editorial-eval - Check deterministic Editorial Pass pattern regressions"
 	@echo "  make test-writing-quality - Run original-scene Writing Voice baselines offline"
+	@echo "  make test-author-workflow - Verify synthetic import, reviewed edits, undo, and recovery"
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
 	@echo "  make test-all - Run Python, desktop, contracts, gateway, and mobile checks"
@@ -36,6 +37,7 @@ help:
 	@echo "  make runtime-check   - Verify the bundled Python and installed openAuthor core"
 	@echo "  make macos-bundle    - Build the macOS app bundle (requires runtime-prepare)"
 	@echo "  make macos-bundle-check - Verify the packaged runtime and app structure"
+	@echo "  make codex-contract-check - Verify subscription context against a local endpoint (no provider credits)"
 
 setup:
 	@echo "Checking local tooling..."
@@ -83,6 +85,9 @@ test-editorial-eval:
 .PHONY: test-writing-quality
 test-writing-quality:
 	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_writing_voice.py
+.PHONY: test-author-workflow
+test-author-workflow:
+	@PYTHONPATH=$(PYTHONPATH) python3 scripts/evaluate_author_workflow.py smoke
 
 test-desktop:
 	@echo "Running desktop tests..."
@@ -172,3 +177,6 @@ macos-bundle: runtime-check
 
 macos-bundle-check:
 	@./scripts/verify_macos_bundle.sh
+
+codex-contract-check:
+	@OPENAUTHOR_CODEX_CONTRACT_BIN="$(CURDIR)/desktop/src-tauri/resources/runtime/codex/bin/codex" PYTHONPATH=$(PYTHONPATH) python3 -m unittest discover -s tests -p test_codex_runtime_contract.py -v

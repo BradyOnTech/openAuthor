@@ -139,7 +139,7 @@ class AssistantTurnStoreTests(unittest.TestCase):
       self.assertEqual(failed.error["category"], "core_error")
       self.assertEqual(
         [row["role"] for row in list_chat_messages(paths, thread_id=thread["id"])],
-        ["user"],
+        [],
       )
 
 

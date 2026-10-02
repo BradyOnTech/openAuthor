@@ -19,6 +19,7 @@ from openauthor.ai import (
   complete_chat,
   generate_proposal,
   generate_proposal_draft,
+  preview_proposal_generation,
   regenerate_change_hunk,
 )
 from openauthor.budget import update_generation_budget_policy
@@ -381,6 +382,7 @@ class AIModuleTests(unittest.TestCase):
           scene_id="scene-0001",
           instruction="test remote provider",
           provider="openai",
+          expected_context_fingerprint=preview_proposal_generation(paths, scene_id="scene-0001", instruction="test remote provider", provider="openai")["fingerprint"],
         )
 
       with self.assertRaises(OpenAuthorError):
@@ -389,6 +391,7 @@ class AIModuleTests(unittest.TestCase):
           scene_id="scene-0001",
           instruction="test remote provider",
           provider="anthropic",
+          expected_context_fingerprint=preview_proposal_generation(paths, scene_id="scene-0001", instruction="test remote provider", provider="anthropic")["fingerprint"],
         )
 
       failure_logs = sorted((root / ".openauthor" / "generations").glob("*.json"))
@@ -469,6 +472,7 @@ class AIModuleTests(unittest.TestCase):
               scene_id="scene-0001",
               instruction="tighten this scene",
               provider="openai",
+              expected_context_fingerprint=preview_proposal_generation(paths, scene_id="scene-0001", instruction="tighten this scene", provider="openai")["fingerprint"],
             )
 
       self.assertEqual(proposal["generation"]["provider"], "openai")

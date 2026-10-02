@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 import { getScene } from "../../api";
 import { useEditor } from "../../contexts/EditorContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import type { SceneDetail } from "../../types";
+import type { SceneDetail, CanonEvidence } from "../../types";
 import { SceneEditor } from "./SceneEditor";
 
 // An inactive tab is a navigation bookmark, not a current manuscript snapshot.
 // Load before editing so a Storyline switch cannot make clean prose look stale.
 // Dirty tabs deliberately keep their original guarded-save precondition.
-export function SceneDocument({ tabId, scene, modified = false, zenMode, onExitZen }: {
+export function SceneDocument({ tabId, scene, modified = false, focusPassage, zenMode, onExitZen }: {
   tabId: string;
   scene: SceneDetail;
   modified?: boolean;
+  focusPassage?: CanonEvidence;
   zenMode?: boolean;
   onExitZen?: () => void;
 }) {
@@ -40,5 +41,5 @@ export function SceneDocument({ tabId, scene, modified = false, zenMode, onExitZ
   if (!ready) return <div style={{ padding: "var(--space-5)" }}>
     {error ? <><p role="alert">{error}</p><button className="btn" onClick={() => setAttempt((value) => value + 1)}>Retry opening scene</button></> : <p role="status">Loading saved scene…</p>}
   </div>;
-  return <SceneEditor scene={scene} zenMode={zenMode} onExitZen={onExitZen} />;
+  return <SceneEditor tabId={tabId} scene={scene} focusPassage={focusPassage} zenMode={zenMode} onExitZen={onExitZen} />;
 }

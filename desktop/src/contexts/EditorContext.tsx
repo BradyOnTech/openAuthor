@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan } from "../types";
+import { readWorkspace, restoreBookmarks, saveWorkspace, workspaceKey } from "../tabRecovery";
+import type { SceneDetail, CodexEntity, ProposalRecord, RevisionSummary, ManuscriptPlan, CanonEvidence } from "../types";
 
 export type EditorTabKind = "scene" | "reader" | "plan" | "memory" | "connections" | "storylines" | "codex" | "proposal" | "alternatives" | "revision" | "generate" | "outliner" | "settings" | "writing-voice";
 
@@ -10,6 +11,7 @@ export type EditorTab = {
   kind: EditorTabKind;
   label: string;
   modified?: boolean;
+  focusPassage?: CanonEvidence;
   data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | { noteId: string } | RevisionDraft | null;
 };
 
@@ -39,12 +41,35 @@ export function useEditor(): EditorState {
   return ctx;
 }
 
-export function EditorProvider({ children }: { children: ReactNode }) {
+export function EditorProvider({ children, projectRoot = "", scope = "main" }: { children: ReactNode; projectRoot?: string; scope?: string }) {
   const [tabs, setTabs] = useState<EditorTab[]>([]);
   const [activeTabId, setActiveTabId] = useState("");
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("none");
   const [secondaryActiveTabId, setSecondaryActiveTabId] = useState("");
   const navigationRevision = useRef(0);
+  const key = projectRoot ? workspaceKey(projectRoot, scope) : "";
+  const [hydratedKey, setHydratedKey] = useState("");
+  useEffect(() => {
+    if (!key) return;
+    let current = true;
+    const revision = navigationRevision.current;
+    const saved = readWorkspace(key);
+    if (!saved) { setHydratedKey(key); return; }
+    void restoreBookmarks(projectRoot, saved).then(restored => {
+      if (!current) return;
+      if (revision === navigationRevision.current) {
+        setTabs(restored);
+        setActiveTabId(restored.some(row => row.id === saved.activeTabId) ? saved.activeTabId : restored[0]?.id || "");
+        setSplitDirection(saved.splitDirection);
+        setSecondaryActiveTabId(restored.some(row => row.id === saved.secondaryActiveTabId) ? saved.secondaryActiveTabId : "");
+      }
+      setHydratedKey(key);
+    });
+    return () => { current = false; };
+  }, [key, projectRoot]);
+  useEffect(() => {
+    if (key && hydratedKey === key) saveWorkspace(key, tabs, activeTabId, splitDirection, secondaryActiveTabId);
+  }, [key, hydratedKey, tabs, activeTabId, splitDirection, secondaryActiveTabId]);
   useEffect(() => () => { ++navigationRevision.current; }, []);
   const beginNavigation = useCallback(() => {
     const revision = ++navigationRevision.current;

@@ -10,7 +10,19 @@ journey through import, planning, Memory, search, copilot notes and export. Futu
 iterations must advance whole writing tasks alongside safety fixes; feature
 inventory and green unit tests alone do not establish a useful application.
 
-### Current execution checkpoint — 2026-09-29
+### Current execution checkpoint — 2026-10-01
+
+The [editorial workspace and recovery pass](evaluations/editorial-workspace-2026-10-01/review.md)
+integrates remote main with the local authoring work. Continuity review now gives
+paired evidence space in the main editor. Validated tabs, caret and scroll
+positions return on restart; fresh source loading and guarded recovery preserve
+newer writing. The eight original continuity challenge cases now match their
+expected outcomes, with additional attribution and explicit-change regressions.
+These focused local checks do not complete broader literary judgment. Next
+evaluate supported findings, omissions and revision usefulness on a connected,
+author-reviewed chapter, followed by packaged-GUI restart acceptance.
+
+### September 29 checkpoint
 
 Writing Voice now completes a smaller author-directed iteration: compare with
 the saved original, give targeted feedback to one sample, retain the previous
@@ -324,6 +336,9 @@ advance the bounded desktop-connected mobile companion experiment and remaining
 mobile context parity. Do not add more voice controls on the assumption that
 workflow tests prove the current ones produce good prose. Recovery here is local
 working-copy continuity, not cross-device sync or durable crash transactions.
+**Evaluation evidence boundary, September 2026**
+
+All 1.0 scores and zero-error Editorial/Canon claims below refer only to the small deterministic regression corpora: Editorial uses the local adapter and pattern/term checks, while Canon starts with manually supplied facts. They do not establish manuscript extraction accuracy, preservation of author voice, or live-provider editing quality. The consent-gated workflow in `docs/author-evaluation-and-pilot.md` adds real import/review/apply/undo/recovery measurement, but current runs are synthetic and no author pilot or live manuscript evaluation is approved. The July verification record is historical, not a current release certification.
 
 ## Delivery status
 

@@ -161,6 +161,10 @@ export type ProposalRecord = {
   source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
   change_group_id?: string;
   proposed_body?: string;
+  selection?: {
+    action: "rewrite" | "shorten" | "expand" | "critique";
+    start: number; end: number; before: string; after: string; feedback: string; branch: string;
+  };
   revision_intent?: {
     goal: string;
     scope: string;
@@ -241,6 +245,8 @@ export type ProposalRecord = {
     created_at: string;
   };
   merge?: {
+    base_commit?: string;
+    head_commit?: string;
     base: string;
     head: string;
     merge_base: string;
@@ -793,10 +799,11 @@ export type CodexRelationship = {
   created_at: string;
 };
 
-export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number };
+export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number; attribution?: string; anchor_text?: string; source_field?: "pov" };
 export type CanonFact = {
   id: string;
   edit_version?: string;
+  updated_at?: string;
   subject_entity_id: string;
   predicate: string;
   value: string;

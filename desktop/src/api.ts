@@ -14,6 +14,7 @@ import type {
   OpenQuestion,
   CharacterArcState,
   CanonDiagnostic,
+  CanonEvidence,
   ContinuityIssue,
   CoreCommandResponse,
   GenerationBudgetReport,
@@ -43,6 +44,7 @@ import type { AssistantTurnRecord } from "./types";
 import type { AssistantEventEnvelope } from "./assistantEvents";
 import type { SceneEditVersion } from "./types";
 import { SceneEditConflictError, type SceneConflict } from "./sceneConflicts";
+import { withBookMetadataWrite } from "./bookOperationBarrier";
 
 const ALLOWED = new Set([
   "init",
@@ -59,6 +61,7 @@ const ALLOWED = new Set([
   "auth",
   "manuscript",
   "revision",
+  "backup",
   "plan",
   "memory",
   "search",
@@ -114,6 +117,14 @@ export async function pickZipFile(startingPath?: string): Promise<string | null>
   });
 }
 
+export async function createPortableBackup(projectRoot: string, target: string): Promise<{ verified: boolean; file_count: number; path: string }> {
+  return decodeJson(await runCoreCommand(projectRoot, ["backup", "create", "--target", target, "--json"]));
+}
+
+export async function restorePortableBackup(source: string, target: string): Promise<{ verified: boolean; project_root: string }> {
+  return decodeJson(await runCoreCommand(CONTROL_PROJECT_ROOT, ["backup", "restore", "--source", source, "--target", target, "--json"]));
+}
+
 export async function pickManuscriptFile(startingPath?: string): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   return tauriInvoke<string | null>("pick_manuscript_file", {
@@ -121,12 +132,17 @@ export async function pickManuscriptFile(startingPath?: string): Promise<string 
   });
 }
 
+export type ImportSectionRole = "act" | "chapter" | "scene" | "text";
+export type ImportCorrections = Record<string, { title?: string; role?: ImportSectionRole }>;
 export type ManuscriptImportPreview = {
   source: string;
   strategy: "auto" | "files" | "headings" | "single";
   scene_count: number;
+  chapter_count: number;
+  fingerprint: string;
   word_count: number;
   warnings: string[];
+  sections: Array<{ id: string; title: string; role: ImportSectionRole; level: number; word_count: number; excerpt: string }>;
   scenes: Array<{
     position: number;
     title: string;
@@ -134,15 +150,18 @@ export type ManuscriptImportPreview = {
     source_format: string;
     word_count: number;
     excerpt: string;
+    chapter_title?: string;
+    act_title?: string;
   }>;
 };
 
 export async function previewManuscriptImport(
   source: string,
-  strategy: "auto" | "files" | "headings" | "single" = "auto"
+  strategy: "auto" | "files" | "headings" | "single" = "auto",
+  corrections: ImportCorrections = {}
 ): Promise<ManuscriptImportPreview> {
   const result = await runCoreCommand(CONTROL_PROJECT_ROOT, [
-    "manuscript", "preview", "--source", source, "--strategy", strategy, "--json"
+    "manuscript", "preview", "--source", source, "--strategy", strategy, "--corrections", JSON.stringify(corrections), "--json"
   ]);
   return decodeJson<ManuscriptImportPreview>(result);
 }
@@ -150,16 +169,20 @@ export async function previewManuscriptImport(
 export async function importManuscript(
   projectRoot: string,
   source: string,
-  strategy: "auto" | "files" | "headings" | "single" = "auto"
+  strategy: "auto" | "files" | "headings" | "single" = "auto",
+  corrections: ImportCorrections = {},
+  expectedFingerprint?: string
 ): Promise<{ scene_count: number; word_count: number; scene_ids: string[]; warnings: string[] }> {
   const result = await runCoreCommand(projectRoot, [
-    "manuscript", "import", "--source", source, "--strategy", strategy, "--json"
+    "manuscript", "import", "--source", source, "--strategy", strategy,
+    "--corrections", JSON.stringify(corrections),
+    ...(expectedFingerprint ? ["--expected-fingerprint", expectedFingerprint] : []), "--json"
   ]);
   return decodeJson(result);
 }
 
 export async function pickExportTarget(
-  format: "markdown" | "docx",
+  format: "markdown" | "docx" | "backup",
   startingPath?: string
 ): Promise<string | null> {
   if (!isTauriRuntime()) return null;
@@ -189,6 +212,16 @@ export async function runCoreCommand(
   args: string[]
 ): Promise<CoreCommandResponse> {
   ensureAllowed(args);
+  const reads: Record<string, string[]> = {
+    style: ["get"],
+    plan: ["get", "scene-preview"],
+    codex: ["get", "list", "relationship-list"],
+    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose"],
+  };
+  if ((reads[args[0]] && !reads[args[0]].includes(args[1])) || (args[0] === "scene" && args[1] === "add")) {
+    if (args[0] === "scene" && args[1] === "update") return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
+    return withBookMetadataWrite(projectRoot, () => tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args }));
+  }
   return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
 }
 
@@ -493,10 +526,15 @@ export async function createProposal(
   return decodeJson<ProposalRecord>(result);
 }
 
+export async function getProposal(projectRoot: string, proposalId: string): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "get", "--id", proposalId, "--json"]));
+}
+
 export async function generateProposal(
   projectRoot: string,
   payload: {
     sceneId: string;
+    requestId?: string;
     instruction: string;
     provider: ProposalProvider;
     title?: string;
@@ -512,6 +550,7 @@ export async function generateProposal(
     constraints?: string[];
     protectedElements?: string[];
     changeGroupId?: string;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -524,6 +563,9 @@ export async function generateProposal(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
+  if (payload.authorization) args.push("--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals),
+    "--story-approvals", JSON.stringify(payload.authorization.storyApprovals), "--expected-context-fingerprint", payload.authorization.fingerprint);
   if (payload.title && payload.title.trim() !== "") {
     args.push("--title", payload.title);
   }
@@ -616,13 +658,16 @@ export async function draftProposal(
   projectRoot: string,
   payload: {
     proposalId: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
     maxOutputTokens?: number;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }
@@ -632,6 +677,8 @@ export async function draftProposal(
   if (typeof payload.maxOutputTokens === "number") {
     args.push("--max-output-tokens", String(payload.maxOutputTokens));
   }
+  if (payload.authorization) args.push("--expected-context-fingerprint", payload.authorization.fingerprint,
+    "--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals), "--story-approvals", JSON.stringify(payload.authorization.storyApprovals));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -676,7 +723,9 @@ export async function regenerateProposalHunk(
   hunkId: string,
   provider: ProposalProvider,
   model?: string,
-  feedback?: string
+  feedback?: string,
+  requestId?: string,
+  authorization?: RevisionAuthorization
 ): Promise<ProposalRecord> {
   const args = [
     "proposal", "hunk-regenerate", "--id", proposalId, "--hunk", hunkId,
@@ -684,6 +733,9 @@ export async function regenerateProposalHunk(
   ];
   if (model?.trim()) args.push("--model", model.trim());
   if (feedback?.trim()) args.push("--feedback", feedback.trim());
+  if (requestId) args.push("--request-id", requestId);
+  if (authorization) args.push("--expected-context-fingerprint", authorization.fingerprint,
+    "--memory-approvals", JSON.stringify(authorization.memoryApprovals), "--story-approvals", JSON.stringify(authorization.storyApprovals));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -720,6 +772,10 @@ export async function listRevisions(projectRoot: string, limit = 50): Promise<Re
   return decodeJson<RevisionSummary[]>(result);
 }
 
+export async function saveRevision(projectRoot: string, message: string): Promise<RevisionSummary> {
+  return decodeJson(await runCoreCommand(projectRoot, ["revision", "save", "--message", message, "--json"]));
+}
+
 export async function getRevisionRetrospective(projectRoot: string, base: string, head: string): Promise<RevisionRetrospective> {
   const result = await runCoreCommand(projectRoot, ["revision", "retrospective", "--base", base, "--head", head, "--json"]);
   return decodeJson(result);
@@ -731,7 +787,7 @@ export async function compareRevisions(
   headRevision: string
 ): Promise<RevisionComparison> {
   const result = await runCoreCommand(projectRoot, [
-    "revision", "diff", "--base", baseRevision, "--head", headRevision, "--json"
+    "revision", "diff", "--base", baseRevision, "--head", headRevision, "--include-unchanged", "--json"
   ]);
   return decodeJson<RevisionComparison>(result);
 }
@@ -905,12 +961,16 @@ export async function listChatMessages(
 
 export type ChatSendPayload = {
   threadId: string;
+  deliveryId?: string;
   message: string;
   currentSceneId?: string;
   sceneIds?: string[];
   selectedText?: string;
   codexIds?: string[];
   approvedCodexIds?: string[];
+  memoryApprovals?: MemoryApproval[];
+  storyApprovals?: string[];
+  expectedContextFingerprint?: string;
   includeCurrentScene?: boolean;
   includeSelection?: boolean;
   includeRecentScenesRadius?: number;
@@ -927,6 +987,85 @@ export type ChatSendPayload = {
   replacementFromMessageId?: string;
 };
 
+export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
+export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
+  style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
+  context: { scene: { id: string; title: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  limits: { omitted_memory_ids: string[] };
+};
+export async function previewProposalRevision(projectRoot: string, input: {
+  proposal_id: string; hunk_id?: string; provider: ProposalProvider; model?: string; feedback?: string;
+  memory_approvals: MemoryApproval[]; story_approvals: string[];
+}): Promise<RevisionContextPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));
+}
+export async function previewProposalGeneration(projectRoot: string, input: Parameters<typeof generateProposal>[1], memoryApprovals: MemoryApproval[], storyApprovals: string[]): Promise<RevisionContextPreview> {
+  const payload = { scene_id: input.sceneId, instruction: input.instruction, provider: input.provider, model: input.model,
+    temperature: input.temperature, max_output_tokens: input.maxOutputTokens, context_scene_radius: input.contextScenes,
+    codex_limit: input.codexLimit, retrieval_mode: input.retrievalMode, retrieval_limit: input.retrievalLimit,
+    retrieval_min_score: input.retrievalMinScore, retrieval_require_fresh: input.retrievalRequireFresh,
+    constraints: input.constraints, protected_elements: input.protectedElements,
+    memory_approvals: memoryApprovals, story_approvals: storyApprovals };
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "generation-preview", "--input-json", JSON.stringify(payload), "--json"]));
+}
+export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
+export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
+export type SelectionInput = {
+  scene_id: string; start: number; end: number; selected_text: string; action: SelectionAction;
+  instruction: string; provider: ProposalProvider; model: string; memory_approvals: MemoryApproval[];
+  story_approvals?: string[];
+};
+export type SelectionPreview = {
+  fingerprint: string; provider: string; model: string; system_prompt: string; user_prompt: string;
+  estimated_input_tokens: number; max_output_tokens: number;
+  anchor: { branch: string };
+  limits: { omitted_before_characters: number; omitted_after_characters: number; omitted_memory_ids: string[] };
+  memory_choices: ChatContextPreview["memory_choices"];
+  story_choices?: StoryContextChoice[];
+};
+export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
+}
+export async function generateSelection(projectRoot: string, input: SelectionInput, fingerprint: string, requestId: string): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-generate", "--input-json", JSON.stringify(input), "--expected-fingerprint", fingerprint, "--request-id", requestId, "--json"]));
+}
+export type ChatContextPreview = {
+  fingerprint: string;
+  provider: string;
+  model: string;
+  mode: string;
+  estimated_input_tokens: number;
+  history_messages_included: number;
+  history_messages_omitted: number;
+  history_budget_limited?: boolean;
+  system_prompt: string;
+  user_prompt: string;
+  history: Array<{ role: string; content: string }>;
+  context: {
+    current_scene: Array<{ id: string; title: string }>;
+    nearby_scenes: Array<{ id: string; title: string }>;
+    codex_entities: Array<{ id: string; name: string; details: Array<{ key: string }> }>;
+    retrieval: { citations: Array<{ source_title: string }>; degraded: boolean; error: string; index?: { stale: boolean } };
+    story_plan?: {
+      brief: { synopsis: string; genre: string; themes: string[]; style_guide: string; outline: string };
+      structure: Array<{ title: string; chapters: Array<{ title: string }> }>;
+      beats: Array<{ summary: string }>;
+      limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number };
+    };
+    [key: string]: unknown;
+  };
+  context_used: { privacy: { history_reset: boolean; one_time_approval: boolean } };
+  memory_choices: Array<{ id: string; name: string; visibility: string; details: Array<{ key: string; visibility: string }> }>;
+  story_choices?: StoryContextChoice[];
+};
+
+export async function previewChatContext(projectRoot: string, payload: ChatSendPayload, historyBeforeMessageId = ""): Promise<ChatContextPreview> {
+  return sidecarRequest<ChatContextPreview>(projectRoot, nextSidecarRequestId(), "chat.context", {
+    ...chatSendParams(payload), history_before_message_id: historyBeforeMessageId,
+  });
+}
+
 export async function sendChatMessage(
   projectRoot: string,
   payload: ChatSendPayload
@@ -939,6 +1078,10 @@ export async function sendChatMessage(
     "--message",
     payload.message
   ];
+  if (payload.deliveryId) args.push("--request-id", payload.deliveryId);
+  if (payload.memoryApprovals?.length) args.push("--memory-approvals", JSON.stringify(payload.memoryApprovals));
+  if (payload.storyApprovals?.length) args.push("--story-approvals", JSON.stringify(payload.storyApprovals));
+  if (payload.expectedContextFingerprint) args.push("--expected-context-fingerprint", payload.expectedContextFingerprint);
   if (payload.currentSceneId) {
     args.push("--current-scene", payload.currentSceneId);
   }
@@ -1088,6 +1231,7 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     turn_id: payload.turnId,
     channel: payload.channel ?? "text",
     replace_from_message_id: payload.replacementFromMessageId ?? "",
+    delivery_id: payload.deliveryId,
     thread_id: payload.threadId,
     message: payload.message,
     current_scene_id: payload.currentSceneId ?? "",
@@ -1095,6 +1239,9 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     selected_text: payload.selectedText ?? "",
     codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
     approved_codex_ids: (payload.approvedCodexIds ?? []).filter((item) => item.trim() !== ""),
+    memory_approvals: payload.memoryApprovals ?? [],
+    story_approvals: payload.storyApprovals ?? [],
+    expected_context_fingerprint: payload.expectedContextFingerprint ?? "",
     context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
   };
 }
@@ -1113,6 +1260,7 @@ export async function sendChatMessageStreamed(
   handlers.onStart?.(requestId, turnId);
   const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
+    if (event.payload.projectRoot !== projectRoot) return;
     const frame = event.payload.frame;
     if (!frame.payload) return;
     if (frame.event === "assistant.event") {
@@ -1645,6 +1793,10 @@ export async function updateCodexEntity(
   ];
   for (const alias of payload.aliases ?? []) args.push("--alias", alias);
   for (const tag of payload.tags ?? []) args.push("--tag", tag);
+  // No flag means "leave unchanged" in the CLI; a blank repeated value means
+  // the author intentionally cleared the list after normalization.
+  if (payload.aliases?.length === 0) args.push("--alias", "");
+  if (payload.tags?.length === 0) args.push("--tag", "");
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<CodexEntity>(result);
@@ -1678,7 +1830,7 @@ export type StoryMemorySuggestion = {
   confidence: number;
   reason: string;
   status: "pending" | "accepted" | "rejected" | "deferred";
-  evidence: Array<{ scene_id: string; path: string; excerpt: string; start: number; end: number }>;
+  evidence: Array<CanonEvidence & { path: string }>;
   subject_entity_id?: string;
   subject_name?: string;
   predicate?: string;
@@ -1786,6 +1938,15 @@ export async function addCanonFact(projectRoot: string, payload: {
 
 export async function listNarrativeSetups(projectRoot: string): Promise<NarrativeSetup[]> {
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "setup-list", "--json"]));
+}
+
+export async function reviewCanonFact(projectRoot: string, factId: string, payload: {
+  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedUpdatedAt?: string;
+}): Promise<CanonFact> {
+  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--json"];
+  if (payload.evidence) args.push("--evidence-json", JSON.stringify(payload.evidence));
+  if (payload.expectedUpdatedAt) args.push("--expected-updated-at", payload.expectedUpdatedAt);
+  return decodeJson(await runCoreCommand(projectRoot, args));
 }
 
 export async function addNarrativeSetup(projectRoot: string, description: string, sceneId: string, excerpt: string): Promise<NarrativeSetup> {
@@ -1914,7 +2075,14 @@ export type StyleProfile = {
   exemplar_digests?: Record<string, string>;
   observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }>;
   created_at: string;
-  metrics: Record<string, unknown>;
+  reference_mode?: "current" | "frozen";
+  freshness?: "current" | "stale" | "unknown";
+  changed_scene_ids?: string[];
+  usable_for_ai?: boolean;
+  fingerprint?: string;
+  source_digests?: Record<string, string>;
+  measurement?: { method: string; word_metrics_available: boolean; limitations: string[] };
+  metrics: Record<string, any>;
   guidance: string[];
 };
 
@@ -1947,11 +2115,16 @@ export async function getStyleProfile(projectRoot: string): Promise<StyleProfile
   return decodeJson(await runCoreCommand(projectRoot, ["style", "get", "--json"]));
 }
 
-export async function buildStyleProfile(projectRoot: string, sceneIds: string[]): Promise<StyleProfile> {
+export async function buildStyleProfile(projectRoot: string, sceneIds: string[], fingerprint?: string): Promise<StyleProfile> {
   const args = ["style", "build"];
   for (const id of sceneIds) args.push("--scene", id);
+  if (fingerprint !== undefined) args.push("--expected-fingerprint", fingerprint);
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function setStyleProfileReference(projectRoot: string, mode: "current" | "frozen", fingerprint: string): Promise<StyleProfile> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", "reference", "--mode", mode, "--expected-fingerprint", fingerprint, "--json"]));
 }
 
 export async function runContinuityChecks(projectRoot: string): Promise<ContinuityIssue[]> {
@@ -2270,10 +2443,12 @@ export async function resolveMergeConflict(
     base: string;
     head: string;
     path: string;
+    requestId?: string;
     provider: ProposalProvider;
     model?: string;
     temperature?: number;
     maxOutputTokens?: number;
+    authorization?: RevisionAuthorization;
   }
 ): Promise<ProposalRecord> {
   const args = [
@@ -2288,6 +2463,9 @@ export async function resolveMergeConflict(
     "--provider",
     payload.provider
   ];
+  if (payload.requestId) args.push("--request-id", payload.requestId);
+  if (payload.authorization) args.push("--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals),
+    "--story-approvals", JSON.stringify(payload.authorization.storyApprovals), "--expected-context-fingerprint", payload.authorization.fingerprint);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
   }
@@ -2300,6 +2478,13 @@ export async function resolveMergeConflict(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function previewMergeResolution(projectRoot: string, input: Parameters<typeof resolveMergeConflict>[1], memoryApprovals: MemoryApproval[], storyApprovals: string[]): Promise<RevisionContextPreview> {
+  const payload = { base: input.base, head: input.head, scene_path: input.path, provider: input.provider,
+    model: input.model, temperature: input.temperature, max_output_tokens: input.maxOutputTokens,
+    memory_approvals: memoryApprovals, story_approvals: storyApprovals };
+  return decodeJson(await runCoreCommand(projectRoot, ["branch", "resolve-preview", "--input-json", JSON.stringify(payload), "--json"]));
 }
 
 export async function listGenerationPins(

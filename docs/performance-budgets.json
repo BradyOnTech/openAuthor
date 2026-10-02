@@ -16,6 +16,7 @@
     "scene_open": 150.0,
     "scene_save": 250.0,
     "project_search": 800.0,
-    "continuity_analysis": 1500.0
+    "continuity_analysis": 1500.0,
+    "story_continuity_analysis": 1500.0
   }
 }

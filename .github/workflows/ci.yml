@@ -49,11 +49,14 @@ jobs:
       - name: Enforce large-project performance budgets
         run: make test-scale
 
-      - name: Measure Canon diagnostic quality
+      - name: Verify synthetic seeded-Canon regression corpus
         run: make test-canon-eval
 
-      - name: Measure Editorial Pass quality and canon safety
+      - name: Verify deterministic Editorial Pass regression corpus
         run: make test-editorial-eval
+
+      - name: Verify synthetic author workflow and recovery
+        run: make test-author-workflow
 
       - name: Phase 4 hardening CLI smoke
         run: |

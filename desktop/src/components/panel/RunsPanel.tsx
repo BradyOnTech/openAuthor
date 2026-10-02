@@ -1,4 +1,5 @@
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { GenerationAssessment } from "../common/GenerationAssessment";
 
 export function RunsPanel() {
   const { runs } = useWorkspace();
@@ -19,7 +20,7 @@ export function RunsPanel() {
           <th>Run ID</th>
           <th>Scene</th>
           <th>Provider</th>
-          <th>Quality</th>
+          <th>Response format</th>
           <th>Cost</th>
           <th>Time</th>
         </tr>
@@ -36,11 +37,7 @@ export function RunsPanel() {
             <td className="mono">{r.scene_id}</td>
             <td>{r.provider}</td>
             <td>
-              {r.quality_tier ? (
-                <span className={`badge badge--${r.quality_tier === "high" ? "applied" : r.quality_tier === "low" ? "error" : "warning"}`}>
-                  {r.quality_tier}
-                </span>
-              ) : "\u2014"}
+              <GenerationAssessment tier={r.quality_tier} />
             </td>
             <td className="mono">
               {r.estimated_cost_usd != null ? `$${r.estimated_cost_usd.toFixed(4)}` : "\u2014"}

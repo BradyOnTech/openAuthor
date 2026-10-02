@@ -1,0 +1,152 @@
+from __future__ import annotations
+
+import hashlib
+import re
+from collections import Counter, defaultdict
+from typing import Any
+
+from .story_memory import _consolidate_character_names, _identity_key, _proper_name_mentions
+
+UNCERTAIN = re.compile(r"\b(?:if|would|could|might|perhaps|suppose|imagined?|dream(?:s|ed|t)?|remembered|used to|not|never|no longer|seemed|claimed|lied)\b", re.IGNORECASE)
+
+
+def _narration(body: str) -> str:
+  # Keep offsets intact while excluding direct speech, including multiline and
+  # unfinished quotes. A quoted claim is not an established story-world fact.
+  return re.sub(r'"[^"]*(?:"|$)|“[^”]*(?:”|$)', lambda match: re.sub(r"[^\n]", " ", match.group(0)), body)
+
+
+def _character_labels(scenes: list[dict[str, Any]], entities: list[dict[str, Any]]) -> dict[str, str | None]:
+  counts: Counter[str] = Counter()
+  pov_names: set[str] = set()
+  for scene in scenes:
+    counts.update(name for name, _, _ in _proper_name_mentions(scene["body"]))
+    if scene.get("pov"):
+      counts[scene["pov"]] += 3
+      pov_names.add(scene["pov"])
+  aliases = _consolidate_character_names(counts, defaultdict(list), pov_names)
+  identities: dict[str, set[str]] = defaultdict(set)
+  accepted_labels: set[str] = set()
+  for entity in entities:
+    if entity.get("type") != "character":
+      continue
+    for label in [entity["name"], *entity.get("aliases", [])]:
+      identities[str(label)].add(entity["name"])
+      accepted_labels.add(_identity_key(str(label)))
+  for name, count in counts.items():
+    if count < 2 or _identity_key(name) in accepted_labels:
+      continue
+    for label in [name, *aliases.get(name, [])]:
+      identities[label].add(name)
+  # Ambiguous aliases must not attribute a physical detail to the wrong person.
+  return {label: next(iter(names)) if len(names) == 1 else None for label, names in identities.items()}
+
+
+def prose_trait_diagnostics(scenes: list[dict[str, Any]], entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  """Local, limited pattern checks: observations are never promoted to Canon."""
+  labels = _character_labels(scenes, entities)
+  if not labels:
+    return []
+  by_name = {_identity_key(label): name for label, name in labels.items()}
+  names = "|".join(re.escape(label) for label in sorted(labels, key=len, reverse=True))
+  mentions = re.compile(rf"(?<!\w)(?:{names})(?!\w)", re.IGNORECASE)
+  owner = rf"(?P<owner>(?:{names})['’]s|her|his|their)"
+  numbers = {word: str(index) for index, word in enumerate(["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"])}
+  count = rf"(?P<count>{'|'.join(numbers)}|\d{{1,2}})"
+  fingers = re.compile(rf"(?<!\w){owner}\s+(?P<side>left|right)\s+hand(?:\s+(?:still\s+)?(?:had|has)\s+(?:only\s+)?|,\s+(?:all\s+)?){count}\s+fingers\b", re.IGNORECASE)
+  colors = re.compile(rf"(?<!\w){owner}\s+(?P<feature>eyes|hair)\s+(?:were|are|was|is)\s+(?P<color>(?:(?:light|dark)\s+)?(?:blue|green|brown|black|white|gray|grey|hazel|amber|red|auburn|blond|blonde|silver))\b", re.IGNORECASE)
+  # Keep idiomatic observations narrow and attributable. An explicit loss can
+  # establish four fingers; a reported, imagined or quoted loss cannot.
+  missing_finger = re.compile(rf"(?P<person>{names})\s+(?:had\s+)?lost\s+(?:the|a)\s+(?:little|pinky|ring|middle|index|thumb)\s+(?:finger\s+)?(?:of|on)\s+(?:her|his|their)\s+(?P<side>left|right)\s+hand\b", re.IGNORECASE)
+  reverse_fingers = re.compile(rf"(?<!\w)(?:all\s+)?{count}\s+fingers\s+(?:of|on)\s+(?P<person>{names})['’]s\s+(?P<side>left|right)\s+hand\b", re.IGNORECASE)
+  spanish_colors = re.compile(rf"(?<!\w)(?:los\s+)?(?P<feature>ojos|cabello|pelo)\s+de\s+(?P<person>{names})\s+(?:eran|son|era|es)\s+(?P<color>verdes?|azul(?:es)?|negros?|rojos?|castaño(?:s)?|marr[oó]n(?:es)?|blancos?|grises?|rubio(?:s)?)\b", re.IGNORECASE)
+  spanish_values = {"verde": "green", "verdes": "green", "azul": "blue", "azules": "blue", "negro": "black", "negros": "black", "rojo": "red", "rojos": "red", "castaño": "brown", "castaños": "brown", "marrón": "brown", "marrones": "brown", "blanco": "white", "blancos": "white", "gris": "gray", "grises": "gray", "rubio": "blond", "rubios": "blond"}
+  dye_change = re.compile(rf"(?<!\w)(?P<person>{names})\s+(?:had\s+)?(?:dyed|dyes|colored|coloured)\s+(?:her|his|their)\s+hair\s+(?P<color>red|black|brown|blond|blonde|blue|green|white|silver|gr[ae]y)\b", re.IGNORECASE)
+  observations: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+  completed_segments: list[tuple[tuple[str, str], list[dict[str, Any]]]] = []
+  for scene in scenes:
+    last_subject = None
+    last_named_end = 0
+    for sentence in re.finditer(r"[^.!?;\n]+[.!?;]?", _narration(scene["body"])):
+      text = sentence.group(0)
+      if sentence.start() - last_named_end > 240 or re.search(r"\n\s*\n", scene["body"][last_named_end:sentence.start()]):
+        last_subject = None
+      named = {by_name[_identity_key(match.group(0))] for match in mentions.finditer(text)}
+      if UNCERTAIN.search(text) or re.search(r"\b(?:no|nunca|quizá|quizás|parecían|imaginó)\b", text, re.IGNORECASE):
+        if named:
+          last_subject = None
+        continue
+      matches = sorted([*( (m, "fingers") for m in fingers.finditer(text)), *((m, "colors") for m in colors.finditer(text)),
+        *((m, "missing") for m in missing_finger.finditer(text)), *((m, "reverse") for m in reverse_fingers.finditer(text)),
+        *((m, "spanish") for m in spanish_colors.finditer(text)), *((m, "change") for m in dye_change.finditer(text))], key=lambda pair: pair[0].start())
+      for match, kind in matches:
+        if kind in {"missing", "reverse", "spanish", "change"}:
+          subject = by_name.get(_identity_key(match.group("person")))
+          if not subject: continue
+          explicit = True
+          preceding = set()
+          if kind in {"missing", "reverse"}:
+            trait = f"{match.group('side').lower()} hand finger count"
+            value = "4" if kind == "missing" else numbers.get(match.group("count").lower(), match.group("count"))
+          else:
+            trait = "eye color" if kind == "spanish" and match.group("feature").lower() == "ojos" else "hair color"
+            value = spanish_values[match.group("color").lower()] if kind == "spanish" else match.group("color").lower().replace("grey", "gray").replace("blonde", "blond")
+          if kind == "change":
+            # An explicit change starts a new validity interval; it cannot
+            # explain contradictory observations from before that change.
+            completed_segments.append(((subject, trait), observations[(subject, trait)]))
+            observations[(subject, trait)] = []
+        else:
+          owner_text = match.group("owner")
+          preceding = {by_name[_identity_key(mention.group(0))] for mention in mentions.finditer(text[:match.start()])}
+          explicit = owner_text.endswith(("'s", "’s"))
+          subject = by_name.get(_identity_key(owner_text[:-2])) if explicit else (next(iter(preceding)) if len(preceding) == 1 else last_subject if not named else None)
+          if not subject:
+            continue
+          if "count" in match.groupdict():
+            trait = f"{match.group('side').lower()} hand finger count"
+            value = numbers.get(match.group("count").lower(), match.group("count"))
+          else:
+            trait = "eye color" if match.group("feature").lower() == "eyes" else "hair color"
+            value = " ".join(match.group("color").lower().split()).replace("grey", "gray").replace("blonde", "blond")
+        start = sentence.start() + len(text) - len(text.lstrip())
+        end = sentence.end() - len(text) + len(text.rstrip())
+        attribution = "explicit name" if explicit else "same-sentence name; review attribution" if preceding else "nearby name; review attribution"
+        observations[(subject, trait)].append({"value": value, "evidence": {"scene_id": scene["id"], "excerpt": scene["body"][start:end], "start": start, "end": end, "attribution": attribution}})
+      if named:
+        last_subject = next(iter(named)) if len(named) == 1 else None
+        last_named_end = sentence.end()
+  diagnostics: list[dict[str, Any]] = []
+  for (subject, trait), rows in [*completed_segments, *observations.items()]:
+    values = list(dict.fromkeys(row["value"] for row in rows))
+    if len(values) < 2:
+      continue
+    all_evidence = [row["evidence"] for row in rows]
+    # Keep the first occurrence of each different value before filling spare
+    # slots. Taking only the first eight passages could hide the contradiction.
+    first_by_value: dict[str, int] = {}
+    for index, row in enumerate(rows):
+      first_by_value.setdefault(row["value"], index)
+    selected = set(list(first_by_value.values())[:8])
+    for index in range(len(rows)):
+      if len(selected) >= 8:
+        break
+      selected.add(index)
+    evidence = [all_evidence[index] for index in sorted(selected)]
+    values_label = " and ".join(values[:8])
+    if len(values) > 8:
+      values_label += f" and {len(values) - 8} additional values"
+    clipped = f" Showing {len(evidence)} of {len(rows)} supporting observations." if len(rows) > len(evidence) else ""
+    identity = f"{subject}:{trait}:" + ":".join(f"{item['scene_id']}:{item['excerpt']}" for item in all_evidence)
+    diagnostics.append({
+      "id": "memory-diagnostic-" + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16],
+      "code": "prose_trait_mismatch",
+      "severity": "warning",
+      "title": "Possible physical-detail mismatch",
+      "message": f"{subject}'s {trait} is described as {values_label}. Review the passages for an intentional change or a mistaken attribution; no Canon Fact was changed." + (" Pronoun ownership was inferred from a nearby name and needs confirmation." if any(item["attribution"] != "explicit name" for item in all_evidence) else "") + clipped,
+      "fact_ids": [],
+      "scene_ids": list(dict.fromkeys(item["scene_id"] for item in all_evidence)),
+      "evidence": evidence,
+      "evidence_count": len(rows),
+    })
+  return diagnostics

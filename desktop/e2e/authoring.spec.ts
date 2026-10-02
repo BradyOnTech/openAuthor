@@ -92,6 +92,8 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     await page.getByPlaceholder(/Tighten the pacing/).fill("Make the final paragraph more ominous while preserving all names, facts, and events.");
     await page.getByRole("combobox", { name: /^Provider/ }).selectOption("local");
     await page.getByRole("button", { name: "Create Change Set", exact: true }).click();
+    await page.getByRole("button", { name: "Generate reviewed edit plan", exact: true }).click();
+    await page.getByRole("button", { name: "Generate reviewed scene", exact: true }).click();
     await expect(page.getByRole("button", { name: "Apply 1 change", exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("change-review.png") });
     await page.getByRole("button", { name: "Apply 1 change", exact: true }).click();

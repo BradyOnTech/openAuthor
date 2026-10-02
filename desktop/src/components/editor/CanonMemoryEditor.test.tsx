@@ -5,7 +5,7 @@ import * as api from "../../api";
 import type { CanonDiagnostic, SceneSummary } from "../../types";
 import { CanonMemoryEditor } from "./CanonMemoryEditor";
 
-const editor = vi.hoisted(() => ({ tabs: [{ id: "scene:s1", modified: true }], setActiveTab: vi.fn(), openTab: vi.fn(), beginNavigation: vi.fn(() => () => true) }));
+const editor = vi.hoisted(() => ({ tabs: [{ id: "scene:s1", modified: true }], setActiveTab: vi.fn(), openTab: vi.fn(), updateTab: vi.fn(), beginNavigation: vi.fn(() => () => true) }));
 const workspace = vi.hoisted(() => ({ projectRoot: "/book", scenes: [] as SceneSummary[], codexEntities: [], setError: vi.fn(), setMessage: vi.fn() }));
 vi.mock("../../contexts/EditorContext", () => ({ useEditor: () => editor }));
 vi.mock("../../contexts/WorkspaceContext", () => ({ useWorkspace: () => workspace }));
@@ -23,7 +23,7 @@ it("opens an existing evidence scene without replacing its draft and preserves r
   render(<CanonMemoryEditor />);
   const card = within(await screen.findByRole("article", { name: finding.title }));
   fireEvent.click(card.getByText("Review evidence (1)"));
-  fireEvent.click(card.getByRole("button", { name: "Open scene: The Gate" }));
+  fireEvent.click(card.getByRole("button", { name: "Open evidence 1 in The Gate" }));
   expect(editor.setActiveTab).toHaveBeenCalledWith("scene:s1");
   expect(api.getScene).not.toHaveBeenCalled();
   fireEvent.click(card.getByText("Record review decision"));

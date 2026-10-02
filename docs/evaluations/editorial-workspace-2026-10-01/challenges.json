@@ -1,0 +1,68 @@
+{
+  "evidence_kind": "fresh_synthetic_product_challenges",
+  "limitations": "Exploratory cases written for this review, not an independent accuracy benchmark. Desired warnings express author-facing expectations beyond the documented narrow pattern checks.",
+  "corpus": "~/Developer/openAuthor/docs/product-review-challenges.json",
+  "cases": [
+    {
+      "id": "literal-control",
+      "expected": {
+        "prose_trait_mismatch": 1
+      },
+      "actual": {
+        "prose_trait_mismatch": 1
+      }
+    },
+    {
+      "id": "natural-finger-paraphrase",
+      "expected": {
+        "prose_trait_mismatch": 1
+      },
+      "actual": {
+        "prose_trait_mismatch": 1
+      }
+    },
+    {
+      "id": "spanish-eye-color",
+      "expected": {
+        "prose_trait_mismatch": 1
+      },
+      "actual": {
+        "prose_trait_mismatch": 1
+      }
+    },
+    {
+      "id": "unrelated-negation",
+      "expected": {
+        "prose_trait_mismatch": 1
+      },
+      "actual": {
+        "prose_trait_mismatch": 1
+      }
+    },
+    {
+      "id": "explained-dye-change",
+      "expected": {},
+      "actual": {}
+    },
+    {
+      "id": "knowledge-learned-later",
+      "expected": {},
+      "actual": {}
+    },
+    {
+      "id": "knowledge-substring-monkey",
+      "expected": {},
+      "actual": {}
+    },
+    {
+      "id": "knowledge-explicit-ignorance",
+      "expected": {},
+      "actual": {}
+    }
+  ],
+  "true_positive": 4,
+  "false_positive": 0,
+  "false_negative": 0,
+  "precision": 1.0,
+  "recall": 1.0
+}

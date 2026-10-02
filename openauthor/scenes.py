@@ -9,6 +9,7 @@ from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_text, next_scene_index, utc_now
 from .project_locks import serialized_project_access
+from .reading_order import ordered_scene_ids
 
 
 def slugify(value: str) -> str:
@@ -179,10 +180,12 @@ def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
 
 @serialized_project_access
 def list_scene_details(paths: ProjectPaths) -> list[dict[str, str]]:
-  return [
+  rows = [
     _scene_detail(paths, scene_file)
     for scene_file in sorted(paths.scenes_dir.glob("*.md"))
   ]
+  positions = {scene_id: index for index, scene_id in enumerate(ordered_scene_ids(paths, [row["id"] for row in rows]))}
+  return sorted(rows, key=lambda row: positions[row["id"]])
 
 
 def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
@@ -228,6 +231,12 @@ def update_scene(
 ) -> Path:
   scene_file = find_scene_file(paths, scene_identifier)
   current = _scene_detail(paths, scene_file)
+  fields = {"title": title, "summary": summary, "pov": pov, "status": status, "body": body}
+  if all(
+    value is None or (value.rstrip("\n") == current[key].rstrip("\n") if key == "body" else value == current[key])
+    for key, value in fields.items()
+  ):
+    return scene_file
   updated = {
     "id": current["id"],
     "title": title if title is not None else current["title"],

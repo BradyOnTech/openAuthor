@@ -8,14 +8,16 @@ from collections import Counter
 from typing import Any
 
 from .memory_context import list_assistant_memory
-from .project import OpenAuthorError, ProjectPaths, utc_now
+from .ai_visibility import memory_for_ai
+from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .revisions import revision_head
 from .scenes import split_scene_text
+from .text_analysis import retrieval_terms
 
 RETRIEVAL_INDEX_SCHEMA_VERSION = 1
+TOKENIZER_VERSION = 2
 DEFAULT_CHUNK_WORDS = 90
 DEFAULT_OVERLAP_WORDS = 20
-TOKEN_PATTERN = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
 SCENE_SOURCE_TYPE = "scene"
 CODEX_SOURCE_TYPE = "codex"
 
@@ -25,8 +27,7 @@ def _normalize_space(value: str) -> str:
 
 
 def _tokenize(value: str) -> list[str]:
-  tokens = TOKEN_PATTERN.findall(value.lower())
-  return [token for token in tokens if len(token) >= 2 or token.isdigit()]
+  return retrieval_terms(value)
 
 
 def _current_git_head(paths: ProjectPaths) -> str:
@@ -69,7 +70,7 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
 
 def _collect_memory_sources(paths: ProjectPaths) -> list[dict[str, str]]:
   sources: list[dict[str, str]] = []
-  for codex_row in list_assistant_memory(paths):
+  for codex_row in memory_for_ai(paths):
     entity_id = codex_row.get("id", "").strip()
     if entity_id == "":
       continue
@@ -126,8 +127,9 @@ def _chunk_source(
   chunk_words: int,
   overlap_words: int,
 ) -> list[dict[str, Any]]:
-  words = source.get("text", "").split(" ")
-  if not words or words == [""]:
+  text = source.get("text", "")
+  words = list(re.finditer(r"\S+", text))
+  if not words:
     return []
 
   step = chunk_words - overlap_words
@@ -136,8 +138,13 @@ def _chunk_source(
   position = 0
   while start < len(words):
     end = min(len(words), start + chunk_words)
-    chunk_text = " ".join(words[start:end]).strip()
-    if chunk_text:
+    char_start, char_end = words[start].start(), words[end - 1].end()
+    max_chars = chunk_words * 32
+    # Whitespace counts alone cannot bound CJK or other unspaced prose.
+    # Slice the original source rather than inserting artificial word spaces.
+    while char_start < char_end:
+      quote_end = min(char_end, char_start + max_chars)
+      chunk_text = text[char_start:quote_end]
       token_counts = Counter(_tokenize(chunk_text))
       chunks.append(
         {
@@ -149,8 +156,10 @@ def _chunk_source(
           "chunk_position": position,
           "word_start": start,
           "word_end": end,
+          "char_start": char_start,
+          "char_end": quote_end,
           "text": chunk_text,
-          "token_total": len(chunk_text.split(" ")),
+          "token_total": max(1, sum(token_counts.values())),
           "token_counts": {
             term: int(count)
             for term, count in sorted(token_counts.items())
@@ -158,6 +167,9 @@ def _chunk_source(
         }
       )
       position += 1
+      if quote_end == char_end:
+        break
+      char_start = quote_end - overlap_words * 32
 
     if end >= len(words):
       break
@@ -220,6 +232,7 @@ def build_retrieval_index(
   index_payload = {
     "schema_version": RETRIEVAL_INDEX_SCHEMA_VERSION,
     "memory_policy_version": 1,
+    "tokenizer_version": TOKENIZER_VERSION,
     "created_at": utc_now(),
     "project_root": str(paths.root),
     "git_head": git_head,
@@ -244,10 +257,7 @@ def build_retrieval_index(
       for term, count in sorted(document_frequency.items())
     },
   }
-  paths.retrieval_index_file.write_text(
-    json.dumps(index_payload, indent=2) + "\n",
-    encoding="utf-8",
-  )
+  atomic_write_json(paths.retrieval_index_file, index_payload)
   return get_retrieval_index_status(paths)
 
 
@@ -277,6 +287,12 @@ def get_retrieval_index_status(paths: ProjectPaths) -> dict[str, Any]:
   )
   stale_by_sources = indexed_digest != current_digest
   stale_reasons: list[str] = []
+  if payload.get("tokenizer_version") != TOKENIZER_VERSION:
+    stale_reasons.append("tokenizer_changed")
+  if any(not row.get("content_digest") for row in payload.get("sources", [])):
+    stale_reasons.append("source_content_validation_missing")
+  if any(row.get("source_type") == CODEX_SOURCE_TYPE and not row.get("content_digest") for row in payload.get("sources", [])):
+    stale_reasons.append("memory_visibility_policy_changed")
   if stale_by_head:
     stale_reasons.append("git_head_changed")
   if stale_by_sources:
@@ -324,6 +340,8 @@ def query_retrieval_index(
     raise OpenAuthorError(
       "Retrieval index not found. Run `openauthor retrieval build` first."
     )
+  if "tokenizer_changed" in status.get("stale_reasons", []):
+    raise OpenAuthorError("Retrieval tokenization changed. Rebuild the index before querying.")
   if require_fresh and status.get("stale"):
     raise OpenAuthorError(
       "Retrieval index is stale for current project state. Rebuild before querying."
@@ -334,7 +352,7 @@ def query_retrieval_index(
   document_frequency = payload.get("document_frequency", {})
   query_terms: list[str] = []
   seen: set[str] = set()
-  for token in _tokenize(normalized_query):
+  for token in retrieval_terms(normalized_query, query=True):
     if token not in seen:
       seen.add(token)
       query_terms.append(token)
@@ -355,16 +373,20 @@ def query_retrieval_index(
   }
   corpus_size = max(1, len(chunks))
   ranked: list[dict[str, Any]] = []
+  current_source_digests = {
+    source["source_id"]: hashlib.sha256(source["text"].encode("utf-8")).hexdigest()
+    for source in _collect_sources(paths)
+  }
 
   for chunk in chunks:
     if not isinstance(chunk, dict):
       continue
     source_id = str(chunk.get("source_id", ""))
     source_row = source_lookup.get(source_id, {})
-    if source_row.get("source_type", chunk.get("source_type")) == CODEX_SOURCE_TYPE:
-      expected_digest = allowed_memory_digests.get(source_id)
-      if expected_digest is None or source_row.get("content_digest") != expected_digest:
-        continue
+    # A stale index can still return unchanged, permitted sources. Never quote
+    # obsolete manuscript facts, revoked Memory, or unverified legacy chunks.
+    if source_id not in current_source_digests or source_row.get("content_digest") != current_source_digests[source_id]:
+      continue
     token_counts = chunk.get("token_counts")
     if not isinstance(token_counts, dict):
       continue

@@ -54,6 +54,18 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+function SplitEditorHarness() {
+  const { tabs, openTab } = useEditor();
+  useEffect(() => {
+    openTab({ id: scene.id, kind: "scene", label: scene.title, data: scene });
+    openTab({ id: "scene-0002", kind: "scene", label: "Other scene", data: { ...scene, id: "scene-0002", title: "Other scene", body: "Other prose." } });
+  }, [openTab]);
+  return <>{tabs.map(tab => <section key={tab.id}>
+    <output aria-label={`Draft in ${tab.id}`}>{(tab.data as SceneDetail).body}</output>
+    <SceneEditor tabId={tab.id} scene={tab.data as SceneDetail} />
+  </section>)}</>;
+}
+
 function saveShortcut() {
   fireEvent.keyDown(window, { key: "s", ctrlKey: true });
 }
@@ -62,8 +74,33 @@ describe("scene save safety", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    workspace.projectRoot = `/novels/save-safety-${crypto.randomUUID()}`;
   });
   afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
+
+  it("keeps each restored split editor's draft attached to its own tab", async () => {
+    vi.mocked(updateScene).mockImplementation(async (_root, _id, changes) => ({ ...scene, body: changes.body ?? scene.body }));
+    render(<EditorProvider><SplitEditorHarness /></EditorProvider>);
+    fireEvent.change(screen.getAllByRole("textbox", { name: "Scene prose" })[0], { target: { value: "First pane changed." } });
+    expect(screen.getByLabelText("Draft in scene-0001").textContent).toBe("First pane changed.");
+    expect(screen.getByLabelText("Draft in scene-0002").textContent).toBe("Other prose.");
+    await act(async () => saveShortcut());
+  });
+
+  it("retains conflict comparison and reconciliation after closing and reopening the editor", async () => {
+    vi.mocked(updateScene).mockRejectedValueOnce(conflictError());
+    const first = render(<EditorProvider><SceneEditor scene={scene} /></EditorProvider>);
+    fireEvent.change(screen.getByRole("textbox", { name: "Scene prose" }), { target: { value: "My pending draft." } });
+    await act(async () => saveShortcut());
+    first.unmount();
+    render(<EditorProvider><SceneEditor scene={scene} /></EditorProvider>);
+    expect(screen.getByRole("heading", { name: "Scene changed elsewhere" })).toBeTruthy();
+    expect((screen.getByRole("textbox", { name: "Scene prose" }) as HTMLTextAreaElement).value).toBe("My pending draft.");
+    vi.mocked(updateScene).mockResolvedValueOnce({ ...changedScene, body: "My pending draft.\n" });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save reconciled version" })));
+    expect(updateScene).toHaveBeenLastCalledWith(workspace.projectRoot, scene.id, expect.objectContaining({ expectedVersion: changedScene.edit_version }));
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
 
   it("pauses conflicting autosaves and explicitly saves the newest reconciled draft against the reviewed version", async () => {
     vi.useFakeTimers();

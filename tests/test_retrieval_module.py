@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +16,66 @@ from openauthor.scenes import add_scene, update_scene
 
 
 class RetrievalModuleTests(unittest.TestCase):
+  def test_unspaced_chapters_return_bounded_original_quotes(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = initialize_project(Path(folder), name="Long Unicode chapter")
+      body = "风吹过城墙。" * 200 + "夜雨落在长街。" + "小林没有回头。" * 200
+      add_scene(paths, title="Chapter", body=body)
+      build_retrieval_index(paths, chunk_words=20, overlap_words=5)
+      result = query_retrieval_index(paths, query="夜雨")
+      self.assertTrue(result["results"])
+      for row in result["results"]:
+        self.assertLessEqual(len(row["text"]), 640)
+        self.assertIn("夜雨", row["text"])
+        self.assertIn(row["text"], body)
+
+  def test_legacy_tokenization_requires_rebuild_even_when_stale_reads_are_allowed(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = self._seed_project(Path(folder))
+      build_retrieval_index(paths)
+      # Reproduce the on-disk format produced before Unicode indexing.
+      payload = json.loads(paths.retrieval_index_file.read_text())
+      payload.pop("tokenizer_version", None)
+      paths.retrieval_index_file.write_text(json.dumps(payload))
+      self.assertIn("tokenizer_changed", get_retrieval_index_status(paths)["stale_reasons"])
+      with self.assertRaisesRegex(OpenAuthorError, "Rebuild"):
+        query_retrieval_index(paths, query="cipher", require_fresh=False)
+      build_retrieval_index(paths)
+      self.assertFalse(get_retrieval_index_status(paths)["stale"])
+      self.assertGreater(query_retrieval_index(paths, query="cipher")["result_count"], 0)
+
+  def test_unicode_queries_find_original_passages_without_ascii_fallback(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = initialize_project(Path(folder), name="Unicode retrieval")
+      passages = [
+        ("夜雨", "夜雨落在长街。小林看见蓝色的灯。她没有回头。"),
+        ("ÉLODIE", "Élodie attend près du café."),
+        ("разговор", "Анна помнила разговор у ворот."),
+        ("المدينة", "سلمى تنتظر عند بوابة المدينة."),
+        ("étoile", "L'e\u0301toile brille."),
+        ("雨", "雨。"),
+      ]
+      for index, (_query, body) in enumerate(passages):
+        add_scene(paths, title=f"Excerpt {index + 1}", body=body)
+      build_retrieval_index(paths)
+      for index, (query, body) in enumerate(passages):
+        with self.subTest(query=query):
+          result = query_retrieval_index(paths, query=query)
+          self.assertGreater(result["result_count"], 0)
+          self.assertEqual(result["results"][0]["source_ref"], f"scene-{index + 1:04d}")
+          self.assertIn(body, result["results"][0]["text"])
+
+  def test_cached_scene_facts_are_not_returned_after_a_revision(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = initialize_project(Path(folder), name="Current facts only")
+      add_scene(paths, title="Archive", body="The gate was cobalt.")
+      add_scene(paths, title="Harbor", body="The sea was cobalt.")
+      build_retrieval_index(paths)
+      update_scene(paths, scene_identifier="scene-0001", body="The gate was red.")
+      result = query_retrieval_index(paths, query="cobalt", require_fresh=False)
+      self.assertEqual([row["source_ref"] for row in result["results"]], ["scene-0002"])
+      self.assertTrue(result["index"]["stale"])
+
   def _seed_project(self, root: Path):
     paths = initialize_project(root, name="Retrieval Demo")
     add_scene(

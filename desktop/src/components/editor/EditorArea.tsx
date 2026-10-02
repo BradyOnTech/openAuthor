@@ -34,7 +34,7 @@ export function EditorArea() {
   );
 }
 
-function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; modified?: boolean } }) {
+function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; modified?: boolean; focusPassage?: import("../../types").CanonEvidence } }) {
   const { zenMode, setZenMode } = useUI();
   switch (tab.kind) {
     case "writing-voice":
@@ -44,7 +44,7 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     case "scene": {
       const scene = tab.data as SceneDetail | undefined;
       if (!scene) return <EmptyState />;
-      return <SceneDocument key={tab.id} tabId={tab.id} scene={scene} modified={tab.modified} zenMode={zenMode} onExitZen={() => setZenMode(false)} />;
+      return <SceneDocument key={tab.id} tabId={tab.id} scene={scene} modified={tab.modified} focusPassage={tab.focusPassage} zenMode={zenMode} onExitZen={() => setZenMode(false)} />;
     }
     case "plan":
       return <PlanEditor focusNoteId={(tab.data as { noteId?: string } | undefined)?.noteId} />;

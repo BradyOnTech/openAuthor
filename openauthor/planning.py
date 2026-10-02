@@ -42,7 +42,7 @@ def _read_plan(paths: ProjectPaths) -> dict[str, Any]:
 
 
 @serialized_project_access
-def get_plan(paths: ProjectPaths) -> dict[str, Any]:
+def get_plan(paths: ProjectPaths, *, persist: bool = True) -> dict[str, Any]:
   plan = _read_plan(paths)
   current_scene_ids = [str(scene["id"]) for scene in list_scenes(paths)]
   current = set(current_scene_ids)
@@ -76,7 +76,8 @@ def get_plan(paths: ProjectPaths) -> dict[str, Any]:
     for scene_id, value in plan.get("scene_metadata", {}).items()
     if scene_id in current and isinstance(value, dict)
   }
-  atomic_write_json(paths.structure_file, plan)
+  if persist:
+    atomic_write_json(paths.structure_file, plan)
   return plan
 
 
@@ -399,7 +400,7 @@ def add_scene_note(
 @serialized_project_access
 def list_manuscript_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
   """Saved prose in Plan order, with unassigned scenes retained at the end."""
-  plan = get_plan(paths)
+  plan = get_plan(paths, persist=False)
   details = {scene["id"]: scene for scene in list_scene_details(paths)}
   return [details[scene_id] for scene_id in _scene_locations(plan)]
 
@@ -407,7 +408,7 @@ def list_manuscript_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
 @serialized_project_access
 def get_manuscript_reading(paths: ProjectPaths) -> dict[str, Any]:
   """A coherent local reading copy of the saved manuscript and its chapters."""
-  plan = get_plan(paths)
+  plan = get_plan(paths, persist=False)
   scenes = list_manuscript_scenes(paths)
   sections = [
     {"id": chapter["id"], "title": chapter["title"], "act_title": act["title"], "scene_ids": chapter["scene_ids"]}

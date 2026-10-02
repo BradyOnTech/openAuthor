@@ -10,24 +10,53 @@ import {
   writeSceneRecoveryDraft,
   type SceneRecoveryDraft,
 } from "../../recoveryJournal";
-import type { SceneDetail } from "../../types";
+import type { SceneDetail, CanonEvidence } from "../../types";
+import { editorSaveQueue } from "../../sceneEditorQueue";
+import { evidenceRange } from "../../evidenceRange";
+import { rememberTextLocation, restoreTextLocation } from "../../editorLocation";
+import { availableProviders } from "../../providerSelection";
+import { registerSceneSave } from "../../sceneSaveSession";
+import { isProjectBookChanging } from "../../bookOperationBarrier";
+import { SelectionAssist } from "./SelectionAssist";
 import { ZenMode } from "../overlay/ZenMode";
 
 type Props = {
+  tabId?: string;
   scene: SceneDetail;
+  focusPassage?: CanonEvidence;
   zenMode?: boolean;
   onExitZen?: () => void;
 };
 
-export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
-  const { projectRoot, refreshScenes, setError } = useWorkspace();
-  const { updateTab, activeTabId } = useEditor();
+export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExitZen }: Props) {
+  const { projectRoot, branches, runtimeConfig, refreshScenes, refreshProposals, setError } = useWorkspace();
+  const { updateTab, activeTabId: selectedTabId, openTab } = useEditor();
+  const activeTabId = tabId ?? selectedTabId;
 
-  const [title, setTitle] = useState(scene.title);
-  const [body, setBody] = useState(scene.body);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [readOnly, setReadOnly] = useState(isProjectBookChanging(projectRoot));
+  const [selection, setSelection] = useState<{ body: string; start: number; end: number } | null>(null);
+  const locationScope = scene.edit_version?.workspace || branches?.find(row => row.current)?.name || "main";
+  const rememberLocation = () => { if (textareaRef.current) rememberTextLocation(projectRoot, locationScope, scene.id, textareaRef.current); };
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const range = focusPassage ? evidenceRange(textarea.value, focusPassage) : null;
+    const location = range ? { start: range[0], end: range[1], direction: "none" as const, scrollTop: 0 } : restoreTextLocation(projectRoot, locationScope, scene.id, textarea.value);
+    if (location) { textarea.setSelectionRange(location.start, location.end, location.direction); textarea.scrollTop = location.scrollTop; const container = textarea.closest(".scene-editor"); if (container) container.scrollTop = "containerScrollTop" in location ? Number(location.containerScrollTop) || 0 : 0; }
+    if (range) { textarea.focus(); setSelection({ body: textarea.value, start: range[0], end: range[1] }); }
+    if (focusPassage) {
+      rememberTextLocation(projectRoot, locationScope, scene.id, textarea);
+      updateTab(activeTabId, { focusPassage: undefined });
+    }
+  }, [projectRoot, locationScope, scene.id, focusPassage]);
+  const [queue] = useState(() => editorSaveQueue(projectRoot, scene, activeTabId));
+  useEffect(() => queue.mount(), [queue]);
+  const [title, setTitle] = useState(queue.latest.current.title);
+  const [body, setBody] = useState(queue.latest.current.body);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [conflict, setConflict] = useState<SceneConflict | null>(null);
+  const [conflict, setConflict] = useState<SceneConflict | null>(queue.conflict.current);
   const [refreshingConflict, setRefreshingConflict] = useState(false);
   const [allowStorylineTransfer, setAllowStorylineTransfer] = useState(false);
   const [recoveryUnavailable, setRecoveryUnavailable] = useState(false);
@@ -36,13 +65,13 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
   const [recoveryIndex, setRecoveryIndex] = useState(0);
   const recoveryDraft = recoveryDrafts[recoveryIndex] || recoveryDrafts[0];
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedRef = useRef({ title: scene.title, body: scene.body });
-  const baseVersionRef = useRef(scene.edit_version);
-  const conflictRef = useRef<SceneConflict | null>(null);
+  const lastSavedRef = queue.lastSaved;
+  const baseVersionRef = queue.baseVersion;
+  const conflictRef = queue.conflict;
   const mountedRef = useRef(true);
   const saveRef = useRef<(showIndicator: boolean) => Promise<void>>(async () => {});
-  const saveInFlightRef = useRef<Promise<void> | null>(null);
-  const acknowledgedSceneRef = useRef<SceneDetail | null>(null);
+  const saveInFlightRef = queue.pending;
+  const acknowledgedSceneRef = queue.acknowledged;
   const ownedRecoveryDraftRef = useRef<SceneRecoveryDraft | null>(null);
   const [recoveryOwner] = useState(() => crypto.randomUUID());
   const recoverySequenceRef = useRef(0);
@@ -52,12 +81,7 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
       draft.draftId !== recoveryOwner && !recoveryDraftMatchesScene(draft, savedScene)));
     setRecoveryIndex(0);
   }, [projectRoot, recoveryOwner]);
-  const latestPayloadRef = useRef({
-    sceneId: scene.id,
-    title,
-    body,
-    tabId: activeTabId,
-  });
+  const latestPayloadRef = queue.latest;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -123,8 +147,8 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
   }, [body, isDirty, saving, projectRoot, scene.id, scene.updated_at, title, recoveryOwner]);
 
   useEffect(() => {
-    updateTab(activeTabId, { modified: isDirty });
-  }, [isDirty, activeTabId, updateTab]);
+    updateTab(activeTabId, { modified: isDirty, data: { ...scene, title, body, edit_version: baseVersionRef.current } });
+  }, [isDirty, title, body, activeTabId, updateTab]);
 
   const save = useCallback(async (showIndicator: boolean) => {
     if (conflictRef.current) return;
@@ -159,7 +183,8 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
           if (updated.save_warnings?.length) setError(updated.save_warnings.join(" "));
           lastSavedRef.current = { title: payload.title, body: payload.body };
           baseVersionRef.current = updated.edit_version;
-          acknowledgedSceneRef.current = updated;
+          const displayed = { ...updated, title: latestPayloadRef.current.title, body: latestPayloadRef.current.body };
+          acknowledgedSceneRef.current = displayed;
           const hasNewerWriting = hasUnsavedChanges();
           if (submittedRecovery && recoveryDraftMatchesScene(submittedRecovery, payload)) {
             clearSceneRecoveryDraft(projectRoot, payload.sceneId, submittedRecovery);
@@ -179,7 +204,7 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
           updateTab(payload.tabId, {
             modified: hasNewerWriting,
             label: updated.title || payload.sceneId,
-            data: updated,
+            data: displayed,
           });
         }
       } catch (e) {
@@ -209,11 +234,14 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
         setError(`Scene written, but the manuscript list could not refresh: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-  }, [projectRoot, refreshScenes, setError, updateTab, refreshRecoveryDrafts]);
+  }, [projectRoot, branches, runtimeConfig, refreshScenes, refreshProposals, setError, updateTab, refreshRecoveryDrafts]);
 
-  useEffect(() => {
-    saveRef.current = save;
-  }, [save]);
+  useEffect(() => { saveRef.current = save; }, [save]);
+  const flush = useCallback(async () => {
+    await saveRef.current(true);
+    return !conflictRef.current && latestPayloadRef.current.title === lastSavedRef.current.title && latestPayloadRef.current.body === lastSavedRef.current.body;
+  }, []);
+  useEffect(() => registerSceneSave({ projectRoot, sceneId: scene.id, scope: locationScope, flush, setReadOnly }), [projectRoot, scene.id, flush]);
 
   useEffect(() => {
     if (!isDirty || conflict) return;
@@ -247,7 +275,7 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
   }, [save]);
 
   return (
-    <div className={`scene-editor${zenMode ? " zen-mode" : ""}`} role={zenMode ? "dialog" : undefined} aria-modal={zenMode || undefined} aria-label={zenMode ? "Focused writing" : undefined}>
+    <div className={`scene-editor${zenMode ? " zen-mode" : ""}`} onScroll={rememberLocation} role={zenMode ? "dialog" : undefined} aria-modal={zenMode || undefined} aria-label={zenMode ? "Focused writing" : undefined}>
       {zenMode && onExitZen && <ZenMode onExit={onExitZen} />}
       <div className="scene-editor__status" aria-live="polite">
         <span>{wordCount.toLocaleString()} word{wordCount === 1 ? "" : "s"}</span>
@@ -328,17 +356,24 @@ export function SceneEditor({ scene, zenMode = false, onExitZen }: Props) {
           }}>Discard</button>
         </div>
       )}
+      <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches?.find(row => row.current)?.name || "main"} selection={selection} disabled={readOnly || Boolean(conflict)} providers={availableProviders(runtimeConfig).map(row => row.id)} flush={flush} onResult={async proposal => { await refreshProposals(); openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || "Review selection", data: proposal }); }} />
       <div className="scene-editor__content">
         <input
           aria-label="Scene title"
           className="scene-editor__title"
           value={title}
+          readOnly={readOnly}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Scene title..."
         />
         <div className="scene-editor__divider" />
         <textarea
+          ref={textareaRef}
           aria-label="Scene prose"
+          readOnly={readOnly}
+          onSelect={event => { const node = event.currentTarget; setSelection(node.selectionEnd > node.selectionStart ? { body: node.value, start: node.selectionStart, end: node.selectionEnd } : null); rememberLocation(); }}
+          onScroll={rememberLocation}
+          onBlur={rememberLocation}
           className="scene-editor__body"
           value={body}
           onChange={(e) => setBody(e.target.value)}

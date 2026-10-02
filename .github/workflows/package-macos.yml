@@ -1,0 +1,55 @@
+name: package-macos
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "openauthor/**"
+      - "desktop/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - ".github/workflows/package-macos.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  package-smoke:
+    name: Unsigned package recovery (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci --prefix desktop
+      - name: Build pinned runtimes on native architecture
+        env:
+          OPENAUTHOR_RUNTIME_ARCH: ${{ matrix.arch }}
+        run: bash scripts/prepare_bundled_runtime.sh
+      - name: Build unsigned app for internal testing
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+          LC_CTYPE: en_US.UTF-8
+        run: npm run tauri:build --prefix desktop -- --bundles app
+      - name: Verify recovery without system tools
+        run: bash scripts/verify_macos_bundle.sh
+      - name: Archive internal-test application
+        run: ditto -c -k --keepParent desktop/src-tauri/target/release/bundle/macos/openAuthor.app openAuthor-${{ matrix.arch }}-UNSIGNED.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openAuthor-${{ matrix.arch }}-UNSIGNED-internal-test
+          path: openAuthor-${{ matrix.arch }}-UNSIGNED.zip
+          retention-days: 7

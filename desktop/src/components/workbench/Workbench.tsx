@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { useEditor } from "../../contexts/EditorContext";
 import { ActivityBar } from "./ActivityBar";
 import { StatusBar } from "./StatusBar";
 import { PrimarySidebar } from "../sidebar/PrimarySidebar";
@@ -11,6 +12,7 @@ import { WelcomeScreen } from "../welcome/WelcomeScreen";
 import { FirstRunGuide } from "../onboarding/FirstRunGuide";
 
 export function Workbench() {
+  const { activeTabId } = useEditor();
   const {
     sidebarOpen,
     secondarySidebarOpen,
@@ -33,6 +35,15 @@ export function Workbench() {
   } = useWorkspace();
 
   const projectReady = !!(activeProjectId && projectFound === true);
+
+  useEffect(() => {
+    const revealEditor = () => {
+      if (projectReady && activeTabId && window.innerWidth <= 900) setSidebarOpen(false);
+    };
+    revealEditor();
+    window.addEventListener("resize", revealEditor);
+    return () => window.removeEventListener("resize", revealEditor);
+  }, [projectReady, activeTabId, setSidebarOpen]);
 
   useEffect(() => {
     if (!activeProjectId) return;

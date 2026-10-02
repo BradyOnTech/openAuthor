@@ -5,6 +5,9 @@ import io
 import json
 import tempfile
 import unittest
+import os
+import urllib.error
+from unittest.mock import patch
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +40,22 @@ def _response_for(frames: list[dict[str, Any]], request_id: Any) -> dict[str, An
 
 
 class ServerModuleTests(unittest.TestCase):
+  def test_regeneration_route_publishes_one_response_and_replaces_the_original_turn(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Sidecar replacement")
+      thread = create_chat_thread(paths, title="Replacement", provider="local")
+      from openauthor.chat import send_chat_message
+      original = send_chat_message(paths, thread_id=thread["id"], message="Original question.", turn_id="turn-original-route")
+      frames = _run_requests(paths, [{"id": "replacement-route", "method": "chat.regenerate", "params": {
+        "thread_id": thread["id"], "message": "Replacement question.", "turn_id": "turn-replacement-route",
+        "replace_from_message_id": original["user_message"]["id"], "memory_approvals": [], "story_approvals": [],
+      }}])
+      responses = [row for row in frames if row.get("id") == "replacement-route" and "event" not in row]
+      self.assertEqual(len(responses), 1)
+      self.assertNotIn("error", responses[0])
+      self.assertEqual([row["content"] for row in list_chat_messages(paths, thread_id=thread["id"]) if row["role"] == "user"], ["Replacement question."])
+      self.assertEqual(AssistantTurnStore(paths).get("turn-original-route").superseded_by, "turn-replacement-route")
+
   def test_mobile_snapshot_prepare_returns_plaintext_for_desktop_encryption(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(
@@ -284,6 +303,65 @@ class ServerModuleTests(unittest.TestCase):
       recorded = _response_for(recorded_frames, "voice-record")["result"]
       self.assertEqual(recorded["turn"]["status"], "completed")
       self.assertEqual(recorded["turn"]["context_pack_id"], pack_id)
+  def test_story_permissions_reach_preview_and_streamed_turn_and_then_expire(self) -> None:
+    from openauthor.canon import add_canon_fact
+    from openauthor.scenes import add_scene
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Canon transport")
+      add_scene(paths, title="Gate", body="The gate is blue.")
+      fact = add_canon_fact(paths, subject_entity_id="", predicate="gate color", value="blue",
+        evidence=[{"scene_id": "scene-0001", "excerpt": "The gate is blue."}])
+      thread = create_chat_thread(paths, title="Review", provider="local", mode="chat")
+      params = {"thread_id": thread["id"], "message": "Discuss the gate.", "current_scene_id": "scene-0001", "story_approvals": [fact["id"]]}
+      preview = _response_for(_run_requests(paths, [{"id": "preview", "method": "chat.context", "params": params}]), "preview")["result"]
+      self.assertEqual([row["id"] for row in preview["context"]["story_memory"]["facts"]], [fact["id"]])
+      params["expected_context_fingerprint"] = preview["fingerprint"]
+      sent = _response_for(_run_requests(paths, [{"id": "send", "method": "chat.send", "params": params}]), "send")["result"]
+      self.assertTrue(sent["user_message"]["context_used"]["privacy"]["one_time_approval"])
+      params.pop("story_approvals")
+      params.pop("expected_context_fingerprint")
+      following = _response_for(_run_requests(paths, [{"id": "next", "method": "chat.context", "params": params}]), "next")["result"]
+      self.assertEqual(following["context"]["story_memory"]["facts"], [])
+      self.assertEqual(following["history"], [])
+
+  def test_context_preview_and_one_time_permission_reach_the_streamed_turn(self) -> None:
+    from openauthor.codex import add_entity
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Context transport")
+      entity_id = add_entity(paths, kind="character", name="Mara", description="APPROVED_FACT", ai_visibility="ask")
+      thread = create_chat_thread(paths, title="Review", provider="local", mode="chat")
+      params = {"thread_id": thread["id"], "message": "Discuss Mara.", "memory_approvals": [{"entity_id": entity_id}]}
+      preview = _response_for(_run_requests(paths, [{"id": "preview", "method": "chat.context", "params": params}]), "preview")["result"]
+      self.assertIn("APPROVED_FACT", preview["user_prompt"])
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
+      params["expected_context_fingerprint"] = preview["fingerprint"]
+      sent = _response_for(_run_requests(paths, [{"id": "send", "method": "chat.send", "params": params}]), "send")["result"]
+      self.assertTrue(sent["user_message"]["context_used"]["privacy"]["one_time_approval"])
+      following = _response_for(_run_requests(paths, [{"id": "next", "method": "chat.context", "params": {"thread_id": thread["id"], "message": "Continue."}}]), "next")["result"]
+      self.assertNotIn("APPROVED_FACT", following["user_prompt"])
+      self.assertEqual(following["history"], [])
+
+  def test_replayed_send_after_connection_loss_does_not_duplicate_messages(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Retry safety")
+      thread = create_chat_thread(paths, title="Retry", provider="local", mode="chat")
+      request = {"id": "lost-response", "method": "chat.send", "params": {"thread_id": thread["id"], "message": "Suggest a different opening."}}
+      first = _response_for(_run_requests(paths, [request]), "lost-response")
+      second = _response_for(_run_requests(paths, [request]), "lost-response")
+      self.assertEqual(len(list_chat_messages(paths, thread_id=thread["id"])), 2)
+      self.assertEqual(first["result"], second["result"])
+
+  def test_expired_credentials_are_actionable_and_do_not_publish_a_partial_turn(self) -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+      paths = initialize_project(Path(temporary), name="Expired sign-in")
+      thread = create_chat_thread(paths, title="Expiry", provider="openai", mode="chat")
+      failure = urllib.error.HTTPError("https://example.invalid", 401, "Expired", {}, io.BytesIO(b'{"error":"expired credential"}'))
+      with patch.dict(os.environ, {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", side_effect=failure) as transport:
+        frames = _run_requests(paths, [{"id": "expiry", "method": "chat.send", "params": {"thread_id": thread["id"], "message": "Synthetic test."}}])
+      response = _response_for(frames, "expiry")
+      self.assertEqual(response["error"]["category"], "auth_error")
+      self.assertEqual(transport.call_count, 1)
+      self.assertEqual(list_chat_messages(paths, thread_id=thread["id"]), [])
 
   def test_ping_and_unknown_method(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -458,7 +536,7 @@ class ServerModuleTests(unittest.TestCase):
       self.assertEqual(send["error"]["category"], "interrupted")
 
       messages = list_chat_messages(paths, thread_id=thread["id"])
-      self.assertEqual([row["role"] for row in messages], ["user"])
+      self.assertEqual([row["role"] for row in messages], [])
       self.assertEqual(
         AssistantTurnStore(paths).get("turn-interrupted").status,
         "interrupted",

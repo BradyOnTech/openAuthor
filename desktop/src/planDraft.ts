@@ -3,6 +3,7 @@ import type { ManuscriptPlan } from "./types";
 export type PlanDraft = {
   brief: ManuscriptPlan["brief"] | null;
   baseline: ManuscriptPlan["brief"] | null;
+  themesText?: string;
   newAct: string;
   chapters: Record<string, string>;
   beats: Record<string, string>;

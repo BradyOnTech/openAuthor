@@ -6,6 +6,7 @@ import queue
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import webbrowser
@@ -26,6 +27,17 @@ class CodexAppServerUnavailable(CodexAppServerError):
   pass
 
 
+class CodexAppServerUnsafeConfiguration(CodexAppServerError):
+  pass
+
+
+class CodexAppServerIncompleteTurn(CodexAppServerError):
+  def __init__(self, message: str, *, token_usage: dict[str, Any], model: str) -> None:
+    super().__init__(message)
+    self.token_usage = token_usage
+    self.model = model
+
+
 DEFAULT_MODEL_SENTINELS = {
   "",
   "codex-default",
@@ -36,6 +48,50 @@ DEFAULT_REQUEST_TIMEOUT_SECONDS = 120.0
 DEFAULT_LOGIN_TIMEOUT_SECONDS = 180.0
 DEFAULT_ACCOUNT_READY_TIMEOUT_SECONDS = 15.0
 ACCOUNT_READY_POLL_SECONDS = 0.25
+VERIFIED_CODEX_VERSION = "0.144.6"
+
+# The subscription runtime is a transport, not a second authoring agent. These
+# settings are also supplied at startup so discovery cannot run before a thread.
+RUNTIME_CONFIG: dict[str, Any] = {
+  "project_doc_max_bytes": 0,
+  "web_search": "disabled",
+  "notify": [],
+  "include_environment_context": False,
+  "include_permissions_instructions": False,
+  "include_apps_instructions": False,
+  "include_collaboration_mode_instructions": False,
+  "skills": {"include_instructions": False},
+  "memories": {"use_memories": False, "generate_memories": False},
+  "orchestrator": {"skills": {"enabled": False}, "mcp": {"enabled": False}},
+  "analytics": {"enabled": False},
+  "tools": {"experimental_request_user_input": {"enabled": False}},
+  "features": {name: False for name in (
+    "apps", "goals", "hooks", "codex_hooks", "plugin_hooks", "plugins",
+    "multi_agent", "multi_agent_v2", "collaboration_modes", "remote_plugin",
+    "shell_tool", "unified_exec", "code_mode", "code_mode_host", "code_mode_only",
+    "memories", "memory_tool", "browser_use", "browser_use_external",
+    "computer_use", "in_app_browser", "image_generation", "js_repl",
+    "apply_patch_freeform", "tool_search", "search_tool", "request_permissions",
+  )},
+}
+# Some model catalogs select the multi-agent tool surface independently of the
+# feature flag. One slot leaves no capacity for a second agent or provider call.
+RUNTIME_CONFIG["features"]["multi_agent_v2"] = {
+  "enabled": False, "max_concurrent_threads_per_session": 1,
+  "root_agent_usage_hint_text": "", "subagent_usage_hint_text": "",
+  "multi_agent_mode_hint_text": "Do not delegate. Answer only the host's writing request.",
+}
+
+
+def _config_arguments(config: dict[str, Any], prefix: str = "") -> list[str]:
+  arguments = []
+  for key, value in config.items():
+    path = f"{prefix}.{key}" if prefix else key
+    if isinstance(value, dict):
+      arguments.extend(_config_arguments(value, path))
+    else:
+      arguments.extend(["-c", f"{path}={json.dumps(value)}"])
+  return arguments
 
 
 def _configured_timeout(name: str, default: float) -> float:
@@ -120,6 +176,13 @@ class CodexAppServer:
     self._messages: queue.Queue[dict[str, Any] | None] = queue.Queue()
     self._stderr_lines: list[str] = []
     self._request_id = 0
+    self._runtime_directory: tempfile.TemporaryDirectory[str] | None = None
+    self._completion_config = json.loads(json.dumps(RUNTIME_CONFIG))
+
+  def _runtime_cwd(self) -> str:
+    if self._runtime_directory is None:
+      self._runtime_directory = tempfile.TemporaryDirectory(prefix="openauthor-provider-")
+    return str(Path(self._runtime_directory.name).resolve())
 
   def __enter__(self) -> CodexAppServer:
     self.start()
@@ -132,23 +195,36 @@ class CodexAppServer:
     if self._process is not None:
       return
     self.codex_home.mkdir(parents=True, exist_ok=True)
+    self._check_instruction_boundary()
     try:
       os.chmod(self.codex_home, 0o700)
     except OSError:
       pass
-    environment = os.environ.copy()
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("CODEX_")}
     environment["CODEX_HOME"] = str(self.codex_home)
     try:
+      version = subprocess.run(
+        [str(self.binary), "--version"], capture_output=True, text=True,
+        timeout=5, cwd=self._runtime_cwd(), env=environment,
+      )
+      if version.returncode != 0 or version.stdout.strip() != f"codex-cli {VERIFIED_CODEX_VERSION}":
+        self.close()
+        raise CodexAppServerUnavailable(
+          f"Subscription requests require the verified runtime codex-cli {VERIFIED_CODEX_VERSION}. "
+          "Use the bundled openAuthor runtime; other versions must pass the context wire contract before use."
+        )
       self._process = subprocess.Popen(
-        [str(self.binary), "app-server", "--listen", "stdio://"],
+        [str(self.binary), "app-server", "--listen", "stdio://", *_config_arguments(RUNTIME_CONFIG)],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         bufsize=1,
         env=environment,
+        cwd=self._runtime_cwd(),
       )
-    except OSError as error:
+    except (OSError, subprocess.TimeoutExpired) as error:
+      self.close()
       raise CodexAppServerUnavailable(
         f"Unable to launch Codex app-server via {self.binary}: {error}"
       ) from error
@@ -166,23 +242,47 @@ class CodexAppServer:
       daemon=True,
     ).start()
 
-    self.request(
-      "initialize",
-      {
-        "clientInfo": {
-          "name": "openauthor",
-          "title": "openAuthor",
-          "version": "0.1.0",
+    try:
+      self.request(
+        "initialize",
+        {
+          "clientInfo": {
+            "name": "openauthor",
+            "title": "openAuthor",
+            "version": "0.1.0",
+          },
+          "capabilities": {"experimentalApi": True},
         },
-        "capabilities": {"experimentalApi": True},
-      },
-    )
-    self.notify("initialized", {})
+      )
+      self.notify("initialized", {})
+      config = self.request("config/read", {"cwd": self._runtime_cwd(), "includeLayers": False}).get("config", {})
+      # Empty tables merge rather than remove inherited server definitions.
+      # Disable each effective server before creating any generation thread.
+      self._completion_config["mcp_servers"] = {
+        name: {"enabled": False} for name in config.get("mcp_servers", {})
+      }
+    except Exception:
+      self.close()
+      raise
+
+  def _check_instruction_boundary(self) -> None:
+    # This runtime version always loads global AGENTS files, independently of
+    # project_doc_max_bytes. Never silently send them or alter user-owned files.
+    if any((self.codex_home / name).exists() for name in ("AGENTS.md", "AGENTS.override.md")):
+      raise CodexAppServerUnsafeConfiguration(
+        "Subscription request blocked: the openAuthor Codex home contains an AGENTS instruction file "
+        "that the runtime would send outside the reviewed context. Use a dedicated "
+        "OPENAUTHOR_CODEX_HOME without AGENTS.md or AGENTS.override.md, then sign in there. "
+        "No manuscript was sent and no configuration or credentials were changed."
+      )
 
   def close(self) -> None:
     process = self._process
     self._process = None
     if process is None:
+      if self._runtime_directory is not None:
+        self._runtime_directory.cleanup()
+        self._runtime_directory = None
       return
     if process.stdin is not None:
       try:
@@ -206,6 +306,9 @@ class CodexAppServer:
             stream.close()
           except OSError:
             pass
+      if self._runtime_directory is not None:
+        self._runtime_directory.cleanup()
+        self._runtime_directory = None
 
   def _read_stdout(self, stream: Any) -> None:
     try:
@@ -437,6 +540,8 @@ class CodexAppServer:
     on_delta: Callable[[str], None] | None,
     tools: list[dict[str, Any]] | None,
   ) -> dict[str, Any]:
+    del project_root  # Only the host's reviewed prompts may identify manuscript data.
+    self._check_instruction_boundary()
     dynamic_tools = [
       {
         "type": "function",
@@ -461,23 +566,13 @@ class CodexAppServer:
       )
 
     thread_params: dict[str, Any] = {
-      "cwd": str(project_root.resolve()),
+      "cwd": self._runtime_cwd(),
       "approvalPolicy": "never",
       "sandbox": "read-only",
       "environments": [],
-      "config": {
-        "web_search": "disabled",
-        "features": {
-          "apps": False,
-          "goals": False,
-          "hooks": False,
-          "multi_agent": False,
-          "remote_plugin": False,
-          "shell_tool": False,
-          "unified_exec": False,
-        },
-      },
+      "config": self._completion_config,
       "ephemeral": True,
+      "baseInstructions": "You are openAuthor's writing collaborator. Follow the host's writing instructions and use only explicitly provided manuscript context.",
       "developerInstructions": developer_instructions,
     }
     if model.strip() not in DEFAULT_MODEL_SENTINELS:
@@ -502,7 +597,6 @@ class CodexAppServer:
     streamed_parts: dict[str, list[str]] = {}
     tool_calls: list[dict[str, Any]] = []
     token_usage: dict[str, Any] = {}
-    turn_error = ""
 
     def handle_server_request(message: dict[str, Any]) -> dict[str, Any]:
       if message.get("method") != "item/tool/call":
@@ -530,7 +624,7 @@ class CodexAppServer:
       }
 
     def handle_message(message: dict[str, Any]) -> None:
-      nonlocal token_usage, turn_error
+      nonlocal token_usage
       method = message.get("method")
       params = message.get("params", {})
       if not isinstance(params, dict):
@@ -550,11 +644,6 @@ class CodexAppServer:
         usage = params.get("tokenUsage", {})
         if isinstance(usage, dict):
           token_usage = usage
-      elif method == "turn/completed":
-        turn = params.get("turn", {})
-        if isinstance(turn, dict) and turn.get("status") == "failed":
-          error = turn.get("error", {})
-          turn_error = str(error.get("message", error)) if isinstance(error, dict) else str(error)
 
     turn_result = self.request(
       "turn/start",
@@ -567,6 +656,8 @@ class CodexAppServer:
     )
     turn = turn_result.get("turn", {})
     turn_id = str(turn.get("id", "")) if isinstance(turn, dict) else ""
+    if not turn_id:
+      raise CodexAppServerError("Codex did not start a turn; no writing was completed.")
 
     def turn_completed(message: dict[str, Any]) -> bool:
       if message.get("method") != "turn/completed":
@@ -577,13 +668,20 @@ class CodexAppServer:
       completed_turn = params.get("turn", {})
       return isinstance(completed_turn, dict) and str(completed_turn.get("id", "")) == turn_id
 
-    self.wait_for(
+    completed = self.wait_for(
       turn_completed,
       on_message=handle_message,
       on_server_request=handle_server_request,
     )
-    if turn_error:
-      raise CodexAppServerError(f"Codex turn failed: {turn_error}")
+    completed_turn = completed.get("params", {}).get("turn", {})
+    if completed_turn.get("status") != "completed":
+      error = completed_turn.get("error") or {}
+      details = str(error.get("message") or "") if isinstance(error, dict) else str(error)
+      status = str(completed_turn.get("status") or "unknown status")
+      raise CodexAppServerIncompleteTurn(
+        f"Codex turn did not complete ({status}). {details}".strip(),
+        token_usage=token_usage, model=str(thread_result.get("model") or ""),
+      )
 
     text_parts = [text for text in final_messages.values() if text.strip()]
     if text_parts:
@@ -592,15 +690,15 @@ class CodexAppServer:
       text = "\n\n".join(
         "".join(parts).strip() for parts in streamed_parts.values() if parts
       ).strip()
-    last_usage = token_usage.get("last", {}) if isinstance(token_usage, dict) else {}
-    if not isinstance(last_usage, dict):
-      last_usage = {}
+    usage = token_usage.get("total") or token_usage.get("last", {})
+    if not isinstance(usage, dict):
+      usage = {}
     return {
       "text": text,
       "tool_calls": tool_calls,
-      "input_tokens": int(last_usage.get("inputTokens", 0) or 0),
-      "output_tokens": int(last_usage.get("outputTokens", 0) or 0),
+      "input_tokens": int(usage.get("inputTokens", 0) or 0),
+      "output_tokens": int(usage.get("outputTokens", 0) or 0),
       "raw_usage": token_usage,
       "attempts": 1,
-      "model": str(thread_result.get("model", model)),
+      "model": str(thread_result.get("model") or ""),
     }

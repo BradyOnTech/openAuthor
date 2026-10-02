@@ -15,6 +15,8 @@ import {
 } from "../../api";
 import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { useRefreshBookTabs } from "../../hooks/useRefreshBookTabs";
+import { withProjectBookChange, flushProjectSceneSaves } from "../../sceneSaveSession";
 
 export function StorylineEditor() {
   const {
@@ -27,6 +29,7 @@ export function StorylineEditor() {
     setMessage,
   } = useWorkspace();
   const { setActiveView } = useUI();
+  const refreshBookTabs = useRefreshBookTabs(projectRoot);
   const [storylines, setStorylines] = useState<StorylineRecord[]>([]);
   const [primaryBranch, setPrimaryBranch] = useState("");
   const [currentBranch, setCurrentBranch] = useState("");
@@ -64,6 +67,7 @@ export function StorylineEditor() {
       refreshProposals(),
       refreshBranches(),
       load(),
+      refreshBookTabs(),
     ]);
   }
   async function mutate(
@@ -73,8 +77,10 @@ export function StorylineEditor() {
   ) {
     setBusy(true);
     try {
-      await action();
-      refresh ? await refreshBook() : await load();
+      await withProjectBookChange(projectRoot, async () => {
+        await action();
+        refresh ? await refreshBook() : await load();
+      });
       setMessage(message);
     } catch (error) {
       setError(
@@ -109,6 +115,7 @@ export function StorylineEditor() {
   async function compare(row: StorylineRecord) {
     setBusy(true);
     try {
+      if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your writing before comparing Storylines.");
       const result = await compareStoryline(projectRoot, row.id);
       setComparison(result);
       setSelectedPaths(

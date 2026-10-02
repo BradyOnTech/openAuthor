@@ -26,7 +26,7 @@ it("keeps an author's new brief when an older initial load completes late", asyn
   expect(screen.getByRole("textbox", { name: "Synopsis" })).toBe(synopsis);
   expect((synopsis as HTMLTextAreaElement).value).toBe("A cartographer follows stolen hours.");
   fireEvent.click(screen.getByRole("button", { name: "Save Brief" }));
-  expect(updateProjectBrief).toHaveBeenCalledWith("/books/plan", expect.objectContaining({ synopsis: "A cartographer follows stolen hours." }), undefined);
+  await waitFor(() => expect(updateProjectBrief).toHaveBeenCalledWith("/books/plan", expect.objectContaining({ synopsis: "A cartographer follows stolen hours." }), undefined));
 });
 
 it("recovers brief and new act drafts after remount without writing the book", async () => {
@@ -66,11 +66,12 @@ it("preserves typing after a brief save starts and advances only its acknowledge
   fireEvent.change(input, { target: { value: "Typed during save" } });
   const saved = { ...plan, workspace: "main", brief: { ...plan.brief, synopsis: "Submitted" } };
   vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  await waitFor(() => expect(finish).toBeTypeOf("function"));
   await act(async () => finish(saved));
   view.unmount(); render(<PlanEditor />);
   expect((await screen.findByRole("textbox", { name: "Synopsis" }) as HTMLTextAreaElement).value).toBe("Typed during save");
   fireEvent.click(screen.getByRole("button", { name: "Save Brief" }));
-  expect(updateProjectBrief).toHaveBeenLastCalledWith("/books/plan", expect.objectContaining({ synopsis: "Typed during save" }), { workspace: "main", value: saved.brief });
+  await waitFor(() => expect(updateProjectBrief).toHaveBeenLastCalledWith("/books/plan", expect.objectContaining({ synopsis: "Typed during save" }), { workspace: "main", value: saved.brief }));
 });
 
 it("does not restore drafts into a different Storyline", async () => {

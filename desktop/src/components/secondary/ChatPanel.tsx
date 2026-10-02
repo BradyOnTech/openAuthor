@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useSyncExternalStore } from "react";
+import { chatDeliverySession } from "../../chatDeliverySession";
+import { ChatContextReview } from "./ChatContextReview";
+import type { ChatSendPayload } from "../../api";
+type ChatAuthorization = Pick<ChatSendPayload, "memoryApprovals" | "storyApprovals" | "expectedContextFingerprint" | "replacementFromMessageId">;
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
   createChatThread,
   updateChatThread,
-  sendChatMessageStreamed,
-  interruptChatTurn,
   executeChatToolCall,
   createProposal,
   queueStoryMemorySuggestion,
@@ -17,6 +19,8 @@ import {
   truncateChatMessages,
   getManuscriptPlan,
   getAssistantTurn,
+  previewChatContext,
+  SidecarDomainError,
 } from "../../api";
 import { parseChatMarkdown, type ChatBlock, type ChatInlineSpan } from "../../chatMarkdown";
 import type {
@@ -37,7 +41,7 @@ import { ReviewContextReceipt } from "./ReviewContextReceipt";
 
 type ChatStream = {
   requestId: string;
-  turnId: string;
+  turnId?: string;
   userText: string;
   text: string;
 };
@@ -45,21 +49,37 @@ type ChatStream = {
 type AssistantScope = "project" | "scene" | "chapter" | "character" | "storyline";
 
 export function ChatPanel() {
+  const { projectRoot, activeChatThreadId } = useWorkspace();
+  return <ThreadPanel key={JSON.stringify([projectRoot, activeChatThreadId])} />;
+}
+
+function ThreadPanel() {
   const {
     projectFound, projectRoot,
     chatThreads, refreshChatThreads,
     activeChatThreadId, setActiveChatThreadId,
     chatMessages, refreshChatMessages,
-    chatSending, setChatSending,
     scenes, codexEntities,
     refreshProposals,
     runtimeConfig,
     setError, setMessage,
   } = useWorkspace();
   const { tabs, activeTabId, openTab } = useEditor();
-  const [stream, setStream] = useState<ChatStream | null>(null);
+  const session = useMemo(() => chatDeliverySession(projectRoot, activeChatThreadId), [projectRoot, activeChatThreadId]);
+  const delivery = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const chatSending = delivery.sending;
+  const stream: ChatStream | null = delivery.sending && delivery.pending
+    ? { requestId: delivery.requestId, userText: delivery.pending.message, text: delivery.text }
+    : null;
   const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
   const memoryConsent = useMemoryConsent(projectRoot, activeChatThreadId);
+
+  useEffect(() => {
+    if (!delivery.sending) {
+      void refreshChatMessages();
+      void refreshChatThreads();
+    }
+  }, [delivery.sending, refreshChatMessages, refreshChatThreads]);
 
   if (!projectFound) {
     return (
@@ -98,112 +118,46 @@ export function ChatPanel() {
   }
 
   async function handleInterrupt() {
-    if (!stream) return;
-    try {
-      await interruptChatTurn(projectRoot, stream.requestId);
-      setMessage("Interrupt requested.");
-    } catch (e) {
-      setError(`Interrupt failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
+    await session.interrupt();
   }
 
-  async function performSend(
-    text: string,
-    sceneIds: string[],
-    codexIds: string[],
-    scope: AssistantScope,
-    replacementFromMessageId?: string,
-    approvedCodexIds: string[] = [],
-  ) {
+  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization | string, approvedCodexIds: string[] = []) {
     if (!activeChatThreadId || !text.trim()) return false;
-    setError("");
-    setChatSending(true);
-    let activeTurnId = "";
-    try {
-      await sendChatMessageStreamed(
-        projectRoot,
-        {
-          threadId: activeChatThreadId,
-          message: text,
-          currentSceneId,
-          sceneIds,
-          codexIds,
-          approvedCodexIds,
-          scope,
-          replacementFromMessageId,
-        },
-        {
-          onStart: (requestId, turnId) => {
-            activeTurnId = turnId;
-            setStream({ requestId, turnId, userText: text, text: "" });
-          },
-          onDelta: (delta) =>
-            setStream((prev) => (prev ? { ...prev, text: prev.text + delta } : prev)),
+    const permissions = typeof reviewed === "string" ? { replacementFromMessageId: reviewed, approvedCodexIds } : reviewed;
+    const payload: ChatSendPayload = { threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope, ...permissions };
+    if (!payload.expectedContextFingerprint && typeof reviewed !== "string") {
+      try {
+        payload.expectedContextFingerprint = (await previewChatContext(projectRoot, payload, payload.replacementFromMessageId)).fingerprint;
+      } catch (error) {
+        if (error instanceof SidecarDomainError) {
+          setError(error.message);
+          return false;
         }
-      );
-      await refreshChatMessages();
-      await refreshChatThreads();
-      return true;
-    } catch (e) {
-      if (activeTurnId) {
-        try {
-          const turn = await getAssistantTurn(projectRoot, activeTurnId);
-          await refreshChatMessages();
-          if (turn.status === "completed") {
-            setMessage("Recovered the completed Assistant turn after a transport timeout.");
-            return true;
-          }
-          if (turn.status === "accepted" || turn.status === "running") {
-            setMessage("The Assistant turn is still running. It was not sent again.");
-            return true;
-          }
-        } catch {
-          // Fall through to the original transport error when no durable turn exists.
-        }
+        // The legacy command transport performs the same preflight in core
+        // when the background service is unavailable.
       }
-      await refreshChatMessages();
-      setError(`Chat send failed: ${e instanceof Error ? e.message : String(e)}`);
-      return false;
-    } finally {
-      setStream(null);
-      setChatSending(false);
     }
+    setError("");
+    return session.send(payload);
   }
 
   function handleStartEdit(message: ChatMessageRecord) {
-    if (chatSending) return;
+    if (chatSending || delivery.pending) return;
     setEditing({ messageId: message.id, text: message.content });
   }
 
-  async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) {
-    if (!activeChatThreadId || !text.trim()) return false;
-    let approvedCodexIds: string[] | null;
-    try {
-      approvedCodexIds = await memoryConsent.requestApproval(codexIds);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-      return false;
-    }
-    if (approvedCodexIds === null) return false;
+  async function handleComposerSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization) {
+    if (!activeChatThreadId || !text.trim() || delivery.pending) return false;
     if (editing) {
       const target = editing;
       setEditing(null);
-      try {
-        await truncateChatMessages(projectRoot, {
-          threadId: activeChatThreadId,
-          fromMessageId: target.messageId,
-        });
-        await refreshChatMessages();
-      } catch (e) {
-        setError(`Edit failed: ${e instanceof Error ? e.message : String(e)}`);
-        return false;
-      }
+      return performSend(text, sceneIds, codexIds, scope, { ...reviewed, replacementFromMessageId: target.messageId });
     }
-    return performSend(text, sceneIds, codexIds, scope, undefined, approvedCodexIds);
+    return performSend(text, sceneIds, codexIds, scope, reviewed);
   }
 
   async function handleRegenerate() {
-    if (!activeChatThreadId || chatSending) return;
+    if (!activeChatThreadId || chatSending || delivery.pending) return;
     setEditing(null);
     const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
     if (!lastUser) return;
@@ -274,24 +228,25 @@ export function ChatPanel() {
         onEditMessage={handleStartEdit}
         setError={setError}
       />
-      {activeChatThreadId && (
-        <VoiceControl
-          projectRoot={projectRoot}
-          threadId={activeChatThreadId}
-          currentSceneId={currentSceneId}
-          onRecorded={async () => {
-            await refreshChatMessages();
-            await refreshChatThreads();
-          }}
-          setError={setError}
-          setMessage={setMessage}
-        />
+      {activeChatThreadId && <VoiceControl projectRoot={projectRoot} threadId={activeChatThreadId} currentSceneId={currentSceneId} onRecorded={async () => { await refreshChatMessages(); await refreshChatThreads(); }} setError={setError} setMessage={setMessage} />}
+      {delivery.error && (
+        <div role="status" className="chat-recovery" style={{ padding: "var(--space-3)", fontSize: "var(--text-sm)", borderTop: "1px solid var(--border-default)" }}>
+          <p>{delivery.error}</p>
+          {delivery.pending && !chatSending && <>
+            <p style={{ whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>{delivery.pending.message}</p>
+            <p>Your prompt is saved on this device. Retry recovers a completed reply when available; a new provider attempt may incur charges. Discard only removes this saved retry, not an already-delivered chat turn.</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn--ai" style={{ minHeight: 40 }} onClick={() => void session.retry()}>Retry message</button>
+              <button className="btn" style={{ minHeight: 40 }} onClick={session.discard}>Discard retry</button>
+            </div>
+          </>}
+        </div>
       )}
-      {memoryConsent.review}
       <Composer
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
-        sending={chatSending || memoryConsent.pending}
+        sending={chatSending}
+        recoveryPending={delivery.pending !== null}
         streaming={stream !== null}
         scenes={scenes}
         codexEntities={codexEntities}
@@ -803,6 +758,10 @@ function ChatMessage({
         <span className="chat-message__time">{formatTime(message.created_at)}</span>
       </div>
 
+      {message.role === "user" && (message.context_used as { privacy?: { history_reset?: boolean } }).privacy?.history_reset && (
+        <p className="chat-context-hints">Earlier replies were not resent because Memory changed or one-time permission expired. Your local conversation is preserved.</p>
+      )}
+
       {message.role === "tool" ? (
         <div className="chat-message__body chat-message__body--tool">
           {message.content}
@@ -1036,6 +995,7 @@ function Composer({
   projectRoot,
   threadId,
   sending,
+  recoveryPending,
   streaming,
   scenes,
   codexEntities,
@@ -1050,18 +1010,20 @@ function Composer({
   projectRoot: string;
   threadId: string;
   sending: boolean;
+  recoveryPending: boolean;
   streaming: boolean;
   scenes: SceneSummary[];
   codexEntities: CodexEntity[];
   activeThread?: ChatThreadRecord;
   currentSceneId?: string;
-  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope) => Promise<boolean>;
+  onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization) => Promise<boolean>;
   onInterrupt: () => void;
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
   onCancelEdit: () => void;
 }) {
   const [text, setText] = useState("");
+  const [reviewPayload, setReviewPayload] = useState<ChatSendPayload | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [scope, setScope] = useState<AssistantScope>("project");
@@ -1184,11 +1146,7 @@ function Composer({
     }
   }
 
-  async function handleSend() {
-    if (!text.trim() || sending || !threadId) return;
-    if ((scope === "chapter" || scope === "character") && !scopeId) return;
-    if (scope === "scene" && !currentSceneId) return;
-
+  function composerPayload(): ChatSendPayload {
     const mentions = extractMentionIds(text, scenes, codexEntities);
     if (scope === "scene" && currentSceneId && !mentions.sceneIds.includes(currentSceneId)) mentions.sceneIds.push(currentSceneId);
     if (scope === "chapter") {
@@ -1197,14 +1155,27 @@ function Composer({
       }
     }
     if (scope === "character" && scopeId && !mentions.codexIds.includes(scopeId)) mentions.codexIds.push(scopeId);
-    const msg = text;
-    const sent = await onSend(msg, mentions.sceneIds, mentions.codexIds, scope);
+    return { threadId, message: text, currentSceneId, sceneIds: mentions.sceneIds, codexIds: mentions.codexIds, scope };
+  }
+
+  async function sendPayload(payload: ChatSendPayload) {
+    const msg = payload.message;
+    const sent = await onSend(msg, payload.sceneIds ?? [], payload.codexIds ?? [], payload.scope ?? "project", payload);
     if (sent) {
-      setText((current) => current === msg ? "" : current);
+      setText(current => current === msg ? "" : current);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
-    } else {
-      textareaRef.current?.focus();
     }
+    return sent;
+  }
+
+  async function handleSend() {
+    if (!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)) return;
+    const payload = composerPayload();
+    if (payload.codexIds?.some(id => codexEntities.find(entry => entry.id === id)?.ai_visibility === "ask")) {
+      setReviewPayload(payload);
+      return;
+    }
+    await sendPayload(payload);
   }
 
   const contextHints: string[] = [];
@@ -1219,6 +1190,8 @@ function Composer({
       contextHints.push("retrieval");
     }
   }
+
+  if (reviewPayload) return <ChatContextReview projectRoot={projectRoot} payload={reviewPayload} historyBeforeMessageId={editing?.messageId} onSend={sendPayload} onClose={() => setReviewPayload(null)} />;
 
   return (
     <div className="chat-composer-wrap">
@@ -1287,6 +1260,7 @@ function Composer({
           rows={1}
           disabled={!threadId || sending}
         />
+        <button className="btn btn--sm" style={{ minHeight: 40 }} onClick={() => setReviewPayload(composerPayload())} disabled={!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}>Context</button>
         {sending && streaming ? (
           <button className="btn btn--sm" onClick={onInterrupt} title="Interrupt this turn">
             Stop
@@ -1295,7 +1269,7 @@ function Composer({
           <button
             className="btn btn--ai btn--sm"
             onClick={handleSend}
-            disabled={!text.trim() || sending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}
+            disabled={!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}
           >
             {sending ? "…" : "Send"}
           </button>

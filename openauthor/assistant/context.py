@@ -7,6 +7,9 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Mapping, Sequence
 
+from ..ai_visibility import memory_for_ai
+from ..story_context import story_plan_for_ai
+from ..story_grounding import prepare_story_grounding
 from ..checks import run_continuity_checks
 from ..codex import list_entities
 from ..memory_context import get_assistant_memory, memory_for_assistant, memory_access_stamp
@@ -44,8 +47,11 @@ class ContextRequest:
   explicit_scene_ids: tuple[str, ...] = ()
   explicit_codex_ids: tuple[str, ...] = ()
   approved_codex_ids: tuple[str, ...] = ()
+  memory_approvals: tuple[dict[str, str], ...] = ()
+  story_approvals: tuple[str, ...] = ()
   history: tuple[Mapping[str, Any], ...] = ()
   agent_mode: bool = False
+  bound_brief: bool = False
 
 
 @dataclass(frozen=True)
@@ -292,7 +298,8 @@ def build_context_pack(
       )
     )
 
-  brief = get_plan(paths)["brief"]
+  story_plan = story_plan_for_ai(paths, requested_scene_ids, book_scope=scope in {"project", "storyline"})
+  brief = story_plan["brief"] if request.bound_brief else get_plan(paths, persist=False)["brief"]
   if any(brief.values()):
     raw_brief = json.dumps(brief, ensure_ascii=False, sort_keys=True)
     item, truncated = _context_item(
@@ -376,10 +383,14 @@ def build_context_pack(
   if unknown_codex:
     raise OpenAuthorError(f"Unknown codex entity id '{sorted(unknown_codex)[0]}'.")
   approved_codex = set(request.approved_codex_ids).intersection(explicit_codex)
-  # Validate explicit references even if a profile disables automatic Memory.
-  # A model or an @mention cannot override exclusion or grant its own consent.
-  for entity_id in explicit_codex:
+  for entity_id in approved_codex:
     get_assistant_memory(paths, entity_id, approved_ids=approved_codex)
+  grants = list(request.memory_approvals)
+  for entity_id in approved_codex:
+    grants.extend({"entity_id": entity_id, "detail_key": key} for key in [*([None] if known_codex[entity_id].get("ai_visibility") == "ask" else []), *[row["key"] for row in known_codex[entity_id].get("details", []) if row.get("ai_visibility") == "ask"]])
+  eligible = {row["id"]: row for row in memory_for_ai(paths, grants)}
+  for entity_id in explicit_codex:
+    if entity_id not in eligible: get_assistant_memory(paths, entity_id, approved_ids=approved_codex)
   context_text = " ".join(
     [request.utterance, request.selected_text]
     + [str(item_payloads[item].get("body", "")) for item in item_payloads if item.startswith("scene:")]
@@ -396,7 +407,7 @@ def build_context_pack(
     )
     if not include:
       continue
-    entity = memory_for_assistant(entity, approved=entity_id in approved_codex)
+    entity = eligible.get(entity_id)
     if entity is None:
       continue
     item, truncated = _context_item(
@@ -421,11 +432,18 @@ def build_context_pack(
     paths, scene_ids=requested_scene_ids, entity_ids=tuple(explicit_codex),
     approved_codex_ids=tuple(approved_codex), project_scope=scope in {"project", "storyline"},
   )
+  grounding = prepare_story_grounding(paths, requested_scene_ids, memory_approvals=grants, story_approvals=list(request.story_approvals))
+  if request.bound_brief or request.memory_approvals or request.story_approvals:
+    review["accepted_canon"] = []
+  review["story_memory"] = grounding["context"]
+  review["story_plan"] = story_plan
   # Required editorial constraints are serialized in full, not counted as a
   # clipped manifest while passing the original object to the provider.
   for key, title, path in [
     ("narrative_frame", "Plan order and chapter intent", "manuscript/structure.json"),
     ("accepted_canon", "Relevant accepted canon", "codex/memory.json"),
+    ("story_memory", "Approved story grounding", "codex/memory.json"),
+    ("story_plan", "Saved story direction and relevant beats", "manuscript/structure.json"),
     ("active_storyline", "Active Storyline intent", ".openauthor/workspace/storylines.json"),
     ("writing_voice", "Approved manuscript Writing Voice", ".openauthor/style_profile.json"),
     ("review_warnings", "Canon evidence warnings", "codex/memory.json"),

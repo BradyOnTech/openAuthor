@@ -118,11 +118,11 @@ class ReviewContextTests(unittest.TestCase):
         evidence=[{"scene_id": "scene-0001", "excerpt": "Seven families survived."}])
       thread = create_chat_thread(paths, title="Discuss", provider="local", mode="chat")
       with patch("openauthor.chat.complete_chat", return_value={"text": "A review for the author."}) as chat:
-        response = send_chat_message(paths, thread_id=thread["id"], message="Review Mara's choice.", current_scene_id="scene-0001")
+        response = send_chat_message(paths, thread_id=thread["id"], message="Review Mara's choice.", current_scene_id="scene-0001", story_approvals=[fact["id"]])
       prepared = AssistantRuntime(paths).prepare(thread_id=thread["id"], channel="desktop_voice", utterance="Review Mara's choice.", current_scene_id="scene-0001")
       with patch("openauthor.ai._call_provider", wraps=_call_provider) as provider:
-        proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Tighten sentence rhythm.", provider="local", retrieval_mode="off")
-        drafted = generate_proposal_draft(paths, proposal_id=proposal["id"], provider="local")
+        proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Tighten sentence rhythm.", provider="local", retrieval_mode="off", story_approvals=[fact["id"]])
+        drafted = generate_proposal_draft(paths, proposal_id=proposal["id"], provider="local", story_approvals=[fact["id"]])
       self.assertEqual(provider.call_count, 2)
       for prompt in [chat.call_args.kwargs["user_prompt"], prepared["instructions"], *[call.kwargs["user_prompt"] for call in provider.call_args_list]]:
         self.assertIn("PROTECTED-SEVEN-FAMILIES", prompt)

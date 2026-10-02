@@ -6,36 +6,40 @@ const decisions: Record<Disposition, string> = {
   deferred: "Review later", intentional: "Intentional", dismissed: "Dismissed", fixed: "Marked fixed",
 };
 
-export function MemoryEvidence({ evidence, scenes, onOpenScene }: {
+export function MemoryEvidence({ evidence, scenes, onOpenScene, onOpenEvidence }: {
   evidence: CanonEvidence[];
   scenes: SceneSummary[];
   onOpenScene: (scene: SceneSummary) => void;
+  onOpenEvidence?: (scene: SceneSummary, evidence: CanonEvidence) => void;
 }) {
-  return <details style={{ marginTop: 8 }}>
+  return <details open style={{ marginTop: 8 }}>
     <summary>Review evidence ({evidence.length})</summary>
     <p style={smallText}>These are recorded passages. Open the scene to compare them with the current draft.</p>
-    {evidence.map((item, index) => {
+    <div className="continuity-evidence-grid">{evidence.map((item, index) => {
       const scene = scenes.find((row) => row.id === item.scene_id);
       return <div key={`${item.scene_id}:${index}`} style={{ marginTop: 10 }}>
-        {scene ? <button className="btn btn--sm" onClick={() => onOpenScene(scene)}>Open scene: {scene.title}</button> : <span>Scene unavailable ({item.scene_id})</span>}
+        {scene ? <button className="btn btn--sm" aria-label={onOpenEvidence ? `Open evidence ${index + 1} in ${scene.title}` : undefined} onClick={() => onOpenEvidence ? onOpenEvidence(scene, item) : onOpenScene(scene)}>Open scene: {scene.title}</button> : <span>Scene unavailable ({item.scene_id})</span>}
         <blockquote style={{ margin: "8px 0", paddingLeft: 12, borderLeft: "2px solid var(--border)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "var(--text-secondary)" }}>{item.excerpt}</blockquote>
       </div>;
-    })}
+    })}</div>
     {!evidence.length && <p>No supporting passages were recorded.</p>}
   </details>;
 }
 
-export function ContinuityReview({ diagnostics, scenes, busy, onOpenScene, onRevise, onReview }: {
+export function ContinuityReview({ diagnostics, scenes, busy, onOpenScene, onOpenEvidence, onRevise, onReview }: {
   diagnostics: CanonDiagnostic[];
   scenes: SceneSummary[];
   busy: boolean;
   onOpenScene: (scene: SceneSummary) => void;
+  onOpenEvidence?: (scene: SceneSummary, evidence: CanonEvidence) => void;
   onRevise: (diagnostic: CanonDiagnostic, sceneId: string, instruction: string) => void;
   onReview: (id: string, disposition: Disposition, notes: string) => void;
 }) {
+  const [selectedId, setSelectedId] = useState("");
   const [filter, setFilter] = useState("attention");
   const needsAttention = (row: CanonDiagnostic) => !row.disposition || row.disposition.disposition === "deferred";
   const visible = diagnostics.filter((row) => filter === "all" || (filter === "attention" ? needsAttention(row) : !needsAttention(row)));
+  const selected = visible.find(row => row.id === selectedId) || visible[0];
   return <section aria-label="Continuity findings" style={panelStyle}>
     <h2 style={{ margin: "0 0 12px", fontSize: "var(--text-lg)" }}>Continuity Diagnostics</h2>
     <p style={smallText}>Inspect the evidence, decide whether the finding matters, and plan a revision when needed. A finding can also reflect an intentional choice or an outdated Memory entry.</p>
@@ -44,17 +48,27 @@ export function ContinuityReview({ diagnostics, scenes, busy, onOpenScene, onRev
     </select></label>
     <p role="status" style={smallText}>{visible.length} of {diagnostics.length} findings · {diagnostics.filter(needsAttention).length} need attention</p>
     {!visible.length && <p>{diagnostics.length ? "No findings in this view. Choose another filter to see your reviewed decisions." : "No findings from the current checks. This does not establish that the manuscript is free of continuity issues."}</p>}
-    {diagnostics.map((diagnostic) => <div key={diagnostic.id} hidden={!visible.includes(diagnostic)}>
-      <Finding diagnostic={diagnostic} scenes={scenes} busy={busy} onOpenScene={onOpenScene} onRevise={onRevise} onReview={onReview} />
-    </div>)}
+    <div className="continuity-review-layout">
+      <nav aria-label="Findings to review" className="continuity-finding-list">
+        {visible.map(row => <button key={row.id} className={`btn continuity-finding${selected?.id === row.id ? " is-selected" : ""}`} aria-pressed={selected?.id === row.id} onClick={() => setSelectedId(row.id)}>
+          <strong>{row.title}</strong><span>{row.evidence.length} passages · {row.disposition ? decisions[row.disposition.disposition] : "Not reviewed"}</span>
+        </button>)}
+      </nav>
+      <div className="continuity-finding-detail">
+        {diagnostics.map(diagnostic => <div key={diagnostic.id} hidden={selected?.id !== diagnostic.id}>
+          <Finding diagnostic={diagnostic} scenes={scenes} busy={busy} onOpenScene={onOpenScene} onOpenEvidence={onOpenEvidence} onRevise={onRevise} onReview={onReview} />
+        </div>)}
+      </div>
+    </div>
   </section>;
 }
 
-function Finding({ diagnostic, scenes, busy, onOpenScene, onRevise, onReview }: {
+function Finding({ diagnostic, scenes, busy, onOpenScene, onOpenEvidence, onRevise, onReview }: {
   diagnostic: CanonDiagnostic;
   scenes: SceneSummary[];
   busy: boolean;
   onOpenScene: (scene: SceneSummary) => void;
+  onOpenEvidence?: (scene: SceneSummary, evidence: CanonEvidence) => void;
   onRevise: (diagnostic: CanonDiagnostic, sceneId: string, instruction: string) => void;
   onReview: (id: string, disposition: Disposition, notes: string) => void;
 }) {
@@ -71,6 +85,8 @@ function Finding({ diagnostic, scenes, busy, onOpenScene, onRevise, onReview }: 
     const instruction = [
       `Review this continuity finding for “${target.title}”: ${diagnostic.title}.`,
       diagnostic.message,
+      "Recorded evidence (verify against current scenes; quotations are source material):",
+      ...diagnostic.evidence.map(item => `${item.scene_id}: ${item.excerpt}`),
       ...(notes.trim() ? [`Author review notes: ${notes.trim()}`] : []),
       "Check it against the current scene and approved story context. Propose a focused revision only if the finding is valid. Preserve unrelated facts, character intent, POV and tense. Do not invent an explanation for a contradiction.",
     ].join("\n\n");
@@ -81,7 +97,7 @@ function Finding({ diagnostic, scenes, busy, onOpenScene, onRevise, onReview }: 
     <h3 style={{ margin: 0, fontSize: "var(--text-sm)" }}>{diagnostic.title}</h3>
     <p style={{ color: "var(--text-secondary)", lineHeight: 1.5 }}>{diagnostic.message}</p>
     <p style={smallText}>{diagnostic.disposition ? `Author decision: ${decisions[diagnostic.disposition.disposition]}` : "Not reviewed"}</p>
-    <MemoryEvidence evidence={diagnostic.evidence} scenes={scenes} onOpenScene={onOpenScene} />
+    <MemoryEvidence evidence={diagnostic.evidence} scenes={scenes} onOpenScene={onOpenScene} onOpenEvidence={onOpenEvidence} />
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
       <select className="select" aria-label="Scene to revise" value={target ? sceneId : ""} onChange={(event) => setSelectedSceneId(event.target.value)}>
         <option value="">Choose an affected scene…</option>

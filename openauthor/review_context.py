@@ -39,7 +39,7 @@ def build_review_context(
   relevance. Only the trusted caller can supply per-request Memory approval.
   No guesses about in-world chronology are derived from reading order.
   """
-  plan = get_plan(paths)
+  plan = get_plan(paths, persist=False)
   scenes = list_manuscript_scenes(paths)
   by_id = {row["id"]: row for row in scenes}
   focused = set(scene_ids).intersection(by_id)

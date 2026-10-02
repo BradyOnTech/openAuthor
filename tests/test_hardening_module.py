@@ -52,7 +52,7 @@ class HardeningModuleTests(unittest.TestCase):
         summary="",
         pov="",
         status="draft",
-        body="Scene body for performance baseline checks.",
+        body="Mara's eyes were blue. Mara's eyes were green.",
       )
       create_proposal(
         paths,
@@ -77,6 +77,8 @@ class HardeningModuleTests(unittest.TestCase):
       self.assertIn("scene_save", metric_names)
       self.assertIn("project_search", metric_names)
       self.assertIn("continuity_analysis", metric_names)
+      self.assertIn("story_continuity_analysis", metric_names)
+      self.assertEqual(report["counts"]["story_continuity_issues"], 1)
       for row in report["metrics"]:
         self.assertEqual(len(row["samples_ms"]), 2)
         self.assertGreaterEqual(row["max_ms"], row["min_ms"])

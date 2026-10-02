@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { countProposals, orderProposalsForReview } from "../../state";
-import { applyProposalBatch, listRevisions, undoProposalBatch } from "../../api";
+import { applyProposalBatch, listRevisions, undoProposalBatch, saveRevision, getScene } from "../../api";
+import { withProjectBookChange } from "../../sceneSaveSession";
 import type { RevisionSummary } from "../../types";
 
 export function ProposalQueue() {
@@ -10,6 +11,22 @@ export function ProposalQueue() {
   const { openTab, updateTab, tabs } = useEditor();
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [applyingGroup, setApplyingGroup] = useState("");
+  const [versionName, setVersionName] = useState("");
+  const [savingVersion, setSavingVersion] = useState(false);
+
+  async function handleSaveVersion() {
+    setSavingVersion(true);
+    try {
+      await withProjectBookChange(projectRoot, () => saveRevision(projectRoot, versionName.trim()));
+      setRevisions(await listRevisions(projectRoot, 20));
+      setVersionName("");
+      setMessage("Version saved with your manuscript, Plan, and Story Memory.");
+    } catch (error) {
+      setError(`Version could not be saved: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSavingVersion(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -42,7 +59,7 @@ export function ProposalQueue() {
     if (applyingGroup || tabs.some((tab) => tab.kind === "scene" && sceneIds.includes(tab.id.replace(/^scene:/, "")) && tab.modified)) return;
     setApplyingGroup(revision);
     try {
-      const result = await undoProposalBatch(projectRoot, revision);
+      const result = await withProjectBookChange(projectRoot, () => undoProposalBatch(projectRoot, revision));
       for (const proposal of result.proposals) updateTab(`proposal:${proposal.id}`, { data: proposal });
       for (const scene of result.scenes) updateTab(`scene:${scene.id}`, { data: scene, label: scene.title });
       setError("");
@@ -59,7 +76,14 @@ export function ProposalQueue() {
     if (applyingGroup) return;
     setApplyingGroup(groupId);
     try {
-      const result = await applyProposalBatch(projectRoot, ids);
+      const result = await withProjectBookChange(projectRoot, async () => {
+        const applied = await applyProposalBatch(projectRoot, ids);
+        for (const id of applied.scene_ids) {
+          const scene = await getScene(projectRoot, id);
+          updateTab(`scene:${id}`, { data: scene, label: scene.title, modified: false });
+        }
+        return applied;
+      });
       for (const proposal of result.proposals) updateTab(`proposal:${proposal.id}`, { data: proposal });
       await Promise.all([refreshProposals(), refreshScenes()]);
       setMessage(`${result.scene_ids.length} scenes applied together in one reversible Revision.`);
@@ -99,6 +123,10 @@ export function ProposalQueue() {
         </span>
       </div>
       <div className="sidebar__content">
+        <form style={{ padding: "var(--space-3)", display: "grid", gap: "var(--space-2)" }} onSubmit={event => { event.preventDefault(); void handleSaveVersion(); }}>
+          <input className="input" aria-label="Version name" placeholder="Name this version…" value={versionName} onChange={event => setVersionName(event.target.value)} />
+          <button className="btn btn--ghost btn--sm" disabled={savingVersion || !versionName.trim()}>{savingVersion ? "Saving version…" : "Save version"}</button>
+        </form>
         {coordinatedGroups.map(([groupId, rows]) => (
           <div key={groupId} style={{ margin: "var(--space-2)", padding: "var(--space-3)", border: "1px solid var(--info)", borderRadius: "var(--radius-md)", background: "var(--info-subtle)" }}>
             <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>Coordinated change · {rows.length} scenes</div>
