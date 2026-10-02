@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { EventEmitter, once } from "node:events";
 import type { AddressInfo } from "node:net";
 import test from "node:test";
@@ -49,7 +52,8 @@ test("starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
   for (const signal of ["SIGTERM", "SIGINT"] as const) {
     const signals = new FakeSignals();
     const output: string[] = [];
-    const server = await startGatewayProcess(environment(), {
+    const directory = mkdtempSync(join(tmpdir(), "openauthor-production-"));
+    const server = await startGatewayProcess({ ...environment(), GATEWAY_CALL_JOURNAL_PATH: join(directory, "calls.json") }, {
       signals,
       auditOutput: { write: (chunk) => void output.push(chunk) },
       diagnosticOutput: { write: (chunk) => void output.push(chunk) },
@@ -67,5 +71,7 @@ test("starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
     assert.equal(signals.exitCode, 0);
     assert.equal(output.join("").includes("sk-fiction"), false);
     assert.equal(output.join("").includes("fiction-safety"), false);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    rmSync(directory, { recursive: true, force: true });
   }
 });

@@ -5,6 +5,7 @@ import { parseGatewayConfig } from "../src/config.ts";
 
 function requiredEnvironment(): NodeJS.ProcessEnv {
   return {
+    GATEWAY_CALL_JOURNAL_PATH: "/private/tmp/openauthor-gateway-test/calls.json",
     SUPABASE_URL: "https://fiction.supabase.co",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fiction",
     OPENAI_API_KEY: "sk-fiction-openai-key",
@@ -47,6 +48,7 @@ test("parses the minimal production environment with bounded server-owned defaul
 
 test("fails closed for missing credentials and unsafe production configuration", () => {
   for (const name of [
+    "GATEWAY_CALL_JOURNAL_PATH",
     "SUPABASE_URL",
     "SUPABASE_PUBLISHABLE_KEY",
     "OPENAI_API_KEY",

@@ -4,6 +4,8 @@ export interface SessionPrincipal {
   deviceId: string;
   /** Verified bearer token used only for the user's RLS-authorized hosted RPC. */
   bearerToken: string;
+  sessionId?: string;
+  expiresAt?: number;
 }
 
 export interface PrincipalVerifier {
@@ -62,6 +64,8 @@ export interface RealtimeCallRequest {
   sdp: string;
   session: RealtimeSessionPolicy;
   requestId: string;
+  /** Durable gateway registration before the answer can be delivered. */
+  onCallCreated?: (callId: string) => Promise<void>;
 }
 
 export interface RealtimeCallResult {
@@ -72,6 +76,7 @@ export interface RealtimeCallResult {
 
 export interface RealtimeUpstream {
   createCall(request: RealtimeCallRequest): Promise<RealtimeCallResult>;
+  hangupCall(callId: string): Promise<void>;
 }
 
 export type AuditOutcome =

@@ -372,15 +372,13 @@ test("rate limits session issuance before contacting OpenAI", async () => {
 
 test("never leaks permanent credentials or raw upstream errors", async () => {
   const permanentKey = "sk-permanent-must-never-leak";
+  const unavailable = new FakeRealtimeUpstream({ sdp: "v=0" });
+  unavailable.failWith(new Error(`upstream rejected ${permanentKey}`));
   const deps = dependencies({
     principalVerifier: {
       verify: async () => verifiedPrincipal(),
     },
-    upstream: {
-      createCall: async () => {
-        throw new Error(`upstream rejected ${permanentKey}`);
-      },
-    },
+    upstream: unavailable,
   });
 
   await withGateway(deps, async (baseUrl) => {

@@ -3,7 +3,9 @@ import type { Server } from "node:http";
 import { parseGatewayConfig, type GatewayConfig } from "./config.ts";
 import { OpenAIRealtimeUpstream } from "./openAIRealtimeUpstream.ts";
 import { SupabaseRpcSessionRateLimiter } from "./supabaseRateLimiter.ts";
-import { createSessionGateway } from "./sessionGateway.ts";
+import { createSessionGateway, type SessionGatewayServer } from "./sessionGateway.ts";
+import { CallJournal } from "./callJournal.ts";
+import { SessionLeases } from "./sessionLeases.ts";
 import {
   SupabaseJwksPrincipalVerifier,
   SupabaseRpcProjectDeviceAuthorizer,
@@ -42,17 +44,16 @@ export function createJsonLineDiagnosticSink(output: TextOutput): DiagnosticSink
   };
 }
 
-export function createProductionGateway(
+export async function createProductionGateway(
   config: GatewayConfig,
   outputs: {
     auditOutput?: TextOutput;
     diagnosticOutput?: TextOutput;
   } = {},
-): Server {
+): Promise<SessionGatewayServer> {
   const auditOutput = outputs.auditOutput ?? process.stdout;
   const diagnosticOutput = outputs.diagnosticOutput ?? process.stderr;
-  return createSessionGateway({
-    dependencies: {
+  const dependencies = {
       principalVerifier: new SupabaseJwksPrincipalVerifier({
         issuer: config.supabase.issuer,
         audience: config.supabase.audience,
@@ -82,9 +83,11 @@ export function createProductionGateway(
       auditSink: createJsonLineAuditSink(auditOutput),
       diagnosticSink: createJsonLineDiagnosticSink(diagnosticOutput),
       clock: { now: () => new Date() },
-    },
-    policy: config.policy,
-  });
+  };
+  const journal = new CallJournal(config.leases.journalPath);
+  const leases = new SessionLeases({ ...config.leases, journal, ...dependencies });
+  try { await leases.initialize(); } catch (error) { journal.close(); throw error; }
+  return createSessionGateway({ dependencies, policy: config.policy, leases });
 }
 
 async function listen(server: Server, port: number, host: string): Promise<void> {
@@ -99,7 +102,7 @@ async function listen(server: Server, port: number, host: string): Promise<void>
 }
 
 export function installGracefulShutdown(
-  server: Server,
+  server: Server & { shutdownVoiceSessions?: () => Promise<void> },
   signals: ProcessSignalSource,
   timeoutMs: number,
 ): () => void {
@@ -124,7 +127,7 @@ export function installGracefulShutdown(
     timeout.unref();
     server.close((error) => {
       if (error) signals.exitCode = 1;
-      cleanup();
+      Promise.resolve(server.shutdownVoiceSessions?.()).catch(() => { signals.exitCode = 1; }).finally(cleanup);
     });
     server.closeIdleConnections();
   };
@@ -139,8 +142,8 @@ export async function startGatewayProcess(
   options: GatewayProcessOptions = {},
 ): Promise<Server> {
   const config = parseGatewayConfig(environment);
-  const server = createProductionGateway(config, options);
-  await listen(server, config.port, config.host);
+  const server = await createProductionGateway(config, options);
+  try { await listen(server, config.port, config.host); } catch (error) { await server.shutdownVoiceSessions(); throw error; }
   installGracefulShutdown(server, options.signals ?? process, config.shutdownTimeoutMs);
   return server;
 }

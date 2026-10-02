@@ -1,4 +1,7 @@
 import { translateMobileRealtimeEvent, type MobileVoiceEvent } from "./realtimeEvents";
+import type { VoiceLease } from "./voiceLease";
+
+export type RealtimeSession = { callId: string; expiresAt: string } & Partial<Omit<VoiceLease, "expiresAt">>;
 
 function untilAborted<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -41,11 +44,7 @@ export type PeerConnectionLike = {
 export type MobileRealtimeDependencies = {
   createPeerConnection(): PeerConnectionLike;
   getUserMedia(): Promise<MediaStreamLike>;
-  negotiate(offerSdp: string, signal?: AbortSignal): Promise<{
-    answerSdp: string;
-    callId: string;
-    expiresAt: string;
-  }>;
+  negotiate(offerSdp: string, signal?: AbortSignal): Promise<RealtimeSession & { answerSdp: string }>;
   playRemote?(stream: MediaStreamLike): Promise<void>;
   cleanup?(): void;
 };
@@ -62,7 +61,7 @@ export class MobileRealtimeTransport {
     private readonly onEvent: (event: MobileVoiceEvent) => void,
   ) {}
 
-  async start(): Promise<{ callId: string; expiresAt: string }> {
+  async start(): Promise<RealtimeSession> {
     if (this.#abort) throw new Error("Realtime transport is already started.");
     const abort = new AbortController();
     const peer = this.dependencies.createPeerConnection();
@@ -80,6 +79,7 @@ export class MobileRealtimeTransport {
     };
     this.#release = release;
     const timeout = setTimeout(() => { abort.abort(new Error("Voice connection timed out. Please try again.")); release(); }, 30_000);
+    let leaseTimeout: ReturnType<typeof setTimeout> | undefined;
     try {
       peer.ontrack = (event) => {
         const stream = event.streams[0];
@@ -120,6 +120,11 @@ export class MobileRealtimeTransport {
       if (!offerSdp) throw new Error("WebRTC did not produce an SDP offer.");
       const negotiated = await untilAborted(this.dependencies.negotiate(offerSdp, abort.signal), abort.signal);
       abort.signal.throwIfAborted();
+      if (negotiated.leaseExpiresAt) {
+        const remaining = Date.parse(negotiated.leaseExpiresAt) - Date.now();
+        if (!(remaining > 0)) throw new Error("Voice policy expired before the connection was ready.");
+        leaseTimeout = setTimeout(() => { abort.abort(new Error("Voice policy expired before the connection was ready.")); release(); }, remaining);
+      }
       if (!negotiated.answerSdp.trim()) throw new Error("Session Gateway returned no SDP answer.");
       await untilAborted(peer.setRemoteDescription({ type: "answer", sdp: negotiated.answerSdp }), abort.signal);
       abort.signal.throwIfAborted();
@@ -141,12 +146,14 @@ export class MobileRealtimeTransport {
       };
       channel.onclose = disconnected;
       channel.onerror = disconnected;
-      return { callId: negotiated.callId, expiresAt: negotiated.expiresAt };
+      const { answerSdp: _answerSdp, ...session } = negotiated;
+      return session;
     } catch (error) {
       abort.abort(); release();
       throw error;
     } finally {
       clearTimeout(timeout);
+      clearTimeout(leaseTimeout);
     }
   }
 

@@ -13,11 +13,15 @@ import type {
   GatewayPolicy,
   SessionPrincipal,
 } from "./types.ts";
+import { LeaseProblem, type SessionLeases } from "./sessionLeases.ts";
 
 export interface SessionGatewayOptions {
   dependencies: GatewayDependencies;
   policy: GatewayPolicy;
+  leases?: SessionLeases;
 }
+
+export type SessionGatewayServer = Server & { shutdownVoiceSessions(): Promise<void> };
 
 interface MobileSessionRequest {
   projectId: string;
@@ -91,6 +95,7 @@ async function readMobileSessionRequest(
   maxRequestBytes: number,
   maxSdpBytes: number,
   requestBodyTimeoutMs: number,
+  requireSdp = true,
 ): Promise<MobileSessionRequest> {
   const contentLength = Number(request.headers["content-length"] ?? "0");
   if (Number.isFinite(contentLength) && contentLength > maxRequestBytes) {
@@ -144,11 +149,11 @@ async function readMobileSessionRequest(
   const record = body as Record<string, unknown>;
   const projectId = record.project_id;
   const deviceId = record.device_id;
-  const sdp = record.sdp;
+  const sdp = requireSdp ? record.sdp : "";
   if (
     typeof projectId !== "string" || projectId.length < 1 || projectId.length > 128 ||
     typeof deviceId !== "string" || deviceId.length < 1 || deviceId.length > 128 ||
-    typeof sdp !== "string" || sdp.length < 1
+    typeof sdp !== "string" || (requireSdp && sdp.length < 1)
   ) {
     throw new RequestProblem(
       400,
@@ -223,20 +228,21 @@ async function writeAudit(
   }
 }
 
-export function createSessionGateway(options: SessionGatewayOptions): Server {
+export function createSessionGateway(options: SessionGatewayOptions): SessionGatewayServer {
   const dependencies = options.dependencies;
   const policy = structuredClone(options.policy);
   validateGatewayPolicy(policy);
   const allowedToolNames = new Set(policy.allowedToolNames);
   const realtimeTools = policy.tools.filter((tool) => allowedToolNames.has(tool.name));
-  return createServer(async (request, response) => {
+  const server = createServer(async (request, response) => {
     const requestId = randomUUID();
     try {
     if (request.url === "/healthz" && request.method === "GET") {
       sendJson(response, 200, { status: "ok" });
       return;
     }
-    if (request.url !== "/v1/realtime/sessions") {
+    const control = /^\/v1\/realtime\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(renew|stop)$/.exec(request.url ?? "");
+    if (request.url !== "/v1/realtime/sessions" && !control) {
       sendError(response, 404, "not_found", "Route not found.", requestId);
       return;
     }
@@ -294,6 +300,7 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
         policy.maxRequestBytes,
         policy.maxSdpBytes,
         policy.requestBodyTimeoutMs,
+        !control,
       );
     } catch (error) {
       const problem = error instanceof RequestProblem
@@ -321,6 +328,25 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
         ...auditIdentity(policy, principal, input),
       });
       sendError(response, 403, "forbidden", "This project or device is not authorized.", requestId);
+      return;
+    }
+
+    if (control) {
+      if (!options.leases) {
+        sendError(response, 410, "session_expired", "The voice session is unavailable or expired.", requestId);
+        return;
+      }
+      try {
+        const authorization = { principal, projectId: input.projectId, deviceId: input.deviceId };
+        if (control[2] === "renew") sendJson(response, 200, await options.leases.renew(control[1]!, authorization));
+        else {
+          await options.leases.stop(control[1]!, authorization);
+          sendJson(response, 200, { stopped: true });
+        }
+      } catch (error) {
+        const status = error instanceof LeaseProblem ? error.statusCode : 503;
+        sendError(response, status, status === 410 ? "session_expired" : "session_access_unavailable", "The voice session is unavailable or expired.", requestId);
+      }
       return;
     }
 
@@ -379,23 +405,24 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
       principal.subject,
     );
     let upstreamResult;
+    let leaseReceipt;
     try {
-      upstreamResult = await dependencies.upstream.createCall({
+      const callRequest = {
         sdp: input.sdp,
         requestId,
         session: {
-          type: "realtime",
+          type: "realtime" as const,
           model: policy.model,
           instructions: policy.instructions,
-          output_modalities: ["audio"],
+          output_modalities: ["audio"] as ["audio"],
           audio: {
             input: {
               transcription: { model: policy.transcriptionModel },
               turn_detection: {
-                type: "semantic_vad",
+                type: "semantic_vad" as const,
                 eagerness: policy.semanticVadEagerness,
-                create_response: true,
-                interrupt_response: true,
+                create_response: true as const,
+                interrupt_response: true as const,
               },
             },
             output: { voice: policy.voice },
@@ -404,10 +431,15 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
             ...tool,
             parameters: structuredClone(tool.parameters),
           })),
-          tool_choice: realtimeTools.length > 0 ? "auto" : "none",
+          tool_choice: realtimeTools.length > 0 ? "auto" as const : "none" as const,
           safety_identifier: safetyIdentifier,
         },
-      });
+      };
+      if (options.leases) {
+        const issued = await options.leases.issue({ principal, projectId: input.projectId, deviceId: input.deviceId }, callRequest);
+        upstreamResult = issued.result;
+        leaseReceipt = issued.receipt;
+      } else upstreamResult = await dependencies.upstream.createCall(callRequest);
     } catch {
       await writeAudit(dependencies, {
         event: "realtime_session_issuance",
@@ -441,6 +473,7 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
       sdp: upstreamResult.sdp,
       ...(upstreamResult.callId ? { call_id: upstreamResult.callId } : {}),
       expires_at: new Date(now.getTime() + policy.issuanceTtlSeconds * 1_000).toISOString(),
+      ...leaseReceipt,
       request_id: requestId,
     });
     } catch {
@@ -464,5 +497,7 @@ export function createSessionGateway(options: SessionGatewayOptions): Server {
         response.end();
       }
     }
-  });
+  }) as SessionGatewayServer;
+  server.shutdownVoiceSessions = async () => { await options.leases?.shutdown(); };
+  return server;
 }

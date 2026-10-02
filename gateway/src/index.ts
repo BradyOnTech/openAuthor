@@ -52,3 +52,6 @@ export type {
   SessionPrincipal,
   SessionRateLimiter,
 } from "./types.ts";
+
+export { CallJournal } from "./callJournal.ts";
+export { SessionLeases, LeaseProblem, type LeaseReceipt, type SessionLeaseOptions } from "./sessionLeases.ts";

@@ -1,5 +1,6 @@
 import { MOBILE_REALTIME_TOOL_NAMES, MOBILE_REALTIME_TOOLS } from "./mobilePolicy.ts";
 import type { GatewayPolicy } from "./types.ts";
+import { isAbsolute } from "node:path";
 
 export interface GatewayConfig {
   host: string;
@@ -25,6 +26,14 @@ export interface GatewayConfig {
   rateLimit: {
     limit: number;
     windowMs: number;
+  };
+  leases: {
+    journalPath: string;
+    leaseTtlMs: number;
+    maxDurationMs: number;
+    pollIntervalMs: number;
+    authorizationTimeoutMs: number;
+    maxCalls: number;
   };
   policy: GatewayPolicy;
 }
@@ -135,6 +144,12 @@ function boundedText(value: string, name: string, maximum: number): string {
 }
 
 export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfig {
+  const journalPath = required(environment, "GATEWAY_CALL_JOURNAL_PATH");
+  if (!isAbsolute(journalPath)) throw new Error("GATEWAY_CALL_JOURNAL_PATH must be absolute.");
+  const leaseTtlMs = boundedInteger(environment, "GATEWAY_SESSION_LEASE_MS", 30000, 1000, 120000);
+  const maxDurationMs = boundedInteger(environment, "GATEWAY_SESSION_MAX_DURATION_MS", 600000, 1000, 3600000);
+  const pollIntervalMs = boundedInteger(environment, "GATEWAY_SESSION_POLL_MS", 5000, 100, 30000);
+  if (leaseTtlMs > maxDurationMs || pollIntervalMs >= leaseTtlMs) throw new Error("Gateway session lease bounds are inconsistent.");
   const supabaseUrl = secureUrl(required(environment, "SUPABASE_URL"), "SUPABASE_URL", true);
   const openAIApiKey = boundedText(required(environment, "OPENAI_API_KEY"), "OPENAI_API_KEY", 16_384);
   const safetyIdentifierSecret = boundedText(
@@ -257,6 +272,11 @@ export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfi
         1_000,
         86_400_000,
       ),
+    },
+    leases: {
+      journalPath, leaseTtlMs, maxDurationMs, pollIntervalMs,
+      authorizationTimeoutMs: boundedInteger(environment, "GATEWAY_SESSION_CONTROL_TIMEOUT_MS", 5000, 100, 60000),
+      maxCalls: boundedInteger(environment, "GATEWAY_SESSION_MAX_CALLS", 500, 1, 1000),
     },
     policy: {
       allowedOrigins: allowedOrigins(environment),

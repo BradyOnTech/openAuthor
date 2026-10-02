@@ -12,6 +12,59 @@ const snapshot: MobileSnapshot = {
 };
 
 describe("MobileVoiceController", () => {
+  it("does not send context or enable audio after a stopped connection finishes late", async () => {
+    let finish!: (value: { callId: string; expiresAt: string }) => void;
+    const context = vi.fn(), mute = vi.fn(), stop = vi.fn();
+    const controller = new MobileVoiceController({
+      project: SnapshotProject.open(snapshot), queue: vi.fn(), onEvent: vi.fn(),
+      createTransport: () => ({ start: () => new Promise(resolve => { finish = resolve; }), setMuted: mute,
+        sendText: vi.fn(), sendContext: context, interrupt: vi.fn(), stop, sendToolOutput: vi.fn() }),
+    });
+    const starting = controller.start();
+    const rejected = expect(starting).rejects.toThrow(/stopped|cancelled/i);
+    controller.stop();
+    finish({ callId: "late-call", expiresAt: "later" });
+    await rejected;
+    expect(context).not.toHaveBeenCalled();
+    expect(mute).not.toHaveBeenCalled();
+    await expect(controller.start()).rejects.toThrow(/stopped|cancelled/i);
+  });
+
+  it("ignores tools and transcript events after stop without reopening local data or adding captures", async () => {
+    let receive!: (event: MobileVoiceEvent) => Promise<void>;
+    const output = vi.fn(), queue = vi.fn(), onEvent = vi.fn();
+    const controller = new MobileVoiceController({
+      project: SnapshotProject.open(snapshot), queue, onEvent,
+      createTransport: handler => { receive = handler; return {
+        start: async () => ({ callId: "call", expiresAt: "later" }), setMuted: vi.fn(), sendContext: vi.fn(),
+        sendText: vi.fn(), interrupt: vi.fn(), stop: vi.fn(), sendToolOutput: output,
+      }; },
+    });
+    await controller.start(); controller.stop();
+    await receive({ type: "tool.requested", providerEventId: "late-tool", callId: "tool", name: "scene.get", arguments: { scene_id: "s1" }, argumentsJson: "{}" });
+    await receive({ type: "tool.requested", providerEventId: "late-write", callId: "write", name: "capture.note", arguments: { text: "late" }, argumentsJson: "{}" });
+    await receive({ type: "assistant.transcript.final", providerEventId: "late-turn", itemId: "late", text: "Old session." });
+    expect(output).not.toHaveBeenCalled(); expect(queue).not.toHaveBeenCalled(); expect(onEvent).not.toHaveBeenCalled();
+    expect(() => controller.sendText("Late input")).toThrow(/stopped|cancelled/i);
+  });
+
+  it("does not send a tool result when stop races its already-running local work", async () => {
+    let receive!: (event: MobileVoiceEvent) => Promise<void>;
+    let finish!: (value: string) => void;
+    const output = vi.fn();
+    const controller = new MobileVoiceController({
+      project: SnapshotProject.open(snapshot), queue: () => new Promise(resolve => { finish = resolve; }), onEvent: vi.fn(),
+      createTransport: handler => { receive = handler; return {
+        start: async () => ({ callId: "call", expiresAt: "later" }), setMuted: vi.fn(), sendContext: vi.fn(),
+        sendText: vi.fn(), interrupt: vi.fn(), stop: vi.fn(), sendToolOutput: output,
+      }; },
+    });
+    await controller.start();
+    const work = receive({ type: "tool.requested", providerEventId: "running", callId: "tool", name: "capture.note", arguments: { text: "Existing capture" }, argumentsJson: "{}" });
+    controller.stop(); finish("retained-operation"); await work;
+    expect(output).not.toHaveBeenCalled();
+  });
+
   it("serves read tools locally and queues final transcript turns", async () => {
     let receive: ((event: MobileVoiceEvent) => Promise<void>) | undefined;
     const output = vi.fn();

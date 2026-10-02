@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import test from "node:test";
 
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { decodeJwt, exportJWK, generateKeyPair, SignJWT } from "jose";
 
 import {
   SupabaseJwksPrincipalVerifier,
@@ -28,6 +28,7 @@ test("verifies a device-bound Supabase access token through JWKS", async () => {
     const token = await new SignJWT({
       role: "authenticated",
       device_id: "device-mara-phone",
+      session_id: "10000000-0000-4000-8000-000000000001",
     })
       .setProtectedHeader({ alg: "RS256", kid: "key-1", typ: "JWT" })
       .setIssuer(ISSUER)
@@ -50,6 +51,8 @@ test("verifies a device-bound Supabase access token through JWKS", async () => {
       tenantId: ISSUER,
       deviceId: "device-mara-phone",
       bearerToken: token,
+      sessionId: "10000000-0000-4000-8000-000000000001",
+      expiresAt: decodeJwt(token).exp! * 1000,
     });
 
     const unboundToken = await new SignJWT({

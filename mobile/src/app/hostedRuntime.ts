@@ -8,6 +8,7 @@ import { EncryptedDownloadedBookStore } from "../adapters/downloadedBookStore";
 import { ExpoOutboxCipher, ExpoSnapshotCipher } from "../adapters/expoProjectCipher";
 import { ExpoDeviceStore, ExpoSecretStore } from "../adapters/expoSecrets";
 import { gatewayRealtimeDependencies } from "../adapters/gatewayRealtime";
+import { gatewayVoicePolicy } from "../adapters/gatewaySession";
 import { SodiumDeviceCrypto } from "../adapters/sodiumDeviceCrypto";
 import { decryptHostedSnapshotManifest } from "../adapters/snapshotManifest";
 import {
@@ -31,6 +32,7 @@ import { encodeRecoveryKey } from "../core/recoveryKey";
 import { verifyAndImportRecoveryKey } from "../core/projectRecovery";
 import { MobileRealtimeTransport } from "../voice/realtimeTransport";
 import { MobileVoiceController } from "../voice/voiceController";
+import { VoicePolicySession } from "../voice/voicePolicySession";
 import type { AppProject, AppRuntime, AppSession, PendingItem, VoiceHandle } from "./types";
 
 function capturePayload(kind: OutboxKind, text: string): Record<string, unknown> {
@@ -45,6 +47,8 @@ async function disconnected(): Promise<boolean> {
   return network.isConnected === false || network.isInternetReachable === false;
 }
 
+type VoiceAttempt = { abort: AbortController; controller?: MobileVoiceController; cleanup(): void };
+
 export class HostedRuntime implements AppRuntime {
   readonly mode = "hosted" as const;
   #clientInstance: ReturnType<typeof createMobileSupabaseClient> | null = null;
@@ -53,6 +57,7 @@ export class HostedRuntime implements AppRuntime {
   #authCleanup: Promise<void> = Promise.resolve();
   #modeAttempt = 0;
   #modeWrite: Promise<void> = Promise.resolve();
+  #voice: VoiceAttempt | null = null;
   readonly #projectTitles = new Map<string, string>();
   readonly #devices = new ExpoDeviceStore();
   readonly #secrets = new ExpoSecretStore();
@@ -88,6 +93,14 @@ export class HostedRuntime implements AppRuntime {
   get #mobileClient() { return asMobileSupabaseClient(this.#client); }
   get #auth() { return new SupabaseAuth(this.#mobileClient); }
   get #enrollmentTransport() { return new SupabaseDeviceEnrollmentTransport(this.#mobileClient); }
+
+  #stopVoice(): void {
+    const current = this.#voice;
+    this.#voice = null;
+    current?.abort.abort(new Error("Voice session was stopped because its access or context changed."));
+    current?.controller?.stop();
+    current?.cleanup();
+  }
 
   async #setLibraryMode(attempt: number, downloadedOnly: boolean): Promise<void> {
     const write = this.#modeWrite.catch(() => {}).then(async () => {
@@ -141,6 +154,7 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async restoreSession(options: { online?: boolean } = {}): Promise<AppSession | null> {
+    this.#stopVoice();
     await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     if (await this.#local.isLocked()) return null;
@@ -160,6 +174,8 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async openDownloadedLibrary(): Promise<AppSession> {
+    this.#accessEpoch++;
+    this.#stopVoice();
     const attempt = ++this.#modeAttempt;
     const identity = await this.#local.require();
     if (attempt !== this.#modeAttempt) throw new Error("Local access request was superseded.");
@@ -178,6 +194,8 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async signIn(email: string, password: string): Promise<AppSession> {
+    this.#accessEpoch++;
+    this.#stopVoice();
     await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     if (await disconnected()) throw new Error("Sign-in needs an internet connection. Use downloaded books if this device was previously signed in.");
@@ -191,6 +209,8 @@ export class HostedRuntime implements AppRuntime {
 
   subscribeLocalAccessLock(listener: () => void): () => void {
     const check = () => { void this.#local.require().catch(() => {
+      this.#accessEpoch++;
+      this.#stopVoice();
       const client = this.#clientInstance;
       this.#clientInstance = null;
       void client?.auth.dispose().catch(() => {});
@@ -204,6 +224,7 @@ export class HostedRuntime implements AppRuntime {
   async signOut(): Promise<void> {
     this.#modeAttempt++;
     this.#accessEpoch++;
+    this.#stopVoice();
     const localOnly = this.#downloadedOnly;
     const client = this.#clientInstance;
     this.#clientInstance = null;
@@ -275,6 +296,9 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async openProject(projectId: string): Promise<{ project: SnapshotProject; freshness: string; offline: boolean }> {
+    // A refresh can replace the snapshot or Writing Voice even for the same
+    // book. A new call must review the newly opened immutable context.
+    this.#stopVoice();
     let offline = this.#downloadedOnly || await disconnected();
     if (!offline) {
       try {
@@ -391,46 +415,93 @@ export class HostedRuntime implements AppRuntime {
     signal?: AbortSignal;
     onEvent: Parameters<AppRuntime["startVoice"]>[0]["onEvent"];
   }): Promise<VoiceHandle> {
-    const { device } = await this.#onlineIdentity();
-    await this.#local.requireBook(input.projectId);
-    const cached = await this.#cache.load(input.projectId);
-    if (!cached) throw new Error("Download a current project snapshot before starting voice.");
-    input.signal?.throwIfAborted();
-    const controller = new MobileVoiceController({
-      project: SnapshotProject.open(cached.snapshot),
-      threadId: `mobile-${input.projectId}`,
-      ...(input.currentSceneId ? { currentSceneId: input.currentSceneId } : {}),
-      queue: (kind, payload) => this.#queue(input.projectId, kind, payload, cached.manifest.revision),
-      onEvent: input.onEvent,
-      createTransport: (onEvent) => new MobileRealtimeTransport(
-        gatewayRealtimeDependencies({
-          gatewayUrl: this.config.gatewayUrl,
-          projectId: input.projectId,
-          deviceId: device.deviceId,
-          accessToken: async () => {
-            await this.#onlineIdentity();
-            return this.#auth.accessToken(device.deviceId);
-          },
-        }),
-        (event) => { void onEvent(event); },
-      ),
-    });
-    const cancel = () => controller.stop();
+    if (this.#downloadedOnly) throw new Error("Reconnect to the online library to use sync, voice or key recovery. Downloaded reading and captures remain available.");
+    this.#stopVoice();
+    const epoch = this.#accessEpoch;
+    const config = { ...this.config };
+    const abort = new AbortController();
+    const cancel = () => { if (this.#voice === attempt) this.#stopVoice(); };
+    const foreground = AppState.addEventListener("change", state => { if (state !== "active") cancel(); });
+    const attempt: VoiceAttempt = { abort, cleanup: () => {
+      input.signal?.removeEventListener("abort", cancel); foreground.remove();
+    } };
+    this.#voice = attempt;
     input.signal?.addEventListener("abort", cancel, { once: true });
+    const reportClosed = (message: string) => {
+      if (this.#voice !== attempt) return;
+      cancel();
+      if (!input.signal?.aborted) input.onEvent({ type: "session.error", code: "disconnected", providerEventId: "local-policy", param: "", message });
+    };
+    const current = () => {
+      input.signal?.throwIfAborted(); abort.signal.throwIfAborted();
+      if (epoch !== this.#accessEpoch || this.#voice !== attempt || this.#downloadedOnly
+        || config.gatewayUrl !== this.config.gatewayUrl || config.supabaseUrl !== this.config.supabaseUrl
+        || config.supabasePublishableKey !== this.config.supabasePublishableKey) {
+        reportClosed("Voice access or configuration changed. Audio is closed; start a new session to continue.");
+        throw new Error("Voice access or configuration changed. Start a new session to continue.");
+      }
+    };
     try {
-      await controller.start();
-      input.signal?.throwIfAborted();
+      current();
+      const { device, session } = await this.#onlineIdentity(); current();
+      await this.#local.requireBook(input.projectId); current();
+      const cached = await this.#cache.load(input.projectId); current();
+      if (!cached) throw new Error("Download a current project snapshot before starting voice.");
+      const sameScope = () => {
+        if (epoch !== this.#accessEpoch || this.#downloadedOnly
+          || config.gatewayUrl !== this.config.gatewayUrl || config.supabaseUrl !== this.config.supabaseUrl
+          || config.supabasePublishableKey !== this.config.supabasePublishableKey) throw new Error("Voice identity or configuration changed.");
+      };
+      const scopedToken = async (active: boolean) => {
+        if (active) current(); else sameScope();
+        const identity = await this.#onlineIdentity();
+        if (active) current(); else sameScope();
+        if (identity.session.userId !== session.userId || identity.device.deviceId !== device.deviceId || identity.device.keyId !== device.keyId) {
+          reportClosed("Voice identity changed. Audio is closed; start a new session to continue.");
+          throw new Error("Voice identity changed. Start a new session to continue.");
+        }
+        const token = await this.#auth.accessToken(device.deviceId);
+        if (active) current(); else sameScope();
+        return token;
+      };
+      const gateway = {
+        gatewayUrl: config.gatewayUrl, projectId: input.projectId, deviceId: device.deviceId,
+        accessToken: () => scopedToken(true),
+        // A deliberate End may stop its old lease after the active registry is
+        // cleared. Sign-out/downloaded mode fence this before any network work.
+        stopAccessToken: () => scopedToken(false),
+      };
+      let policy: VoicePolicySession;
+      const controller = new MobileVoiceController({
+        project: SnapshotProject.open(cached.snapshot),
+        threadId: `mobile-${input.projectId}`,
+        ...(input.currentSceneId ? { currentSceneId: input.currentSceneId } : {}),
+        queue: (kind, payload) => this.#queue(input.projectId, kind, payload, cached.manifest.revision),
+        onEvent: event => { current(); input.onEvent(event); },
+        createTransport: onEvent => {
+          policy = new VoicePolicySession({
+            transport: new MobileRealtimeTransport(gatewayRealtimeDependencies(gateway), event => {
+              try { current(); if (policy.active) void onEvent(event); } catch { cancel(); }
+            }),
+            policy: gatewayVoicePolicy(gateway),
+            onClosed: reportClosed,
+          });
+          return policy;
+        },
+      });
+      attempt.controller = controller;
+      abort.signal.addEventListener("abort", () => controller.stop(), { once: true });
+      await controller.start(); current();
+      return {
+        mute: muted => { current(); controller.mute(muted); },
+        sendText: text => { current(); controller.sendText(text); },
+        interrupt: () => { current(); controller.interrupt(); },
+        stop: cancel,
+      };
     } catch (error) {
-      input.signal?.removeEventListener("abort", cancel);
-      controller.stop();
+      cancel();
       throw error;
     }
-    return {
-      mute: (muted) => controller.mute(muted),
-      sendText: (text) => controller.sendText(text),
-      interrupt: () => controller.interrupt(),
-      stop: () => { input.signal?.removeEventListener("abort", cancel); controller.stop(); },
-    };
   }
 
   async exportRecoveryKey(projectId: string): Promise<{ keyVersion: number; recoveryKey: string }> {
@@ -467,6 +538,7 @@ export class HostedRuntime implements AppRuntime {
 
   async revokeDeviceAndDeleteLocalData(): Promise<void> {
     this.#accessEpoch++;
+    this.#stopVoice();
     await this.#clientInstance?.auth.stopAutoRefresh();
     await this.#local.lock();
     await this.#recovery.drain().catch(() => {});

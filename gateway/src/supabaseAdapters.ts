@@ -108,6 +108,7 @@ export class SupabaseJwksPrincipalVerifier implements PrincipalVerifier {
           "iat",
           "exp",
           "role",
+          "session_id",
           this.#tenantClaim,
           this.#deviceClaim,
         ],
@@ -115,15 +116,18 @@ export class SupabaseJwksPrincipalVerifier implements PrincipalVerifier {
       const subject = payload.sub;
       const tenantId = payload[this.#tenantClaim];
       const deviceId = payload[this.#deviceClaim];
+      const sessionId = payload.session_id;
       if (
         typeof subject !== "string" || subject.length < 1 || subject.length > 128 ||
         typeof tenantId !== "string" || tenantId.length < 1 || tenantId.length > 128 ||
         typeof deviceId !== "string" || deviceId.length < 1 || deviceId.length > 128 ||
+        typeof sessionId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId) ||
+        !Number.isSafeInteger(payload.exp) || payload.exp! > Number.MAX_SAFE_INTEGER / 1000 ||
         payload.role !== this.#requiredRole
       ) {
         return null;
       }
-      return { subject, tenantId, deviceId, bearerToken: token };
+      return { subject, tenantId, deviceId, bearerToken: token, sessionId, expiresAt: payload.exp! * 1000 };
     } catch (error) {
       if (error instanceof joseErrors.JOSEError) return null;
       throw new Error("Supabase JWKS verification is unavailable.");

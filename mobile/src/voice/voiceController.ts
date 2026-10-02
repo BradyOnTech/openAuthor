@@ -2,9 +2,10 @@ import { MobileAssistantTools } from "../core/mobileAssistant";
 import type { OutboxKind } from "../core/outbox";
 import type { SnapshotProject } from "../core/snapshotProject";
 import type { MobileVoiceEvent } from "./realtimeEvents";
+import type { RealtimeSession } from "./realtimeTransport";
 
-type VoiceTransport = {
-  start(): Promise<{ callId: string; expiresAt: string }>;
+export type VoiceTransport = {
+  start(): Promise<RealtimeSession>;
   setMuted(muted: boolean): void;
   sendText(text: string): void;
   sendContext(context: unknown): void;
@@ -23,6 +24,8 @@ export class MobileVoiceController {
   readonly #onEvent: (event: MobileVoiceEvent) => void;
   readonly #threadId: string;
   readonly #context: unknown;
+  #stopped = false;
+  #started = false;
 
   constructor(input: {
     project: SnapshotProject;
@@ -50,19 +53,19 @@ export class MobileVoiceController {
   }
 
   async #receive(event: MobileVoiceEvent): Promise<void> {
+    if (this.#stopped) return;
     this.#onEvent(event);
+    if (this.#stopped) return;
     if (event.type === "tool.requested") {
       if (!event.arguments) {
         this.#transport.sendToolOutput(event.callId, { error: "Tool arguments were invalid JSON." });
         return;
       }
       try {
-        this.#transport.sendToolOutput(
-          event.callId,
-          await this.#tools.execute(event.name, event.arguments),
-        );
+        const output = await this.#tools.execute(event.name, event.arguments);
+        if (!this.#stopped) this.#transport.sendToolOutput(event.callId, output);
       } catch (error) {
-        this.#transport.sendToolOutput(event.callId, {
+        if (!this.#stopped) this.#transport.sendToolOutput(event.callId, {
           error: error instanceof Error ? error.message : "Mobile tool failed.",
         });
       }
@@ -84,30 +87,43 @@ export class MobileVoiceController {
   }
 
   async start(): Promise<{ callId: string; expiresAt: string }> {
+    this.#requireOpen();
+    if (this.#started) throw new Error("Voice session has already started.");
+    this.#started = true;
     try {
       const session = await this.#transport.start();
+      this.#requireOpen();
       this.#transport.sendContext(this.#context);
       this.#transport.setMuted(false);
       return session;
     } catch (error) {
-      this.#transport.stop();
+      this.stop();
       throw error;
     }
   }
 
   mute(muted: boolean): void {
+    this.#requireOpen();
     this.#transport.setMuted(muted);
   }
 
   sendText(text: string): void {
+    this.#requireOpen();
     this.#transport.sendText(text);
   }
 
   interrupt(): void {
+    this.#requireOpen();
     this.#transport.interrupt();
   }
 
   stop(): void {
+    if (this.#stopped) return;
+    this.#stopped = true;
     this.#transport.stop();
+  }
+
+  #requireOpen(): void {
+    if (this.#stopped) throw new Error("Voice session was stopped. Start a new session to continue.");
   }
 }

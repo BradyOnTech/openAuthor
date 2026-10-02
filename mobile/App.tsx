@@ -457,7 +457,7 @@ function AssistantView({ project, sceneId, onOpenScene, onClearScene }: { projec
       if (state !== "active") stop();
     });
     return () => { subscription.remove(); stop(); };
-  }, [stop]);
+  }, [stop, project, sceneId]);
   const start = async () => {
     if (attemptRef.current || handleRef.current) return;
     const attempt = new AbortController();
@@ -517,7 +517,10 @@ function AssistantView({ project, sceneId, onOpenScene, onClearScene }: { projec
               ? "This session uses the downloaded profile for proposed prose, not Copilot's speaking personality."
               : "Approve a Writing Voice on desktop and publish a fresh snapshot to include it here."}</Text>
             <Text style={styles.muted}>Desktop changes are not live. Reopen the book after publication and start a new session to use an updated profile.</Text>
-            {sceneId && <Button label="Discuss without a selected scene" variant="secondary" disabled={!!handle || voice.status === "connecting"} onPress={() => { setLocalError(""); onClearScene(); }} />}
+            {sceneId && <>
+              <Text style={styles.muted}>Changing the selected scene ends active voice.</Text>
+              <Button label="Discuss without a selected scene" variant="secondary" onPress={() => { stop(); setLocalError(""); onClearScene(); }} />
+            </>}
           </>}
         </View>
         {!!voice.userTranscript && <View style={styles.userBubble}><Text style={styles.bubbleLabel}>You</Text><Text style={styles.body}>{voice.userTranscript}</Text></View>}
@@ -527,7 +530,7 @@ function AssistantView({ project, sceneId, onOpenScene, onClearScene }: { projec
             accessibilityHint="Opens a related snapshot passage; not a verified source for the answer"
             accessibilityRole="link"
             key={`${item.kind}:${item.sourceId}`}
-            onPress={() => item.kind === "scene" && onOpenScene(item.sourceId)}
+            onPress={() => { if (item.kind === "scene") { stop(); onOpenScene(item.sourceId); } }}
           >
             <Text style={styles.citation}>Related: {item.title}</Text>
           </Pressable>

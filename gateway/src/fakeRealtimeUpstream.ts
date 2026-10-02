@@ -7,6 +7,7 @@ import type {
 /** Deterministic test double; it never uses credentials or the network. */
 export class FakeRealtimeUpstream implements RealtimeUpstream {
   readonly calls: RealtimeCallRequest[] = [];
+  readonly hangups: string[] = [];
   #result: RealtimeCallResult;
   #failure: Error | undefined;
 
@@ -24,8 +25,14 @@ export class FakeRealtimeUpstream implements RealtimeUpstream {
   }
 
   async createCall(request: RealtimeCallRequest): Promise<RealtimeCallResult> {
-    this.calls.push(structuredClone(request));
+    const { onCallCreated, ...serializable } = request;
+    this.calls.push(structuredClone(serializable));
     if (this.#failure) throw this.#failure;
+    if (this.#result.callId) await onCallCreated?.(this.#result.callId);
     return structuredClone(this.#result);
+  }
+
+  async hangupCall(callId: string): Promise<void> {
+    this.hangups.push(callId);
   }
 }

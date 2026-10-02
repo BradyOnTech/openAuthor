@@ -130,3 +130,57 @@ test("replaces network exceptions without leaking the API key or transport detai
     },
   );
 });
+
+test("hangs up a validated gateway-created call on the same trusted origin", async () => {
+  const requests: Array<{ url: string; init: RequestInit | undefined }> = [];
+  const upstream = new OpenAIRealtimeUpstream({
+    apiKey: "sk-control-private",
+    fetchImpl: async (input, init) => {
+      requests.push({ url: String(input), init });
+      return new Response(null, { status: 200 });
+    },
+  });
+  await upstream.hangupCall("rtc_control123");
+  assert.equal(requests[0]?.url, "https://api.openai.com/v1/realtime/calls/rtc_control123/hangup");
+  assert.equal(requests[0]?.init?.method, "POST");
+  assert.equal(new Headers(requests[0]?.init?.headers).get("authorization"), "Bearer sk-control-private");
+  assert.equal(requests[0]?.init?.redirect, "error");
+  for (const invalid of ["", "../calls/rtc_other", "rtc_123?key=secret", "https://other.example/call", "a".repeat(129)]) {
+    await assert.rejects(upstream.hangupCall(invalid));
+  }
+  assert.equal(requests.length, 1);
+});
+
+test("refuses unsafe or missing call Locations and terminates a known call after malformed SDP", async () => {
+  for (const location of [null, "https://attacker.example/v1/realtime/calls/rtc_x", "/v1/realtime/calls/rtc_x?query=1", "/v1/realtime/calls/../rtc_x", "/v1/realtime/calls/rtc_x/extra"]) {
+    const upstream = new OpenAIRealtimeUpstream({
+      apiKey: "sk-server-only",
+      fetchImpl: async () => new Response("v=0\r\ns=answer\r\n", { status: 201, headers: location ? { location } : {} }),
+    });
+    await assert.rejects(upstream.createCall(REQUEST), /call creation failed/);
+  }
+  const requests: string[] = [];
+  const upstream = new OpenAIRealtimeUpstream({
+    apiKey: "sk-server-only",
+    fetchImpl: async input => {
+      requests.push(String(input));
+      return requests.length === 1
+        ? new Response("invalid-answer", { status: 201, headers: { location: "/v1/realtime/calls/rtc_known" } })
+        : new Response(null, { status: 200 });
+    },
+  });
+  await assert.rejects(upstream.createCall(REQUEST), /call creation failed/);
+  assert.equal(requests[1], "https://api.openai.com/v1/realtime/calls/rtc_known/hangup");
+});
+
+test("never treats failed hangup as confirmed termination or follows a redirect", async () => {
+  const upstream = new OpenAIRealtimeUpstream({
+    apiKey: "sk-hangup-private",
+    fetchImpl: async () => new Response("provider-secret-details", { status: 404 }),
+  });
+  await assert.rejects(upstream.hangupCall("rtc_still_unknown"), error => {
+    assert.equal(String(error).includes("provider-secret-details"), false);
+    assert.equal(String(error).includes("sk-hangup-private"), false);
+    return true;
+  });
+});
