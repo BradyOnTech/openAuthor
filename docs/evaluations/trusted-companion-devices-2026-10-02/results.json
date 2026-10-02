@@ -1,0 +1,147 @@
+{
+  "evaluation": "trusted-companion-devices",
+  "date": "2026-10-02",
+  "source_digest_algorithm": "sha256",
+  "source_digests": {
+    "desktop/src/components/panel/MobileInboxPanel.tsx": "bfdccf49112b35d72442bdbc3ef772cd31b5b7194b77a098c5d48b99d5ac59c9",
+    "desktop/src/components/panel/MobileInboxPanel.test.tsx": "46f3bca052ed89f5a5935f1733ec43618a8ddbb23534538cebc9b299783ab25b",
+    "desktop/src/components/panel/TrustedDevicesPanel.tsx": "faaf87516724ae6670da84eede882c24e98121f37e3a7e85a8b3f10d8fd7d98c",
+    "desktop/src/components/panel/TrustedDevicesPanel.test.tsx": "0c3812013f8c748a3a910df934265d28ff9cb924a5090a268b6571324ce23c66",
+    "desktop/src/mobileSync/deviceReviewOperation.ts": "7a7e2e000baba389846090b197678bfaedfd165d33795ba54a104f6b44228d35",
+    "desktop/src/mobileSync/deviceReviewOperation.test.ts": "55886c46bee17be187739229dd5e4eeb2bf23d09a45ecfb1f6c502e5122fbae0",
+    "desktop/src/mobileSync/hostedCoordinator.ts": "ef6d7545a3495c47ae4b7cb6cf02f25ec2581226c8899357e9870fe5d939ec2d",
+    "desktop/src/mobileSync/hostedCoordinator.test.ts": "456a2457e30814603354671d481135e926731e3b87d37990e788d798ae1ef64b",
+    "desktop/src/mobileSync/projectKeyProvisioning.ts": "3214e57f38e49ba10dacfc0e454fec7ee616b9c2f3d3a4497a2c30c3cbfdef12",
+    "desktop/src/mobileSync/projectKeyProvisioning.test.ts": "4cf68a2b0e5468c13d18dde6b836c9eff445b62e460132e730efaf3ba53de25d",
+    "desktop/src/mobileSync/supabaseTransport.ts": "171f88fb66578070cfe777e34af19cfab805e613674c3070d02b3bcb2fafc5c0",
+    "desktop/src/mobileSync/supabaseTransport.test.ts": "345c8229e785854ba9074c0950521e4f6c4ddefa27faa5625d44a817b748eed6",
+    "desktop/src/mobileSync/connectDesktop.ts": "bdb2f8b23a9d494865c4055523b2597c4715eee2c545d0c7953169347b1b7401",
+    "desktop/e2e/companion-trusted-devices.spec.ts": "88161e105e528762342847a5a5af750adf4d00e32ba1c84b77723bb287f2bbd8",
+    "supabase/migrations/20261002140000_mobile_active_authority.sql": "bdcdd4cc589ea08439db36e150f455bccc79e8199c08c76f3c2d2bb21ee096a4",
+    "supabase/tests/mobile_active_authority.sql": "eb6df85906d6dd1bb3118617f9ac4db653c2a64c6eda480b2702ca374f0bb948"
+  },
+  "checks": {
+    "focused": {
+      "command": "npx vitest run src/components/panel/MobileInboxPanel.test.tsx src/components/panel/TrustedDevicesPanel.test.tsx src/mobileSync/deviceReviewOperation.test.ts src/mobileSync/hostedCoordinator.test.ts src/mobileSync/projectKeyProvisioning.test.ts src/mobileSync/supabaseTransport.test.ts",
+      "passed": 82,
+      "failed": 0,
+      "files": 6,
+      "log": "focused-final.txt"
+    },
+    "desktop_full": {
+      "command": "npm test",
+      "passed": 494,
+      "failed": 0,
+      "files": 81,
+      "duration_seconds": 21.04,
+      "log": "full-final.txt"
+    },
+    "desktop_build": {
+      "command": "npm run build",
+      "status": "passed",
+      "includes_typecheck": true,
+      "log": "build-final.txt",
+      "warning": "Existing Vite chunk-size advisory; build succeeded."
+    },
+    "chromium_rendered_fixture": {
+      "command": "npx playwright test e2e/companion-trusted-devices.spec.ts --reporter=line",
+      "passed": 1,
+      "failed": 0,
+      "duration_seconds": 2.8,
+      "viewport": [
+        1024,
+        768
+      ],
+      "log": "browser-final.txt",
+      "browser_executable": "chromium_headless_shell-1217",
+      "scope": "Production device panel/coordinator/RPC adapter and real libsodium sealing; local synthetic RPC responses; no hosted account/device/provider operations."
+    },
+    "account_reset_red": {
+      "failed": 1,
+      "skipped": 3,
+      "log": "account-reset-red.txt",
+      "confirmed_bug": "Parent deviceBusy survived an already-open sign-in completion that unmounted an in-flight device panel; Connect stayed disabled."
+    },
+    "recovery_key_red": {
+      "failed": 1,
+      "log": "recovery-key-red.txt",
+      "confirmed_bug": "Checksum-valid recovery key with different AES bytes was accepted for the current book version."
+    }
+  },
+  "limitations": [
+    "Recovery unlock requires an independently verified current envelope/provisioned key; it cannot recover an absent current envelope.",
+    "A stronger project-bound recovery commitment or existing snapshot verification remains future work.",
+    "Browser fixture uses synthetic server responses and rebuilds simulated server state on reload; only local draft recovery is claimed there.",
+    "Revocation does not erase offline copies or undo already-started requests.",
+    "No deployment, real hosted device writes, live provider calls or private author data edits in this lane."
+  ],
+  "output_format": {
+    "text": "Captured text normalized only for trailing whitespace and EOF; exact original changed outputs retained in gzip archives",
+    "original_outputs": {
+      "full-before-final-browser.txt": {
+        "archive": "full-before-final-browser.txt.raw.gz",
+        "captured_sha256": "9b191ec858759026f8cfbf336351d3d51a5999754e4759ed020cdcaf4b64b92d",
+        "archive_sha256": "ff59401d9848e4020e5a88a8a32fff667fc8015ea571882145930568c357e37e"
+      },
+      "account-reset-green.txt": {
+        "archive": "account-reset-green.txt.raw.gz",
+        "captured_sha256": "97dba8d65eb567821de2d855872b9de185380ee5bc818f3d307019038ef3bf03",
+        "archive_sha256": "37753f31cef8c59076b420f70b4eb50eb4da477a98f021420d1f34890334e63f"
+      },
+      "full-final.txt": {
+        "archive": "full-final.txt.raw.gz",
+        "captured_sha256": "4e03fe6962632aaf3a301ca7a3b36106497d1f0cf0a5d5a5ccc5dc65d8533751",
+        "archive_sha256": "81a8071dcbcd4742bd76594a68e273f1757dabee4a1b770349b08a8522839ab1"
+      },
+      "account-reset-red.txt": {
+        "archive": "account-reset-red.txt.raw.gz",
+        "captured_sha256": "21e6e339468b70df203f8001e0797924c26ffad1d9708c45c5c18a735a89735c",
+        "archive_sha256": "a1988681e611bf32f7faa36da75ff5c824db0122e32a7c7112d58afea470ed2f"
+      },
+      "full-before-account-reset-fix.txt": {
+        "archive": "full-before-account-reset-fix.txt.raw.gz",
+        "captured_sha256": "6481fdb3ade161b01606328ec28999e7884179ef72c316d3c6dbbb3beb29e915",
+        "archive_sha256": "b8cbc01c15c09852a4b6f94d64ca76b204b8f6ab74a26c3f2d928753a32ac980"
+      },
+      "recovery-key-green.txt": {
+        "archive": "recovery-key-green.txt.raw.gz",
+        "captured_sha256": "a01bcd0834d79b6ecbff28c3cc28b2a735c06f1a37b7bd65a7fa1137d5d2a003",
+        "archive_sha256": "85de51aa992d9f166e1fc8b09d82c429cc1e8a01d2e1a7a3ba107e8f3e087609"
+      },
+      "focused-final.txt": {
+        "archive": "focused-final.txt.raw.gz",
+        "captured_sha256": "7ab8bd9aab0e80d0dadb6229dc5d134ec32278df7e914a01226a4feb549dfa1a",
+        "archive_sha256": "bfbb5e44d8da45dcc7584516a40b2e3c1a437b8ef37e5d444370a17b71d763c5"
+      },
+      "recovery-key-red.txt": {
+        "archive": "recovery-key-red.txt.raw.gz",
+        "captured_sha256": "264df270969ce17375fbf281e51ab73af93ecde9f6e560b8d90f085fb6c894c0",
+        "archive_sha256": "a61c573596017cd9c67de610f18d28dbcec319fbba51f54e40d2a2b82a11f537"
+      }
+    }
+  },
+  "evidence_sha256": {
+    "browser-final.txt": "8f84174adbcffdce8f2e2f83a02a583e14768d25fb5cdee39906be5b5791ab99",
+    "account-reset-green.txt.raw.gz": "37753f31cef8c59076b420f70b4eb50eb4da477a98f021420d1f34890334e63f",
+    "recovery-key-red.txt.raw.gz": "a61c573596017cd9c67de610f18d28dbcec319fbba51f54e40d2a2b82a11f537",
+    "build-before-final-browser.txt": "12015610333a60766e298e520b205b3eb96189f88bb8d947842ce140fc96ddd3",
+    "recovery-key-green.txt.raw.gz": "85de51aa992d9f166e1fc8b09d82c429cc1e8a01d2e1a7a3ba107e8f3e087609",
+    "full-before-final-browser.txt": "efd2cb3839f49c8db79d46d9b6436701cd2e9572c035baedb29bacb6fbf91d45",
+    "focused-final.txt.raw.gz": "bfbb5e44d8da45dcc7584516a40b2e3c1a437b8ef37e5d444370a17b71d763c5",
+    "account-reset-green.txt": "b31fb15f0c75c3cddd880465660a4a2eb99b79cdd979a76f8a668ce3265a7651",
+    "full-final.txt": "31112ac42f693ec2aaca5e649220cecb06ab5f9bc80ae388a102ca4da266ad9c",
+    "README.md": "73225a8e579b83711fd87b362b1c66ff3686ccaa5a0a93c4b33a3b93ac40ba08",
+    "account-reset-red.txt.raw.gz": "a1988681e611bf32f7faa36da75ff5c824db0122e32a7c7112d58afea470ed2f",
+    "account-reset-red.txt": "3c4df8b3633877d058cb3478cdefcfa98af6c90e1a207edd8fdad24736e2043e",
+    "full-before-account-reset-fix.txt": "6253d66d63f0b4c122155c0143d209119ee2f708f4af10ec778b64bfcc88ef60",
+    "recovery-key-green.txt": "1d63eca01f1ca99df91c82dbf6fe2e36340c709cc4b12330e8aadbc120d638f8",
+    "full-before-account-reset-fix.txt.raw.gz": "b8cbc01c15c09852a4b6f94d64ca76b204b8f6ab74a26c3f2d928753a32ac980",
+    "build-before-account-reset-fix.txt": "2c87f39c776d7622918af1cbec125d1a8ea8cb05570642e56ab2d66b8dad6c29",
+    "full-before-final-browser.txt.raw.gz": "ff59401d9848e4020e5a88a8a32fff667fc8015ea571882145930568c357e37e",
+    "trusted-device-review-laptop.png": "6dfea88ba26e0f832063cf0c11813b9a474b74ccc8ac178d4b485a83dc7f53f1",
+    "focused-final.txt": "7bc4fcaea5bdc09e1101fe2f82dd707640ce6f5e394d64d09ccd50ea0586cc9c",
+    "full-final.txt.raw.gz": "81a8071dcbcd4742bd76594a68e273f1757dabee4a1b770349b08a8522839ab1",
+    "recovery-key-red.txt": "e9a9439049d7b785ab15e4d7400a9c50e4db13eed8bd3fbbecca2d27e5d1adbe",
+    "build-final.txt": "283aaf3c10da7d42eeceed2b4d19016abcc0c9753af0b9e69b6f1a3fa623bb90"
+  }
+}

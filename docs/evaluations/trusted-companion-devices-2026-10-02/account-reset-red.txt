@@ -1,0 +1,411 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/panel/MobileInboxPanel.test.tsx (4 tests | 1 failed | 3 skipped) 1197ms
+     × restores deliberate Connect after an already-open sign-in completes during rotation and fences the old busy/secret result 1196ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/panel/MobileInboxPanel.test.tsx > MobileInboxPanel > restores deliberate Connect after an already-open sign-in completes during rotation and fences the old busy/secret result
+TestingLibraryElementError: Unable to find role="button" and name "Connect this desktop"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Mobile inbox"[39m
+      [33mstyle[39m=[32m"padding: var(--space-4); overflow-y: auto;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mstyle[39m=[32m"display: flex; align-items: center; justify-content: space-between; gap: 8px;"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h2[39m
+            [33mstyle[39m=[32m"margin: 0px; color: var(--text-primary); font-size: var(--text-base);"[39m
+          [36m>[39m
+            [0mMobile Inbox[0m
+          [36m</h2>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 3px;"[39m
+          [36m>[39m
+            [0mImported captures and review intent. Decisions are finalized elsewhere on desktop.[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"btn btn--sm"[39m
+        [36m>[39m
+          [0mRefresh[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Hosted mobile sync"[39m
+        [33mstyle[39m=[32m"display: grid; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-top: var(--space-4);"[39m
+      [36m>[39m
+        [36m<strong[39m
+          [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+        [36m>[39m
+          [0mHosted encrypted sync[0m
+        [36m</strong>[39m
+        [36m<div[39m
+          [33mrole[39m=[32m"status"[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs);"[39m
+        [36m>[39m
+          [0mA device-bound Supabase session is required; secure desktop device-key persistence is not implemented.[0m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mstyle[39m=[32m"margin: 0px; color: var(--text-secondary); font-size: var(--text-xs);"[39m
+        [36m>[39m
+          [0mConnect this computer to your companion account, then publish an encrypted copy for your phone. Captures return here for review; mobile does not edit the manuscript.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; align-items: end; gap: 8px; flex-wrap: wrap;"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mWorking…[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mCompanion account[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; align-items: end; gap: 8px; flex-wrap: wrap;"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mstyle[39m=[32m"display: grid; gap: 4px; color: var(--text-tertiary); font-size: var(--text-xs); flex: 1 1 0%; min-width: 130px;"[39m
+          [36m>[39m
+            [0mRecovery key version[0m
+            [36m<input[39m
+              [33mclass[39m=[32m"input input--mono"[39m
+              [33minputmode[39m=[32m"numeric"[39m
+              [33mvalue[39m=[32m"1"[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label[39m
+            [33mstyle[39m=[32m"display: grid; gap: 4px; color: var(--text-tertiary); font-size: var(--text-xs); flex: 2 1 0%; min-width: 130px;"[39m
+          [36m>[39m
+            [0mRecovery key[0m
+            [36m<input[39m
+              [33mautocomplete[39m=[32m"off"[39m
+              [33mclass[39m=[32m"input input--mono"[39m
+              [33mtype[39m=[32m"password"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUnlock recovery key[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; gap: 8px; flex-wrap: wrap;"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mPublish snapshot[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mImport outbox[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+      [36m<h3[39m
+        [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin: 16px 0px 8px;"[39m
+      [36m>[39m
+        [0mCaptures · [0m
+        [0m1[0m
+      [36m</h3>[39m
+      [36m<article[39m
+        [33mstyle[39m=[32m"border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-bottom: var(--space-2);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; justify-content: space-between; gap: 8px;"[39m
+        [36m>[39m
+          [36m<strong[39m
+            [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+          [36m>[39m
+            [0mGate image[0m
+          [36m</strong>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"badge"[39m
+          [36m>[39m
+            [0mNote[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-sm); white-space: pre-wrap; margin: 8px 0px 0px;"[39m
+        [36m>[39m
+          [0mLet the gate cast a longer shadow.[0m
+        [36m</p>[39m
+        [36m<small[39m
+          [33mstyle[39m=[32m"display: block; color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 8px;"[39m
+        [36m>[39m
+          [0mdevice-one[0m
+          [0m · [0m
+          [0moperation-note-one[0m
+        [36m</small>[39m
+      [36m</article>[39m
+      [36m<h3[39m
+        [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin: 16px 0px 8px;"[39m
+      [36m>[39m
+        [0mReview intent · [0m
+        [0m1[0m
+      [36m</h3>[39m
+      [36m<article[39m
+        [33mstyle[39m=[32m"border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-bottom: var(--space-2);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; justify-content: space-between; gap: 8px;"[39m
+        [36m>[39m
+          [36m<strong[39m
+            [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+          [36m>[39m
+            [0mReview decision · [0m
+            [0maccepted[0m
+          [36m</strong>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"badge badge--warning"[39m
+          [36m>[39m
+            [0mConflict[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin-top: 8px;"[39m
+        [36m>[39m
+          [0mproposal[0m
+          [0m · [0m
+          [0mtarget pending[0m
+        [36m</div>[39m
+        [36m<small[39m
+          [33mstyle[39m=[32m"display: block; color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 8px;"[39m
+        [36m>[39m
+          [0mdevice-one[0m
+          [0m · [0m
+          [0moperation-review-one[0m
+        [36m</small>[39m
+      [36m</article>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Mobile inbox"[39m
+        [33mstyle[39m=[32m"padding: var(--space-4); overflow-y: auto;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"display: flex; align-items: center; justify-content: space-between; gap: 8px;"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h2[39m
+              [33mstyle[39m=[32m"margin: 0px; color: var(--text-primary); font-size: var(--text-base);"[39m
+            [36m>[39m
+              [0mMobile Inbox[0m
+            [36m</h2>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 3px;"[39m
+            [36m>[39m
+              [0mImported captures and review intent. Decisions are finalized elsewhere on desktop.[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"btn btn--sm"[39m
+          [36m>[39m
+            [0mRefresh[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Hosted mobile sync"[39m
+          [33mstyle[39m=[32m"display: grid; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-top: var(--space-4);"[39m
+        [36m>[39m
+          [36m<strong[39m
+            [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+          [36m>[39m
+            [0mHosted encrypted sync[0m
+          [36m</strong>[39m
+          [36m<div[39m
+            [33mrole[39m=[32m"status"[39m
+            [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs);"[39m
+          [36m>[39m
+            [0mA device-bound Supabase session is required; secure desktop device-key persistence is not implemented.[0m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"margin: 0px; color: var(--text-secondary); font-size: var(--text-xs);"[39m
+          [36m>[39m
+            [0mConnect this computer to your companion account, then publish an encrypted copy for your phone. Captures return here for review; mobile does not edit the manuscript.[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: end; gap: 8px; flex-wrap: wrap;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0mWorking…[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0mCompanion account[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; align-items: end; gap: 8px; flex-wrap: wrap;"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mstyle[39m=[32m"display: grid; gap: 4px; color: var(--text-tertiary); font-size: var(--text-xs); flex: 1 1 0%; min-width: 130px;"[39m
+            [36m>[39m
+              [0mRecovery key version[0m
+              [36m<input[39m
+                [33mclass[39m=[32m"input input--mono"[39m
+                [33minputmode[39m=[32m"numeric"[39m
+                [33mvalue[39m=[32m"1"[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mstyle[39m=[32m"display: grid; gap: 4px; color: var(--text-tertiary); font-size: var(--text-xs); flex: 2 1 0%; min-width: 130px;"[39m
+            [36m>[39m
+              [0mRecovery key[0m
+              [36m<input[39m
+                [33mautocomplete[39m=[32m"off"[39m
+                [33mclass[39m=[32m"input input--mono"[39m
+                [33mtype[39m=[32m"password"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0mUnlock recovery key[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; gap: 8px; flex-wrap: wrap;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0mPublish snapshot[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+              [33mdisabled[39m=[32m""[39m
+            [36m>[39m
+              [0mImport outbox[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<h3[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin: 16px 0px 8px;"[39m
+        [36m>[39m
+          [0mCaptures · [0m
+          [0m1[0m
+        [36m</h3>[39m
+        [36m<article[39m
+          [33mstyle[39m=[32m"border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-bottom: var(--space-2);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; justify-content: space-between; gap: 8px;"[39m
+          [36m>[39m
+            [36m<strong[39m
+              [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+            [36m>[39m
+              [0mGate image[0m
+            [36m</strong>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"badge"[39m
+            [36m>[39m
+              [0mNote[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-sm); white-space: pre-wrap; margin: 8px 0px 0px;"[39m
+          [36m>[39m
+            [0mLet the gate cast a longer shadow.[0m
+          [36m</p>[39m
+          [36m<small[39m
+            [33mstyle[39m=[32m"display: block; color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 8px;"[39m
+          [36m>[39m
+            [0mdevice-one[0m
+            [0m · [0m
+            [0moperation-note-one[0m
+          [36m</small>[39m
+        [36m</article>[39m
+        [36m<h3[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin: 16px 0px 8px;"[39m
+        [36m>[39m
+          [0mReview intent · [0m
+          [0m1[0m
+        [36m</h3>[39m
+        [36m<article[39m
+          [33mstyle[39m=[32m"border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-surface); padding: var(--space-3); margin-bottom: var(--space-2);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: flex; justify-content: space-between; gap: 8px;"[39m
+          [36m>[39m
+            [36m<strong[39m
+              [33mstyle[39m=[32m"color: var(--text-primary); font-size: var(--text-sm);"[39m
+            [36m>[39m
+              [0mReview decision · [0m
+              [0maccepted[0m
+            [36m</strong>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"badge badge--warning"[39m
+            [36m>[39m
+              [0mConflict[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); margin-top: 8px;"[39m
+          [36m>[39m
+            [0mproposal[0m
+            [0m · [0m
+            [0mtarget pending[0m
+          [36m</div>[39m
+          [36m<small[39m
+            [33mstyle[39m=[32m"display: block; color: var(--text-tertiary); font-size: var(--text-xs); margin-top: 8px;"[39m
+          [36m>[39m
+            [0mdevice-one[0m
+            [0m · [0m
+            [0moperation-review-one[0m
+          [36m</small>[39m
+        [36m</article>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ ❯ Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/components/panel/MobileInboxPanel.test.tsx:183:11
+    181|     await waitFor(() => expect(old.provisionProjectKey).toHaveBeenCall…
+    182|     await act(async () => finishSignIn({ userId: "account-two", email:…
+    183|     await waitFor(() => expect(screen.getByRole("button", { name: "Con…
+       |           ^
+    184|     await act(async () => finishRotation({ keyVersion: 4, recoveryKey:…
+    185|     expect(screen.queryByText("late-old-account-secret")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  11:37:27
+   Duration  1.82s (transform 100ms, setup 0ms, import 217ms, tests 1.20s, environment 336ms)

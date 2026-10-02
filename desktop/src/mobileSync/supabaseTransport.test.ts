@@ -120,6 +120,9 @@ describe("SupabaseMobileSyncTransport", () => {
     const publicKey = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
     const row = {
       device_id: "20000000-0000-4000-8000-000000000001",
+      user_id: "10000000-0000-4000-8000-000000000009",
+      platform: "ios",
+      key_version: 2,
       key_id: "30000000-0000-4000-8000-000000000001",
       key_algorithm: "x25519-v1",
       public_key: bytea(publicKey),
@@ -141,6 +144,9 @@ describe("SupabaseMobileSyncTransport", () => {
 
     await expect(transport.listProjectDevices(PROJECT_ID)).resolves.toEqual([{
       deviceId: row.device_id,
+      userId: row.user_id,
+      platform: row.platform,
+      deviceKeyVersion: row.key_version,
       keyId: row.key_id,
       keyAlgorithm: "x25519-v1",
       publicKey: bytesToBase64(publicKey)
@@ -161,6 +167,46 @@ describe("SupabaseMobileSyncTransport", () => {
       Authorization: "Bearer user-access-token",
       "Content-Type": "application/json",
     });
+  });
+
+  it("revokes only the reviewed project device with a verified response and refreshed account token", async () => {
+    const deviceId = "40000000-0000-4000-8000-000000000001";
+    const targetDeviceId = "20000000-0000-4000-8000-000000000002";
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
+      project_id: PROJECT_ID, device_id: targetDeviceId, revoked_at: "2026-10-02T12:00:00Z",
+      revoked_by_device_id: deviceId, revocation_reason_code: "lost-device",
+    }), { status: 200 }));
+    const transport = new SupabaseMobileSyncTransport({
+      supabaseUrl: "https://example.supabase.co", publishableKey: "public", userAccessToken: "initial",
+      getAccessToken: async () => "verified-current", deviceId, fetch: fetchMock,
+    });
+    await transport.revokeProjectDevice({ projectId: PROJECT_ID, targetDeviceId, reasonCode: "lost-device" });
+    expect(fetchMock).toHaveBeenCalledWith("https://example.supabase.co/rest/v1/rpc/mobile_revoke_project_device", expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: "Bearer verified-current" }),
+      body: JSON.stringify({ p_requesting_device_id: deviceId, p_project_id: PROJECT_ID, p_target_device_id: targetDeviceId, p_reason_code: "lost-device" }),
+    }));
+    await expect(transport.revokeProjectDevice({ projectId: PROJECT_ID, targetDeviceId, reasonCode: "Invalid Reason" })).rejects.toThrow("reason code");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ project_id: "other", device_id: targetDeviceId, revoked_at: "now" }), { status: 200 }));
+    await expect(transport.revokeProjectDevice({ projectId: PROJECT_ID, targetDeviceId, reasonCode: "lost-device" })).rejects.toThrow("could not be confirmed");
+  });
+
+  it.each([
+    { project_id: "other", latest_key_version: 3, active_key_version: 3 },
+    { project_id: PROJECT_ID, latest_key_version: "3", active_key_version: 3 },
+    { project_id: PROJECT_ID, latest_key_version: 3, active_key_version: 2 },
+    { project_id: PROJECT_ID, latest_key_version: 0, active_key_version: 0 },
+    { project_id: PROJECT_ID, latest_key_version: -1, active_key_version: null },
+  ])("refuses malformed authoritative key state %j", async row => {
+    const transport = publicationTransport(vi.fn(async () => new Response(JSON.stringify(row), { status: 200 })));
+    await expect(transport.getProjectKeyState(PROJECT_ID)).rejects.toThrow("key state is invalid");
+  });
+
+  it("distinguishes an existing retired book key from a current active key", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ project_id: PROJECT_ID, latest_key_version: 3, active_key_version: null }), { status: 200 }));
+    const transport = publicationTransport(fetchMock);
+    await expect(transport.getProjectKeyState(PROJECT_ID)).resolves.toEqual({ latestKeyVersion: 3, activeKeyVersion: null });
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("mobile_get_project_key_state"), expect.any(Object));
   });
 
   it("atomically rotates with exact recipient envelope metadata", async () => {

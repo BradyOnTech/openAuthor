@@ -9,9 +9,11 @@ export async function connectDesktopMobileSync(projectId: string, projectRoot: s
   const enrollment = await enrollDesktopForProject({
     scope: await deploymentScope(config.url), projectId, account: await desktopAccount(), secrets: nativeSecrets,
   });
-  return createHostedMobileSyncCoordinator({
+  const coordinator = createHostedMobileSyncCoordinator({
     supabaseUrl: config.url, publishableKey: config.publishableKey, projectId, projectRoot,
     accessToken: await enrollment.accessToken(), getAccessToken: enrollment.accessToken,
     projectKeys: enrollment.projectKeys,
   });
+  await coordinator.refreshKeyState();
+  return coordinator;
 }

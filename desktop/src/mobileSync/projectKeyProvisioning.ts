@@ -3,12 +3,16 @@ export const MOBILE_PROJECT_KEY_ENVELOPE_ALGORITHM =
 
 export type MobileProjectDevice = {
   deviceId: string;
+  userId?: string;
+  platform?: string;
+  deviceKeyVersion?: number;
   keyId: string;
   keyAlgorithm: string;
   publicKey: string;
   projectEnrolledAt: string | null;
   projectRevokedAt: string | null;
 };
+export type MobileProjectKeyState = { latestKeyVersion: number; activeKeyVersion: number | null };
 
 export type MobileProjectKeyEnvelope = {
   envelopeId: string;
@@ -156,6 +160,7 @@ export function createMobileProjectKeyProvisioningService(options: {
       projectId: string;
       expectedPreviousVersion: number;
       reasonCode: string;
+      reviewedRecipients?: ReadonlyArray<{ deviceId: string; keyId: string }>;
     }): Promise<{
       projectKey: CryptoKey;
       keyVersion: number;
@@ -172,6 +177,13 @@ export function createMobileProjectKeyProvisioningService(options: {
         && device.projectRevokedAt === null
         && device.keyAlgorithm === "x25519-v1"
       ));
+      if (input.reviewedRecipients !== undefined) {
+        const identity = (rows: ReadonlyArray<{ deviceId: string; keyId: string }>) =>
+          rows.map(row => `${row.deviceId}:${row.keyId}`).sort();
+        if (JSON.stringify(identity(recipients)) !== JSON.stringify(identity(input.reviewedRecipients))) {
+          throw new Error("The remaining device keys changed. Refresh and review the recipients before rotating.");
+        }
+      }
       if (recipients.length === 0) {
         throw new Error("No active X25519 project device is available for key provisioning.");
       }

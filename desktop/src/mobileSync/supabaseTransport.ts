@@ -10,6 +10,7 @@ import {
 import {
   MOBILE_PROJECT_KEY_ENVELOPE_ALGORITHM,
   type MobileProjectDevice,
+  type MobileProjectKeyState,
   type MobileProjectKeyEnvelope,
   type MobileProjectKeyProvisioningTransport,
 } from "./projectKeyProvisioning";
@@ -271,6 +272,9 @@ export class SupabaseMobileSyncTransport implements
       }
       devices.push({
         deviceId: stringField(row, "device_id"),
+        userId: stringField(row, "user_id"),
+        platform: stringField(row, "platform"),
+        deviceKeyVersion: positiveInteger(row.key_version, "Mobile device key version"),
         keyId: stringField(row, "key_id"),
         keyAlgorithm,
         publicKey: bytesToBase64Url(publicKey),
@@ -279,6 +283,43 @@ export class SupabaseMobileSyncTransport implements
       });
     }
     return devices;
+  }
+
+  async revokeProjectDevice(input: {
+    projectId: string;
+    targetDeviceId: string;
+    reasonCode: string;
+  }): Promise<void> {
+    const projectId = required(input.projectId, "Project id");
+    const targetDeviceId = required(input.targetDeviceId, "Target device id");
+    const reasonCode = required(input.reasonCode, "Revocation reason");
+    if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(reasonCode)) throw new Error("Revocation reason code is invalid.");
+    const response = await this.#rpc<unknown>("mobile_revoke_project_device", {
+      p_requesting_device_id: this.#deviceId,
+      p_project_id: projectId,
+      p_target_device_id: targetDeviceId,
+      p_reason_code: reasonCode,
+    });
+    const row = record(Array.isArray(response) && response.length === 1 ? response[0] : response);
+    if (row.project_id !== projectId || row.device_id !== targetDeviceId
+      || row.revoked_by_device_id !== this.#deviceId || row.revocation_reason_code !== reasonCode
+      || typeof row.revoked_at !== "string" || !row.revoked_at.trim()) {
+      throw new Error("Device revocation could not be confirmed. Refresh the device list before trying again.");
+    }
+  }
+
+  async getProjectKeyState(projectId: string): Promise<MobileProjectKeyState> {
+    const expectedProject = required(projectId, "Project id");
+    const row = record(await this.#rpc<unknown>("mobile_get_project_key_state", {
+      p_requesting_device_id: this.#deviceId, p_project_id: expectedProject,
+    }));
+    const latest = row.latest_key_version;
+    const active = row.active_key_version;
+    if (row.project_id !== expectedProject || typeof latest !== "number" || !Number.isSafeInteger(latest) || latest < 0
+      || active !== null && (typeof active !== "number" || !Number.isSafeInteger(active) || active < 1 || active !== latest)) {
+      throw new Error("Hosted book key state is invalid. Reconnect before syncing.");
+    }
+    return { latestKeyVersion: latest, activeKeyVersion: active as number | null };
   }
 
   async rotateProjectKeyWithEnvelopes(input: {

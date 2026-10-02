@@ -35,6 +35,16 @@ function deterministicCrypto() {
 }
 
 describe("mobile project-key provisioning", () => {
+  it("refuses a changed reviewed device/key set before creating or sending envelopes", async () => {
+    const current = { deviceId: DEVICE_ONE, keyId: KEY_TWO, keyAlgorithm: "x25519-v1", publicKey: base64Url(new Uint8Array(32)), projectEnrolledAt: "now", projectRevokedAt: null };
+    const transport: MobileProjectKeyProvisioningTransport = {
+      listProjectDevices: vi.fn(async () => [current]), rotateProjectKeyWithEnvelopes: vi.fn(),
+    };
+    const seal = vi.fn();
+    const service = createMobileProjectKeyProvisioningService({ transport, sealedBox: { seal } });
+    await expect(service.provisionProjectKey({ projectId: PROJECT_ID, expectedPreviousVersion: 3, reasonCode: "lost-device", reviewedRecipients: [{ deviceId: DEVICE_ONE, keyId: KEY_ONE }] })).rejects.toThrow("remaining device keys changed");
+    expect(seal).not.toHaveBeenCalled(); expect(transport.rotateProjectKeyWithEnvelopes).not.toHaveBeenCalled();
+  });
   it("seals one random project key independently for every active device", async () => {
     const publicKeyOne = base64Url(Uint8Array.from({ length: 32 }, () => 11));
     const publicKeyTwo = base64Url(Uint8Array.from({ length: 32 }, () => 22));

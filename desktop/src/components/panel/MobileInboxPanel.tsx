@@ -10,6 +10,12 @@ import { createHostedMobileSyncCoordinator, type HostedMobileSyncCoordinator } f
 import { connectDesktopMobileSync } from "../../mobileSync/connectDesktop";
 import { cloudConfiguration, desktopAccount } from "../../cloud/account";
 import { CloudSignIn } from "../../cloud/CloudSignIn";
+import { TrustedDevicesPanel } from "./TrustedDevicesPanel";
+import { deviceReviewOperation, forgetCompanionRecoveryKeys } from "../../mobileSync/deviceReviewOperation";
+
+// Retain in-memory connection/key state when this panel is unmounted or the
+// author visits another book. Every RPC still verifies the enrolled account.
+const connections = new Map<string, HostedMobileSyncCoordinator>();
 
 function payloadText(payload: Record<string, unknown>, key: string): string {
   const value = payload[key];
@@ -27,15 +33,16 @@ function ProjectMobileInbox() {
   const [reviews, setReviews] = useState<MobileReviewDecision[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncBusy, setSyncBusy] = useState(false);
-  const [expectedPreviousVersion, setExpectedPreviousVersion] = useState("0");
+  const [deviceBusy, setDeviceBusy] = useState(false);
   const [unlockVersion, setUnlockVersion] = useState("1");
   const [recoveryInput, setRecoveryInput] = useState("");
-  const [recoveryOutput, setRecoveryOutput] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
   const [showSignIn, setShowSignIn] = useState(false);
-  const [connected, setConnected] = useState<HostedMobileSyncCoordinator | null>(null);
+  const connectionScope = JSON.stringify([activeProjectId, projectRoot]);
+  const [connected, setConnected] = useState<HostedMobileSyncCoordinator | null>(() => connections.get(connectionScope) ?? null);
   const active = useRef(true);
   const busy = useRef(false);
+  const accountGeneration = useRef(0);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const initialCoordinator = useMemo(() => {
     return createHostedMobileSyncCoordinator({
@@ -46,31 +53,48 @@ function ProjectMobileInbox() {
     });
   }, [activeProjectId, projectFound, projectRoot]);
   const coordinator = connected ?? initialCoordinator;
+  const currentCoordinator = useRef(coordinator);
+  currentCoordinator.current = coordinator;
   const [, refreshSyncState] = useState(0);
   const syncState = coordinator.getState();
 
   useEffect(() => {
-    setRecoveryOutput("");
+    setRecoveryInput("");
     setSyncMessage("");
   }, [coordinator]);
 
-  const runSyncAction = useCallback(async (action: () => Promise<void>) => {
-    if (busy.current) return;
+  const runSyncAction = useCallback(async (action: (isCurrent: () => boolean) => Promise<void>) => {
+    if (busy.current || deviceBusy) return;
     busy.current = true;
     setSyncBusy(true);
     setSyncMessage("");
+    const generation = accountGeneration.current;
+    const isCurrent = () => active.current && accountGeneration.current === generation && currentCoordinator.current === coordinator;
     try {
-      await action();
-      if (active.current) refreshSyncState((version) => version + 1);
+      await action(isCurrent);
+      if (isCurrent()) refreshSyncState((version) => version + 1);
     } catch (error) {
-      if (active.current) setError(
+      if (isCurrent()) setError(
         `Mobile sync failed: ${error instanceof Error ? error.message : String(error)}`
       );
     } finally {
-      busy.current = false;
-      if (active.current) setSyncBusy(false);
+      if (accountGeneration.current === generation) {
+        busy.current = false;
+        if (active.current) setSyncBusy(false);
+      }
     }
-  }, [coordinator, setError]);
+  }, [coordinator, deviceBusy, setError]);
+  const connectedIdentity = connected?.getIdentity();
+  const deviceScope = connectedIdentity ? JSON.stringify([projectRoot, activeProjectId, connectedIdentity.userId, connectedIdentity.deviceId]) : null;
+  const changeConnection = (next: HostedMobileSyncCoordinator | null) => {
+    if (next) connections.set(connectionScope, next); else connections.delete(connectionScope);
+    setConnected(next);
+    setDeviceBusy(false);
+  };
+  const controlsBusy = syncBusy || deviceBusy;
+  const unresolvedDeviceChange = deviceScope ? deviceReviewOperation(deviceScope).getSnapshot().requiresRefresh : false;
+  const syncBlocked = controlsBusy || unresolvedDeviceChange;
+  const coordinatorGeneration = accountGeneration.current;
 
   const refresh = useCallback(async () => {
     if (!projectFound) return;
@@ -133,61 +157,48 @@ function ProjectMobileInbox() {
           Captures return here for review; mobile does not edit the manuscript.
         </p>
         <div style={syncControlsStyle}>
-          <button className="btn btn--sm" disabled={syncBusy || !cloudConfiguration()}
-            onClick={() => void runSyncAction(async () => {
+          <button className="btn btn--sm" disabled={controlsBusy || !cloudConfiguration()}
+            onClick={() => void runSyncAction(async (isCurrent) => {
               const account = await desktopAccount();
               if (!await account.session()) {
-                if (active.current) setShowSignIn(true);
+                if (isCurrent()) setShowSignIn(true);
                 return;
               }
               if (!activeProjectId) throw new Error("Open a hosted project before connecting.");
               const next = await connectDesktopMobileSync(activeProjectId, projectRoot);
-              if (active.current) { setConnected(next); setShowSignIn(false); }
+              if (isCurrent()) { changeConnection(next); setShowSignIn(false); }
             })}>
-            {syncBusy ? "Working…" : connected ? "Reconnect this desktop" : "Connect this desktop"}
+            {controlsBusy ? "Working…" : connected ? "Reconnect this desktop" : "Connect this desktop"}
           </button>
-          <button className="btn btn--sm" disabled={syncBusy || !cloudConfiguration()}
+          <button className="btn btn--sm" disabled={controlsBusy || !cloudConfiguration()}
             onClick={() => setShowSignIn((value) => !value)}>Companion account</button>
-          {connected && <button className="btn btn--sm" disabled={syncBusy}
-            onClick={() => void runSyncAction(async () => {
+          {connected && <button className="btn btn--sm" disabled={controlsBusy}
+            onClick={() => void runSyncAction(async (isCurrent) => {
               await (await desktopAccount()).signOut();
-              if (active.current) { setConnected(null); setRecoveryInput(""); setRecoveryOutput(""); }
+              connections.clear(); forgetCompanionRecoveryKeys();
+              if (isCurrent()) { changeConnection(null); setRecoveryInput(""); }
             })}>Sign out of companion</button>}
         </div>
         {showSignIn && <CloudSignIn onSignedIn={() => {
           if (active.current) {
-            setConnected(null);
+            accountGeneration.current++;
+            busy.current = false; setSyncBusy(false); setDeviceBusy(false);
+            setRecoveryInput("");
+            connections.clear(); forgetCompanionRecoveryKeys(); changeConnection(null);
             setShowSignIn(false);
             setSyncMessage("Signed in. Select Connect this desktop to set up encrypted sync for this book.");
           }
         }} />}
 
-        <div style={syncControlsStyle}>
-          <label style={syncLabelStyle}>
-            Previous key version
-            <input
-              className="input input--mono"
-              inputMode="numeric"
-              value={expectedPreviousVersion}
-              onChange={(event) => setExpectedPreviousVersion(event.target.value)}
-            />
-          </label>
-          <button
-            className="btn btn--sm"
-            disabled={syncBusy || syncState.status === "setup_required"}
-            onClick={() => void runSyncAction(async () => {
-              const result = await coordinator.provisionProjectKey(
-                Number(expectedPreviousVersion),
-                "desktop-provisioning"
-              );
-              setRecoveryOutput(result.recoveryKey);
-              setSyncMessage(`Provisioned key version ${result.keyVersion} for ${result.envelopeCount} devices.`);
-            })}
-          >
-            Provision key
-          </button>
-        </div>
+        {connectedIdentity && activeProjectId && <TrustedDevicesPanel
+          key={deviceScope!} coordinator={coordinator} projectId={activeProjectId} projectRoot={projectRoot}
+          disabled={syncBusy} onBusyChange={value => { if (active.current && accountGeneration.current === coordinatorGeneration && currentCoordinator.current === coordinator) setDeviceBusy(value); }}
+          onChanged={() => { if (active.current && accountGeneration.current === coordinatorGeneration && currentCoordinator.current === coordinator) refreshSyncState(version => version + 1); }}
+        />}
 
+        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
+          Recovery input must match this book's verified current key. It cannot restore a missing device key envelope; reconnect or review a new book key rotation instead.
+        </p>
         <div style={syncControlsStyle}>
           <label style={syncLabelStyle}>
             Recovery key version
@@ -210,11 +221,10 @@ function ProjectMobileInbox() {
           </label>
           <button
             className="btn btn--sm"
-            disabled={syncBusy || syncState.status === "setup_required"}
-            onClick={() => void runSyncAction(async () => {
+            disabled={syncBlocked || syncState.status === "setup_required"}
+            onClick={() => void runSyncAction(async (isCurrent) => {
               await coordinator.unlockRecoveryKey(Number(unlockVersion), recoveryInput);
-              setRecoveryInput("");
-              setSyncMessage(`Unlocked key version ${unlockVersion} in memory.`);
+              if (isCurrent()) { setRecoveryInput(""); setSyncMessage(`Unlocked key version ${unlockVersion} in memory.`); }
             })}
           >
             Unlock recovery key
@@ -224,19 +234,21 @@ function ProjectMobileInbox() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             className="btn btn--sm"
-            disabled={syncBusy || syncState.status !== "ready"}
-            onClick={() => void runSyncAction(async () => {
+            disabled={syncBlocked || syncState.status !== "ready"}
+            onClick={() => void runSyncAction(async (isCurrent) => {
               await coordinator.publishSnapshot();
-              setSyncMessage("Encrypted snapshot published.");
+              if (deviceScope) deviceReviewOperation(deviceScope).published();
+              if (isCurrent()) setSyncMessage("Encrypted snapshot published.");
             })}
           >
             Publish snapshot
           </button>
           <button
             className="btn btn--sm"
-            disabled={syncBusy || syncState.status !== "ready"}
-            onClick={() => void runSyncAction(async () => {
+            disabled={syncBlocked || syncState.status !== "ready"}
+            onClick={() => void runSyncAction(async (isCurrent) => {
               const report = await coordinator.importOutbox();
+              if (!isCurrent()) return;
               setSyncMessage(
                 `Imported ${report.imported.length} mobile items; ${report.failures.length} need attention.`
               );
@@ -250,14 +262,6 @@ function ProjectMobileInbox() {
         {syncMessage && (
           <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
             {syncMessage}
-          </div>
-        )}
-        {recoveryOutput && (
-          <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
-            Save this recovery key now. It is held only in memory:
-            <code style={{ display: "block", overflowWrap: "anywhere", marginTop: 4 }}>
-              {recoveryOutput}
-            </code>
           </div>
         )}
       </section>
