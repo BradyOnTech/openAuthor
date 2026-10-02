@@ -130,7 +130,7 @@
   /* Text — warm off-whites */
   --text-primary: #e8e4df;
   --text-secondary: #8a8680;
-  --text-tertiary: #5a5854;
+  --text-tertiary: #9a938c;
   --text-ghost: #3a3834;
   --text-inverse: #111114;
 
@@ -144,7 +144,7 @@
   --accent: #c4841d;
   --accent-hover: #d4942d;
   --accent-active: #b47a18;
-  --accent-text: #ffffff;
+  --accent-text: #111114;
   --accent-subtle: rgba(196, 132, 29, 0.10);
   --accent-muted: rgba(196, 132, 29, 0.06);
   --accent-border: rgba(196, 132, 29, 0.25);
@@ -187,6 +187,8 @@
   --editor-line-highlight: rgba(0, 0, 0, 0.03);
   --editor-border: rgba(0, 0, 0, 0.06);
   --editor-title: #2a2520;
+  --editor-focus: #8a5c0a;
+  --editor-warning-text: #8a5c0a;
 
   /* Scrollbar */
   --scrollbar-thumb: rgba(255, 255, 255, 0.08);
@@ -223,7 +225,7 @@
   /* Text */
   --text-primary: #1a1815;
   --text-secondary: #6a6560;
-  --text-tertiary: #9a9590;
+  --text-tertiary: #625d58;
   --text-ghost: #c5c0ba;
   --text-inverse: #faf8f4;
 
@@ -234,8 +236,8 @@
   --border-focus: rgba(164, 108, 16, 0.5);
 
   /* Accent — slightly darker amber for contrast */
-  --accent: #a46c10;
-  --accent-hover: #b47a18;
+  --accent: #9c660e;
+  --accent-hover: #90600e;
   --accent-active: #8a5c0a;
   --accent-text: #ffffff;
   --accent-subtle: rgba(164, 108, 16, 0.08);
@@ -280,6 +282,8 @@
   --editor-line-highlight: rgba(0, 0, 0, 0.02);
   --editor-border: rgba(0, 0, 0, 0.08);
   --editor-title: #1a1815;
+  --editor-focus: #8a5c0a;
+  --editor-warning-text: #8a5c0a;
 
   /* Scrollbar */
   --scrollbar-thumb: rgba(0, 0, 0, 0.10);
@@ -1066,7 +1070,7 @@ body {
 }
 
 .scene-editor__status--dirty {
-  color: var(--warning-text);
+  color: var(--editor-warning-text);
 }
 
 .scene-conflict {
@@ -1115,7 +1119,7 @@ body {
 
 .scene-editor__title::placeholder {
   color: var(--editor-text-secondary);
-  opacity: 0.4;
+  opacity: 1;
 }
 
 .scene-editor__divider {
@@ -1142,8 +1146,14 @@ body {
 
 .scene-editor__body::placeholder {
   color: var(--editor-text-secondary);
-  opacity: 0.3;
+  opacity: 1;
   font-style: italic;
+}
+
+.scene-editor__title:focus-visible,
+.scene-editor__body:focus-visible {
+  outline: 2px solid var(--editor-focus);
+  outline-offset: 4px;
 }
 
 .scene-editor__body::selection {

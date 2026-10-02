@@ -6,11 +6,12 @@ export function ZenMode({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     const editor = exitRef.current?.closest(".scene-editor");
     if (editor && !editor.contains(document.activeElement)) {
-      editor.querySelector<HTMLTextAreaElement>("textarea")?.focus();
+      editor.querySelector<HTMLTextAreaElement>(".scene-editor__body")?.focus();
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
+        editor?.querySelector<HTMLTextAreaElement>(".scene-editor__body")?.focus();
         onExit();
       }
       if (e.key === "Tab" && editor) {
@@ -34,7 +35,7 @@ export function ZenMode({ onExit }: { onExit: () => void }) {
 
   return (
     <button ref={exitRef} className="zen-mode__exit" aria-label="Exit focus mode" onClick={() => {
-      exitRef.current?.closest(".scene-editor")?.querySelector<HTMLTextAreaElement>("textarea")?.focus();
+      exitRef.current?.closest(".scene-editor")?.querySelector<HTMLTextAreaElement>(".scene-editor__body")?.focus();
       onExit();
     }}>
       Exit focus mode · Esc

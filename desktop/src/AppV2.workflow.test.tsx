@@ -37,6 +37,7 @@ const harness = vi.hoisted(() => ({
   currentBranch: "main",
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
+  sceneSaveConflict: false,
   sceneListGate: null as null | ((root: string, rows: Array<Record<string, unknown>>) => Promise<Array<Record<string, unknown>>>),
   briefGate: null as null | (() => Promise<void>),
   briefWriteBranches: [] as string[],
@@ -186,6 +187,13 @@ vi.mock("@tauri-apps/api/core", () => ({
       if (!scene) return response("Unknown scene", 1);
       if (!hasArgument(args, "--expected-version")) throw new Error("Rendered editor omitted its loaded scene version.");
       if (harness.saveGate) await harness.saveGate();
+      if (harness.sceneSaveConflict) return response({ error: {
+        code: "scene_edit_conflict",
+        reason: "scene_changed",
+        current: editableScene(scene),
+        conflicting_fields: ["body"],
+        recovery_path: "",
+      } }, 3);
       if (hasArgument(args, "--title")) scene.title = argument(args, "--title");
       if (hasArgument(args, "--summary")) scene.summary = argument(args, "--summary");
       if (hasArgument(args, "--pov")) scene.pov = argument(args, "--pov");
@@ -665,6 +673,7 @@ describe("active V2 author workflow", () => {
     harness.failDraftOnce = false;
     harness.failHunkOnce = false;
     harness.saveGate = null;
+    harness.sceneSaveConflict = false;
     harness.briefGate = null;
     harness.sceneListGate = null;
     harness.briefWriteBranches.length = 0;
@@ -1164,13 +1173,52 @@ describe("active V2 author workflow", () => {
     await user.tab({ shift: true });
     expect(document.activeElement).toBe(editor);
     fireEvent.change(editor, { target: { value: "Mara has not sent this letter. She burns it instead." } });
-    fireEvent.keyDown(window, { key: "Escape" });
+    (editor as HTMLTextAreaElement).setSelectionRange(5, 5);
+    fireEvent.select(editor);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Exit focus mode" }));
+    await user.keyboard("{Escape}");
 
     expect(screen.queryByRole("button", { name: "Exit focus mode" })).toBeNull();
     expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
+    expect(document.activeElement).toBe(editor);
+    await user.keyboard("quietly ");
     fireEvent.keyDown(window, { key: "s", metaKey: true });
-    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara has not sent this letter. She burns it instead."));
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara quietly has not sent this letter. She burns it instead."));
     expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it.each(["entry", "Escape", "Exit click"])("focus mode preserves the live prose caret during a visible scene conflict on %s", async (path) => {
+    const { user, body } = await openWritingScene();
+    harness.scenes[0].body = "Mara sends the saved letter.";
+    harness.sceneSaveConflict = true;
+    fireEvent.change(body, { target: { value: "Mara keeps the letter." } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await screen.findByRole("region", { name: "Scene conflict review" });
+    const comparison = screen.getByRole("textbox", { name: "Saved prose" }) as HTMLTextAreaElement;
+    expect(comparison.value).toBe("Mara sends the saved letter.");
+
+    body.focus();
+    body.setSelectionRange(4, 4);
+    fireEvent.select(body);
+    if (path === "entry") screen.getByRole("tab", { name: /^Opening/ }).focus();
+    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+    const exit = screen.getByRole("button", { name: "Exit focus mode" });
+    if (path !== "entry") {
+      await user.tab();
+      expect(document.activeElement).toBe(exit);
+      if (path === "Escape") await user.keyboard("{Escape}");
+      else await user.click(exit);
+      expect(screen.queryByRole("button", { name: "Exit focus mode" })).toBeNull();
+    }
+
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(body);
+    expect(document.activeElement).toBe(body);
+    await user.keyboard(" still");
+    expect(body.value).toBe("Mara still keeps the letter.");
+    expect(comparison.value).toBe("Mara sends the saved letter.");
+    expect(harness.scenes[0].body).toBe("Mara sends the saved letter.");
+    expect(screen.getByRole("region", { name: "Scene conflict review" })).toBeTruthy();
   });
 
   it("starts a blank novel in a focused workspace with the assistant opt-in", async () => {
