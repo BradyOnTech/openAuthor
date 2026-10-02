@@ -1,0 +1,45 @@
+{
+  "recorded_at_utc": "2026-10-02T19:42:14.393294+00:00",
+  "review_baseline": "3b88359",
+  "applied_migration_through": "20261002170000_registry_bootstrap.sql",
+  "database": "Disposable Unix-socket PostgreSQL17.11, fsync enabled, synthetic author/Auth-session rows",
+  "actual_baseline_red": "same requested slug must not grant another author ownership",
+  "sql_assertions": 13,
+  "actual_concurrency_controls": 4,
+  "concurrency": [
+    "same-account serialization with actual lock wait",
+    "different-account namespace isolation",
+    "Auth-session removed during actual bootstrap lock wait",
+    "repeatable-read refused"
+  ],
+  "existing_cloud_suites": "encrypted-sync, live authority, key recovery, project deletion and8 project-deletion races pass",
+  "sandbox_initdb_failure": "baseline-red.txt is sandbox shmget restriction, not product failure",
+  "reproduction_helper": "evaluate.py preserved; formatted helper bytecompiled. Raw baseline/current SQL checkpoints precede later lifecycle suites.",
+  "source_sha256": {
+    "supabase/migrations/20261002170000_registry_bootstrap.sql": "287291e0f210d6b79f940f45518b47bf5b5a9b558876e82c997889e3b7e3ef1f",
+    "supabase/tests/registry_bootstrap.sql": "553d81c54d444e5068fbd266ab684286b364548bffc66e56649d981d873ceb08",
+    "scripts/verify_registry_bootstrap_concurrency.py": "8a8dbe1fcbd28745811aff0fa3b75f89d5be58eaf2aec0e7ca554ab8f7c6fcba"
+  },
+  "evidence_sha256": {
+    "baseline-red.txt": "76634f0b744c5b2412e30ac54d48f926d29ff43133d5f0e7aac2b1738176aefc",
+    "current-sql.txt": "ca09a81531efac034064343b8828d05e3268542004ca96d77db2f50e8803ba2b",
+    "baseline-sql-red.txt": "b4c6c54cf79951f4b9927e4dd0f2a68661b987a0391d52c2ade2a8360d83fb73",
+    "README.md": "abf3594f4670fcb44a0ddc010a82e4581092f87dc847f6d13ab0a64c40a49658",
+    "all-sql-current.txt": "a3dcc43d3af3f55d937683f6cc0ac89abe6794ff1e9c2f959699eac8fb5387c3",
+    "evaluate.py": "6848742897b03e5696d64462d0aaffc436c0b806dc58ce483d8b72fbf233d755",
+    "baseline-sql-red.raw.gz": "7daf8cb19f6710ab36b31463075fb228f7056cb07abd35b3a8755bf0e513fcc7",
+    "current-sql.raw.gz": "f03b57b050d26b9df6e11f831ea98aa7198654fd0b2b7c9aad724871e47cec50"
+  },
+  "log_normalization": {
+    "baseline-sql-red.txt": {
+      "raw_path": "baseline-sql-red.raw.gz",
+      "decompressed_sha256": "db0b6906d330d84ea9cb433e0e8bb8a0f957a59004053b45391e736825883c59",
+      "normalization": "Display removes trailing line whitespace and extra final blank lines; original bytes preserved in raw gzip."
+    },
+    "current-sql.txt": {
+      "raw_path": "current-sql.raw.gz",
+      "decompressed_sha256": "7799e14ae0494c63ac77cdfbc06a1ce36ebef45066ef84e7146cd25887c0601b",
+      "normalization": "Display removes trailing line whitespace and extra final blank lines; original bytes preserved in raw gzip."
+    }
+  }
+}

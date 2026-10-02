@@ -135,7 +135,11 @@
         "Server-owned renewable voice leases retain immutable hard deadlines, autonomously poll authority, journal known upstream calls before answer delivery, block issuance during uncertain cleanup and stop retired client media/context; local HTTP/SIGKILL and hosted App controls pass",
         "Desktop trusted-device review supports deliberate per-book revocation, exact-recipient/version rotation, explicit publication, scoped draft/late-outcome recovery and account-reset redaction; wrong-book recovery keys cannot replace the verified current key",
         "Desktop missing-envelope recovery authenticates the current committed manifest and exact snapshot, then installs only its own exact current-device/version sealed envelope; lost replies receive positive-only exact readback and session/account races remain fenced",
-        "Permanent project namespace tombstones, privileged upload-completion fences and leased orphan-inclusive Storage cleanup preserve pending intent across crash/lost replies; a separate verifier role is required for attested metadata finalization"
+        "Permanent project namespace tombstones, privileged upload-completion fences and leased orphan-inclusive Storage cleanup preserve pending intent across crash/lost replies; a separate verifier role is required for attested metadata finalization",
+        "Reviewed multi-project account deletion freezes current authority, captures exact per-project/workspace dispositions, visibly acknowledges retained shared history, composes attested project cleanup and blocks Auth removal while voice cleanup remains unresolved.",
+        "Desktop reviewed account inventory lists current devices and prior deletion jobs, preserves same-session refocus, blocks concurrent cloud actions during a lost reply and supports account-only device enrollment without publishing a book.",
+        "Independent known-call control persists scope, credential binding and immutable deadlines before answering; scoped renewal and durable restart recovery close known calls after gateway loss while the controller and provider control path remain available.",
+        "Workspace bootstrap preserves existing roles and refuses cross-author legacy takeover; registry RLS checks live unfrozen current membership without recursive workspace-member policies."
       ],
       "verification": [
         "mobile/test/companionRecovery.test.ts",
@@ -155,15 +159,21 @@
         "docs/evaluations/trusted-companion-devices-2026-10-02/results.json",
         "docs/evaluations/book-key-recovery-2026-10-02/results.json",
         "docs/evaluations/project-deletion-2026-10-02/results.json",
-        "scripts/verify_project_deletion_concurrency.py"
+        "scripts/verify_project_deletion_concurrency.py",
+        "docs/evaluations/registry-bootstrap-2026-10-02/results.json",
+        "docs/evaluations/registry-read-authority-2026-10-02/results.json",
+        "docs/evaluations/account-deletion-2026-10-02/results.json",
+        "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json",
+        "docs/evaluations/independent-voice-control-2026-10-02/results.json",
+        "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
       ],
       "remaining": [
-        "Physical iPhone and Android reading, audio permission/routing, interruption/reconnect and cold restart",
-        "Approved deployed connection: authorization, revocation, rotation, deletion and desktop review handoff",
-        "Real-device encrypted keys and credential migration acceptance",
-        "Apply and drill shared quota/live authority/voice leases/trusted-device/recovery/deletion changes in the approved deployment; establish target Storage in-flight upload, failed-upload queue and backing-version verification before finalization. Multi-project account-deletion orchestration remains unimplemented.",
-        "Strict voice expiry through gateway host outages needs independent call control; upstream allocation before durable identification remains unknown.",
-        "Missing-envelope recovery requires a current committed snapshot or independently verified current key. No-current-snapshot recovery is deliberately refused; a reviewed new rotation or future project-bound commitment is required."
+        "Physical iPhone and Android reading, audio permissions/routing, interruption/reconnect, encrypted capture handoff and cold restart.",
+        "Apply and drill the reviewed migrations and separate worker/controller credentials in the approved deployment; verify authorization, revocation, rotation and deletion against actual Storage backing versions, in-flight uploads and failed-upload queues before finalization.",
+        "Real-device encrypted key and credential migration acceptance, including current-source native account management and signed Keychain behavior.",
+        "A retained shared project moved or deleted after account review can block the immutable intent; a reviewed amendment or operator reconciliation workflow remains open.",
+        "Reconcile provider allocation before a durable call ID. Strict expiry during complete controller/state/provider-control-network outages and final media/billing cleanup remain unestablished.",
+        "Missing-envelope recovery requires a current committed snapshot or independently verified current key. No-current-snapshot recovery stays refused; a reviewed new rotation or future project-bound commitment remains required."
       ],
       "status": "in_progress"
     },
@@ -241,7 +251,8 @@
       "discovered": 577,
       "passed": 577,
       "optional_runtime_skipped": 0,
-      "evidence": "docs/evaluations/voice-preservation-2026-10-02/full-core-tests-final.txt"
+      "evidence": "docs/evaluations/voice-preservation-2026-10-02/full-core-tests-final.txt",
+      "checkpoint_scope": "Verified at 0cd77bd; unchanged in this cloud/frontend iteration and not rerun."
     },
     "actual_packaged_python_3_11": {
       "discovered": 577,
@@ -250,22 +261,22 @@
       "version": "3.11.15",
       "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
       "scope": "Actual bundled interpreter and installed byte-identical core before app rebuild; rebuilt app verifies the same core hash. Runs overlap.",
-      "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt"
+      "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt",
+      "checkpoint_scope": "Verified at 0cd77bd; unchanged in this cloud/frontend iteration and not rerun."
     },
     "desktop": {
-      "tests": 564,
-      "files": 86,
-      "typecheck_build": "passed; production frontend and unsigned arm64 application rebuilt",
-      "current_real_core_journeys": {
+      "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
+      "tests": 590,
+      "files": 88,
+      "typecheck_build": "passed; production frontend build, no new native acceptance",
+      "synthetic_account_and_recovery_journeys": {
         "chromium": 6,
         "webkit": 6,
-        "scope": "Caret, daily review, evidence workspace, Memory review, tab keyboard and Writing Voice; offline provider baseline."
+        "skipped": 0,
+        "scope": "Three reviewed account-deletion journeys and three existing companion key-recovery journeys per engine; production UI/encryption with synthetic SDK, vault and RPC boundaries."
       },
-      "earlier_full_browser_journeys": 19,
-      "earlier_scope": "Previous checkpoint; not a current rerun of all workflows.",
-      "native_keyboard_and_retention": "passed; separately scoped native-gui-0cd77bd.json",
-      "native_caret_repair": "Earlier actual keyboard insertion after SIGKILL; original binary identity retained.",
-      "evidence": "docs/evaluations/tab-keyboard-2026-10-02/results.json"
+      "prior_real_core_journeys": "Six separate offline workflows per browser at 0cd77bd; preserved in checkpoint history, not a current rerun.",
+      "evidence": "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json"
     },
     "mobile": {
       "tests": 181,
@@ -280,7 +291,8 @@
       "earlier_hosted_journeys": 1,
       "earlier_preview_journeys": 4,
       "scope": "Current build-containment tests/exports; prior browser journeys retain their original checkpoint. No physical phones.",
-      "evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json"
+      "evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json",
+      "checkpoint_scope": "Verified at 0cd77bd; unchanged in this cloud/frontend iteration and not rerun."
     },
     "packaged_sigkill": {
       "stages": 5,
@@ -327,11 +339,17 @@
       "release_certified": false
     },
     "gateway": {
-      "tests": 66,
+      "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
+      "tests": 94,
+      "passed": 94,
       "skipped": 0,
-      "typecheck_build": "passed at unchanged 5fe9d7c checkpoint; not rerun this desktop/core/export iteration",
-      "database": "Disposable PostgreSQL 17.11; exact SQL/RPC/concurrency boundaries retained in deletion packet",
-      "deployed_supabase": "not_observed"
+      "typecheck_build": "passed",
+      "sql_suites": 8,
+      "real_database_concurrency_controls": 16,
+      "voice_real_pg_http_process_cases": 6,
+      "database": "Disposable fsynced PostgreSQL 17.11; no existing database or deployed account touched.",
+      "deployed_supabase": "not_observed",
+      "evidence": "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
     },
     "mobile_publication": {
       "affected_tests": 61,
@@ -441,6 +459,51 @@
       },
       "evidence_hash_audit": "All declared source/evidence/archive/display hashes verified; historical scale hash explicitly scoped.",
       "documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
+    },
+    "hosted_lifecycle_checkpoint": {
+      "date": "2026-10-02",
+      "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
+      "desktop_tests": 590,
+      "desktop_test_files": 88,
+      "desktop_typecheck_build": "passed; production frontend only, no new native application acceptance",
+      "synthetic_browser_journeys": {
+        "chromium": 6,
+        "webkit": 6,
+        "skipped": 0,
+        "scope": "Three reviewed account-deletion journeys and three existing companion key-recovery journeys per engine; production UI/encryption with synthetic SDK, vault and RPC boundaries."
+      },
+      "gateway_tests": 94,
+      "gateway_passed": 94,
+      "gateway_skipped": 0,
+      "gateway_typecheck_build": "passed",
+      "sql_suites": 8,
+      "real_database_concurrency_controls": 16,
+      "voice_real_database_http_process_cases": 6,
+      "database": "Disposable fsynced PostgreSQL 17.11; no existing database or deployed account touched.",
+      "source_hashes_unchanged_during_combined_run": true,
+      "independent_review": {
+        "standards_open": 0,
+        "spec_open": 0
+      },
+      "new_live_provider_calls": 0,
+      "deployed_mutations": 0,
+      "native_acceptance": "Not rerun on this frontend/cloud source. Last native app and core recovery results remain separately scoped to 0cd77bd.",
+      "release_certified": false,
+      "evidence": [
+        "docs/evaluations/registry-bootstrap-2026-10-02/results.json",
+        "docs/evaluations/registry-read-authority-2026-10-02/results.json",
+        "docs/evaluations/account-deletion-2026-10-02/results.json",
+        "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json",
+        "docs/evaluations/independent-voice-control-2026-10-02/results.json",
+        "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
+      ],
+      "remaining": [
+        "Fresh-prose author judgment and observed Memory review burden.",
+        "Physical iPhone/Android and approved deployed authorization, revocation, rotation, deletion, backing storage and independent-controller acceptance.",
+        "Account intent amendment when retained shared projects move or disappear after review; safe no-snapshot recovery.",
+        "Unknown provider allocation reconciliation and the limits of complete controller/state/provider-network outages; final provider media/billing behavior remains unverified.",
+        "VoiceOver, long writing sessions, signed GUI recovery, signing/notarization, clean Apple Silicon/Intel installs and upgrades, and the mandatory mobile dependency audit gate."
+      ]
     }
   },
   "known_code_gaps": [
@@ -453,28 +516,30 @@
       "scope": "The automatic capitalization-based local path retains two uncased-name misses and two place/character type errors in its authored cases. The optional reviewed semantic path is implemented and mechanically verified; provider accuracy on fresh original prose remains unmeasured."
     },
     {
-      "name": "Account-deletion orchestration",
-      "scope": "Reviewed resumable project deletion exists; a complete multi-project account lifecycle remains unimplemented.",
-      "evidence": [
-        "docs/evaluations/project-deletion-2026-10-02/results.json"
-      ]
-    },
-    {
-      "name": "Strict voice expiry through host outage and unknown allocation",
-      "scope": "Known calls have durable cleanup and renewable/hard deadlines. Independent call control through host outage and allocation before a durable call ID remain unresolved.",
-      "evidence": [
-        "docs/evaluations/voice-session-enforcement-2026-10-02/verification.json"
-      ]
-    },
-    {
       "name": "No-snapshot key recovery",
       "scope": "No current committed snapshot or independently verified key means recovery stays refused. Reviewed new rotation or a future project-bound commitment remains required.",
       "evidence": [
         "docs/evaluations/book-key-recovery-2026-10-02/results.json"
       ]
+    },
+    {
+      "name": "Account-deletion intent amendment after retained shared-project changes",
+      "scope": "The reviewed multi-project lifecycle is implemented. A retained shared project moved or deleted after review can block immutable dispositions; an amendment or operator reconciliation workflow is not implemented.",
+      "evidence": [
+        "docs/account-deletion.md",
+        "docs/evaluations/account-deletion-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Unknown provider allocation and total control outage",
+      "scope": "Independent known-call control is implemented and locally verified across gateway loss. Allocation before a durable call ID stays blocked and needs reconciliation. Strict expiry during complete controller, durable-state or provider-control-network failure is not established.",
+      "evidence": [
+        "docs/independent-voice-control.md",
+        "docs/evaluations/independent-voice-control-2026-10-02/results.json"
+      ]
     }
   ],
-  "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+  "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
   "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",
@@ -519,6 +584,30 @@
       "scope": "Unit, two-browser and actual unsigned Mac observations pass; VoiceOver and long sessions remain open.",
       "evidence": [
         "docs/evaluations/tab-keyboard-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Cross-author workspace bootstrap and recursive registry RLS",
+      "scope": "Existing roles remain unchanged; bootstrap refuses legacy takeover and queued stale Auth. Current live membership predicates avoid recursive member reads. Real SQL and concurrency controls pass.",
+      "evidence": [
+        "docs/evaluations/registry-bootstrap-2026-10-02/results.json",
+        "docs/evaluations/registry-read-authority-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Reviewed multi-project account deletion and desktop account-only review",
+      "scope": "Locally verified resumable orchestration, retained shared-history acknowledgement, explicit dispositions, voice finalization guard and lost-reply UI. Actual Storage/Auth deployment and changing retained-project amendment remain open.",
+      "evidence": [
+        "docs/evaluations/account-deletion-2026-10-02/results.json",
+        "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json"
+      ]
+    },
+    {
+      "name": "Independent known-call cleanup through gateway loss",
+      "scope": "Durable controller registration, credential/scope binding, deadline checks, CAS renewal and private role guards are locally verified with real process/database failures. Unknown allocation, total control outages and live provider acceptance remain open.",
+      "evidence": [
+        "docs/evaluations/independent-voice-control-2026-10-02/results.json",
+        "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
       ]
     }
   ],
@@ -701,6 +790,217 @@
           "release_certified": false,
           "gui_scope": "Read-only retained-tabs/Plan/prose check recorded separately; no cloud, Keychain, signing or accessibility certificate",
           "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-5fe9d7c.json"
+        }
+      }
+    },
+    {
+      "name": "before-account-lifecycle-and-independent-voice-iteration",
+      "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+      "local_verification": {
+        "python_3_13": {
+          "discovered": 577,
+          "passed": 577,
+          "optional_runtime_skipped": 0,
+          "evidence": "docs/evaluations/voice-preservation-2026-10-02/full-core-tests-final.txt"
+        },
+        "actual_packaged_python_3_11": {
+          "discovered": 577,
+          "passed": 577,
+          "skipped": 0,
+          "version": "3.11.15",
+          "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+          "scope": "Actual bundled interpreter and installed byte-identical core before app rebuild; rebuilt app verifies the same core hash. Runs overlap.",
+          "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt"
+        },
+        "desktop": {
+          "tests": 564,
+          "files": 86,
+          "typecheck_build": "passed; production frontend and unsigned arm64 application rebuilt",
+          "current_real_core_journeys": {
+            "chromium": 6,
+            "webkit": 6,
+            "scope": "Caret, daily review, evidence workspace, Memory review, tab keyboard and Writing Voice; offline provider baseline."
+          },
+          "earlier_full_browser_journeys": 19,
+          "earlier_scope": "Previous checkpoint; not a current rerun of all workflows.",
+          "native_keyboard_and_retention": "passed; separately scoped native-gui-0cd77bd.json",
+          "native_caret_repair": "Earlier actual keyboard insertion after SIGKILL; original binary identity retained.",
+          "evidence": "docs/evaluations/tab-keyboard-2026-10-02/results.json"
+        },
+        "mobile": {
+          "tests": 181,
+          "files": 30,
+          "typecheck": "passed",
+          "current_platform_exports": [
+            "ios",
+            "android",
+            "web"
+          ],
+          "current_web_and_hosted_test_builds": "passed guarded Metro exports; source maps removed before PWA cache",
+          "earlier_hosted_journeys": 1,
+          "earlier_preview_journeys": 4,
+          "scope": "Current build-containment tests/exports; prior browser journeys retain their original checkpoint. No physical phones.",
+          "evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json"
+        },
+        "packaged_sigkill": {
+          "stages": 5,
+          "result": "exact rollback before commit; committed writing preserved"
+        },
+        "dependency_audits": {
+          "contracts": 0,
+          "desktop": 0,
+          "gateway": 0,
+          "mobile": {
+            "high_entries": 5,
+            "underlying_advisories": 1,
+            "advisory": "GHSA-86w9-cpqp-85rv",
+            "patched_release": "none at verification",
+            "reachability": "Installed affected verifier remains vulnerable. Current wrapper resolves config offline, refuses signing/EAS fields, verifies absence in real web/iOS/Android Metro maps, and keeps audit gate failing. Direct CLI can bypass wrapper; supported patch/replacement and signed-path acceptance remain open."
+          }
+        },
+        "connected_editorial": {
+          "provider_calls": 1,
+          "provider": "openai-codex",
+          "resolved_model": "gpt-5.6-sol",
+          "input_tokens": 4620,
+          "output_tokens": 2411,
+          "source_unchanged": true,
+          "critique_apply_refused": true,
+          "finding_validation": "originally withheld; local reparsing of same retained response verifies one finding with disclosed unique-exact-quote offset correction",
+          "author_review": "not_observed"
+        },
+        "connected_voice": {
+          "provider_calls": 3,
+          "resolved_model": "gpt-5.6-sol",
+          "input_tokens": 11508,
+          "output_tokens": 2757,
+          "source_unchanged": true,
+          "literary_acceptance": "not_observed",
+          "initial_alternatives": "require_revision",
+          "refinement": "approval_pending"
+        },
+        "native_bundle": {
+          "source_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+          "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+          "application_sha256": "21fedbc26d0c97e7921f434240d736c1a056e0ca98fb9bfec9fe9b37341eb161",
+          "unsigned_arm64": true,
+          "release_certified": false
+        },
+        "gateway": {
+          "tests": 66,
+          "skipped": 0,
+          "typecheck_build": "passed at unchanged 5fe9d7c checkpoint; not rerun this desktop/core/export iteration",
+          "database": "Disposable PostgreSQL 17.11; exact SQL/RPC/concurrency boundaries retained in deletion packet",
+          "deployed_supabase": "not_observed"
+        },
+        "mobile_publication": {
+          "affected_tests": 61,
+          "files": 4,
+          "live_provider_calls": 0,
+          "deployed_acceptance": "not_observed",
+          "guarantee": "No ciphertext deletion on failed/lost publication replies; exact metadata readback only; orphan lifecycle remains open"
+        },
+        "mobile_current_authority": {
+          "implementation_commit": "2a4f015",
+          "database": "Disposable PostgreSQL17.11 with synthetic real Auth-session rows and installed Storage RLS against minimal metadata schema",
+          "regressions": 26,
+          "red": "Previous migrations retained voice authority after Auth-session deletion",
+          "green": "Existing encrypted-sync suite plus current authority/key-state suite pass",
+          "deployed_supabase": "not_observed",
+          "physical_storage_deletion": "not_implemented_or_observed"
+        },
+        "companion_voice_checkpoint": {
+          "implementation_commit": "f32a435",
+          "gateway_tests": 50,
+          "gateway_skipped": 0,
+          "gateway_typecheck_build": "passed",
+          "mobile_tests": 167,
+          "mobile_test_files": 29,
+          "mobile_typecheck": "passed",
+          "mobile_hosted_browser_journeys": 1,
+          "gateway_independent_affected_controls": 21,
+          "live_provider_calls": 0,
+          "deployed_mutations": 0,
+          "strict_provider_outage_expiry": "not_verified_or_implemented",
+          "immutable_provider_configuration_and_spend": "not_verified_or_implemented",
+          "physical_phone_acceptance": "not_observed"
+        },
+        "trusted_devices_checkpoint": {
+          "implementation_commit": "58395c3",
+          "desktop_tests": 494,
+          "desktop_test_files": 81,
+          "focused_tests": 82,
+          "typecheck_build": "passed",
+          "synthetic_chromium_journeys": 1,
+          "viewport": [
+            1024,
+            768
+          ],
+          "independent_final_recovery_review": "clean",
+          "deployed_mutations": 0,
+          "live_provider_calls": 0,
+          "native_bundle": "Still earlier d5aea8a unsigned development checkpoint; no rebuilt current desktop GUI acceptance claimed"
+        },
+        "key_recovery_checkpoint": {
+          "implementation_commit": "e80ff81",
+          "desktop_tests": 547,
+          "desktop_test_files": 84,
+          "focused_tests": 140,
+          "typecheck_build": "passed",
+          "synthetic_browser_journeys": 3,
+          "database_assertions": 13,
+          "source_and_session_races": "passed",
+          "live_provider_calls": 0,
+          "deployed_acceptance": "not_observed"
+        },
+        "project_deletion_checkpoint": {
+          "implementation_commit": "5fe9d7c",
+          "gateway_tests": 66,
+          "skipped": 0,
+          "typecheck_build": "passed",
+          "database_assertions": 31,
+          "real_database_concurrency_controls": 8,
+          "worker_controls": 15,
+          "worker_sigkill_stages": 2,
+          "real_rpc_to_postgres_worker": "passed with synthetic Storage HTTP metadata effects",
+          "backend_verification": "separate operator attestation; target backing/queue not observed",
+          "account_deletion_orchestration": "not_implemented",
+          "deployed_mutations": 0
+        },
+        "native_bundle_latest": {
+          "source_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+          "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+          "application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
+          "source_checkout_clean": true,
+          "packaged_sigkill_stages": 5,
+          "runtime_contract": "passed",
+          "unsigned_arm64": true,
+          "release_certified": false,
+          "gui_scope": "Actual tab focus/activation/close and recovered scene/Plan drafts on normal reopening; no cloud/Keychain/signing/VoiceOver certificate.",
+          "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-0cd77bd.json",
+          "bundle_evidence": "docs/evaluations/project-completion-2026-10-02/native-bundle-0cd77bd.json",
+          "build_advisories": [
+            "Existing Vite static/dynamic import and bundle-size advisories.",
+            "Optional rust-objcopy debug stripping failed for missing libLLVM; optimized build and bundle verification succeeded."
+          ]
+        },
+        "preservation_and_assertion_checkpoint": {
+          "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+          "memory_authored_cases": 31,
+          "memory_matched": 31,
+          "memory_extra": 0,
+          "memory_missed": 0,
+          "memory_name_corpus": "Historical 25/27 names, zero extras, two uncased misses, two classification errors remain.",
+          "voice_live_calls_this_iteration": 0,
+          "voice_replay": "Retained outputs unchanged; source-linked consistency self-review and exact authored preservation constraints mechanically verified. Live prose/author quality absent.",
+          "independent_review": {
+            "standards_open": 0,
+            "spec_initial": 1,
+            "spec_fixed": 1,
+            "spec_open": 0
+          },
+          "evidence_hash_audit": "All declared source/evidence/archive/display hashes verified; historical scale hash explicitly scoped.",
+          "documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
         }
       }
     }

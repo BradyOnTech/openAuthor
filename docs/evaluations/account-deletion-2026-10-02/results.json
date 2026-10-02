@@ -1,0 +1,28 @@
+{
+  "recorded_at_utc": "2026-10-02T19:31:19.558771+00:00",
+  "command": "python3 scripts/verify_account_deletion.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+  "sql_assertions": 39,
+  "actual_queued_transaction_controls": 4,
+  "typescript_tests": 10,
+  "typescript_pass": 10,
+  "typescript_skipped": 0,
+  "gateway_typecheck": "pass",
+  "gateway_build": "pass",
+  "deployment_backing_auth_acceptance": "unverified; synthetic fixture receipts only",
+  "source_sha256": {
+    "supabase/migrations/20261002180000_mobile_account_deletion.sql": "c2f9aec8949a118d2bd36f4284960868e2e8c2a3ea77c68c03902fee30e5f346",
+    "supabase/tests/mobile_account_deletion.sql": "8f573344b10b9547f0874b575ae14c734ab93f4ee174d6049afe6ec8e526847c",
+    "gateway/src/accountDeletion.ts": "8c4f3321c32f08a1a6b961e51ca7dde61a2886225ec54c463a4e4b993cf3ae87",
+    "gateway/src/accountDeletionMain.ts": "bbf6fa8f5098889113dbb7e3b553301270146fc3afc18124f97e0ca96cdd4f72",
+    "gateway/test/accountDeletion.test.ts": "96ff9d5b13f018973026ebf1582eade26e41d77440e1c3aa8d76c4cc891c53a9",
+    "gateway/test/accountDeletion.postgres.test.ts": "6009771e3a5d1dbf764e084d9e0b8748ed24d69f115c2582302add04bbe1ccf2",
+    "scripts/verify_account_deletion.py": "f38895f8084ab1ebede0248ea81b489ec9e2b6c0498d3d796cb2bd9bdd23bcbb",
+    "scripts/verify_account_deletion_concurrency.py": "a884e7a1a200e4b06b5c3781cabc51ed36e513e6ee16b32d7d48832c85a07de8"
+  },
+  "raw_log": {
+    "path": "verification.log.gz",
+    "sha256": "f559ee3c7bd82ed4801edd0a6abd738aaa903d219cb7ba21270392c5e7656794",
+    "decompressed_sha256": "21361cc44895fea62306fcdc1fe047d3ecddc3cfb8ddc5d774ec0ee50849a4d0"
+  },
+  "checkpoint_scope": "Standalone migration-18 checkpoint before migration 19 voice-finalization guard. The current full migration set is verified in cloud-lifecycle-integration-2026-10-02."
+}

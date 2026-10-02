@@ -1,0 +1,57 @@
+{
+  "recorded_at_utc": "2026-10-02T19:53:40.103494+00:00",
+  "command": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+  "gateway": {
+    "tests": 94,
+    "passed": 94,
+    "skipped": 0,
+    "failed": 0,
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "database": {
+    "platform": "Disposable Unix-socket PostgreSQL 17.11, fsync enabled",
+    "migration_through": "20261002200000_registry_read_authority.sql",
+    "sql_suites": [
+      "mobile_encrypted_sync_rls",
+      "mobile_active_authority",
+      "mobile_recovery_snapshot",
+      "mobile_project_deletion",
+      "registry_bootstrap",
+      "mobile_account_deletion",
+      "mobile_voice_control",
+      "registry_read_authority"
+    ],
+    "project_queued_controls": 8,
+    "bootstrap_controls": 4,
+    "account_queued_controls": 4,
+    "voice_real_pg_http_process_cases": 6,
+    "assertion_counts": "Separate packets declare bootstrap 13, account 39 and registry 85; the combined run replays their actual SQL plus voice controls."
+  },
+  "tested_source_unchanged_during_execution": true,
+  "source_manifest": "source-sha256.json",
+  "source_archive": "tested-source.tar.gz",
+  "review": {
+    "standards": "zero open findings after fixes",
+    "root_desktop_spec": "zero open findings after fixes"
+  },
+  "prior_red_results": {
+    "legacy-refusal-state-red": "The old cross-user takeover assertion expected 22000; migration 18 denies 42501. The exact versioned expectation and unchanged user/session/key/label assertion now pass.",
+    "concurrent-pre-final-input-red": "Migration 19 was applied before the final closed-claim fix while test source changed. The frozen-source final run passes 94/94; this earlier mixed-input run is not current certification."
+  },
+  "limits": [
+    "Synthetic SDK, Storage, Auth and provider HTTP boundaries. No real account, provider, existing database or deployment operations.",
+    "Target backing versions, failed-upload queues and independent operator attestations remain unverified.",
+    "Unknown provider allocation stays blocked. Strict expiry when all controllers, durable state or the provider control network fail is not established; final provider media and billing behavior is unverified.",
+    "A retained project moved or deleted after review can block immutable account dispositions; an amendment or operator reconciliation workflow remains open.",
+    "Physical phones, current-source native account management, signing, clean machines, VoiceOver and fresh-prose author acceptance remain open."
+  ],
+  "evidence_sha256": {
+    "concurrent-pre-final-input-red.txt.gz": "cacb51dcf87bb47953e2af07271f4f995d2fb296388580dc40fb3a8774630f78",
+    "legacy-refusal-state-red.txt.gz": "4ae83c99ca1a2bd9d2d3e5694be34fd7a14df8fd7c354025bdeb4d4f0624a6a4",
+    "combined-green.txt.gz": "e0e5a94dd0059a7097fe37cbc44e9b8bb6798cd372f5963cab3fc93d9fd34ee8",
+    "source-sha256.json": "5d194eb051864d210079a76bb0715daba52f53293e486626bfe489113b961d64",
+    "tested-source.tar.gz": "526427295b08b5920b66788a31414407e27a63862fe7a61a3fc345282f015b22"
+  },
+  "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268"
+}

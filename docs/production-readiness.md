@@ -22,12 +22,24 @@ build alone satisfies this goal.
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
 | Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Fresh end-user walkthrough and accessibility pass required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds and current-source unsigned arm64 runtime verification pass. Contracts/desktop/gateway audits are clean; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds pass; unsigned arm64 runtime verification belongs to the prior 0cd77bd native checkpoint. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest checkpoint — 2026-10-02, `0cd77bd`
+## Latest checkpoint — 2026-10-02, `e7712d3`
 
-Production readiness remains **in progress**. The current pass repairs lost
+Production readiness remains **in progress**. Reviewed multi-project account
+deletion and its desktop review flow are now implemented. An independent known-call
+controller provides durable scope/deadline enforcement and restart recovery;
+unresolved voice cleanup blocks account finalization. Workspace bootstrap and
+registry RLS now preserve existing roles and enforce live unfrozen membership.
+The [combined packet](evaluations/cloud-lifecycle-integration-2026-10-02/README.md)
+records 94/94 gateway tests without skips, eight SQL suites and 16 actual database
+concurrency controls against unchanged captured inputs. Current desktop checks
+pass 590 tests in 88 files, TypeScript/build and six account/key-recovery journeys
+in each browser. Independent Standards and Spec re-reviews have zero open findings.
+These are local results with synthetic provider, Auth and Storage boundaries.
+
+The preceding `0cd77bd` pass repairs lost
 Writing Voice preservation constraints, unsupported candidate-only consistency assessments,
 recognized quoted/speculative/reported Memory facts, and native document-tab
 keyboard navigation. Mobile exports now fail closed on signing/EAS setup and
@@ -35,20 +47,24 @@ inspect real Metro source maps; the unpatched Forge audit remains a release gate
 See the [current completion review](evaluations/project-completion-2026-10-02/review.md)
 and [requirements ledger](evaluations/project-completion-2026-10-02/requirements.json).
 
-Current checks pass 577 tests on each of Python 3.13 and actual bundled Python
+That prior checkpoint passes 577 tests on each of Python 3.13 and actual bundled Python
 3.11.15, 564 desktop tests, 181 mobile tests, TypeScript/builds and six real-core
 workflows in each of Chromium and WebKit. The unsigned arm64 app matches
 committed source and passes its runtime contract and five packaged-engine
 SIGKILL stages. Actual Mac tab focus/activation/close and recovered scene/Plan
 drafts pass on normal reopening. Earlier caret/backup and 19-browser-workflow
 results retain their original source/binary scopes; gateway's unchanged 66-test
-checkpoint is separate. The machine record preserves previous checkpoints.
+checkpoint is separate. Core/mobile/native checks were not rerun in the current
+cloud/frontend iteration; current native account and Keychain acceptance remain
+unobserved. The machine record preserves previous checkpoints.
 
 Author literary judgment and fresh-prose Memory workload remain unobserved.
 Required work also includes physical phones, approved deployment/backing drills,
-multi-project account deletion, independent voice call control through host
-outages, signing/notarization, clean Mac installs/upgrades and full native
-accessibility. No new provider call occurred; the fourth synthetic Voice
+account-intent amendment after retained shared-project changes, safe no-snapshot
+key recovery, unknown provider-allocation reconciliation, independent-controller
+deployment, signing/notarization, clean Mac installs/upgrades and full native
+accessibility. Strict expiry during complete control outages and final provider
+media/billing cleanup remain unestablished. No new provider call occurred; the fourth synthetic Voice
 refinement still awaits approval after automatic review rejected it beyond the
 three-call allowance.
 

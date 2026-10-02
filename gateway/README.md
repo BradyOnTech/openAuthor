@@ -182,11 +182,12 @@ integration still needs deployment QA.
 ## Active call enforcement and recovery
 
 Production defaults to a 30-second renewable lease, a 10-minute hard duration,
-and current-authority checks every 5 seconds. JWT verification and hosted RPCs
+gateway current-authority checks every 5 seconds and a separate controller's
+database checks every 1 second. JWT verification and hosted RPCs
 have independent bounded timeouts. Revoked devices/keys/sessions, removed
 workspace members, archived/deleting books, expired JWTs, denied authority and
 unavailable verification cause backend hangup. Apply the active authority
-migration `20261002140000_mobile_active_authority.sql` before deployment.
+migrations through `20261002190000_mobile_voice_control.sql` before deployment.
 The existing Boolean authorizer must expose current database policy, rather
 than a cached authorization decision.
 
@@ -214,15 +215,28 @@ between live processes or hosts. Exclusive ownership refuses an active/unknown
 owner. A stale PID on the same host is recoverable automatically. A changed
 hostname, PID reuse, incomplete ownership claim or corrupt journal needs
 operator review; never discard the call records to bypass startup cleanup.
-Production fixes the origin to `https://api.openai.com`; the journal does not
-bind an API project/key. Rotate keys within the same project only after old
-calls are drained. Changing account/project credentials may prevent cleanup;
-non-success hangup, including 404, remains unconfirmed and blocks startup.
+Production also requires a separately supervised controller and shared
+PostgreSQL call-control records. Its narrow `mobile_voice_controller` credential
+is separate from the public gateway's `mobile_voice_gateway` credential; neither
+is a service-role key. The gateway waits for the controller's private fsynced
+call registration before delivering an answer. DB-time scoped CAS renewal
+preserves the original hard deadline. Closing is irreversible; generation
+claims fence SQL acknowledgements. During DB outage, observed calls can be ended
+using the controller's bound private journal. Accepted hangup receipts are
+fsynced before database acknowledgement, and survive controller restart.
 
-This is backend enforcement while the owning process is running, with known-call
-cleanup on restart. A host/process outage suspends its timers until restart;
-strict wall-clock enforcement across that outage needs an independently live
-watchdog/shared call-control deployment. There is also an unavoidable provider
+Production fixes the provider origin and sends configured OpenAI project/org
+headers. Records/journals bind to the origin, project/org and key fingerprint.
+This local binding does not verify provider account ownership. Drain all old
+records before changing credentials; a new binding cannot bypass old unresolved
+calls. Non-success hangup, including 404, remains unconfirmed. See the
+[independent controller runbook](../docs/independent-voice-control.md) for roles,
+execution, migration, failure handling and deployment acceptance.
+
+Known-call enforcement no longer depends on the public gateway staying alive.
+Actual independent-host deployment and measured polling/failover bounds remain
+unverified. If all controllers, their durable state or provider-control network
+are unavailable, strict wall-clock closure is not guaranteed. There is also an unavoidable provider
 create-to-known-call-ID window: a lost response or crash before Location is
 received cannot be durably mapped or terminated by this service. The answer is
 not delivered in that window, but provider allocation/usage is unknown. Do not
@@ -232,7 +246,8 @@ physical-device acceptance from these local fixtures.
 The exported `createSessionGateway` utility supports issuance-only local
 fixtures when no lease manager is supplied. The production entrypoint always
 requires the persistent journal and initializes its lease manager; there is no
-production opt-out.
+production issuance opt-out. Explicit `GATEWAY_VOICE_CONTROL_MODE=legacy-recovery`
+drains older local journals and refuses every new issuance.
 
 ## Server-owned policy
 

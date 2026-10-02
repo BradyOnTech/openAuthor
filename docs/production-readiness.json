@@ -234,32 +234,34 @@
         "Earlier unsigned arm64 GUI forced-termination walkthrough recovered both tabs, active Plan, unsaved Synopsis/new-act drafts, and resumed physical Tab/Shift-Tab typing at the restored caret. At that historical checkpoint the combined 15-journey rerun was pending; the subsequent 17-journey checkpoint passed.",
         "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks.",
         "Earlier local followup, before0cd77bd: default Python discovers 548 tests with 547 passing and one optional runtime skip; desktop passes 465 tests across 79 files plus typecheck/build. All 19 combined browser workflows pass; the subsequent transport-only publication repair passes 61 affected sync/provisioning checks. Shared gateway quota passes 33 tests against disposable PostgreSQL without skips. Separate evidence retains each boundary and source hashes.",
-        "Current0cd77bd checkpoint:577/577 on both interpreters, desktop564/86, mobile181/30, six real-core workflows in each Chromium/WebKit; exact committed unsigned app, runtime contract and five packaged-engine SIGKILL stages. Actual native normal reopen/manual tab observations only. Author/physical/signed/deployed acceptance open. See current completion review and latest_automated_checkpoint."
+        "Current0cd77bd checkpoint:577/577 on both interpreters, desktop564/86, mobile181/30, six real-core workflows in each Chromium/WebKit; exact committed unsigned app, runtime contract and five packaged-engine SIGKILL stages. Actual native normal reopen/manual tab observations only. Author/physical/signed/deployed acceptance open. See current completion review and latest_automated_checkpoint.",
+        "Current e7712d3 frontend/cloud checkpoint: 590 desktop tests in 88 files; 94/94 gateway tests without skips; eight SQL suites, 16 real database concurrency controls, six real PG/HTTP/process voice cases and six account/key-recovery browser journeys per engine. Exact inputs were hashed before and unchanged after the combined run. No current-source native, deployed, physical-device or signed acceptance is claimed."
       ],
       "remaining": [
         "Resolve the unpatched node-forge security finding with a supported patch or reviewed/tested mitigation plus vulnerable-path analysis; rerun audits and affected bundle checks.",
         "Complete author evaluation on fresh connected prose and observe Memory/review burden; local synthetic mechanics do not establish full-novel usefulness.",
         "Physical iPhone/Android voice, permissions, interruption/reconnect, audio routing and desktop handoff; approved deployment authorization, revocation, key rotation and deletion drills.",
         "Owner-supplied Developer ID signing/notarization, architecture-specific clean Apple Silicon/Intel installation, signed-app credentials, upgrades when a released version exists, and full native accessibility acceptance.",
-        "Maintain explicit physical power-loss and noncooperating external-writer limits; do not declare production readiness."
+        "Maintain explicit physical power-loss and noncooperating external-writer limits; do not declare production readiness.",
+        "Complete reviewed account-intent amendment after retained-project changes, safe no-snapshot key recovery and unknown provider-allocation reconciliation; drill independent controller operations against the actual deployment."
       ]
     }
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Current preservation/Memory/tab/export iteration: 577 tests on both Python interpreters, desktop564/86, mobile181/30, six real-core journeys in each Chromium/WebKit. Exact committed arm64 app runtime/contract/five SIGKILL stages and separately scoped native keyboard/reopen observations pass. Author/physical/signed/deployed acceptance remains open.",
+    "verification_stage": "Current reviewed account lifecycle, independent known-call control and registry authority: desktop 590/88, gateway 94/94 with no skips, eight SQL suites, 16 real database concurrency controls and six browser journeys per engine. Older core/mobile/native outcomes retain their own source scope. Author, physical-device, signed and deployed acceptance remains open.",
     "python_tests_passed": 577,
     "python_test_scope": "577/577 on Python3.13 and actual bundled Python3.11.15, no skips; interpreter runs overlap.",
-    "desktop_tests_passed": 564,
-    "desktop_test_files_passed": 86,
+    "desktop_tests_passed": 590,
+    "desktop_test_files_passed": 88,
     "mobile_tests_passed": 181,
     "mobile_test_files_passed": 30,
     "contracts_tests_passed": 19,
-    "gateway_tests_passed": 66,
+    "gateway_tests_passed": 94,
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
-    "frontend_build": "Current desktop production/unsigned Mac build and guarded Expo web/iOS/Android exports plus web/hosted-PWA builds passed.",
+    "frontend_build": "Current desktop production frontend and gateway builds passed. Guarded mobile exports and unsigned native app remain earlier 0cd77bd evidence.",
     "macos_unsigned_bundle_and_bundled_runtime": "0cd77bd exact source/core, pinned runtimes, wire contract and five SIGKILL stages passed; native manual tab controls and recovered scene/Plan drafts observed on normal reopen. Earlier caret/backup drills retain their original app identity. No release certificate.",
     "dependency_audit": "Five high mobile entries from one unpatched node-forge advisory remain. Current offline config/signing guard and actual Metro source-map containment verified; no audit suppression, no supported patch or signed-artifact acceptance. Other packages retain earlier clean audits.",
     "dependency_evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json",
@@ -277,17 +279,17 @@
     "python313_tests_passed": 577,
     "python313_tests_skipped": 0,
     "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
-    "combined_browser_gate": "Six current real-core offline workflows passed separately in Chromium and WebKit; older19-workflow checkpoint retains its own source scope.",
+    "combined_browser_gate": "Six current synthetic account/key-recovery journeys per browser; prior real-core writing journeys retain their 0cd77bd scope.",
     "native_gui_observations": [
       "Normal reopening retained exact synthetic saved scene and both writing/Plan tabs.",
       "Unfinished Synopsis and new-act drafts retained; no save/discard.",
       "Manual tab focus, activation, named panel entry and neighboring focus after closing read-only workspace observed."
     ],
-    "desktop_test_scope": "564 tests across86 files, TypeScript and production build.",
-    "desktop_full_browser_journeys": "6/6 Chromium and6/6 WebKit current focused real-core workflows.",
-    "gateway_test_scope": "Unchanged 5fe9d7c checkpoint:66/66, no skips, disposable PostgreSQL17.11, TypeScript/build; not rerun in this iteration.",
+    "desktop_test_scope": "Current source: 590 tests across 88 files, TypeScript and production frontend build.",
+    "desktop_full_browser_journeys": "6/6 Chromium and 6/6 WebKit account/key-recovery journeys.",
+    "gateway_test_scope": "Current frozen source: 94/94, zero skips, disposable PostgreSQL 17.11, TypeScript/build; synthetic provider/Storage/Auth boundaries.",
     "combined_desktop_browser_journeys": 6,
-    "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+    "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
     "native_application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
     "browser_engine_runs": {
       "chromium": 6,
@@ -295,7 +297,10 @@
     },
     "new_live_provider_calls": 0,
     "independent_review_open_findings": 0,
-    "independent_documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
+    "independent_documentation_review": "Current code Standards and Spec re-reviews have zero open findings. Evidence packet integrity audited separately.",
+    "current_source_native_acceptance": "not_observed; native_application_sha256 and native_gui_observations below belong to 0cd77bd",
+    "unchanged_core_mobile_native_scope": "Python, mobile, contracts and Rust counts below remain separately scoped prior evidence; not rerun in this iteration.",
+    "cloud_evidence": "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
   },
   "external_constraints": {
     "live_provider_spend_usd_max_total": 5,
@@ -365,6 +370,58 @@
       "gateway_test_scope": "Disposable PostgreSQL 17.11 shared-quota/RLS checks: 33 tests passed without a skip, plus typecheck/build. Target deployed Supabase remains unobserved.",
       "combined_desktop_browser_journeys": 19,
       "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442"
+    },
+    {
+      "date": "2026-10-02",
+      "verification_stage": "Current preservation/Memory/tab/export iteration: 577 tests on both Python interpreters, desktop564/86, mobile181/30, six real-core journeys in each Chromium/WebKit. Exact committed arm64 app runtime/contract/five SIGKILL stages and separately scoped native keyboard/reopen observations pass. Author/physical/signed/deployed acceptance remains open.",
+      "python_tests_passed": 577,
+      "python_test_scope": "577/577 on Python3.13 and actual bundled Python3.11.15, no skips; interpreter runs overlap.",
+      "desktop_tests_passed": 564,
+      "desktop_test_files_passed": 86,
+      "mobile_tests_passed": 181,
+      "mobile_test_files_passed": 30,
+      "contracts_tests_passed": 19,
+      "gateway_tests_passed": 66,
+      "rust_tests_passed": 10,
+      "rust_tests_ignored": 1,
+      "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
+      "frontend_build": "Current desktop production/unsigned Mac build and guarded Expo web/iOS/Android exports plus web/hosted-PWA builds passed.",
+      "macos_unsigned_bundle_and_bundled_runtime": "0cd77bd exact source/core, pinned runtimes, wire contract and five SIGKILL stages passed; native manual tab controls and recovered scene/Plan drafts observed on normal reopen. Earlier caret/backup drills retain their original app identity. No release certificate.",
+      "dependency_audit": "Five high mobile entries from one unpatched node-forge advisory remain. Current offline config/signing guard and actual Metro source-map containment verified; no audit suppression, no supported patch or signed-artifact acceptance. Other packages retain earlier clean audits.",
+      "dependency_evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json",
+      "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
+      "scale_gate": "No new full-product scale gate. Memory sample before root quote/suffix refinements retains its explicit source hash; historical full-product scale evidence remains separate.",
+      "live_provider_api_estimated_cost_usd": 0.0,
+      "live_provider_usage_scope": "One authenticated subscription call on a fresh synthetic three-scene chapter; gen-74db96940b37; resolved gpt-5.6-sol;4620 input / 2411 output tokens; one attempt. API estimate is not proof of subscription billing or exact monetary cost.",
+      "live_selection_evaluation": "Raw critique caught planted unexplained character knowledge and preserved explicit change/ambiguity. Original evidence finding was withheld for a one-character offset error; same-response exact-quote recovery locally verified. Assistant assessment only; author acceptance absent.",
+      "completion_evidence": "docs/evaluations/project-completion-2026-10-02/requirements.json",
+      "literary_assessment": "docs/evaluations/connected-editorial-2026-10-02/assessment.md",
+      "production_readiness_claim": false,
+      "python_tests_discovered": 577,
+      "python_tests_skipped": 0,
+      "packaged_python_tests_last_passed": 577,
+      "python313_tests_passed": 577,
+      "python313_tests_skipped": 0,
+      "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "combined_browser_gate": "Six current real-core offline workflows passed separately in Chromium and WebKit; older19-workflow checkpoint retains its own source scope.",
+      "native_gui_observations": [
+        "Normal reopening retained exact synthetic saved scene and both writing/Plan tabs.",
+        "Unfinished Synopsis and new-act drafts retained; no save/discard.",
+        "Manual tab focus, activation, named panel entry and neighboring focus after closing read-only workspace observed."
+      ],
+      "desktop_test_scope": "564 tests across86 files, TypeScript and production build.",
+      "desktop_full_browser_journeys": "6/6 Chromium and6/6 WebKit current focused real-core workflows.",
+      "gateway_test_scope": "Unchanged 5fe9d7c checkpoint:66/66, no skips, disposable PostgreSQL17.11, TypeScript/build; not rerun in this iteration.",
+      "combined_desktop_browser_journeys": 6,
+      "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+      "native_application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
+      "browser_engine_runs": {
+        "chromium": 6,
+        "webkit": 6
+      },
+      "new_live_provider_calls": 0,
+      "independent_review_open_findings": 0,
+      "independent_documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
     }
   ],
   "companion_checkpoint_2026_10_02": {
@@ -396,28 +453,47 @@
   },
   "cloud_lifecycle_checkpoint": {
     "date": "2026-10-02",
-    "recovery_commit": "e80ff81",
-    "deletion_commit": "5fe9d7c",
-    "desktop_tests": 547,
-    "desktop_test_files": 84,
-    "synthetic_recovery_browser_journeys": 3,
-    "gateway_tests": 66,
+    "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
+    "desktop_tests": 590,
+    "desktop_test_files": 88,
+    "desktop_typecheck_build": "passed; production frontend only, no new native application acceptance",
+    "synthetic_browser_journeys": {
+      "chromium": 6,
+      "webkit": 6,
+      "skipped": 0,
+      "scope": "Three reviewed account-deletion journeys and three existing companion key-recovery journeys per engine; production UI/encryption with synthetic SDK, vault and RPC boundaries."
+    },
+    "gateway_tests": 94,
+    "gateway_passed": 94,
     "gateway_skipped": 0,
-    "recovery_sql_assertions": 13,
-    "deletion_sql_assertions": 31,
-    "real_database_concurrency_controls": 8,
-    "actual_worker_sigkill_stages": 2,
-    "native_source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
-    "native_unsigned_arm64": true,
-    "native_core_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
-    "native_application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
-    "packaged_runtime_and_five_sigkill_stages": "passed",
-    "remaining": "Author literary/Memory assessment, target backing verification/account orchestration/deployment, physical phones, independent outage call control, signing/clean machines, native accessibility and mobile dependency mitigation remain open.",
+    "gateway_typecheck_build": "passed",
+    "sql_suites": 8,
+    "real_database_concurrency_controls": 16,
+    "voice_real_database_http_process_cases": 6,
+    "database": "Disposable fsynced PostgreSQL 17.11; no existing database or deployed account touched.",
+    "source_hashes_unchanged_during_combined_run": true,
+    "independent_review": {
+      "standards_open": 0,
+      "spec_open": 0
+    },
+    "new_live_provider_calls": 0,
+    "deployed_mutations": 0,
+    "native_acceptance": "Not rerun on this frontend/cloud source. Last native app and core recovery results remain separately scoped to 0cd77bd.",
     "release_certified": false,
     "evidence": [
-      "docs/evaluations/book-key-recovery-2026-10-02/results.json",
-      "docs/evaluations/project-deletion-2026-10-02/results.json",
-      "docs/evaluations/project-completion-2026-10-02/native-bundle-5fe9d7c.json"
+      "docs/evaluations/registry-bootstrap-2026-10-02/results.json",
+      "docs/evaluations/registry-read-authority-2026-10-02/results.json",
+      "docs/evaluations/account-deletion-2026-10-02/results.json",
+      "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json",
+      "docs/evaluations/independent-voice-control-2026-10-02/results.json",
+      "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
+    ],
+    "remaining": [
+      "Fresh-prose author judgment and observed Memory review burden.",
+      "Physical iPhone/Android and approved deployed authorization, revocation, rotation, deletion, backing storage and independent-controller acceptance.",
+      "Account intent amendment when retained shared projects move or disappear after review; safe no-snapshot recovery.",
+      "Unknown provider allocation reconciliation and the limits of complete controller/state/provider-network outages; final provider media/billing behavior remains unverified.",
+      "VoiceOver, long writing sessions, signed GUI recovery, signing/notarization, clean Apple Silicon/Intel installs and upgrades, and the mandatory mobile dependency audit gate."
     ]
   },
   "preservation_and_assertion_checkpoint": {
@@ -436,5 +512,78 @@
       "spec_open": 0
     },
     "evidence_hash_audit": "All declared source/evidence/archive/display hashes verified; historical scale hash explicitly scoped."
+  },
+  "cloud_lifecycle_checkpoint_history": [
+    {
+      "date": "2026-10-02",
+      "recovery_commit": "e80ff81",
+      "deletion_commit": "5fe9d7c",
+      "desktop_tests": 547,
+      "desktop_test_files": 84,
+      "synthetic_recovery_browser_journeys": 3,
+      "gateway_tests": 66,
+      "gateway_skipped": 0,
+      "recovery_sql_assertions": 13,
+      "deletion_sql_assertions": 31,
+      "real_database_concurrency_controls": 8,
+      "actual_worker_sigkill_stages": 2,
+      "native_source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+      "native_unsigned_arm64": true,
+      "native_core_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+      "native_application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+      "packaged_runtime_and_five_sigkill_stages": "passed",
+      "remaining": "Author literary/Memory assessment, target backing verification/account orchestration/deployment, physical phones, independent outage call control, signing/clean machines, native accessibility and mobile dependency mitigation remain open.",
+      "release_certified": false,
+      "evidence": [
+        "docs/evaluations/book-key-recovery-2026-10-02/results.json",
+        "docs/evaluations/project-deletion-2026-10-02/results.json",
+        "docs/evaluations/project-completion-2026-10-02/native-bundle-5fe9d7c.json"
+      ]
+    }
+  ],
+  "hosted_lifecycle_checkpoint": {
+    "date": "2026-10-02",
+    "implementation_commit": "e7712d37e7febb7723968324628f31238e9fa268",
+    "desktop_tests": 590,
+    "desktop_test_files": 88,
+    "desktop_typecheck_build": "passed; production frontend only, no new native application acceptance",
+    "synthetic_browser_journeys": {
+      "chromium": 6,
+      "webkit": 6,
+      "skipped": 0,
+      "scope": "Three reviewed account-deletion journeys and three existing companion key-recovery journeys per engine; production UI/encryption with synthetic SDK, vault and RPC boundaries."
+    },
+    "gateway_tests": 94,
+    "gateway_passed": 94,
+    "gateway_skipped": 0,
+    "gateway_typecheck_build": "passed",
+    "sql_suites": 8,
+    "real_database_concurrency_controls": 16,
+    "voice_real_database_http_process_cases": 6,
+    "database": "Disposable fsynced PostgreSQL 17.11; no existing database or deployed account touched.",
+    "source_hashes_unchanged_during_combined_run": true,
+    "independent_review": {
+      "standards_open": 0,
+      "spec_open": 0
+    },
+    "new_live_provider_calls": 0,
+    "deployed_mutations": 0,
+    "native_acceptance": "Not rerun on this frontend/cloud source. Last native app and core recovery results remain separately scoped to 0cd77bd.",
+    "release_certified": false,
+    "evidence": [
+      "docs/evaluations/registry-bootstrap-2026-10-02/results.json",
+      "docs/evaluations/registry-read-authority-2026-10-02/results.json",
+      "docs/evaluations/account-deletion-2026-10-02/results.json",
+      "docs/evaluations/desktop-account-deletion-2026-10-02/verification.json",
+      "docs/evaluations/independent-voice-control-2026-10-02/results.json",
+      "docs/evaluations/cloud-lifecycle-integration-2026-10-02/results.json"
+    ],
+    "remaining": [
+      "Fresh-prose author judgment and observed Memory review burden.",
+      "Physical iPhone/Android and approved deployed authorization, revocation, rotation, deletion, backing storage and independent-controller acceptance.",
+      "Account intent amendment when retained shared projects move or disappear after review; safe no-snapshot recovery.",
+      "Unknown provider allocation reconciliation and the limits of complete controller/state/provider-network outages; final provider media/billing behavior remains unverified.",
+      "VoiceOver, long writing sessions, signed GUI recovery, signing/notarization, clean Apple Silicon/Intel installs and upgrades, and the mandatory mobile dependency audit gate."
+    ]
   }
 }

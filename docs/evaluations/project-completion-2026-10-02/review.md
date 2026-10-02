@@ -1,11 +1,39 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `0cd77bd`; all six
+Status: **in progress**. The latest implementation is `e7712d3`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
 ## Latest repairs and evidence
+
+The reviewed multi-project account lifecycle now captures exact dispositions,
+acknowledges retained shared history, freezes authority and composes separately
+attested project cleanup. Desktop review lists devices and earlier deletion jobs,
+supports accounts without a published book, and blocks cloud actions while a
+begin reply is unresolved. Same-session refocus retains the reviewed request.
+See the [account packet](../account-deletion-2026-10-02/README.md) and
+[desktop packet](../desktop-account-deletion-2026-10-02/README.md).
+
+An independent controller now registers known voice calls durably before answer
+delivery and verifies their original scope, credentials and deadlines. Restart
+and gateway-loss controls pass while a controller and provider control path remain
+available. Account finalization blocks unresolved voice cleanup. Closed receipts
+survive Auth redaction without reopening an active call. Unknown allocation and
+complete control outages remain limits. See the
+[controller packet](../independent-voice-control-2026-10-02/README.md).
+
+Workspace bootstrap preserves existing membership roles and refuses cross-author
+legacy takeover. Current registry RLS avoids recursive member queries and checks
+live unfrozen membership. The
+[combined checkpoint](../cloud-lifecycle-integration-2026-10-02/README.md)
+records eight SQL suites, 16 actual concurrency controls and 94/94 gateway tests
+without skips. Source hashes were unchanged across the final run. Independent
+Standards and Spec re-reviews have zero open findings; 240 packet hash checks
+matched, and the account raw log is preserved under a tracked compressed name.
+
+The writing, Memory, tab and mobile-build work below belongs to the preceding
+`0cd77bd` iteration; its unchanged core/mobile/native results retain that scope.
 
 Writing Voice can now receive exact author-defined facts, knowledge limits,
 uncertainty, protected wording and ending constraints. Source-bound fingerprints
@@ -53,16 +81,17 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Python 3.13 | 577/577, no skip | Local synthetic/provider-boundary checks |
-| Actual bundled Python 3.11.15 | 577/577, no skip | Same byte-identical core before app rebuild; interpreter runs overlap |
-| Desktop | 564 tests in 86 files; TypeScript and production build pass | Does not establish literary or full assistive accessibility quality |
-| Real-core browser workflows | 6/6 Chromium and 6/6 WebKit | Focused offline workflows; earlier 19-workflow result retains its original scope |
-| Mobile | 181 tests in 30 files; TypeScript and guarded platform builds pass | No physical phones or deployed acceptance |
-| Gateway | Earlier unchanged 66/66, no skip; TypeScript/build | Disposable PostgreSQL/HTTP fixture; not rerun this iteration |
-| Native arm64 app | Exact committed core, runtime contract and five real packaged-engine SIGKILL stages pass | Unsigned development app; no clean-machine certificate |
-| Independent review | Zero open Standards or Spec findings | One reported-claim finding repaired and re-reviewed |
+| Desktop | Current 590 tests in 88 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
+| Account/key-recovery browser workflows | Current 6/6 Chromium and 6/6 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
+| Gateway/database | Current 94/94, no skip; TypeScript/build; eight SQL suites and 16 concurrency controls | Disposable PostgreSQL/HTTP fixture; six real database/process voice cases |
+| Python 3.13 | Prior 0cd77bd: 577/577, no skip | Unchanged core; not rerun this iteration |
+| Actual bundled Python 3.11.15 | Prior 0cd77bd: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
+| Writing browser workflows | Prior 0cd77bd: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows; not current account journeys |
+| Mobile | Prior 0cd77bd: 181 tests in 30 files; guarded platform builds pass | Unchanged mobile; no physical phones or deployed acceptance |
+| Native arm64 app | Prior 0cd77bd: exact core, runtime contract and five packaged-engine SIGKILL stages | Unsigned development app; no current frontend or clean-machine certificate |
+| Independent review | Current zero open Standards or Spec findings | Local implementation review, not release acceptance |
 
-The [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
+The earlier [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
 core SHA-256 `671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440`
 and application SHA-256
 `f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4`.
@@ -101,7 +130,10 @@ permanent namespace tombstones, leased orphan-inclusive cleanup, exact pending
 intent and a separate verifier role. Target backing versions, upload queues and
 in-flight upload absence must be independently checked before finalization.
 The local HTTP fixture represents metadata, not physical backend purge.
-Multi-project account-deletion orchestration remains unimplemented.
+Multi-project account orchestration is now implemented and locally verified.
+Actual backing purge and Auth acceptance remain deployment gates. A retained
+shared project moved or deleted after review can block its immutable intent;
+a reviewed amendment or operator reconciliation workflow remains open.
 
 ## Remaining work
 
@@ -115,10 +147,12 @@ Multi-project account-deletion orchestration remains unimplemented.
    GUI crash/restore acceptance.
 4. Approved deployed reading, encrypted capture, voice interruption/reconnect,
    cold restart and desktop handoff on physical iPhone and Android.
-5. Remaining cloud code and infrastructure: multi-project account deletion,
-   independent outage call control, unknown upstream allocation, and target
-   backing/queue verification; then deployed authorization/revocation/rotation
-   and deletion drills.
+5. Remaining cloud code and infrastructure: account-intent amendment after
+   retained-project changes, safe no-snapshot key recovery, unknown upstream
+   allocation reconciliation and target backing/queue verification. Then drill
+   deployed authorization/revocation/rotation, independent controller operations
+   and deletion. Complete control outages and provider media/billing cleanup
+   retain their explicit limits.
 6. Supported mobile dependency repair, Developer ID signing/notarization, clean
    Apple Silicon and Intel installation/upgrades, and signed credential checks.
 

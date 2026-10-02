@@ -1,0 +1,23 @@
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+psql:supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+psql:supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+psql:supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+                                             set_config
+----------------------------------------------------------------------------------------------------
+ {"sub":"d1000000-0000-7000-8000-000000000001","session_id":"d9000000-0000-7000-8000-000000000001"}
+(1 row)
+
+                                             set_config
+----------------------------------------------------------------------------------------------------
+ {"sub":"d1000000-0000-7000-8000-000000000002","session_id":"d9000000-0000-7000-8000-000000000002"}
+(1 row)
+
+psql:supabase/tests/registry_bootstrap.sql:31: ERROR:  assertion failed: same requested slug must not grant another author ownership
+CONTEXT:  PL/pgSQL function pg_temp_10.assert_true(boolean,text) line 2 at RAISE

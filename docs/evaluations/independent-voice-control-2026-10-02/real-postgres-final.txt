@@ -1,0 +1,62 @@
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+Independent known-call control SQL checks passed.
+TAP version 13
+# (node:84856) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: independent real-PG controller survives gateway SIGKILL and fsynced-journal worker failover
+ok 1 - independent real-PG controller survives gateway SIGKILL and fsynced-journal worker failover
+  ---
+  duration_ms: 3489.388917
+  type: 'test'
+  ...
+# Subtest: observed controller cache hangs up during DB outage; lost provider reply cannot acknowledge closure
+ok 2 - observed controller cache hangs up during DB outage; lost provider reply cannot acknowledge closure
+  ---
+  duration_ms: 2551.727417
+  type: 'test'
+  ...
+# Subtest: real SQL renewal CAS preserves scope/hard duration and no-observation gateway withholds answer
+ok 3 - real SQL renewal CAS preserves scope/hard duration and no-observation gateway withholds answer
+  ---
+  duration_ms: 2415.370375
+  type: 'test'
+  ...
+# Subtest: actual migration preflight refuses incoming role contamination and makes safe authenticator grants SET-only
+ok 4 - actual migration preflight refuses incoming role contamination and makes safe authenticator grants SET-only
+  ---
+  duration_ms: 77.581292
+  type: 'test'
+  ...
+# Subtest: account fence refuses Auth deletion racing an actual uncommitted allocation and keeps unresolved intent owned
+ok 5 - account fence refuses Auth deletion racing an actual uncommitted allocation and keeps unresolved intent owned
+  ---
+  duration_ms: 102.227333
+  type: 'test'
+  ...
+# Subtest: Auth deletion redacts closed scope while exact SQL receipts retire gateway and controller crash journals
+ok 6 - Auth deletion redacts closed scope while exact SQL receipts retire gateway and controller crash journals
+  ---
+  duration_ms: 188.153459
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8919.910459
