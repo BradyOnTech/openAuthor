@@ -62,12 +62,13 @@ behavior, interruption, reconnect and accessibility remain unobserved.
 
 ## Verification and its limits
 
-The current core suite passes 493 of 494 discovered tests on Python 3.13, with
-one optional bundled-runtime check skipped. All 494 pass using the actual
-packaged Python 3.11 runtime. Desktop has 374 passing tests across 74 files plus
+The current core suite passes 529 of 530 discovered tests on Python 3.13, with
+one optional bundled-runtime check skipped. The prior packaged Python 3.11
+checkpoint passed all 494 then-current tests; its source is being refreshed.
+Desktop has 406 passing tests across 76 files plus
 TypeScript and production build checks; mobile has 126 across 27 files plus
 TypeScript, one hosted journey and four preview journeys. Contracts has 19
-passing tests; gateway has 28 plus its typecheck/build. All 15 final desktop
+passing tests; gateway has 28 plus its typecheck/build. All 17 final desktop
 browser journeys pass, including book, Memory permission and Storyline
 workflows. The unchanged authoring and caret journeys also pass in WebKit.
 
@@ -95,12 +96,28 @@ entries propagated from one unpatched node-forge advisory. The
 
 A current-source review separates these gaps from older defects already fixed:
 
-- Memory extraction misses uncased names and misclassifies some capitalized
-  places; typed number, boolean and date details also need value validation.
-- Empty acts/chapters can disappear on manuscript re-import without a specific
-  loss warning. This concerns outline containers, not a demonstrated prose loss.
-- Stale pending chat offers immutable retry or discard. A fresh-context path
-  must reconcile existing completion receipts before starting another request.
+- Memory extraction still misses uncased names and misclassifies some capitalized
+  places. The Inbox now describes those scanning limits. Author review effort
+  remains unmeasured.
+- The fresh Writing Voice alternatives introduce uncertainty about Ivo leaving,
+  while only the boat's departure is uncertain in the source. One adds symbolic
+  explanation. Specific refinement feedback is prepared; a fourth subscription
+  call awaits approval because the three-call allowance has been used. Read the
+  [paired packet](../connected-voice-2026-10-02/review.md) before assessing quality.
+
+Typed Memory values now reject invalid numbers, booleans, dates, lists and
+references before mutation, while preserving untouched legacy values and invalid
+editor drafts. Empty parts/chapters survive public Markdown and marked DOCX
+round trips, including outline-only books, without phantom scenes. Stale chat
+now reconciles old receipts without inference before fresh review, durably closes
+old delivery IDs, and resets one-time context grants. Those three code gaps are
+closed; broader author and delivery acceptance remains open.
+
+Live Voice analysis also exposed a version-field defect: a generated profile
+kept empty source digests after receiving verified exemplar digests. Saving it
+left the profile unverified and omitted it from revision context. Fresh analysis
+now aligns both captured version maps. The completed response was repaired
+locally and retained alongside the original; no repeat analysis call was made.
 
 Basic Unicode retrieval, honest unavailable word metrics, and reviewed context
 for initial edit plans and merge reconciliation are already implemented. They

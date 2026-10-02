@@ -57,6 +57,38 @@ class WritingVoiceTests(unittest.TestCase):
     self.assertEqual(list_proposals(self.paths), [])
     self.assertEqual(profile["traits"]["pacing"], "propulsive")
 
+  def test_approved_analysis_is_current_in_revision_context_until_exemplar_changes(self):
+    from openauthor.selection_editing import preview_selection
+    for provider_name in ("local", "openai"):
+      with self.subTest(provider=provider_name):
+        reply = self.provider_result({"profile": PRESETS[0], "observations": [
+          {"scene_id": "scene-0001", "aspect": "Dialogue", "observation": "The question is brief.", "excerpt": '"Seven," she said.'}]})
+        scene = get_scene(self.paths, "scene-0001")
+        with patch("openauthor.ai._call_provider", return_value=reply):
+          suggestion = suggest_voice(self.paths, request={"scene_ids": [scene["id"]], "provider": provider_name})
+        saved = save_style_profile(self.paths, profile=suggestion["profile"], expected_version=suggestion["base_version"], expected_scope=suggestion["scope"])
+        self.assertEqual(saved["freshness"], "current")
+        self.assertTrue(saved["usable_for_ai"])
+        args = {"scene_id": scene["id"], "start": 0, "end": len(self.source), "selected_text": self.source,
+          "action": "rewrite", "provider": "local"}
+        preview = preview_selection(self.paths, **args)
+        self.assertTrue(preview["context"]["style_profile_status"]["included"])
+        self.assertEqual(preview["context"]["writing_voice"], voice_context(saved))
+        update_scene(self.paths, scene_identifier=scene["id"], body=scene["body"] + "\nChanged exemplar.")
+        self.assertEqual(get_style_profile(self.paths)["freshness"], "stale")
+        self.assertFalse(preview_selection(self.paths, **args)["context"]["style_profile_status"]["included"])
+        update_scene(self.paths, scene_identifier=scene["id"], body=scene["body"])
+
+  def test_fresh_analysis_replaces_previous_exemplar_versions(self):
+    first = suggest_voice(self.paths, request={"scene_ids": ["scene-0001"], "provider": "local"})
+    self.save(first["profile"])
+    second = suggest_voice(self.paths, request={"scene_ids": ["scene-0002"], "provider": "local"})
+    saved = save_style_profile(self.paths, profile=second["profile"], expected_version=second["base_version"], expected_scope=second["scope"])
+    self.assertEqual(saved["freshness"], "current")
+    self.assertTrue(saved["usable_for_ai"])
+    self.assertEqual(set(saved["source_digests"]), {"scene-0002"})
+    self.assertEqual(saved["source_digests"], saved["exemplar_digests"])
+
   def test_refine_one_sample_preserves_original_and_review_history_until_apply_and_undo(self):
     from openauthor.writing_voice import refine_voice_preview
     approved = self.save()

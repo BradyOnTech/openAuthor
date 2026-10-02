@@ -652,6 +652,62 @@ def _publish_chat_receipt(paths: ProjectPaths, thread_id: str, receipt_path: Pat
   atomic_write_json(receipt_path, receipt)
 
 
+@serialize_assistant_thread_mutation
+def reconcile_chat_delivery(paths: ProjectPaths, *, thread_id: str, request_id: str, turn_id: str = "") -> dict[str, Any]:
+  """Recover a local reply or close its delivery identity without calling AI.
+
+  Closing is durable even for an attempt which never reached this process. A
+  delayed send with the old identity cannot race a freshly reviewed request.
+  The thread lock waits for an active delivery before inspecting its receipt.
+  """
+  if not request_id.strip():
+    raise OpenAuthorError("request_id is required to reconcile a saved delivery.")
+  get_chat_thread(paths, thread_id)
+  key = hashlib.sha256(f"{thread_id}:{request_id}".encode()).hexdigest()
+  folder = _chat_delivery_folder(paths, thread_id)
+  receipt_path = folder / f"{key}.json"
+  closed_path = folder / "closed" / f"{key}.json"
+  with project_write_lock(paths, resource=_chat_lock_resource(thread_id)):
+    try:
+      _recover_chat_deliveries(paths, thread_id)
+      if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        if receipt["result"].get("turn", {}).get("status") != "completed":
+          return {"status": "blocked", "can_review": False, "message": "The saved result is not finalized. Keep this request until delivery can be recovered."}
+        return {"status": "completed", "can_review": False, "message": "The saved reply was recovered. No new request was sent."}
+      if closed_path.exists():
+        return json.loads(closed_path.read_text(encoding="utf-8"))
+      attempt_path = folder / "attempts" / f"{key}.json"
+      attempt = json.loads(attempt_path.read_text(encoding="utf-8")) if attempt_path.exists() else None
+      if attempt and turn_id and attempt["logical_turn_id"] != turn_id:
+        raise OpenAuthorError("The saved delivery belongs to a different Assistant turn.")
+      previous_id = str(attempt["turn_id"] if attempt else turn_id)
+      store = AssistantTurnStore(paths)
+      previous = None
+      if previous_id:
+        try:
+          previous = store.get(previous_id)
+        except OpenAuthorError as error:
+          if str(error) != f"Assistant turn '{previous_id}' not found.":
+            raise
+      if previous and previous.thread_id != thread_id:
+        raise OpenAuthorError("The saved Assistant turn belongs to a different conversation.")
+      if previous and previous.status in {"completed", "superseded"}:
+        result = {"status": "blocked", "can_review": False, "message": "The provider turn completed, but its delivery receipt is unavailable. A new send is blocked to avoid duplicating that turn."}
+      else:
+        if previous and previous.status in {"accepted", "running"}:
+          # Holding the same thread lock proves the previous writer stopped.
+          store.interrupt(previous_id, message="Saved delivery closed for a fresh context review.")
+        result = {
+          "status": "indeterminate" if previous else "not_delivered", "can_review": True,
+          "message": "The previous attempt has no saved reply. It may have reached the provider and incurred charges. Its request is now closed; review current context before starting a new attempt." if previous else "The question was not delivered. Its old request is now closed; review current context before sending.",
+        }
+      atomic_write_json(closed_path, result)
+      return result
+    except (OSError, ValueError, KeyError, TypeError) as error:
+      raise OpenAuthorError("The saved delivery could not be reconciled. Keep the original request and try again after repairing local storage.") from error
+
+
 
 @serialize_assistant_thread_mutation
 def send_chat_message(paths: ProjectPaths, *, thread_id: str, request_id: str = "", is_cancelled: Any = None,
@@ -680,6 +736,8 @@ def send_chat_message(paths: ProjectPaths, *, thread_id: str, request_id: str = 
       if receipt["fingerprint"] != fingerprint:
         raise OpenAuthorError("A chat request id cannot be reused for different content.")
       return receipt["result"]
+    if (folder / "closed" / f"{key}.json").exists():
+      raise OpenAuthorError("This saved chat request is closed. Review current context before starting a new attempt.")
     original_turn_id = ""
     if replace_from_message_id:
       original = next((row for row in list_chat_messages(paths, thread_id=thread_id)

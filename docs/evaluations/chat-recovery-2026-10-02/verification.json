@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-02",
+  "scope": "Fresh context recovery for an immutable pending chat delivery",
+  "fixtures": "Original disposable books; deterministic local provider; no external provider requests or author data edits",
+  "red_before_fix": {
+    "command": "cd desktop && npx vitest run src/ChatPanel.recovery.test.tsx",
+    "result": "1 passed, 1 failed at missing Review current context control",
+    "artifact": "rendered-before-fix.log"
+  },
+  "checks": [
+    {
+      "command": "PYTHONPATH=. python3 -m unittest tests.test_chat_delivery_recovery",
+      "result": "8/8 passed",
+      "log": "/private/tmp/openauthor-chat-recovery-core-2026-10-02.log"
+    },
+    {
+      "command": "cd desktop && npx vitest run src/ChatPanel.recovery.test.tsx src/chatDeliverySession.test.ts src/ChatContextReview.test.tsx",
+      "result": "21/21 passed in 3 files",
+      "log": "/private/tmp/openauthor-chat-stale-focused-2026-10-02.log"
+    },
+    {
+      "command": "cd desktop && npx tsc --noEmit",
+      "result": "passed",
+      "log": "/private/tmp/openauthor-chat-recovery-typecheck-2026-10-02.log"
+    },
+    {
+      "command": "cd desktop && npx playwright test e2e/chat-delivery-recovery.spec.ts e2e/memory-permission.spec.ts e2e/storyline-journey.spec.ts",
+      "engine": "Chromium headless shell 1217",
+      "result": "5/5 passed, 38.4s; before Stop control addition",
+      "log": "/private/tmp/openauthor-chat-recovery-final-chromium-2026-10-02.log"
+    },
+    {
+      "command": "cd desktop && npx playwright test e2e/chat-delivery-recovery.spec.ts --browser webkit",
+      "engine": "Official Playwright WebKit 2359",
+      "result": "2/2 passed, 18.1s; final production source",
+      "log": "/private/tmp/openauthor-chat-recovery-final-webkit-2026-10-02.log"
+    }
+  ],
+  "verified": [
+    "Memory changed after explicit permission and exact preview is refused before provider generation.",
+    "Fresh review first reconciles the original delivery ID and durably closes it without provider contact.",
+    "Old delayed or retried request IDs cannot send after closure; an active delivery settles under the existing conversation lock.",
+    "A completed receipt is recovered/published before offering a new attempt; a completed turn with no receipt blocks new generation.",
+    "Failed/stopped/crashed attempts with no receipt are disclosed as indeterminate; a new attempt needs explicit fresh review.",
+    "Recovered questions can be edited, cancelling retains them, and restart requires new Ask first permission.",
+    "Original Character/chapter scene targets, Storyline scope and replacement history boundary are retained; separate composer question and picker stay unchanged during review.",
+    "Fresh send uses new delivery and turn IDs and a current fingerprint. Final provenance contains current permitted facts and omits private notes.",
+    "Rendered Stop delegates to the existing request-specific interruption API and retains the stopped recovered question without another send.",
+    "Journal and reconciliation failures keep sending closed and preserve original identity for safe repeated reconciliation."
+  ],
+  "screenshots": [
+    "stale-question-saved.png",
+    "fresh-context-reviewed.png",
+    "restart-requires-permission.png",
+    "completed-reply-reconciled.png"
+  ],
+  "independent_review": "Release agent found no material completed-turn duplication, delayed-old-ID race, permission reuse or stale scope adoption; ran core8/8 and session/rendered14/14.",
+  "limits": [
+    "Browser transport adapter launches a fresh stdio process per request; native persistent-process interruption is not covered by these browser journeys.",
+    "Indeterminate remote attempts cannot establish whether a provider processed or charged for an unsaved result; the author receives an explicit notice before authorizing another attempt."
+  ],
+  "full_suite_isolation": {
+    "observed_failure_log": "/private/tmp/openauthor-desktop-final-new-gaps-2026-10-02.log",
+    "observed_failure": "405 passed, 1 failed: replacement boundary assertion received preceding completed-id instead of replacement-turn",
+    "cause": "Absence of Retry was used as a completion signal, but Retry is also hidden while reconciliation is running. The preceding test could reset its shared transport harness before the old asynchronous request settled.",
+    "deterministic_probe": "A held reconciliation proves Retry absent while original pending identity and reconciling=true remain. Release is followed by completed notice, journal removal and pending=null assertions.",
+    "repair": "Wait for actual settled state, and drain the book/thread delivery session in afterEach before runtime and harness cleanup. Keep exact replacement ID/history assertions.",
+    "production_changes": false,
+    "focused": {
+      "result": "21/21 passed",
+      "log": "/private/tmp/openauthor-chat-isolation-focused-2026-10-02.log"
+    },
+    "full_desktop": {
+      "result": "406/406 passed in 76 files, 18.42s",
+      "log": "/private/tmp/openauthor-chat-isolation-full-final-2026-10-02.log"
+    },
+    "typecheck": {
+      "result": "passed",
+      "log": "/private/tmp/openauthor-chat-isolation-typecheck-2026-10-02.log"
+    }
+  }
+}

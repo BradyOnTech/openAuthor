@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-02",
+  "status": "implemented_and_locally_verified",
+  "author_data_used": false,
+  "external_provider_calls": false,
+  "seams": [
+    "save_style_profile",
+    "get_style_profile",
+    "style_profile_for_ai",
+    "set_style_profile_reference"
+  ],
+  "red_before_green": [
+    {
+      "slice": "new save corruption and old non-map read",
+      "tests": 5,
+      "failures": 8,
+      "errors": 4,
+      "log": "initial-public-save-red.txt"
+    },
+    {
+      "slice": "old unverified resave compatibility and malformed frozen values",
+      "tests": 2,
+      "failures": 3,
+      "errors": 1,
+      "log": "legacy-and-reader-red.txt"
+    },
+    {
+      "slice": "frozen extra source ID and disagreeing digest maps",
+      "tests": 1,
+      "failures": 2,
+      "log": "reader-shape-red.txt"
+    },
+    {
+      "slice": "non-object save under legacy carryforward",
+      "tests": 1,
+      "errors": 3,
+      "log": "non-object-save-red.txt"
+    },
+    {
+      "slice": "valid old source-only reference mode transition",
+      "tests": 1,
+      "failures": 1,
+      "log": "legacy-mode-transition-red.txt"
+    }
+  ],
+  "checks": [
+    {
+      "command": "PYTHONPATH=. python3 -m unittest tests.test_style_profile_source_metadata tests.test_writing_voice tests.test_style_profile_module tests.test_selection_voice tests.test_selection_editing tests.test_editorial_review -v",
+      "tests": 80,
+      "new_source_metadata_tests": 11,
+      "status": "passed",
+      "log": "focused-tests.txt"
+    },
+    {
+      "command": "git diff --check -- openauthor/style_profile.py tests/test_style_profile_source_metadata.py tests/test_assistant_snapshots.py",
+      "status": "passed"
+    },
+    {
+      "command": "PYTHONPATH=. python3 -m unittest tests.test_assistant_snapshots tests.test_style_profile_source_metadata tests.test_writing_voice tests.test_style_profile_module tests.test_selection_voice tests.test_selection_editing tests.test_editorial_review -v",
+      "tests": 90,
+      "status": "passed",
+      "log": "focused-and-snapshot-tests.txt"
+    }
+  ],
+  "contracts": [
+    "New saves require source and exemplar maps with exactly the selected scene IDs and equal lowercase SHA-256 values. Missing source map may use a complete verified exemplar map.",
+    "Each supplied exemplar hash and exact observation passage is checked against current scene prose under the existing shared project lock before any atomic profile replacement.",
+    "Reader provenance requires complete valid selected source metadata; a nonempty stored exemplar map must agree. Malformed source metadata remains unknown and excluded from AI, including frozen references.",
+    "Schema-1 reads remain unverified without rewriting. Existing same-exemplar profiles with both empty maps can be resaved without promoting their provenance.",
+    "Valid older schema-2 source-only profiles may retain absent or empty exemplar maps on read and when switching reference mode; new saves cannot introduce incomplete maps.",
+    "Valid frozen references preserve old source versions even after current prose changes; current reference mode excludes changed source versions."
+  ],
+  "source_sha256": {
+    "openauthor/style_profile.py": "b1f3f315df26e7bbb30f7c701b50815ed787ff440f6ededa70754c962bfe8800",
+    "tests/test_style_profile_source_metadata.py": "96d562b96d926b34cb4ce65e08e2bc65368c1ec4b708f0a18c98aa13d2f46939",
+    "tests/test_assistant_snapshots.py": "ed7ab6c5b6f974144fded45bf549e0cf591062c4be612feb7e0ab9ccf1f2042b"
+  },
+  "integration_fixture": "Approved mobile Writing Voice fixture now supplies the actual selected scene body SHA-256; projection/privacy/digest assertions are unchanged."
+}

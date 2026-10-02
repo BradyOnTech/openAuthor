@@ -1,0 +1,12 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/StoryMemoryEditor.values.test.tsx src/StoryMemoryEditor.recovery.test.tsx src/memoryApi.test.ts
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  3 passed (3)
+      Tests  23 passed (23)
+   Start at  08:58:49
+   Duration  2.53s (transform 311ms, setup 0ms, import 648ms, tests 2.32s, environment 1.09s)

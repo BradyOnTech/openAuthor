@@ -36,6 +36,7 @@ from .chat import (
   rename_chat_thread,
   send_chat_message,
   preview_chat_context,
+  reconcile_chat_delivery,
   truncate_chat_messages,
   update_chat_thread,
 )
@@ -1129,6 +1130,11 @@ def build_parser() -> argparse.ArgumentParser:
   )
   chat_thread_update.add_argument("--json", action="store_true", help="Output JSON.")
 
+  chat_reconcile = chat_sub.add_parser("reconcile", help="Recover a saved reply or close a delivery before fresh context review; never contacts a provider.")
+  chat_reconcile.add_argument("--thread", required=True)
+  chat_reconcile.add_argument("--request-id", required=True)
+  chat_reconcile.add_argument("--turn-id", default="")
+  chat_reconcile.add_argument("--json", action="store_true", help="Output JSON.")
   chat_send = chat_sub.add_parser("send", help="Send a message to a chat thread.")
   chat_send.add_argument("--thread", required=True, help="Thread id.")
   chat_send.add_argument("--message", required=True, help="Message content.")
@@ -2499,6 +2505,11 @@ def _run(args: argparse.Namespace) -> int:
       raise OpenAuthorError(
         f"Unsupported chat thread command: {args.chat_thread_command}"
       )
+
+    if args.chat_command == "reconcile":
+      row = reconcile_chat_delivery(paths, thread_id=args.thread, request_id=args.request_id, turn_id=args.turn_id)
+      print(json.dumps(row) if args.json else row["message"])
+      return 0
 
     if args.chat_command in {"send", "context"}:
       context_overrides = _chat_context_overrides(args)

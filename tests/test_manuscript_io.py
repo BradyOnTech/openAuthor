@@ -14,7 +14,7 @@ from openauthor.manuscript_io import (
 )
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.scenes import add_scene, list_scene_details
-from openauthor.planning import add_act, add_chapter, assign_scene
+from openauthor.planning import add_act, add_chapter, assign_scene, get_plan
 
 
 class ManuscriptIOTests(unittest.TestCase):
@@ -40,11 +40,6 @@ class ManuscriptIOTests(unittest.TestCase):
             for path, title in zip(files, ["Written Second", "Written First", "Unassigned"]):
               self.assertIn(f"Prose for {title}.", path.read_text())
       self.assertEqual({path.name: path.read_bytes() for path in paths.scenes_dir.glob("*.md")}, before)
-from openauthor.planning import get_plan
-from openauthor.scenes import add_scene, list_scene_details
-
-
-class ManuscriptIOTests(unittest.TestCase):
   def test_import_rejects_invalid_corrections_and_manifest_paths_before_writing(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

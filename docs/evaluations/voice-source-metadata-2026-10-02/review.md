@@ -1,0 +1,9 @@
+# Writing Voice source metadata verification — 2026-10-02
+
+A public save accepted malformed `source_digests` and replaced the approved profile before the subsequent read failed. Existing frozen profiles could also treat truthy invalid source metadata as verified provenance. Disposable original synthetic books reproduced both failures; no author manuscript or external provider was used.
+
+New saves now validate the complete selected source and exemplar maps before replacement. Invalid, missing, mismatched or stale versions refuse without changing the approved file. Reader verification requires complete SHA-256 source metadata and agreement with a nonempty exemplar map; malformed historical source metadata stays inspectable, unknown and excluded from AI without rewriting.
+
+Eleven new public-boundary tests cover the corruption, reopen preservation, stale source refusal, old schema reads, unverified legacy resave, malformed frozen inclusion, map disagreement and reference-mode transitions. The final Writing Voice, Style Profile, selection editing and editorial suite passes 80 tests. Including the full mobile snapshot module passes 90 tests; its approved-Voice fixture now supplies the actual selected scene body hash while retaining every projection, privacy and digest assertion. Exact source hashes, commands, red-before-green logs and compatibility limits are in `verification.json`.
+
+Compatibility remains deliberate: schema-1 profiles stay unverified; empty-map legacy resaves do not promote them. Valid old schema-2 source-only profiles remain readable and can switch between current and frozen references, including after their source scenes change. New saves still require complete matching maps. This evidence verifies local core behavior and does not assess literary quality or physical devices.

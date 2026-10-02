@@ -16,7 +16,7 @@ build alone satisfies this goal.
 | --- | --- | --- |
 | Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save and stale-response safeguards plus durable multi-file recovery now have real subprocess-kill evidence; unknown newer writing requires reviewed comparison. Noncooperating writers, physical power loss and full signed-GUI acceptance remain explicit limits |
 | Authoring | Create/import a book, draft and organize chapters/scenes, read, search, reopen and export with predictable structure and no unexplained loss | Connected browser/real-Python journey now covers import, planning, chapter reading, Memory, search, local copilot notes and Word export; packaged/full-novel acceptance remains required |
-| AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | One authenticated October 2 synthetic chapter critique caught a planted knowledge problem; original evidence-offset failure and same-response repair are retained. Author judgment, revisions and broader quality remain unverified |
+| AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | An authenticated October 2 chapter critique caught a planted knowledge problem. Fresh Voice analysis and two alternatives exposed a profile-version defect and invented departure ambiguity; original responses and fixes are retained. Refinement and author judgment remain open |
 | Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Existing core/rendered tests; independent failure-path review and packaged end-to-end coverage required |
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
@@ -105,16 +105,25 @@ or broader keyboard/assistive accessibility.
 The [dependency review](evaluations/project-completion-2026-10-02/dependency-review.md)
 records compatible patches to `fast-uri` 3.1.8 and `brace-expansion` 5.0.12.
 Contracts, desktop and gateway audits report zero vulnerabilities. Mobile has
-five high dependency entries from one unpatched `node-forge` advisory; vulnerable
-build-time/runtime reachability was not established. A supported fix or reviewed,
-tested mitigation and affected-path analysis is required before clearing that
-security gate. No broad Expo downgrade or audit suppression was applied.
+five high dependency entries from one unpatched `node-forge` advisory. The
+[reachability trace](evaluations/project-completion-2026-10-02/forge-reachability.md)
+reaches the affected primitive through installed Expo signing helpers. Current
+signing configuration exits offline, and three fresh JavaScript module lists omit
+the affected modules. Signed-runtime and future-configuration acceptance remains
+open; a supported fix or reviewed mitigation is required to clear the audit.
+No broad Expo downgrade or audit suppression was applied.
 
-Concrete code gaps remain in typed Memory value validation, uncased-name
-extraction, specific warnings for lost empty outline containers on re-import,
-and fresh-context recovery for stale pending chat. Basic Unicode retrieval,
-honest unavailable word metrics, and reviewed initial-plan/merge context already
-exist; older missing-feature wording is superseded in the machine ledger.
+Typed Memory value validation, preserved empty outline containers on re-import,
+and fresh-context chat recovery now have focused public-workflow checks. The
+Inbox explicitly describes its uncased-name and person/place-classification
+limits. Fresh Writing Voice analysis aligns captured profile versions, and
+malformed version metadata is rejected before replacing an approved profile.
+Three connected synthetic Voice calls retain source and provider provenance;
+the alternatives introduce a departure ambiguity, and refinement awaits one
+additional-call approval. See the [paired review](evaluations/connected-voice-2026-10-02/review.md).
+Basic Unicode retrieval, honest unavailable word metrics, and reviewed
+initial-plan/merge context already exist; older missing-feature wording is
+superseded in the machine ledger.
 
 Remaining acceptance is author review of useful retained/rejected revisions;
 physical-phone and approved deployment authorization/revocation/recovery drills;

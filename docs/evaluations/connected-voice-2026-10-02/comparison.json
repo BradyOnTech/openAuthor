@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "id": "voice-preview-bcac21d94f8c",
+  "scene_id": "scene-0003",
+  "scene_version": {
+    "schema_version": 1,
+    "workspace": "78471d05b91a70f60be06f8505000dc4fc26fc2e7de3ee70de1a128cbf96a036",
+    "storyline": "Local manuscript",
+    "scene_id": "scene-0003",
+    "fields": {
+      "title": "d2632641fa3167627def73c84d94441263aef7020e8671b7624ddd9ea902a7a0",
+      "body": "5b0a8e5f772da9d936c2d713f9ec39931de4d3a97d13de674225eacbddcf8258",
+      "summary": "250d4e16a10543026131af5ce08b2d07f77584d0bfb21d810073a9b4b3f25acf",
+      "pov": "489fd650993e6b11790c2c8c9f1b55ab743f8494ff5b7626e9113f688631435e",
+      "status": "7743ce348d9284d677a185f33295b92266cc435a5b5f775029b300066d26693a"
+    }
+  },
+  "source_text": "She laid the tide table beside the sealed letter. She felt nervous about what he might do next. She wanted to ask whether he would open the letter, but she did not want to sound as if she were asking him to.\n\n\"The red mark,\" she said. \"It's only a mooring?\"\n\n\"A proposed one. Even the pencil was careful.\"\n\nThe ruler lay across the lower edge of the sheet. Its end rested on the red line. A short length of black thread from Nessa's cuff was caught beneath it. She looked at the thread. Neither of them had opened the letter. Neither had said what it contained.\n\nIvo reached toward the envelope. Nessa put two fingers on its folded edge.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler stayed where he had laid it, with the black thread caught beneath its end.",
+  "instruction": "Make the tension in Nessa's hesitation more particular through her attention to the existing table, ruler, thread or sealed letter. Keep Nessa's practical questions and Ivo's dry qualification distinct. Preserve the proposed mooring, uncertain water level and departure, stopped clock, intact green seal and ignorance of the letter. Do not add a movement or open the letter. End with Ivo's hand resting and the thread under the ruler.",
+  "provider": "openai-codex",
+  "model": "codex-recommended",
+  "created_at": "2026-10-02T13:55:42.681266+00:00",
+  "directions": [
+    {
+      "id": "direction-1",
+      "profile": {
+        "schema_version": 2,
+        "name": "My book's voice",
+        "description": "Direct, observant prose with clear physical staging and a close but restrained narrative perspective. Concrete objects, practical questions, and dry qualifications carry implications that the narration leaves unresolved.",
+        "traits": {
+          "prose": "direct",
+          "description": "spare",
+          "emotion": "restrained",
+          "distance": "close",
+          "dialogue": "subtextual",
+          "pacing": "deliberate",
+          "imagery": "concrete",
+          "humor": "dry"
+        },
+        "guidance": [
+          "Stage movement through precise positions, small adjustments, and the handling of objects.",
+          "Keep description selective and concrete, favoring useful details over decorative accumulation.",
+          "Stay close to the viewpoint character's immediate perceptions, reasoning, and acknowledged limits.",
+          "Express emotion indirectly through attention, posture, repeated actions, and practical wants.",
+          "Use practical questions to expose uncertainty and interpersonal pressure.",
+          "Let answers evade, qualify, or narrow the question without explaining their full implications.",
+          "Build dry humor through understatement, literal-minded replies, and modest verbal reversals.",
+          "Allow significant objects to recur and acquire weight through use rather than explicit symbolism.",
+          "Vary sentence length while keeping syntax clear; use short sentences to mark decisions or absences.",
+          "Maintain deliberate pacing by letting observation and minor physical action unfold between exchanges.",
+          "Preserve uncertainty when the viewpoint character cannot interpret documents, sounds, motives, or decisions."
+        ],
+        "avoid": [
+          "Avoid naming emotions when a physical action or practical concern can convey them.",
+          "Avoid lyrical elaboration that draws attention away from the immediate setting.",
+          "Avoid explaining the meaning of suggestive objects or gestures.",
+          "Avoid granting the viewpoint character knowledge she has not obtained.",
+          "Avoid dialogue that states motives or conflicts too plainly.",
+          "Avoid broad scenic description when one or two concrete details establish the space.",
+          "Avoid jokes that become expansive, whimsical, or overtly performative.",
+          "Avoid accelerating past pauses, unanswered questions, and inconclusive actions."
+        ],
+        "exemplar_scene_ids": [
+          "scene-0001",
+          "scene-0002"
+        ],
+        "exemplar_digests": {
+          "scene-0001": "5afb6ed924558821eb53a2c4f3796d6405e480609f1f49f617d300c2389654c3",
+          "scene-0002": "9796b65737e1894bd5ac1f8a2080aeaaafb18e731ee984cc74df8cf41d78affa"
+        },
+        "reference_mode": "current",
+        "source_digests": {
+          "scene-0001": "5afb6ed924558821eb53a2c4f3796d6405e480609f1f49f617d300c2389654c3",
+          "scene-0002": "9796b65737e1894bd5ac1f8a2080aeaaafb18e731ee984cc74df8cf41d78affa"
+        },
+        "measurement": {
+          "method": "author_approved_traits",
+          "limitations": [
+            "Author preferences are not measured prose quality."
+          ]
+        },
+        "observations": [
+          {
+            "scene_id": "scene-0001",
+            "aspect": "emotional expression",
+            "observation": "Feeling is conveyed through protective handling and hesitation rather than named emotion.",
+            "excerpt": "Nessa brought the letter flat against her chest, under the coat that had belonged to her brother. The coat was too broad across the shoulders. When she lifted her hand to knock, a little rain ran from the cuff onto the step. She put her hand back over the envelope."
+          },
+          {
+            "scene_id": "scene-0001",
+            "aspect": "description and staging",
+            "observation": "A few spatially exact, utilitarian details establish the workshop and Nessa's restricted view.",
+            "excerpt": "Ivo opened the workshop door without taking the chain off. Behind him, a lamp stood on a box of hinges. The yellow shade had been mended with thread. Nessa could see two of the stitches through the narrow opening."
+          },
+          {
+            "scene_id": "scene-0001",
+            "aspect": "humor and dialogue",
+            "observation": "The humor is dry and qualifying: Ivo reframes ordinary statements without becoming playful at length.",
+            "excerpt": "\"For you,\" she said.\n\n\"A generous description of most trouble.\"\n\n\"From the harbor office.\""
+          },
+          {
+            "scene_id": "scene-0001",
+            "aspect": "narrative distance",
+            "observation": "The narration remains close to what Nessa knows and explicitly records what she did not learn; this supports a close reading, though the prose does not enter sustained interior monologue.",
+            "excerpt": "Her brother had asked her to deliver it before the second bell; he had not told her what it said. She had not asked him to."
+          },
+          {
+            "scene_id": "scene-0001",
+            "aspect": "imagery",
+            "observation": "Imagery is primarily concrete, with a restrained personification supplying dry implication.",
+            "excerpt": "\"Is that where the water comes?\" Nessa asked.\n\n\"That's where they propose to put a mooring. The water hasn't agreed.\""
+          },
+          {
+            "scene_id": "scene-0001",
+            "aspect": "character knowledge",
+            "observation": "Interpretive limits are stated precisely: Nessa can read the figures but cannot confidently apply them.",
+            "excerpt": "She read the nearest column twice. The numbers had the plainness of things already settled, although she could not tell which column belonged to today."
+          },
+          {
+            "scene_id": "scene-0002",
+            "aspect": "dialogue",
+            "observation": "A practical question receives an incomplete answer, and repetition increases pressure without explicit confrontation.",
+            "excerpt": "\"Has anyone decided about the boat?\"\n\n\"You'll hear the bell.\"\n\n\"There was one already.\"\n\nThe woman took her fingers out of the string. \"You'll hear another.\""
+          },
+          {
+            "scene_id": "scene-0002",
+            "aspect": "rhythm and pacing",
+            "observation": "Deliberate pacing emerges from sequential observation, small sounds, and a minute adjustment of position.",
+            "excerpt": "The first drop hit the bucket's rim, the next its bottom. Nessa shifted her chair half an inch so the falling water was out of her line of sight."
+          },
+          {
+            "scene_id": "scene-0002",
+            "aspect": "emotional expression",
+            "observation": "Nessa's desire for certainty is displaced onto a practical object and immediately qualified by her own reasoning.",
+            "excerpt": "She wanted the ruler, although she knew a ruler would not make the office's answer more exact."
+          },
+          {
+            "scene_id": "scene-0002",
+            "aspect": "closure",
+            "observation": "The scene ends on continued attention and a concrete non-event, preserving uncertainty rather than resolving it.",
+            "excerpt": "She listened all the way across the yard. No second bell sounded before she reached Ivo's door."
+          }
+        ],
+        "metrics": {
+          "words": 723,
+          "average_sentence_words": 11.3,
+          "dialogue_passages": 14,
+          "paragraphs": 28
+        },
+        "created_at": "2026-10-02T13:54:44.143168+00:00"
+      },
+      "text": "She laid the tide table beside the letter, its green seal intact. The stopped clock gave her no help with the water level or when he meant to leave. She wanted to ask if he would open the letter. Even to ask might sound like asking him to do it.\n\n“The red mark,” she said. “It’s only a mooring?”\n\n“A proposed one. Even the pencil was careful.”\n\nThe ruler lay across the lower edge of the sheet, its end on the red line. A short length of black thread from Nessa’s cuff was caught beneath it. She watched the thread rather than the sealed letter. Neither of them had opened it. Neither knew what it contained.\n\nIvo reached toward the envelope. Nessa put two fingers on its folded edge.\n\n“Wait,” she said.\n\nHe left his hand resting on the table. The ruler stayed where he had laid it, the black thread caught beneath its end.",
+      "observations": [
+        {
+          "criterion": "voice_fit",
+          "observation": "Concrete objects carry the pressure without symbolic explanation, while Ivo’s qualification remains dry.",
+          "excerpt": "“A proposed one. Even the pencil was careful.”"
+        },
+        {
+          "criterion": "readability",
+          "observation": "The positions of letter, ruler, red line, thread, and hands remain explicit and easy to follow.",
+          "excerpt": "The ruler lay across the lower edge of the sheet, its end on the red line."
+        },
+        {
+          "criterion": "emotional_effect",
+          "observation": "Nessa’s hesitation is made particular through what she chooses to watch and where she places her fingers rather than by naming her emotion.",
+          "excerpt": "She watched the thread rather than the sealed letter."
+        },
+        {
+          "criterion": "character_distinction",
+          "observation": "Nessa asks a short practical question; Ivo answers by narrowing its certainty.",
+          "excerpt": "The red mark,” she said. “It’s only a mooring?”\n\n“A proposed one."
+        },
+        {
+          "criterion": "consistency",
+          "observation": "Close third-person past tense, the intact green seal, stopped clock, uncertain water and departure, and ignorance of the contents are retained. The nearby-scene continuity is unavailable, so the clock and departure references rely on the supplied instruction and scene summary.",
+          "excerpt": "The stopped clock gave her no help with the water level or when he meant to leave."
+        }
+      ],
+      "warnings": [
+        "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+      ],
+      "generation_id": "gen-032a92c488be",
+      "measures": {
+        "words": 155,
+        "average_sentence_words": 9.7,
+        "dialogue_passages": 4,
+        "paragraphs": 7
+      },
+      "author_review": {
+        "ratings": {},
+        "notes": ""
+      }
+    },
+    {
+      "id": "direction-2",
+      "profile": {
+        "schema_version": 2,
+        "name": "Kinetic, emotionally intense",
+        "description": "Urgent pacing, close perspective and sharp emotional contrasts.",
+        "traits": {
+          "prose": "direct",
+          "description": "spare",
+          "emotion": "intense",
+          "distance": "close",
+          "dialogue": "subtextual",
+          "pacing": "propulsive",
+          "imagery": "concrete",
+          "humor": "earnest"
+        },
+        "guidance": [
+          "Vary sentence rhythm with pressure; keep physical stakes specific.",
+          "Ground emotional intensity in choices and consequences."
+        ],
+        "avoid": [
+          "Artificial melodrama or uniformly clipped sentences."
+        ],
+        "exemplar_scene_ids": [],
+        "exemplar_digests": {},
+        "reference_mode": "current",
+        "source_digests": {},
+        "measurement": {
+          "method": "author_approved_traits",
+          "limitations": [
+            "Author preferences are not measured prose quality."
+          ]
+        },
+        "observations": [],
+        "metrics": {},
+        "created_at": ""
+      },
+      "text": "She laid the tide table beside the sealed letter, its green seal intact. The figures could not tell her where the water stood now. The stopped clock could not tell her how long remained before he left—if he meant to leave at all.\n\nShe wanted to ask whether he would open the letter. The question felt too much like permission.\n\n“The red mark,” she said. “It’s only a mooring?”\n\n“A proposed one. Even the pencil was careful.”\n\nThe ruler lay across the lower edge of the sheet, its end on the red line. A short length of black thread from Nessa’s cuff was caught beneath it. She fixed on the thread: pinned, but not broken. Easier to look at than the green seal.\n\nNeither of them had opened the letter. Neither knew what it contained.\n\nIvo reached toward the envelope. Nessa put two fingers on its folded edge.\n\n“Wait,” she said.\n\nHe left his hand resting on the table. The ruler stayed where he had laid it, the black thread caught beneath its end.",
+      "observations": [
+        {
+          "criterion": "voice_fit",
+          "observation": "The close, urgent voice is grounded in specific objects rather than heightened abstraction.",
+          "excerpt": "She fixed on the thread: pinned, but not broken. Easier to look at than the green seal."
+        },
+        {
+          "criterion": "readability",
+          "observation": "Sentence lengths tighten as Ivo reaches for the envelope, while the physical arrangement remains clear.",
+          "excerpt": "Ivo reached toward the envelope. Nessa put two fingers on its folded edge."
+        },
+        {
+          "criterion": "emotional_effect",
+          "observation": "Nessa’s hesitation is particularized as fear that her question could become consent.",
+          "excerpt": "The question felt too much like permission."
+        },
+        {
+          "criterion": "character_distinction",
+          "observation": "Nessa keeps to a short practical question, while Ivo answers with dry precision.",
+          "excerpt": "“A proposed one. Even the pencil was careful.”"
+        },
+        {
+          "criterion": "consistency",
+          "observation": "The uncertain water level, unfinished departure, stopped clock, intact green seal, unopened letter, and ignorance of its contents are preserved. With no nearby scenes supplied, the exact implications of his departure remain uncertain.",
+          "excerpt": "The figures could not tell her where the water stood now. The stopped clock could not tell her how long remained before he left—if he meant to leave at all."
+        }
+      ],
+      "warnings": [
+        "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+      ],
+      "generation_id": "gen-684914aa9d4f",
+      "measures": {
+        "words": 175,
+        "average_sentence_words": 9.7,
+        "dialogue_passages": 4,
+        "paragraphs": 9
+      },
+      "author_review": {
+        "ratings": {},
+        "notes": ""
+      }
+    }
+  ]
+}

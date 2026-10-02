@@ -127,6 +127,7 @@ export function MemorySuggestionReview({ request }: { request?: MemoryViewReques
 
   return <section className="memory-inbox" aria-label="Memory suggestion review">
     <header className="memory-inbox__header"><div><h1>Memory suggestions</h1><p>Compare the recorded passages with the proposed entry. Suggestions are heuristic and remain unconfirmed until you accept them. Connections are reviewed in Connection Map.</p></div><button className="btn" disabled={busy || loading} onClick={scan}>Scan manuscript</button></header>
+    <details><summary>What scanning can miss</summary><p>Scanning uses capitalized names and saved POV names. Names in scripts without capital letters may be missed; add those entries in Memory. Check whether each proposed entry is a person, place or another type, and correct its type before accepting.</p></details>
     <div className="memory-inbox__filters"><label>Show <select className="select" aria-label="Filter Memory suggestions" value={filter} onChange={event => setFilter(event.target.value as Status | "all")}>
       {statuses.map(status => <option key={status} value={status}>{statusNames[status]}</option>)}<option value="all">All decisions</option>
     </select></label><span role="status">{rows.length} {filter === "pending" ? "awaiting review" : "in this view"}</span><button className="btn btn--sm" disabled={busy || loading} onClick={() => void load()}>Refresh suggestions</button></div>

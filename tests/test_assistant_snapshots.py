@@ -16,7 +16,7 @@ from openauthor.codex import add_entity
 from openauthor.canon import add_canon_fact, list_canon_facts, update_canon_fact
 from openauthor.project import initialize_project
 from openauthor.revisions import create_revision
-from openauthor.scenes import add_scene, update_scene
+from openauthor.scenes import add_scene, get_scene, update_scene
 from openauthor.style_profile import save_style_profile, voice_context
 from openauthor.planning import add_act, add_chapter, assign_scene
 
@@ -91,6 +91,7 @@ class AssistantSnapshotTests(unittest.TestCase):
         "traits": {"emotion": "restrained", "dialogue": "subtextual"},
         "guidance": ["Keep action spatially clear."], "avoid": ["Melodrama."],
         "exemplar_scene_ids": ["scene-0001"],
+        "exemplar_digests": {"scene-0001": hashlib.sha256(get_scene(paths, "scene-0001")["body"].encode()).hexdigest()},
         "observations": [{"scene_id": "scene-0001", "aspect": "sound", "observation": "analysis-not-for-mobile", "excerpt": "A bell rings."}],
         "metrics": {"private_analysis": "not-for-mobile"},
       })

@@ -13,7 +13,9 @@
         "Visible uncertainty, strengths, review limits and minimal intervention",
         "Approved Writing Voice guidance included in selection and chapter preparation with stale-context checks",
         "Read-only critique cannot be applied as a prose mutation",
-        "Unique exact source quotation can recover inaccurate provider offsets, with disclosed correction and unchanged raw feedback"
+        "Unique exact source quotation can recover inaccurate provider offsets, with disclosed correction and unchanged raw feedback",
+        "Fresh Writing Voice analysis aligns captured exemplar/source versions so approved learned guidance reaches revision context",
+        "Malformed supplied Writing Voice source-version maps are rejected before saving; legacy malformed metadata stays unverified"
       ],
       "verification": [
         "tests/test_editorial_review.py",
@@ -22,11 +24,16 @@
         "docs/evaluations/connected-editorial-2026-10-02/local-results.json",
         "docs/evaluations/connected-editorial-2026-10-02/live-results-original.json",
         "docs/evaluations/connected-editorial-2026-10-02/live-results-verified.json",
-        "docs/evaluations/connected-editorial-2026-10-02/assessment.md"
+        "docs/evaluations/connected-editorial-2026-10-02/assessment.md",
+        "tests/test_writing_voice.py",
+        "docs/evaluations/connected-voice-2026-10-02/verification.json",
+        "docs/evaluations/connected-voice-2026-10-02/review.md",
+        "tests/test_style_profile_source_metadata.py",
+        "docs/evaluations/voice-source-metadata-2026-10-02/verification.json"
       ],
       "remaining": [
         "Author assessment of connected chapter critique, including omissions, false alarms and kept/rejected edits",
-        "Evaluate live approved Writing Voice revisions and refinement across fresh original chapters"
+        "Complete refinement and author assessment of fresh connected Writing Voice revisions; the first two live alternatives introduce a departure ambiguity absent from the source"
       ],
       "status": "in_progress"
     },
@@ -39,17 +46,22 @@
         "Correctable entity types retained across rescans",
         "Source-, suggestion- and Storyline-scoped review versions",
         "Main-editor Memory suggestion inbox with exact evidence, retained corrections and explicit refreshed review",
-        "Entity-type correction refuses an incompatible existing identity before alias mutation"
+        "Entity-type correction refuses an incompatible existing identity before alias mutation",
+        "Typed Memory values validate before new writes while unchanged legacy values remain readable and retained",
+        "Explicit scanning limits describe uncased names and person/place review"
       ],
       "verification": [
         "tests/test_memory_review.py",
         "docs/evaluations/memory-review-2026-10-02/extraction.json",
         "desktop/e2e/memory-review-workspace.spec.ts",
-        "desktop/src/components/editor/MemorySuggestionReview.test.tsx"
+        "desktop/src/components/editor/MemorySuggestionReview.test.tsx",
+        "tests/test_memory_detail_values.py",
+        "desktop/src/StoryMemoryEditor.values.test.tsx",
+        "docs/evaluations/memory-values-2026-10-02/verification.json"
       ],
       "remaining": [
         "Observe author review time, omissions and unwanted suggestions on fresh original prose",
-        "Address or explicitly scope uncased-script extraction and ambiguous capitalized entity types"
+        "Improve uncased-script extraction and ambiguous capitalized entity types; their current limits are disclosed in the Inbox"
       ],
       "status": "in_progress"
     },
@@ -62,7 +74,8 @@
         "Selection actions outside scrolling context",
         "Arrow/Home/End continuity navigation",
         "Exact-text word comparison with additions/removals",
-        "WebKit first-focus caret restored after native focus handling; pointer choice and latest caret preserved"
+        "WebKit first-focus caret restored after native focus handling; pointer choice and latest caret preserved",
+        "Stale chat reconciles completed/indeterminate delivery before fresh context review; the old request ID closes durably and one-time grants reset"
       ],
       "verification": [
         "docs/evaluations/daily-review-2026-10-02/verification.json",
@@ -70,7 +83,9 @@
         "desktop/src/passageComparison.test.ts",
         "desktop/e2e/caret-keyboard.spec.ts",
         "docs/evaluations/caret-focus-2026-10-02/verification.json",
-        "docs/evaluations/project-completion-2026-10-02/native-gui.json"
+        "docs/evaluations/project-completion-2026-10-02/native-gui.json",
+        "tests/test_chat_delivery_recovery.py",
+        "desktop/e2e/chat-delivery-recovery.spec.ts"
       ],
       "remaining": [
         "Physical/native accessibility walkthrough, including VoiceOver and long writing sessions"
@@ -111,14 +126,17 @@
         "Recovery at the shared lock before cooperating reads",
         "Explicit fingerprint-guarded recovery comparison and resolution",
         "Committed recovery journals cannot be rolled back by resolution choices",
-        "Cross-project configuration restores rejected before mutation; selected prose remains separately restorable"
+        "Cross-project configuration restores rejected before mutation; selected prose remains separately restorable",
+        "Empty parts/chapters and outline-only books survive export, preview and import without phantom scenes"
       ],
       "verification": [
         "tests/test_book_transactions.py",
         "docs/manuscript-transactions.md",
         "scripts/verify_packaged_recovery.py",
         "docs/evaluations/project-completion-2026-10-02/native-bundle.json",
-        "docs/evaluations/project-completion-2026-10-02/native-gui.json"
+        "docs/evaluations/project-completion-2026-10-02/native-gui.json",
+        "tests/test_outline_roundtrip.py",
+        "docs/evaluations/outline-roundtrip-2026-10-02/roundtrip.json"
       ],
       "remaining": [
         "Full signed/clean-machine multi-scene GUI recovery and upgrade acceptance",
@@ -140,7 +158,9 @@
       "verification": [
         "scripts/verify_macos_bundle.sh",
         ".github/workflows/package-macos.yml",
-        ".github/workflows/release-macos.yml"
+        ".github/workflows/release-macos.yml",
+        "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
+        "docs/evaluations/project-completion-2026-10-02/forge-reachability.md"
       ],
       "remaining": [
         "Developer ID signing and notarization",
@@ -163,23 +183,24 @@
   "date": "2026-10-02",
   "local_verification": {
     "python_3_13": {
-      "discovered": 494,
-      "passed": 493,
+      "discovered": 530,
+      "passed": 529,
       "optional_runtime_skipped": 1
     },
     "actual_packaged_python_3_11": {
       "discovered": 494,
       "passed": 494,
-      "skipped": 0
+      "skipped": 0,
+      "checkpoint": "previous implementation; packaged verification will be refreshed"
     },
     "desktop": {
-      "tests": 374,
-      "files": 74,
+      "tests": 406,
+      "files": 76,
       "typecheck_build": "passed",
       "native_caret_repair": "passed actual keyboard insertion after SIGKILL",
       "webkit_focus_and_evidence_journeys": 2,
       "chromium_focus_and_evidence_journeys": 2,
-      "full_browser_journeys": 15
+      "full_browser_journeys": 17
     },
     "mobile": {
       "tests": 126,
@@ -204,7 +225,8 @@
         "high_entries": 5,
         "underlying_advisories": 1,
         "advisory": "GHSA-86w9-cpqp-85rv",
-        "patched_release": "none at verification"
+        "patched_release": "none at verification",
+        "reachability": "Affected verifier reached by installed Expo signing helpers; current no-signing configuration exits offline; fresh web/iOS/Android JavaScript exports omit affected modules. Signed-runtime/future-config certification not observed."
       }
     },
     "connected_editorial": {
@@ -217,6 +239,16 @@
       "critique_apply_refused": true,
       "finding_validation": "originally withheld; local reparsing of same retained response verifies one finding with disclosed unique-exact-quote offset correction",
       "author_review": "not_observed"
+    },
+    "connected_voice": {
+      "provider_calls": 3,
+      "resolved_model": "gpt-5.6-sol",
+      "input_tokens": 11508,
+      "output_tokens": 2757,
+      "source_unchanged": true,
+      "literary_acceptance": "not_observed",
+      "initial_alternatives": "require_revision",
+      "refinement": "approval_pending"
     }
   },
   "known_code_gaps": [
@@ -227,30 +259,39 @@
         "tests/test_memory_review.py"
       ],
       "scope": "Current authored extraction cases preserve two uncased-name misses and two place/character type errors."
-    },
+    }
+  ],
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
+  "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",
       "evidence": [
-        "openauthor/codex.py"
+        "tests/test_memory_detail_values.py",
+        "desktop/src/StoryMemoryEditor.values.test.tsx"
       ],
-      "scope": "Current helper accepts malformed number, boolean and date values; review and validation remain needed."
+      "scope": "New typed values and malformed collections fail before mutation. Unchanged legacy values are preserved; deliberately edited values must validate."
     },
     {
       "name": "Empty imported/exported outline containers",
       "evidence": [
-        "openauthor/import_structure.py",
-        "openauthor/manuscript_io.py"
+        "tests/test_outline_roundtrip.py",
+        "docs/evaluations/outline-roundtrip-2026-10-02/roundtrip.json"
       ],
-      "scope": "Bodyless parts/chapters are omitted on re-import without a specific warning. Saved prose is not reported lost."
+      "scope": "Markdown schema-1 and marked DOCX round trips preserve empty containers; unsupported/ambiguous headings and flattening remain disclosed."
     },
     {
       "name": "Fresh-context recovery for stale chat",
       "evidence": [
-        "desktop/src/chatDeliverySession.ts",
-        "desktop/src/components/secondary/ChatPanel.tsx"
+        "tests/test_chat_delivery_recovery.py",
+        "desktop/e2e/chat-delivery-recovery.spec.ts"
       ],
-      "scope": "Pending chat can retry its immutable stale reviewed payload or discard; safe re-review must first reconcile any completed result."
+      "scope": "Old delivery is reconciled/closed before fresh review. Completed receipts recover without inference; unresolved completed turns remain blocked."
     }
   ],
-  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
+  "approval_pending": {
+    "action": "One additional synthetic Writing Voice refinement subscription call",
+    "reason": "Automatic approval review rejected fourth call beyond three-call authorization.",
+    "question_status": "sent; no human reply observed",
+    "feedback": "docs/evaluations/connected-voice-2026-10-02/refinement-feedback.txt"
+  }
 }

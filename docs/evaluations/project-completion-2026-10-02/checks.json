@@ -4,11 +4,11 @@
   "checks": [
     {
       "check": "default_core",
-      "discovered": 494,
-      "passed": 493,
+      "discovered": 530,
+      "passed": 529,
       "skipped": 1,
-      "log_sha256": "d9b1421953ff525320fe72d87e64bf646682887c391477f9594a3a1c5ed2fbd5",
-      "development_log_path": "/private/tmp/openauthor-core-final-2026-10-02.log"
+      "log_sha256": "c53bf31b30c01ef4954c43af26d3d0865dead43e703b9b0ba3c51548645f7760",
+      "development_log_path": "/private/tmp/openauthor-core-verified-new-gaps-2026-10-02.log"
     },
     {
       "check": "actual_packaged_core",
@@ -16,23 +16,24 @@
       "passed": 494,
       "skipped": 0,
       "log_sha256": "00830a7ae2eb3ed1e69d1ac929c012947d92d6b86180e7b510b9db1217cfcd63",
-      "development_log_path": "/private/tmp/openauthor-packaged-core-reviewed-final-2026-10-02.log"
+      "development_log_path": "/private/tmp/openauthor-packaged-core-reviewed-final-2026-10-02.log",
+      "checkpoint": "previous implementation; packaged verification will be refreshed"
     },
     {
       "check": "desktop_unit",
-      "discovered": 374,
-      "passed": 374,
+      "discovered": 406,
+      "passed": 406,
       "skipped": 0,
-      "log_sha256": "c06adddf4ece1fb45b4177237853dcf590ce7bf0fd4988efead09e5360be6861",
-      "development_log_path": "/private/tmp/openauthor-desktop-caret-replacement-final-2026-10-02.log"
+      "log_sha256": "85ec568ef9f4dde435e790c1e91fd82196ea6704f9c3df5a61fc99aa163b9784",
+      "development_log_path": "/private/tmp/openauthor-chat-isolation-full-final-2026-10-02.log"
     },
     {
       "check": "desktop_full_browser",
-      "discovered": 15,
-      "passed": 15,
+      "discovered": 17,
+      "passed": 17,
       "skipped": 0,
-      "log_sha256": "53d2c6396ffb4206f9bad894a6c4764c1b89880e45c01595a9ae891f0f6671cb",
-      "development_log_path": "/private/tmp/openauthor-desktop-browser-selection-final-2026-10-02.log"
+      "log_sha256": "44f2ad8c57eed22ba14f30d68542785901e54815db61455cb22022d627cbc1c3",
+      "development_log_path": "/private/tmp/openauthor-desktop-browser-final-new-gaps-2026-10-02.log"
     }
   ],
   "other_evidence": [
@@ -40,7 +41,13 @@
     "../../../mobile/evidence/2026-10-02-reading-capture-recovery/verification.json",
     "dependencies.json",
     "native-gui.json",
-    "native-bundle.json"
+    "native-bundle.json",
+    "../connected-voice-2026-10-02/verification.json",
+    "../memory-values-2026-10-02/verification.json",
+    "../outline-roundtrip-2026-10-02/roundtrip.json",
+    "../chat-recovery-2026-10-02/verification.json",
+    "../voice-source-metadata-2026-10-02/verification.json",
+    "forge-reachability.json"
   ],
   "limits": [
     "No author acceptance",

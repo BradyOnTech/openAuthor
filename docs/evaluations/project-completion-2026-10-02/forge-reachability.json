@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T14:10:43.230Z",
+  "scope": "Read-only installed-source analysis and offline synthetic probes; no crypto patch, audit suppression, signing credentials or deployed authorization",
+  "advisory": {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "cve": "CVE-2026-85393",
+    "affected": "<=1.4.0",
+    "patched_version": null,
+    "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+    "pending_upstream_patch": "https://github.com/digitalbazaar/forge/pull/1152"
+  },
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0"
+  },
+  "resolved_config": {
+    "has_code_signing_certificate": false,
+    "has_code_signing_metadata": false,
+    "has_eas_project_id": false
+  },
+  "offline_config_checks": [
+    {
+      "name": "no signature header",
+      "returned": null
+    },
+    {
+      "name": "Expo root header without EAS ID",
+      "returned": null
+    },
+    {
+      "name": "project key header without signing certificate",
+      "returned": null
+    }
+  ],
+  "network_attempts": 0,
+  "positive_primitive_reachability": {
+    "installed_library_verifier_calls": 3,
+    "default_generated_rsa_exponent": "65537",
+    "exercised": [
+      "validateSelfSignedCertificate → X509 certificate.verify → RSA publicKey.verify",
+      "signBufferRSASHA256AndVerify → RSA publicKey.verify",
+      "generateDevelopmentCertificateFromCSR → CSR.verify → RSA publicKey.verify"
+    ],
+    "exploit_demonstrated": false,
+    "private_keys_persisted": false
+  },
+  "existing_export_bundles": [
+    {
+      "file": "mobile/.expo/recovery-native-preflight/_expo/static/js/android/index-e404370219ba801594d0c921b0b82980.hbc",
+      "sha256": "0eb28770b27c41ad06c63e96f9e0b7d962ee8b006a9b2eaa5793dec4188cf520",
+      "size_bytes": 3016188,
+      "matching_verifier_strings": []
+    },
+    {
+      "file": "mobile/.expo/recovery-native-preflight/_expo/static/js/ios/index-9fef5d2f7eb86a16b6d4f202e01a085e.hbc",
+      "sha256": "8bab2b8fcb752ece5e142f3505cb99ada7d0b1ed9066449a691bbdf25a9395fb",
+      "size_bytes": 3010742,
+      "matching_verifier_strings": []
+    },
+    {
+      "file": "mobile/.expo/recovery-native-preflight/_expo/static/js/web/index-968b6673b5611df63663804035c5c8d4.js",
+      "sha256": "c45c43c184e062e3765f694df9bf70160e0a422acfaeacde0c65c8bdbeba9194",
+      "size_bytes": 1382357,
+      "matching_verifier_strings": []
+    }
+  ],
+  "offline_source_map_export": {
+    "command": "EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo export --platform all --source-maps --output-dir /private/tmp/openauthor-forge-source-map-inspection",
+    "maps": [
+      {
+        "file": "source-map-export/_expo/static/js/android/index-3183c6da3be0e245e1b28d3abd60187a.hbc.map",
+        "sha256": "407be391df2e7d798fa48393bb83836e06697c8c307a67356fe435077c1d7cba",
+        "source_count": 846,
+        "included_affected_modules": [],
+        "included_cli_modules": [
+          "/node_modules/expo/node_modules/@expo/cli/build/metro-require/require.js"
+        ],
+        "bundle_sha256": "b7595b19b8f2d76e567376f28577535787454f8e865bcccc73afbc1ddd1b8436"
+      },
+      {
+        "file": "source-map-export/_expo/static/js/ios/index-b97287447d61bb034c098a9bf6dda954.hbc.map",
+        "sha256": "8e21c77ce3295e045a42e9d56216eaf5476c5cf83360f0a53985c5bfdaee6835",
+        "source_count": 848,
+        "included_affected_modules": [],
+        "included_cli_modules": [
+          "/node_modules/expo/node_modules/@expo/cli/build/metro-require/require.js"
+        ],
+        "bundle_sha256": "a5b0fb29f566abca58e85f805f476f0baf2c312528d7684fdbbbd7db5aaab906"
+      },
+      {
+        "file": "source-map-export/_expo/static/js/web/index-551b7da24958566b86374098fd28bda1.js.map",
+        "sha256": "a2c9ab4994ac5f2abc3f167cbb8e777dc135a75b940dc2bfbb5a140d21f009c6",
+        "source_count": 402,
+        "included_affected_modules": [],
+        "included_cli_modules": [
+          "/node_modules/expo/node_modules/@expo/cli/build/metro-require/require.js"
+        ],
+        "bundle_sha256": "146896ec141f4169647142b04589066c946ce336518c5d8893efb8daebeb73ec"
+      }
+    ],
+    "retained_module_lists": "forge-module-lists.json",
+    "module_lists_sha256": "40bf276ccba81dca02b0b739152d73b94a83b2c1f8ffb3ee963884e084c4fd90",
+    "interpretation": "Forge, the certificate helper and Expo signing modules are absent from these three Metro module lists. The Expo CLI Metro require loader is present. This is not evidence about native OS signing, embedded native libraries, EAS servers or future configured update pipelines."
+  },
+  "source_sha256": {
+    "mobile/app.json": "6b4595e91d9785ec19455d039d668c62f03fb9c7327f5d1ff6c2a812cba63a5f",
+    "mobile/eas.json": "6d46bcbded5224fabd27cb6c5b8e98a44189277bbfa41bbaa0d2dcb44af46b48",
+    "mobile/package-lock.json": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968",
+    "mobile/node_modules/@expo/code-signing-certificates/build/main.js": "3670cfbd69934b475257649886517d0314890ca4139708d2c812efaab04bc6d1",
+    "mobile/node_modules/node-forge/lib/rsa.js": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+    "mobile/node_modules/node-forge/lib/x509.js": "cce5b00838c8c08486964c1f62cb8ae3491365509b26a27cfe1917f73dee3be9",
+    "mobile/node_modules/expo/node_modules/@expo/cli/build/src/utils/codesigning.js": "935fadac6f1dc56bc088acb04416d1fc83bd70505f368b87dd210d0aa4617de2",
+    "mobile/node_modules/expo/node_modules/@expo/cli/build/src/start/server/middleware/ExpoGoManifestHandlerMiddleware.js": "27f19b87c5662a5dbf88372e3354e36311546fb276585a05a63717b509c70217",
+    "mobile/node_modules/expo/node_modules/@expo/cli/build/src/run/ios/codeSigning/Security.js": "af3f12dfb57ef87ae4cb3903af4398eeb034750c08d4fe523bc6a7d3062998b2"
+  },
+  "remaining_gate": "Supported patched release or reviewed tested mitigation/replacement; re-audit signing/update configurations and resulting artifacts. Current mobile audit remains 5 high entries from one underlying advisory."
+}

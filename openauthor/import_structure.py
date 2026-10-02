@@ -3,9 +3,17 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
 from .project import OpenAuthorError
+
+
+@dataclass
+class ResolvedManuscript:
+  """Prose and ordered outline boundaries, including containers without prose."""
+  scenes: list[dict[str, Any]]
+  outline: list[dict[str, Any]]
 
 
 def correct_sections(sections: list[dict[str, Any]], corrections: dict[str, Any] | None) -> None:
@@ -61,6 +69,9 @@ def split_sections(text: str, fallback: str, *, markdown: bool) -> list[dict[str
 
 def infer_section_roles(sections: list[dict[str, Any]]) -> None:
   for index, section in enumerate(sections):
+    # Exported DOCX paragraph styles provide explicit, editable roles.
+    if section.get("role"):
+      continue
     descendants: list[int] = []
     for following in sections[index + 1:]:
       if following["level"] <= section["level"]:
@@ -80,8 +91,9 @@ def infer_section_roles(sections: list[dict[str, Any]]) -> None:
     section["role"] = role
 
 
-def resolve_sections(sections: list[dict[str, Any]], warnings: list[str]) -> list[dict[str, Any]]:
+def resolve_sections(sections: list[dict[str, Any]], warnings: list[str]) -> ResolvedManuscript:
   scenes: list[dict[str, Any]] = []
+  outline: list[dict[str, Any]] = []
   group = ""
   act: dict[str, Any] | None = None
   chapter: dict[str, Any] | None = None
@@ -96,10 +108,20 @@ def resolve_sections(sections: list[dict[str, Any]], warnings: list[str]) -> lis
         act = chapter = None
       if chapter and section["level"] <= chapter["level"]:
         chapter = None
+    if (role == "act" and act) or (role == "chapter" and chapter):
+      warnings.append(f"Nested {role} '{section['title']}' is flattened to the supported part/chapter hierarchy. Check its parentage in the resulting reading order.")
     if role == "act":
       act, chapter = section, None
     elif role == "chapter":
       chapter = section
+    location = {
+      "act_key": act["id"] if act else (f"file:{group}" if chapter else ""),
+      "act_title": act["title"] if act else section["root_title"],
+      "chapter_key": chapter["id"] if chapter else (f"{act['id']}:scenes" if act else ""),
+      "chapter_title": chapter["title"] if chapter else ("Opening" if act else ""),
+    }
+    if role in {"act", "chapter"}:
+      outline.append({"role": role, **location})
     body = section["body"]
     if role == "text":
       body = "\n\n".join(value for value in (section["heading"], body) if value)
@@ -114,18 +136,20 @@ def resolve_sections(sections: list[dict[str, Any]], warnings: list[str]) -> lis
       "title": section["title"], "body": body,
       "metadata": section.get("metadata", {}),
       "source_path": source, "source_format": section["source_format"],
-      "act_key": act["id"] if act else (f"file:{group}" if chapter else ""),
-      "act_title": act["title"] if act else section["root_title"],
-      "chapter_key": chapter["id"] if chapter else (f"{act['id']}:scenes" if act else ""),
-      "chapter_title": chapter["title"] if chapter else ("Opening" if act else ""),
+      **location,
     })
-  return scenes
+    outline.append({"role": "scene", "scene_index": len(scenes) - 1, **location,
+                    "source_path": source})
+  return ResolvedManuscript(scenes, outline)
 
 
-def append_import_structure(plan: dict[str, Any], scenes: list[dict[str, Any]], ids: list[str]) -> None:
-  if not any(scene["chapter_key"] for scene in scenes):
+def append_import_structure(plan: dict[str, Any], manuscript: ResolvedManuscript, ids: list[str]) -> list[dict[str, Any]]:
+  """Append the reviewed outline, returning imported acts without existing-prose wrappers."""
+  if len(ids) != len(manuscript.scenes):
+    raise OpenAuthorError("Import scene identifiers do not match the resolved manuscript.")
+  if not any(item["role"] in {"act", "chapter"} or item["chapter_key"] for item in manuscript.outline):
     plan["unassigned_scene_ids"].extend(ids)
-    return
+    return []
 
   def new_act(title: str) -> dict[str, Any]:
     act = {"id": f"act-{uuid.uuid4().hex[:10]}", "title": title, "synopsis": "", "position": len(plan["acts"]) + 1, "chapters": []}
@@ -141,15 +165,20 @@ def append_import_structure(plan: dict[str, Any], scenes: list[dict[str, Any]], 
   if plan["unassigned_scene_ids"]:
     new_chapter(new_act("Existing manuscript"), "Unassigned scenes", list(plan["unassigned_scene_ids"]))
     plan["unassigned_scene_ids"] = []
+  imported_start = len(plan["acts"])
   act_key = chapter_key = None
   act = chapter = None
-  for scene, identifier in zip(scenes, ids):
-    next_act = scene["act_key"] or f"file:{scene['source_path']}"
-    next_chapter = scene["chapter_key"] or f"{next_act}:unassigned"
+  for item in manuscript.outline:
+    next_act = item["act_key"] or f"file:{item['source_path']}"
+    next_chapter = item["chapter_key"] or f"{next_act}:unassigned"
     if act_key != next_act:
-      act = new_act(scene["act_title"] or "Imported manuscript")
+      act = new_act(item["act_title"] or "Imported manuscript")
       act_key, chapter_key = next_act, None
+    if item["role"] == "act":
+      continue
     if chapter_key != next_chapter:
-      chapter = new_chapter(act, scene["chapter_title"] or "Opening", [])
+      chapter = new_chapter(act, item["chapter_title"] or "Opening", [])
       chapter_key = next_chapter
-    chapter["scene_ids"].append(identifier)
+    if item["role"] == "scene":
+      chapter["scene_ids"].append(ids[item["scene_index"]])
+  return plan["acts"][imported_start:]

@@ -66,19 +66,20 @@ function ThreadPanel() {
   const { tabs, activeTabId, openTab } = useEditor();
   const session = useMemo(() => chatDeliverySession(projectRoot, activeChatThreadId), [projectRoot, activeChatThreadId]);
   const delivery = useSyncExternalStore(session.subscribe, session.getSnapshot);
-  const chatSending = delivery.sending;
+  const chatSending = delivery.sending || delivery.reconciling;
   const stream: ChatStream | null = delivery.sending && delivery.pending
     ? { requestId: delivery.requestId, userText: delivery.pending.message, text: delivery.text }
     : null;
   const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
   const [regenerationReview, setRegenerationReview] = useState<ChatSendPayload | null>(null);
+  const [recoveryReview, setRecoveryReview] = useState<ChatSendPayload | null>(null);
 
   useEffect(() => {
-    if (!delivery.sending) {
+    if (!delivery.sending && !delivery.reconciling) {
       void refreshChatMessages();
       void refreshChatThreads();
     }
-  }, [delivery.sending, refreshChatMessages, refreshChatThreads]);
+  }, [delivery.sending, delivery.reconciling, refreshChatMessages, refreshChatThreads]);
 
   if (!projectFound) {
     return (
@@ -216,12 +217,13 @@ function ThreadPanel() {
       {delivery.error && (
         <div role="status" className="chat-recovery" style={{ padding: "var(--space-3)", fontSize: "var(--text-sm)", borderTop: "1px solid var(--border-default)" }}>
           <p>{delivery.error}</p>
-          {delivery.pending && !chatSending && <>
-            <p style={{ whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>{delivery.pending.message}</p>
-            <p>Your prompt is saved on this device. Retry recovers a completed reply when available; a new provider attempt may incur charges. Discard only removes this saved retry, not an already-delivered chat turn.</p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn--ai" style={{ minHeight: 40 }} onClick={() => void session.retry()}>Retry message</button>
-              <button className="btn" style={{ minHeight: 40 }} onClick={session.discard}>Discard retry</button>
+          {(delivery.pending || delivery.reviewDraft) && !chatSending && !recoveryReview && <>
+            <p style={{ whiteSpace: "pre-wrap", maxHeight: 120, overflowY: "auto" }}>{(delivery.pending || delivery.reviewDraft)!.message}</p>
+            <p>Your prompt is saved on this device. {delivery.pending ? "Retry recovers a completed reply when available; a new provider attempt may incur charges. Review current context checks for a saved reply first and asks again before a new attempt." : "The previous request is closed. Fresh context and one-time permissions must be reviewed before sending."} Discard only removes this saved question, not an already-delivered chat turn.</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {delivery.pending && <button className="btn btn--ai" style={{ minHeight: 40 }} onClick={() => void session.retry()}>Retry message</button>}
+              <button className="btn" style={{ minHeight: 40 }} disabled={recoveryReview !== null} onClick={() => void session.prepareReview().then(draft => { if (draft) setRecoveryReview(draft); })}>Review current context</button>
+              <button className="btn" style={{ minHeight: 40 }} disabled={recoveryReview !== null} onClick={session.discard}>Discard retry</button>
             </div>
           </>}
         </div>
@@ -230,7 +232,7 @@ function ThreadPanel() {
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
         sending={chatSending}
-        recoveryPending={delivery.pending !== null}
+        recoveryPending={delivery.pending !== null || delivery.reviewDraft !== null}
         streaming={stream !== null}
         scenes={scenes}
         codexEntities={codexEntities}
@@ -241,8 +243,10 @@ function ThreadPanel() {
         editing={editing}
         editDiscardCount={editDiscardCount}
         onCancelEdit={() => setEditing(null)}
-        externalReview={regenerationReview}
-        onExternalReviewClosed={() => setRegenerationReview(null)}
+        externalReview={recoveryReview || regenerationReview}
+        onExternalReviewSend={recoveryReview ? payload => session.sendReviewed(payload) : undefined}
+        onExternalQuestionChange={recoveryReview ? message => { const draft = session.updateReviewQuestion(message); if (draft) setRecoveryReview(draft); } : undefined}
+        onExternalReviewClosed={() => { setRegenerationReview(null); setRecoveryReview(null); }}
       />
     </div>
   );
@@ -993,6 +997,8 @@ function Composer({
   editDiscardCount,
   onCancelEdit,
   externalReview,
+  onExternalReviewSend,
+  onExternalQuestionChange,
   onExternalReviewClosed,
 }: {
   projectRoot: string;
@@ -1010,6 +1016,8 @@ function Composer({
   editDiscardCount: number;
   onCancelEdit: () => void;
   externalReview: ChatSendPayload | null;
+  onExternalReviewSend?: (payload: ChatSendPayload) => Promise<boolean>;
+  onExternalQuestionChange?: (message: string) => void;
   onExternalReviewClosed: () => void;
 }) {
   const [text, setText] = useState("");
@@ -1185,7 +1193,7 @@ function Composer({
   }
 
   const contextReview = externalReview || reviewPayload;
-  if (contextReview) return <ChatContextReview key={externalReview ? `regenerate:${externalReview.replacementFromMessageId}` : "composer"} projectRoot={projectRoot} payload={contextReview} historyBeforeMessageId={contextReview.replacementFromMessageId || editing?.messageId} onSend={sendPayload} onClose={() => { setReviewPayload(null); onExternalReviewClosed(); }} />;
+  if (contextReview) return <ChatContextReview key={externalReview ? `external:${externalReview.replacementFromMessageId ?? "recovery"}` : "composer"} projectRoot={projectRoot} payload={contextReview} historyBeforeMessageId={contextReview.replacementFromMessageId || editing?.messageId} onSend={externalReview && onExternalReviewSend ? onExternalReviewSend : sendPayload} onQuestionChange={onExternalQuestionChange} onInterrupt={onInterrupt} onClose={() => { setReviewPayload(null); onExternalReviewClosed(); }} />;
 
   return (
     <div className="chat-composer-wrap">

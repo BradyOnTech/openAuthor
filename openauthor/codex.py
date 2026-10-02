@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import math
+import re
 import sqlite3
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -114,15 +117,23 @@ def _clean_strings(values: list[Any] | None) -> list[str]:
   return cleaned
 
 
-def _clean_details(values: list[Any] | None) -> list[dict[str, Any]]:
+def _clean_details(values: list[Any] | None, *, strict: bool = False) -> list[dict[str, Any]]:
+  if strict and values is not None and not isinstance(values, list):
+    raise OpenAuthorError("Invalid detail list: provide a JSON array of detail records.")
   cleaned: list[dict[str, Any]] = []
   seen: set[str] = set()
   for value in values or []:
     if not isinstance(value, dict):
+      if strict:
+        raise OpenAuthorError("Invalid detail record: each detail must have a key, type and value.")
       continue
+    if strict and not isinstance(value.get("key"), str):
+      raise OpenAuthorError("Invalid detail key: use a nonempty text key.")
     key = str(value.get("key", "")).strip()
     detail_type = str(value.get("type", "text")).strip().lower()
     if not key or key.casefold() in seen:
+      if strict:
+        raise OpenAuthorError("Invalid detail key: use nonempty, unique keys; remove a detail explicitly to delete it.")
       continue
     if detail_type not in DETAIL_TYPES:
       raise OpenAuthorError(f"Invalid detail type '{detail_type}'.")
@@ -137,6 +148,63 @@ def _clean_details(values: list[Any] | None) -> list[dict[str, Any]]:
     })
     seen.add(key.casefold())
   return cleaned
+
+
+def _valid_json_value(value: Any) -> bool:
+  if value is None or type(value) in {str, bool}:
+    return True
+  if type(value) is int:
+    return abs(value) <= 9007199254740991
+  if type(value) is float:
+    return math.isfinite(value) and (not value.is_integer() or abs(value) <= 9007199254740991)
+  if isinstance(value, list):
+    return all(_valid_json_value(item) for item in value)
+  if isinstance(value, dict):
+    return all(type(key) is str and _valid_json_value(item) for key, item in value.items())
+  return False
+
+
+def _validate_detail_values(paths: ProjectPaths, details: list[dict[str, Any]], previous: list[dict[str, Any]] | None = None) -> None:
+  """Validate new values without coercing or blocking untouched legacy data."""
+  for detail in details:
+    kind, value = detail["type"], detail["value"]
+    old = next((row for row in previous or [] if row.get("key", "").casefold() == detail["key"].casefold()
+      and row.get("type") == kind), None)
+    if old is not None and type(value) is type(old.get("value")):
+      try:
+        if json.dumps(value, sort_keys=True) == json.dumps(old.get("value"), sort_keys=True):
+          continue
+      except (TypeError, ValueError):
+        pass
+    requirement = ""
+    if kind == "text" and not isinstance(value, str):
+      requirement = "use text"
+    elif kind == "number" and (type(value) not in {int, float} or not _valid_json_value(value)):
+      requirement = "use a finite JSON number; integers must be within ±9007199254740991"
+    elif kind == "boolean" and type(value) is not bool:
+      requirement = "use the JSON boolean true or false"
+    elif kind == "date":
+      try:
+        if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+          raise ValueError("invalid date")
+        date.fromisoformat(value)
+      except ValueError:
+        requirement = "use a valid calendar date in YYYY-MM-DD format"
+    elif kind == "list" and (not isinstance(value, list) or not _valid_json_value(value)):
+      requirement = "use a JSON array with finite JSON values and string object keys"
+    elif kind in {"entity", "scene"}:
+      try:
+        if not isinstance(value, str) or not value:
+          raise OpenAuthorError("missing reference")
+        if kind == "entity":
+          get_entity(paths, value)
+        else:
+          from .scenes import get_scene
+          get_scene(paths, value)
+      except OpenAuthorError:
+        requirement = f"choose a current {'Memory entry' if kind == 'entity' else 'scene'} ID from this book"
+    if requirement:
+      raise OpenAuthorError(f"Invalid detail '{detail['key']}' ({kind}): {requirement}. Your saved values were not changed.")
 
 
 def _validate_codex_snapshot(payload: Any, *, snapshot_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -299,6 +367,8 @@ def add_entity(
     raise OpenAuthorError(f"Invalid Story Memory scope '{scope}'.")
 
   ensure_codex(paths)
+  cleaned_details = _clean_details(details, strict=True)
+  _validate_detail_values(paths, cleaned_details)
   entity_id = f"entity-{uuid.uuid4().hex[:12]}"
   timestamp = utc_now()
   connection = sqlite3.connect(str(paths.codex_db))
@@ -314,7 +384,7 @@ def add_entity(
       (
         entity_id, kind, name.strip(), description, category.strip(),
         json.dumps(_clean_strings(aliases)), json.dumps(_clean_strings(tags)),
-        json.dumps(_clean_details(details)), notes, ai_visibility, scope,
+        json.dumps(cleaned_details), notes, ai_visibility, scope,
         timestamp, timestamp,
       ),
     )
@@ -445,7 +515,9 @@ def update_entity(
   next_category = category if category is not None else current["category"]
   next_aliases = _clean_strings(aliases) if aliases is not None else current["aliases"]
   next_tags = _clean_strings(tags) if tags is not None else current["tags"]
-  next_details = _clean_details(details) if details is not None else current["details"]
+  next_details = _clean_details(details, strict=True) if details is not None else current["details"]
+  if details is not None:
+    _validate_detail_values(paths, next_details, current["details"])
   next_notes = notes if notes is not None else current["notes"]
   next_ai_visibility = ai_visibility if ai_visibility is not None else current["ai_visibility"]
   next_scope = scope if scope is not None else current["scope"]

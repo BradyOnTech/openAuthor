@@ -104,8 +104,9 @@ def suggest_voice(paths: ProjectPaths, *, request: dict[str, Any]) -> dict[str, 
     observations = data.get("observations", [])
     generation_id = reply["generation_id"]
     message = "AI interpretation, not an objective literary assessment. Review the traits and verify every cited passage before saving."
+  source_digests = {row["id"]: hashlib.sha256(row["body"].encode()).hexdigest() for row in scenes}
   profile.update({"exemplar_scene_ids": [row["id"] for row in scenes],
-                  "exemplar_digests": {row["id"]: hashlib.sha256(row["body"].encode()).hexdigest() for row in scenes},
+                  "exemplar_digests": source_digests, "source_digests": source_digests,
                   "observations": observations, "metrics": prose_measures("\n\n".join(row["body"] for row in scenes)) if scenes else {}})
   profile = validate_profile(profile)
   by_id = {row["id"]: row["body"] for row in scenes}

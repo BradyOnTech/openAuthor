@@ -77,7 +77,14 @@ def get_style_profile(paths: ProjectPaths) -> dict[str, Any] | None:
     except (OpenAuthorError, OSError):
       current_sources[scene_id] = None
   recorded = payload.get("source_digests", payload.get("exemplar_digests", {}))
-  verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+  # Old, unverified source metadata remains inspectable without becoming usable
+  # provenance or causing a post-write/read failure. New saves validate it below.
+  if not isinstance(recorded, dict):
+    recorded = {}
+  verified = (bool(current_sources) and set(recorded) == set(current_sources)
+    and (not payload.get("exemplar_digests") or recorded == payload["exemplar_digests"])
+    and all(isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest) for digest in recorded.values())
+    and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION)
   changed = [scene_id for scene_id, digest in current_sources.items() if digest != recorded.get(scene_id) or digest is None]
   freshness = "unknown" if not verified else "stale" if changed else "current"
   manual = "traits" in payload and not current_sources
@@ -103,7 +110,7 @@ def _lines(value: Any, name: str, count: int = 16) -> list[str]:
   return [line for item in value if (line := _text(item, name, 400))]
 
 
-def validate_profile(value: Any) -> dict[str, Any]:
+def validate_profile(value: Any, *, require_verified_sources: bool = False, allow_unverified_sources: bool = False) -> dict[str, Any]:
   if not isinstance(value, dict):
     raise OpenAuthorError("Writing Voice must be a profile object.")
   traits = value.get("traits", {})
@@ -119,6 +126,14 @@ def validate_profile(value: Any) -> dict[str, Any]:
   digests = value.get("exemplar_digests", {})
   if not isinstance(digests, dict) or set(digests) - set(ids) or any(not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest) for digest in digests.values()):
     raise OpenAuthorError("Writing Voice exemplar versions are invalid.")
+  source_digests = value.get("source_digests", digests)
+  if require_verified_sources:
+    if (not isinstance(source_digests, dict)
+        or any(not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest) for digest in source_digests.values())):
+      raise OpenAuthorError("Writing Voice source versions are invalid or incomplete. Analyze the selected exemplars again before saving.")
+    unchanged_unverified = allow_unverified_sources and source_digests == {} and digests == {}
+    if not unchanged_unverified and (set(source_digests) != set(ids) or set(digests) != set(ids) or source_digests != digests):
+      raise OpenAuthorError("Writing Voice source and exemplar versions do not match. Analyze the selected exemplars again before saving.")
   observations = value.get("observations", [])
   if not isinstance(observations, list) or len(observations) > 16:
     raise OpenAuthorError("Writing Voice analysis has too many observations.")
@@ -137,7 +152,7 @@ def validate_profile(value: Any) -> dict[str, Any]:
     "guidance": _lines(value.get("guidance", []), "guidance"), "avoid": _lines(value.get("avoid", []), "avoid"),
     "exemplar_scene_ids": list(dict.fromkeys(ids)), "exemplar_digests": digests,
     "reference_mode": value.get("reference_mode", "current"),
-    "source_digests": value.get("source_digests", digests),
+    "source_digests": source_digests,
     "measurement": value.get("measurement", {"method": "author_approved_traits", "limitations": ["Author preferences are not measured prose quality."]}),
     "observations": evidence, "metrics": metrics, "created_at": _text(value.get("created_at", ""), "created timestamp", 100),
   }
@@ -150,7 +165,12 @@ def save_style_profile(paths: ProjectPaths, *, profile: dict[str, Any], expected
   current = get_style_profile(paths)
   if expected_version != (current["version"] if current else ""):
     raise OpenAuthorError("Writing Voice changed elsewhere or on another Storyline. Your draft was not saved; reload and reconcile it.")
-  checked = validate_profile(profile)
+  # Retain an existing legacy profile's explicitly unverified metadata, but never
+  # introduce missing versions into a new or previously verified profile.
+  keep_unverified = bool(isinstance(profile, dict) and current and current["freshness"] == "unknown"
+    and profile.get("exemplar_scene_ids", []) == current["exemplar_scene_ids"]
+    and current["exemplar_digests"] == {} and current["source_digests"] == {})
+  checked = validate_profile(profile, require_verified_sources=True, allow_unverified_sources=keep_unverified)
   for scene_id, digest in checked["exemplar_digests"].items():
     if hashlib.sha256(get_scene(paths, scene_id)["body"].encode()).hexdigest() != digest:
       raise OpenAuthorError("An exemplar changed after analysis. Analyze it again before approving this profile.")

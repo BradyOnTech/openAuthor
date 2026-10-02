@@ -11,7 +11,13 @@ const repository = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Browser-only transport adapter. Both command results and Assistant events
 // come from the real Python core, using a disposable book and offline provider.
-export async function localBook(page: Page) {
+type SidecarRequest = { id: string; method: string; params: Record<string, unknown> };
+type TransportFaults = {
+  beforeSidecar?: (root: string, request: SidecarRequest) => Promise<void>;
+  afterSidecar?: (root: string, request: SidecarRequest, response: unknown) => Promise<unknown>;
+};
+
+export async function localBook(page: Page, faults: TransportFaults = {}) {
   const sandbox = await realpath(await mkdtemp(join(tmpdir(), "openauthor-journey-")));
   const projectRoot = join(sandbox, "The Lantern Cartographer");
   const env = { ...process.env, PYTHONPATH: repository, OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "", OPENROUTER_API_KEY: "", OPENAUTHOR_CODEX_HOME: join(sandbox, "codex") };
@@ -51,7 +57,7 @@ export async function localBook(page: Page) {
     }
   }
 
-  async function sidecar(root: string, request: { id: string; method: string; params: Record<string, unknown> }) {
+  async function sidecar(root: string, request: SidecarRequest) {
     const cwd = scopedPath(root);
     // Each request uses a fresh stdio process; this tests protocol/UI wiring,
     // not the native bridge's persistent-process lifecycle or interruption.
@@ -90,7 +96,11 @@ export async function localBook(page: Page) {
         return { found: result.status === 0, project_root: root };
       }
       if (command === "core_command") return core(root, payload.args || []);
-      if (command === "sidecar_request") return sidecar(root, payload.request);
+      if (command === "sidecar_request") {
+        await faults.beforeSidecar?.(root, payload.request);
+        const response = await sidecar(root, payload.request);
+        return faults.afterSidecar ? faults.afterSidecar(root, payload.request, response) : response;
+      }
       throw new Error(`Native command not covered by the author journey: ${command}`);
     })();
     pending.add(request);

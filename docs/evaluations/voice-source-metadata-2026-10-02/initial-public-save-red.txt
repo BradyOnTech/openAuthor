@@ -1,0 +1,179 @@
+test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) ...
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests=[]) ... ERROR
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests='bad') ... ERROR
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests=None) ... ERROR
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={}) ... FAIL
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'}) ... FAIL
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874', 'unselected-scene': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'}) ... FAIL
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': 'not-a-sha256', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'}) ... FAIL
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '0000000000000000000000000000000000000000000000000000000000000000', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'}) ... FAIL
+  test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': 31, 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'}) ... FAIL
+test_matching_maps_still_refuse_an_exemplar_changed_after_analysis (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_matching_maps_still_refuse_an_exemplar_changed_after_analysis) ... ok
+test_missing_source_map_uses_verified_exemplar_versions_and_manual_profiles_remain_valid (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_missing_source_map_uses_verified_exemplar_versions_and_manual_profiles_remain_valid) ... ok
+test_new_saves_require_complete_matching_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_new_saves_require_complete_matching_exemplar_versions) ...
+  test_new_saves_require_complete_matching_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_new_saves_require_complete_matching_exemplar_versions) (exemplar_digests={}) ... FAIL
+  test_new_saves_require_complete_matching_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_new_saves_require_complete_matching_exemplar_versions) (exemplar_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'}) ... FAIL
+test_older_unverified_schema_reads_remain_available_without_rewriting (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_older_unverified_schema_reads_remain_available_without_rewriting) ...
+  test_older_unverified_schema_reads_remain_available_without_rewriting (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_older_unverified_schema_reads_remain_available_without_rewriting) (metadata={'source_digests': []}) ... ERROR
+
+======================================================================
+ERROR: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 38, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    save_style_profile(self.paths, profile={**self.saved, "source_digests": source_digests},
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      expected_version=self.saved["version"], expected_scope=self.suggestion["scope"])
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 163, in save_style_profile
+    return get_style_profile(paths)
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in get_style_profile
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in <genexpr>
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                             ^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests='bad')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 38, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    save_style_profile(self.paths, profile={**self.saved, "source_digests": source_digests},
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      expected_version=self.saved["version"], expected_scope=self.suggestion["scope"])
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 163, in save_style_profile
+    return get_style_profile(paths)
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in get_style_profile
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in <genexpr>
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                             ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 38, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    save_style_profile(self.paths, profile={**self.saved, "source_digests": source_digests},
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      expected_version=self.saved["version"], expected_scope=self.suggestion["scope"])
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 163, in save_style_profile
+    return get_style_profile(paths)
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in get_style_profile
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in <genexpr>
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                             ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+
+======================================================================
+ERROR: test_older_unverified_schema_reads_remain_available_without_rewriting (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_older_unverified_schema_reads_remain_available_without_rewriting) (metadata={'source_digests': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 77, in test_older_unverified_schema_reads_remain_available_without_rewriting
+    profile = get_style_profile(self.paths)
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in get_style_profile
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 80, in <genexpr>
+    verified = bool(current_sources) and all(recorded.get(scene_id) for scene_id in current_sources) and payload.get("schema_version") == STYLE_PROFILE_SCHEMA_VERSION
+                                             ^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874', 'unselected-scene': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': 'not-a-sha256', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': '0000000000000000000000000000000000000000000000000000000000000000', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_malformed_new_source_maps_cannot_replace_the_approved_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_malformed_new_source_maps_cannot_replace_the_approved_profile) (source_digests={'scene-0001': 31, 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 37, in test_malformed_new_source_maps_cannot_replace_the_approved_profile
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_new_saves_require_complete_matching_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_new_saves_require_complete_matching_exemplar_versions) (exemplar_digests={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 48, in test_new_saves_require_complete_matching_exemplar_versions
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+======================================================================
+FAIL: test_new_saves_require_complete_matching_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_new_saves_require_complete_matching_exemplar_versions) (exemplar_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 48, in test_new_saves_require_complete_matching_exemplar_versions
+    with self.assertRaisesRegex(OpenAuthorError, "source|exemplar"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: OpenAuthorError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.134s
+
+FAILED (failures=8, errors=4)

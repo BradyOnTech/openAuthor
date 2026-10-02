@@ -8,9 +8,11 @@ type Props = {
   historyBeforeMessageId?: string;
   onSend: (payload: ChatSendPayload) => Promise<boolean>;
   onClose: () => void;
+  onQuestionChange?: (message: string) => void;
+  onInterrupt?: () => void | Promise<void>;
 };
 
-export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId, onSend, onClose }: Props) {
+export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId, onSend, onClose, onQuestionChange, onInterrupt }: Props) {
   const [approvals, setApprovals] = useState<MemoryApproval[]>([]);
   const [storyApprovals, setStoryApprovals] = useState<string[]>([]);
   const [preview, setPreview] = useState<ChatContextPreview | null>(null);
@@ -64,7 +66,7 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
       : current.filter(grant => grant.entity_id !== id || (key !== undefined && grant.detail_key !== key)));
   }
   async function send() {
-    if (!preview || loading || choicesLoading || choicesError || error || sending) return;
+    if (!payload.message.trim() || !preview || loading || choicesLoading || choicesError || error || sending) return;
     setSending(true);
     try {
       if (await onSend({ ...payload, memoryApprovals: approvals, storyApprovals, expectedContextFingerprint: preview.fingerprint })) onClose();
@@ -75,7 +77,9 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
 
   return <section aria-label="Review AI context" className="chat-context-review">
     <header><h3>Review AI context</h3><button className="btn" disabled={sending} onClick={onClose}>Back to message</button></header>
-    <p className="chat-context-review__prompt">{payload.message}</p>
+    {onQuestionChange ? <label>Saved question<textarea className="input chat-context-review__prompt" aria-label="Saved question" value={payload.message} disabled={sending} onChange={event => {
+      setLoading(true); setPreview(null); setApprovals([]); setStoryApprovals([]); onQuestionChange(event.target.value);
+    }} /></label> : <p className="chat-context-review__prompt">{payload.message}</p>}
     <p>Nothing is sent until you choose Send. Private Memory notes and excluded fields are never included. These settings do not redact facts you wrote in scene text or your message.</p>
     {(error || choicesError) && <p role="alert">{choicesError || error}</p>}
     {loading && <p role="status">Updating context…</p>}
@@ -120,8 +124,9 @@ export function ChatContextReview({ projectRoot, payload, historyBeforeMessageId
       <details><summary>Inspect exact initial prompts and history</summary><pre>{JSON.stringify({ system: preview.system_prompt, user: preview.user_prompt, history: preview.history }, null, 2)}</pre></details>
     </>}
     <footer>
+      {sending && onInterrupt && <button className="btn" onClick={() => void onInterrupt()}>Stop</button>}
       <button className="btn" disabled={loading || choicesLoading || sending} onClick={() => { setLoading(true); setPreview(null); setRevision(value => value + 1); }}>Refresh preview</button>
-      <button className="btn btn--ai" disabled={!preview || loading || choicesLoading || Boolean(choicesError) || Boolean(error) || sending} onClick={() => void send()}>{sending ? "Sending…" : "Send reviewed context"}</button>
+      <button className="btn btn--ai" disabled={!payload.message.trim() || !preview || loading || choicesLoading || Boolean(choicesError) || Boolean(error) || sending} onClick={() => void send()}>{sending ? "Sending…" : "Send reviewed context"}</button>
     </footer>
   </section>;
 }

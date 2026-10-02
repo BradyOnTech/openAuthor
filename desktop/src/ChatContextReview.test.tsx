@@ -34,6 +34,23 @@ afterEach(() => {
   delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
 });
 
+it("keeps Stop available while a reviewed turn is running and retains the review after cancellation", async () => {
+  let settle!: (sent: boolean) => void;
+  const stop = vi.fn(async () => {});
+  const close = vi.fn();
+  render(<ChatContextReview projectRoot="/synthetic/cancel-review" payload={{ threadId: "chat-1", message: "Keep this question" }} onSend={() => new Promise(resolve => { settle = resolve; })} onInterrupt={stop} onClose={close} />);
+  await waitFor(() => expect((screen.getByRole("button", { name: "Send reviewed context" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "Send reviewed context" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Stop" }));
+  expect(stop).toHaveBeenCalledTimes(1);
+  expect((screen.getByRole("button", { name: "Back to message" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(close).not.toHaveBeenCalled();
+  settle(false);
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Stop" })).toBeNull());
+  expect(screen.getByText("Keep this question")).toBeTruthy();
+  expect(close).not.toHaveBeenCalled();
+});
+
 it("re-previews story grants and sends the matching fingerprint through the real desktop transport", async () => {
   const sent: ChatSendPayload[] = [];
   render(<ChatContextReview projectRoot="/synthetic/canon" payload={{ threadId: "chat-1", message: "Discuss the gate" }} onSend={async payload => { sent.push(payload); return true; }} onClose={() => {}} />);

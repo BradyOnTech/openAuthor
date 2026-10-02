@@ -139,6 +139,8 @@ export type ManuscriptImportPreview = {
   strategy: "auto" | "files" | "headings" | "single";
   scene_count: number;
   chapter_count: number;
+  act_count?: number;
+  outline?: Array<{ title: string; chapters: Array<{ title: string; scene_positions: number[] }> }>;
   fingerprint: string;
   word_count: number;
   warnings: string[];
@@ -1248,6 +1250,29 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     expected_context_fingerprint: payload.expectedContextFingerprint ?? "",
     context_overrides: Object.keys(contextOverrides).length > 0 ? contextOverrides : null,
   };
+}
+
+export type ChatDeliveryReconciliation = {
+  status: "completed" | "not_delivered" | "indeterminate" | "blocked";
+  can_review: boolean;
+  message: string;
+};
+
+// This operation only reconciles local receipts. It never starts a provider turn.
+export async function reconcileChatDelivery(projectRoot: string, payload: ChatSendPayload): Promise<ChatDeliveryReconciliation> {
+  const requestId = payload.replacementFromMessageId ? payload.turnId : payload.deliveryId;
+  if (!requestId) throw new Error("The saved request has no delivery identity. Keep a copy of the question before discarding it.");
+  try {
+    return await sidecarRequest<ChatDeliveryReconciliation>(projectRoot, nextSidecarRequestId(), "chat.delivery.reconcile", {
+      thread_id: payload.threadId, request_id: requestId, turn_id: payload.turnId ?? "",
+    }, 30_000);
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    // Reconciliation is idempotent and provider-free on both transports.
+    const args = ["chat", "reconcile", "--thread", payload.threadId, "--request-id", requestId];
+    if (payload.turnId) args.push("--turn-id", payload.turnId);
+    return decodeJson<ChatDeliveryReconciliation>(await runCoreCommand(projectRoot, [...args, "--json"]));
+  }
 }
 
 export async function sendChatMessageStreamed(

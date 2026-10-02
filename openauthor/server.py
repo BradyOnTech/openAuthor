@@ -29,6 +29,7 @@ from .chat import (
   list_chat_threads,
   regenerate_chat_turn,
   preview_chat_context,
+  reconcile_chat_delivery,
   send_chat_message,
   truncate_chat_messages,
 )
@@ -342,6 +343,16 @@ class ChatSidecarServer:
         self._paths, **_chat_context_params(params),
         history_before_message_id=str(params.get("history_before_message_id", "")),
       ))
+      return
+    if method == "chat.delivery.reconcile":
+      # Reconciliation waits for the delivery lock. Keep stdin responsive to
+      # Stop requests while a different worker settles the original turn.
+      worker = threading.Thread(target=self._respond_call, args=(request_id, lambda: reconcile_chat_delivery(
+        self._paths, thread_id=str(params.get("thread_id", "")).strip(),
+        request_id=str(params.get("request_id", "")).strip(), turn_id=str(params.get("turn_id", "")).strip(),
+      )), daemon=True)
+      self._workers.append(worker)
+      worker.start()
       return
 
     self._writer.respond(

@@ -1,0 +1,32 @@
+test_frozen_source_versions_must_match_the_selected_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_frozen_source_versions_must_match_the_selected_exemplar_versions) ...
+  test_frozen_source_versions_must_match_the_selected_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_frozen_source_versions_must_match_the_selected_exemplar_versions) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874', 'unselected-scene': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'}) ... FAIL
+  test_frozen_source_versions_must_match_the_selected_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_frozen_source_versions_must_match_the_selected_exemplar_versions) (source_digests={'scene-0001': '0000000000000000000000000000000000000000000000000000000000000000', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'}) ... FAIL
+
+======================================================================
+FAIL: test_frozen_source_versions_must_match_the_selected_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_frozen_source_versions_must_match_the_selected_exemplar_versions) (source_digests={'scene-0001': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874', 'unselected-scene': '11c63bc6e19553269c4ef14ed78873cbf29e33c216a3b0a32881076d8ebc436c'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 109, in test_frozen_source_versions_must_match_the_selected_exemplar_versions
+    self.assertEqual(profile["freshness"], "unknown")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'current' != 'unknown'
+- current
++ unknown
+
+
+======================================================================
+FAIL: test_frozen_source_versions_must_match_the_selected_exemplar_versions (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_frozen_source_versions_must_match_the_selected_exemplar_versions) (source_digests={'scene-0001': '0000000000000000000000000000000000000000000000000000000000000000', 'scene-0002': '0f891bd37fbaa874b60313368f148478f6f0a079f957009d9fb7956ccc601874'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 109, in test_frozen_source_versions_must_match_the_selected_exemplar_versions
+    self.assertEqual(profile["freshness"], "unknown")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'stale' != 'unknown'
+- stale
++ unknown
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.025s
+
+FAILED (failures=2)
