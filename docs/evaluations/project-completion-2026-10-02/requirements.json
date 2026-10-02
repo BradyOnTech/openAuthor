@@ -116,7 +116,9 @@
         "Ambiguous encrypted snapshot publication outcomes retain ciphertext, acknowledge only exact committed metadata, and never automatically delete or retry publication",
         "Current live Auth-session, workspace membership and active-project checks protect ongoing Realtime authority, device registration/token claims, encrypted-sync RPCs and Storage policies; server-owned publishing key state separates active keys from historical envelopes",
         "Server-owned renewable voice leases retain immutable hard deadlines, autonomously poll authority, journal known upstream calls before answer delivery, block issuance during uncertain cleanup and stop retired client media/context; local HTTP/SIGKILL and hosted App controls pass",
-        "Desktop trusted-device review supports deliberate per-book revocation, exact-recipient/version rotation, explicit publication, scoped draft/late-outcome recovery and account-reset redaction; wrong-book recovery keys cannot replace the verified current key"
+        "Desktop trusted-device review supports deliberate per-book revocation, exact-recipient/version rotation, explicit publication, scoped draft/late-outcome recovery and account-reset redaction; wrong-book recovery keys cannot replace the verified current key",
+        "Desktop missing-envelope recovery authenticates the current committed manifest and exact snapshot, then installs only its own exact current-device/version sealed envelope; lost replies receive positive-only exact readback and session/account races remain fenced",
+        "Permanent project namespace tombstones, privileged upload-completion fences and leased orphan-inclusive Storage cleanup preserve pending intent across crash/lost replies; a separate verifier role is required for attested metadata finalization"
       ],
       "verification": [
         "mobile/test/companionRecovery.test.ts",
@@ -133,14 +135,18 @@
         "docs/evaluations/mobile-active-authority-2026-10-02/verification.json",
         "docs/evaluations/voice-session-enforcement-2026-10-02/verification.json",
         "mobile/evidence/2026-10-02-continuous-voice/verification.json",
-        "docs/evaluations/trusted-companion-devices-2026-10-02/results.json"
+        "docs/evaluations/trusted-companion-devices-2026-10-02/results.json",
+        "docs/evaluations/book-key-recovery-2026-10-02/results.json",
+        "docs/evaluations/project-deletion-2026-10-02/results.json",
+        "scripts/verify_project_deletion_concurrency.py"
       ],
       "remaining": [
         "Physical iPhone and Android reading, audio permission/routing, interruption/reconnect and cold restart",
         "Approved deployed connection: authorization, revocation, rotation, deletion and desktop review handoff",
         "Real-device encrypted keys and credential migration acceptance",
-        "Complete orphan-safe encrypted-object deletion; deploy and drill shared quota/live authority/voice leases and trusted-device changes. Strict expiry through gateway host outages needs independent call control, and upstream allocation before durable identification remains unknown.",
-        "Recover a book key when no independently verified current device envelope exists; current unlock safely refuses that case, pending project-bound commitment or snapshot verification."
+        "Apply and drill shared quota/live authority/voice leases/trusted-device/recovery/deletion changes in the approved deployment; establish target Storage in-flight upload, failed-upload queue and backing-version verification before finalization. Multi-project account-deletion orchestration remains unimplemented.",
+        "Strict voice expiry through gateway host outages needs independent call control; upstream allocation before durable identification remains unknown.",
+        "Missing-envelope recovery requires a current committed snapshot or independently verified current key. No-current-snapshot recovery is deliberately refused; a reviewed new rotation or future project-bound commitment is required."
       ],
       "status": "in_progress"
     },
@@ -339,6 +345,44 @@
       "deployed_mutations": 0,
       "live_provider_calls": 0,
       "native_bundle": "Still earlier d5aea8a unsigned development checkpoint; no rebuilt current desktop GUI acceptance claimed"
+    },
+    "key_recovery_checkpoint": {
+      "implementation_commit": "e80ff81",
+      "desktop_tests": 547,
+      "desktop_test_files": 84,
+      "focused_tests": 140,
+      "typecheck_build": "passed",
+      "synthetic_browser_journeys": 3,
+      "database_assertions": 13,
+      "source_and_session_races": "passed",
+      "live_provider_calls": 0,
+      "deployed_acceptance": "not_observed"
+    },
+    "project_deletion_checkpoint": {
+      "implementation_commit": "5fe9d7c",
+      "gateway_tests": 66,
+      "skipped": 0,
+      "typecheck_build": "passed",
+      "database_assertions": 31,
+      "real_database_concurrency_controls": 8,
+      "worker_controls": 15,
+      "worker_sigkill_stages": 2,
+      "real_rpc_to_postgres_worker": "passed with synthetic Storage HTTP metadata effects",
+      "backend_verification": "separate operator attestation; target backing/queue not observed",
+      "account_deletion_orchestration": "not_implemented",
+      "deployed_mutations": 0
+    },
+    "native_bundle_latest": {
+      "source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+      "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+      "application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+      "source_checkout_clean": true,
+      "packaged_sigkill_stages": 5,
+      "runtime_contract": "passed",
+      "unsigned_arm64": true,
+      "release_certified": false,
+      "gui_scope": "Read-only retained-tabs/Plan/prose check recorded separately; no cloud, Keychain, signing or accessibility certificate",
+      "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-5fe9d7c.json"
     }
   },
   "known_code_gaps": [
@@ -351,7 +395,7 @@
       "scope": "The automatic capitalization-based local path retains two uncased-name misses and two place/character type errors in its authored cases. The optional reviewed semantic path is implemented and mechanically verified; provider accuracy on fresh original prose remains unmeasured."
     }
   ],
-  "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+  "implementation_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
   "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",

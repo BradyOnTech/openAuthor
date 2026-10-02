@@ -128,8 +128,8 @@ device/project authority after obtaining its quota lock. Real PostgreSQL checks
 cover concurrent gateways, restart, lost responses and queued revocation; see
 the [quota evidence](../shared-gateway-limiter-2026-10-02/review.md). The migration
 and matching database policy must be adopted in the approved deployment before
-running this production gateway. The full encrypted-object deletion lifecycle
-and target-deployment/device acceptance remain open.
+running this production gateway. The later local cleanup checkpoint is recorded
+below; target backing, deployment and device acceptance remain open.
 
 The separate `2a4f015` authority checkpoint rejects deleted, expired and
 wrong-subject Auth sessions, removed workspace membership and archived books.
@@ -158,14 +158,55 @@ The `58395c3` trusted-device checkpoint adds explicit per-book revocation,
 reviewed exact-recipient/key-version rotation and separate publication. Failed
 operations retain drafts and require a deliberate refresh; account changes
 redact typed and late-returned recovery material. A key from another book cannot
-replace the verified current key. Recovery without a verified current envelope
-is refused and remains a future implementation gate. Full desktop checks pass
+replace the verified current key. At that checkpoint recovery without a verified
+current envelope was refused; the later snapshot-proof recovery is recorded
+below. Full desktop checks pass
 494 tests across 81 files, typecheck/build, 82 affected tests and the final
 1024×768 synthetic rendered browser journey. Independent review of the final
 recovery and account-reset fixes is clean. See the
 [device packet](../trusted-companion-devices-2026-10-02/README.md).
-The native application remains the earlier `d5aea8a` development bundle; these
-new source checks do not certify a rebuilt native GUI or release installation.
+Those source checks originally used the earlier `d5aea8a` development bundle.
+Later rebuilt native checkpoints retain their own binary identity; none certifies
+a release installation.
+
+## Current cloud lifecycle and native checkpoint
+
+`e80ff81` restores a desktop's missing current key envelope only after the
+entered key authenticates both the exact current committed snapshot and its
+project/snapshot/revision/version manifest. The client validates the plaintext
+book identity, installs only its own reviewed current-device envelope, and
+confirms exact SQL identity/ciphertext after a lost reply without another write.
+Session/account/device/version changes refuse stale completion. No current
+verifiable snapshot means recovery stays refused; a reviewed new rotation or
+future key commitment remains necessary. The
+[recovery packet](../book-key-recovery-2026-10-02/README.md) records 547 desktop
+tests across 84 files, 140 affected tests and three synthetic public-panel browser
+journeys. These checks retain their synthetic account/Keychain/HTTP boundaries.
+
+`5fe9d7c` adds a permanent cloud project UUID tombstone, privileged upload
+completion fence, durable leased orphan-inclusive cleanup and separate verifier
+role. The bounded worker saves exact pending paths before Storage DELETE and
+reconciles them before retry. SQL independently checks unfiltered pending-path
+absence and namespace emptiness. The worker stops awaiting external backing
+verification; a separately authorized database operator must attest before
+encrypted child/project metadata removal. That attestation is not independent
+SQL proof of physical purge. The
+[cleanup packet](../project-deletion-2026-10-02/README.md) records 31 deletion and
+13 recovery SQL assertions, eight actual database concurrency controls, 66/66
+gateway tests with no skips, two actual worker SIGKILL stages and an actual
+RPC-to-PostgreSQL worker fixture. Its Storage HTTP effects represent metadata;
+there is no local backing store or failed-upload queue. Target verification and
+multi-project account-deletion orchestration remain required.
+
+The unsigned arm64 app was rebuilt from clean tracked native source at
+`5fe9d7c`. [Bundle provenance](native-bundle-5fe9d7c.json) records exact core and
+binary hashes, the bundled runtime contract and five real packaged-engine
+SIGKILL recovery stages. The native read-only reopening check retains both
+tabs, unfinished Plan drafts and saved synthetic writing. It does not exercise
+live recovery, signed Keychain, clean machines, upgrades or VoiceOver. The earlier
+19 real-core browser workflows, 548 packaged Python tests and 167 mobile tests
+retain their original checkpoint scopes; this pass does not relabel them as new
+end-to-end cloud, physical-device or literary acceptance.
 
 A separate publication repair prevents deletion of committed ciphertext after a
 lost metadata response. It validates exact committed metadata and uses one

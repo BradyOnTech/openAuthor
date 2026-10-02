@@ -246,15 +246,15 @@
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Current source committed; actual packaged core 548/548, default core 547/548 with one optional skip, desktop 465 tests/build and 19 combined browser workflows passed. Shared gateway quota: 33 tests and SQL/RLS passed. Final native exact-source preview and retained tabs/Plan drafts observed. Physical, signed and deployed acceptance remains open.",
+    "verification_stage": "Latest cloud lifecycle checkpoint: desktop547/84+3synthetic recovery browser journeys, gateway66/66 with0skips, recovery13/deletion31SQL assertions and8real concurrency controls. Unsigned5fe9d7c native bundle/runtime/five SIGKILL stages pass. Earlier core548/mobile167/real-core19browser results retain their original scopes; no new full combined browser/physical/signed/deployed acceptance.",
     "python_tests_passed": 548,
     "python_test_scope": "Actual packaged Python 3.11 suite: 548 passed, no skip. Default Python 3.13 discovery: 547 passed and one optional runtime skip. Interpreter runs overlap.",
-    "desktop_tests_passed": 465,
-    "desktop_test_files_passed": 79,
-    "mobile_tests_passed": 126,
-    "mobile_test_files_passed": 27,
+    "desktop_tests_passed": 547,
+    "desktop_test_files_passed": 84,
+    "mobile_tests_passed": 167,
+    "mobile_test_files_passed": 29,
     "contracts_tests_passed": 19,
-    "gateway_tests_passed": 33,
+    "gateway_tests_passed": 66,
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
@@ -339,6 +339,32 @@
       "docs/evaluations/voice-session-enforcement-2026-10-02/review.md",
       "mobile/evidence/2026-10-02-continuous-voice/review.md",
       "docs/evaluations/trusted-companion-devices-2026-10-02/README.md"
+    ]
+  },
+  "cloud_lifecycle_checkpoint": {
+    "date": "2026-10-02",
+    "recovery_commit": "e80ff81",
+    "deletion_commit": "5fe9d7c",
+    "desktop_tests": 547,
+    "desktop_test_files": 84,
+    "synthetic_recovery_browser_journeys": 3,
+    "gateway_tests": 66,
+    "gateway_skipped": 0,
+    "recovery_sql_assertions": 13,
+    "deletion_sql_assertions": 31,
+    "real_database_concurrency_controls": 8,
+    "actual_worker_sigkill_stages": 2,
+    "native_source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+    "native_unsigned_arm64": true,
+    "native_core_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+    "native_application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+    "packaged_runtime_and_five_sigkill_stages": "passed",
+    "remaining": "Author literary/Memory assessment, target backing verification/account orchestration/deployment, physical phones, independent outage call control, signing/clean machines, native accessibility and mobile dependency mitigation remain open.",
+    "release_certified": false,
+    "evidence": [
+      "docs/evaluations/book-key-recovery-2026-10-02/results.json",
+      "docs/evaluations/project-deletion-2026-10-02/results.json",
+      "docs/evaluations/project-completion-2026-10-02/native-bundle-5fe9d7c.json"
     ]
   }
 }

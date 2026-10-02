@@ -1,0 +1,26 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/mobileSync/snapshotRecoveryTransport.test.ts (24 tests | 1 failed | 23 skipped) 16ms
+     × installs only the local device key with an exact expected version and confirms the full immutable envelope 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mobileSync/snapshotRecoveryTransport.test.ts > snapshot recovery transport > installs only the local device key with an exact expected version and confirms the full immutable envelope
+Error: Recovery envelope installation is unconfirmed. No key was unlocked and no write was retried. Reconnect to check its committed state before trying again.
+ ❯ SupabaseMobileSyncTransport.recoverProjectKeyEnvelope src/mobileSync/supabaseTransport.ts:405:29
+    403|         confirmed = Array.isArray(rows) && rows.filter(row => matchesP…
+    404|       } catch { /* Reconnection can independently unwrap a committed e…
+    405|       if (!confirmed) throw new Error("Recovery envelope installation …
+       |                             ^
+    406|     }
+    407|     await this.#accessToken();
+ ❯ src/mobileSync/snapshotRecoveryTransport.test.ts:78:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 skipped (24)
+   Start at  12:10:32
+   Duration  302ms (transform 117ms, setup 0ms, import 213ms, tests 16ms, environment 0ms)

@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T17:33:09.020175+00:00",
+  "status": "local_worker_and_database_coordination_verified_backend_acceptance_open",
+  "assessment": "assistant_engineering_assessment_not_author_or_deployed_acceptance",
+  "git_head": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+  "source_state": "Implementation committed locally at 5fe9d7c; evidence and runbook saved separately. No push or deployment.",
+  "scope": "Synthetic loopback Storage/RPC HTTP adapters, actual disposable PostgreSQL, fsynced prepared-job fixtures, actual subprocess SIGKILL and executable command. No live provider calls, deployed writes, private author data or real credentials.",
+  "live_provider_calls": 0,
+  "final_verification": {
+    "command": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+    "exit_code": 0,
+    "root_raw_log": "/private/tmp/openauthor-deletion-final-pg.txt",
+    "gateway_tests": {
+      "discovered": 66,
+      "passed": 66,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_encrypted_sync_sql": "passed",
+    "live_authority_sql": "passed",
+    "recovery_snapshot_sql": "passed",
+    "project_deletion_sql": "passed",
+    "real_postgres_concurrency": {
+      "controls": 8,
+      "passed": 8
+    },
+    "focused_worker_controls": 15,
+    "actual_sigkill_stages": [
+      "after_fsynced_prepare_before_RPC_reply",
+      "after_Storage_metadata_commit_before_reply_or_ack"
+    ],
+    "actual_rpc_to_postgres_worker_test": "passed",
+    "storage_backend_or_cleanup_queue": "not_present_in_local_fixture",
+    "recovery_sql_assertions": 13,
+    "deletion_sql_assertions": 31
+  },
+  "evidence_capture": {
+    "owner": "root",
+    "state": "Exact original logs preserved in raw.gz archives; only trailing whitespace and surplus EOF lines normalized. See output-format.json.",
+    "final_raw_sources": [
+      "/private/tmp/openauthor-deletion-final-pg.txt",
+      "/private/tmp/openauthor-deletion-concurrency-focused-2026-10-02.log"
+    ],
+    "intermediate_files": [
+      "worker-interface-red.txt",
+      "worker-http-green.txt",
+      "gateway-worker-checks.txt",
+      "initial-pg-fixture-red.txt"
+    ],
+    "published_outputs": [
+      "postgres-gateway-final.txt",
+      "concurrency-upgrade-red-green.txt",
+      "output-format.json"
+    ]
+  },
+  "independent_review": {
+    "reviewer": "mobile_restart_retention",
+    "scope": "Read-only bounded worker/CLI guarantee and separately reviewed SQL concurrency seam",
+    "material_findings": []
+  },
+  "interfaces": {
+    "worker": "ProjectDeletionWorker.runOnce(jobLease) -> {phase,acknowledged_paths}; at most one exact batch per call",
+    "command": "node gateway/dist/projectDeletionMain.js --job <approved-job-uuid>",
+    "separate_worker_environment": [
+      "SUPABASE_URL",
+      "SUPABASE_DELETION_SERVICE_KEY"
+    ],
+    "job_store": [
+      "claim",
+      "assertLease via exact-token renewal",
+      "renewLease",
+      "prepareDeleteBatch",
+      "acknowledgeBatch",
+      "markStorageEmpty"
+    ],
+    "worker_rpcs": [
+      "mobile_claim_project_deletion",
+      "mobile_renew_project_deletion_lease",
+      "mobile_prepare_project_deletion_batch",
+      "mobile_ack_project_deletion_batch",
+      "mobile_mark_project_deletion_storage_empty"
+    ],
+    "storage_bucket": "mobile-encrypted-sync",
+    "exact_namespace": "projects/{canonical-project-uuid}/",
+    "limits": {
+      "default_lease_seconds": 60,
+      "allowed_lease_seconds": [
+        15,
+        300
+      ],
+      "batch_paths_max": 100,
+      "request_timeout_ms": 5000,
+      "inventory_entries_max": 100000,
+      "inventory_pages_max": 2000,
+      "depth_max": 16,
+      "CLI_successful_runs_max": 1000
+    },
+    "terminal_worker_phase": "awaiting_backend_verification",
+    "verifier_role": "mobile_deletion_verifier (nologin; selected only through separate authorized database administration)",
+    "finalizer": "mobile_finalize_project_deletion(p_job_id,p_project_id,p_lease_token,p_backend_verification_sha256)",
+    "finalizer_worker_or_client_permission": "denied",
+    "backing_receipt_semantics": "SHA256 digest of an externally supplied trusted operator verification record; SQL does not inspect or validate its contents."
+  },
+  "validated_cases": [
+    "Complete paginated recursive inventory before own deletion; unpublished orphan folders included",
+    "Immutable exact target prefix; adjacent project and objects retained",
+    "Unsafe/duplicate/foreign/malformed rows and inventory bounds refuse destructive work",
+    "Durable prepare precedes HTTP DELETE; exact pending array retained after partial failure",
+    "Lost reply, failed readback and failed acknowledgement never justify blind destructive retry",
+    "Actual SIGKILL at two stages resumes the same persisted intent; committed deletion is not repeated",
+    "Current token checks refuse superseded lease acknowledgement; successor reconciles known pending absence",
+    "Independent SQL exact pending-path absence and unfiltered namespace count guard negative HTTP listings",
+    "Owner-approved durable intent survives requester Auth-session removal",
+    "Real PostgREST-shaped RPC adapter executes exact whitelisted names/arguments through actual PostgreSQL",
+    "Separate executable command drains confirmed batches and suppresses secrets/configuration in failures",
+    "Real service_role privileges deny backing attestation/finalization; project metadata remains awaiting verifier"
+  ],
+  "remaining_limits": [
+    "No local S3/filesystem backing store, failed-upload queue or deployed Supabase HTTP stack was exercised.",
+    "An empty metadata listing does not prove in-flight uploads settled or every backing object/version is purged.",
+    "No public backend queue-drain API or automatic backend verifier is invented or implemented.",
+    "Physical purge requires target-version/backend operational procedure and independent external verification.",
+    "Verifier digest is an explicit trusted attestation, not independent SQL proof of its contents.",
+    "Multi-project account-deletion orchestration is not automated by this project worker.",
+    "Unsupported malformed path/list metadata keeps the job frozen for operator inspection rather than omission."
+  ],
+  "primary_sources": [
+    "https://supabase.com/docs/reference/self-hosting-storage/search-for-objects-under-a-prefix",
+    "https://github.com/supabase/storage/blob/master/src/storage/object.ts",
+    "https://github.com/supabase/storage/blob/master/src/storage/uploader.ts"
+  ],
+  "inspected_sdk": {
+    "package": "@supabase/storage-js",
+    "installed_version": "2.112.4",
+    "sha256": {
+      "desktop/node_modules/@supabase/storage-js/src/packages/StorageFileApi.ts": "dc64f0bbb70b83a0bb8905e88d2df8223bd540fcf56acc0596e44768dd03479a",
+      "desktop/node_modules/@supabase/storage-js/src/lib/types.ts": "3a50cee12c1b0b7d9de84fd279aa9c2ffabc9d0d51543eb0c2a69ddef5e88dd0",
+      "desktop/node_modules/@supabase/storage-js/package.json": "3ef80fe15270fb2026107806e9218f7c315e8f2f25e21f4f59d0c7e11b150357"
+    }
+  },
+  "source_sha256": {
+    "gateway/src/projectDeletion.ts": "2ce360f8b265b9b2bb90921e877fdf62ab229f060ea12c9bff6c5b93c26408a5",
+    "gateway/src/projectDeletionMain.ts": "1a83cf294c103103bc1dacc9d557c90990456df65d234cd0d0d511f85b141e0c",
+    "gateway/test/projectDeletion.test.ts": "f2f99a51c234f8a8071d43fcce87675181e6fbb87cc9ab9f359d898c0238e860",
+    "gateway/test/projectDeletion.postgres.test.ts": "19cb7192f0ffb194a82a8d508ceebc27e738bdf99f0dcf89ec8d3cca42d468b2",
+    "gateway/package.json": "750d910eb34a1436bb60da120074def6faa01159d9efb3305b5dd657a723c72a",
+    "gateway/package-lock.json": "0466f4cf6c305df9c403a52443b52cba4c27762dab5501ec019c9f3b779e196d",
+    "gateway/tsconfig.json": "8c196b761119d5d3f09180ec6a6d27a02094ba31543d101297e3fc84bb3c65e5",
+    "gateway/tsconfig.build.json": "ecf119325f517b0f5e6bf50c7d288d91afca39ab06cf311587975af59f284e70",
+    "supabase/migrations/20261002160000_mobile_project_deletion.sql": "f3e5824f6367d17551c5c8a36ff683937bca1c2622353f53ef1dddf2533d4f9c",
+    "supabase/tests/mobile_project_deletion.sql": "dc3317abf5f486374fcbad58e1cb80244d87f056ae1e351cbfe27241f750f4e2",
+    "scripts/verify_project_deletion_concurrency.py": "f466f5af89978971805d9bd08e5178f8a6f50144170ef784441e11a86117e2a1",
+    "scripts/verify_shared_gateway_limiter.py": "a172da822661c64fddd98da0d17415f48c6b1d9dd5accc68a777b6d04fa7ece3",
+    "docs/encrypted-project-deletion.md": "4fcda177bdd437859ca099fe7b1a73657a4ce755c6e5e70e20a2dec2169a065c",
+    "docs/evaluations/project-deletion-2026-10-02/README.md": "96f32a7453c83d4f16c76920400f6d373ee841f25530d054b04c8e91bed52d2a"
+  },
+  "implementation_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+  "evidence_sha256": {
+    "README.md": "96f32a7453c83d4f16c76920400f6d373ee841f25530d054b04c8e91bed52d2a",
+    "concurrency-upgrade-red-green.txt": "868c89f68c11bbfd13c6a529f56485e86809f4c1d682be11e4ba4d624bfd7ee2",
+    "concurrency-upgrade-red-green.txt.raw.gz": "79386d0657be9fec1e38cf654af97a0a10074f1f1cc834b6552703efe5390f53",
+    "gateway-worker-checks.txt": "905e70ad36a7a08147217536fc209a8ec352d0c97114d18edaec65e6547a4bf7",
+    "gateway-worker-checks.txt.raw.gz": "1ff5ba9ed5fbbb05d9c7d2d9a8da3bd6a97313dbbd0867ac99bb83407dee9353",
+    "initial-pg-fixture-red.txt": "07cb137d5f269ab26901c714c7d8b835999f03a34e9494cb7e16bc45ccdae863",
+    "initial-pg-fixture-red.txt.raw.gz": "3990c954b4ad2adb11057a758a908bbfda896eb60edf2e3c7dcd644f37efc1d0",
+    "output-format.json": "e8e4bfb434c69154597fef6bd15a83c05c8d4a388764e612ab143c40301b47f7",
+    "postgres-gateway-final.txt": "0df7ab7a16828f6587329d9f186c2a3501977e085ff6e44320a4289718078774",
+    "postgres-gateway-final.txt.raw.gz": "e1ae651aa91704397a75664ebfd14c8af9835fd205079e823af65ec89459d4d2",
+    "worker-http-green.txt": "323e6d23ed27c64452b138076286c18d2381ca8c7316fe02aa01106d936f822c",
+    "worker-http-green.txt.raw.gz": "981bedb6d66a9aa5375c75f656cfa8bf014f53256d71cce47c65375ec74783c5",
+    "worker-interface-red.txt": "05d3a88224e916dd318ce0c23b5100898eadb950bed0f7e3005b19b7620c979a",
+    "worker-interface-red.txt.raw.gz": "f2891a55a70e3c2b80527099202ce9ddcac055ddf7e644e12a5edf792c155343"
+  }
+}

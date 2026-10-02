@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "bundled_core_source": "exact_match",
+  "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+  "architecture": "arm64",
+  "python": "3.11.15",
+  "source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+  "workflow_run_id": "",
+  "signed_bundle_required": false,
+  "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate",
+  "release_certified": false,
+  "manual_gates": {
+    "clean_machine_install": "not_observed",
+    "packaged_gui_author_workflow": "not_observed",
+    "signed_gui_forced_termination": "not_observed",
+    "upgrade_from_released_version": "not_observed",
+    "voiceover_keyboard_contrast": "not_observed"
+  },
+  "source_checkout_clean": true,
+  "application": {
+    "identifier": "com.openauthor.desktop",
+    "version": "0.1.0"
+  },
+  "runtime_manifests": {
+    "python": {
+      "schema_version": 1,
+      "python_version": "3.11.15",
+      "python_build_release": "20260510",
+      "architecture": "aarch64",
+      "source_asset": "cpython-3.11.15+20260510-aarch64-apple-darwin-install_only.tar.gz",
+      "sha256": "03bcedae9b19a48888d7dc8ba064f73f6efaaf2b13f6a8e1a1bcc062df13e855"
+    },
+    "codex": {
+      "schema_version": 1,
+      "codex_version": "0.144.6",
+      "architecture": "aarch64-apple-darwin",
+      "source_asset": "codex-0.144.6-darwin-arm64.tgz",
+      "sha512": "eb382f87bd0ccc1352793d7b1c48523ab9a618664600acd20bbc7a240abe79d90991d3d803d3f4235b46eda278f46941901c6e0be30a047d6a9bafb60a085cc3"
+    }
+  },
+  "binaries": {
+    "application": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695"
+    },
+    "python": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c"
+    },
+    "codex": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "80a3933d11a9d13ef806aa24f7bb8afc9169cfe4e9b09d6da6a92922cbde9cff"
+    },
+    "git": {
+      "architectures": [
+        "arm64"
+      ],
+      "sha256": "4387eed8ef6f08893a676a2971235f72707f886ee0ebd28b71e7482caa91d655"
+    }
+  },
+  "verification_outputs": {
+    "format": "Trailing whitespace and surplus EOF lines normalized; exact original bytes in gzip.",
+    "outputs": {
+      "native-build-5fe9d7c.txt": {
+        "captured_raw_sha256": "ac309598cc63c6c6a2ace37a61e609f65211f3ab79bc10f670a40db536e51d00",
+        "normalized_sha256": "8ceed40670f5ce81c806300568734b3ce703968159ef544390d735ddb6b3d9eb",
+        "raw_archive": "native-build-5fe9d7c.txt.raw.gz",
+        "raw_archive_sha256": "d37b2856a3b2e59c7ec6c8a2b77e79e873c2a77661638287a5571436512129d4"
+      },
+      "native-verification-5fe9d7c.txt": {
+        "captured_raw_sha256": "b6e75e9b78562824d78ff570cf3be6a357dec9942772680cf662a301f1a4fa22",
+        "normalized_sha256": "b6e75e9b78562824d78ff570cf3be6a357dec9942772680cf662a301f1a4fa22",
+        "raw_archive": "native-verification-5fe9d7c.txt.raw.gz",
+        "raw_archive_sha256": "53eb7fa048a91d27207141e1090424be3953ad41d50f6fb4564ceaf1070471e6"
+      }
+    }
+  }
+}

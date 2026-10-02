@@ -1,0 +1,22 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/mobileSync/hostedCoordinator.test.ts (11 tests | 1 failed | 10 skipped) 16ms
+     × recovers an absent current envelope only after authenticating the published book snapshot, without publication 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mobileSync/hostedCoordinator.test.ts > HostedMobileSyncCoordinator > recovers an absent current envelope only after authenticating the published book snapshot, without publication
+Error: A verified current book key is unavailable. Reconnect for its device envelope or explicitly review a new key rotation; this recovery input cannot establish publication access on its own.
+ ❯ src/mobileSync/hostedCoordinator.ts:312:17
+
+ ❯ exclusive src/mobileSync/hostedCoordinator.ts:226:18
+ ❯ src/mobileSync/hostedCoordinator.test.ts:57:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 skipped (11)
+   Start at  12:03:12
+   Duration  334ms (transform 200ms, setup 0ms, import 225ms, tests 16ms, environment 0ms)

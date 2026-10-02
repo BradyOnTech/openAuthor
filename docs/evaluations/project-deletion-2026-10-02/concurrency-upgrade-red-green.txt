@@ -1,0 +1,62 @@
+The files belonging to this database system will be owned by user "author".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /private/tmp/oa-delete-80u60yq5/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... America/Chicago
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+Success. You can now start the database server using:
+
+    '/opt/homebrew/opt/postgresql@17/bin/pg_ctl' -D /private/tmp/oa-delete-80u60yq5/data -l logfile start
+
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+OLD-HELPER REPLAY RED: two public preflights/rotations produced SQLSTATE40P01
+Expected outcomes (None, '40001'), got exit 3: BACKEND:19656
+{"sub": "8f665877-5106-4bd9-a0ce-9334dcfe27f4", "session_id": "2099e322-c72c-4544-a93e-e3c4ef35d4d4", "device_id": "03706d3d-854f-4e48-8790-f27ab77ee470"}
+{"project_id": "13ce1a15-d716-438a-ac6e-59d277715203", "active_key_version": 1, "latest_key_version": 1}
+PREFLIGHT_HELD
+ERROR:  40P01: deadlock detected
+DETAIL:  Process 19656 waits for ShareLock on transaction 938; blocked by process 19658.
+Process 19658 waits for ShareLock on transaction 937; blocked by process 19656.
+HINT:  See server log for query details.
+CONTEXT:  while locking tuple (0,1) in relation "projects"
+SQL statement "SELECT 1 from public.projects
+    where id = p_project_id and status = 'active'
+    for update"
+PL/pgSQL function mobile_rotate_project_key_with_envelopes(uuid,uuid,integer,text,jsonb) line 27 at PERFORM
+LOCATION:  DeadLockReport, deadlock.c:1135
+PASS pre-freeze read committed uploader refused with SQLSTATE 42501
+PASS pre-freeze repeatable read uploader refused with SQLSTATE 25000
+PASS freeze waits for real in-flight shared write and includes its commit
+PASS queued owner deletion revalidates revoked owner after lock wait
+PASS queued owner deletion revalidates revoked Auth session after lock wait
+PASS queued recovery refuses changed project-version before envelope commit
+PASS queued recovery refuses changed device-key before envelope commit
+PASS two public preflight/rotation transactions serialize without lock-upgrade deadlock
+8/8 real PostgreSQL concurrency controls passed; no Storage backend purge claim.
+waiting for server to shut down.... done
+server stopped

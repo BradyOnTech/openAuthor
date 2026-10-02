@@ -1,0 +1,84 @@
+TAP version 13
+# (node:17373) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: whole stable paginated subtree includes orphans, preserves adjacent books and stops before backing attestation
+ok 1 - whole stable paginated subtree includes orphans, preserves adjacent books and stops before backing attestation
+  ---
+  duration_ms: 148.658667
+  type: 'test'
+  ...
+# Subtest: unsafe, duplicate, foreign and malformed Storage lists never authorize a DELETE
+ok 2 - unsafe, duplicate, foreign and malformed Storage lists never authorize a DELETE
+  ---
+  duration_ms: 66.49925
+  type: 'test'
+  ...
+# Subtest: lost DELETE reply is reconciled by fresh listing and never blindly repeated
+ok 3 - lost DELETE reply is reconciled by fresh listing and never blindly repeated
+  ---
+  duration_ms: 49.119292
+  type: 'test'
+  ...
+# Subtest: partial deletion retains immutable pending batch, reads it before retry and cannot mark completion
+ok 4 - partial deletion retains immutable pending batch, reads it before retry and cannot mark completion
+  ---
+  duration_ms: 95.100042
+  type: 'test'
+  ...
+# Subtest: unavailable readback retains pending intent and does not claim Storage empty
+ok 5 - unavailable readback retains pending intent and does not claim Storage empty
+  ---
+  duration_ms: 61.759583
+  type: 'test'
+  ...
+# Subtest: superseded lease after Storage response cannot acknowledge or advance the old job
+ok 6 - superseded lease after Storage response cannot acknowledge or advance the old job
+  ---
+  duration_ms: 65.757375
+  type: 'test'
+  ...
+# Subtest: failed durable acknowledgement resumes pending absent paths without another DELETE
+ok 7 - failed durable acknowledgement resumes pending absent paths without another DELETE
+  ---
+  duration_ms: 66.335583
+  type: 'test'
+  ...
+# Subtest: the trusted RPC adapter preserves exact lease/path arguments and cannot finalize
+ok 8 - the trusted RPC adapter preserves exact lease/path arguments and cannot finalize
+  ---
+  duration_ms: 90.761292
+  type: 'test'
+  ...
+# Subtest: negative Storage inventory cannot bypass the independent pending-path database check
+ok 9 - negative Storage inventory cannot bypass the independent pending-path database check
+  ---
+  duration_ms: 27.428375
+  type: 'test'
+  ...
+# Subtest: inventory bounds and malformed lease scope block before any destructive request
+ok 10 - inventory bounds and malformed lease scope block before any destructive request
+  ---
+  duration_ms: 30.527292
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL after durable prepare and after HTTP deletion resumes the same persisted batch
+ok 11 - actual SIGKILL after durable prepare and after HTTP deletion resumes the same persisted batch
+  ---
+  duration_ms: 385.151417
+  type: 'test'
+  ...
+# Subtest: HTTP timeouts and unsafe adapter configuration preserve the frozen job without leaking secrets
+ok 12 - HTTP timeouts and unsafe adapter configuration preserve the frozen job without leaking secrets
+  ---
+  duration_ms: 516.37625
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1698.177625
