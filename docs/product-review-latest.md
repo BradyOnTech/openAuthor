@@ -1,5 +1,11 @@
 # openAuthor author workflow review and improvement priorities
 
+Historical September 30 checkpoint. For current implementation and remaining
+acceptance work, read the [October 2 quality review](evaluations/project-completion-2026-10-02/review.md)
+and [requirements ledger](evaluations/project-completion-2026-10-02/requirements.json).
+Open tabs and caret recovery are now implemented and locally verified; broader
+editorial usefulness, physical phones and release acceptance remain open.
+
 Reviewed September 30, 2026, on `codex/production-authoring` at `2fbe4f6` plus the current uncommitted changes. The unsigned arm64 app was rebuilt from this checkout and tested with synthetic writing. This report supersedes the earlier [review checkpoint](product-review-current.md), whose failed Unicode and stale Style Profile findings have since been addressed in the working tree.
 
 openAuthor has a useful foundation for reversible editing, but it is not yet a dependable novel-writing assistant. The lost revision-input defect and inconsistent review of edit-plan and reconciliation context have now been fixed in the working tree. Its largest remaining shortcomings are narrow story understanding and unnecessary effort navigating and reviewing a book. More generation features should not outrank those issues.

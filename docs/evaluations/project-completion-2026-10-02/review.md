@@ -4,7 +4,7 @@ Status: local implementation and verification advanced; the six acceptance
 priorities remain in progress. This is not a release certificate.
 
 Remaining work includes editorial/Voice judgment, fresh-prose Memory evaluation,
-continuous companion voice policy, safe deletion and device management. Physical
+deployed companion voice enforcement, safe deletion and device acceptance. Physical
 phone use and signed Mac installation, upgrade and accessibility checks are
 also required. The
 [requirements ledger](requirements.json) records each outcome and its remaining
@@ -128,8 +128,44 @@ device/project authority after obtaining its quota lock. Real PostgreSQL checks
 cover concurrent gateways, restart, lost responses and queued revocation; see
 the [quota evidence](../shared-gateway-limiter-2026-10-02/review.md). The migration
 and matching database policy must be adopted in the approved deployment before
-running this production gateway. Continuous post-issuance policy, the full
-encrypted-object deletion lifecycle and device-management UX remain open.
+running this production gateway. The full encrypted-object deletion lifecycle
+and target-deployment/device acceptance remain open.
+
+The separate `2a4f015` authority checkpoint rejects deleted, expired and
+wrong-subject Auth sessions, removed workspace membership and archived books.
+It protects the periodic Realtime check and existing encrypted-sync/Storage
+predicates, while a new checked key-state RPC distinguishes an active publishing
+key from retained historical envelopes. The
+[authority regression](../mobile-active-authority-2026-10-02/review.md) retains the
+old-migration failure and 26 passing SQL assertions, including installed
+PostgreSQL Storage RLS against a minimal metadata schema. That fixture does not
+exercise the Supabase Storage HTTP/backend or complete the deletion lifecycle.
+The `f32a435` gateway/mobile checkpoint adds server-owned short leases, immutable
+hard call deadlines, periodic authority checks and durable known-call cleanup,
+plus client teardown on account/book/scene changes and ignored late events.
+Gateway passes 50 tests with no skips against the disposable database; mobile
+passes 167 tests and the actual hosted App browser journey. Independent gateway
+review passes 21 affected real HTTP/SIGKILL controls. The
+[server packet](../voice-session-enforcement-2026-10-02/review.md) and
+[mobile packet](../../../mobile/evidence/2026-10-02-continuous-voice/review.md)
+retain source hashes and failed-before-fixed probes. Production still needs
+independent outage call control for strict wall-clock limits; allocation before
+durable call identification, final media/billing, immutable provider settings
+and actual deployment/phones remain unverified. Earlier suite/bundle counts
+above retain their original checkpoint scope.
+
+The `58395c3` trusted-device checkpoint adds explicit per-book revocation,
+reviewed exact-recipient/key-version rotation and separate publication. Failed
+operations retain drafts and require a deliberate refresh; account changes
+redact typed and late-returned recovery material. A key from another book cannot
+replace the verified current key. Recovery without a verified current envelope
+is refused and remains a future implementation gate. Full desktop checks pass
+494 tests across 81 files, typecheck/build, 82 affected tests and the final
+1024×768 synthetic rendered browser journey. Independent review of the final
+recovery and account-reset fixes is clean. See the
+[device packet](../trusted-companion-devices-2026-10-02/README.md).
+The native application remains the earlier `d5aea8a` development bundle; these
+new source checks do not certify a rebuilt native GUI or release installation.
 
 A separate publication repair prevents deletion of committed ciphertext after a
 lost metadata response. It validates exact committed metadata and uses one

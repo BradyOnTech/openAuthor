@@ -313,5 +313,32 @@
       "subscription_runtime_audit": "Unreviewed automatic instruction/skill discovery removed or refused; isolated runtime context verified against a local wire endpoint and the packaged binary. Resolved model, cumulative usage and reported failed-turn usage retained. Native configured subscription still works. Model-selected scaffolding and additional configuration/fault variants remain to audit. See docs/subscription-runtime-evaluation.json.",
       "production_readiness_claim": false
     }
-  ]
+  ],
+  "companion_checkpoint_2026_10_02": {
+    "authority_commit": "2a4f015",
+    "voice_commit": "f32a435",
+    "trusted_devices_commit": "58395c3",
+    "desktop_tests_passed": 494,
+    "mobile_tests_passed": 167,
+    "gateway_tests_passed": 50,
+    "gateway_skips": 0,
+    "database": "Disposable PostgreSQL17.11 including live Auth sessions and installed Storage RLS against minimal metadata schema",
+    "desktop_browser": "One additional synthetic rendered trusted-device journey; earlier19real-core journeys retain their original scope",
+    "mobile_browser": "One actual hosted App/runtime journey with synthetic boundaries",
+    "release_certified": false,
+    "remaining": [
+      "Orphan-safe resumable encrypted-object deletion and target Storage backend cleanup drill",
+      "Absent-envelope book-key recovery",
+      "Independent outage call control and unknown upstream allocation/immutable settings/spend limitations",
+      "Approved deployed auth/revocation/rotation/cleanup and physical iOS/Android acceptance",
+      "Current-source packaged GUI acceptance, signing/notarization, clean-machine/upgrade/accessibility acceptance",
+      "Author-assessed editorial/Voice quality and fresh-prose Memory burden"
+    ],
+    "evidence": [
+      "docs/evaluations/mobile-active-authority-2026-10-02/review.md",
+      "docs/evaluations/voice-session-enforcement-2026-10-02/review.md",
+      "mobile/evidence/2026-10-02-continuous-voice/review.md",
+      "docs/evaluations/trusted-companion-devices-2026-10-02/README.md"
+    ]
+  }
 }

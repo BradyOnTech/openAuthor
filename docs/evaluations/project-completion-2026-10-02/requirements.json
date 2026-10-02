@@ -113,7 +113,10 @@
         "Atomic encrypted SQLite snapshot/auth/recovery storage, verified legacy migration",
         "Conditional migration and auth lease fences preserve refreshed data and prevent in-flight SDK refresh from restoring signed-out credentials",
         "Production gateway issuance quotas are database-owned and atomic across devices/books/replicas, rechecking queued device/project authority before consumption",
-        "Ambiguous encrypted snapshot publication outcomes retain ciphertext, acknowledge only exact committed metadata, and never automatically delete or retry publication"
+        "Ambiguous encrypted snapshot publication outcomes retain ciphertext, acknowledge only exact committed metadata, and never automatically delete or retry publication",
+        "Current live Auth-session, workspace membership and active-project checks protect ongoing Realtime authority, device registration/token claims, encrypted-sync RPCs and Storage policies; server-owned publishing key state separates active keys from historical envelopes",
+        "Server-owned renewable voice leases retain immutable hard deadlines, autonomously poll authority, journal known upstream calls before answer delivery, block issuance during uncertain cleanup and stop retired client media/context; local HTTP/SIGKILL and hosted App controls pass",
+        "Desktop trusted-device review supports deliberate per-book revocation, exact-recipient/version rotation, explicit publication, scoped draft/late-outcome recovery and account-reset redaction; wrong-book recovery keys cannot replace the verified current key"
       ],
       "verification": [
         "mobile/test/companionRecovery.test.ts",
@@ -124,13 +127,20 @@
         "supabase/migrations/20261002120000_mobile_realtime_shared_rate_limit.sql",
         "scripts/verify_shared_gateway_limiter.py",
         "docs/evaluations/shared-gateway-limiter-2026-10-02/verification.json",
-        "docs/evaluations/mobile-publication-recovery-2026-10-02/verification.json"
+        "docs/evaluations/mobile-publication-recovery-2026-10-02/verification.json",
+        "supabase/migrations/20261002140000_mobile_active_authority.sql",
+        "supabase/tests/mobile_active_authority.sql",
+        "docs/evaluations/mobile-active-authority-2026-10-02/verification.json",
+        "docs/evaluations/voice-session-enforcement-2026-10-02/verification.json",
+        "mobile/evidence/2026-10-02-continuous-voice/verification.json",
+        "docs/evaluations/trusted-companion-devices-2026-10-02/results.json"
       ],
       "remaining": [
         "Physical iPhone and Android reading, audio permission/routing, interruption/reconnect and cold restart",
         "Approved deployed connection: authorization, revocation, rotation, deletion and desktop review handoff",
         "Real-device encrypted keys and credential migration acceptance",
-        "Finish continuous post-issuance voice policy, orphan-safe encrypted-object deletion lifecycle and desktop trusted/lost-device management UX; adopt and drill the new shared-quota migration in the approved deployment"
+        "Complete orphan-safe encrypted-object deletion; deploy and drill shared quota/live authority/voice leases and trusted-device changes. Strict expiry through gateway host outages needs independent call control, and upstream allocation before durable identification remains unknown.",
+        "Recover a book key when no independently verified current device envelope exists; current unlock safely refuses that case, pending project-bound commitment or snapshot verification."
       ],
       "status": "in_progress"
     },
@@ -288,6 +298,47 @@
       "live_provider_calls": 0,
       "deployed_acceptance": "not_observed",
       "guarantee": "No ciphertext deletion on failed/lost publication replies; exact metadata readback only; orphan lifecycle remains open"
+    },
+    "mobile_current_authority": {
+      "implementation_commit": "2a4f015",
+      "database": "Disposable PostgreSQL17.11 with synthetic real Auth-session rows and installed Storage RLS against minimal metadata schema",
+      "regressions": 26,
+      "red": "Previous migrations retained voice authority after Auth-session deletion",
+      "green": "Existing encrypted-sync suite plus current authority/key-state suite pass",
+      "deployed_supabase": "not_observed",
+      "physical_storage_deletion": "not_implemented_or_observed"
+    },
+    "companion_voice_checkpoint": {
+      "implementation_commit": "f32a435",
+      "gateway_tests": 50,
+      "gateway_skipped": 0,
+      "gateway_typecheck_build": "passed",
+      "mobile_tests": 167,
+      "mobile_test_files": 29,
+      "mobile_typecheck": "passed",
+      "mobile_hosted_browser_journeys": 1,
+      "gateway_independent_affected_controls": 21,
+      "live_provider_calls": 0,
+      "deployed_mutations": 0,
+      "strict_provider_outage_expiry": "not_verified_or_implemented",
+      "immutable_provider_configuration_and_spend": "not_verified_or_implemented",
+      "physical_phone_acceptance": "not_observed"
+    },
+    "trusted_devices_checkpoint": {
+      "implementation_commit": "58395c3",
+      "desktop_tests": 494,
+      "desktop_test_files": 81,
+      "focused_tests": 82,
+      "typecheck_build": "passed",
+      "synthetic_chromium_journeys": 1,
+      "viewport": [
+        1024,
+        768
+      ],
+      "independent_final_recovery_review": "clean",
+      "deployed_mutations": 0,
+      "live_provider_calls": 0,
+      "native_bundle": "Still earlier d5aea8a unsigned development checkpoint; no rebuilt current desktop GUI acceptance claimed"
     }
   },
   "known_code_gaps": [
