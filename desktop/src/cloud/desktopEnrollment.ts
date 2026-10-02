@@ -12,6 +12,13 @@ type Identity = {
   privateKey: string;
 };
 
+function signedSessionId(token: string): unknown {
+  try {
+    const body = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return (JSON.parse(atob(body.padEnd(Math.ceil(body.length / 4) * 4, "="))) as Record<string, unknown>).session_id;
+  } catch { return undefined; }
+}
+
 function encode(value: Uint8Array): string {
   return sodium.to_base64(value, sodium.base64_variants.URLSAFE_NO_PADDING);
 }
@@ -56,6 +63,7 @@ function bytea(value: unknown, length: number): Uint8Array {
 
 export type DesktopEnrollment = {
   deviceId: string;
+  deviceKey: { keyId: string; publicKey: string };
   projectKeys: Map<number, CryptoKey>;
   accessToken(): Promise<string>;
 };
@@ -71,6 +79,7 @@ export async function enrollDesktopForProject(input: {
   const { account, secrets } = input;
   const session = await account.session();
   if (!session || !UUID.test(session.userId)) throw new Error("Sign in before connecting this desktop.");
+  const originalSessionId = signedSessionId(session.accessToken);
   await sodium.ready;
   const slot = `device-${input.scope}-${session.userId}`;
   let stored = await secrets.get(slot);
@@ -86,7 +95,8 @@ export async function enrollDesktopForProject(input: {
     } finally { pair.privateKey.fill(0); }
   }
   const device = identity(stored, session.userId);
-  if (!await account.session({ userId: device.userId })) throw new Error("Sign in before connecting this desktop.");
+  const beforeRegistration = await account.session({ userId: device.userId });
+  if (!beforeRegistration || signedSessionId(beforeRegistration.accessToken) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
   const registered = row(await account.rpc("mobile_register_device", {
     p_device_id: device.deviceId, p_key_id: device.keyId,
     p_platform: "desktop", p_device_label: device.name,
@@ -97,6 +107,7 @@ export async function enrollDesktopForProject(input: {
   const accessToken = async () => {
     const verified = await account.session({ userId: device.userId, deviceId: device.deviceId });
     if (!verified) throw new Error("Your companion session ended. Reconnect to continue.");
+    if (signedSessionId(verified.accessToken) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
     return verified.accessToken;
   };
   await accessToken();
@@ -133,5 +144,5 @@ export async function enrollDesktopForProject(input: {
       } finally { raw.fill(0); }
     }
   } finally { privateKey.fill(0); }
-  return { deviceId: device.deviceId, projectKeys, accessToken };
+  return { deviceId: device.deviceId, deviceKey: { keyId: device.keyId, publicKey: device.publicKey }, projectKeys, accessToken };
 }

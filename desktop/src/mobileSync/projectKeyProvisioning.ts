@@ -108,10 +108,7 @@ function recoveryKey(projectKey: Uint8Array): string {
   return `OA1-${body}.${crc32(body)}`;
 }
 
-export async function importMobileRecoveryKey(
-  value: string,
-  cryptoProvider: Pick<Crypto, "subtle"> = crypto
-): Promise<CryptoKey> {
+function recoveryBytes(value: string): Uint8Array {
   const compact = value.trim();
   if (!compact.startsWith("OA1-")) {
     throw new Error("Recovery key version is unsupported.");
@@ -126,7 +123,23 @@ export async function importMobileRecoveryKey(
   if (crc32(body) !== checksum.toUpperCase()) {
     throw new Error("Recovery key checksum does not match.");
   }
-  const rawKey = base64UrlToBytes(body, 32, "Recovery key");
+  return base64UrlToBytes(body, 32, "Recovery key");
+}
+
+export async function sealMobileRecoveryKey(value: string, recipientPublicKey: string, sealedBox: MobileSealedBox = libsodiumSealedBox): Promise<string> {
+  const rawKey = recoveryBytes(value);
+  try {
+    const sealed = await sealedBox.seal(rawKey, base64UrlToBytes(recipientPublicKey, 32));
+    if (sealed.byteLength !== 80) throw new Error("Sealed project key must be exactly 80 bytes.");
+    return bytesToBase64Url(sealed);
+  } finally { rawKey.fill(0); }
+}
+
+export async function importMobileRecoveryKey(
+  value: string,
+  cryptoProvider: Pick<Crypto, "subtle"> = crypto
+): Promise<CryptoKey> {
+  const rawKey = recoveryBytes(value);
   try {
     return await cryptoProvider.subtle.importKey(
       "raw",

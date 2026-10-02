@@ -43,6 +43,9 @@ describe("durable desktop enrollment", () => {
     const second = await f.run();
     expect(f.events[0]).toBe("persist");
     expect(first.deviceId).toBe(second.deviceId);
+    const saved = JSON.parse([...f.records.values()][0]);
+    expect(first.deviceKey).toEqual({ keyId: saved.keyId, publicKey: saved.publicKey });
+    expect(second.deviceKey).toEqual(first.deviceKey);
     expect(f.secrets.create).toHaveBeenCalledTimes(1);
     expect(f.registered[0]).toEqual(f.registered[1]);
     expect(JSON.stringify(f.registered)).not.toContain("privateKey");
@@ -126,5 +129,17 @@ describe("durable desktop enrollment", () => {
     await expect(f.run()).rejects.toThrow("saved device identity is invalid");
     expect(f.secrets.create).not.toHaveBeenCalled();
     expect(f.account.rpc).not.toHaveBeenCalled();
+  });
+
+  it("fences a later sign-in to the same account/device while permitting token refresh in the original signed session", async () => {
+    const f = fixture();
+    let sessionId = "80000000-0000-4000-8000-000000000001";
+    let expiration = 3000000000;
+    vi.mocked(f.account.session).mockImplementation(async () => ({ userId, email: "author@example.com", accessToken: `${btoa("{}")} .${btoa(JSON.stringify({ session_id: sessionId, exp: expiration }))}.synthetic`.replace(" ", "") }));
+    const enrolled = await f.run();
+    expiration++;
+    await expect(enrolled.accessToken()).resolves.toContain("synthetic");
+    sessionId = "80000000-0000-4000-8000-000000000002";
+    await expect(enrolled.accessToken()).rejects.toThrow("session changed");
   });
 });

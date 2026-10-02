@@ -4,6 +4,9 @@ import {
   type HostedMobileSyncServices,
 } from "./hostedCoordinator";
 import { importMobileRecoveryKey } from "./projectKeyProvisioning";
+import { recoveryManifestRow, recoverySnapshotFixture, recoveryFixtureKey, recoveryFixtureDeviceKey } from "./recoverySnapshot.fixture";
+import { SupabaseMobileSyncTransport } from "./supabaseTransport";
+import sodium from "libsodium-wrappers";
 
 function jwt(claims: Record<string, unknown>): string {
   const encode = (value: object) => btoa(JSON.stringify(value))
@@ -29,6 +32,40 @@ const runtime = {
 };
 
 describe("HostedMobileSyncCoordinator", () => {
+  it("recovers an absent current envelope only after authenticating the published book snapshot, without publication", async () => {
+    const snapshot = await recoverySnapshotFixture();
+    await sodium.ready;
+    const pair = sodium.crypto_box_keypair();
+    const requests: string[] = [];
+    const transport = new SupabaseMobileSyncTransport({ supabaseUrl: runtime.supabaseUrl, publishableKey: "public", userAccessToken: "synthetic", deviceId: "40000000-0000-4000-8000-000000000001",
+      fetch: async (url, init) => {
+        const route = String(url).split("/").pop()!; requests.push(route);
+        if (route === "mobile_get_project_key_state") return new Response(JSON.stringify({ project_id: runtime.projectId, latest_key_version: 3, active_key_version: 3 }));
+        if (route === "mobile_get_recovery_snapshot") return new Response(JSON.stringify(recoveryManifestRow(snapshot)));
+        if (route.endsWith(".bin")) return new Response(snapshot.ciphertext_base64);
+        if (route === "mobile_recover_project_key_envelope") {
+          const body = JSON.parse(init!.body as string);
+          const sealed = sodium.from_hex(body.p_sealed_key);
+          const digest = sodium.to_hex(new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(sealed).buffer)));
+          expect(sodium.crypto_box_seal_open(sealed, pair.publicKey, pair.privateKey)).toEqual(Uint8Array.from({ length: 32 }, (_, i) => i));
+          return new Response(JSON.stringify({ project_id: runtime.projectId, key_version: 3, id: body.p_envelope_id,
+            sender_device_id: body.p_requesting_device_id,
+            recipient_device_id: body.p_requesting_device_id, recipient_key_id: body.p_expected_device_key_id,
+            algorithm: "x25519-xsalsa20-poly1305-sealedbox-v1", sealed_project_key: "\\x" + body.p_sealed_key, sealed_project_key_sha256: digest }));
+        }
+        throw new Error(`Unexpected route ${route}`);
+      } });
+    const publishSnapshot = vi.fn();
+    const services = { devices: transport, recovery: transport, provisioning: { provisionProjectKey: vi.fn() }, sync: { publishSnapshot, importOutbox: vi.fn() } };
+    const coordinator = createHostedMobileSyncCoordinator({ ...runtime, services,
+      recoveryDeviceKey: { keyId: recoveryFixtureDeviceKey, publicKey: sodium.to_base64(pair.publicKey, sodium.base64_variants.URLSAFE_NO_PADDING) },
+      accessToken: jwt({ role: "authenticated", sub: "account-one", device_id: "40000000-0000-4000-8000-000000000001" }),
+    });
+    await coordinator.unlockRecoveryKey(3, recoveryFixtureKey);
+    expect(coordinator.getState()).toMatchObject({ status: "ready", activeKeyVersion: 3 });
+    expect(requests.filter(route => route === "mobile_recover_project_key_envelope")).toHaveLength(1);
+    expect(publishSnapshot).not.toHaveBeenCalled();
+  });
   it("rejects a checksum-valid recovery key from another book without replacing its verified envelope key", async () => {
     const verified = await crypto.subtle.importKey("raw", new Uint8Array(32).fill(8), "AES-GCM", false, ["encrypt", "decrypt"]);
     const services: HostedMobileSyncServices = {
@@ -68,6 +105,17 @@ describe("HostedMobileSyncCoordinator", () => {
     const coordinator = createHostedMobileSyncCoordinator({ ...runtime, services, projectKeys: new Map([[3, verified]]), accessToken: jwt({ role: "authenticated", sub: "account-one", device_id: "40000000-0000-4000-8000-000000000001" }) });
     await coordinator.unlockRecoveryKey(3, recoveryKey); await coordinator.publishSnapshot();
     expect(services.sync.publishSnapshot).toHaveBeenCalledTimes(1);
+  });
+  it("keeps the original verified key when authority changes after a matching recovery challenge", async () => {
+    const verified = await importMobileRecoveryKey("OA1-AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.EFAAEC69");
+    let reads = 0;
+    const getProjectKeyState = vi.fn(async () => ++reads === 2 ? { latestKeyVersion: 4, activeKeyVersion: 4 } : { latestKeyVersion: 3, activeKeyVersion: 3 });
+    const services: HostedMobileSyncServices = { devices: { getProjectKeyState, listProjectDevices: vi.fn(async () => []), revokeProjectDevice: vi.fn() },
+      provisioning: { provisionProjectKey: vi.fn() }, sync: { publishSnapshot: vi.fn(async () => ({ snapshot_id: "original" } as never)), importOutbox: vi.fn() } };
+    const coordinator = createHostedMobileSyncCoordinator({ ...runtime, services, projectKeys: new Map([[3, verified]]), accessToken: jwt({ role: "authenticated", sub: "account-one", device_id: "40000000-0000-4000-8000-000000000001" }) });
+    await expect(coordinator.unlockRecoveryKey(3, "OA1-AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.EFAAEC69")).rejects.toThrow("changed during recovery");
+    await coordinator.publishSnapshot();
+    expect(services.sync.publishSnapshot).toHaveBeenCalledWith(expect.objectContaining({ projectKey: verified }));
   });
   it("locks publication immediately after an unconfirmed mutation until current authority is refreshed", async () => {
     const key = await projectKey();

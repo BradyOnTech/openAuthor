@@ -7,10 +7,12 @@ import {
 import {
   createMobileProjectKeyProvisioningService,
   importMobileRecoveryKey,
+  sealMobileRecoveryKey,
   type MobileProjectDevice,
   type MobileProjectKeyState,
 } from "./projectKeyProvisioning";
 import { SupabaseMobileSyncTransport } from "./supabaseTransport";
+import { validateRecoverySnapshot, verifyRecoverySnapshot, type ProjectKeyRecoveryTransport } from "./snapshotRecovery";
 
 export type HostedMobileSyncState = {
   status: "setup_required" | "locked" | "ready";
@@ -29,6 +31,7 @@ type ImportReport = {
 };
 
 export type HostedMobileSyncServices = {
+  recovery?: ProjectKeyRecoveryTransport;
   provisioning: {
     provisionProjectKey(input: {
       projectId: string;
@@ -84,6 +87,7 @@ type CoordinatorOptions = {
   accessToken?: string | null;
   getAccessToken?: () => Promise<string>;
   projectKeys?: ReadonlyMap<number, CryptoKey>;
+  recoveryDeviceKey?: { keyId: string; publicKey: string };
   projectId?: string | null;
   projectRoot?: string | null;
   services?: HostedMobileSyncServices;
@@ -123,6 +127,7 @@ export function createHostedMobileSyncCoordinator(
   const supabaseUrl = options.supabaseUrl?.trim() ?? "";
   const publishableKey = options.publishableKey?.trim() ?? "";
   const accessToken = options.accessToken?.trim() ?? "";
+  const originalSessionId = decodeJwtClaims(accessToken)?.session_id;
   const projectId = options.projectId?.trim() ?? "";
   const projectRoot = options.projectRoot?.trim() ?? "";
 
@@ -163,6 +168,7 @@ export function createHostedMobileSyncCoordinator(
         });
         services = {
           devices: transport,
+          recovery: transport,
           provisioning: createMobileProjectKeyProvisioningService({ transport }),
           sync: createMobileSyncService({ transport }),
         };
@@ -171,6 +177,7 @@ export function createHostedMobileSyncCoordinator(
   }
 
   const projectKeys = new Map(options.projectKeys);
+  const recoveryDeviceKey = options.recoveryDeviceKey ? { ...options.recoveryDeviceKey } : null;
   if (services && !services.devices && projectKeys.size > 0) {
     const version = Math.max(...projectKeys.keys());
     requiredVersion(version);
@@ -197,6 +204,14 @@ export function createHostedMobileSyncCoordinator(
   let inFlight = false;
   let mutationGeneration = 0;
   let rotationRequired = false;
+  const verifyCurrentSession = async () => {
+    if (!options.getAccessToken) return;
+    const current = decodeJwtClaims(await options.getAccessToken());
+    if (!identity || current?.role !== "authenticated" || current.sub !== identity.userId || current.device_id !== identity.deviceId
+      || current.session_id !== originalSessionId) {
+      throw new Error("The companion account or device changed during recovery. Reconnect before continuing.");
+    }
+  };
   const refreshKeyState = async (): Promise<MobileProjectKeyState> => {
     const generation = mutationGeneration;
     const devices = requireServices().devices;
@@ -302,31 +317,58 @@ export function createHostedMobileSyncCoordinator(
       return exclusive(async () => {
         requireServices();
         const version = requiredVersion(keyVersion);
+        await verifyCurrentSession();
+        let originalAuthority: MobileProjectKeyState | null = null;
         if (services?.devices) {
-          const current = await refreshKeyState();
-          if (current.activeKeyVersion !== version) throw new Error("Only the current active book key can unlock publication. A retired or older key cannot restore access.");
+          originalAuthority = await refreshKeyState();
+          if (originalAuthority.activeKeyVersion !== version) throw new Error("Only the current active book key can unlock publication. A retired or older key cannot restore access.");
         }
         if (rotationRequired) throw new Error("Rotate the retired book key before publishing. Recovery unlock cannot bypass revocation.");
         const verifiedKey = projectKeys.get(version);
-        if (!verifiedKey) {
-          throw new Error("A verified current book key is unavailable. Reconnect for its device envelope or explicitly review a new key rotation; this recovery input cannot establish publication access on its own.");
-        }
         const projectKey = await importMobileRecoveryKey(recoveryKey);
         // OA1's checksum detects typing mistakes, not the book a key belongs to.
         // Authenticate a fresh challenge against the independently unwrapped
         // envelope/provisioned key without extracting either key's bytes.
-        try {
+        if (verifiedKey) try {
           const nonce = crypto.getRandomValues(new Uint8Array(12));
           const challenge = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, verifiedKey, new Uint8Array(0));
           await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce }, projectKey, challenge);
         } catch {
           throw new Error("The recovery key does not match this book's verified current key. The previous key remains available; check the account, book and recovery key.");
         }
-        projectKeys.set(version, projectKey);
-        if (services?.devices) {
+        const recheckAuthority = async () => {
+          if (!originalAuthority || !services?.devices) return;
           const current = await refreshKeyState();
-          if (current.activeKeyVersion !== version) throw new Error("The book key changed during recovery unlock. Reconnect and review its current version.");
+          await verifyCurrentSession();
+          if (current.activeKeyVersion !== originalAuthority.activeKeyVersion || current.latestKeyVersion !== originalAuthority.latestKeyVersion) throw new Error("The book key changed during recovery unlock. Reconnect and review its current version.");
+        };
+        if (!verifiedKey) {
+          const recovery = services?.recovery;
+          const deviceKey = recoveryDeviceKey;
+          if (!recovery || !deviceKey || !originalAuthority || !identity) {
+            throw new Error("A verified current book key is unavailable. Reconnect this desktop before using authenticated snapshot recovery, or explicitly review a new key rotation.");
+          }
+          const located = await recovery.getRecoverySnapshot(projectId, version);
+          if (!located) throw new Error("No committed snapshot exists for the current book key. Recovery cannot verify this book; reconnect for an envelope or review a new key rotation.");
+          const snapshot = { ...located, manifestNonce: new Uint8Array(located.manifestNonce), manifestCiphertext: new Uint8Array(located.manifestCiphertext) };
+          validateRecoverySnapshot(snapshot, projectId, version);
+          const ciphertext = await recovery.downloadRecoverySnapshot(snapshot);
+          validateRecoverySnapshot(snapshot, projectId, version);
+          await verifyRecoverySnapshot(projectKey, snapshot, ciphertext);
+          await recheckAuthority();
+          const sealedProjectKey = await sealMobileRecoveryKey(recoveryKey, deviceKey.publicKey);
+          try {
+            await recovery.recoverProjectKeyEnvelope({ projectId, expectedKeyVersion: version, expectedDeviceKeyId: deviceKey.keyId,
+              envelopeId: crypto.randomUUID(), sealedProjectKey });
+            await recheckAuthority();
+          } catch (reason) {
+            state = { ...state, status: "locked", activeKeyVersion: null, message: "Recovery could not confirm current device key access. Reconnect and refresh before syncing." };
+            throw reason;
+          }
         }
+        await recheckAuthority();
+        // Installation follows full proof and the final live authority check.
+        projectKeys.set(version, projectKey);
         state = {
           status: "ready",
           activeKeyVersion: version,

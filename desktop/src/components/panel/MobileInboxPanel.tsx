@@ -197,7 +197,7 @@ function ProjectMobileInbox() {
         />}
 
         <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
-          Recovery input must match this book's verified current key. It cannot restore a missing device key envelope; reconnect or review a new book key rotation instead.
+          Recovery verifies the current key against this desktop's envelope or this book's authenticated published snapshot. If the envelope is missing, a verified snapshot can restore access for this desktop only. Unavailable or damaged snapshots require reconnecting or reviewing a new key rotation. Recovery never publishes automatically.
         </p>
         <div style={syncControlsStyle}>
           <label style={syncLabelStyle}>

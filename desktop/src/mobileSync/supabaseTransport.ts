@@ -14,6 +14,7 @@ import {
   type MobileProjectKeyEnvelope,
   type MobileProjectKeyProvisioningTransport,
 } from "./projectKeyProvisioning";
+import { validateRecoverySnapshot, type RecoverySnapshot, type ProjectKeyRecoveryTransport } from "./snapshotRecovery";
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -177,6 +178,7 @@ function nonNegativeInteger(value: unknown, label: string): number {
 
 export class SupabaseMobileSyncTransport implements
   MobileSyncTransport,
+  ProjectKeyRecoveryTransport,
   MobileProjectKeyProvisioningTransport {
   readonly #url: string;
   readonly #publishableKey: string;
@@ -320,6 +322,90 @@ export class SupabaseMobileSyncTransport implements
       throw new Error("Hosted book key state is invalid. Reconnect before syncing.");
     }
     return { latestKeyVersion: latest, activeKeyVersion: active as number | null };
+  }
+
+  async getRecoverySnapshot(projectId: string, expectedKeyVersion: number): Promise<RecoverySnapshot | null> {
+    const expectedProject = required(projectId, "Project id");
+    const version = positiveInteger(expectedKeyVersion, "Recovery key version");
+    const value = await this.#rpc<unknown>("mobile_get_recovery_snapshot", {
+      p_requesting_device_id: this.#deviceId, p_project_id: expectedProject, p_expected_key_version: version,
+    });
+    // A nullable composite may be rendered as null or an empty row collection.
+    if (value === null || Array.isArray(value) && value.length === 0) return null;
+    const row = record(Array.isArray(value) && value.length === 1 ? value[0] : value);
+    if (row.schema_version !== 1 || row.object_bucket !== "mobile-encrypted-sync" || row.manifest_algorithm !== "aes-256-gcm-v1"
+      || typeof row.manifest_nonce !== "string" || row.manifest_nonce.length !== 26
+      || typeof row.manifest_ciphertext !== "string" || row.manifest_ciphertext.length > 8194) throw new Error("The recovery snapshot metadata is unsupported.");
+    const snapshot: RecoverySnapshot = {
+      snapshotId: stringField(row, "snapshot_id"), projectId: stringField(row, "project_id"), revision: stringField(row, "project_revision"),
+      keyVersion: positiveInteger(row.key_version, "Recovery snapshot key version"), objectPath: stringField(row, "object_path"),
+      byteLength: positiveInteger(row.object_byte_length, "Recovery snapshot size"), ciphertextSha256: stringField(row, "object_sha256"),
+      manifestNonce: decodeBytea(row.manifest_nonce, "Recovery manifest nonce"), manifestCiphertext: decodeBytea(row.manifest_ciphertext, "Recovery manifest ciphertext"),
+      manifestSha256: stringField(row, "manifest_ciphertext_sha256"),
+    };
+    validateRecoverySnapshot(snapshot, expectedProject, version);
+    await this.#accessToken();
+    return snapshot;
+  }
+
+  async downloadRecoverySnapshot(snapshot: RecoverySnapshot): Promise<string> {
+    validateRecoverySnapshot(snapshot, snapshot.projectId, snapshot.keyVersion);
+    const path = snapshot.objectPath.split("/").map(encodeURIComponent).join("/");
+    const response = await this.#fetch(`${this.#url}/storage/v1/object/authenticated/mobile-encrypted-sync/${path}`, {
+      method: "GET", headers: { apikey: this.#publishableKey, Authorization: `Bearer ${await this.#accessToken()}` },
+    });
+    if (!response.ok) throw new Error(`The recovery snapshot could not be downloaded (${response.status}). Reconnect or review a new rotation.`);
+    const length = response.headers.get("Content-Length");
+    if (length !== null && Number(length) !== snapshot.byteLength) throw new Error("The recovery snapshot download size does not match its committed manifest.");
+    if (!response.body) throw new Error("The recovery snapshot download is empty.");
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > snapshot.byteLength) throw new Error("The recovery snapshot download exceeded its committed size.");
+        chunks.push(value);
+      }
+      if (total !== snapshot.byteLength) throw new Error("The recovery snapshot download is incomplete.");
+    } catch (reason) {
+      await reader.cancel().catch(() => undefined);
+      throw reason;
+    } finally { reader.releaseLock(); }
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    await this.#accessToken();
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  }
+
+  async recoverProjectKeyEnvelope(input: { projectId: string; expectedKeyVersion: number; expectedDeviceKeyId: string; envelopeId: string; sealedProjectKey: string }): Promise<void> {
+    const projectId = required(input.projectId, "Project id");
+    const version = positiveInteger(input.expectedKeyVersion, "Recovery key version");
+    const sealed = base64UrlToBytes(input.sealedProjectKey, 80, "Sealed recovery project key");
+    const expected = { project_id: projectId, key_version: version, id: required(input.envelopeId, "Recovery envelope id"),
+      recipient_device_id: this.#deviceId, recipient_key_id: required(input.expectedDeviceKeyId, "Recovery device key id"),
+      sender_device_id: this.#deviceId,
+      algorithm: MOBILE_PROJECT_KEY_ENVELOPE_ALGORITHM, sealed_project_key: encodeBytea(sealed), sealed_project_key_sha256: await sha256Hex(sealed) };
+    try {
+      const response = await this.#rpc<unknown>("mobile_recover_project_key_envelope", {
+        p_requesting_device_id: this.#deviceId, p_project_id: projectId, p_expected_key_version: version,
+        p_expected_device_key_id: expected.recipient_key_id, p_envelope_id: expected.id, p_sealed_key: bytesToHex(sealed),
+      });
+      if (!matchesPublication(response, expected)) throw new Error("The recovery envelope response did not match the reviewed device and key.");
+    } catch {
+      // Read once after an ambiguous reply. Absence cannot prove rollback;
+      // never repeat a write or accept another envelope's claimed key.
+      let confirmed = false;
+      try {
+        const rows = await this.#rpc<unknown>("mobile_get_project_key_envelopes", { p_requesting_device_id: this.#deviceId, p_project_id: projectId });
+        confirmed = Array.isArray(rows) && rows.filter(row => matchesPublication(row, expected)).length === 1;
+      } catch { /* Reconnection can independently unwrap a committed envelope. */ }
+      if (!confirmed) throw new Error("Recovery envelope installation is unconfirmed. No key was unlocked and no write was retried. Reconnect to check its committed state before trying again.");
+    }
+    await this.#accessToken();
   }
 
   async rotateProjectKeyWithEnvelopes(input: {

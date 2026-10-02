@@ -13,6 +13,7 @@ export async function connectDesktopMobileSync(projectId: string, projectRoot: s
     supabaseUrl: config.url, publishableKey: config.publishableKey, projectId, projectRoot,
     accessToken: await enrollment.accessToken(), getAccessToken: enrollment.accessToken,
     projectKeys: enrollment.projectKeys,
+    recoveryDeviceKey: enrollment.deviceKey,
   });
   await coordinator.refreshKeyState();
   return coordinator;
