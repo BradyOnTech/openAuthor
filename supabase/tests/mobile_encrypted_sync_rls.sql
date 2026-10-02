@@ -273,12 +273,23 @@ begin
     );
     raise exception 'cross-user device takeover unexpectedly succeeded';
   exception
-    when sqlstate '22000' then null;
+    when sqlstate '22000' then
+      if to_regprocedure('public.mobile_account_is_frozen(uuid)') is not null then raise; end if;
+    when sqlstate '42501' then
+      if to_regprocedure('public.mobile_account_is_frozen(uuid)') is null then raise; end if;
   end;
 end;
 $$;
 
 reset role;
+select pg_temp.assert_true(
+  (select user_id = '10000000-0000-0000-0000-000000000001'::uuid
+    and auth_session_id = '90000000-0000-0000-0000-000000000005'::uuid
+    and current_key_id = '41000000-0000-0000-0000-000000000001'::uuid
+    and device_label = 'Primary desktop'
+   from public.mobile_devices where id = '40000000-0000-0000-0000-000000000001'),
+  'cross-user denial must preserve the original account, Auth session, key and label'
+);
 set local role supabase_auth_admin;
 select pg_temp.assert_true(
   (public.mobile_custom_access_token_hook(jsonb_build_object(

@@ -11,6 +11,7 @@ import { connectDesktopMobileSync } from "../../mobileSync/connectDesktop";
 import { cloudConfiguration, desktopAccount } from "../../cloud/account";
 import { CloudSignIn } from "../../cloud/CloudSignIn";
 import { TrustedDevicesPanel } from "./TrustedDevicesPanel";
+import { AccountDeletionPanel } from "./AccountDeletionPanel";
 import { deviceReviewOperation, forgetCompanionRecoveryKeys } from "../../mobileSync/deviceReviewOperation";
 
 // Retain in-memory connection/key state when this panel is unmounted or the
@@ -34,6 +35,7 @@ function ProjectMobileInbox() {
   const [loading, setLoading] = useState(false);
   const [syncBusy, setSyncBusy] = useState(false);
   const [deviceBusy, setDeviceBusy] = useState(false);
+  const [accountDeletionPending, setAccountDeletionPending] = useState(false);
   const [unlockVersion, setUnlockVersion] = useState("1");
   const [recoveryInput, setRecoveryInput] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
@@ -93,7 +95,7 @@ function ProjectMobileInbox() {
   };
   const controlsBusy = syncBusy || deviceBusy;
   const unresolvedDeviceChange = deviceScope ? deviceReviewOperation(deviceScope).getSnapshot().requiresRefresh : false;
-  const syncBlocked = controlsBusy || unresolvedDeviceChange;
+  const syncBlocked = controlsBusy || unresolvedDeviceChange || accountDeletionPending;
   const coordinatorGeneration = accountGeneration.current;
 
   const refresh = useCallback(async () => {
@@ -120,10 +122,32 @@ function ProjectMobileInbox() {
     void refresh();
   }, [refresh]);
 
+  const accountSignIn = showSignIn && <CloudSignIn onSignedIn={() => {
+    if (active.current) {
+      accountGeneration.current++;
+      busy.current = false; setSyncBusy(false); setDeviceBusy(false);
+      setRecoveryInput(""); setAccountDeletionPending(false);
+      connections.clear(); forgetCompanionRecoveryKeys(); changeConnection(null);
+      setShowSignIn(false);
+      setSyncMessage("Signed in. Select Connect this desktop to set up encrypted sync for this book.");
+    }
+  }} />;
+  const accountDeletion = cloudConfiguration() && <AccountDeletionPanel key={`account-deletion:${accountGeneration.current}`} identity={connectedIdentity ?? null} disabled={controlsBusy} onRequestPending={() => {
+    setAccountDeletionPending(true);
+    setSyncMessage("Account deletion outcome pending. Hosted publishing, import and device changes are blocked; check account deletion status.");
+  }} onRequested={() => {
+    connections.clear(); forgetCompanionRecoveryKeys(); setRecoveryInput("");
+    setAccountDeletionPending(true);
+    setSyncMessage("Account deletion requested. Hosted publishing and import are blocked; check deletion status for remaining work.");
+  }} />;
+
   if (!projectFound) {
     return (
       <div style={{ padding: "var(--space-4)", color: "var(--text-tertiary)" }}>
         Open a project to review mobile captures.
+        {cloudConfiguration() && <button className="btn btn--sm" onClick={() => setShowSignIn(value => !value)}>Companion account</button>}
+        {accountSignIn}
+        {accountDeletion}
       </div>
     );
   }
@@ -157,7 +181,7 @@ function ProjectMobileInbox() {
           Captures return here for review; mobile does not edit the manuscript.
         </p>
         <div style={syncControlsStyle}>
-          <button className="btn btn--sm" disabled={controlsBusy || !cloudConfiguration()}
+          <button className="btn btn--sm" disabled={controlsBusy || accountDeletionPending || !cloudConfiguration()}
             onClick={() => void runSyncAction(async (isCurrent) => {
               const account = await desktopAccount();
               if (!await account.session()) {
@@ -179,20 +203,12 @@ function ProjectMobileInbox() {
               if (isCurrent()) { changeConnection(null); setRecoveryInput(""); }
             })}>Sign out of companion</button>}
         </div>
-        {showSignIn && <CloudSignIn onSignedIn={() => {
-          if (active.current) {
-            accountGeneration.current++;
-            busy.current = false; setSyncBusy(false); setDeviceBusy(false);
-            setRecoveryInput("");
-            connections.clear(); forgetCompanionRecoveryKeys(); changeConnection(null);
-            setShowSignIn(false);
-            setSyncMessage("Signed in. Select Connect this desktop to set up encrypted sync for this book.");
-          }
-        }} />}
+        {accountSignIn}
+        {accountDeletion}
 
         {connectedIdentity && activeProjectId && <TrustedDevicesPanel
           key={deviceScope!} coordinator={coordinator} projectId={activeProjectId} projectRoot={projectRoot}
-          disabled={syncBusy} onBusyChange={value => { if (active.current && accountGeneration.current === coordinatorGeneration && currentCoordinator.current === coordinator) setDeviceBusy(value); }}
+          disabled={syncBusy || accountDeletionPending} onBusyChange={value => { if (active.current && accountGeneration.current === coordinatorGeneration && currentCoordinator.current === coordinator) setDeviceBusy(value); }}
           onChanged={() => { if (active.current && accountGeneration.current === coordinatorGeneration && currentCoordinator.current === coordinator) refreshSyncState(version => version + 1); }}
         />}
 

@@ -55,3 +55,5 @@ export type {
 
 export { CallJournal } from "./callJournal.ts";
 export { SessionLeases, LeaseProblem, type LeaseReceipt, type SessionLeaseOptions } from "./sessionLeases.ts";
+export { SupabaseGatewayVoiceControl, SupabaseControllerVoiceControl, voiceCredentialBinding, type VoiceControlRecord, type GatewayVoiceControl, type ControllerVoiceControl } from "./sharedVoiceControl.ts";
+export { ControllerJournal, VoiceControllerWorker } from "./voiceControllerWorker.ts";

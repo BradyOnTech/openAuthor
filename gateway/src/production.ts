@@ -6,6 +6,7 @@ import { SupabaseRpcSessionRateLimiter } from "./supabaseRateLimiter.ts";
 import { createSessionGateway, type SessionGatewayServer } from "./sessionGateway.ts";
 import { CallJournal } from "./callJournal.ts";
 import { SessionLeases } from "./sessionLeases.ts";
+import { SupabaseGatewayVoiceControl, voiceCredentialBinding } from "./sharedVoiceControl.ts";
 import {
   SupabaseJwksPrincipalVerifier,
   SupabaseRpcProjectDeviceAuthorizer,
@@ -77,6 +78,8 @@ export async function createProductionGateway(
       }),
       upstream: new OpenAIRealtimeUpstream({
         apiKey: config.openAI.apiKey,
+        ...(config.openAI.projectId ? { projectId: config.openAI.projectId } : {}),
+        ...(config.openAI.organizationId ? { organizationId: config.openAI.organizationId } : {}),
         timeoutMs: config.openAI.timeoutMs,
         maxResponseBytes: config.openAI.maxResponseBytes,
       }),
@@ -84,8 +87,14 @@ export async function createProductionGateway(
       diagnosticSink: createJsonLineDiagnosticSink(diagnosticOutput),
       clock: { now: () => new Date() },
   };
+  const control = config.voiceControl.mode === "independent" ? new SupabaseGatewayVoiceControl({
+    supabaseUrl: config.supabase.url, publishableKey: config.supabase.publishableKey,
+    token: config.voiceControl.token!, binding: voiceCredentialBinding(config.openAI.apiKey, config.openAI.projectId!, config.openAI.organizationId),
+    timeoutMs: config.leases.authorizationTimeoutMs, registrationTimeoutMs: config.leases.authorizationTimeoutMs,
+    leaseMs: config.leases.leaseTtlMs, maxDurationMs: config.leases.maxDurationMs,
+  }) : undefined;
   const journal = new CallJournal(config.leases.journalPath);
-  const leases = new SessionLeases({ ...config.leases, journal, ...dependencies });
+  const leases = new SessionLeases({ ...config.leases, journal, ...dependencies, ...(control ? { control } : { recoveryOnly: true }) });
   try { await leases.initialize(); } catch (error) { journal.close(); throw error; }
   return createSessionGateway({ dependencies, policy: config.policy, leases });
 }

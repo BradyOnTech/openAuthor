@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAuthStorage, createCompanionAccount } from "./account";
+import { cloudSessionId, createAuthStorage, createCompanionAccount } from "./account";
 import { deploymentScope, nativeSecrets } from "./secretStore";
 
 const userId = "10000000-0000-4000-8000-000000000001";
@@ -48,6 +48,35 @@ describe("desktop companion account", () => {
     expect(f.client.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     f.client.rpc.mockResolvedValue({ data: null, error: { message: "raw manuscript or token" } } as never);
     await expect(f.account.rpc("name", {})).rejects.toThrow("refused by the backend");
+  });
+
+  it("retains a review on same-session refocus and notifies only identity/session changes", async () => {
+    const f = fixture(), unsubscribe = vi.fn(), listener = vi.fn();
+    const sessionId = "30000000-0000-4000-8000-000000000001";
+    f.session.access_token = `header.${btoa(JSON.stringify({ session_id: sessionId, device_id: deviceId }))}.signature`;
+    await f.account.session();
+    let authChanged!: (event: string, session: typeof f.session | null) => void;
+    Object.assign(f.client.auth, { onAuthStateChange: (callback: typeof authChanged) => {
+      authChanged = callback; return { data: { subscription: { unsubscribe } } };
+    } });
+    const stop = f.account.onIdentityChange!(listener);
+    authChanged("INITIAL_SESSION", f.session); authChanged("TOKEN_REFRESHED", f.session); authChanged("SIGNED_IN", f.session); authChanged("USER_UPDATED", f.session);
+    expect(listener).not.toHaveBeenCalled();
+    const changed = { ...f.session, access_token: `header.${btoa(JSON.stringify({ session_id: sessionId, device_id: userId }))}.signature` };
+    authChanged("TOKEN_REFRESHED", changed);
+    authChanged("SIGNED_IN", { ...changed, access_token: `header.${btoa(JSON.stringify({ session_id: deviceId, device_id: userId }))}.signature` });
+    authChanged("USER_UPDATED", { ...changed, user: { ...changed.user, id: deviceId } }); authChanged("SIGNED_OUT", null);
+    expect(listener).toHaveBeenCalledTimes(4);
+    stop(); expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("reads a verified token's Auth session and refuses malformed or non-UUID bindings", () => {
+    const sessionId = "30000000-0000-4000-8000-000000000001";
+    const signed = { userId, email: "", accessToken: `header.${btoa(JSON.stringify({ session_id: sessionId }))}.signature` };
+    expect(cloudSessionId(signed)).toBe(sessionId);
+    for (const accessToken of ["invalid", "header.bad.signature", `header.${btoa(JSON.stringify({ session_id: "unbound" }))}.signature`]) {
+      expect(cloudSessionId({ ...signed, accessToken })).toBeUndefined();
+    }
   });
 
   it("isolates credential slots by deployment and fails closed without a native vault", async () => {

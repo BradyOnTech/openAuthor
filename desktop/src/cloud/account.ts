@@ -8,17 +8,37 @@ export interface CompanionAccount {
   signOut(): Promise<void>;
   refresh(): Promise<void>;
   rpc(name: string, params: Record<string, unknown>): Promise<unknown>;
+  onIdentityChange?(listener: () => void): () => void;
 }
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function tokenClaims(session: CloudSession): Record<string, unknown> | undefined {
+  try {
+    const encoded = session.accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const value: unknown = JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, "=")));
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+  } catch { return undefined; }
+}
+/** Read only after account.session() has verified the signed identity. */
+export function cloudSessionId(session: CloudSession): string | undefined {
+  const value = tokenClaims(session)?.session_id;
+  return typeof value === "string" && UUID.test(value) ? value : undefined;
+}
+
 export function createCompanionAccount(client: SupabaseClient): CompanionAccount {
+  const identity = (session: CloudSession | null) => {
+    if (!session) return null;
+    const device = tokenClaims(session)?.device_id;
+    return JSON.stringify([session.userId, cloudSessionId(session), typeof device === "string" && UUID.test(device) ? device : undefined]);
+  };
+  let verifiedIdentity: string | null = null;
   const account: CompanionAccount = {
     async session(expected) {
       const result = await client.auth.getSession();
       if (result.error) throw new Error("Your companion session could not be restored. Please sign in again.");
       const session = result.data.session;
-      if (!session) return null;
+      if (!session) { verifiedIdentity = null; return null; }
       const verified = await client.auth.getClaims(session.access_token);
       const claims = verified.data?.claims;
       if (verified.error || !claims || typeof claims.sub !== "string" || !UUID.test(claims.sub)
@@ -28,7 +48,9 @@ export function createCompanionAccount(client: SupabaseClient): CompanionAccount
           || expected.deviceId !== undefined && claims.device_id !== expected.deviceId)) {
         throw new Error("The companion session identity could not be verified. Please reconnect.");
       }
-      return { userId: claims.sub, email: session.user.email ?? "", accessToken: session.access_token };
+      const current = { userId: claims.sub, email: session.user.email ?? "", accessToken: session.access_token };
+      verifiedIdentity = identity(current);
+      return current;
     },
     async signIn(email, password) {
       if (!email.trim() || !password) throw new Error("Enter your email and password.");
@@ -54,6 +76,17 @@ export function createCompanionAccount(client: SupabaseClient): CompanionAccount
       if (result.error || !result.data.session) {
         throw new Error("The device session could not be refreshed. Please sign in again.");
       }
+    },
+    onIdentityChange(listener) {
+      let previous = verifiedIdentity;
+      const { data } = client.auth.onAuthStateChange((event, session) => {
+        if (event === "INITIAL_SESSION") return;
+        const next = identity(session ? { userId: session.user.id, email: session.user.email ?? "", accessToken: session.access_token } : null);
+        // SIGNED_IN can also confirm an unchanged session when a tab refocuses.
+        // Event claims only invalidate; account.session() still verifies access.
+        if (event === "SIGNED_OUT" || next !== previous) { previous = next; listener(); }
+      });
+      return () => data.subscription.unsubscribe();
     },
     async rpc(name, params) {
       const result = await client.rpc(name, params);

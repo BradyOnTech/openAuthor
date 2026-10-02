@@ -17,7 +17,7 @@ type ProjectRecord = {
   kind: ProjectKind;
   status: "active" | "archived";
   settings: Record<string, unknown>;
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -39,7 +39,7 @@ type WorkspaceMemberRecord = {
 type ProjectActivityRecord = {
   id: string;
   project_id: string;
-  actor_user_id: string;
+  actor_user_id: string | null;
   event_type: string;
   payload: Record<string, unknown>;
   created_at: string;

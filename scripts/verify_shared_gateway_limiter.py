@@ -90,6 +90,10 @@ def main() -> None:
       for name, migration in (
         ("mobile_recovery_snapshot.sql", "20261002150000_mobile_recovery_snapshot.sql"),
         ("mobile_project_deletion.sql", "20261002160000_mobile_project_deletion.sql"),
+        ("registry_bootstrap.sql", "20261002170000_registry_bootstrap.sql"),
+        ("mobile_account_deletion.sql", "20261002180000_mobile_account_deletion.sql"),
+        ("mobile_voice_control.sql", "20261002190000_mobile_voice_control.sql"),
+        ("registry_read_authority.sql", "20261002200000_registry_read_authority.sql"),
       ):
         if args.migration_through and args.migration_through < migration:
           continue
@@ -97,6 +101,12 @@ def main() -> None:
         print(f"{name}: real PostgreSQL checks passed.", flush=True)
       if not args.migration_through or args.migration_through >= "20261002160000_mobile_project_deletion.sql":
         run(["python3", str(root / "scripts/verify_project_deletion_concurrency.py"),
+          "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
+      if not args.migration_through or args.migration_through >= "20261002170000_registry_bootstrap.sql":
+        run(["python3", str(root / "scripts/verify_registry_bootstrap_concurrency.py"),
+          "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
+      if not args.migration_through or args.migration_through >= "20261002180000_mobile_account_deletion.sql":
+        run(["python3", str(root / "scripts/verify_account_deletion_concurrency.py"),
           "--pg-bin", str(args.pg_bin), "--socket", str(socket)])
       if args.sql_only:
         return

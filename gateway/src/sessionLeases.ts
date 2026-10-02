@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { CallJournal } from "./callJournal.ts";
 import { validCallId } from "./openAIRealtimeUpstream.ts";
+import type { GatewayVoiceControl, VoiceControlRecord } from "./sharedVoiceControl.ts";
 import type { Clock, PrincipalVerifier, ProjectDeviceAuthorizer, RealtimeCallRequest, RealtimeCallResult, RealtimeUpstream, SessionAuthorizationRequest, SessionPrincipal } from "./types.ts";
 
 export interface LeaseReceipt {
@@ -22,6 +23,9 @@ export interface SessionLeaseOptions {
   pollIntervalMs: number;
   authorizationTimeoutMs: number;
   maxCalls: number;
+  control?: GatewayVoiceControl;
+  /** Production legacy recovery drains journals and refuses new calls. */
+  recoveryOnly?: boolean;
 }
 
 interface Lease {
@@ -36,6 +40,7 @@ interface Lease {
   pollTimer?: ReturnType<typeof setTimeout>;
   termination?: Promise<void>;
   creationPending: boolean;
+  controlState?: VoiceControlRecord;
 }
 
 export class LeaseProblem extends Error {
@@ -77,7 +82,8 @@ export class SessionLeases {
     // Previous tokens are deliberately absent from disk: stop old calls, rather
     // than resuming an unverifiable session after a crash or deploy.
     for (const [id, callId] of this.#options.journal.entries()) {
-      await bounded(this.#options.upstream.hangupCall(callId), this.#options.authorizationTimeoutMs);
+      if (this.#options.control) await bounded(this.#options.control.recover(id, callId), this.#options.authorizationTimeoutMs);
+      else await bounded(this.#options.upstream.hangupCall(callId), this.#options.authorizationTimeoutMs);
       this.#options.journal.retire(id);
     }
     this.#ready = true;
@@ -94,10 +100,20 @@ export class SessionLeases {
     this.#leases.set(lease.id, lease);
     this.#pendingIssues += 1;
     try {
+      if (this.#options.control) {
+        lease.controlState = await bounded(this.#options.control.begin(lease.id, request), this.#options.authorizationTimeoutMs);
+        lease.hardDeadline = Date.parse(lease.controlState.hard_expires_at);
+        lease.deadline = Date.parse(lease.controlState.lease_expires_at);
+      }
       const creation = this.#options.upstream.createCall({ ...call, onCallCreated: async callId => {
         if (!validCallId(callId) || lease.callId) throw new LeaseProblem(503);
         lease.callId = callId;
         this.#options.journal.record(lease.id, callId);
+        if (this.#options.control && lease.controlState) {
+          lease.controlState = await this.#options.control.attach(lease.controlState, callId);
+          lease.controlState = await this.#options.control.ready(lease.controlState);
+          lease.deadline = Date.parse(lease.controlState.lease_expires_at);
+        }
         if (this.#closing || lease.status !== "starting") {
           delete lease.termination;
           await this.#terminate(lease);
@@ -141,8 +157,16 @@ export class SessionLeases {
       throw new LeaseProblem(403);
     }
     if (lease.epoch !== epoch || lease.status !== "active" || this.#expired(lease) || this.#closing) throw new LeaseProblem(410);
+    if (this.#options.control && lease.controlState) {
+      try {
+        const state = await bounded(this.#options.control.renew(lease.controlState, request), this.#options.authorizationTimeoutMs);
+        if (lease.epoch !== epoch || lease.status !== "active" || this.#closing) throw new LeaseProblem(410);
+        lease.controlState = state;
+        lease.deadline = Date.parse(state.lease_expires_at);
+      } catch (error) { await this.#terminate(lease).catch(() => undefined); throw error; }
+    }
     lease.request = structuredClone(request);
-    lease.deadline = Math.min(lease.hardDeadline, this.#options.clock.now().getTime() + this.#options.leaseTtlMs, request.principal.expiresAt!);
+    if (!this.#options.control) lease.deadline = Math.min(lease.hardDeadline, this.#options.clock.now().getTime() + this.#options.leaseTtlMs, request.principal.expiresAt!);
     lease.epoch += 1;
     this.#schedule(lease);
     return this.#receipt(lease);
@@ -166,7 +190,7 @@ export class SessionLeases {
   }
 
   #available(): void {
-    if (!this.#ready || this.#closing || this.#leases.size >= this.#options.maxCalls || [...this.#leases.values()].some(lease => lease.status === "ending")) throw new LeaseProblem(503);
+    if (!this.#ready || this.#closing || this.#options.recoveryOnly || this.#leases.size >= this.#options.maxCalls || [...this.#leases.values()].some(lease => lease.status === "ending")) throw new LeaseProblem(503);
   }
 
   #validPrincipal(principal: SessionPrincipal): void {
@@ -233,8 +257,22 @@ export class SessionLeases {
     if (!lease.callId && lease.creationPending) return Promise.resolve();
     lease.termination = (async () => {
       if (lease.callId) {
-        await bounded(this.#options.upstream.hangupCall(lease.callId), this.#options.authorizationTimeoutMs);
+        if (this.#options.control && lease.controlState) {
+          try {
+            if (lease.controlState.call_id === null) lease.controlState = await this.#options.control.attach(lease.controlState, lease.callId);
+            lease.controlState = await this.#options.control.close(lease.controlState);
+          } catch (error) {
+            // A registration/storage outage must still stop this exact known
+            // call. Retain the local record; independent acknowledgement is
+            // unknown and startup recovery must not infer it from an error.
+            if (!lease.controlState.controller_observed) await bounded(this.#options.upstream.hangupCall(lease.callId), this.#options.authorizationTimeoutMs).catch(() => undefined);
+            throw error;
+          }
+          await bounded(this.#options.control.closed(lease.controlState), this.#options.authorizationTimeoutMs);
+        } else await bounded(this.#options.upstream.hangupCall(lease.callId), this.#options.authorizationTimeoutMs);
         this.#options.journal.retire(lease.id);
+      } else if (this.#options.control && lease.controlState) {
+        await bounded(this.#options.control.close(lease.controlState), this.#options.authorizationTimeoutMs);
       }
       this.#leases.delete(lease.id);
     })().catch(error => {

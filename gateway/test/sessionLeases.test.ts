@@ -316,7 +316,7 @@ test("actual SIGKILL retains the call and restart issues hangup before becoming 
 
 test("real HTTP issuance, owned renewal and stop use leases without spending another quota", async () => {
   const f = await fixture();
-  const config = parseGatewayConfig({ GATEWAY_CALL_JOURNAL_PATH: f.path, SUPABASE_URL: "https://fiction.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public", OPENAI_API_KEY: "synthetic", SAFETY_IDENTIFIER_SECRET: "synthetic-secret-at-least-32-bytes" });
+  const config = parseGatewayConfig({ GATEWAY_VOICE_CONTROL_MODE: "legacy-recovery", GATEWAY_CALL_JOURNAL_PATH: f.path, SUPABASE_URL: "https://fiction.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public", OPENAI_API_KEY: "synthetic", SAFETY_IDENTIFIER_SECRET: "synthetic-secret-at-least-32-bytes" });
   let quotaRequests = 0;
   const server = createSessionGateway({ policy: config.policy, leases: f.manager, dependencies: {
     principalVerifier: f.verifier, authorizer: f.authorizer, upstream: f.upstream,

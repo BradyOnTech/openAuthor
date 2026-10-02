@@ -7,7 +7,9 @@ import { MobileInboxPanel } from "./MobileInboxPanel";
 const harness = vi.hoisted(() => ({
   setError: vi.fn(),
   configured: false,
+  projectFound: true,
   session: vi.fn(async () => ({ userId: "user" })),
+  rpc: vi.fn(),
   connect: vi.fn(),
   signIn: vi.fn(),
   projectId: "project-one",
@@ -58,16 +60,17 @@ const coordinator = vi.hoisted(() => ({
 
 vi.mock("../../contexts/WorkspaceContext", () => ({
   useWorkspace: () => ({
-    projectFound: true,
+    projectFound: harness.projectFound,
     activeProjectId: harness.projectId,
     projectRoot: harness.projectRoot,
     setError: harness.setError,
   }),
 }));
 
-vi.mock("../../cloud/account", () => ({
+vi.mock("../../cloud/account", async importOriginal => ({
+  ...await importOriginal<typeof import("../../cloud/account")>(),
   cloudConfiguration: () => harness.configured ? { url: "https://example.com", publishableKey: "public" } : null,
-  desktopAccount: async () => ({ session: harness.session, signIn: harness.signIn }),
+  desktopAccount: async () => ({ session: harness.session, signIn: harness.signIn, rpc: harness.rpc }),
 }));
 vi.mock("../../cloud/secretStore", () => ({ hasNativeCredentialStore: () => true }));
 vi.mock("../../mobileSync/connectDesktop", () => ({ connectDesktopMobileSync: harness.connect }));
@@ -83,7 +86,7 @@ vi.mock("../../mobileSync/hostedCoordinator", () => ({
 
 describe("MobileInboxPanel", () => {
   let serial = 0;
-  beforeEach(() => { harness.projectRoot = `/synthetic-panel-${++serial}`; harness.connect.mockReset(); harness.signIn.mockReset(); });
+  beforeEach(() => { harness.projectRoot = `/synthetic-panel-${++serial}`; harness.connect.mockReset(); harness.signIn.mockReset(); harness.rpc.mockReset(); harness.projectFound = true; harness.session.mockResolvedValue({ userId: "user" }); });
   afterEach(() => {
     cleanup();
     harness.setError.mockReset();
@@ -107,6 +110,52 @@ describe("MobileInboxPanel", () => {
     expect(screen.getByText("Encrypted snapshot published.")).toBeTruthy();
     expect(harness.setError).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /apply/i })).toBeNull();
+  });
+
+  it("keeps account review and sign-in reachable with no open project", async () => {
+    harness.configured = true; harness.projectFound = false;
+    render(<MobileInboxPanel />);
+    expect(screen.getByText("Hosted account deletion")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Companion account" }));
+    expect(screen.getByRole("form", { name: "Companion sign-in" })).toBeTruthy();
+    expect(harness.connect).not.toHaveBeenCalled();
+  });
+
+  it("blocks hosted sync and device management during an account deletion request and after its lost reply", async () => {
+    harness.configured = true;
+    const userId = "a0000000-0000-4000-8000-000000000001", deviceId = "a0000000-0000-4000-8000-000000000002";
+    const workspaceId = "a0000000-0000-4000-8000-000000000004", projectId = "a0000000-0000-4000-8000-000000000005";
+    harness.session.mockResolvedValue({ userId, email: "synthetic@example.test", accessToken: `header.${btoa(JSON.stringify({ session_id: "a0000000-0000-4000-8000-000000000003" }))}.signature` } as never);
+    let fail!: (reason: Error) => void;
+    harness.rpc.mockImplementation(async name => {
+      if (name === "mobile_get_account_deletion") return null;
+      if (name === "mobile_begin_account_deletion") return new Promise((_, reject) => { fail = reject; });
+      return { schema_version: 1, inventory_sha256: "a".repeat(64), inventory: { user_id: userId,
+        workspaces: [{ workspace_id: workspaceId, name: "Solo", role: "owner", other_members: 0, other_owners: 0, project_ids: [projectId] }],
+        projects: [{ project_id: projectId, workspace_id: workspaceId, name: "Book", needs_rotation: false, previous_key_version: 3, own_outbox_ids: [], project_deletion_job: null }],
+        devices: [{ device_id: deviceId, platform: "desktop", device_label: "Computer" }], existing_project_jobs: [],
+      } };
+    });
+    const publish = vi.fn(), importOutbox = vi.fn();
+    harness.connect.mockResolvedValue({ ...coordinator, getIdentity: () => ({ userId, deviceId }),
+      getState: () => ({ status: "ready", activeKeyVersion: 3, latestKeyVersion: 3, message: "Current book verified." }),
+      listDevices: async () => [{ deviceId, keyId: "key", keyAlgorithm: "x25519-v1", publicKey: "public", projectEnrolledAt: "enrolled", projectRevokedAt: null }],
+      publishSnapshot: publish, importOutbox,
+    });
+    const view = render(<MobileInboxPanel />);
+    fireEvent.click(screen.getByRole("button", { name: "Connect this desktop" })); await screen.findByText("Current book verified.");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Review book key rotation" }).hasAttribute("disabled")).toBe(false));
+    view.container.querySelector("details")!.open = true;
+    fireEvent.click(screen.getByRole("button", { name: "Review hosted account deletion" })); await screen.findByText("Exact hosted inventory");
+    fireEvent.click(screen.getByRole("checkbox", { name: /I intend to permanently/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Request reviewed account deletion" }));
+    await waitFor(() => expect(typeof fail).toBe("function"));
+    for (const name of ["Reconnect this desktop", "Publish snapshot", "Import outbox", "Unlock recovery key", "Review book key rotation"]) expect(screen.getByRole("button", { name }).hasAttribute("disabled")).toBe(true);
+    await act(async () => fail(new Error("Reply lost"))); await screen.findByText("Reply lost");
+    for (const name of ["Reconnect this desktop", "Publish snapshot", "Import outbox", "Review book key rotation"]) expect(screen.getByRole("button", { name }).hasAttribute("disabled")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Check account deletion status" })); await screen.findByText(/No completed request is confirmed/);
+    expect(screen.getByRole("button", { name: "Publish snapshot" }).hasAttribute("disabled")).toBe(true);
+    expect(publish).not.toHaveBeenCalled(); expect(importOutbox).not.toHaveBeenCalled();
   });
 
   it("shows captured items and flags stale review decisions as conflicts", async () => {

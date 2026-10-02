@@ -6,6 +6,8 @@ import type {
 
 export interface OpenAIRealtimeUpstreamOptions {
   apiKey: string;
+  projectId?: string;
+  organizationId?: string;
   baseUrl?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
@@ -30,6 +32,7 @@ export function validCallId(value: unknown): value is string {
 
 export class OpenAIRealtimeUpstream implements RealtimeUpstream {
   readonly #apiKey: string;
+  readonly #bindingHeaders: Record<string, string>;
   readonly #baseUrl: string;
   readonly #fetch: typeof fetch;
   readonly #timeoutMs: number;
@@ -38,6 +41,13 @@ export class OpenAIRealtimeUpstream implements RealtimeUpstream {
   constructor(options: OpenAIRealtimeUpstreamOptions) {
     if (!options.apiKey) throw new Error("An OpenAI API key is required.");
     this.#apiKey = options.apiKey;
+    this.#bindingHeaders = {};
+    for (const [name, value] of [["OpenAI-Project", options.projectId], ["OpenAI-Organization", options.organizationId]]) {
+      if (value !== undefined) {
+        if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error("OpenAI credential binding is invalid.");
+        this.#bindingHeaders[name!] = value;
+      }
+    }
     const base = new URL(options.baseUrl ?? "https://api.openai.com");
     const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(base.hostname);
     if ((base.protocol !== "https:" && !(base.protocol === "http:" && loopback)) || base.username || base.password || base.search || base.hash || base.pathname !== "/") throw new Error("OpenAI origin is invalid.");
@@ -68,6 +78,7 @@ export class OpenAIRealtimeUpstream implements RealtimeUpstream {
         method: "POST",
         headers: {
           authorization: `Bearer ${this.#apiKey}`,
+          ...this.#bindingHeaders,
           "x-client-request-id": request.requestId,
         },
         body: form,
@@ -144,7 +155,7 @@ export class OpenAIRealtimeUpstream implements RealtimeUpstream {
     let response: Response;
     try {
       response = await this.#fetch(`${this.#baseUrl}/v1/realtime/calls/${callId}/hangup`, {
-        method: "POST", headers: { authorization: `Bearer ${this.#apiKey}` },
+        method: "POST", headers: { authorization: `Bearer ${this.#apiKey}`, ...this.#bindingHeaders },
         signal: AbortSignal.timeout(this.#timeoutMs), redirect: "error",
       });
     } catch {

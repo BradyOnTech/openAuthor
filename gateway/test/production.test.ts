@@ -23,6 +23,7 @@ function environment(): NodeJS.ProcessEnv {
     SUPABASE_URL: "https://fiction.supabase.co",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fiction",
     OPENAI_API_KEY: "sk-fiction-openai-key",
+    GATEWAY_VOICE_CONTROL_MODE: "legacy-recovery",
     SAFETY_IDENTIFIER_SECRET: "fiction-safety-secret-at-least-32-bytes",
     GATEWAY_SHUTDOWN_TIMEOUT_MS: "1000",
   };

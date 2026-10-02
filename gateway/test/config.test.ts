@@ -9,6 +9,8 @@ function requiredEnvironment(): NodeJS.ProcessEnv {
     SUPABASE_URL: "https://fiction.supabase.co",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fiction",
     OPENAI_API_KEY: "sk-fiction-openai-key",
+    OPENAI_PROJECT_ID: "proj_synthetic",
+    SUPABASE_VOICE_GATEWAY_TOKEN: `${Buffer.from('{"alg":"HS256"}').toString("base64url")}.${Buffer.from(JSON.stringify({ role: "mobile_voice_gateway", exp: 4102444800 })).toString("base64url")}.synthetic`,
     SAFETY_IDENTIFIER_SECRET: "fiction-safety-secret-at-least-32-bytes",
   };
 }
@@ -52,6 +54,7 @@ test("fails closed for missing credentials and unsafe production configuration",
     "SUPABASE_URL",
     "SUPABASE_PUBLISHABLE_KEY",
     "OPENAI_API_KEY",
+    "SUPABASE_VOICE_GATEWAY_TOKEN",
     "SAFETY_IDENTIFIER_SECRET",
   ]) {
     const environment = requiredEnvironment();

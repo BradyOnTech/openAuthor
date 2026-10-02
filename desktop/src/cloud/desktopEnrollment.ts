@@ -1,5 +1,5 @@
 import sodium from "libsodium-wrappers";
-import { UUID, type CompanionAccount } from "./account";
+import { UUID, cloudSessionId, type CompanionAccount } from "./account";
 import type { DesktopSecretStore } from "./secretStore";
 
 type Identity = {
@@ -12,12 +12,6 @@ type Identity = {
   privateKey: string;
 };
 
-function signedSessionId(token: string): unknown {
-  try {
-    const body = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return (JSON.parse(atob(body.padEnd(Math.ceil(body.length / 4) * 4, "="))) as Record<string, unknown>).session_id;
-  } catch { return undefined; }
-}
 
 function encode(value: Uint8Array): string {
   return sodium.to_base64(value, sodium.base64_variants.URLSAFE_NO_PADDING);
@@ -68,18 +62,17 @@ export type DesktopEnrollment = {
   accessToken(): Promise<string>;
 };
 
-export async function enrollDesktopForProject(input: {
+async function registerDesktopDevice(input: {
   scope: string;
-  projectId: string;
+  userId?: string;
   account: CompanionAccount;
   secrets: DesktopSecretStore;
-}): Promise<DesktopEnrollment> {
-  if (!UUID.test(input.projectId)) throw new Error("This book needs a hosted project identity before companion sync.");
+}) {
   if (!/^[0-9a-f]{64}$/.test(input.scope)) throw new Error("Invalid companion deployment scope.");
   const { account, secrets } = input;
-  const session = await account.session();
+  const session = await account.session(input.userId ? { userId: input.userId } : undefined);
   if (!session || !UUID.test(session.userId)) throw new Error("Sign in before connecting this desktop.");
-  const originalSessionId = signedSessionId(session.accessToken);
+  const originalSessionId = cloudSessionId(session);
   await sodium.ready;
   const slot = `device-${input.scope}-${session.userId}`;
   let stored = await secrets.get(slot);
@@ -96,7 +89,7 @@ export async function enrollDesktopForProject(input: {
   }
   const device = identity(stored, session.userId);
   const beforeRegistration = await account.session({ userId: device.userId });
-  if (!beforeRegistration || signedSessionId(beforeRegistration.accessToken) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
+  if (!beforeRegistration || cloudSessionId(beforeRegistration) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
   const registered = row(await account.rpc("mobile_register_device", {
     p_device_id: device.deviceId, p_key_id: device.keyId,
     p_platform: "desktop", p_device_label: device.name,
@@ -107,10 +100,31 @@ export async function enrollDesktopForProject(input: {
   const accessToken = async () => {
     const verified = await account.session({ userId: device.userId, deviceId: device.deviceId });
     if (!verified) throw new Error("Your companion session ended. Reconnect to continue.");
-    if (signedSessionId(verified.accessToken) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
+    if (cloudSessionId(verified) !== originalSessionId) throw new Error("The companion session changed. Reconnect this desktop.");
     return verified.accessToken;
   };
   await accessToken();
+  return { device, accessToken };
+}
+
+/** Register this account's desktop without enrolling it in any hosted book. */
+export async function enrollDesktopAccount(input: {
+  scope: string; userId: string; account: CompanionAccount; secrets: DesktopSecretStore;
+}): Promise<{ userId: string; deviceId: string }> {
+  if (!UUID.test(input.userId)) throw new Error("Sign in before connecting this desktop.");
+  const { device } = await registerDesktopDevice(input);
+  return { userId: device.userId, deviceId: device.deviceId };
+}
+
+export async function enrollDesktopForProject(input: {
+  scope: string;
+  projectId: string;
+  account: CompanionAccount;
+  secrets: DesktopSecretStore;
+}): Promise<DesktopEnrollment> {
+  if (!UUID.test(input.projectId)) throw new Error("This book needs a hosted project identity before companion sync.");
+  const { account } = input;
+  const { device, accessToken } = await registerDesktopDevice(input);
   await account.rpc("mobile_enroll_project_device", {
     p_requesting_device_id: device.deviceId, p_project_id: input.projectId, p_target_device_id: device.deviceId,
   });

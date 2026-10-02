@@ -59,7 +59,7 @@ export type Project = {
   kind: ProjectKind;
   status: ProjectStatusValue;
   settings: Record<string, unknown>;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -73,7 +73,7 @@ export type WorkspaceMember = {
 export type ProjectActivityEvent = {
   id: string;
   projectId: string;
-  actorUserId: string;
+  actorUserId: string | null;
   eventType: string;
   payload: Record<string, unknown>;
   createdAt: string;

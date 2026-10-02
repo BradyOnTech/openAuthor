@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import sodium from "libsodium-wrappers";
-import { enrollDesktopForProject } from "./desktopEnrollment";
+import { enrollDesktopAccount, enrollDesktopForProject } from "./desktopEnrollment";
 import type { CompanionAccount } from "./account";
 import type { DesktopSecretStore } from "./secretStore";
 
@@ -37,6 +37,17 @@ function fixture() {
 }
 
 describe("durable desktop enrollment", () => {
+  it("connects an account with no hosted books without any project enrollment or envelope request", async () => {
+    const f = fixture();
+    const first = await enrollDesktopAccount({ scope, userId, account: f.account, secrets: f.secrets });
+    const second = await enrollDesktopAccount({ scope, userId, account: f.account, secrets: f.secrets });
+    expect(first).toEqual(second);
+    expect(first.userId).toBe(userId);
+    expect(f.events).toEqual(["persist", "mobile_register_device", "mobile_register_device"]);
+    expect(f.account.refresh).toHaveBeenCalledTimes(2);
+    expect(f.account.session).toHaveBeenCalledWith({ userId });
+    expect(JSON.stringify(first)).not.toContain("privateKey");
+  });
   it("persists before registration and reuses the same identity after restart", async () => {
     const f = fixture();
     const first = await f.run();

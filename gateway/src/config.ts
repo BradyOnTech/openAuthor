@@ -1,6 +1,7 @@
 import { MOBILE_REALTIME_TOOL_NAMES, MOBILE_REALTIME_TOOLS } from "./mobilePolicy.ts";
 import type { GatewayPolicy } from "./types.ts";
 import { isAbsolute } from "node:path";
+import { trustedVoiceToken } from "./sharedVoiceControl.ts";
 
 export interface GatewayConfig {
   host: string;
@@ -20,6 +21,8 @@ export interface GatewayConfig {
   };
   openAI: {
     apiKey: string;
+    projectId?: string;
+    organizationId?: string;
     timeoutMs: number;
     maxResponseBytes: number;
   };
@@ -36,6 +39,7 @@ export interface GatewayConfig {
     maxCalls: number;
   };
   policy: GatewayPolicy;
+  voiceControl: { mode: "independent" | "legacy-recovery"; token?: string };
 }
 
 const DEFAULT_INSTRUCTIONS =
@@ -152,6 +156,15 @@ export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfi
   if (leaseTtlMs > maxDurationMs || pollIntervalMs >= leaseTtlMs) throw new Error("Gateway session lease bounds are inconsistent.");
   const supabaseUrl = secureUrl(required(environment, "SUPABASE_URL"), "SUPABASE_URL", true);
   const openAIApiKey = boundedText(required(environment, "OPENAI_API_KEY"), "OPENAI_API_KEY", 16_384);
+  const mode = environment.GATEWAY_VOICE_CONTROL_MODE?.trim() || "independent";
+  if (mode !== "independent" && mode !== "legacy-recovery") throw new Error("GATEWAY_VOICE_CONTROL_MODE must be independent or legacy-recovery.");
+  const projectId = environment.OPENAI_PROJECT_ID?.trim();
+  const organizationId = environment.OPENAI_ORGANIZATION_ID?.trim();
+  if (mode === "independent" && !projectId) throw new Error("OPENAI_PROJECT_ID is required for independent control.");
+  for (const [name, value] of [["OPENAI_PROJECT_ID", projectId], ["OPENAI_ORGANIZATION_ID", organizationId]]) {
+    if (value && !/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error(`${name} is invalid.`);
+  }
+  const controlToken = mode === "independent" ? trustedVoiceToken(required(environment, "SUPABASE_VOICE_GATEWAY_TOKEN"), "mobile_voice_gateway") : undefined;
   const safetyIdentifierSecret = boundedText(
     required(environment, "SAFETY_IDENTIFIER_SECRET"),
     "SAFETY_IDENTIFIER_SECRET",
@@ -248,6 +261,7 @@ export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfi
     },
     openAI: {
       apiKey: openAIApiKey,
+      ...(projectId ? { projectId } : {}), ...(organizationId ? { organizationId } : {}),
       timeoutMs: boundedInteger(
         environment,
         "GATEWAY_OPENAI_TIMEOUT_MS",
@@ -318,5 +332,6 @@ export function parseGatewayConfig(environment: NodeJS.ProcessEnv): GatewayConfi
       ),
       safetyIdentifierSecret,
     },
+    voiceControl: { mode, ...(controlToken ? { token: controlToken } : {}) },
   };
 }

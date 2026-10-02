@@ -5,6 +5,8 @@ import { closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readF
 
 import { validCallId } from "./openAIRealtimeUpstream.ts";
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 /** Content-free, exclusively owned call records. Bearer tokens never go to disk. */
 export class CallJournal {
   readonly #path: string;
@@ -45,7 +47,7 @@ export class CallJournal {
         const saved = JSON.parse(readFileSync(path, "utf8"));
         if (saved.schema !== 1 || !Array.isArray(saved.calls) || saved.calls.length > 1000) throw new Error();
         for (const entry of saved.calls) {
-          if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !/^[0-9a-f-]{36}$/.test(entry[0]) || !validCallId(entry[1]) || this.#calls.has(entry[0]) || [...this.#calls.values()].includes(entry[1])) throw new Error();
+          if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !uuidPattern.test(entry[0]) || !validCallId(entry[1]) || this.#calls.has(entry[0]) || [...this.#calls.values()].includes(entry[1])) throw new Error();
           this.#calls.set(entry[0], entry[1]);
         }
       } else this.#persist();
@@ -58,7 +60,7 @@ export class CallJournal {
   entries(): Array<[string, string]> { return [...this.#calls.entries()]; }
 
   record(leaseId: string, callId: string): void {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(leaseId) || !validCallId(callId) || this.#closed || this.#calls.has(leaseId) || this.#calls.size >= 1000 || [...this.#calls.values()].includes(callId)) throw new Error("Call cannot be durably registered.");
+    if (!uuidPattern.test(leaseId) || !validCallId(callId) || this.#closed || this.#calls.has(leaseId) || this.#calls.size >= 1000 || [...this.#calls.values()].includes(callId)) throw new Error("Call cannot be durably registered.");
     this.#calls.set(leaseId, callId);
     try { this.#persist(); } catch (error) { this.#calls.delete(leaseId); throw error; }
   }
