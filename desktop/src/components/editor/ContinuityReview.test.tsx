@@ -52,3 +52,30 @@ it("does not retarget missing scenes or treat recorded evidence as current verif
   expect(screen.getByText(/These are recorded passages/)).toBeTruthy();
   expect((screen.getByRole("button", { name: "Plan a revision" }) as HTMLButtonElement).disabled).toBe(true);
 });
+
+it("moves through findings with the keyboard and keeps unfinished review notes", () => {
+  const diagnostics = [finding, { ...finding, id: "d2", title: "Character knowledge conflict" }, { ...finding, id: "d3", title: "Timeline mismatch" }];
+  const review = vi.fn();
+  render(<ContinuityReview diagnostics={diagnostics} scenes={scenes} busy={false} onOpenScene={vi.fn()} onRevise={vi.fn()} onReview={review} />);
+  const list = within(screen.getByRole("navigation", { name: "Findings to review" }));
+  const first = list.getByRole("button", { name: /Conflicting Canon Facts/ });
+  first.focus();
+  const article = within(screen.getByRole("article", { name: finding.title }));
+  fireEvent.click(article.getByText("Record review decision"));
+  fireEvent.change(article.getByLabelText("Review notes"), { target: { value: "Confirm the narrator knows this." } });
+  fireEvent.keyDown(first, { key: "ArrowDown" });
+  const second = list.getByRole("button", { name: /Character knowledge conflict/ });
+  expect(document.activeElement).toBe(second);
+  expect(second.getAttribute("aria-pressed")).toBe("true");
+  expect(first.tabIndex).toBe(-1);
+  expect(screen.getByRole("article", { name: "Character knowledge conflict" })).toBeTruthy();
+  fireEvent.keyDown(second, { key: "End" });
+  const last = list.getByRole("button", { name: /Timeline mismatch/ });
+  expect(document.activeElement).toBe(last);
+  fireEvent.keyDown(last, { key: "Home" });
+  expect(document.activeElement).toBe(first);
+  expect((article.getByLabelText("Review notes") as HTMLTextAreaElement).value).toBe("Confirm the narrator knows this.");
+  fireEvent.keyDown(article.getByLabelText("Review notes"), { key: "ArrowDown" });
+  expect(first.getAttribute("aria-pressed")).toBe("true");
+  expect(review).not.toHaveBeenCalled();
+});

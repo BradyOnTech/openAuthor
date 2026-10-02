@@ -14,18 +14,115 @@ build alone satisfies this goal.
 
 | Area | Required proof | Current assessment |
 | --- | --- | --- |
-| Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save-acknowledgement, cooperating rollback and stale desktop-save races corrected with core/native/browser regressions; multi-draft recovery, concurrent external writes, full metadata coverage and crash recovery remain open |
+| Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save and stale-response safeguards plus durable multi-file recovery now have real subprocess-kill evidence; unknown newer writing requires reviewed comparison. Noncooperating writers, physical power loss and full signed-GUI acceptance remain explicit limits |
 | Authoring | Create/import a book, draft and organize chapters/scenes, read, search, reopen and export with predictable structure and no unexplained loss | Connected browser/real-Python journey now covers import, planning, chapter reading, Memory, search, local copilot notes and Word export; packaged/full-novel acceptance remains required |
-| AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | Existing implementation; fresh integration and creative-quality validation required |
+| AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | One authenticated October 2 synthetic chapter critique caught a planted knowledge problem; original evidence-offset failure and same-response repair are retained. Author judgment, revisions and broader quality remain unverified |
 | Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Existing core/rendered tests; independent failure-path review and packaged end-to-end coverage required |
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
 | Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Fresh end-user walkthrough and accessibility pass required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked installation and Node 22 workflow corrected; local package checks/audits/build pass. Remote CI, native toolchain/runtime and distribution still need verification |
-| Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Not proven; no release-ready claim |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds and current-source unsigned arm64 runtime verification pass. Contracts/desktop/gateway audits are clean; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
 ## Iteration record
+
+### 2026-10-02 — focused review, durable recovery and completion audit
+
+The six-priority pass is **in progress**. The
+[requirement ledger](evaluations/project-completion-2026-10-02/requirements.json)
+separates implemented behavior from author, device and distribution acceptance.
+The pass starts from `f154d78`. Bundle provenance records the implementation
+commit and actual packaged bytes separately from the unobserved manual gates.
+
+Focused read-only Critique now offers explicit review modes for passages and
+Plan chapters, source-checked evidence, uncertainty, strengths and minimal
+optional interventions. Chapter source changes make the review stale. Approved
+Writing Voice enters selection context only through the usable privacy-gated
+craft projection; raw unapproved samples stay excluded and profile changes
+invalidate reviewed fingerprints before or after provider work.
+
+One authenticated subscription call reviewed the fresh three-scene synthetic
+Ferry Ledger chapter. Its raw feedback caught the planted unexplained key
+knowledge without flagging the explicit hair-dye change or resolving the ledger
+and ferry. The original strict parser withheld its only finding for a one-character
+offset error. A reviewed repair re-anchors only a unique exact quote within the
+same supplied scene and visibly records the correction; the immutable original
+and locally revalidated response remain separate. No extra inference was used
+for that repair. The [assistant assessment](evaluations/connected-editorial-2026-10-02/assessment.md)
+records absent author acceptance and the limits of one authored fixture.
+Generation `gen-74db96940b37` resolved `gpt-5.6-sol` and reports 4,620 input and
+2,411 output tokens, one attempt, and a `$0.00` API estimate through the
+subscription path. That estimate does not establish subscription billing. The
+approved evaluation scope is synthetic content with a maximum `$5` API budget.
+
+Memory review now suppresses selected grammatical false positives, supports
+source/version-guarded entity-type correction, and protects conflicting typed
+identities. The main workspace retains correction drafts and offers evidence
+review and keyboard triage. Saved Plan guidance is compact; passage comparisons
+retain exact text and selection actions stay reachable. Fresh extraction and
+rendered workflow evidence are linked from the requirement ledger. Broader
+language support and observed author review burden remain open.
+
+[Durable manuscript transactions](manuscript-transactions.md) now journal exact
+bytes and recover before cooperating reads after real SIGKILL subprocesses at
+scene, Revision HEAD, proposal and commit stages. Reviewed recovery fingerprints
+protect against third-writer changes. A committed journal preserves successful
+writing; a full Revision restore that changes project identity fails before any
+writes. The packaged-engine probe exercises embedded tools without system tools
+on PATH. Physical power loss, arbitrary noncooperating writers and signed GUI
+failure acceptance remain separate limits.
+
+Mobile encrypted restart retention, native cache migration and authentication
+cleanup now cover concurrent refresh, vanished legacy files, pending SDK writes
+after sign-out, and cross-tab commit fences. Real SQLite/WebCrypto adapters and
+the installed Supabase SDK are exercised through test ports. Browser/native
+adapter results and all-platform Expo exports do not establish physical iPhone
+or Android audio, OS permission, routing, interruption or deployment security.
+
+Current Python 3.13 discovery after the quote-anchor repair reports 494 tests:
+493 passed and one optional packaged-runtime contract skipped. The final
+packaged-Python run passed all 494 tests with no skip. Desktop passed 374 tests
+across 74 files after the caret and immediate-replacement follow-up. Mobile
+passed 126 tests across 27 files and all-platform exports; contracts passed 19
+tests; gateway passed 28 tests/typecheck/build.
+Native tests passed 10 with one macOS Keychain case ignored. The preliminary browser
+run passed 13 journeys and exposed a Storyline-regeneration assertion; its corrected
+targeted rerun passed 2/2. The final combined Chrome gate passed all 15 journeys.
+The unchanged authoring and caret journeys also pass in WebKit. The initial
+combined run exposed immediate replacement appending after caret restoration;
+the repair now preserves explicit author selection and has regression coverage.
+The final current-source arm64 bundle passed its wire contract and five real
+SIGKILL recovery stages. Its exact core-source SHA-256 is
+`21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92`.
+Local native GUI inspection restored exact synthetic scene bytes from backup,
+then recovered both document tabs, active Plan, unsaved Synopsis and new-act
+drafts after forced termination. Physical Tab/Shift-Tab and typing resumed at
+the restored caret and subsequently retained its updated position. This targeted
+unsigned local walkthrough does not certify signed/clean-machine installation
+or broader keyboard/assistive accessibility.
+
+The [dependency review](evaluations/project-completion-2026-10-02/dependency-review.md)
+records compatible patches to `fast-uri` 3.1.8 and `brace-expansion` 5.0.12.
+Contracts, desktop and gateway audits report zero vulnerabilities. Mobile has
+five high dependency entries from one unpatched `node-forge` advisory; vulnerable
+build-time/runtime reachability was not established. A supported fix or reviewed,
+tested mitigation and affected-path analysis is required before clearing that
+security gate. No broad Expo downgrade or audit suppression was applied.
+
+Concrete code gaps remain in typed Memory value validation, uncased-name
+extraction, specific warnings for lost empty outline containers on re-import,
+and fresh-context recovery for stale pending chat. Basic Unicode retrieval,
+honest unavailable word metrics, and reviewed initial-plan/merge context already
+exist; older missing-feature wording is superseded in the machine ledger.
+
+Remaining acceptance is author review of useful retained/rejected revisions;
+physical-phone and approved deployment authorization/revocation/recovery drills;
+owner-supplied Developer ID signing and notarization; clean Apple Silicon and
+Intel installation; signed-app credential and upgrade checks; and full native
+keyboard/VoiceOver, contrast and text-scaling evaluation. A local unsigned GUI
+walkthrough and green fixture tests do not complete these gates. Production
+readiness remains unestablished.
 
 ### 2026-09-07 — baseline and writing safety
 

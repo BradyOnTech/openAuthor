@@ -110,6 +110,12 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
     }
     throw new Error(`Unexpected fixture backend path: ${path}`);
   });
+  const readScene = async (title: string) => {
+    await page.getByRole("tab", { name: "Scenes", exact: true }).click();
+    const back = page.getByRole("button", { name: "Back to scenes", exact: true });
+    if (await back.isVisible()) await back.click();
+    await page.getByRole("button", { name: `Read ${title}`, exact: true }).click();
+  };
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
@@ -145,7 +151,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await expect(page.getByText(/Scene 2 of 3 · Desktop Plan reading order/)).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("plan-ordered-reader.png"), fullPage: true });
   await page.getByRole("button", { name: "Back to scenes", exact: true }).click();
-  await page.getByRole("button", { name: "Read The Snow Key" }).click();
+  await readScene("The Snow Key");
   missingBookKey = false;
   await expect(page.getByText(/Mara found a brass key beneath/)).toBeVisible();
   await page.getByRole("button", { name: "Discuss this scene", exact: true }).click();
@@ -173,7 +179,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await expect(page.getByText("2 accepted story facts selected from this snapshot for the book.", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: /The Winter Observatory/ }).click();
-  await page.getByRole("button", { name: "Read The Snow Key" }).click();
+  await readScene("The Snow Key");
   await page.getByRole("tab", { name: "Assistant", exact: true }).click();
   await expect(page.getByText("Writing Voice: Winter restraint", { exact: true })).toBeVisible();
   await expect(page.getByText("1 accepted story fact selected from this snapshot for this scene.", { exact: true })).toBeVisible();
@@ -182,11 +188,94 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await exerciseVoiceControls(page, testInfo);
   await page.getByRole("tab", { name: "Capture", exact: true }).click();
   const note = "Let the key open the clock instead of the door.";
+  await page.getByRole("button", { name: "dictated passage", exact: true }).click();
   await page.getByLabel("Capture text").fill(note);
   await page.getByRole("tab", { name: "Scenes", exact: true }).click();
   await expect(page.getByRole("button", { name: "Discuss this scene", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Capture", exact: true }).click();
   await expect(page.getByLabel("Capture text")).toHaveValue(note);
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 550 });
+  await page.getByRole("tab", { name: "Scenes", exact: true }).click();
+  const readOffset = await page.getByText(/Mara found a brass key beneath/).evaluate((element) => {
+    let parent = element.parentElement;
+    while (parent && parent.scrollHeight <= parent.clientHeight) parent = parent.parentElement;
+    if (!parent) throw new Error("Expected a scrollable manuscript reader");
+    parent.scrollTop = 140;
+    return parent.scrollTop;
+  });
+  expect(readOffset).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("openauthor-companion-v1");
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    const get = <T>(store: string, key: IDBValidKey) => new Promise<T>((resolve, reject) => {
+      const request = database.transaction(store).objectStore(store).get(key);
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      const keys = await new Promise<IDBValidKey[]>((resolve) => {
+        const request = database.transaction("records").objectStore("records").getAllKeys();
+        request.onsuccess = () => resolve(request.result);
+      });
+      const slot = keys.find((key) => String(key).startsWith("companion-recovery:"));
+      if (!slot) return null;
+      const record = await get<{ iv: Uint8Array<ArrayBuffer>; bytes: ArrayBuffer }>("records", slot);
+      const key = await get<CryptoKey>("keys", "wrapping-key");
+      const decoded = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: record.iv, additionalData: new TextEncoder().encode(String(slot)) }, key, record.bytes)));
+      return decoded.state.reading?.scrollY;
+    } finally { database.close(); }
+  })).toBe(readOffset);
+  await page.getByRole("tab", { name: "Capture", exact: true }).click();
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  // Quota/encryption failures keep the current draft and expose a durable-save
+  // failure. A retry must commit the same latest state before a cold restart.
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
+      if (String(key).startsWith("companion-recovery:")) {
+        IDBObjectStore.prototype.put = put;
+        throw new DOMException("Fixture: encrypted draft storage full", "QuotaExceededError");
+      }
+      return put.call(this, value, key);
+    };
+  });
+  await page.getByLabel("Capture text").fill(`${note} Keep this on failure.`);
+  await expect(page.getByText("Draft changes are not saved for restart.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Capture text")).toHaveValue(`${note} Keep this on failure.`);
+  await page.getByRole("button", { name: "Retry reading and capture recovery" }).click();
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  await page.getByLabel("Capture text").fill(note);
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: /The Winter Observatory/ }).click();
+  await expect(page.getByRole("tab", { name: "Capture", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByLabel("Capture text")).toHaveValue(note);
+  await expect(page.getByRole("button", { name: "dictated passage", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("tab", { name: "Scenes", exact: true }).click();
+  await expect(page.getByText(/Mara found a brass key beneath/)).toBeVisible();
+  await expect.poll(() => page.getByText(/Mara found a brass key beneath/).evaluate((element) => {
+    let parent = element.parentElement;
+    while (parent && parent.scrollHeight <= parent.clientHeight) parent = parent.parentElement;
+    return parent?.scrollTop;
+  })).toBe(readOffset);
+  await page.getByRole("tab", { name: "Capture", exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath("recovered-unfinished-capture.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("openauthor-companion-v1");
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      const records = database.transaction("records").objectStore("records");
+      const keys = await new Promise<IDBValidKey[]>((resolve) => { const read = records.getAllKeys(); read.onsuccess = () => resolve(read.result); });
+      const slot = keys.find((key) => String(key).startsWith("companion-recovery:"))!;
+      const record = await new Promise<unknown>((resolve) => { const read = database.transaction("records").objectStore("records").get(slot); read.onsuccess = () => resolve(read.result); });
+      (globalThis as unknown as { retainedRecovery: unknown }).retainedRecovery = { slot, record };
+    } finally { database.close(); }
+  });
   // One failed local write must not erase the draft or pretend it was saved.
   // This changes only this disposable browser's next outbox insert.
   await page.evaluate(() => {
@@ -201,6 +290,32 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   });
   await page.getByRole("button", { name: "Save pending item" }).click();
   await expect(page.getByText("Fixture: capture storage is temporarily unavailable.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Capture text")).toHaveValue(note);
+  await page.getByRole("button", { name: "Save pending item" }).click();
+  await expect(page.getByText("Pending review", { exact: true })).toBeVisible();
+  await expect(page.getByText(note, { exact: true })).toBeVisible();
+  // Reproduce a process exit after outbox insertion but before draft-clearing
+  // commits: restore the last durable encrypted draft, then start a fresh app.
+  // Retrying that recovered operation must leave exactly one outbox item.
+  await page.getByRole("tab", { name: "Capture", exact: true }).click();
+  await expect(page.getByLabel("Capture text")).toHaveValue("");
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    const retained = (globalThis as unknown as { retainedRecovery: { slot: IDBValidKey; record: unknown } }).retainedRecovery;
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("openauthor-companion-v1");
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const transaction = database.transaction("records", "readwrite");
+        transaction.oncomplete = () => resolve(); transaction.onabort = () => reject(transaction.error);
+        transaction.objectStore("records").put(retained.record, retained.slot);
+      });
+    } finally { database.close(); }
+  });
+  await page.reload();
+  await page.getByRole("button", { name: /The Winter Observatory/ }).click();
   await expect(page.getByLabel("Capture text")).toHaveValue(note);
   await page.getByRole("button", { name: "Save pending item" }).click();
   await expect(page.getByText("Pending review", { exact: true })).toBeVisible();
@@ -225,6 +340,20 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
       });
     } finally { database.close(); }
   });
+  const records = await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("openauthor-companion-v1");
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      return await new Promise<unknown[]>((resolve, reject) => {
+        const request = database.transaction("records").objectStore("records").getAll();
+        request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      });
+    } finally { database.close(); }
+  });
+  expect(JSON.stringify(records)).not.toContain(note);
+  expect(JSON.stringify(records)).not.toContain("Mara found a brass key");
   expect(saved).toHaveLength(1);
   expect(JSON.stringify(saved)).not.toContain(note);
   const originalEnvelope = saved[0] as OutboxEnvelope;
@@ -316,7 +445,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   // emulation. Downloaded mode must persist and never rely on this hint alone.
   await expect(page.getByText("Downloaded books", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /The Winter Observatory/ }).click();
-  await page.getByRole("button", { name: "Read The Snow Key" }).click();
+  await readScene("The Snow Key");
   await expect(page.getByText(/Mara found a brass key beneath/)).toBeVisible();
   await page.getByRole("tab", { name: "Assistant", exact: true }).click();
   await page.getByRole("button", { name: "Start voice", exact: true }).click();
@@ -324,6 +453,11 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await page.getByRole("tab", { name: "Capture", exact: true }).click();
   const offlineNote = "Offline idea: the clock runs backward when Mara lies.";
   await page.getByLabel("Capture text").fill(offlineNote);
+  await expect(page.getByText("Reading position and capture draft saved on this device.", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: /The Winter Observatory/ }).click();
+  await expect(page.getByLabel("Capture text")).toHaveValue(offlineNote);
+  expect(backendAttempts.length).toBe(attemptsBeforeOffline);
   await page.getByRole("button", { name: "Save pending item" }).click();
   await expect(page.getByText("Pending review", { exact: true })).toBeVisible();
   await expect(page.getByText(offlineNote, { exact: true })).toBeVisible();
@@ -356,8 +490,18 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   // Signing out offline must lock the downloaded library and clear the saved
   // session without deleting the author's unsynced, encrypted captures.
   await page.getByRole("tab", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  const secondWindow = await context.newPage();
+  const secondHostedAttempts: string[] = [];
+  secondWindow.on("request", (request) => { if (request.url().startsWith("https://")) secondHostedAttempts.push(request.url()); });
+  await secondWindow.goto("/");
+  await expect(secondWindow.getByText("Downloaded books", { exact: true })).toBeVisible();
+  await secondWindow.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(secondWindow.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByText(/Mara found a brass key beneath/)).toHaveCount(0);
+  await expect(page.getByLabel("Capture text")).toHaveCount(0);
+  expect(secondHostedAttempts).toEqual([]);
+  await secondWindow.close();
   await page.getByRole("button", { name: "Open downloaded books", exact: true }).click();
   await expect(page.getByText(/Signing out locks local access/)).toBeVisible();
   await page.reload();
@@ -406,7 +550,10 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   expect(imported.failures).toEqual([]);
   expect(imported.imported).toHaveLength(2);
   const inspected = python("inspect");
-  expect(inspected.inbox.map((item: { payload: { content: string } }) => item.payload.content)).toEqual(expect.arrayContaining([note, offlineNote]));
+  expect(inspected.inbox.map((item: { payload: { content: string } }) => item.payload.content)).toContain(offlineNote);
+  expect(inspected.proposals).toEqual(expect.arrayContaining([expect.objectContaining({
+    proposed_body: note, status: "pending", source: "mobile_outbox",
+  })]));
   expect(inspected.scene.body.trim()).toBe("Mara found a brass key beneath the observatory's frozen door.");
   const rpcBodies = requests.filter((request) => request.path.startsWith("/rest/")).map((request) => request.body).join("\n");
   expect(rpcBodies).not.toContain(recoveryKey);

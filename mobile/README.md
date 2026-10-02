@@ -88,13 +88,68 @@ accepted as authorization by the gateway or sync backend.
 
 The expired-session/offline/sign-out/reconnect flow is verified in a phone-sized
 Chrome PWA test with simulated hosting. Physical Safari/Android, storage eviction,
-native auth-storage hardening and full revocation drills remain release gates.
+signed native auth-storage migration and full revocation drills remain release gates.
 
 Native secure storage can become unavailable after removal, restore, or device
 security changes; recovery keys remain important. See [Expo SecureStore storage
 limits and persistence](https://docs.expo.dev/versions/latest/sdk/securestore/).
 Browser writes request [strict IndexedDB durability](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/transaction),
 but cannot prevent user deletion or browser storage eviction.
+
+### Reading position and unfinished captures
+
+Hosted books now restore the last reading scene, scroll position, passive tab,
+and unfinished capture text/type after reopening the book in a fresh app
+instance. These records use the existing device-encrypted snapshot cache,
+separately from downloaded publications, and are bound to the deployment,
+account, device, key identity, and book. They are never sent to hosting. A new
+publication keeps scene focus but resets the old pixel position; an unfinished
+capture keeps its original revision for desktop review.
+
+Wait for **Reading position and capture draft saved on this device** before
+closing the app. While a write is pending, an immediate process exit can lose
+those newest changes. An encryption/quota failure keeps the current draft,
+shows that restart recovery is not saved, and offers retry. Leaving the book
+waits for durable recovery; saving a pending item persists its operation identity
+before the outbox write, so a restart between outbox commit and draft clearing
+can retry without duplicating the capture. Unreadable recovery is retained and
+never silently replaced; reading stays available while capture restoration is
+retried. Sample preview captures still disappear on reload.
+
+Normal sign-out locks and redacts the local view while retaining encrypted
+recovery. Other browser windows receive a content-free lock signal and redact
+their views too; foreground entry rechecks device-local authorization. Device
+removal also deletes recovery records. Clearing site data, storage eviction or
+loss of device keys can still make unsynced work unavailable.
+
+Native snapshot, auth and recovery ciphertext now commit atomically in the
+existing SQLite outbox database using WAL and FULL synchronization. Old snapshot
+files are decrypted/validated and migrated before removal. Migration uses a
+conditional insert; a newer concurrent SQLite publication wins and is decrypted
+before the legacy file is removed. If a refresh removes the old file during
+reading, the reader rechecks SQLite. This avoids Expo's
+overwrite-move behavior deleting the old file before replacement. Real SQLite
+process-exit tests verify both rollback before commit and durability after commit.
+The database holds ciphertext and hashed record identities; wrapping keys remain
+in SecureStore. This does not establish device power-loss or storage-controller
+behavior.
+
+Native Supabase sign-in sessions now use the existing encrypted cache, with the
+wrapping key in SecureStore. Large tokens never go into new plaintext SQLite
+records or a size-limited SecureStore value. Upgrade reads legacy SQLite auth
+only to encrypt it, verify decrypt/readback, then remove that plaintext key.
+Migration/encryption failures preserve recoverable old data and report failure;
+they do not fall back from a corrupt encrypted session to plaintext. Auth writes
+and native wrapping-key creation serialize across instances in one JS runtime.
+Closing sign-in storage fences late SDK refresh writes. Browser leases compare
+a content-free generation and write ciphertext in the same IndexedDB transaction,
+including across tabs; native adapter generations share the serialized auth queue.
+Offline sign-out makes no logout request. The runtime disposes its old SDK client,
+and a deliberate new sign-in waits for cleanup before creating a fresh lease.
+The migration protocol is locally tested; signed physical-device upgrade,
+Keychain/Keystore failure and power-loss verification remain release gates.
+
+See [reading/capture recovery evidence](evidence/2026-10-02-reading-capture-recovery/review.md).
 
 ### Local encrypted round-trip verification
 

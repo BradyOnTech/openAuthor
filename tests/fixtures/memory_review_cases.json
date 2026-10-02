@@ -1,0 +1,18 @@
+{
+  "evidence_kind": "authored_synthetic_extraction_cases",
+  "limitation": "These cases measure recorded behavior, not independent accuracy on novels or real-author review burden.",
+  "cases": [
+    {"id":"temporal-openers","body":"After the tide fell, Mara crossed the stones. Before the tide rose, Mara returned. After the bell, Mara waited. Before the bell, Mara counted.","entities":{"Mara":"character"}},
+    {"id":"restrictive-modifiers","body":"Only Mara carried the note. Only Mara knew the sender. Even Ivo waited. Even Ivo heard the bell.","entities":{"Mara":"character","Ivo":"character"}},
+    {"id":"clausal-and-transition-openers","body":"Once the ferry left, Noor waited. Once the rain stopped, Noor walked. Still, Noor kept the sealed note. Still, Noor did not read it.","entities":{"Noor":"character"}},
+    {"id":"ordinary-word-names","body":"Hope carried the ribbon. Hope met Grace at the pier. Grace took the ribbon. May arrived late. May apologized.","entities":{"Hope":"character","Grace":"character","May":"character"}},
+    {"id":"titles-and-diacritics","body":"Dr. Élodie March checked the seal. Dr. Élodie March refused to break it. Captain Lin arrived. Captain Lin waited.","entities":{"Dr. Élodie March":"character","Captain Lin":"character"}},
+    {"id":"names-matching-grammar-controls","body":"After waited by the pier. After left early. Before carried the note. Before opened the gate. Once watched the rain. Once stayed. Still held the ribbon. Still listened. Only waited. Only left. Even smiled. Even returned.","entities":{"After":"character","Before":"character","Once":"character","Still":"character","Only":"character","Even":"character"}},
+    {"id":"ambiguous-capitalized-places","body":"The Last Ferry stood painted on the sign. The Last Ferry appeared on another sign. North Gate was closed. North Gate opened at dawn.","entities":{"Last Ferry":"location","North Gate":"location"}},
+    {"id":"cyrillic-persons","body":"Мария закрыла дверь. Мария ждала ответа. Иван вернулся. Иван молчал.","entities":{"Мария":"character","Иван":"character"}},
+    {"id":"decomposed-spelling","body":"Élodie closed the gate. Élodie waited. René brought the letter. René stayed.","entities":{"Élodie":"character","René":"character"}},
+    {"id":"possessive-spelling","body":"Mara’s coat was wet. Mara’s gloves were torn. Ivo carried a dry scarf. Ivo offered it.","entities":{"Mara":"character","Ivo":"character"}},
+    {"id":"uncased-script-names","body":"小林关上门。小林等待回信。阿明回来了。阿明没有说话。","entities":{"小林":"character","阿明":"character"}},
+    {"id":"spatial-and-named-controls","body":"Beyond the gate, Mara waited. Beneath the bridge, Mara watched. Beyond the road, Mara stood. Beneath the tree, Mara rested. Beyond lifted the lamp. Beyond followed Mara.","entities":{"Mara":"character","Beyond":"character"}}
+  ]
+}

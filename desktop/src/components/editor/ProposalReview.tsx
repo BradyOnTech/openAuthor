@@ -8,6 +8,8 @@ import type { ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
 import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
 import { RevisionContextReview } from "./RevisionContextReview";
+import { EditorialFindings } from "./EditorialFindings";
+import { PassageComparison } from "../shared/PassageComparison";
 
 type Props = {
   proposal: ProposalRecord;
@@ -232,13 +234,15 @@ export function ProposalReview({ proposal: initial }: Props) {
   const changeSet = proposal.change_set;
   const acceptedCount = changeSet?.hunks.filter((hunk) => hunk.decision === "accepted").length ?? 0;
   const displayStatus = proposal.undone_at ? "undone" : proposal.status;
+  const statusLabel = proposal.status === "pending" && proposal.selection
+    ? proposal.selection.action === "critique" ? "Feedback ready" : "Replacement awaiting review" : displayStatus;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
         <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
         <div className="review-card__meta">
-          <span className={`badge badge--${displayStatus}`}>{displayStatus}</span>
+          <span className={`badge badge--${displayStatus}`}>{statusLabel}</span>
           {proposal.stale && proposal.status === "pending" && (
             <span className="badge badge--warning" title="The scene changed after this proposal was written">
               scene changed
@@ -371,10 +375,10 @@ export function ProposalReview({ proposal: initial }: Props) {
       {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
         <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
         <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
-        <div className="selection-review__comparison">
-          <div><strong>Before</strong><blockquote>{proposal.selection.before}</blockquote></div>
-          <div><strong>{proposal.selection.action === "critique" ? "Feedback" : "After"}</strong><blockquote>{proposal.selection.feedback || proposal.selection.after}</blockquote></div>
-        </div>
+        {proposal.selection.action === "critique" ? proposal.selection.review
+          ? <EditorialFindings review={proposal.selection.review} feedback={proposal.selection.feedback} stale={Boolean(proposal.stale)} />
+          : <div className="selection-review__comparison"><div><strong>Selected passage</strong><blockquote>{proposal.selection.before}</blockquote></div><div><strong>Feedback · quotations not verified</strong><blockquote>{proposal.selection.feedback}</blockquote></div></div>
+          : <PassageComparison before={proposal.selection.before} after={proposal.selection.after} />}
         {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
         {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
         <button className="btn" style={{ minHeight: 40 }} disabled={Boolean(busy)} onClick={() => setSelectionRefresh(value => value + 1)}>Refresh selection status</button>

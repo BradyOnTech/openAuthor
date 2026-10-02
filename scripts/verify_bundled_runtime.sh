@@ -34,6 +34,7 @@ fi
 
 "$PYTHON" -I -c 'import openauthor, sqlite3; assert openauthor.__file__; assert sqlite3.sqlite_version'
 "$PYTHON" -I -m openauthor --help >/dev/null
+"$PYTHON" -I "$ROOT/scripts/verify_packaged_sources.py"
 "$PYTHON" -I "$ROOT/scripts/verify_packaged_recovery.py"
 "$CODEX" app-server generate-json-schema --out "$SCHEMA_CHECK" >/dev/null
 echo "Bundled runtime: OK ($("$PYTHON" -I -c 'import platform; print(platform.python_version(), platform.machine())'))"

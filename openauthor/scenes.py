@@ -117,22 +117,22 @@ def add_scene(
     if any(paths.scenes_dir.glob(f"{index:04d}-*.md")):
       index += 1
       continue
+    from .book_transactions import write_transaction_text
+    content = build_scene_markdown(
+      scene_identifier=scene_id(index), title=title, summary=summary,
+      pov=pov, status=status, body=body,
+    )
+    if write_transaction_text(file_path, content, exclusive=True):
+      from .product_signals import record_product_event
+      record_product_event(paths, "scene_created", word_count=len(body.split()))
+      return file_path
     try:
       fd = os.open(file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
       index += 1
       continue
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
-      handle.write(
-        build_scene_markdown(
-          scene_identifier=scene_id(index),
-          title=title,
-          summary=summary,
-          pov=pov,
-          status=status,
-          body=body,
-        )
-      )
+      handle.write(content)
     from .product_signals import record_product_event
     record_product_event(paths, "scene_created", word_count=len(body.split()))
     return file_path

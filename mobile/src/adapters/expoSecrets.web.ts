@@ -2,6 +2,9 @@ import { decodeEnrolledDevice, type DeviceStore, type EnrolledDevice, type Secre
 import { browserStorage } from "./browserStorage";
 
 export class ExpoSecretStore implements SecretStore {
+  subscribeLocalAccessChanges(listener: () => void): () => void {
+    return browserStorage.subscribe((key) => { if (key === "secret:openauthor.mobile.local-access.v1") listener(); });
+  }
   get(key: string): Promise<string | null> { return browserStorage.get(`secret:${key}`); }
   set(key: string, value: string): Promise<void> { return browserStorage.set(`secret:${key}`, value); }
   delete(key: string): Promise<void> { return browserStorage.delete(`secret:${key}`); }

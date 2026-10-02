@@ -20,6 +20,8 @@ async function serialized<T>(key: string, operation: () => Promise<T>): Promise<
 }
 
 export class ExpoSecretStore implements SecretStore {
+  subscribeLocalAccessChanges(_listener: () => void): () => void { return () => {}; }
+
   async get(key: string): Promise<string | null> {
     return await SecureStore.getItemAsync(key);
   }

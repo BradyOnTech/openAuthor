@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
+from .project_locks import serialized_project_access
 
 ENTITY_TYPES = {"character", "location", "lore", "item", "faction", "event"}
 DETAIL_TYPES = {"text", "number", "boolean", "date", "scene", "entity", "list"}
@@ -80,6 +81,7 @@ def initialize_codex(db_path: str) -> None:
     connection.close()
 
 
+@serialized_project_access
 def ensure_codex(paths: ProjectPaths) -> None:
   initialize_codex(str(paths.codex_db))
 
@@ -151,6 +153,7 @@ def _validate_codex_snapshot(payload: Any, *, snapshot_path: Path) -> tuple[list
   return entity_rows, relationship_rows
 
 
+@serialized_project_access
 def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
   ensure_codex(paths)
   snapshot_path = _codex_snapshot_path(paths)
@@ -272,6 +275,7 @@ def replace_runtime_codex_from_snapshot(paths: ProjectPaths) -> dict[str, Any]:
   }
 
 
+@serialized_project_access
 def add_entity(
   paths: ProjectPaths,
   *,
@@ -323,6 +327,7 @@ def add_entity(
   return entity_id
 
 
+@serialized_project_access
 def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[str, Any]]:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
@@ -371,6 +376,7 @@ def list_entities(paths: ProjectPaths, *, kind: str | None = None) -> list[dict[
   ]
 
 
+@serialized_project_access
 def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, Any]:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
@@ -408,6 +414,7 @@ def get_entity(paths: ProjectPaths, entity_id: str) -> dict[str, Any]:
   }
 
 
+@serialized_project_access
 def update_entity(
   paths: ProjectPaths,
   *,
@@ -486,6 +493,7 @@ def update_entity(
   return updated
 
 
+@serialized_project_access
 def add_relationship(
   paths: ProjectPaths,
   *,
@@ -534,6 +542,7 @@ def add_relationship(
   }
 
 
+@serialized_project_access
 def list_relationships(
   paths: ProjectPaths,
   *,
@@ -587,6 +596,7 @@ def list_relationships(
   ]
 
 
+@serialized_project_access
 def delete_relationship(paths: ProjectPaths, relationship_id: str) -> dict[str, Any]:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
@@ -601,6 +611,7 @@ def delete_relationship(paths: ProjectPaths, relationship_id: str) -> dict[str, 
   return {"id": relationship_id, "deleted": True}
 
 
+@serialized_project_access
 def export_codex_json(paths: ProjectPaths) -> Path:
   ensure_codex(paths)
   connection = sqlite3.connect(str(paths.codex_db))
@@ -781,6 +792,7 @@ def _records_from_source_file(path: Path, kind: str) -> list[tuple[str, str, str
   return [(kind, name, description)]
 
 
+@serialized_project_access
 def import_codex_from_directory(
   paths: ProjectPaths,
   source_root: Path,

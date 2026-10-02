@@ -15,6 +15,9 @@
 
 - Device private key and project keys in SecureStore/Keystore.
 - Encrypted project snapshot cache.
+- Encrypted reading position and unfinished captures, scoped to the account/device/book; never uploaded until the author saves a pending item.
+- Encrypted auth sessions. Native upgrades remove legacy SQLite auth only after verified encrypted storage succeeds.
+- Content-free auth lease generations prevent an old session from restoring credentials after sign-out.
 - Ciphertext-only pending outbox records and status metadata.
 
 ## Explicitly excluded

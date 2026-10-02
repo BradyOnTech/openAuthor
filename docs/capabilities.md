@@ -16,6 +16,12 @@ These states are intentionally independent. Core code is not treated as a shippe
 ## Current product truth
 
 The current task-oriented assessment is [Author journey readiness](author-journey-readiness.md).
+The [October 2 quality pass](evaluations/project-completion-2026-10-02/review.md)
+adds Memory inbox and daily review evidence, encrypted companion restart
+recovery, and actual packaged-engine forced-termination checks. A small live
+chapter critique and unsigned native backup restoration have also run. Author
+acceptance, physical phones, accessibility, signed distribution and the remaining
+mobile dependency advisory keep release states at `not_ready`.
 September 7 adds browser evidence for planning, Memory, search, copilot-to-note
 promotion and Word export, plus a new chapter-reading view. Reading and both
 export formats follow Plan order. The August inventory below is historical;

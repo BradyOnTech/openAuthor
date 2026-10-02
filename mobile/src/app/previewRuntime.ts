@@ -1,3 +1,4 @@
+import { emptyCompanionState, type CompanionState } from "../core/companionRecovery";
 import { SnapshotProject, type MobileSnapshot } from "../core/snapshotProject";
 import type { AppProject, AppRuntime, AppSession, PendingItem, VoiceHandle } from "./types";
 
@@ -54,6 +55,8 @@ export class PreviewRuntime implements AppRuntime {
     return this.#session;
   }
 
+  subscribeLocalAccessLock(_listener: () => void): () => void { return () => {}; }
+
   async signOut(): Promise<void> {
     this.#session = null;
   }
@@ -74,6 +77,9 @@ export class PreviewRuntime implements AppRuntime {
       offline: true,
     };
   }
+
+  async loadCompanionState(): Promise<CompanionState> { return emptyCompanionState(); }
+  async saveCompanionState(): Promise<void> { /* Sample drafts remain in memory only. */ }
 
   async pending(): Promise<PendingItem[]> {
     return this.#pending.map((item) => ({ ...item }));

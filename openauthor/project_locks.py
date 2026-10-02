@@ -83,6 +83,8 @@ def project_lock(paths: ProjectPaths) -> Iterator[None]:
       except OSError as error:
         raise OpenAuthorError(f"Could not acquire safe project access: {error}") from error
       _HELD.keys = {*held, key}
+      from .book_transactions import recover_book_transaction
+      recover_book_transaction(paths)
       yield
     finally:
       _HELD.keys = held

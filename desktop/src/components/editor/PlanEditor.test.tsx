@@ -29,6 +29,36 @@ it("keeps an author's new brief when an older initial load completes late", asyn
   await waitFor(() => expect(updateProjectBrief).toHaveBeenCalledWith("/books/plan", expect.objectContaining({ synopsis: "A cartographer follows stolen hours." }), undefined));
 });
 
+it("starts saved guidance compact and opens editing only on request", async () => {
+  vi.mocked(getManuscriptPlan).mockResolvedValue({ ...plan, brief: { ...plan.brief, synopsis: "A cartographer follows stolen hours.", genre: "Fantasy", themes: ["Trust"], style_guide: "Keep close third person.", outline: "Return to the harbor." } });
+  render(<PlanEditor />);
+  const edit = await screen.findByRole("button", { name: "Edit saved brief" });
+  expect(edit.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.getByText("A cartographer follows stolen hours.", { selector: "p" })).toBeTruthy();
+  expect(screen.getByText("Fantasy · Trust")).toBeTruthy();
+  expect(screen.queryByRole("textbox", { name: "Synopsis" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Discard local Plan drafts…" })).toBeNull();
+  fireEvent.click(edit);
+  expect((screen.getByRole("textbox", { name: "Style guide" }) as HTMLTextAreaElement).value).toBe("Keep close third person.");
+  fireEvent.click(screen.getByRole("button", { name: "Collapse saved brief" }));
+  expect(screen.queryByRole("textbox", { name: "Outline" })).toBeNull();
+  expect(updateProjectBrief).not.toHaveBeenCalled();
+});
+
+it("keeps unsaved edits and their save action visible through recovery of a saved brief", async () => {
+  const saved = { ...plan, workspace: "main", brief: { ...plan.brief, synopsis: "Saved direction" } };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  const view = render(<PlanEditor />);
+  fireEvent.click(await screen.findByRole("button", { name: "Edit saved brief" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Synopsis" }), { target: { value: "Keep this unsaved direction" } });
+  expect(screen.getByText("Unsaved brief · kept on this device")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Collapse saved brief" })).toBeNull();
+  view.unmount(); render(<PlanEditor />);
+  expect((await screen.findByRole("textbox", { name: "Synopsis" }) as HTMLTextAreaElement).value).toBe("Keep this unsaved direction");
+  expect((screen.getByRole("button", { name: "Save Brief" }) as HTMLButtonElement).disabled).toBe(false);
+  expect(updateProjectBrief).not.toHaveBeenCalled();
+});
+
 it("recovers brief and new act drafts after remount without writing the book", async () => {
   vi.mocked(getManuscriptPlan).mockResolvedValue({ ...plan, workspace: "main" });
   const view = render(<PlanEditor />);

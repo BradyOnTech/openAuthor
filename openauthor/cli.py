@@ -177,6 +177,12 @@ def build_parser() -> argparse.ArgumentParser:
   project_sub = project_parser.add_subparsers(dest="project_command", required=True)
   project_inspect = project_sub.add_parser("inspect", help="Inspect project metadata and identity.")
   project_inspect.add_argument("--json", action="store_true", help="Output JSON.")
+  project_recovery_status = project_sub.add_parser("recovery-status", help="Inspect interrupted-edit files without changing them.")
+  project_recovery_status.add_argument("--json", action="store_true")
+  project_recovery_resolve = project_sub.add_parser("recovery-resolve", help="Resolve an exact reviewed interrupted-edit comparison.")
+  project_recovery_resolve.add_argument("--fingerprint", required=True)
+  project_recovery_resolve.add_argument("--decisions", required=True, help="JSON mapping conflicting file paths to keep_current or restore_before.")
+  project_recovery_resolve.add_argument("--json", action="store_true")
   project_ensure_id = project_sub.add_parser(
     "ensure-id",
     help="Ensure project has a persistent project_id; optionally enforce expected id.",
@@ -585,6 +591,7 @@ def build_parser() -> argparse.ArgumentParser:
   memory_review = memory_sub.add_parser("review", help="Accept, reject, or defer a suggestion.")
   memory_review.add_argument("--id", required=True)
   memory_review.add_argument("--disposition", choices=["accepted", "rejected", "deferred"], required=True)
+  memory_review.add_argument("--expected-version", default=None)
   memory_review.add_argument("--json", action="store_true", help="Output JSON.")
   memory_correct = memory_sub.add_parser("correct", help="Correct a suggestion before accepting or deferring it.")
   memory_correct.add_argument("--id", required=True)
@@ -592,6 +599,8 @@ def build_parser() -> argparse.ArgumentParser:
   memory_correct.add_argument("--description", default=None)
   memory_correct.add_argument("--predicate", default=None)
   memory_correct.add_argument("--value", default=None)
+  memory_correct.add_argument("--entity-type", default=None)
+  memory_correct.add_argument("--expected-version", default=None)
   memory_correct.add_argument("--json", action="store_true", help="Output JSON.")
   memory_suggest = memory_sub.add_parser("suggest", help="Queue a non-canon Story Memory suggestion for review.")
   memory_suggest.add_argument("--title", default="Assistant insight")
@@ -1436,6 +1445,20 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
   if args.command == "project":
+    if args.project_command in {"recovery-status", "recovery-resolve"}:
+      from .book_transactions import transaction_recovery_status, resolve_transaction_recovery
+      if args.project_command == "recovery-status":
+        row = transaction_recovery_status(paths)
+      else:
+        try:
+          decisions = json.loads(args.decisions)
+        except ValueError as error:
+          raise OpenAuthorError("Recovery decisions must be a JSON object.") from error
+        if not isinstance(decisions, dict):
+          raise OpenAuthorError("Recovery decisions must be a JSON object.")
+        row = resolve_transaction_recovery(paths, fingerprint=args.fingerprint, decisions=decisions)
+      print(json.dumps(row, indent=None if args.json else 2))
+      return 0
     if args.project_command == "inspect":
       row = inspect_project(paths)
       if args.json:
@@ -1542,7 +1565,7 @@ def _run(args: argparse.Namespace) -> int:
     elif args.memory_command == "list":
       row = list_memory_suggestions(paths, status=args.status)
     elif args.memory_command == "review":
-      row = review_memory_suggestion(paths, args.id, disposition=args.disposition)
+      row = review_memory_suggestion(paths, args.id, disposition=args.disposition, expected_version=args.expected_version)
     elif args.memory_command == "correct":
       row = correct_memory_suggestion(
         paths,
@@ -1551,6 +1574,8 @@ def _run(args: argparse.Namespace) -> int:
         description=args.description,
         predicate=args.predicate,
         value=args.value,
+        entity_type=args.entity_type,
+        expected_version=args.expected_version,
       )
     elif args.memory_command == "suggest":
       row = queue_memory_suggestion(paths, title=args.title, content=args.content, scene_id=args.scene_id, source=args.source)

@@ -1001,6 +1001,9 @@ body {
 .selection-assist button, .selection-assist input:not([type="checkbox"]), .selection-assist select, .selection-assist summary,
 .selection-review ~ .review-card__actions button { min-height: 40px; }
 .selection-assist__panel { max-height: 48vh; overflow: auto; display: grid; gap: 12px; padding: 12px 0; }
+.selection-assist__panel:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.selection-assist__actions { border-top: 1px solid var(--border); padding: 10px 0 6px; background: var(--bg-surface); }
+.selection-assist__footnote { display: block; color: var(--text-secondary); line-height: 1.5; }
 .selection-assist label { display: grid; gap: 6px; }
 .selection-assist fieldset label { display: flex; align-items: center; min-height: 40px; }
 .selection-assist__preview { display: grid; gap: 8px; font-variant-numeric: tabular-nums; }
@@ -3435,6 +3438,38 @@ button.status-bar__item {
 .import-structure-review input, .import-structure-review select, .import-structure-review summary { min-height: 40px; }
 .import-structure-review summary { cursor: pointer; align-content: center; }
 .memory-suggestion-review button { min-height: 40px; }
+.memory-workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--bg-deep); }
+.memory-workspace__views { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); }
+.memory-workspace__views button { min-height: 40px; }
+.memory-workspace__views button[aria-pressed="true"] { background: var(--bg-elevated); border-color: var(--accent); }
+.memory-workspace__content { flex: 1; min-height: 0; overflow: hidden; }
+.memory-workspace__view { height: 100%; }
+.memory-inbox { display: flex; flex-direction: column; gap: 12px; height: 100%; padding: 24px; max-width: 1440px; margin: 0 auto; color: var(--text-primary); }
+.memory-inbox__header { display: flex; gap: 16px; align-items: start; justify-content: space-between; }
+.memory-inbox h1, .memory-inbox h2, .memory-inbox h3 { margin: 0 0 8px; }
+.memory-inbox__header p { margin: 0; max-width: 760px; color: var(--text-secondary); line-height: 1.5; }
+.memory-inbox button, .memory-inbox select { min-height: 40px; }
+.memory-inbox__filters { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.memory-inbox__filters label { display: flex; align-items: center; gap: 8px; }
+.memory-inbox__filters span, .memory-inbox__list > p, .memory-inbox__status { font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.5; }
+.memory-inbox__layout { display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); gap: 20px; flex: 1; min-height: 0; }
+.memory-inbox__list { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+.memory-inbox__row.btn { display: grid; gap: 6px; flex-shrink: 0; white-space: normal; text-align: left; justify-content: stretch; }
+.memory-inbox__row span { font-size: var(--text-xs); color: var(--text-secondary); }
+.memory-inbox__row.is-selected { background: var(--bg-elevated); border-color: var(--accent); }
+.memory-inbox__detail { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-surface); overflow: hidden; }
+.memory-inbox__body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+.memory-inbox__body:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.memory-inbox__body p { line-height: 1.5; overflow-wrap: anywhere; }
+.memory-inbox__statement { white-space: pre-wrap; }
+.memory-inbox__body h3 { margin-top: 24px; }
+.memory-inbox__correction { display: grid; gap: 12px; margin-top: 24px; border: 1px solid var(--border); padding: 16px; }
+.memory-inbox__correction label { display: grid; gap: 6px; }
+.memory-inbox__actions { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.memory-inbox__actions > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.memory-inbox__actions small { flex-basis: 100%; color: var(--text-secondary); line-height: 1.5; }
+@media (max-width: 900px) { .memory-inbox { padding: 16px; } .memory-inbox__layout { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); gap: 12px; } .memory-inbox__header { flex-wrap: wrap; } }
+@media (max-width: 620px) { .memory-inbox__layout { grid-template-columns: 1fr; grid-template-rows: minmax(100px, 22vh) minmax(0, 1fr); } .memory-inbox__header p { font-size: var(--text-xs); } }
 .memory-suggestion-review p { text-wrap: pretty; }
 .memory-suggestion-review strong { overflow-wrap: anywhere; }
 .canon-fact-review { margin-top: 8px; font-size: var(--text-sm); }
@@ -3443,6 +3478,15 @@ button.status-bar__item {
 .canon-fact-review label { display: grid; gap: 4px; }
 .canon-fact-review button, .canon-fact-review select, .canon-fact-review textarea { min-height: 40px; }
 .canon-memory-editor button, .canon-memory-editor input, .canon-memory-editor select { min-height: 40px; }
+
+.plan-brief__header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.plan-brief__header > div { flex: 1; min-width: 180px; }
+.plan-brief__status { color: var(--text-secondary); font-size: var(--text-xs); line-height: 1.5; margin: 5px 0 0; }
+.plan-brief__summary { margin-top: 12px; }
+.plan-brief__synopsis { color: var(--text-primary); line-height: 1.5; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.plan-brief__tags { color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; margin: 8px 0 0; overflow-wrap: anywhere; }
+.plan-brief__fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: var(--space-3); margin-top: var(--space-3); }
+@media (max-width: 900px) { .plan-brief__fields { grid-template-columns: 1fr; } }
 
 .continuity-review-layout { display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .continuity-finding-list { display: grid; gap: 8px; position: sticky; top: 12px; max-height: 65vh; overflow-y: auto; }

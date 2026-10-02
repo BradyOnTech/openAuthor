@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "summary": "The passage largely preserves the restrained style and deliberate uncertainty, but Leah’s unexplained certainty about the key creates a character-knowledge break.",
+  "strengths": [
+    "Leah’s literal questions and Jonas’s dry evasiveness remain clearly differentiated.",
+    "The receipt, ledger, and practical handling of wet objects carry tension without overexplaining emotion.",
+    "The ending preserves uncertainty about both the crossing and the unopened ledger."
+  ],
+  "limitations": [
+    "No approved canon or intended explanation for Leah’s knowledge is supplied. If her impossible knowledge is deliberately supernatural or otherwise established outside these scenes, that context could change the assessment."
+  ],
+  "findings": [
+    {
+      "category": "character-knowledge",
+      "title": "Leah knows the key’s location without an available source",
+      "observation": "Scene 2 establishes that Jonas concealed the key only after Leah left, while scene 3 explicitly rules out her seeing the act, discussing it, or receiving a message. Her certainty therefore exceeds the knowledge available to her in the supplied chapter.",
+      "uncertainty": "This may be an intentional mystery, but the supplied material provides no perceptible clue, inference, or established ability that distinguishes deliberate uncanny knowledge from a continuity error.",
+      "suggestion": "Either provide the smallest observable basis for Leah’s inference or frame the location as an unexplained impression rather than confirmed knowledge. If the certainty is intentionally impossible, add a minimal cue that the rupture is deliberate without explaining it.",
+      "evidence": [
+        {
+          "scene_id": "scene-0002",
+          "start": 134,
+          "end": 238,
+          "quote": "He waited until her steps had passed the office window, then slid the key beneath the brass paperweight."
+        },
+        {
+          "scene_id": "scene-0003",
+          "start": 526,
+          "end": 706,
+          "quote": "She had not seen Jonas hide the copper key, had not spoken with him about it and had received no message. Nonetheless, she knew that the copper key was under the brass paperweight."
+        }
+      ]
+    }
+  ]
+}

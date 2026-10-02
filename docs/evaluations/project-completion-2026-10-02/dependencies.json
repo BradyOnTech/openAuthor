@@ -1,0 +1,441 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-02",
+  "recorded_at_utc": "2026-10-02T12:58:34.412553+00:00",
+  "base_commit": "f154d78aaaafb5c1f0b42fdbe35b242aeadff705",
+  "source_checkout_clean": false,
+  "scope": "Targeted compatible transitive patches and current npm audits for all four JavaScript workspaces; not release certification.",
+  "toolchain": {
+    "node": "v22.17.0",
+    "npm": "10.9.2"
+  },
+  "patches": [
+    {
+      "lockfile": "contracts/package-lock.json",
+      "package": "fast-uri",
+      "from": "3.1.6",
+      "to": "3.1.8",
+      "parent": "ajv@8.20.0",
+      "compatible_range": "^3.0.1",
+      "changed_fields": [
+        "version",
+        "resolved",
+        "integrity"
+      ],
+      "install": "npm ci --ignore-scripts --no-audit --no-fund; 8 packages installed from existing lock"
+    },
+    {
+      "lockfile": "mobile/package-lock.json",
+      "package": "brace-expansion",
+      "from": "5.0.9",
+      "to": "5.0.12",
+      "parent": "minimatch@10.2.6",
+      "compatible_range": "^5.0.8",
+      "changed_fields": [
+        "version",
+        "resolved",
+        "integrity"
+      ],
+      "install": "npm install --ignore-scripts --no-audit --no-fund; exactly 1 package changed"
+    }
+  ],
+  "unchanged_lockfiles": [
+    "desktop/package-lock.json",
+    "gateway/package-lock.json"
+  ],
+  "workspaces": {
+    "contracts": {
+      "name": "@openauthor/contracts",
+      "version": "0.1.0",
+      "lockfile": "contracts/package-lock.json",
+      "lockfile_sha256": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279",
+      "audit_command": "npm audit --prefix contracts --audit-level=low --json",
+      "audit_exit_code": 0,
+      "audit_result": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 6,
+            "dev": 3,
+            "optional": 0,
+            "peer": 0,
+            "peerOptional": 0,
+            "total": 8
+          }
+        }
+      },
+      "raw_audit_report_sha256": "18386f412776c3b445dda1dce0e2e6de1da8def44294da1e8cf41a780d3d065c",
+      "installed_versions_verified": [
+        {
+          "name": "ajv",
+          "version": "8.20.0",
+          "manifest": "contracts/node_modules/ajv/package.json",
+          "resolution": "direct contracts installation"
+        },
+        {
+          "name": "fast-uri",
+          "version": "3.1.8",
+          "manifest": "contracts/node_modules/fast-uri/package.json",
+          "resolution": "direct contracts installation"
+        }
+      ],
+      "fast_uri_present": true
+    },
+    "desktop": {
+      "name": "openauthor-desktop",
+      "version": "0.1.0",
+      "lockfile": "desktop/package-lock.json",
+      "lockfile_sha256": "d53fa3dee1fdcb3f5c043d337e955994673def20a669fe29b88daa9c97587e1e",
+      "audit_command": "npm audit --prefix desktop --audit-level=low --json",
+      "audit_exit_code": 0,
+      "audit_result": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 20,
+            "dev": 227,
+            "optional": 63,
+            "peer": 10,
+            "peerOptional": 0,
+            "total": 246
+          }
+        }
+      },
+      "raw_audit_report_sha256": "ce4d6af526383839d598086383129842c1dd20babbb6a162e499c336bcddcc2a",
+      "installed_versions_verified": [
+        {
+          "name": "ajv",
+          "version": "8.20.0",
+          "manifest": "contracts/node_modules/ajv/package.json",
+          "resolution": "file:../contracts symlink to shared contracts installation"
+        },
+        {
+          "name": "fast-uri",
+          "version": "3.1.8",
+          "manifest": "contracts/node_modules/fast-uri/package.json",
+          "resolution": "file:../contracts symlink to shared contracts installation"
+        }
+      ],
+      "fast_uri_present": true
+    },
+    "gateway": {
+      "name": "openauthor-session-gateway",
+      "version": "0.1.0",
+      "lockfile": "gateway/package-lock.json",
+      "lockfile_sha256": "0466f4cf6c305df9c403a52443b52cba4c27762dab5501ec019c9f3b779e196d",
+      "audit_command": "npm audit --prefix gateway --audit-level=low --json",
+      "audit_exit_code": 0,
+      "audit_result": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 2,
+            "dev": 3,
+            "optional": 0,
+            "peer": 0,
+            "peerOptional": 0,
+            "total": 4
+          }
+        }
+      },
+      "raw_audit_report_sha256": "14401d877791cd0c0bb97e28ee36c2184f95c5b27dcb2ece0c37af1fc1c8247d",
+      "installed_versions_verified": [],
+      "fast_uri_present": false
+    },
+    "mobile": {
+      "name": "openauthor-mobile",
+      "version": "0.1.0",
+      "lockfile": "mobile/package-lock.json",
+      "lockfile_sha256": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968",
+      "audit_command": "npm audit --prefix mobile --audit-level=low --json",
+      "audit_exit_code": 1,
+      "audit_result": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {
+          "@config-plugins/react-native-webrtc": {
+            "name": "@config-plugins/react-native-webrtc",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              "expo"
+            ],
+            "effects": [],
+            "range": ">=4.0.0",
+            "nodes": [
+              "node_modules/@config-plugins/react-native-webrtc"
+            ],
+            "fixAvailable": {
+              "name": "@config-plugins/react-native-webrtc",
+              "version": "3.0.0",
+              "isSemVerMajor": true
+            }
+          },
+          "@expo/cli": {
+            "name": "@expo/cli",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              "@expo/code-signing-certificates",
+              "node-forge"
+            ],
+            "effects": [
+              "expo"
+            ],
+            "range": "<=0.0.0-canary-20231123-1b19f96-4 || >=0.0.1-canary-20231125-d600e44",
+            "nodes": [
+              "node_modules/expo/node_modules/@expo/cli"
+            ],
+            "fixAvailable": {
+              "name": "expo",
+              "version": "44.0.6",
+              "isSemVerMajor": true
+            }
+          },
+          "@expo/code-signing-certificates": {
+            "name": "@expo/code-signing-certificates",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              "node-forge"
+            ],
+            "effects": [],
+            "range": "*",
+            "nodes": [
+              "node_modules/@expo/code-signing-certificates"
+            ],
+            "fixAvailable": true
+          },
+          "expo": {
+            "name": "expo",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              "@expo/cli"
+            ],
+            "effects": [
+              "@config-plugins/react-native-webrtc"
+            ],
+            "range": ">=45.0.0-beta.1",
+            "nodes": [
+              "node_modules/expo"
+            ],
+            "fixAvailable": {
+              "name": "expo",
+              "version": "44.0.6",
+              "isSemVerMajor": true
+            }
+          },
+          "node-forge": {
+            "name": "node-forge",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              {
+                "source": 1240912,
+                "name": "node-forge",
+                "dependency": "node-forge",
+                "title": "node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements",
+                "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+                "severity": "high",
+                "cwe": [
+                  "CWE-347"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                },
+                "range": "<=1.4.0"
+              }
+            ],
+            "effects": [
+              "@expo/cli",
+              "@expo/code-signing-certificates"
+            ],
+            "range": "*",
+            "nodes": [
+              "node_modules/node-forge"
+            ],
+            "fixAvailable": {
+              "name": "expo",
+              "version": "44.0.6",
+              "isSemVerMajor": true
+            }
+          }
+        },
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 5,
+            "critical": 0,
+            "total": 5
+          },
+          "dependencies": {
+            "prod": 522,
+            "dev": 54,
+            "optional": 27,
+            "peer": 0,
+            "peerOptional": 0,
+            "total": 586
+          }
+        }
+      },
+      "raw_audit_report_sha256": "c5ed6b267cc61fa2ec196b090fccc5448d3d28d66ff8cfe73ce55a693d1d33e0",
+      "installed_versions_verified": [
+        {
+          "name": "ajv",
+          "version": "8.20.0",
+          "manifest": "contracts/node_modules/ajv/package.json",
+          "resolution": "file:../contracts symlink to shared contracts installation"
+        },
+        {
+          "name": "fast-uri",
+          "version": "3.1.8",
+          "manifest": "contracts/node_modules/fast-uri/package.json",
+          "resolution": "file:../contracts symlink to shared contracts installation"
+        },
+        {
+          "name": "brace-expansion",
+          "version": "5.0.12",
+          "manifest": "mobile/node_modules/brace-expansion/package.json"
+        },
+        {
+          "name": "minimatch",
+          "version": "10.2.6",
+          "manifest": "mobile/node_modules/minimatch/package.json"
+        },
+        {
+          "name": "node-forge",
+          "version": "1.4.0",
+          "manifest": "mobile/node_modules/node-forge/package.json"
+        },
+        {
+          "name": "expo",
+          "version": "57.0.18",
+          "manifest": "mobile/node_modules/expo/package.json"
+        },
+        {
+          "name": "@config-plugins/react-native-webrtc",
+          "version": "15.0.2",
+          "manifest": "mobile/node_modules/@config-plugins/react-native-webrtc/package.json"
+        },
+        {
+          "name": "@expo/code-signing-certificates",
+          "version": "0.0.6",
+          "manifest": "mobile/node_modules/@expo/code-signing-certificates/package.json"
+        },
+        {
+          "name": "@expo/cli",
+          "version": "57.0.20",
+          "manifest": "mobile/node_modules/expo/node_modules/@expo/cli/package.json"
+        }
+      ],
+      "fast_uri_present": true
+    }
+  },
+  "verification": {
+    "contracts": {
+      "command": "npm run check --prefix contracts",
+      "status": "passed",
+      "tests_passed": 19,
+      "typecheck": "passed",
+      "log": "/private/tmp/openauthor-contracts-check-2026-10-02.log",
+      "log_sha256": "9a9d41b58b80df856bee42001e4f087e1055e2f94d5638455fa4b26b8cdb76b2"
+    },
+    "gateway": {
+      "command": "npm run check --prefix gateway",
+      "status": "passed",
+      "tests_passed": 28,
+      "typecheck": "passed",
+      "build": "passed",
+      "environment_note": "Initial sandbox run blocked 15 local-loopback test listeners with EPERM; approved rerun with loopback enabled passed all 28 tests. No deployed gateway or external provider was tested.",
+      "log": "/private/tmp/openauthor-gateway-check-2026-10-02.log",
+      "log_sha256": "18d6b8893b5b7020982a74188afccc40a27f02a2b9e6d07e68180bcaa6e295eb"
+    },
+    "desktop_contract_consumers": {
+      "command": "npm test --prefix desktop -- src/mobileSync/supabaseTransport.test.ts src/mobileSync/mobileSync.test.ts src/mobileSync/mobileApi.test.ts",
+      "status": "passed",
+      "test_files_passed": 3,
+      "tests_passed": 21,
+      "log": "/private/tmp/openauthor-desktop-contract-consumers-2026-10-02.log",
+      "log_sha256": "e58767aa2de9c58218fa0590beb07562f1bae57c5259b8e5a4a7b401bc9eb75e"
+    },
+    "mobile_typecheck": {
+      "command": "npm run typecheck --prefix mobile",
+      "status": "passed",
+      "log": "/private/tmp/openauthor-mobile-patch-typecheck-2026-10-02.log",
+      "log_sha256": "3fee5b071ef09a7198963a5e21be6d78196687683cb15c749816ea0baf57a548"
+    }
+  },
+  "remaining_advisory": {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "cve": "CVE-2026-85393",
+    "package": "node-forge",
+    "installed_version": "1.4.0",
+    "affected_range": "<=1.4.0",
+    "patched_versions": [],
+    "registry_latest_verified": "1.4.0",
+    "mobile_audit_high_entries": 5,
+    "propagated_entries": [
+      "node-forge",
+      "@expo/code-signing-certificates",
+      "@expo/cli",
+      "expo",
+      "@config-plugins/react-native-webrtc"
+    ],
+    "description": "RSA PKCS#1 v1.5 verification accepts extra nested DigestAlgorithm elements.",
+    "dependency_graph": "Expo CLI and @expo/code-signing-certificates depend on node-forge ^1.3.3; Expo and its config plugin propagate the audit finding.",
+    "build_time_or_runtime_reachability": "not_established",
+    "reachability_limit": "Dependency paths identify installation reachability; this audit did not prove which verification calls, update/signing workflows or distributed bundles can reach the vulnerable branch. Do not classify it as harmless or build-time-only.",
+    "npm_suggested_expo_downgrade": "44.0.6; semver-major and incompatible with current Expo57 stack; not applied and not accepted as a remedy.",
+    "resolution_gate": "A supported patched release or reviewed, tested mitigation/replacement plus affected-path analysis is required before clearing the security gate. Re-run all four audits and relevant bundle/consumer tests afterwards."
+  },
+  "primary_sources": [
+    "https://github.com/advisories/GHSA-qw65-cvwx-89v3",
+    "https://github.com/advisories/GHSA-58mr-gqgx-xq4g",
+    "https://github.com/advisories/GHSA-hrr3-gc8f-f4qj",
+    "https://github.com/fastify/fast-uri/releases/tag/v3.1.8",
+    "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+    "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+    "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+    "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+    "https://registry.npmjs.org/fast-uri/3.1.8",
+    "https://registry.npmjs.org/brace-expansion/5.0.12",
+    "https://registry.npmjs.org/node-forge/latest"
+  ],
+  "release_certified": false,
+  "limits": [
+    "Audit results are point-in-time registry reports, not a complete security assessment.",
+    "Clean audits in three workspaces do not certify source, deployed authorization or platform security.",
+    "No broad framework downgrade, audit suppression, vendored cryptographic patch or release publishing was performed.",
+    "Provider literary quality, physical-device acceptance, signed/notarized architecture-specific installation, upgrades and accessibility remain separate completion gates."
+  ]
+}

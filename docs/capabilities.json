@@ -1,11 +1,26 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-07",
+  "updated_at": "2026-10-02",
   "status_definitions": {
-    "core": ["implemented", "partial", "not_started"],
-    "active_ui": ["implemented", "partial", "hidden", "not_applicable"],
-    "end_to_end": ["verified", "missing"],
-    "release": ["ready", "not_ready"]
+    "core": [
+      "implemented",
+      "partial",
+      "not_started"
+    ],
+    "active_ui": [
+      "implemented",
+      "partial",
+      "hidden",
+      "not_applicable"
+    ],
+    "end_to_end": [
+      "verified",
+      "missing"
+    ],
+    "release": [
+      "ready",
+      "not_ready"
+    ]
   },
   "capabilities": [
     {
@@ -43,7 +58,10 @@
         "desktop/src/recoveryJournal.test.ts",
         "desktop/src/AppV2.workflow.test.tsx",
         "desktop/e2e/authoring.spec.ts",
-        "desktop/src-tauri/src/lib.rs"
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/src/components/editor/SceneEditor.location.test.tsx",
+        "desktop/e2e/caret-keyboard.spec.ts",
+        "docs/evaluations/caret-focus-2026-10-02/verification.json"
       ]
     },
     {
@@ -85,7 +103,9 @@
         "tests/test_session_continuity.py",
         "docs/session-continuity.md",
         "desktop/src/AppV2.workflow.test.tsx",
-        "desktop/src-tauri/src/lib.rs"
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/e2e/daily-review-polish.spec.ts",
+        "docs/evaluations/daily-review-2026-10-02/verification.json"
       ]
     },
     {
@@ -242,7 +262,11 @@
         "tests/fixtures/canon_evaluation.json",
         "scripts/evaluate_canon_diagnostics.py",
         "desktop/src/components/editor/CanonMemoryEditor.tsx",
-        "desktop/src/components/editor/ProposalReview.tsx"
+        "desktop/src/components/editor/ProposalReview.tsx",
+        "desktop/src/components/editor/MemorySuggestionReview.tsx",
+        "desktop/src/components/editor/MemorySuggestionReview.test.tsx",
+        "desktop/e2e/memory-review-workspace.spec.ts",
+        "docs/evaluations/memory-review-2026-10-02/verification.json"
       ]
     },
     {
@@ -396,7 +420,11 @@
         "openauthor/scenes.py",
         "desktop/src/recoveryJournal.ts",
         "desktop/src/recoveryJournal.test.ts",
-        "desktop/src/components/editor/SceneEditor.tsx"
+        "desktop/src/components/editor/SceneEditor.tsx",
+        "openauthor/book_transactions.py",
+        "tests/test_book_transactions.py",
+        "scripts/verify_packaged_recovery.py",
+        "docs/manuscript-transactions.md"
       ]
     },
     {
@@ -464,7 +492,9 @@
         "scripts/verify_macos_bundle.sh",
         "desktop/src-tauri/src/lib.rs",
         "desktop/src-tauri/tauri.conf.json",
-        ".github/workflows/release-macos.yml"
+        ".github/workflows/release-macos.yml",
+        "scripts/verify_packaged_sources.py",
+        "docs/evaluations/project-completion-2026-10-02/native-bundle.json"
       ]
     },
     {

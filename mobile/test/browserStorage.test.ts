@@ -5,6 +5,20 @@ import { SQLiteOutboxStore } from "../src/adapters/sqliteOutboxStore.web";
 import type { OutboxEnvelope } from "../src/core/outbox";
 
 describe("browser companion persistence", () => {
+  it("notifies other open tabs of an access-lock write without sending private values", async () => {
+    const name = `browser-${crypto.randomUUID()}`;
+    const first = new BrowserStorage(name);
+    const second = new BrowserStorage(name);
+    let release!: (key: string) => void;
+    const received = new Promise<string>((resolve) => { release = resolve; });
+    const unsubscribe = second.subscribe(release);
+    try {
+      await first.set("secret:openauthor.mobile.local-access.v1", "private access record");
+      expect(await received).toBe("secret:openauthor.mobile.local-access.v1");
+      expect(await second.get("secret:openauthor.mobile.local-access.v1")).toBe("private access record");
+    } finally { unsubscribe(); }
+  });
+
   it("atomically persists one encrypted enrollment identity across tabs and reopening", async () => {
     const name = `browser-${crypto.randomUUID()}`;
     const first = new BrowserStorage(name);

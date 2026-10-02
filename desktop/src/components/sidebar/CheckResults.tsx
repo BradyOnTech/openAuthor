@@ -36,7 +36,7 @@ export function CheckResults() {
       </div>
       <div className="sidebar__content">
         <p style={{ padding: "0 var(--space-3)", color: "var(--text-secondary)", fontSize: "var(--text-sm)", lineHeight: 1.5 }}>Checks summaries, scene length, duplicate titles and POV metadata—not a story-consistency verdict.</p>
-        <button className="btn btn--sm" style={{ minHeight: 40, margin: "0 var(--space-3) var(--space-3)", whiteSpace: "normal" }} onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })}>Open story continuity</button>
+        <button className="btn btn--sm" style={{ minHeight: 40, margin: "0 var(--space-3) var(--space-3)", whiteSpace: "normal" }} onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Story Memory", data: { memoryView: "canon" } })}>Open story continuity</button>
         {(["error", "warning", "info"] as const).map((severity) => {
           const items = ordered.filter((i) => i.severity === severity);
           if (items.length === 0) return null;

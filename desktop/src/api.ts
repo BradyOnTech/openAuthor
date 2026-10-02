@@ -1011,10 +1011,13 @@ export async function previewProposalGeneration(projectRoot: string, input: Para
 }
 export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
 export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
+export type EditorialReviewFocus = "general" | "continuity" | "character-knowledge" | "motivation" | "pacing" | "voice";
 export type SelectionInput = {
   scene_id: string; start: number; end: number; selected_text: string; action: SelectionAction;
   instruction: string; provider: ProposalProvider; model: string; memory_approvals: MemoryApproval[];
   story_approvals?: string[];
+  review_focus?: EditorialReviewFocus;
+  review_scope?: "passage" | "chapter";
 };
 export type SelectionPreview = {
   fingerprint: string; provider: string; model: string; system_prompt: string; user_prompt: string;
@@ -1023,6 +1026,7 @@ export type SelectionPreview = {
   limits: { omitted_before_characters: number; omitted_after_characters: number; omitted_memory_ids: string[] };
   memory_choices: ChatContextPreview["memory_choices"];
   story_choices?: StoryContextChoice[];
+  review?: { focus: EditorialReviewFocus; scope: "passage" | "chapter"; scene_ids: string[] };
 };
 export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -1822,6 +1826,7 @@ export async function deleteCodexRelationship(projectRoot: string, relationshipI
 
 export type StoryMemorySuggestion = {
   id: string;
+  review_version?: string;
   kind: "entity_create" | "canon_fact" | "memory_note" | "relationship_create";
   entity_type?: CodexEntity["type"];
   name: string;
@@ -1853,18 +1858,18 @@ export async function listStoryMemorySuggestions(projectRoot: string, status: St
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "list", "--status", status, "--json"]));
 }
 
-export async function reviewStoryMemorySuggestion(projectRoot: string, id: string, disposition: "accepted" | "rejected" | "deferred"): Promise<StoryMemorySuggestion> {
-  return decodeJson(await runCoreCommand(projectRoot, ["memory", "review", "--id", id, "--disposition", disposition, "--json"]));
+export async function reviewStoryMemorySuggestion(projectRoot: string, id: string, disposition: "accepted" | "rejected" | "deferred", expectedVersion?: string): Promise<StoryMemorySuggestion> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "review", "--id", id, "--disposition", disposition, ...(expectedVersion !== undefined ? ["--expected-version", expectedVersion] : []), "--json"]));
 }
 
 export async function correctStoryMemorySuggestion(
   projectRoot: string,
   id: string,
-  updates: { name?: string; description?: string; predicate?: string; value?: string }
+  updates: { name?: string; description?: string; predicate?: string; value?: string; entity_type?: CodexEntity["type"]; expected_version?: string }
 ): Promise<StoryMemorySuggestion> {
   const args = ["memory", "correct", "--id", id];
   for (const [key, value] of Object.entries(updates)) {
-    if (value !== undefined) args.push(`--${key}`, value);
+    if (value !== undefined) args.push(`--${key.replace(/_/g, "-")}`, value);
   }
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));

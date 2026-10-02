@@ -9,7 +9,7 @@ import { GenerateProposal } from "./GenerateProposal";
 import { RevisionReview } from "./RevisionReview";
 import { PlanEditor } from "./PlanEditor";
 import { StoryMemoryEditor } from "./StoryMemoryEditor";
-import { CanonMemoryEditor } from "./CanonMemoryEditor";
+import { MemoryWorkspace, type MemoryViewRequest } from "./MemoryWorkspace";
 import { ConnectionGraphEditor } from "./ConnectionGraphEditor";
 import { StorylineEditor } from "./StorylineEditor";
 import { AlternativeComparison } from "./AlternativeComparison";
@@ -49,7 +49,7 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     case "plan":
       return <PlanEditor focusNoteId={(tab.data as { noteId?: string } | undefined)?.noteId} />;
     case "memory":
-      return <CanonMemoryEditor />;
+      return <MemoryWorkspace request={tab.data as MemoryViewRequest | undefined} />;
     case "connections":
       return <ConnectionGraphEditor />;
     case "storylines":

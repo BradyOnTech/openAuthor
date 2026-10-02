@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { randomUUID } from "expo-crypto";
 import { getNetworkStateAsync } from "expo-network";
 
@@ -24,6 +24,7 @@ import { revokeAndDeleteHostedLocalData } from "../core/hostedLifecycle";
 import { MobileOutbox, type OutboxKind } from "../core/outbox";
 import { readPendingOutbox } from "../core/outboxReview";
 import { LocalCompanion } from "../core/localCompanion";
+import { CompanionRecovery, type CompanionState } from "../core/companionRecovery";
 import { SnapshotProject } from "../core/snapshotProject";
 import { SnapshotSync } from "../core/snapshotSync";
 import { encodeRecoveryKey } from "../core/recoveryKey";
@@ -48,6 +49,8 @@ export class HostedRuntime implements AppRuntime {
   readonly mode = "hosted" as const;
   #clientInstance: ReturnType<typeof createMobileSupabaseClient> | null = null;
   #downloadedOnly = false;
+  #accessEpoch = 0;
+  #authCleanup: Promise<void> = Promise.resolve();
   #modeAttempt = 0;
   #modeWrite: Promise<void> = Promise.resolve();
   readonly #projectTitles = new Map<string, string>();
@@ -58,6 +61,7 @@ export class HostedRuntime implements AppRuntime {
   readonly #local;
   readonly #cache = new EncryptedFileSnapshotCache();
   readonly #outboxStore = new SQLiteOutboxStore();
+  readonly #recovery = new CompanionRecovery(this.#cache);
 
   constructor(private readonly config: MobileConfig) {
     this.#enrollment = new DeviceEnrollment({
@@ -137,6 +141,7 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async restoreSession(options: { online?: boolean } = {}): Promise<AppSession | null> {
+    await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     if (await this.#local.isLocked()) return null;
     if (!options.online && await this.#local.prefersDownloaded()) return this.openDownloadedLibrary();
@@ -173,6 +178,7 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async signIn(email: string, password: string): Promise<AppSession> {
+    await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     if (await disconnected()) throw new Error("Sign-in needs an internet connection. Use downloaded books if this device was previously signed in.");
     const session = await this.#auth.signInWithPassword(email, password);
@@ -183,22 +189,48 @@ export class HostedRuntime implements AppRuntime {
     return session;
   }
 
+  subscribeLocalAccessLock(listener: () => void): () => void {
+    const check = () => { void this.#local.require().catch(() => {
+      const client = this.#clientInstance;
+      this.#clientInstance = null;
+      void client?.auth.dispose().catch(() => {});
+      listener();
+    }); };
+    const unsubscribe = this.#secrets.subscribeLocalAccessChanges(check);
+    const foreground = AppState.addEventListener("change", (state) => { if (state === "active") check(); });
+    return () => { unsubscribe(); foreground.remove(); };
+  }
+
   async signOut(): Promise<void> {
     this.#modeAttempt++;
+    this.#accessEpoch++;
     const localOnly = this.#downloadedOnly;
+    const client = this.#clientInstance;
+    this.#clientInstance = null;
     // Normal sign-out intentionally retains this account's encrypted local
     // state. A same-user sign-in rebinds the exact persisted device/key; a
     // different user cannot silently delete or inherit that account's work.
-    await this.#local.lock();
-    await this.#modeWrite.catch(() => {});
-    this.#projectTitles.clear();
-    this.#downloadedOnly = false;
-    await this.#clientInstance?.auth.stopAutoRefresh();
-    try {
-      if (!localOnly && !await disconnected()) await this.#auth.signOut();
-    } finally {
-      await clearMobileAuthSession(this.config);
-    }
+    const cleanup = this.#authCleanup.then(async () => {
+      try {
+        await this.#local.lock();
+        await this.#recovery.drain().catch(() => {});
+        await this.#modeWrite.catch(() => {});
+        this.#projectTitles.clear();
+        this.#downloadedOnly = false;
+        await client?.auth.stopAutoRefresh();
+        if (client && !localOnly && !await disconnected()) await new SupabaseAuth(asMobileSupabaseClient(client)).signOut();
+      } finally {
+        this.#projectTitles.clear();
+        this.#downloadedOnly = false;
+        await this.#modeWrite.catch(() => {});
+        // Closing storage's lease fences in-flight refresh commits. A new
+        // deliberate sign-in waits for cleanup and creates a fresh SDK client.
+        try { await client?.auth.dispose(); }
+        finally { await clearMobileAuthSession(this.config); }
+      }
+    });
+    this.#authCleanup = cleanup.catch(() => {});
+    await cleanup;
   }
 
   async projects(): Promise<AppProject[]> {
@@ -270,6 +302,23 @@ export class HostedRuntime implements AppRuntime {
     };
   }
 
+  async loadCompanionState(projectId: string): Promise<CompanionState> {
+    const epoch = this.#accessEpoch;
+    const identity = await this.#local.requireBook(projectId);
+    const value = await this.#recovery.load(identity, projectId);
+    await this.#local.requireBook(projectId);
+    if (epoch !== this.#accessEpoch) throw new Error("Recovery access was superseded.");
+    return value;
+  }
+
+  async saveCompanionState(projectId: string, value: CompanionState): Promise<void> {
+    const epoch = this.#accessEpoch;
+    const identity = await this.#local.requireBook(projectId);
+    if (epoch !== this.#accessEpoch) throw new Error("Recovery access was superseded.");
+    await this.#recovery.save(identity, projectId, value);
+    await this.#local.requireBook(projectId);
+  }
+
   async pending(projectId: string): Promise<PendingItem[]> {
     const book = await this.#local.requireBook(projectId);
     return readPendingOutbox({
@@ -303,9 +352,9 @@ export class HostedRuntime implements AppRuntime {
     };
   }
 
-  async #queue(projectId: string, kind: OutboxKind, payload: Record<string, unknown>, baseRevision: string): Promise<string> {
+  async #queue(projectId: string, kind: OutboxKind, payload: Record<string, unknown>, baseRevision: string, retainedOperationId?: string): Promise<string> {
     const current = await this.#mobileOutbox(projectId);
-    const operationId = randomUUID();
+    const operationId = retainedOperationId ?? randomUUID();
     await current.outbox.enqueue({
       operationId,
       projectId,
@@ -319,13 +368,16 @@ export class HostedRuntime implements AppRuntime {
 
   async capture(input: {
     projectId: string;
+    operationId?: string;
     baseRevision: string;
     kind: "capture_note" | "dictated_passage" | "story_memory_suggestion" | "change_set_request";
     text: string;
   }): Promise<PendingItem> {
     if (!input.text.trim()) throw new Error("Capture text is required.");
-    const operationId = await this.#queue(input.projectId, input.kind, capturePayload(input.kind, input.text.trim()), input.baseRevision);
-    return { operationId, kind: input.kind, summary: input.text.trim(), createdAt: new Date().toISOString(), status: "local" };
+    const operationId = await this.#queue(input.projectId, input.kind, capturePayload(input.kind, input.text.trim()), input.baseRevision, input.operationId);
+    const saved = await this.#outboxStore.get(operationId);
+    return { operationId, kind: input.kind, summary: input.text.trim(),
+      createdAt: saved?.createdAt ?? new Date().toISOString(), status: saved?.acknowledgedAt ? "uploaded" : "local" };
   }
 
   async flush(projectId: string): Promise<{ uploaded: number; remaining: number }> {
@@ -414,7 +466,10 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async revokeDeviceAndDeleteLocalData(): Promise<void> {
+    this.#accessEpoch++;
+    await this.#clientInstance?.auth.stopAutoRefresh();
     await this.#local.lock();
+    await this.#recovery.drain().catch(() => {});
     await revokeAndDeleteHostedLocalData({
       revokeDevice: async () => {
         if (await disconnected()) {
@@ -423,7 +478,10 @@ export class HostedRuntime implements AppRuntime {
         }
         await this.#enrollment.revokeCurrent();
       },
-      deleteCache: async () => { try { await this.#cache.deleteAll(); } finally { await this.#books.clear(); } },
+      deleteCache: async () => {
+        try { await clearMobileAuthSession(this.config); }
+        finally { try { await this.#cache.deleteAll(); } finally { await this.#books.clear(); } }
+      },
       deleteOutbox: () => this.#outboxStore.deleteAll(),
       signOut: () => this.signOut(),
     });

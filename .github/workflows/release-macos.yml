@@ -63,6 +63,9 @@ jobs:
           OPENAUTHOR_RUNTIME_ARCH: ${{ matrix.arch }}
         run: scripts/prepare_bundled_runtime.sh
 
+      - name: Verify source, contracts, core and native workflows before packaging
+        run: make check test test-contracts test-desktop tauri-test
+
       - name: Build, sign, notarize, and attach draft release artifacts
         uses: tauri-apps/tauri-action@v1
         env:
@@ -87,4 +90,19 @@ jobs:
       - name: Verify sealed app and packaged core
         env:
           OPENAUTHOR_REQUIRE_SIGNED_BUNDLE: "1"
+          OPENAUTHOR_EXPECT_ARCH: ${{ matrix.arch }}
+          OPENAUTHOR_BUNDLE_REPORT_PATH: ${{ runner.temp }}/signed-package-evidence.json
         run: scripts/verify_macos_bundle.sh "desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos/openAuthor.app"
+
+      - name: Record distributable checksums
+        run: |
+          find desktop/src-tauri/target/${{ matrix.target }}/release/bundle -type f \( -name '*.dmg' -o -name '*.tar.gz' \) -exec shasum -a 256 {} \; > "${{ runner.temp }}/signed-artifacts.sha256"
+          test -s "${{ runner.temp }}/signed-artifacts.sha256"
+
+      - name: Preserve signed-build verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-package-evidence-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/signed-package-evidence.json
+            ${{ runner.temp }}/signed-artifacts.sha256

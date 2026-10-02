@@ -7,6 +7,7 @@ from pathlib import Path
 from openauthor.assistant.mobile_outbox import MobileOutboxEnvelope, import_mobile_outbox_item, list_mobile_inbox_items
 from openauthor.assistant.snapshots import project_mobile_snapshot
 from openauthor.project import initialize_project, resolve_project
+from openauthor.proposals import list_proposals
 from openauthor.revisions import create_revision
 from openauthor.scenes import add_scene, get_scene, update_scene
 from openauthor.style_profile import save_style_profile
@@ -68,7 +69,7 @@ elif operation == "import":
   result = import_mobile_outbox_item(paths, envelope=envelope, payload=data["payload"]).to_dict()
 elif operation == "inspect":
   paths = resolve_project(root)
-  result = {"inbox": list_mobile_inbox_items(paths), "scene": get_scene(paths, "scene-0001")}
+  result = {"inbox": list_mobile_inbox_items(paths), "proposals": list_proposals(paths), "scene": get_scene(paths, "scene-0001")}
 else:
   raise ValueError("Unknown fixture operation")
 print(json.dumps(result))

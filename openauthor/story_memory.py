@@ -7,9 +7,11 @@ import unicodedata
 from collections import Counter, defaultdict
 from typing import Any
 
-from .codex import add_entity, add_relationship, list_entities, list_relationships, update_entity
+from .codex import ENTITY_TYPES, add_entity, add_relationship, list_entities, list_relationships, update_entity
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .scenes import get_scene, list_scene_details, list_scenes
+from .project_locks import serialized_project_access
+from .scene_edits import workspace_edit_scope
 
 SUGGESTION_SCHEMA_VERSION = 1
 SUGGESTION_STATUSES = {"pending", "accepted", "rejected", "deferred"}
@@ -24,8 +26,9 @@ NAME_TITLES = {
   "general", "inspector", "king", "lady", "lord", "prince", "princess",
   "professor", "queen", "sir",
 }
-SENTENCE_TRANSITIONS = {"meanwhile", "however", "nevertheless", "therefore", "afterward", "finally", "suddenly", "instead"}
+SENTENCE_TRANSITIONS = {"meanwhile", "however", "nevertheless", "therefore", "afterward", "finally", "suddenly", "instead", "still", "yet", "otherwise", "eventually"}
 SPATIAL_OPENERS = {"beyond", "beneath", "above", "across", "behind", "beside", "between", "inside", "outside", "through", "under"}
+CLAUSE_OPENERS = {"after", "before", "once", "while", "until", "although", "unless", "without", "since"}
 RELATION_PATTERNS = {
   "trusts": r"trusts?",
   "distrusts": r"(?:distrusts?|does\s+not\s+trust)",
@@ -83,7 +86,11 @@ def _proper_name_mentions(body: str):
     transition = first[0].casefold() in SENTENCE_TRANSITIONS and separator.lstrip().startswith(",")
     spatial = (first[0].casefold() in SPATIAL_OPENERS and following is not None
       and separator.isspace() and following[0].casefold() in {"the", "a", "an", "his", "her", "their", "our", "my", "this", "that"})
-    if transition or spatial:
+    clause = (first[0].casefold() in CLAUSE_OPENERS and following is not None and separator.isspace()
+      and following[0].casefold() in {"the", "a", "an", "his", "her", "their", "our", "my", "this", "that", "he", "she", "it", "they", "we", "dawn", "dusk", "noon", "midnight", "sunrise", "sunset"})
+    modifier = (first[0].casefold() in {"only", "even"} and following is not None
+      and separator.isspace() and capitalized(following[0]))
+    if transition or spatial or clause or modifier:
       index += 1
       continue
     end_index = index
@@ -306,6 +313,34 @@ def _matching_entity(
   return matching[0] if matching else None
 
 
+def _review_version(paths: ProjectPaths, suggestion: dict[str, Any], cache: dict | None = None) -> str:
+  cache = cache if cache is not None else {}
+  sources = {}
+  for evidence in suggestion.get("evidence", []):
+    identifier = evidence.get("scene_id", "")
+    if not identifier:
+      continue
+    if identifier not in cache:
+      try:
+        scene = get_scene(paths, identifier)
+        cache[identifier] = {"body": scene["body"], "pov": scene.get("pov", "")}
+      except OpenAuthorError:
+        cache[identifier] = {"missing": True}
+    sources[identifier] = cache[identifier]
+  value = {"workspace": workspace_edit_scope(paths)[0], "suggestion": {key: value for key, value in suggestion.items() if key != "review_version"}, "sources": sources}
+  return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def _versioned_suggestion(paths: ProjectPaths, suggestion: dict[str, Any], cache: dict | None = None) -> dict[str, Any]:
+  return {**suggestion, "review_version": _review_version(paths, suggestion, cache)}
+
+
+def _check_review_version(paths: ProjectPaths, suggestion: dict[str, Any], expected_version: str | None) -> None:
+  if expected_version is not None and (not expected_version or _review_version(paths, suggestion) != expected_version):
+    raise OpenAuthorError("The suggestion, source or Storyline changed. Refresh and review the current evidence before deciding or correcting it.")
+
+
+@serialized_project_access
 def queue_memory_suggestion(
   paths: ProjectPaths,
   *,
@@ -324,7 +359,7 @@ def queue_memory_suggestion(
   store = _read_store(paths)
   existing = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if existing is not None:
-    return existing
+    return _versioned_suggestion(paths, existing)
   suggestion = {
     "id": suggestion_id,
     "kind": "memory_note",
@@ -341,9 +376,10 @@ def queue_memory_suggestion(
   }
   store["suggestions"].append(suggestion)
   atomic_write_json(_suggestions_path(paths), store)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)
 
 
+@serialized_project_access
 def list_memory_suggestions(
   paths: ProjectPaths,
   *,
@@ -354,9 +390,11 @@ def list_memory_suggestions(
   rows = _read_store(paths)["suggestions"]
   if status is not None:
     rows = [row for row in rows if row.get("status") == status]
-  return sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))
+  cache: dict = {}
+  return [_versioned_suggestion(paths, row, cache) for row in sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))]
 
 
+@serialized_project_access
 def extract_memory_suggestions(
   paths: ProjectPaths,
   *,
@@ -526,6 +564,7 @@ def extract_memory_suggestions(
     if current and current.get("author_corrected"):
       row["name"] = current.get("name", row["name"])
       row["description"] = current.get("description", row["description"])
+      row["entity_type"] = current.get("entity_type", row["entity_type"])
     row["updated_at"] = (
       current.get("updated_at", current.get("created_at", utc_now()))
       if current
@@ -607,11 +646,13 @@ def extract_memory_suggestions(
   }
 
 
+@serialized_project_access
 def review_memory_suggestion(
   paths: ProjectPaths,
   suggestion_id: str,
   *,
   disposition: str,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   if disposition not in SUGGESTION_STATUSES - {"pending"}:
     raise OpenAuthorError("Suggestion disposition must be accepted, rejected, or deferred.")
@@ -619,6 +660,7 @@ def review_memory_suggestion(
   suggestion = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if suggestion is None:
     raise OpenAuthorError(f"Unknown Story Memory suggestion '{suggestion_id}'.")
+  _check_review_version(paths, suggestion, expected_version)
   if suggestion.get("status") != "pending" and suggestion.get("status") != "deferred":
     raise OpenAuthorError("This Story Memory suggestion has already been decided.")
   created_entity_id = ""
@@ -669,6 +711,14 @@ def review_memory_suggestion(
       entities = list_entities(paths)
       existing = _matching_entity(entities, suggestion["name"], aliases)
       if existing:
+        # Entity creation carries an author-reviewable type. Generic Assistant
+        # notes can refer to any existing identity and retain their association.
+        if suggestion.get("kind") == "entity_create" and existing["type"] != suggestion["entity_type"]:
+          raise OpenAuthorError(
+            f"An existing {existing['type']} entry named '{existing['name']}' matches this "
+            f"{suggestion['entity_type']} suggestion. Resolve the identity or correct the "
+            "suggestion before accepting it; nothing was changed."
+          )
         merged_aliases = list(existing.get("aliases", []))
         known = {str(alias).casefold() for alias in merged_aliases}
         known.add(existing["name"].casefold())
@@ -698,7 +748,8 @@ def review_memory_suggestion(
     for other in store["suggestions"]:
       if other is suggestion or other.get("kind") not in {"entity_create", "memory_note"}:
         continue
-      if other.get("status") in {"pending", "deferred"} and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
+      compatible_type = other.get("kind") == "memory_note" or other.get("entity_type") == accepted_entity["type"]
+      if other.get("status") in {"pending", "deferred"} and compatible_type and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
         other["status"] = "accepted"
         other["decided_at"] = suggestion["decided_at"]
         other["created_entity_id"] = created_entity_id
@@ -706,9 +757,10 @@ def review_memory_suggestion(
   atomic_write_json(_suggestions_path(paths), store)
   from .product_signals import record_product_event
   record_product_event(paths, "story_memory_suggestion_reviewed", disposition=disposition)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)
 
 
+@serialized_project_access
 def correct_memory_suggestion(
   paths: ProjectPaths,
   suggestion_id: str,
@@ -717,18 +769,24 @@ def correct_memory_suggestion(
   description: str | None = None,
   predicate: str | None = None,
   value: str | None = None,
+  entity_type: str | None = None,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   store = _read_store(paths)
   suggestion = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if suggestion is None:
     raise OpenAuthorError(f"Unknown Story Memory suggestion '{suggestion_id}'.")
+  _check_review_version(paths, suggestion, expected_version)
   if suggestion.get("status") not in {"pending", "deferred"}:
     raise OpenAuthorError("Only pending or deferred Story Memory suggestions can be corrected.")
+  if entity_type is not None and (suggestion.get("kind") != "entity_create" or entity_type not in ENTITY_TYPES):
+    raise OpenAuthorError("Choose a supported entity type for an entity suggestion.")
   updates = {
     "name": name,
     "description": description,
     "predicate": predicate,
     "value": value,
+    "entity_type": entity_type,
   }
   changed = False
   for key, candidate in updates.items():
@@ -745,4 +803,4 @@ def correct_memory_suggestion(
   suggestion["corrected_at"] = utc_now()
   suggestion["updated_at"] = utc_now()
   atomic_write_json(_suggestions_path(paths), store)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)

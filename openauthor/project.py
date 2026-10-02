@@ -64,6 +64,9 @@ def utc_now() -> str:
 
 
 def atomic_write_text(path: Path, content: str) -> None:
+  from .book_transactions import write_transaction_text
+  if write_transaction_text(path, content):
+    return
   path.parent.mkdir(parents=True, exist_ok=True)
   fd, temp_name = tempfile.mkstemp(
     prefix=f".{path.name}.",
@@ -76,6 +79,11 @@ def atomic_write_text(path: Path, content: str) -> None:
       handle.flush()
       os.fsync(handle.fileno())
     os.replace(temp_name, path)
+    directory_fd = os.open(path.parent, os.O_RDONLY)
+    try:
+      os.fsync(directory_fd)
+    finally:
+      os.close(directory_fd)
   except BaseException:
     try:
       os.unlink(temp_name)

@@ -25,12 +25,24 @@ OPENAUTHOR_CODEX_CONTRACT_BIN="$APP/Contents/Resources/resources/runtime/codex/b
 
 if [[ "${OPENAUTHOR_REQUIRE_SIGNED_BUNDLE:-0}" == "1" ]]; then
   codesign --verify --deep --strict --verbose=2 "$APP"
-  SIGNING_AUTHORITY="$(codesign -dv --verbose=4 "$APP" 2>&1 | sed -n 's/^Authority=//p' | head -1)"
-  if [[ -z "$SIGNING_AUTHORITY" ]]; then
-    echo "Bundle only has an ad-hoc signature; a Developer ID signature is required." >&2
+  SIGNATURE_METADATA="$(codesign -dv --verbose=4 "$APP" 2>&1)"
+  SIGNING_AUTHORITY="$(printf '%s\n' "$SIGNATURE_METADATA" | sed -n 's/^Authority=//p' | head -1)"
+  if [[ "$SIGNING_AUTHORITY" != "Developer ID Application: "* ]]; then
+    echo "A Developer ID Application signature is required." >&2
     exit 1
   fi
+  if [[ "$SIGNATURE_METADATA" != *"(runtime)"* ]]; then
+    echo "The signed bundle must enable the hardened runtime." >&2
+    exit 1
+  fi
+  xcrun stapler validate "$APP"
   spctl --assess --type execute --verbose=4 "$APP"
 fi
+
+REPORT_ARGS=()
+if [[ -n "${OPENAUTHOR_BUNDLE_REPORT_PATH:-}" ]]; then
+  REPORT_ARGS=(--report "$OPENAUTHOR_BUNDLE_REPORT_PATH")
+fi
+"$RUNTIME/bin/python3" -I "$ROOT/scripts/verify_packaged_sources.py" --app "$APP" "${REPORT_ARGS[@]}"
 
 echo "macOS bundle: OK ($APP)"

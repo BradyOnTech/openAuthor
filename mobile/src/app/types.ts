@@ -1,4 +1,5 @@
 import type { MobileVoiceEvent } from "../voice/realtimeEvents";
+import type { CompanionState } from "../core/companionRecovery";
 import type { SnapshotProject } from "../core/snapshotProject";
 
 export type AppSession = { userId: string; email: string; downloadedOnly?: boolean };
@@ -30,15 +31,19 @@ export interface AppRuntime {
   openDownloadedLibrary(): Promise<AppSession>;
   signIn(email: string, password: string): Promise<AppSession>;
   signOut(): Promise<void>;
+  subscribeLocalAccessLock(listener: () => void): () => void;
   projects(): Promise<AppProject[]>;
   openProject(projectId: string): Promise<{
     project: SnapshotProject;
     freshness: string;
     offline: boolean;
   }>;
+  loadCompanionState(projectId: string): Promise<CompanionState>;
+  saveCompanionState(projectId: string, value: CompanionState): Promise<void>;
   pending(projectId: string): Promise<PendingItem[]>;
   capture(input: {
     projectId: string;
+    operationId?: string;
     baseRevision: string;
     kind: "capture_note" | "dictated_passage" | "story_memory_suggestion" | "change_set_request";
     text: string;

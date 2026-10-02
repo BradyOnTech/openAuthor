@@ -3,17 +3,14 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
   addCodexEntity,
-  correctStoryMemorySuggestion,
   getCodexEntity,
   listStoryMemorySuggestions,
-  reviewStoryMemorySuggestion,
   scanStoryMemory,
   type StoryMemorySuggestion,
 } from "../../api";
 import { orderCodexEntities } from "../../state";
 import type { CodexEntity } from "../../types";
 import { flushProjectSceneSaves } from "../../sceneSaveSession";
-import { EvidencePassages } from "../shared/EvidencePassages";
 
 const TYPE_ORDER: CodexEntity["type"][] = ["character", "location", "lore", "item", "faction", "event"];
 const belongsInSuggestionInbox = (suggestion: StoryMemorySuggestion) => suggestion.kind !== "relationship_create";
@@ -36,14 +33,10 @@ export function CodexBrowser() {
   const [adding, setAdding] = useState(false);
   const [suggestions, setSuggestions] = useState<StoryMemorySuggestion[]>([]);
   const [scanning, setScanning] = useState(false);
-  const [bulkReviewing, setBulkReviewing] = useState(false);
-  const [correctingId, setCorrectingId] = useState("");
-  const [correctionName, setCorrectionName] = useState("");
-  const [correctionDescription, setCorrectionDescription] = useState("");
 
   useEffect(() => {
     void refreshSuggestions();
-  }, [projectRoot]);
+  }, [projectRoot, codexEntities]);
 
   async function refreshSuggestions() {
     if (!projectRoot) return;
@@ -60,51 +53,12 @@ export function CodexBrowser() {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before scanning Story Memory.");
       const report = await scanStoryMemory(projectRoot);
       setSuggestions(report.suggestions.filter((row) => row.status === "pending" && belongsInSuggestionInbox(row)));
+      openTab({ id: "memory:canon", kind: "memory", label: "Story Memory", data: { memoryView: "suggestions", suggestionId: report.suggestions.find(row => row.status === "pending" && belongsInSuggestionInbox(row))?.id } });
       setMessage(`Scanned ${report.scanned_scenes} scenes; ${report.pending} suggestion${report.pending === 1 ? "" : "s"} await${report.pending === 1 ? "s" : ""} review.`);
     } catch (error) {
       setError(`Story Memory scan failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setScanning(false);
-    }
-  }
-
-  async function decideSuggestion(id: string, disposition: "accepted" | "rejected" | "deferred") {
-    try {
-      await reviewStoryMemorySuggestion(projectRoot, id, disposition);
-      await Promise.all([refreshSuggestions(), refreshCodex()]);
-      setError("");
-      setMessage(disposition === "accepted" ? "Suggestion accepted into Story Memory." : `Suggestion ${disposition}.`);
-    } catch (error) {
-      setError(`Suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  async function decideAllSuggestions(disposition: "accepted" | "rejected" | "deferred") {
-    setBulkReviewing(true);
-    try {
-      for (const suggestion of suggestions) {
-        await reviewStoryMemorySuggestion(projectRoot, suggestion.id, disposition);
-      }
-      await Promise.all([refreshSuggestions(), refreshCodex()]);
-      setError("");
-      setMessage(`${suggestions.length} suggestions ${disposition === "accepted" ? "accepted into Story Memory" : "deferred"}.`);
-    } catch (error) {
-      setError(`Bulk suggestion review failed: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setBulkReviewing(false);
-    }
-  }
-
-  async function saveCorrection(suggestion: StoryMemorySuggestion) {
-    try {
-      const updated = await correctStoryMemorySuggestion(projectRoot, suggestion.id, suggestion.kind === "canon_fact"
-        ? { name: correctionName, value: correctionDescription }
-        : { name: correctionName, description: correctionDescription });
-      setSuggestions((rows) => rows.map((row) => row.id === updated.id ? updated : row));
-      setCorrectingId("");
-      setMessage("Suggestion corrected. It is still non-canon until you accept it.");
-    } catch (error) {
-      setError(`Suggestion correction failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -177,10 +131,10 @@ export function CodexBrowser() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn--sm" disabled={scanning || bulkReviewing} onClick={() => void handleScan()} style={{ width: "100%", minHeight: 40, whiteSpace: "normal", marginTop: "var(--space-2)" }}>
+        <button className="btn btn--sm" disabled={scanning} onClick={() => void handleScan()} style={{ width: "100%", minHeight: 40, whiteSpace: "normal", marginTop: "var(--space-2)" }}>
           {scanning ? "Scanning…" : "Scan Manuscript for Memory"}
         </button>
-        <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Canon & Continuity" })} style={{ width: "100%", minHeight: 40, marginTop: "var(--space-2)" }}>
+        <button className="btn btn--primary btn--sm" onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Story Memory", data: { memoryView: "canon" } })} style={{ width: "100%", minHeight: 40, marginTop: "var(--space-2)" }}>
           Canon & Continuity
         </button>
         <button className="btn btn--sm" onClick={() => openTab({ id: "memory:connections", kind: "connections", label: "Connection Map" })} style={{ width: "100%", minHeight: 40, marginTop: "var(--space-2)" }}>
@@ -188,38 +142,11 @@ export function CodexBrowser() {
         </button>
       </div>
       <div className="sidebar__content">
-        {suggestions.length > 0 && (
-          <div className="memory-suggestion-review">
-            <div className="section-header"><span>Suggestion inbox</span><span className="section-header__count">({suggestions.length})</span></div>
-            <p style={{ padding: "0 var(--space-3)", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.5 }}>Suggestions are heuristic, not established story truth. Review the passages before accepting.</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "0 var(--space-3) var(--space-2)" }}>
-              <button className="btn btn--sm btn--primary" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("accepted")}>Accept all</button>
-              <button className="btn btn--sm" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("deferred")}>Review later</button>
-              <button className="btn btn--sm" disabled={bulkReviewing} onClick={() => void decideAllSuggestions("rejected")}>Exclude all</button>
-            </div>
-            {suggestions.map((suggestion) => (
-              <div key={suggestion.id} style={{ padding: "var(--space-3)", borderBottom: "1px solid var(--border)", background: "var(--warning-subtle)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                  <strong style={{ color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>{suggestion.name}</strong>
-                  <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-xs)" }}>Unconfirmed</span>
-                </div>
-                <p style={{ margin: "6px 0", color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.4 }}>{suggestion.reason}</p>
-                <EvidencePassages evidence={suggestion.evidence} />
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  <button className="btn btn--sm btn--primary" onClick={() => void decideSuggestion(suggestion.id, "accepted")}>Accept</button>
-                  <button className="btn btn--sm" onClick={() => void decideSuggestion(suggestion.id, "deferred")}>Later</button>
-                  <button className="btn btn--sm" onClick={() => void decideSuggestion(suggestion.id, "rejected")}>Reject</button>
-                  <button className="btn btn--sm" onClick={() => { setCorrectingId(suggestion.id); setCorrectionName(suggestion.name); setCorrectionDescription(suggestion.kind === "canon_fact" ? suggestion.value ?? "" : suggestion.description ?? ""); }}>Correct</button>
-                </div>
-                {correctingId === suggestion.id && <div style={{ display: "grid", gap: 5, marginTop: 7 }}>
-                  <input className="input" aria-label={`Corrected name for ${suggestion.name}`} value={correctionName} onChange={(event) => setCorrectionName(event.target.value)} />
-                  <textarea className="input" rows={3} aria-label={`Corrected detail for ${suggestion.name}`} value={correctionDescription} onChange={(event) => setCorrectionDescription(event.target.value)} />
-                  <div style={{ display: "flex", gap: 5 }}><button className="btn btn--primary btn--sm" disabled={!correctionName.trim() || !correctionDescription.trim()} onClick={() => void saveCorrection(suggestion)}>Save correction</button><button className="btn btn--sm" onClick={() => setCorrectingId("")}>Cancel</button></div>
-                </div>}
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="memory-suggestion-review" style={{ padding: "var(--space-3)", borderBottom: "1px solid var(--border)" }}>
+          <div className="section-header"><span>Suggestion inbox</span><span className="section-header__count">({suggestions.length})</span></div>
+          <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-xs)", lineHeight: 1.5 }}>Review source passages and proposed entries in the main workspace before accepting.</p>
+          <button className="btn btn--sm" style={{ width: "100%" }} onClick={() => openTab({ id: "memory:canon", kind: "memory", label: "Story Memory", data: { memoryView: "suggestions" } })}>Review Memory suggestions</button>
+        </div>
         {grouped.map((g) => (
           <div key={g.type}>
             <div className="section-header">

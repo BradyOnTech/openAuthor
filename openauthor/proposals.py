@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .book_transactions import recoverable_project_edit
+
 import hashlib
 import json
 import re
@@ -303,6 +305,7 @@ def rebase_proposal_change_set(paths: ProjectPaths, *, proposal_id: str) -> dict
 
 
 @serialized_project_access
+@recoverable_project_edit
 def apply_proposal(
   paths: ProjectPaths,
   *,
@@ -449,6 +452,7 @@ def apply_proposal(
 
 
 @serialized_project_access
+@recoverable_project_edit
 def apply_proposal_batch(
   paths: ProjectPaths,
   *,
@@ -597,6 +601,7 @@ def apply_proposal_batch(
 
 
 @serialized_project_access
+@recoverable_project_edit
 def undo_proposal_batch(paths: ProjectPaths, *, applied_revision: str) -> dict[str, Any]:
   """Restore an exact recorded group, or leave every member untouched.
 
@@ -715,6 +720,7 @@ def undo_proposal_batch(paths: ProjectPaths, *, applied_revision: str) -> dict[s
 
 
 @serialized_project_access
+@recoverable_project_edit
 def undo_proposal(
   paths: ProjectPaths,
   *,
@@ -827,6 +833,15 @@ def _proposal_is_stale(
 ) -> bool:
   if proposal.get("selection") and proposal["selection"].get("branch") != _capture_vcs_anchor(paths)[0]:
     return True
+  source_digests = (proposal.get("selection") or {}).get("review_source_digests")
+  if isinstance(source_digests, dict):
+    for source_id, expected_digest in source_digests.items():
+      try:
+        actual_digest = current_digests.get(source_id) if current_digests is not None else _scene_digest(paths, source_id)
+      except OpenAuthorError:
+        return True
+      if actual_digest != expected_digest:
+        return True
   if proposal.get("source") == "merge_resolution":
     metadata = proposal.get("merge") or {}
     try:

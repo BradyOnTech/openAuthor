@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-02",
+  "scope": "Memory suggestion review workspace and guarded author decisions",
+  "status": "verified",
+  "checks": [
+    {
+      "command": "cd desktop && npx vitest run src/components/editor/MemorySuggestionReview.test.tsx src/components/editor/MemoryWorkspace.test.tsx src/components/shared/EvidencePassages.test.tsx src/components/editor/ConnectionGraphEditor.test.tsx src/components/editor/CanonMemoryEditor.test.tsx src/components/editor/ContinuityReview.test.tsx",
+      "status": "passed",
+      "test_files": 6,
+      "tests": 18
+    },
+    {
+      "command": "cd desktop && npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "command": "cd desktop && OPENAUTHOR_BROWSER_EXECUTABLE=~/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell npx playwright test e2e/daily-review-polish.spec.ts e2e/memory-review-workspace.spec.ts",
+      "status": "passed",
+      "journeys": 2,
+      "duration_seconds": 15.3,
+      "memory_journey_seconds": 8.1
+    }
+  ],
+  "verified_behaviors": [
+    "A cold scan opens the existing Story Memory tab and displays a selected proposed entry beside its recorded passages.",
+    "The author can correct a capitalized place mistakenly proposed as a character; correction remains unconfirmed until explicit acceptance.",
+    "Unfinished corrections retain name, detail, entry type, original review version and selected suggestion across restart.",
+    "Changed source prose blocks stale acceptance before any Codex write; a fresh scan preserves the author-corrected type.",
+    "Correction recovery cannot silently adopt a newer source version; the author must compare updated evidence before explicitly advancing its baseline.",
+    "A correction retained after another writer accepts or rejects its suggestion remains available for reference, with Save disabled and the recorded decision explained.",
+    "Accept, Later and Reject decisions are loaded from the core and available after reopening via status filters.",
+    "ArrowUp, ArrowDown, Home and End move through suggestions without losing correction drafts.",
+    "Decision actions remain outside scrolling evidence and visible at 900x800 without horizontal overflow.",
+    "Opening accepted evidence selects the exact Last Ferry name in the current updated prose and returns to review history.",
+    "Opening evidence in a dirty scene preserves its tab data instead of replacing author writing.",
+    "Relationship decisions send the reviewed version and no longer display heuristic support as a percentage confidence."
+  ],
+  "screenshots": [
+    "memory-evidence-review.png",
+    "memory-evidence-review-narrow.png"
+  ],
+  "method": "Browser transport adapter invokes the real Python core against a disposable book with no remote provider requests.",
+  "limitations": [
+    "This verifies review workflow, correction and stale-source guards; it is not a calibrated extraction accuracy benchmark.",
+    "Does not certify packaged native process lifecycle."
+  ]
+}

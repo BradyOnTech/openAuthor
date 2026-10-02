@@ -164,6 +164,7 @@ export type ProposalRecord = {
   selection?: {
     action: "rewrite" | "shorten" | "expand" | "critique";
     start: number; end: number; before: string; after: string; feedback: string; branch: string;
+    review?: EditorialReview;
   };
   revision_intent?: {
     goal: string;
@@ -303,6 +304,22 @@ export type ProposalRecord = {
     quality_flags?: string[];
     log_path: string;
   };
+};
+
+export type EditorialReview = {
+  schema_version: 1;
+  focus: string;
+  scope: "passage" | "chapter";
+  kind: "mechanical" | "editorial";
+  summary: string;
+  strengths: string[];
+  limitations: string[];
+  warnings: string[];
+  sources: Array<{ scene_id: string; title: string; start: number; end: number }>;
+  findings: Array<{
+    id: string; category: string; title: string; observation: string; uncertainty: string; suggestion: string;
+    evidence: CanonEvidence[];
+  }>;
 };
 
 export type RevisionSummary = {

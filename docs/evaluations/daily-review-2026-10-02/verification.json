@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-02",
+  "scope": "Daily Plan and passage review polish",
+  "status": "verified",
+  "checks": [
+    {
+      "command": "cd desktop && npx vitest run src/components/editor/PlanEditor.test.tsx src/components/editor/ContinuityReview.test.tsx src/SelectionAssist.test.tsx",
+      "status": "passed",
+      "test_files": 3,
+      "tests": 19
+    },
+    {
+      "command": "cd desktop && npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "command": "cd desktop && OPENAUTHOR_BROWSER_EXECUTABLE=~/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell npx playwright test e2e/daily-review-polish.spec.ts e2e/memory-review-workspace.spec.ts",
+      "status": "passed",
+      "journeys": 2,
+      "duration_seconds": 15.3,
+      "daily_journey_seconds": 5.9
+    }
+  ],
+  "verified_behaviors": [
+    "A saved 12-line synopsis is compact and the Scene Inbox remains visible.",
+    "Editing remains explicit; a recovered unsaved brief opens its fields and save action without writing book data.",
+    "ArrowUp, ArrowDown, Home and End navigate findings while unfinished decision notes are retained.",
+    "Critique focus and chapter scope invalidate prior context review and recover without changing a journaled request.",
+    "A new unversioned book previews a selection successfully after removal of the invented main branch fallback.",
+    "Generate and discard actions remain in the viewport while exact long context scrolls at 1400x900 and 900x800.",
+    "Generating a reviewed passage replacement leaves manuscript prose unchanged until acceptance."
+  ],
+  "screenshots": [
+    "compact-saved-plan.png",
+    "selection-context-actions.png",
+    "selection-context-actions-narrow.png"
+  ],
+  "method": "Browser-only native transport adapter invokes the real Python core against a disposable book with the offline local provider.",
+  "limitations": [
+    "Does not certify packaged Tauri process lifecycle.",
+    "Does not establish real-provider literary judgment quality."
+  ]
+}

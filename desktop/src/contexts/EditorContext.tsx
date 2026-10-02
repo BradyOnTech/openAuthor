@@ -12,7 +12,7 @@ export type EditorTab = {
   label: string;
   modified?: boolean;
   focusPassage?: CanonEvidence;
-  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | { noteId: string } | RevisionDraft | null;
+  data?: SceneDetail | CodexEntity | ProposalRecord | ProposalRecord[] | RevisionSummary | ManuscriptPlan | { voiceBrief: string } | { noteId: string } | { memoryView: "suggestions" | "canon"; suggestionId?: string } | RevisionDraft | null;
 };
 
 export type SplitDirection = "none" | "horizontal" | "vertical";

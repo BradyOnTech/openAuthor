@@ -5,13 +5,20 @@ import Storage from "expo-sqlite/kv-store";
 
 import type { MobileConfig } from "../config";
 import type { MobileSupabaseClient } from "./supabaseAdapters";
-import { isMobileAuthStorageKey, mobileAuthStorageKey } from "../core/authStorageKey";
+import { EncryptedFileSnapshotCache } from "./encryptedSnapshotCache";
+import { EncryptedAuthStorage } from "../core/encryptedAuthStorage";
+import { mobileAuthStorageKey } from "../core/authStorageKey";
+
+function authStorage(config: MobileConfig): EncryptedAuthStorage {
+  return new EncryptedAuthStorage({ deployment: config.supabaseUrl, base: mobileAuthStorageKey(config),
+    encrypted: new EncryptedFileSnapshotCache(), legacy: Storage });
+}
 
 export function createMobileSupabaseClient(config: MobileConfig): SupabaseClient {
   return createClient(config.supabaseUrl, config.supabasePublishableKey, {
     auth: {
       storageKey: mobileAuthStorageKey(config),
-      storage: Storage,
+      storage: authStorage(config),
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
@@ -21,8 +28,7 @@ export function createMobileSupabaseClient(config: MobileConfig): SupabaseClient
 }
 
 export async function clearMobileAuthSession(config: MobileConfig): Promise<void> {
-  const base = mobileAuthStorageKey(config);
-  for (const key of (await Storage.getAllKeys()).filter((key) => isMobileAuthStorageKey(key, base))) await Storage.removeItem(key);
+  await authStorage(config).clear();
 }
 
 export function asMobileSupabaseClient(client: SupabaseClient): MobileSupabaseClient {

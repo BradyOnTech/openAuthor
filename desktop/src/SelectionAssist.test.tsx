@@ -96,3 +96,45 @@ it("does not carry one-request Memory permission into a new request", async () =
   expect(permission.checked).toBe(false);
   expect((screen.getByRole("checkbox", { name: "Allow Canon fact: Gate · color: blue for this request" }) as HTMLInputElement).checked).toBe(false);
 });
+
+it("reviews connected chapter focus explicitly and keeps generation outside the scrolling context", async () => {
+  render(<SelectionAssist projectRoot="/synthetic/focus" sceneId="scene-1" branch="main" selection={{ body: "Mara began to count.", start: 0, end: 20 }} disabled={false} providers={["local"]} flush={async () => true} onResult={async () => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Critique" }));
+  fireEvent.change(screen.getByLabelText("Review focus"), { target: { value: "character-knowledge" } });
+  fireEvent.change(screen.getByLabelText("Review scope"), { target: { value: "chapter" } });
+  fireEvent.click(screen.getByRole("button", { name: "Review context" }));
+  const generate = await screen.findByRole("button", { name: "Generate reviewed critique" });
+  const input = JSON.parse(boundary.calls[0][boundary.calls[0].indexOf("--input-json") + 1]);
+  expect(input.review_focus).toBe("character-knowledge");
+  expect(input.review_scope).toBe("chapter");
+  expect(screen.getByRole("region", { name: "Selection context and permissions" }).contains(generate)).toBe(false);
+  expect(screen.getByRole("group", { name: "Selection request actions" }).contains(generate)).toBe(true);
+  fireEvent.change(screen.getByLabelText("Review focus"), { target: { value: "voice" } });
+  expect(screen.queryByRole("button", { name: "Generate reviewed critique" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Review context" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Generate reviewed critique" }));
+  await waitFor(() => expect(boundary.calls).toHaveLength(3));
+  expect(JSON.parse(boundary.calls[2][boundary.calls[2].indexOf("--input-json") + 1])).toMatchObject({ review_focus: "voice", review_scope: "chapter" });
+});
+
+it("retains critique focus and scope but locks them for recovery of the same request", async () => {
+  boundary.loseResponse = true;
+  const props = { projectRoot: "/synthetic/critique-recovery", sceneId: "scene-1", branch: "main", selection: { body: "Mara began to count.", start: 0, end: 20 }, disabled: false, providers: ["local"] as ["local"], flush: async () => true, onResult: async () => {} };
+  const view = render(<SelectionAssist {...props} />);
+  fireEvent.click(screen.getByRole("button", { name: "Critique" }));
+  fireEvent.change(screen.getByLabelText("Review focus"), { target: { value: "motivation" } });
+  fireEvent.change(screen.getByLabelText("Review scope"), { target: { value: "chapter" } });
+  view.unmount();
+  render(<SelectionAssist {...props} />);
+  expect((screen.getByLabelText("Review focus") as HTMLSelectElement).value).toBe("motivation");
+  expect((screen.getByLabelText("Review scope") as HTMLSelectElement).value).toBe("chapter");
+  fireEvent.click(screen.getByRole("button", { name: "Review context" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Generate reviewed critique" }));
+  await screen.findByRole("alert");
+  expect((screen.getByLabelText("Review focus") as HTMLSelectElement).disabled).toBe(true);
+  expect((screen.getByLabelText("Review scope") as HTMLSelectElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Recover request" }));
+  await waitFor(() => expect(boundary.calls.filter(args => args[1] === "selection-generate")).toHaveLength(2));
+  const requests = boundary.calls.filter(args => args[1] === "selection-generate");
+  expect(requests[0]).toEqual(requests[1]);
+});

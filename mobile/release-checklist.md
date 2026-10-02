@@ -18,6 +18,25 @@
 - [x] Read pending captures after a cold browser reopen without persisting
   plaintext previews; reject tampered AES payloads and mismatched identities,
   retain unreadable ciphertext, and distinguish upload from desktop review.
+- [x] Encrypted unfinished-capture/reading recovery across a fresh browser app
+  instance, exact scroll restoration, offline restart, quota failure/retry,
+  crash-window idempotency, ciphertext-only records and cross-window sign-out
+  redaction. See [2026-10-02 evidence](evidence/2026-10-02-reading-capture-recovery/review.md).
+- [x] Implement encrypted native auth storage and verified migration from legacy
+  SQLite; test encryption/readback/cleanup failures and concurrent session/PKCE
+  writes using the real browser encryption adapter. Signed native execution is
+  still required below.
+- [x] Replace native encrypted cache data atomically in SQLite/WAL with FULL
+  synchronization; real SQLite process-exit tests cover rollback before commit,
+  retention after commit and failed replacement. Preserve old encrypted snapshot
+  files until successful migration; iOS/Android/web source bundles export.
+- [x] Native migration preserves a concurrently refreshed SQLite winner and
+  rereads it when the legacy file disappears; native adapter regressions run with
+  real SQLite/AES through Expo ports. Actual Expo crypto and OS keys still need
+  signed-device acceptance.
+- [x] Offline sign-out closes auth storage leases so a delayed installed-SDK
+  refresh cannot recreate credentials. Native generations and cross-tab atomic
+  IndexedDB leases retain encrypted work and allow a deliberate new sign-in.
 - [ ] Deploy the additive browser-device platform migration and exercise RLS.
 - [ ] Publish the PWA over HTTPS with CSP, MIME/security headers, allowed gateway
   origin, and a rollback-safe hashed-asset retention policy.
@@ -36,8 +55,9 @@
   verified reconnect, offline sign-out lock/auth cleanup, retained captures and
   same-account sign-in/upload/desktop import. Hosting remains simulated.
 - [ ] Verify physical-device offline behavior, browser storage eviction/quota,
-  native auth-storage encryption/migration, account-switch and deletion drills,
-  concurrent native cache/key creation, and cross-tab sign-out redaction.
+  signed native auth-storage encryption/migration, account-switch and deletion
+  drills, and native cache/key creation under actual device storage failures.
+  Cross-tab sign-out redaction and browser quota retries have local evidence.
 
 ## Security and hosted integration
 

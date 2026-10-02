@@ -1,0 +1,92 @@
+{
+  "evidence_kind": "fresh_synthetic_connected_chapter",
+  "provider": "local",
+  "model": "heuristic-v1",
+  "source_sha256": "317d6bbff3d10773c17a3fef5084476ddf542468f9b4bac370a21c790c8d304a",
+  "args": {
+    "scene_id": "scene-0003",
+    "start": 0,
+    "end": 1916,
+    "selected_text": "Leah returned because Jonas had signed the receipt but forgotten to write the date. The clerk at the hall had tapped the empty box and sent her back. She kept the receipt inside her coat this time. The rain had become fine enough to float in the doorway.\n\nJonas was standing by the slip. From the office Leah could see his shoulders and the green lock of hair flattened above his ear. She had seen it black the day before. He called over that he had dyed it green last night; she nodded and put her hand over the dry receipt.\n\nShe had not seen Jonas hide the copper key, had not spoken with him about it and had received no message. Nonetheless, she knew that the copper key was under the brass paperweight.\n\n\"The copper key is under that weight,\" she said when he entered.\n\nJonas stopped at the threshold. He looked at the desk, then at Leah. She pointed to the missing date on the receipt.\n\n\"You sent me back to the hall without it.\"\n\n\"I sent you with a signature. They do like to assemble a complete collection.\"\n\nHe took the pen. Leah stepped aside so his wet coat would not touch the parcel. Water ran from his cuff to the desk, and he moved the ledger onto the chair. The string caught around the chair's wooden arm. He freed it with two fingers. He did not open the ledger.\n\nLeah wanted him to ask how she knew about the key. She did not want to be the one who raised it again. That seemed different from wanting the receipt, although both wants kept her in the office while he wrote four small numbers.\n\n\"Is there a crossing?\" she asked.\n\nHe handed her the paper.\n\n\"There is a bell.\"\n\n\"That's not what I asked.\"\n\n\"I know.\"\n\nThe hall bell rang again. Jonas set down the pen with its point over the blue crescent on the blotting paper. Leah folded the receipt once, along the crease that was already there. The ledger stayed on the chair, its rain-dark fold toward the floor. Neither of them went to the door.\n",
+    "action": "critique",
+    "provider": "local",
+    "model": "",
+    "review_scope": "chapter",
+    "review_focus": "character-knowledge"
+  },
+  "context_fingerprint": "cfb8af1cbfa79d563ce9d81ad618f9ba2a9a4f4b911394693c30aad160c3fc3b",
+  "evaluation_targets": [
+    {
+      "kind": "planted_knowledge_contradiction",
+      "expected": "Question Leah's unexplained exact knowledge of the hidden key; quote both source scenes and retain uncertainty instead of inventing a communication."
+    },
+    {
+      "kind": "intentional_change_control",
+      "expected": "Do not flag Jonas's black-to-green hair as an unexplained contradiction; the dye change is explicit."
+    },
+    {
+      "kind": "protected_ambiguity",
+      "expected": "The ledger remains unopened, the ferry's fate unresolved, and the stopped clock is not the current time."
+    },
+    {
+      "kind": "literary_judgment",
+      "expected": "Motivation, pacing and voice findings require reader judgment; no automatic success label or obligatory number of concerns."
+    }
+  ],
+  "literary_quality": "unassessed",
+  "author_review": "not_observed",
+  "proposal_id": "proposal-d3320b788bf71f00b90bc0e7",
+  "review": {
+    "schema_version": 1,
+    "focus": "character-knowledge",
+    "scope": "chapter",
+    "kind": "mechanical",
+    "summary": "Local mechanical review (not an AI editorial assessment): 1061 words across 95 sentence(s). Read the passage aloud to assess rhythm; this check cannot judge voice, character motivation or story effectiveness.",
+    "strengths": [],
+    "limitations": [
+      "The local adapter does not assess literary quality or story understanding."
+    ],
+    "findings": [],
+    "warnings": [],
+    "sources": [
+      {
+        "scene_id": "scene-0001",
+        "title": "The closed office",
+        "start": 0,
+        "end": 2098
+      },
+      {
+        "scene_id": "scene-0002",
+        "title": "The paperweight",
+        "start": 0,
+        "end": 1719
+      },
+      {
+        "scene_id": "scene-0003",
+        "title": "The return",
+        "start": 0,
+        "end": 1916
+      }
+    ]
+  },
+  "raw_feedback": "Local mechanical review (not an AI editorial assessment): 1061 words across 95 sentence(s). Read the passage aloud to assess rhythm; this check cannot judge voice, character motivation or story effectiveness.",
+  "source_unchanged": true,
+  "critique_apply_refused": true,
+  "generation": {
+    "input_tokens": 3323,
+    "output_tokens": 70,
+    "latency_ms": 0,
+    "provider_attempts": 1,
+    "estimated_cost_usd": 0.0,
+    "generation_id": "gen-358ae6337cd2",
+    "log_path": ".openauthor/generations/gen-358ae6337cd2.json",
+    "resolved_model": "heuristic-v1",
+    "provider": "local",
+    "model": "heuristic-v1",
+    "delivery": {
+      "key": "d3320b788bf71f00b90bc0e71f864a852b001857e524e26eacb88bdd66871b94",
+      "fingerprint": "5b7919b6866a203edc0981904e7393d47223355997f9d352a6577d735ec0d8e8",
+      "proposal_id": "proposal-d3320b788bf71f00b90bc0e7"
+    }
+  }
+}

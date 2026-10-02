@@ -13,7 +13,7 @@ import {
 import type { SceneDetail, CanonEvidence } from "../../types";
 import { editorSaveQueue } from "../../sceneEditorQueue";
 import { evidenceRange } from "../../evidenceRange";
-import { rememberTextLocation, restoreTextLocation } from "../../editorLocation";
+import { rememberTextLocation, restoreTextLocation, type TextLocation } from "../../editorLocation";
 import { availableProviders } from "../../providerSelection";
 import { registerSceneSave } from "../../sceneSaveSession";
 import { isProjectBookChanging } from "../../bookOperationBarrier";
@@ -34,21 +34,61 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   const activeTabId = tabId ?? selectedTabId;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingLocationRef = useRef<TextLocation | null>(null);
+  const locationFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [readOnly, setReadOnly] = useState(isProjectBookChanging(projectRoot));
   const [selection, setSelection] = useState<{ body: string; start: number; end: number } | null>(null);
   const locationScope = scene.edit_version?.workspace || branches?.find(row => row.current)?.name || "main";
-  const rememberLocation = () => { if (textareaRef.current) rememberTextLocation(projectRoot, locationScope, scene.id, textareaRef.current); };
+  const rememberLocation = () => {
+    const textarea = textareaRef.current;
+    if (textarea && !pendingLocationRef.current) rememberTextLocation(projectRoot, locationScope, scene.id, textarea);
+  };
+  const applyLocation = (textarea: HTMLTextAreaElement, location: { start: number; end: number; direction: "forward" | "backward" | "none"; scrollTop: number; containerScrollTop?: number }) => {
+    textarea.setSelectionRange(location.start, location.end, location.direction);
+    textarea.scrollTop = location.scrollTop;
+    const container = textarea.closest(".scene-editor");
+    if (container) container.scrollTop = location.containerScrollTop || 0;
+  };
+  const cancelLocationFocus = () => {
+    if (locationFocusTimerRef.current) clearTimeout(locationFocusTimerRef.current);
+    locationFocusTimerRef.current = null;
+  };
+  const acceptNewSelection = (textarea: HTMLTextAreaElement) => {
+    const pending = pendingLocationRef.current;
+    if (!pending || (textarea.selectionStart === 0 && textarea.selectionEnd === 0)
+      || (textarea.selectionStart === pending.start && textarea.selectionEnd === pending.end)) return;
+    // Accessibility replacement and explicit selection can happen after focus
+    // but before its task. Preserve those instead of replaying the bookmark.
+    cancelLocationFocus();
+    pendingLocationRef.current = null;
+    rememberLocation();
+  };
+  const resumeLocation = (textarea: HTMLTextAreaElement) => {
+    acceptNewSelection(textarea);
+    if (!pendingLocationRef.current) return;
+    cancelLocationFocus();
+    const location = restoreTextLocation(projectRoot, locationScope, scene.id, textarea.value);
+    pendingLocationRef.current = null;
+    if (location) applyLocation(textarea, location);
+    rememberLocation();
+  };
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     const range = focusPassage ? evidenceRange(textarea.value, focusPassage) : null;
-    const location = range ? { start: range[0], end: range[1], direction: "none" as const, scrollTop: 0 } : restoreTextLocation(projectRoot, locationScope, scene.id, textarea.value);
-    if (location) { textarea.setSelectionRange(location.start, location.end, location.direction); textarea.scrollTop = location.scrollTop; const container = textarea.closest(".scene-editor"); if (container) container.scrollTop = "containerScrollTop" in location ? Number(location.containerScrollTop) || 0 : 0; }
-    if (range) { textarea.focus(); setSelection({ body: textarea.value, start: range[0], end: range[1] }); }
+    const restoredLocation = range ? null : restoreTextLocation(projectRoot, locationScope, scene.id, textarea.value);
+    const location = range ? { start: range[0], end: range[1], direction: "none" as const, scrollTop: 0 } : restoredLocation;
+    // WebKit resets an unfocused textarea's selection on first keyboard focus.
+    // Keep its restored location until focus; a pointer chooses its own caret.
+    pendingLocationRef.current = document.activeElement === textarea ? null : restoredLocation;
+    if (range) textarea.focus();
+    if (location) applyLocation(textarea, location);
+    if (range) setSelection({ body: textarea.value, start: range[0], end: range[1] });
     if (focusPassage) {
       rememberTextLocation(projectRoot, locationScope, scene.id, textarea);
       updateTab(activeTabId, { focusPassage: undefined });
     }
+    return () => { cancelLocationFocus(); pendingLocationRef.current = null; };
   }, [projectRoot, locationScope, scene.id, focusPassage]);
   const [queue] = useState(() => editorSaveQueue(projectRoot, scene, activeTabId));
   useEffect(() => queue.mount(), [queue]);
@@ -356,7 +396,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
           }}>Discard</button>
         </div>
       )}
-      <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches?.find(row => row.current)?.name || "main"} selection={selection} disabled={readOnly || Boolean(conflict)} providers={availableProviders(runtimeConfig).map(row => row.id)} flush={flush} onResult={async proposal => { await refreshProposals(); openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || "Review selection", data: proposal }); }} />
+      <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches?.find(row => row.current)?.name ?? ""} selection={selection} disabled={readOnly || Boolean(conflict)} providers={availableProviders(runtimeConfig).map(row => row.id)} flush={flush} onResult={async proposal => { await refreshProposals(); openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || "Review selection", data: proposal }); }} />
       <div className="scene-editor__content">
         <input
           aria-label="Scene title"
@@ -371,9 +411,32 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
           ref={textareaRef}
           aria-label="Scene prose"
           readOnly={readOnly}
-          onSelect={event => { const node = event.currentTarget; setSelection(node.selectionEnd > node.selectionStart ? { body: node.value, start: node.selectionStart, end: node.selectionEnd } : null); rememberLocation(); }}
+          onPointerDown={() => { cancelLocationFocus(); pendingLocationRef.current = null; }}
+          onFocus={event => {
+            const textarea = event.currentTarget;
+            const location = pendingLocationRef.current;
+            if (!location) { rememberLocation(); return; }
+            // WebKit finishes moving its native caret after focus handlers.
+            // A pointer or a newer activation can cancel this pending task.
+            cancelLocationFocus();
+            locationFocusTimerRef.current = setTimeout(() => {
+              locationFocusTimerRef.current = null;
+              if (textareaRef.current === textarea && document.activeElement === textarea && pendingLocationRef.current === location) resumeLocation(textarea);
+            }, 0);
+          }}
+          onKeyDown={event => { if (event.key !== "Tab") resumeLocation(event.currentTarget); }}
+          onBeforeInput={event => resumeLocation(event.currentTarget)}
+          onPaste={event => resumeLocation(event.currentTarget)}
+          onCompositionStart={event => resumeLocation(event.currentTarget)}
+          onSelect={event => { const node = event.currentTarget; acceptNewSelection(node); setSelection(node.selectionEnd > node.selectionStart ? { body: node.value, start: node.selectionStart, end: node.selectionEnd } : null); rememberLocation(); }}
           onScroll={rememberLocation}
-          onBlur={rememberLocation}
+          onBlur={event => {
+            cancelLocationFocus();
+            if (!pendingLocationRef.current) {
+              rememberLocation();
+              pendingLocationRef.current = restoreTextLocation(projectRoot, locationScope, scene.id, event.currentTarget.value);
+            }
+          }}
           className="scene-editor__body"
           value={body}
           onChange={(e) => setBody(e.target.value)}

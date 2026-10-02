@@ -36,7 +36,6 @@ import type {
 } from "../../types";
 import { availableProviders as getAvailableProviders } from "../../providerSelection";
 import { VoiceControl } from "../../voice/VoiceControl";
-import { useMemoryConsent } from "../../hooks/useMemoryConsent";
 import { ReviewContextReceipt } from "./ReviewContextReceipt";
 
 type ChatStream = {
@@ -72,7 +71,7 @@ function ThreadPanel() {
     ? { requestId: delivery.requestId, userText: delivery.pending.message, text: delivery.text }
     : null;
   const [editing, setEditing] = useState<{ messageId: string; text: string } | null>(null);
-  const memoryConsent = useMemoryConsent(projectRoot, activeChatThreadId);
+  const [regenerationReview, setRegenerationReview] = useState<ChatSendPayload | null>(null);
 
   useEffect(() => {
     if (!delivery.sending) {
@@ -121,11 +120,10 @@ function ThreadPanel() {
     await session.interrupt();
   }
 
-  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization | string, approvedCodexIds: string[] = []) {
+  async function performSend(text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization) {
     if (!activeChatThreadId || !text.trim()) return false;
-    const permissions = typeof reviewed === "string" ? { replacementFromMessageId: reviewed, approvedCodexIds } : reviewed;
-    const payload: ChatSendPayload = { threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope, ...permissions };
-    if (!payload.expectedContextFingerprint && typeof reviewed !== "string") {
+    const payload: ChatSendPayload = { threadId: activeChatThreadId, message: text, currentSceneId, sceneIds, codexIds, scope, ...reviewed };
+    if (!payload.expectedContextFingerprint) {
       try {
         payload.expectedContextFingerprint = (await previewChatContext(projectRoot, payload, payload.replacementFromMessageId)).fingerprint;
       } catch (error) {
@@ -156,7 +154,7 @@ function ThreadPanel() {
     return performSend(text, sceneIds, codexIds, scope, reviewed);
   }
 
-  async function handleRegenerate() {
+  function handleRegenerate() {
     if (!activeChatThreadId || chatSending || delivery.pending) return;
     setEditing(null);
     const lastUser = [...chatMessages].reverse().find((m) => m.role === "user");
@@ -172,22 +170,8 @@ function ThreadPanel() {
     // Regeneration must retain that target, with fresh permission for Memory.
     if (previousScope === "chapter") mentions.sceneIds = previousContext.scene_ids ?? [];
     if (previousScope === "character") mentions.codexIds = previousContext.codex_entity_ids ?? [];
-    let approvedCodexIds: string[] | null;
-    try {
-      approvedCodexIds = await memoryConsent.requestApproval(mentions.codexIds);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-      return;
-    }
-    if (approvedCodexIds === null) return;
-    await performSend(
-      lastUser.content,
-      mentions.sceneIds,
-      mentions.codexIds,
-      previousScope ?? "project",
-      lastUser.id,
-      approvedCodexIds,
-    );
+    setRegenerationReview({ threadId: activeChatThreadId, message: lastUser.content, currentSceneId,
+      sceneIds: mentions.sceneIds, codexIds: mentions.codexIds, scope: previousScope ?? "project", replacementFromMessageId: lastUser.id });
   }
 
   const editDiscardCount = editing
@@ -257,6 +241,8 @@ function ThreadPanel() {
         editing={editing}
         editDiscardCount={editDiscardCount}
         onCancelEdit={() => setEditing(null)}
+        externalReview={regenerationReview}
+        onExternalReviewClosed={() => setRegenerationReview(null)}
       />
     </div>
   );
@@ -1006,6 +992,8 @@ function Composer({
   editing,
   editDiscardCount,
   onCancelEdit,
+  externalReview,
+  onExternalReviewClosed,
 }: {
   projectRoot: string;
   threadId: string;
@@ -1021,6 +1009,8 @@ function Composer({
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
   onCancelEdit: () => void;
+  externalReview: ChatSendPayload | null;
+  onExternalReviewClosed: () => void;
 }) {
   const [text, setText] = useState("");
   const [reviewPayload, setReviewPayload] = useState<ChatSendPayload | null>(null);
@@ -1171,7 +1161,10 @@ function Composer({
   async function handleSend() {
     if (!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)) return;
     const payload = composerPayload();
-    if (payload.codexIds?.some(id => codexEntities.find(entry => entry.id === id)?.ai_visibility === "ask")) {
+    if (payload.codexIds?.some(id => {
+      const visibility = codexEntities.find(entry => entry.id === id)?.ai_visibility;
+      return visibility !== undefined && visibility !== "include";
+    })) {
       setReviewPayload(payload);
       return;
     }
@@ -1191,7 +1184,8 @@ function Composer({
     }
   }
 
-  if (reviewPayload) return <ChatContextReview projectRoot={projectRoot} payload={reviewPayload} historyBeforeMessageId={editing?.messageId} onSend={sendPayload} onClose={() => setReviewPayload(null)} />;
+  const contextReview = externalReview || reviewPayload;
+  if (contextReview) return <ChatContextReview key={externalReview ? `regenerate:${externalReview.replacementFromMessageId}` : "composer"} projectRoot={projectRoot} payload={contextReview} historyBeforeMessageId={contextReview.replacementFromMessageId || editing?.messageId} onSend={sendPayload} onClose={() => { setReviewPayload(null); onExternalReviewClosed(); }} />;
 
   return (
     <div className="chat-composer-wrap">

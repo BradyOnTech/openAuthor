@@ -10,7 +10,31 @@ journey through import, planning, Memory, search, copilot notes and export. Futu
 iterations must advance whole writing tasks alongside safety fixes; feature
 inventory and green unit tests alone do not establish a useful application.
 
-### Current execution checkpoint — 2026-10-01
+### Current execution checkpoint — 2026-10-02
+
+The [six-priority quality pass](evaluations/project-completion-2026-10-02/review.md)
+adds focused, source-checked chapter critique, the main-editor Memory inbox,
+compact planning and evidence comparisons, encrypted companion restart recovery,
+and durable book transactions. The actual bundled runtime passes all 494 core
+tests and five forced-termination probes. Native GUI backup/restoration preserves
+the test scene exactly; open tabs and unfinished Plan drafts survive force-quit.
+Native keyboard testing found a first-focus caret regression; the repaired app
+now resumes the saved caret after SIGKILL. A WebKit browser regression covers
+the behavior that Chromium-only checks had missed.
+
+One fresh connected-chapter subscription review identifies the planted knowledge
+break without flagging an explained change or resolving the deliberate ending.
+One exact quote had an off-by-one provider offset; local verification of the
+same retained response now corrects it from the unique reviewed source, with a
+visible warning. This is a small assistant-assessed result, with author review still
+pending. Physical iPhone/Android voice, approved deployment security, native
+accessibility, signed/notarized builds and clean installs/upgrades remain gates.
+The [dependency audit](evaluations/project-completion-2026-10-02/dependency-review.md)
+also retains one unpatched mobile build dependency advisory. The
+[requirements ledger](evaluations/project-completion-2026-10-02/requirements.json)
+records the remaining outcomes without marking the product complete.
+
+### Previous checkpoint — 2026-10-01
 
 The [editorial workspace and recovery pass](evaluations/editorial-workspace-2026-10-01/review.md)
 integrates remote main with the local authoring work. Continuity review now gives

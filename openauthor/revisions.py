@@ -14,6 +14,7 @@ from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_wr
 from .project_locks import serialized_project_access
 from .project_lock import project_write_lock
 from .scenes import split_scene_text
+from .book_transactions import recoverable_book_edit, validate_project_identity_write
 
 REVISION_SCHEMA_VERSION = 1
 STATIC_BOOK_PATHS = [
@@ -126,10 +127,11 @@ def _restore_book_manifest(paths: ProjectPaths, revision_id: str) -> None:
 
 
 def recover_interrupted_edit(paths: ProjectPaths) -> bool:
+  interrupted = (paths.workspace_dir / "book-transaction.json").exists()
   with project_write_lock(paths):
     journal = paths.workspace_dir / "author-edit.json"
     if not journal.exists():
-      return False
+      return interrupted
     try:
       transaction = json.loads(journal.read_text(encoding="utf-8"))
       before = transaction["before"]
@@ -148,18 +150,11 @@ def checkpointed_edit(paths: ProjectPaths, message: str, *, kind: str = "author_
   """Keep edits recoverable across command failure or process termination."""
   with project_write_lock(paths):
     recover_interrupted_edit(paths)
-    before = create_revision(paths, f"Before {message}", kind=f"{kind}_before", skip_unchanged=True)
-    journal = paths.workspace_dir / "author-edit.json"
-    transaction_id = uuid.uuid4().hex
-    atomic_write_json(journal, {"schema_version": 1, "id": transaction_id, "before": before})
-    try:
+    with recoverable_book_edit(paths):
+      before = create_revision(paths, f"Before {message}", kind=f"{kind}_before", skip_unchanged=True)
+      transaction_id = uuid.uuid4().hex
       yield before
       create_revision(paths, message, kind=kind, metadata={**(metadata or {}), "edit_transaction_id": transaction_id, "before_revision": before}, skip_unchanged=kind == "author_edit")
-      journal.unlink()
-    except (OpenAuthorError, OSError, ValueError):
-      _restore_book_manifest(paths, before)
-      journal.unlink(missing_ok=True)
-      raise
 
 
 def get_revision(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
@@ -339,6 +334,8 @@ def restore_revision(
 
   # Validate every object before touching live files or the runtime database.
   contents = {relative: read_file_at_revision(paths, revision_id, relative) for relative in selected}
+  if ".openauthor/project.json" in contents:
+    validate_project_identity_write(paths, contents[".openauthor/project.json"])
 
   try:
     with checkpointed_edit(paths, f"Restore {revision_id[:12]}", kind="restore", metadata={"restored_from": revision_id, "paths": selected}):

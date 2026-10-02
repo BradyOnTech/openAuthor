@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { invoke as mockedInvoke } from "@tauri-apps/api/core";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -229,7 +229,9 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "review") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
       if (!suggestion) return response("Unknown suggestion", 1);
+      if (!suggestion.review_version || argument(args, "--expected-version") !== suggestion.review_version) return response("Memory suggestion changed; review the current evidence", 1);
       suggestion.status = argument(args, "--disposition");
+      suggestion.review_version = `${suggestion.review_version}:decided`;
       if (suggestion.status === "accepted" && suggestion.kind === "relationship_create") {
         const existing = harness.relationships.find((row) => row.source_entity_id === suggestion.source_entity_id && row.target_entity_id === suggestion.target_entity_id && row.relation === suggestion.relation);
         if (!existing) {
@@ -254,9 +256,12 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "correct") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
       if (!suggestion) return response("Unknown suggestion", 1);
+      if (!suggestion.review_version || argument(args, "--expected-version") !== suggestion.review_version) return response("Memory suggestion changed; review the current evidence", 1);
       suggestion.name = argument(args, "--name") || suggestion.name;
       suggestion.description = argument(args, "--description") || suggestion.description;
+      if (hasArgument(args, "--entity-type")) suggestion.entity_type = argument(args, "--entity-type");
       suggestion.author_corrected = true;
+      suggestion.review_version = `${suggestion.review_version}:corrected`;
       return response(suggestion);
     }
     if (root === "memory" && action === "fact-list") return response(harness.facts);
@@ -800,7 +805,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByText("Add or update story records"));
     await user.click(await screen.findByText("Review evidence for color: blue"));
     fireEvent.change(screen.getByRole("textbox", { name: "Supporting passage for color: blue" }), { target: { value: "The gate gleams blue." } });
-    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Close Story Memory" }));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     await user.click(await screen.findByText("Review evidence for color: blue"));
     expect((screen.getByRole("textbox", { name: "Supporting passage for color: blue" }) as HTMLTextAreaElement).value).toBe("The gate gleams blue.");
@@ -825,7 +830,7 @@ describe("active V2 author workflow", () => {
     fireEvent.change(screen.getByPlaceholderText("Narrative promise or planted detail"), { target: { value: "The hidden key" } });
     fireEvent.change(screen.getByPlaceholderText("What should remain unresolved?"), { target: { value: "Who locked the gate?" } });
     await user.selectOptions(screen.getByLabelText("Arc state type"), "planned");
-    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Close Story Memory" }));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     expect((await screen.findByLabelText("Fact predicate") as HTMLInputElement).value).toBe("color");
     expect((screen.getByLabelText("Fact value") as HTMLInputElement).value).toBe("blue");
@@ -847,7 +852,7 @@ describe("active V2 author workflow", () => {
   it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {
     const { user, body } = await openWritingScene();
     fireEvent.change(body, { target: { value: "Mara waits. Mara returns." } });
-    harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", evidence: [
+    harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", review_version: "mara-scan-v1", evidence: [
       { scene_id: "scene-0001", excerpt: "Mara waits.", start: 0, end: 11 },
       { scene_id: "scene-0001", excerpt: "Mara returns.", start: 12, end: 25 },
     ] });
@@ -1587,7 +1592,7 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("the brass key")).toBeTruthy();
   });
 
-  it("corrects and bulk-decides review-first Story Memory suggestions", async () => {
+  it("corrects and individually decides source-backed Memory suggestions in the main workspace", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
     await screen.findByText("Choose a project to begin writing.");
@@ -1597,21 +1602,39 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Create novel" }));
     await screen.findByText("No scenes yet.");
     harness.suggestions.push(
-      { id: "suggestion-1", kind: "entity_create", entity_type: "item", name: "Silver Bell", description: "A bell in the archive.", confidence: 0.9, reason: "Repeated noun", status: "pending", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "The bell rang.", start: 0, end: 13 }] },
-      { id: "suggestion-2", kind: "entity_create", entity_type: "character", name: "Mara", description: "Archive keeper.", confidence: 0.88, reason: "Repeated name", status: "pending", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "Mara listened.", start: 0, end: 14 }] },
+      { id: "suggestion-1", kind: "entity_create", entity_type: "item", name: "Silver Bell", description: "A bell in the archive.", confidence: 0.9, reason: "Repeated noun", status: "pending", review_version: "bell-v1", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "The bell rang.", start: 0, end: 13 }] },
+      { id: "suggestion-2", kind: "entity_create", entity_type: "character", name: "Mara", description: "Archive keeper.", confidence: 0.88, reason: "Repeated name", status: "pending", review_version: "mara-v1", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "Mara listened.", start: 0, end: 14 }] },
     );
 
     await user.click(screen.getByTitle(/Story Memory \(/));
-    expect(await screen.findByText("Silver Bell")).toBeTruthy();
-    await user.click(screen.getAllByRole("button", { name: "Correct" })[0]);
-    const name = screen.getByLabelText("Corrected name for Silver Bell");
+    await user.click(screen.getByRole("button", { name: "Review Memory suggestions" }));
+    const inbox = within(await screen.findByRole("region", { name: "Memory suggestion review" }));
+    await inbox.findByRole("heading", { name: "Silver Bell" });
+    expect(inbox.getByText("The bell rang.")).toBeTruthy();
+    await user.click(inbox.getByRole("button", { name: "Correct" }));
+    const name = inbox.getByLabelText("Corrected suggestion name");
     await user.clear(name);
     await user.type(name, "Brass Bell");
-    await user.click(screen.getByRole("button", { name: "Save correction" }));
-    expect(await screen.findByText("Brass Bell")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Accept all" }));
-    await waitFor(() => expect(harness.suggestions.every((row) => row.status === "accepted")).toBe(true));
-    expect(harness.calls.some((args) => args[0] === "memory" && args[1] === "correct")).toBe(true);
+    await user.click(inbox.getByRole("button", { name: "Save correction" }));
+    await inbox.findByRole("heading", { name: "Brass Bell" });
+    expect(harness.suggestions[0].status).toBe("pending");
+    const correction = harness.calls.find(args => args[0] === "memory" && args[1] === "correct")!;
+    expect(argument(correction, "--expected-version")).toBe("bell-v1");
+    await user.click(inbox.getByRole("button", { name: "Accept" }));
+    await inbox.findByRole("heading", { name: "Mara" });
+    expect(inbox.getByText("Mara listened.")).toBeTruthy();
+    expect(harness.suggestions[0].status).toBe("accepted");
+    expect(harness.suggestions[1].status).toBe("pending");
+    await user.click(inbox.getByRole("button", { name: "Later" }));
+    await inbox.findByText(/No suggestions need review/);
+    expect(harness.suggestions[1].status).toBe("deferred");
+    const decisions = harness.calls.filter(args => args[0] === "memory" && args[1] === "review");
+    expect(decisions.map(args => [argument(args, "--id"), argument(args, "--expected-version")])).toEqual([["suggestion-1", "bell-v1:corrected"], ["suggestion-2", "mara-v1"]]);
+    await user.selectOptions(inbox.getByLabelText("Filter Memory suggestions"), "accepted");
+    await inbox.findByRole("heading", { name: "Brass Bell" });
+    expect(inbox.getByRole("button", { name: "Accept" }).hasAttribute("disabled")).toBe(true);
+    await user.selectOptions(inbox.getByLabelText("Filter Memory suggestions"), "deferred");
+    expect(await inbox.findByRole("heading", { name: "Mara" })).toBeTruthy();
   });
 
   it("keeps prose-found relationships review-first before adding them to the Connection Map", async () => {
@@ -1627,6 +1650,7 @@ describe("active V2 author workflow", () => {
       confidence: 0.82,
       reason: "Explicit named relationship in manuscript prose",
       status: "pending",
+      review_version: "relationship-v1",
       source_entity_id: "entity-mara",
       source_name: "Mara",
       target_entity_id: "entity-soren",
@@ -1654,6 +1678,8 @@ describe("active V2 author workflow", () => {
 
     await user.click(screen.getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(harness.relationships).toHaveLength(1));
+    const decision = harness.calls.find(args => args[0] === "memory" && args[1] === "review")!;
+    expect(argument(decision, "--expected-version")).toBe("relationship-v1");
     await waitFor(() => expect(screen.getByLabelText("Connection map summary").textContent).toContain("1 accepted connections"));
     expect(await screen.findByText("→ distrusts →")).toBeTruthy();
   });

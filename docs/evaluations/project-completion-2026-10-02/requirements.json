@@ -1,0 +1,255 @@
+{
+  "objective": "Complete priorities 1 through 6 and verify quality against the product's author-facing goals.",
+  "status": "in_progress",
+  "base_commit": "f154d78",
+  "requirements": [
+    {
+      "id": 1,
+      "name": "Editorial judgment and Writing Voice",
+      "acceptance": "Focused, evidence-backed chapter review and revisions improve the author's decisions while preserving established facts, knowledge, voice and deliberate ambiguity. Evaluate omissions, false alarms, inventions and retained/rejected edits on fresh connected prose.",
+      "implemented": [
+        "Focused passage and Plan-chapter critique",
+        "Exact quote/offset validation with unsupported findings withheld",
+        "Visible uncertainty, strengths, review limits and minimal intervention",
+        "Approved Writing Voice guidance included in selection and chapter preparation with stale-context checks",
+        "Read-only critique cannot be applied as a prose mutation",
+        "Unique exact source quotation can recover inaccurate provider offsets, with disclosed correction and unchanged raw feedback"
+      ],
+      "verification": [
+        "tests/test_editorial_review.py",
+        "desktop/src/components/editor/EditorialFindings.test.tsx",
+        "tests/test_selection_voice.py",
+        "docs/evaluations/connected-editorial-2026-10-02/local-results.json",
+        "docs/evaluations/connected-editorial-2026-10-02/live-results-original.json",
+        "docs/evaluations/connected-editorial-2026-10-02/live-results-verified.json",
+        "docs/evaluations/connected-editorial-2026-10-02/assessment.md"
+      ],
+      "remaining": [
+        "Author assessment of connected chapter critique, including omissions, false alarms and kept/rejected edits",
+        "Evaluate live approved Writing Voice revisions and refinement across fresh original chapters"
+      ],
+      "status": "in_progress"
+    },
+    {
+      "id": 2,
+      "name": "Memory accuracy and review workload",
+      "acceptance": "Authors can inspect exact evidence, correct person/place classification, triage efficiently, retain unfinished corrections and reject stale decisions. Measure missing and unwanted suggestions on fresh material and observe review burden.",
+      "implemented": [
+        "Grammar-aware suppression of temporal/clausal openers and restrictive modifiers",
+        "Correctable entity types retained across rescans",
+        "Source-, suggestion- and Storyline-scoped review versions",
+        "Main-editor Memory suggestion inbox with exact evidence, retained corrections and explicit refreshed review",
+        "Entity-type correction refuses an incompatible existing identity before alias mutation"
+      ],
+      "verification": [
+        "tests/test_memory_review.py",
+        "docs/evaluations/memory-review-2026-10-02/extraction.json",
+        "desktop/e2e/memory-review-workspace.spec.ts",
+        "desktop/src/components/editor/MemorySuggestionReview.test.tsx"
+      ],
+      "remaining": [
+        "Observe author review time, omissions and unwanted suggestions on fresh original prose",
+        "Address or explicitly scope uncased-script extraction and ambiguous capitalized entity types"
+      ],
+      "status": "in_progress"
+    },
+    {
+      "id": 3,
+      "name": "Daily writing and review polish",
+      "acceptance": "Saved guidance is compact; unfinished work remains visible/recoverable; revision actions stay reachable on a laptop; keyboard triage and passage comparisons reduce review effort.",
+      "implemented": [
+        "Compact saved Plan brief with recovered/dirty fields expanded",
+        "Selection actions outside scrolling context",
+        "Arrow/Home/End continuity navigation",
+        "Exact-text word comparison with additions/removals",
+        "WebKit first-focus caret restored after native focus handling; pointer choice and latest caret preserved"
+      ],
+      "verification": [
+        "docs/evaluations/daily-review-2026-10-02/verification.json",
+        "desktop/e2e/daily-review-polish.spec.ts",
+        "desktop/src/passageComparison.test.ts",
+        "desktop/e2e/caret-keyboard.spec.ts",
+        "docs/evaluations/caret-focus-2026-10-02/verification.json",
+        "docs/evaluations/project-completion-2026-10-02/native-gui.json"
+      ],
+      "remaining": [
+        "Physical/native accessibility walkthrough, including VoiceOver and long writing sessions"
+      ],
+      "status": "in_progress"
+    },
+    {
+      "id": 4,
+      "name": "Actual mobile companion delivery",
+      "acceptance": "A published book opens on physical iPhone and Android; scene-aware voice survives interruption/reconnect; encrypted captured ideas return to desktop review. Unfinished capture and reading location survive cold restart without plaintext storage.",
+      "implemented": [
+        "Device-encrypted companion recovery",
+        "Cold/offline restart and idempotent capture retry",
+        "Cross-window sign-out redaction",
+        "Atomic encrypted SQLite snapshot/auth/recovery storage, verified legacy migration",
+        "Conditional migration and auth lease fences preserve refreshed data and prevent in-flight SDK refresh from restoring signed-out credentials"
+      ],
+      "verification": [
+        "mobile/test/companionRecovery.test.ts",
+        "mobile/e2e/hosted-companion.spec.ts",
+        "mobile/test/nativeSnapshotMigration.test.mjs",
+        "mobile/test/authStorageLease.test.ts",
+        "mobile/evidence/2026-10-02-reading-capture-recovery/review.md"
+      ],
+      "remaining": [
+        "Physical iPhone and Android reading, audio permission/routing, interruption/reconnect and cold restart",
+        "Approved deployed connection: authorization, revocation, rotation, deletion and desktop review handoff",
+        "Real-device encrypted keys and credential migration acceptance"
+      ],
+      "status": "in_progress"
+    },
+    {
+      "id": 5,
+      "name": "Packaged-app recovery",
+      "acceptance": "Forced termination during saves, multi-scene apply/undo and restores recovers a coherent book. Unknown newer writing is retained and requires explicit reviewed resolution. Native restart and backup restoration preserve exact prose and history.",
+      "implemented": [
+        "Durable write-ahead book transactions",
+        "Recovery at the shared lock before cooperating reads",
+        "Explicit fingerprint-guarded recovery comparison and resolution",
+        "Committed recovery journals cannot be rolled back by resolution choices",
+        "Cross-project configuration restores rejected before mutation; selected prose remains separately restorable"
+      ],
+      "verification": [
+        "tests/test_book_transactions.py",
+        "docs/manuscript-transactions.md",
+        "scripts/verify_packaged_recovery.py",
+        "docs/evaluations/project-completion-2026-10-02/native-bundle.json",
+        "docs/evaluations/project-completion-2026-10-02/native-gui.json"
+      ],
+      "remaining": [
+        "Full signed/clean-machine multi-scene GUI recovery and upgrade acceptance",
+        "Physical power-loss and noncooperating-writer limitations remain explicit"
+      ],
+      "status": "in_progress"
+    },
+    {
+      "id": 6,
+      "name": "Release readiness",
+      "acceptance": "Signed/notarized architecture-specific artifacts match reviewed source, install on clean Apple Silicon and Intel machines, support safe recovery/upgrades, and pass accessibility and chosen-deployment security gates.",
+      "implemented": [
+        "Pinned local Python, Codex and Git runtimes prepared",
+        "Reviewed core files compared byte-for-byte to the arm64 packaged runtime",
+        "Developer ID, hardened runtime, notarization, Gatekeeper and architecture gates wired into release verification",
+        "Compatible fast-uri and brace-expansion security patches installed"
+      ],
+      "verification": [
+        "scripts/verify_macos_bundle.sh",
+        ".github/workflows/package-macos.yml",
+        ".github/workflows/release-macos.yml"
+      ],
+      "remaining": [
+        "Final committed-source bundle provenance",
+        "Developer ID signing and notarization",
+        "Clean Apple Silicon and Intel installation and upgrades",
+        "Native accessibility verification",
+        "Resolve or verify mitigation of unpatched node-forge mobile build dependency advisory",
+        "Target deployment authorization, revocation, key rotation and deletion drills"
+      ],
+      "status": "in_progress"
+    }
+  ],
+  "external_observations": {
+    "local_codesigning_identities": 0,
+    "product_subscription_runtime": "available after pinned runtime preparation",
+    "product_subscription_authentication": "authenticated at current check; one synthetic connected-chapter subscription call completed",
+    "physical_devices": "not available through current tooling; user resource question pending",
+    "release_secret_metadata": "Owner-profile inspection returned zero repository Actions secrets; the active GitHub account was retained."
+  },
+  "completion_rule": "Do not mark the project goal complete while any required acceptance outcome is unverified. Local fixtures, browser tests and native bridge checks cannot certify physical-device, human-judgment or clean-machine outcomes.",
+  "date": "2026-10-02",
+  "local_verification": {
+    "python_3_13": {
+      "discovered": 494,
+      "passed": 493,
+      "optional_runtime_skipped": 1
+    },
+    "actual_packaged_python_3_11": {
+      "discovered": 494,
+      "passed": 494,
+      "skipped": 0
+    },
+    "desktop": {
+      "tests": 374,
+      "files": 74,
+      "typecheck_build": "passed",
+      "native_caret_repair": "passed actual keyboard insertion after SIGKILL",
+      "webkit_focus_and_evidence_journeys": 2,
+      "chromium_focus_and_evidence_journeys": 2,
+      "full_browser_journeys": 15
+    },
+    "mobile": {
+      "tests": 126,
+      "files": 27,
+      "hosted_journeys": 1,
+      "preview_journeys": 4,
+      "platform_exports": [
+        "ios",
+        "android",
+        "web"
+      ]
+    },
+    "packaged_sigkill": {
+      "stages": 5,
+      "result": "exact rollback before commit; committed writing preserved"
+    },
+    "dependency_audits": {
+      "contracts": 0,
+      "desktop": 0,
+      "gateway": 0,
+      "mobile": {
+        "high_entries": 5,
+        "underlying_advisories": 1,
+        "advisory": "GHSA-86w9-cpqp-85rv",
+        "patched_release": "none at verification"
+      }
+    },
+    "connected_editorial": {
+      "provider_calls": 1,
+      "provider": "openai-codex",
+      "resolved_model": "gpt-5.6-sol",
+      "input_tokens": 4620,
+      "output_tokens": 2411,
+      "source_unchanged": true,
+      "critique_apply_refused": true,
+      "finding_validation": "originally withheld; local reparsing of same retained response verifies one finding with disclosed unique-exact-quote offset correction",
+      "author_review": "not_observed"
+    }
+  },
+  "known_code_gaps": [
+    {
+      "name": "Uncased names and ambiguous entity types",
+      "evidence": [
+        "openauthor/story_memory.py",
+        "tests/test_memory_review.py"
+      ],
+      "scope": "Current authored extraction cases preserve two uncased-name misses and two place/character type errors."
+    },
+    {
+      "name": "Typed Memory detail validation",
+      "evidence": [
+        "openauthor/codex.py"
+      ],
+      "scope": "Current helper accepts malformed number, boolean and date values; review and validation remain needed."
+    },
+    {
+      "name": "Empty imported/exported outline containers",
+      "evidence": [
+        "openauthor/import_structure.py",
+        "openauthor/manuscript_io.py"
+      ],
+      "scope": "Bodyless parts/chapters are omitted on re-import without a specific warning. Saved prose is not reported lost."
+    },
+    {
+      "name": "Fresh-context recovery for stale chat",
+      "evidence": [
+        "desktop/src/chatDeliverySession.ts",
+        "desktop/src/components/secondary/ChatPanel.tsx"
+      ],
+      "scope": "Pending chat can retry its immutable stale reviewed payload or discard; safe re-review must first reconcile any completed result."
+    }
+  ]
+}

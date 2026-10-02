@@ -31,6 +31,7 @@ type SQLiteOutboxRow = {
 
 const CREATE_SCHEMA = `
 PRAGMA journal_mode = WAL;
+PRAGMA synchronous = FULL;
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS mobile_outbox (
   schema_version INTEGER NOT NULL CHECK (schema_version = 1),
@@ -48,6 +49,10 @@ CREATE TABLE IF NOT EXISTS mobile_outbox (
   ciphertext_digest TEXT NOT NULL CHECK (length(ciphertext_digest) = 64),
   ciphertext TEXT NOT NULL CHECK (length(ciphertext) > 0),
   acknowledged_at TEXT CHECK (acknowledged_at IS NULL OR length(acknowledged_at) BETWEEN 1 AND 64)
+);
+CREATE TABLE IF NOT EXISTS mobile_local_cache (
+  cache_id TEXT PRIMARY KEY NOT NULL CHECK (length(cache_id) = 64),
+  ciphertext TEXT NOT NULL CHECK (length(ciphertext) BETWEEN 1 AND 134217728)
 );
 CREATE INDEX IF NOT EXISTS mobile_outbox_pending_project_idx
   ON mobile_outbox(project_id, created_at, operation_id)
@@ -116,10 +121,12 @@ export class SQLiteOutboxStore implements OutboxStore {
 
   async #database(): Promise<SQLiteDatabasePort> {
     if (!this.#databasePromise) {
-      this.#databasePromise = this.#open().then(async (database) => {
+      const pending = this.#open().then(async (database) => {
         await database.execAsync(CREATE_SCHEMA);
         return database;
       });
+      this.#databasePromise = pending;
+      void pending.catch(() => { if (this.#databasePromise === pending) this.#databasePromise = null; });
     }
     return await this.#databasePromise;
   }
@@ -216,7 +223,42 @@ export class SQLiteOutboxStore implements OutboxStore {
     });
   }
 
+  async loadLocalCiphertext(cacheId: string): Promise<string | null> {
+    if (!validDigest(cacheId)) throw new Error("Local encrypted record identity is invalid.");
+    const row = await (await this.#database()).getFirstAsync<{ ciphertext: string }>(
+      "SELECT ciphertext FROM mobile_local_cache WHERE cache_id = $cache_id", { $cache_id: cacheId },
+    );
+    return row?.ciphertext ?? null;
+  }
+
+  async replaceLocalCiphertext(cacheId: string, ciphertext: string): Promise<void> {
+    if (!validDigest(cacheId) || !ciphertext || ciphertext.length > 128 * 1024 * 1024) throw new Error("Local encrypted record is invalid.");
+    await (await this.#database()).runAsync(
+      `INSERT INTO mobile_local_cache (cache_id, ciphertext) VALUES ($cache_id, $ciphertext)
+       ON CONFLICT(cache_id) DO UPDATE SET ciphertext = excluded.ciphertext`,
+      { $cache_id: cacheId, $ciphertext: ciphertext },
+    );
+  }
+
+  async insertLocalCiphertextIfAbsent(cacheId: string, ciphertext: string): Promise<void> {
+    if (!validDigest(cacheId) || !ciphertext || ciphertext.length > 128 * 1024 * 1024) throw new Error("Local encrypted record is invalid.");
+    await (await this.#database()).runAsync(
+      `INSERT INTO mobile_local_cache (cache_id, ciphertext) VALUES ($cache_id, $ciphertext)
+       ON CONFLICT(cache_id) DO NOTHING`,
+      { $cache_id: cacheId, $ciphertext: ciphertext },
+    );
+  }
+
+  async deleteLocalCiphertext(cacheId: string): Promise<void> {
+    if (!validDigest(cacheId)) throw new Error("Local encrypted record identity is invalid.");
+    await (await this.#database()).runAsync("DELETE FROM mobile_local_cache WHERE cache_id = $cache_id", { $cache_id: cacheId });
+  }
+
+  async deleteLocalCiphertextAll(): Promise<void> {
+    await (await this.#database()).execAsync("DELETE FROM mobile_local_cache;");
+  }
+
   async deleteAll(): Promise<void> {
-    await (await this.#database()).execAsync("DELETE FROM mobile_outbox;");
+    await (await this.#database()).execAsync("DELETE FROM mobile_outbox; DELETE FROM mobile_local_cache;");
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { CanonDiagnostic, CanonEvidence, SceneSummary } from "../../types";
 
 type Disposition = NonNullable<CanonDiagnostic["disposition"]>["disposition"];
@@ -37,9 +37,21 @@ export function ContinuityReview({ diagnostics, scenes, busy, onOpenScene, onOpe
 }) {
   const [selectedId, setSelectedId] = useState("");
   const [filter, setFilter] = useState("attention");
+  const findingListId = useId();
+  const findingButtons = useRef(new Map<string, HTMLButtonElement>());
   const needsAttention = (row: CanonDiagnostic) => !row.disposition || row.disposition.disposition === "deferred";
   const visible = diagnostics.filter((row) => filter === "all" || (filter === "attention" ? needsAttention(row) : !needsAttention(row)));
   const selected = visible.find(row => row.id === selectedId) || visible[0];
+  function navigateFindings(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    const nextIndex = event.key === "ArrowDown" ? Math.min(index + 1, visible.length - 1)
+      : event.key === "ArrowUp" ? Math.max(index - 1, 0)
+      : event.key === "Home" ? 0 : event.key === "End" ? visible.length - 1 : null;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = visible[nextIndex];
+    setSelectedId(next.id);
+    findingButtons.current.get(next.id)?.focus();
+  }
   return <section aria-label="Continuity findings" style={panelStyle}>
     <h2 style={{ margin: "0 0 12px", fontSize: "var(--text-lg)" }}>Continuity Diagnostics</h2>
     <p style={smallText}>Inspect the evidence, decide whether the finding matters, and plan a revision when needed. A finding can also reflect an intentional choice or an outdated Memory entry.</p>
@@ -47,15 +59,16 @@ export function ContinuityReview({ diagnostics, scenes, busy, onOpenScene, onOpe
       <option value="attention">Needs attention</option><option value="reviewed">Reviewed</option><option value="all">All findings</option>
     </select></label>
     <p role="status" style={smallText}>{visible.length} of {diagnostics.length} findings · {diagnostics.filter(needsAttention).length} need attention</p>
+    {visible.length > 1 && <p id={`${findingListId}-help`} style={smallText}>Use ↑ and ↓ in the findings list to move between evidence. Home and End jump to the first and last finding.</p>}
     {!visible.length && <p>{diagnostics.length ? "No findings in this view. Choose another filter to see your reviewed decisions." : "No findings from the current checks. This does not establish that the manuscript is free of continuity issues."}</p>}
     <div className="continuity-review-layout">
-      <nav aria-label="Findings to review" className="continuity-finding-list">
-        {visible.map(row => <button key={row.id} className={`btn continuity-finding${selected?.id === row.id ? " is-selected" : ""}`} aria-pressed={selected?.id === row.id} onClick={() => setSelectedId(row.id)}>
+      <nav aria-label="Findings to review" className="continuity-finding-list" aria-describedby={visible.length > 1 ? `${findingListId}-help` : undefined}>
+        {visible.map((row, index) => <button key={row.id} ref={button => { if (button) findingButtons.current.set(row.id, button); else findingButtons.current.delete(row.id); }} className={`btn continuity-finding${selected?.id === row.id ? " is-selected" : ""}`} aria-pressed={selected?.id === row.id} aria-controls={`${findingListId}-${row.id}`} tabIndex={selected?.id === row.id ? 0 : -1} onKeyDown={event => navigateFindings(event, index)} onClick={() => setSelectedId(row.id)}>
           <strong>{row.title}</strong><span>{row.evidence.length} passages · {row.disposition ? decisions[row.disposition.disposition] : "Not reviewed"}</span>
         </button>)}
       </nav>
       <div className="continuity-finding-detail">
-        {diagnostics.map(diagnostic => <div key={diagnostic.id} hidden={selected?.id !== diagnostic.id}>
+        {diagnostics.map(diagnostic => <div key={diagnostic.id} id={`${findingListId}-${diagnostic.id}`} hidden={selected?.id !== diagnostic.id}>
           <Finding diagnostic={diagnostic} scenes={scenes} busy={busy} onOpenScene={onOpenScene} onOpenEvidence={onOpenEvidence} onRevise={onRevise} onReview={onReview} />
         </div>)}
       </div>

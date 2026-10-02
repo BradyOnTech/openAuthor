@@ -15,8 +15,12 @@ test("keeps document tabs usable while preparing a Change Set", async ({ page })
     await page.getByRole("button", { name: /^Changes \(/ }).click();
     await page.getByTitle("Create a reviewable Change Set").click();
     await expect(page.getByRole("textbox", { name: "What should change?" })).toBeVisible();
-    await page.getByRole("tab", { name: "Canon & Continuity", exact: true }).click();
+    await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Continuity findings", exact: true })).toBeVisible();
+    await page.getByText("Add or update story records", { exact: true }).click();
     await expect(page.getByRole("region", { name: "Canon Facts", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Generate", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "What should change?" })).toBeVisible();
     expect(book.errors).toEqual([]);
   } finally { await book.close(); }
 });

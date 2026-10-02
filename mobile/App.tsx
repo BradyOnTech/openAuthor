@@ -1,3 +1,4 @@
+import { randomUUID } from "expo-crypto";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
@@ -17,6 +18,7 @@ import {
 
 import { createAppRuntime } from "./src/app/runtime";
 import type { AppProject, AppSession, PendingItem, VoiceHandle } from "./src/app/types";
+import { CAPTURE_KINDS, emptyCompanionState, reconcileCompanionState, type CaptureDraft, type CompanionState } from "./src/core/companionRecovery";
 import type { SnapshotProject, SnapshotScene } from "./src/core/snapshotProject";
 import { initialVoiceSession, reduceVoiceSession } from "./src/voice/voiceSession";
 
@@ -34,6 +36,7 @@ function Button(props: {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={props.label}
+      accessibilityState={{ disabled: !!props.disabled }}
       disabled={props.disabled}
       onPress={props.onPress}
       style={({ pressed }) => [
@@ -56,7 +59,7 @@ function ErrorBanner({ message }: { message: string }) {
   return <Text accessibilityRole="alert" style={styles.error}>{message}</Text>;
 }
 
-function SignIn({ onSignedIn }: { onSignedIn(session: AppSession): void }) {
+function SignIn({ onSignedIn, message }: { onSignedIn(session: AppSession): void; message?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,7 +95,8 @@ function SignIn({ onSignedIn }: { onSignedIn(session: AppSession): void }) {
     </SafeAreaView>
   );
   return (
-    <KeyboardAvoidingView style={styles.centered} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={styles.authScroll} keyboardShouldPersistTaps="handled">
       <View style={styles.authCard}>
         <Text style={styles.brand}>openAuthor</Text>
         <Text style={styles.h1}>Your manuscript, in conversation.</Text>
@@ -118,16 +122,17 @@ function SignIn({ onSignedIn }: { onSignedIn(session: AppSession): void }) {
           style={styles.input}
           value={password}
         />
-        <ErrorBanner message={error} />
+        <ErrorBanner message={error || message || ""} />
         <Button label={busy ? "Signing in…" : "Sign in"} disabled={busy} onPress={() => void submit()} />
         <Button label="Open downloaded books" variant="secondary" disabled={busy} onPress={() => void openDownloads()} />
         <Text style={styles.muted}>Previously downloaded books work without a connection. Signing out locks them until you sign in online again.</Text>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: AppSession; onOpen(project: AppProject): void; onSignedOut(): void; onSession(session: AppSession | null): void }) {
+function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: AppSession; onOpen(project: AppProject): void; onSignedOut(message?: string): void; onSession(session: AppSession | null): void }) {
   const [projects, setProjects] = useState<AppProject[] | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -160,7 +165,7 @@ function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: A
       {!projects && !error && <ActivityIndicator color="#7d5cff" size="large" />}
       {!!error && <Button label="Retry loading projects" variant="secondary" onPress={() => setAttempt((value) => value + 1)} />}
       {runtime.mode === "hosted" && <Button label={session.downloadedOnly ? "Reconnect to online library" : "Use downloaded books"} disabled={switching} variant="secondary" onPress={() => void switchLibrary()} />}
-      <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(onSignedOut).catch(() => setError("Sign-out failed. Please retry."))} />
+      <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(() => onSignedOut()).catch(() => onSignedOut("Sign-out cleanup did not finish. The local view was closed; sign in to retry."))} />
       {projects?.length === 0 && <Text style={styles.empty}>{session.downloadedOnly ? "No downloaded books on this device. Connect online and open a published book first." : "No mobile-enabled projects yet. Publish one from desktop first."}</Text>}
       <ScrollView contentContainerStyle={styles.list}>
         {projects?.map((project) => (
@@ -242,15 +247,26 @@ function ScenesView({ project, onScene }: { project: SnapshotProject; onScene(sc
   );
 }
 
-function SceneReader({ project, scene, onScene, onBack, onDiscuss }: {
+function SceneReader({ project, scene, onScene, onBack, onDiscuss, scrollY, onScroll, visible }: {
   project: SnapshotProject; scene: SnapshotScene; onScene(scene: SnapshotScene): void; onBack(): void; onDiscuss(): void;
+  scrollY: number; onScroll(y: number): void; visible: boolean;
 }) {
   const scenes = project.listScenes();
   const position = scenes.findIndex((item) => item.id === scene.id);
+  const reader = useRef<ScrollView>(null);
+  const restored = useRef(false);
+  const restore = () => {
+    if (visible && !restored.current) { restored.current = true; reader.current?.scrollTo({ y: scrollY, animated: false }); }
+  };
+  useEffect(() => {
+    if (visible) restore();
+    else restored.current = false;
+  }, [visible]);
   const previous = scenes[position - 1];
   const next = scenes[position + 1];
   return (
-    <ScrollView contentContainerStyle={styles.reader}>
+    <ScrollView ref={reader} contentContainerStyle={styles.reader} onContentSizeChange={restore} onLayout={restore}
+      scrollEventThrottle={150} onScroll={(event) => { if (visible && restored.current) onScroll(event.nativeEvent.contentOffset.y); }}>
       <Button label="Back to scenes" onPress={onBack} variant="secondary" />
       <Text style={styles.h1}>{scene.title}</Text>
       <Text style={styles.muted}>{scene.pov} · {scene.status}</Text>
@@ -265,9 +281,19 @@ function SceneReader({ project, scene, onScene, onBack, onDiscuss }: {
   );
 }
 
-function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingItem): void; onStatusChange(status: CaptureStatus): void }) {
-  const [kind, setKind] = useState<"capture_note" | "dictated_passage" | "story_memory_suggestion" | "change_set_request">("capture_note");
-  const [text, setText] = useState("");
+function CaptureView(props: {
+  project: SnapshotProject; draft: CaptureDraft | null; ready: boolean; retention: string;
+  onDraft(draft: CaptureDraft | null): void; persistDraft(): Promise<void>;
+  onCreated(item: PendingItem): void; onStatusChange(status: CaptureStatus): void;
+}) {
+  const kind = props.draft?.kind ?? "capture_note";
+  const text = props.draft?.text ?? "";
+  const change = (nextText: string, nextKind = kind) => props.onDraft(nextText.length > 0 ? {
+    operationId: randomUUID(), kind: nextKind, text: nextText,
+    baseRevision: props.draft?.baseRevision ?? props.project.identity().revision,
+  } : (nextKind === "capture_note" ? null : {
+    operationId: randomUUID(), kind: nextKind, text: "", baseRevision: props.project.identity().revision,
+  }));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const inFlight = useRef(false);
@@ -283,9 +309,14 @@ function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingI
     setMessage("");
     try {
       const identity = props.project.identity();
-      const item = await runtime.capture({ projectId: identity.projectId, baseRevision: identity.revision, kind, text });
+      // Persist the idempotency identity before inserting into the outbox. If
+      // the app closes after insertion, retrying cannot create a duplicate.
+      if (runtime.mode === "hosted") await props.persistDraft();
+      const item = await runtime.capture({ projectId: identity.projectId,
+        baseRevision: props.draft?.baseRevision ?? identity.revision,
+        ...(props.draft ? { operationId: props.draft.operationId } : {}), kind, text });
       if (active.current) {
-        setText("");
+        props.onDraft(null);
         setMessage("Saved to the encrypted review outbox.");
         props.onCreated(item);
       }
@@ -299,20 +330,25 @@ function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingI
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
       <Text style={styles.sectionTitle}>Capture for desktop review</Text>
-      <Text style={styles.muted}>Your draft stays while switching tabs. Save it before closing this book or reloading the app.</Text>
+      <Text style={styles.muted}>{runtime.mode === "hosted"
+        ? "Unfinished captures are saved encrypted on this device. Save pending item when ready for desktop review."
+        : "Your sample draft stays while switching tabs. Save it before closing this book."}</Text>
+      {runtime.mode === "hosted" && <Text accessibilityLiveRegion="polite" style={styles.muted}>{props.retention}</Text>}
+      {!!props.draft && props.draft.baseRevision !== props.project.identity().revision && <Text style={styles.notice}>This draft began on an earlier snapshot. Desktop will review it against that revision.</Text>}
       {runtime.mode === "preview" && <Text style={styles.notice}>Sample capture only. It is not synced and disappears on reload.</Text>}
       <View style={styles.chips}>
-        {(["capture_note", "dictated_passage", "story_memory_suggestion", "change_set_request"] as const).map((value) => (
-          <Pressable accessibilityRole="button" disabled={busy} key={value} onPress={() => setKind(value)} style={[styles.chip, kind === value && styles.chipActive]}>
+        {CAPTURE_KINDS.map((value) => (
+          <Pressable accessibilityRole="button" aria-pressed={kind === value} accessibilityState={{ selected: kind === value, disabled: busy || !props.ready }} disabled={busy || !props.ready} key={value} onPress={() => change(text, value)} style={[styles.chip, kind === value && styles.chipActive]}>
             <Text style={kind === value ? styles.chipActiveText : styles.chipText}>{value.replaceAll("_", " ")}</Text>
           </Pressable>
         ))}
       </View>
       <TextInput
         accessibilityLabel="Capture text"
-        editable={!busy}
+        editable={!busy && props.ready}
         multiline
-        onChangeText={setText}
+        maxLength={48 * 1024}
+        onChangeText={(value) => change(value)}
         placeholder="A note, dictated passage, memory suggestion, or requested change…"
         placeholderTextColor="#697386"
         style={[styles.input, styles.composer]}
@@ -320,7 +356,7 @@ function CaptureView(props: { project: SnapshotProject; onCreated(item: PendingI
         value={text}
       />
       {!!message && <Text accessibilityLiveRegion="polite" style={styles.muted}>{message}</Text>}
-      <Button label={busy ? "Saving…" : "Save pending item"} disabled={busy || !text.trim()} onPress={() => void submit()} />
+      <Button label={busy ? "Saving…" : "Save pending item"} disabled={busy || !props.ready || !text.trim()} onPress={() => void submit()} />
     </ScrollView>
   );
 }
@@ -518,14 +554,14 @@ function AssistantView({ project, sceneId, onOpenScene, onClearScene }: { projec
   );
 }
 
-function SettingsView({ projectId, onSignedOut, requestLeave }: { projectId: string; onSignedOut(): void; requestLeave(action: () => void): void }) {
+function SettingsView({ projectId, onSignedOut, requestLeave }: { projectId: string; onSignedOut(message?: string): void; requestLeave(action: () => void): void }) {
   const [recovery, setRecovery] = useState("");
   const [restoreCode, setRestoreCode] = useState("");
   const [restoreVersion, setRestoreVersion] = useState("");
   const [recoveryMessage, setRecoveryMessage] = useState("");
   const erase = () => {
     const message = "This revokes the device and deletes its local keys, snapshots, and pending captures. Unsynced work cannot be recovered.";
-    const remove = () => void runtime.revokeDeviceAndDeleteLocalData().then(onSignedOut).catch((caught: unknown) => setRecoveryMessage(caught instanceof Error ? caught.message : "Device removal failed."));
+    const remove = () => void runtime.revokeDeviceAndDeleteLocalData().then(() => onSignedOut()).catch(() => onSignedOut("The local view was closed. Device cleanup did not finish; reconnect to complete revocation."));
     if (Platform.OS === "web") { if (globalThis.confirm(`Remove this device?\n\n${message}`)) remove(); }
     else Alert.alert("Remove this device?", message, [{ text: "Cancel", style: "cancel" }, { text: "Remove device", style: "destructive", onPress: remove }]);
   };
@@ -564,18 +600,59 @@ function SettingsView({ projectId, onSignedOut, requestLeave }: { projectId: str
         <Button label="Restore recovery key" variant="secondary" disabled={!restoreVersion || !restoreCode.trim()} onPress={() => void restoreKey()} />
         {!!recoveryMessage && <Text accessibilityLiveRegion="polite" style={styles.muted}>{recoveryMessage}</Text>}
       </View>
-      <Button label="Sign out" variant="secondary" onPress={() => requestLeave(() => void runtime.signOut().then(onSignedOut).catch(() => setRecoveryMessage("Sign-out failed. Please retry.")))} />
+      <Button label="Sign out" variant="secondary" onPress={() => requestLeave(() => void runtime.signOut().then(() => onSignedOut()).catch(() => onSignedOut("Sign-out cleanup did not finish. The local view was closed; sign in to retry.")))} />
       <Button label="Revoke device and delete local data" variant="danger" onPress={() => requestLeave(erase)} />
     </ScrollView>
   );
 }
 
-function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject; onExit(): void; onSignedOut(): void }) {
+function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject; onExit(): void; onSignedOut(message?: string): void }) {
   const [loaded, setLoaded] = useState<{ project: SnapshotProject; freshness: string; offline: boolean } | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("scenes");
   const [scene, setScene] = useState<SnapshotScene | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [recovery, setRecovery] = useState<CompanionState>(emptyCompanionState);
+  const recoveryRef = useRef(recovery);
+  const [recoveryReady, setRecoveryReady] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
+  const [retention, setRetention] = useState("Reading saved drafts…");
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0);
+  const writeRef = useRef<Promise<void>>(Promise.resolve());
+  const writeSequence = useRef(0);
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const persist = (value: CompanionState): Promise<void> => {
+    if (!recoveryReady || runtime.mode === "preview") return Promise.resolve();
+    const sequence = ++writeSequence.current;
+    setRetention("Saving reading position and capture draft…");
+    const write = writeRef.current.catch(() => {}).then(() => runtime.saveCompanionState(selected.id, value));
+    writeRef.current = write;
+    void write.then(() => {
+      if (mounted.current && sequence === writeSequence.current) { setRecoveryError(""); setRetention("Reading position and capture draft saved on this device."); }
+    }).catch(() => {
+      if (mounted.current && sequence === writeSequence.current) {
+        setRecoveryError("Recovery could not be saved. Your current draft is still here; retry before closing the app.");
+        setRetention("Draft changes are not saved for restart.");
+      }
+    });
+    return write;
+  };
+  const updateRecovery = (next: CompanionState) => {
+    recoveryRef.current = next;
+    setRecovery(next);
+    void persist(next).catch(() => {});
+  };
+  const chooseTab = (value: Tab) => {
+    setTab(value);
+    if (value === "scenes" || value === "capture" || value === "review") updateRecovery({ ...recoveryRef.current, tab: value });
+  };
+  const chooseScene = (value: SnapshotScene | null) => {
+    setScene(value);
+    updateRecovery({ ...recoveryRef.current, reading: value && loaded ? {
+      sceneId: value.id, revision: loaded.project.identity().revision, scrollY: 0,
+    } : null });
+  };
   const [captureStatus, setCaptureStatus] = useState<CaptureStatus>("empty");
   const [captureRevision, setCaptureRevision] = useState(0);
   const [leaveMessage, setLeaveMessage] = useState("");
@@ -583,6 +660,14 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
   const requestLeave = (action: () => void) => {
     if (captureStatus === "saving") {
       setLeaveMessage("Your capture is still saving. Please wait before leaving this book.");
+      return;
+    }
+    if (runtime.mode === "hosted") {
+      if (!recoveryReady) { action(); return; }
+      setLeaveMessage("Saving reading position and draft before leaving…");
+      void persist(recoveryRef.current).then(() => { if (mounted.current) action(); }).catch(() => {
+        if (mounted.current) setLeaveMessage("The draft could not be saved for restart. Keep this book open and retry, or save it to the review outbox.");
+      });
       return;
     }
     if (captureStatus === "empty") { action(); return; }
@@ -599,10 +684,26 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
   useEffect(() => {
     let active = true;
     setError("");
-    runtime.openProject(selected.id).then((value) => { if (active) setLoaded(value); })
+    runtime.openProject(selected.id).then(async (value) => {
+      if (!active) return;
+      setLoaded(value);
+      try {
+        const saved = reconcileCompanionState(value.project, await runtime.loadCompanionState(selected.id));
+        if (!active) return;
+        recoveryRef.current = saved;
+        setRecovery(saved);
+        setScene(saved.reading ? value.project.getScene(saved.reading.sceneId) : null);
+        setTab(saved.tab);
+        setRecoveryReady(true);
+        setRecoveryError("");
+        setRetention("Reading position and capture draft saved on this device.");
+      } catch {
+        if (active) { setRecoveryReady(false); setRecoveryError("Saved recovery could not be unlocked. Reading remains available; retry to restore your capture. No saved work was deleted."); }
+      }
+    })
       .catch((caught: unknown) => { if (active) setError(caught instanceof Error ? caught.message : "Project could not be opened."); });
     return () => { active = false; };
-  }, [selected.id, attempt]);
+  }, [selected.id, attempt, recoveryAttempt]);
   if (!loaded) return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.list}>
     <Text style={styles.h1}>{selected.title}</Text>
     <ErrorBanner message={error} />
@@ -613,37 +714,55 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
     </>}
     <Button label="Back to projects" variant="secondary" onPress={onExit} />
   </ScrollView></SafeAreaView>;
+  if (!recoveryReady && !recoveryError) return <SafeAreaView style={styles.safe}>
+    <View style={styles.pageHeader}><Text style={styles.h1}>{selected.title}</Text></View>
+    <ActivityIndicator color="#7d5cff" size="large" />
+    <Text accessibilityLiveRegion="polite" style={styles.muted}>Restoring your reading position and unfinished capture…</Text>
+    <Button label="Back to projects" variant="secondary" onPress={onExit} />
+  </SafeAreaView>;
   const identity = loaded.project.identity();
   return (
     <SafeAreaView style={styles.safe}>
       {runtime.mode === "preview" && <Text style={styles.notice}>Sample book · voice and sync unavailable</Text>}
       <View style={styles.projectHeader}>
-        <Pressable accessibilityRole="button" onPress={() => requestLeave(onExit)}><Text style={styles.back}>‹ Projects</Text></Pressable>
+        <Pressable accessibilityRole="button" style={styles.backButton} onPress={() => requestLeave(onExit)}><Text style={styles.back}>‹ Projects</Text></Pressable>
         <View style={styles.flex}><Text numberOfLines={1} style={styles.projectTitle}>{selected.title}</Text><Text style={styles.muted}>{loaded.freshness}{loaded.offline ? " · downloaded copy" : ""}</Text></View>
       </View>
       <ErrorBanner message={leaveMessage} />
+      <ErrorBanner message={recoveryError} />
+      {!!recoveryError && <Button label="Retry reading and capture recovery" variant="secondary" onPress={() => {
+        if (recoveryReady) void persist(recoveryRef.current).catch(() => {});
+        else setRecoveryAttempt((value) => value + 1);
+      }} />}
+      {!recoveryReady && !recoveryError && <Text accessibilityLiveRegion="polite" style={styles.muted}>Reading saved drafts…</Text>}
       <View style={styles.flex}>
         {/* Keep only passive reading/capture views mounted across tabs. Voice
             must still unmount and stop the microphone when leaving Assistant. */}
-        <View style={[styles.flex, tab !== "scenes" && styles.hidden]}>
-          {scene ? <SceneReader key={scene.id} project={loaded.project} scene={scene} onScene={setScene} onBack={() => setScene(null)} onDiscuss={() => setTab("assistant")} /> : <ScenesView project={loaded.project} onScene={setScene} />}
+        <View accessibilityElementsHidden={tab !== "scenes"} importantForAccessibility={tab === "scenes" ? "auto" : "no-hide-descendants"} style={[styles.flex, tab !== "scenes" && styles.hidden]}>
+          {scene ? <SceneReader key={scene.id} project={loaded.project} scene={scene} onScene={chooseScene} onBack={() => chooseScene(null)} onDiscuss={() => setTab("assistant")}
+            visible={tab === "scenes"} scrollY={recovery.reading?.scrollY ?? 0} onScroll={(y) => {
+              const current = recoveryRef.current;
+              if (current.reading && Math.abs(current.reading.scrollY - y) >= 1) updateRecovery({ ...current, reading: { ...current.reading, scrollY: y } });
+            }} /> : <ScenesView project={loaded.project} onScene={chooseScene} />}
         </View>
         {tab === "assistant" && <AssistantView
           project={loaded.project}
-          onClearScene={() => setScene(null)}
+          onClearScene={() => chooseScene(null)}
           {...(scene ? { sceneId: scene.id } : {})}
           onOpenScene={(sceneId) => {
             const cited = loaded.project.getScene(sceneId);
             if (cited) {
-              setScene(cited);
-              setTab("scenes");
+              chooseScene(cited);
+              chooseTab("scenes");
             }
           }}
         />}
-        <View style={[styles.flex, tab !== "capture" && styles.hidden]}>
-          <CaptureView project={loaded.project} onStatusChange={setCaptureStatus} onCreated={() => {
+        <View accessibilityElementsHidden={tab !== "capture"} importantForAccessibility={tab === "capture" ? "auto" : "no-hide-descendants"} style={[styles.flex, tab !== "capture" && styles.hidden]}>
+          <CaptureView project={loaded.project} draft={recovery.capture} ready={recoveryReady} retention={retention}
+            onDraft={(draft) => updateRecovery({ ...recoveryRef.current, capture: draft })}
+            persistDraft={() => persist(recoveryRef.current)} onStatusChange={setCaptureStatus} onCreated={() => {
             setCaptureRevision((value) => value + 1);
-            setTab((current) => current === "capture" ? "review" : current);
+            if (tab === "capture") chooseTab("review");
           }} />
         </View>
         {tab === "review" && <ReviewView key={captureRevision} projectId={identity.projectId} revision={identity.revision} />}
@@ -651,7 +770,7 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
       </View>
       <View accessibilityRole="tablist" style={styles.tabBar}>
         {(["scenes", "assistant", "capture", "review", "settings"] as const).map((value) => (
-          <Pressable accessibilityRole="tab" aria-selected={tab === value} key={value} onPress={() => setTab(value)} style={styles.tab}>
+          <Pressable accessibilityRole="tab" accessibilityState={{ selected: tab === value }} aria-selected={tab === value} key={value} onPress={() => chooseTab(value)} style={styles.tab}>
             <Text style={tab === value ? styles.tabTextActive : styles.tabText}>{value[0]?.toUpperCase()}{value.slice(1)}</Text>
           </Pressable>
         ))}
@@ -666,6 +785,13 @@ export default function App() {
   const [project, setProject] = useState<AppProject | null>(null);
   const [restoreError, setRestoreError] = useState("");
   const restoreAttempt = useRef(0);
+  useEffect(() => runtime.subscribeLocalAccessLock(() => {
+    restoreAttempt.current++;
+    setProject(null);
+    setSession(null);
+    setRestoring(false);
+    setRestoreError("Local access was locked. Sign in online to reopen downloaded books.");
+  }), []);
   useEffect(() => {
     const attempt = ++restoreAttempt.current;
     runtime.restoreSession().then((value) => { if (attempt === restoreAttempt.current) setSession(value); })
@@ -690,15 +816,17 @@ export default function App() {
     <Text style={styles.muted}>Connecting to your library…</Text>
     {runtime.mode === "hosted" && <Button label="Open downloaded books" variant="secondary" onPress={() => void openDownloads()} />}
   </SafeAreaView>;
-  return <><StatusBar style="light" />{!!restoreError && <ErrorBanner message={restoreError} />}{!session ? <SignIn onSignedIn={(value) => { setRestoreError(""); setSession(value); }} /> : project ? <ProjectShell key={project.id} selected={project} onExit={() => setProject(null)} onSignedOut={() => { setProject(null); setSession(null); }} /> : <ProjectPicker key={session.downloadedOnly ? "downloaded" : "online"} session={session} onSession={setSession} onOpen={setProject} onSignedOut={() => setSession(null)} />}</>;
+  return <><StatusBar style="light" />{!session ? <SignIn message={restoreError} onSignedIn={(value) => { setRestoreError(""); setSession(value); }} /> : project ? <ProjectShell key={project.id} selected={project} onExit={() => setProject(null)} onSignedOut={(message) => { setProject(null); setSession(null); setRestoreError(message ?? ""); }} /> : <ProjectPicker key={session.downloadedOnly ? "downloaded" : "online"} session={session} onSession={setSession} onOpen={setProject} onSignedOut={(message) => { setSession(null); setRestoreError(message ?? ""); }} />}</>;
 }
 
 const colors = { bg: "#0c0d12", surface: "#171923", border: "#2a2e3d", text: "#f4f1ff", muted: "#a8adbd", accent: "#7d5cff", danger: "#c84762" };
 const styles = StyleSheet.create({
   hidden: { display: "none" },
+  backButton: { minHeight: 48, justifyContent: "center" },
   contextToggle: { minHeight: 44, justifyContent: "center" },
   sessionStatus: { paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
   safe: { flex: 1, backgroundColor: colors.bg }, flex: { flex: 1 }, centered: { flex: 1, backgroundColor: colors.bg, justifyContent: "center", padding: 24, gap: 18 },
+  authScroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
   authCard: { gap: 16, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 24 },
   brand: { color: "#b8a7ff", fontSize: 18, fontWeight: "800", letterSpacing: 1 }, brandSmall: { color: "#b8a7ff", fontSize: 15, fontWeight: "800" },
   h1: { color: colors.text, fontSize: 29, lineHeight: 35, fontWeight: "700" }, sectionTitle: { color: colors.text, fontSize: 22, fontWeight: "700" }, projectTitle: { color: colors.text, fontSize: 18, fontWeight: "700" },
@@ -711,7 +839,7 @@ const styles = StyleSheet.create({
   pill: { color: "#cfc4ff", backgroundColor: "#2d2750", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, overflow: "hidden", fontSize: 12 }, empty: { color: colors.muted, textAlign: "center", padding: 30, lineHeight: 23 },
   reader: { padding: 20, gap: 12, paddingBottom: 50 }, readOnly: { color: colors.muted, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 18 },
   recoveryKey: { color: colors.text, backgroundColor: "#101118", borderRadius: 10, padding: 12, fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }), lineHeight: 21 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 9 }, chipActive: { backgroundColor: "#3b2e79", borderColor: "#7964d9" }, chipText: { color: colors.muted }, chipActiveText: { color: colors.text }, citation: { color: "#cfc4ff", backgroundColor: "#25203f", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, overflow: "hidden" },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 }, chip: { minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 9 }, chipActive: { backgroundColor: "#3b2e79", borderColor: "#7964d9" }, chipText: { color: colors.muted }, chipActiveText: { color: colors.text }, citation: { color: "#cfc4ff", backgroundColor: "#25203f", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, overflow: "hidden" },
   conversation: { padding: 16, gap: 14, paddingBottom: 24 }, userBubble: { alignSelf: "flex-end", maxWidth: "88%", backgroundColor: "#342a61", borderRadius: 16, padding: 14, gap: 5 }, assistantBubble: { alignSelf: "flex-start", maxWidth: "92%", backgroundColor: colors.surface, borderRadius: 16, padding: 14, gap: 5 }, bubbleLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   voiceControls: { flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingBottom: 8 }, textComposer: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: colors.border },
   tabBar: { minHeight: 64, flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: "#111219" }, tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", paddingHorizontal: 2 }, tabText: { color: "#a8adbd", fontSize: 12 }, tabTextActive: { color: "#c7bbff", fontSize: 12, fontWeight: "800" },

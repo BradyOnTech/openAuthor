@@ -1,0 +1,135 @@
+{
+  "schema": "openauthor.mobile.recovery.acceptance.v1",
+  "date": "2026-10-02",
+  "timezone": "America/Chicago",
+  "status": "local_acceptance_passed_external_device_and_deployment_gates_open",
+  "base_commit": "f154d78aaaafb5c1f0b42fdbe35b242aeadff705",
+  "environment": {
+    "node": "22.17.0",
+    "chromium": "154.0.8037.95",
+    "phone_viewport_css_px": [
+      390,
+      844
+    ],
+    "short_phone_viewport_css_px": [
+      390,
+      550
+    ],
+    "supabase_js": "2.112.4",
+    "fast_uri": "3.1.8",
+    "brace_expansion": "5.0.12"
+  },
+  "checks": [
+    {
+      "command": "cd mobile && npm run check",
+      "status": "passed",
+      "tests": 126,
+      "test_files": 27,
+      "log": "unit-and-types.log"
+    },
+    {
+      "command": "cd mobile && npm run test:e2e:hosted",
+      "status": "passed",
+      "tests": 1,
+      "log": "hosted-browser.log",
+      "hosting": "simulated HTTP auth/storage/RPC; production runtime/SDK/AES/local storage/desktop/Python engine"
+    },
+    {
+      "command": "cd mobile && npm run test:e2e",
+      "status": "passed",
+      "tests": 4,
+      "log": "preview-browser.log",
+      "hosting": "preview/offline shell; no live backend or voice"
+    },
+    {
+      "command": "cd mobile && npm exec -- expo export --clear --platform all --output-dir .expo/recovery-native-preflight",
+      "status": "passed",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "log": "native-export.log",
+      "scope": "JS/Hermes bundle export; no signed binary or device execution"
+    },
+    {
+      "command": "cd mobile && npm run build:web",
+      "status": "passed",
+      "log": "pwa-export.log"
+    }
+  ],
+  "focused_tests": {
+    "encrypted_companion_recovery": 6,
+    "native_auth_upgrade_protocol": 10,
+    "real_sqlite_durability": 5,
+    "cross_tab_access_signal": 1,
+    "native_cache_migration_adapter": 5,
+    "closed_auth_lease_regressions": 3
+  },
+  "verified_browser_behaviors": [
+    "Non-default capture type, text, reading scene and exact scroll survive fresh app reload",
+    "Quota failure keeps the latest draft and exposes retry/status; retry is durable before restart",
+    "Outbox commit/draft-clear crash window retries with the original operation ID and leaves one outbox record",
+    "Encrypted records contain no manuscript/capture plaintext",
+    "Offline cold restart restores the unfinished capture with zero hosted requests",
+    "Second offline browser window sign-out redacts the first window immediately and locks access after reload",
+    "Fresh same-account sign-in reopens retained encrypted work; explicit upload imports dictation as a pending desktop proposal and note as an inbox item",
+    "Desktop manuscript prose is unchanged; capture/recovery secrets are absent from RPC request bodies",
+    "Installed Supabase SDK refresh paused through auth cleanup cannot recreate credentials when released; a deliberate new sign-in succeeds",
+    "Cross-window auth generations are compared atomically with ciphertext writes in IndexedDB, so encryption already in flight cannot restore a closed session"
+  ],
+  "verified_native_storage_protocol": [
+    "Real SQLite WAL and FULL synchronization",
+    "Failed atomic replacement preserves the previous committed ciphertext",
+    "Separate process exit mid-transaction rolls back; exit immediately after commit retains the replacement",
+    "Identity-isolated cache deletion retains independent pending outbox work",
+    "Transient database-open failure retries successfully",
+    "Auth encryption is verified by readback before deleting legacy plaintext; encryption/readback/deletion failures retain recovery",
+    "Simultaneous auth session and PKCE writes serialize without dropping either value",
+    "Legacy snapshot migration conditionally inserts only an absent row and returns the authenticated concurrent SQLite winner",
+    "Legacy-file disappearance during missing-row and file-text reads rechecks SQLite before returning",
+    "Unreadable winning ciphertext and failed conditional insertion preserve legacy recovery data",
+    "Native auth adapter generation closes synchronously before serialized cleanup; installed SDK delayed refresh cannot recreate credentials",
+    "A new legitimate sign-in gets a fresh lease, and an old SDK removal cannot erase the new session"
+  ],
+  "limits": [
+    "Browser reload is a fresh React/runtime instance, not a physical-phone power cycle",
+    "Crash-window restoration reproduces last-durable recovery state after outbox insertion; separate SQLite process exits use real disposable database files",
+    "Native auth protocol tests use real AES storage adapters and the installed Supabase SDK with fixture HTTP responses; native Expo crypto/Keychain/Keystore still require signed-device acceptance",
+    "The native cache class and migration SQL are tested through Expo filesystem/SecureStore/crypto ports with real SQLite and WebCrypto; native Expo ciphertext format and physical OS storage behavior remain unverified",
+    "Simulated hosting and media cannot prove deployed authorization/RLS, live voice, real audio, OS eviction or controller power-loss behavior",
+    "No user book, live provider call, deployment or signing credential change occurred"
+  ],
+  "external_gates": [
+    "Target HTTPS PWA/backend/gateway deployment and production device claim, private bucket, RLS and rate-limit configuration",
+    "Real phone enrollment, live voice permission/route/interruption/reconnect/background matrix on iOS and Android",
+    "Signed native builds and upgrade/migration/key-loss/storage-quota/eviction/deletion drills",
+    "Physical VoiceOver/TalkBack, font scaling, keyboard and accessibility acceptance"
+  ],
+  "source_sha256": {
+    "mobile/App.tsx": "dd53e7431f4321815f7146f800fcbb3fd363e3545c8f71c33bf3aebda25dd983",
+    "mobile/e2e/hosted-companion.spec.ts": "cfd4ecd6053c42175ea00ae7a2eb9ab79c9216cc181d652f1198fcab78373782",
+    "mobile/e2e/project_fixture.py": "603385c3deca66bdca2be025a14b78c5273204319058c2ab665be62123c926e1",
+    "mobile/src/core/companionRecovery.ts": "91c6db941d5a2d49921e6dbcf86e5d98a0df17bc99e83714889ed038959b3ee1",
+    "mobile/src/core/encryptedAuthStorage.ts": "f07c1b864dcfa7638cfa786f373a773950f3719e5149f62e5741a8ec47823d05",
+    "mobile/src/adapters/encryptedSnapshotCache.ts": "5e77be1885dfe18995842d7cfa76975602ba61f41fd1b625a45d3b55b4ed64ba",
+    "mobile/src/adapters/encryptedSnapshotCache.web.ts": "4f8e325ca66601f5afc7ebdafee9ffb5f2e3f5678b4de090bc6338e6fb0825b5",
+    "mobile/src/adapters/sqliteOutboxStore.ts": "79e3a7e3e910b9d11e5ff5bcd6fdc58dad7829342d22e5207768ca86d831d935",
+    "mobile/src/adapters/browserStorage.ts": "2b986757fe2430052efb093a5d1d1dd49594c42f7936bd61b4cc0350ec449527",
+    "mobile/src/adapters/supabaseClient.ts": "2a879c29c3f56ade7676a22a22a6016142ea91a6f39ad7692ca416e44c83707c",
+    "mobile/src/app/hostedRuntime.ts": "b4476565366ae5ac972e8f475502baf8a39db440598e2625ccace7fde5c20ec4",
+    "mobile/test/companionRecovery.test.ts": "0d50e747f834cf44e553cb40dd5e88a202bf87cb9a21549a7ab9b8bbe2af1e6f",
+    "mobile/test/encryptedAuthStorage.test.ts": "239fc5a9038cced35213d969b803aa38c02cbe808020680e10f9b6ba9bc19f10",
+    "mobile/test/sqliteRecoveryDurability.test.mjs": "bd4e7dc90fa475c3f9ea4c29783b52cd56f2a33302986c3a50cf7bfa988bd518",
+    "mobile/src/adapters/supabaseClient.web.ts": "7d679106ab4104f6516604fd3a166d76204476b5d58ee9f94333e2de4ddfd774",
+    "mobile/test/nativeSnapshotMigration.test.mjs": "59085fb279f58880bc4d2c3d7c9ad4def4c2fe08dc3d08181cba1fe1070c2892",
+    "mobile/test/authStorageLease.test.ts": "902a5c7a170e110f6db4dc5c2c2f9ddbd60166ec1d8f4838c524aad5f1cb9a76",
+    "mobile/src/adapters/expoSecrets.ts": "ab3363edd80acfcc1eaabacb1a6eca0aa86e40dc1032311047b9ab54bda5aee7",
+    "mobile/src/adapters/expoSecrets.web.ts": "7ca557c5da9e25ccf07d63807ec43a3fc1a7e47c67d478a1cd7025b655a2d997",
+    "mobile/src/app/types.ts": "2ce0469958a29f94633a866dc20539ec894f8077b2a6cd92a937909a5000f9f4",
+    "mobile/src/app/previewRuntime.ts": "2e8c5d79363f4600212297dcfe4936fe62a529cddbb4e28e5aa9996e3ca8ee0a",
+    "mobile/test/browserStorage.test.ts": "f24481fe351d0ac10c5690343665aca928f7a46394786a6f87f5e71e166e1571",
+    "mobile/package-lock.json": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968",
+    "contracts/package-lock.json": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279"
+  }
+}

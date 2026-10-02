@@ -1,6 +1,14 @@
 # Author journey readiness
 
-Updated 2026-09-29. Working product assessment, not a release certificate.
+Updated 2026-10-02. Working product assessment, not a release certificate.
+
+The [current six-priority quality pass](evaluations/project-completion-2026-10-02/review.md)
+advances evidence-based review, Memory triage, daily writing ergonomics, encrypted
+companion restart recovery and packaged transaction recovery. A first connected
+chapter review and native backup restoration have run. Author evaluation,
+physical phones, native accessibility and signed clean-machine distribution
+remain open. Native testing also found a first-focus caret regression; the repaired bundle
+now passes actual keyboard insertion after forced termination. The detailed assessment below retains the earlier journey evidence.
 
 ## Purpose
 
@@ -21,14 +29,14 @@ phone, or live-model quality.
 | --- | --- | --- |
 | Start a book | New project; previewed Markdown/TXT/DOCX/Scrivener import | Browser verifies heading-based Markdown import with unchanged source. Full format fidelity and packaged file dialogs remain open. |
 | Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Browser verifies planning, navigation in Plan order and actual save/focus/reopen. Retained brief/structure/metadata drafts and stale-save checks are implemented; long-session ergonomics and crash recovery remain gates. |
-| Read the book | Desktop chapter reader and saved position; mobile Plan-ordered scenes, chapter labels, Previous/Next and direct discussion | Browser verifies desktop position restoration and mobile reading through reversed file order, chapter search and unassigned scenes. Older mobile snapshots retain their downloaded order. Long desktop chapters render at most 25 scenes per page. Mobile position restoration and physical-device reading remain open. |
+| Read the book | Desktop chapter reader and saved position; mobile Plan-ordered scenes, chapter labels, Previous/Next and direct discussion | Browser verifies desktop position restoration and mobile reading through reversed file order, chapter search and unassigned scenes. Older mobile snapshots retain their downloaded order. Long desktop chapters render at most 25 scenes per page. Encrypted mobile scene/scroll restoration now passes cold/offline browser restart; physical-device reading remains open. |
 | Discuss and retain ideas | Scoped copilot, retrieval/citations, note/suggestion/experiment promotion; one-request Memory permission and context receipts | Browser verifies scene/chapter/character focus, regeneration, Memory permission, saving a note and the chapter/accepted-canon/Storyline receipt. Shared text/desktop-voice context includes brief, Plan order, relevant accepted facts and active experiment intent. Estimated assembled-input budgeting and oversized-request recovery are tested; exact provider token accounting, ongoing voice-session limits and novel-scale judgment remain gates. |
-| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Creative quality and multi-file crash recovery remain unproven. |
+| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Durable journals and packaged-engine SIGKILL tests now verify multi-file rollback and commit preservation. Author-rated creative quality and signed/clean-machine acceptance remain open. |
 | Shape writing quality | Editable Writing Voice, original craft presets, review-first exemplar analysis, bounded sample comparisons and author assessments; approved mobile profile projection | Browser verifies approval, offline comparison/assessment/reopen, chat promotion and the approved voice receipt. The encrypted phone journey now verifies profile publication, display and reopening; controller tests check its voice context. Live prose quality remains open. |
-| Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy and usefulness on a full original novel remain unproven. |
+| Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The main-editor inbox now verifies retained corrections, person/place repair, exact evidence and stale-review refusal. The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy, uncased-name extraction and review workload on original prose remain open. |
 | Explore alternatives | Storylines, comparison, selective integration into Changes | Browser exercises an original six-scene alternate ending, returns to Primary, integrates one of two changed scenes, verifies the other is unchanged and undoes. Clean scene tabs reload the active Storyline; comprehensive unsaved-navigation policy remains open. |
 | Finish the book | Word and Markdown export with loss reports | Both now follow Plan order, with unassigned scenes last. Browser exports/re-reads Word; core checks both formats. Export remains scene-oriented, not a typesetting feature. |
-| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion browser/core checks plus 96 current mobile tests cover privacy, source/knowledge preservation, context limits and voice scene-list order. The encrypted browser journey verifies fact refresh, reading navigation and scene-specific discussion handoff. Hosted delivery, physical iOS/Android voice, interruption/audio routing and native credential migration remain gates. |
+| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion checks now include 126 tests plus hosted and preview browser journeys. Encrypted cold-restart reading/capture retention, atomic native migration and late-refresh sign-out fencing pass local checks; iOS/Android/web exports pass. Real keys and migration on devices, approved deployed authorization, physical voice, interruption/audio routing and accessibility remain gates. |
 
 ## Connected author journey and reading
 
@@ -95,6 +103,14 @@ project-note filtering, missing scenes, retained Plan text and dirty scene tabs.
   the precise policy, evidence, transcript and offline-revocation limits.
 
 ## Next priorities
+
+The October 2 priorities are author-assessed connected chapter/Voice quality,
+Memory accuracy and observed triage effort, final native keyboard/accessibility
+acceptance, physical-phone reading/voice/capture, and signed Mac distribution.
+The [current ledger](evaluations/project-completion-2026-10-02/requirements.json)
+separates implemented local recovery and review mechanics from these outcomes.
+An unpatched mobile build dependency advisory also remains a release gate.
+Historical checkpoints below explain how this assessment developed.
 
 The September 29 writing iteration adds the saved original to comparison and
 targeted, recoverable feedback for refining one candidate into a separate attempt.

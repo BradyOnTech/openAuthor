@@ -1,10 +1,11 @@
 import type { CachedSnapshot, SnapshotCache } from "../core/snapshotSync";
 import { SnapshotProject } from "../core/snapshotProject";
-import { browserStorage } from "./browserStorage";
+import { browserStorage, type BrowserStorage } from "./browserStorage";
 
 export class EncryptedFileSnapshotCache implements SnapshotCache {
+  constructor(private readonly storage: BrowserStorage = browserStorage) {}
   async load(projectId: string): Promise<CachedSnapshot | null> {
-    const value = await browserStorage.get(`snapshot:${projectId}`);
+    const value = await this.storage.get(`snapshot:${projectId}`);
     if (!value) return null;
     const cached = JSON.parse(value) as CachedSnapshot;
     this.#validate(projectId, cached);
@@ -16,8 +17,14 @@ export class EncryptedFileSnapshotCache implements SnapshotCache {
   }
   async replace(projectId: string, value: CachedSnapshot): Promise<void> {
     this.#validate(projectId, value);
-    await browserStorage.set(`snapshot:${projectId}`, JSON.stringify(value));
+    await this.storage.set(`snapshot:${projectId}`, JSON.stringify(value));
   }
-  delete(projectId: string): Promise<void> { return browserStorage.delete(`snapshot:${projectId}`); }
-  deleteAll(): Promise<void> { return browserStorage.deletePrefix("snapshot:"); }
+  delete(projectId: string): Promise<void> { return this.storage.delete(`snapshot:${projectId}`); }
+  loadRecovery(scope: string): Promise<string | null> { return this.storage.get(`companion-recovery:${scope}`); }
+  saveRecovery(scope: string, value: string): Promise<void> { return this.storage.set(`companion-recovery:${scope}`, value); }
+  deleteRecovery(scope: string): Promise<void> { return this.storage.delete(`companion-recovery:${scope}`); }
+  async deleteAll(): Promise<void> {
+    await this.storage.deletePrefix("snapshot:");
+    await this.storage.deletePrefix("companion-recovery:");
+  }
 }

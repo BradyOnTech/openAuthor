@@ -117,12 +117,24 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await expect(page.getByText("Storyline: Mara stays to repair the city", { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("chapter-review-context.png") });
     await page.getByRole("button", { name: /Regenerate/ }).click();
+    const regeneratedContext = page.getByRole("region", { name: "Review AI context", exact: true });
+    const includedChapterScenes = regeneratedContext.getByRole("list").first();
+    // This list also discloses nearby scenes; the receipt below must retain
+    // the original chapter's exact full-scene IDs.
+    await expect(includedChapterScenes.getByRole("listitem")).toContainText(["The Blank Hour", "The Last Door"]);
+    const renewedCanonGrant = regeneratedContext.getByRole("checkbox", { name: /Allow Canon fact:.*for this request/ });
+    await expect(renewedCanonGrant).not.toBeChecked();
+    expect((await json(["chat", "message", "list", "--thread", threads[0].id])).find((message: any) => message.role === "assistant").id).toBe(reply.id);
+    await renewedCanonGrant.check();
+    await regeneratedContext.getByRole("button", { name: "Send reviewed context", exact: true }).click();
     await expect.poll(async () => {
       const regenerated = await json(["chat", "message", "list", "--thread", threads[0].id]);
       return regenerated.find((message: any) => message.role === "assistant")?.id ?? reply.id;
     }).not.toBe(reply.id);
     const regenerated = await json(["chat", "message", "list", "--thread", threads[0].id]);
-    expect(regenerated.find((message: any) => message.role === "assistant").context_used.scene_ids).toEqual(["scene-0005", "scene-0006"]);
+    const regeneratedReply = regenerated.find((message: any) => message.role === "assistant");
+    expect(regeneratedReply.context_used.scene_ids).toEqual(["scene-0005", "scene-0006"]);
+    expect(regeneratedReply.context_used.review.canon_fact_ids).toEqual([canon.id]);
     await page.getByRole("button", { name: "Close side panel" }).click();
 
     await page.getByRole("button", { name: /^Storylines \(/ }).click();

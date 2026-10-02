@@ -2,16 +2,17 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { MobileConfig } from "../config";
 import type { MobileSupabaseClient } from "./supabaseAdapters";
 import { browserStorage } from "./browserStorage";
-import { isMobileAuthStorageKey, mobileAuthStorageKey } from "../core/authStorageKey";
+import { mobileAuthStorageKey } from "../core/authStorageKey";
 
 export function createMobileSupabaseClient(config: MobileConfig): SupabaseClient {
+  const lease = browserStorage.authLease(`auth:${mobileAuthStorageKey(config)}`);
   return createClient(config.supabaseUrl, config.supabasePublishableKey, {
     auth: {
       storageKey: mobileAuthStorageKey(config),
       storage: {
-        getItem: (key) => browserStorage.get(`auth:${key}`),
-        setItem: (key, value) => browserStorage.set(`auth:${key}`, value),
-        removeItem: (key) => browserStorage.delete(`auth:${key}`),
+        getItem: (key) => lease.get(`auth:${key}`),
+        setItem: (key, value) => lease.set(`auth:${key}`, value),
+        removeItem: (key) => lease.delete(`auth:${key}`),
       },
       persistSession: true,
       autoRefreshToken: true,
@@ -21,8 +22,7 @@ export function createMobileSupabaseClient(config: MobileConfig): SupabaseClient
 }
 
 export async function clearMobileAuthSession(config: MobileConfig): Promise<void> {
-  const base = `auth:${mobileAuthStorageKey(config)}`;
-  for (const key of (await browserStorage.keys(base)).filter((key) => isMobileAuthStorageKey(key, base))) await browserStorage.delete(key);
+  await browserStorage.clearAuth(`auth:${mobileAuthStorageKey(config)}`);
 }
 
 export function asMobileSupabaseClient(client: SupabaseClient): MobileSupabaseClient {

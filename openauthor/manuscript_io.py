@@ -467,7 +467,9 @@ def _commit_import(paths: ProjectPaths, source: Path, strategy: str, scenes: lis
     committed: list[Path] = []
     try:
       for staged_path, target, _ in staged:
-        os.replace(staged_path, target)
+        from .book_transactions import write_transaction_text
+        if not write_transaction_text(target, staged_path.read_text(encoding="utf-8"), exclusive=True):
+          os.replace(staged_path, target)
         committed.append(target)
       append_import_structure(plan, scenes, [identifier for _, _, identifier in staged])
       atomic_write_json(paths.structure_file, plan)

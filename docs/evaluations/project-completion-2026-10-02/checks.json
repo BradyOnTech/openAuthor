@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-02",
+  "release_certified": false,
+  "checks": [
+    {
+      "check": "default_core",
+      "discovered": 494,
+      "passed": 493,
+      "skipped": 1,
+      "log_sha256": "d9b1421953ff525320fe72d87e64bf646682887c391477f9594a3a1c5ed2fbd5",
+      "development_log_path": "/private/tmp/openauthor-core-final-2026-10-02.log"
+    },
+    {
+      "check": "actual_packaged_core",
+      "discovered": 494,
+      "passed": 494,
+      "skipped": 0,
+      "log_sha256": "00830a7ae2eb3ed1e69d1ac929c012947d92d6b86180e7b510b9db1217cfcd63",
+      "development_log_path": "/private/tmp/openauthor-packaged-core-reviewed-final-2026-10-02.log"
+    },
+    {
+      "check": "desktop_unit",
+      "discovered": 374,
+      "passed": 374,
+      "skipped": 0,
+      "log_sha256": "c06adddf4ece1fb45b4177237853dcf590ce7bf0fd4988efead09e5360be6861",
+      "development_log_path": "/private/tmp/openauthor-desktop-caret-replacement-final-2026-10-02.log"
+    },
+    {
+      "check": "desktop_full_browser",
+      "discovered": 15,
+      "passed": 15,
+      "skipped": 0,
+      "log_sha256": "53d2c6396ffb4206f9bad894a6c4764c1b89880e45c01595a9ae891f0f6671cb",
+      "development_log_path": "/private/tmp/openauthor-desktop-browser-selection-final-2026-10-02.log"
+    }
+  ],
+  "other_evidence": [
+    "../caret-focus-2026-10-02/verification.json",
+    "../../../mobile/evidence/2026-10-02-reading-capture-recovery/verification.json",
+    "dependencies.json",
+    "native-gui.json",
+    "native-bundle.json"
+  ],
+  "limits": [
+    "No author acceptance",
+    "No physical-phone execution",
+    "No signed/clean-machine distribution or upgrade",
+    "No full native accessibility certification"
+  ]
+}

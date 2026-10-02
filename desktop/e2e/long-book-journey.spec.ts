@@ -29,6 +29,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     console.info(`Editorial workload: ${fixture.word_count} words, 64 scenes, 16 chapters; synthetic surrounding prose.`);
     const deadline = await json(["memory", "fact-add", "--predicate", "Bell deadline", "--value", "The seventh bell must ring before dawn.",
       "--evidence-json", JSON.stringify([{ scene_id: "scene-0001", excerpt: "The seventh bell must ring before dawn." }])]);
+    await json(["retrieval", "build"]);
     const evidence = await json(["retrieval", "query", "--text", "tide key western bridge", "--limit", "8", "--require-fresh"]);
     expect(evidence.results.map((row: any) => row.source_ref)).toEqual(expect.arrayContaining(["scene-0001", "scene-0032", "scene-0048"]));
     await page.reload();
@@ -41,6 +42,15 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByPlaceholder(/Tighten the pacing/).fill("Tighten the opening phrasing in both scenes while preserving all names, facts, and the protected bell deadline.");
     await page.getByRole("combobox", { name: "Provider", exact: true }).selectOption("local");
     await page.getByRole("button", { name: "Create 2 Coordinated Change Sets", exact: true }).click();
+    expect(await json(["proposal", "list"])).toHaveLength(0);
+    for (const title of ["The Hidden Key", "The Seventh Bell"]) {
+      const planContext = page.getByRole("region", { name: "Review edit-plan context", exact: true });
+      await expect(planContext.getByText(`Scene: ${title}`, { exact: true })).toBeVisible();
+      await planContext.getByRole("button", { name: "Generate reviewed edit plan", exact: true }).click();
+      const draftContext = page.getByRole("region", { name: "Review scene draft context", exact: true });
+      await expect(draftContext.getByText(`Scene: ${title}`, { exact: true })).toBeVisible();
+      await draftContext.getByRole("button", { name: "Generate reviewed scene", exact: true }).click();
+    }
     await expect(page.getByRole("button", { name: "Apply together", exact: true })).toBeEnabled();
     const pending = await json(["proposal", "list"]);
     expect(pending).toHaveLength(2);
@@ -55,7 +65,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     // A protected-text violation in one member must block the entire group.
     const openingProposal = pending.find((row: any) => row.scene_id === "scene-0001");
     await page.getByRole("button", { name: `${openingProposal.title} — pending`, exact: true }).click();
-    await page.getByRole("button", { name: "Edit change hunk 1", exact: true }).click();
+    await page.locator(".review-card").getByRole("button", { name: "Edit", exact: true }).first().click();
     const replacement = page.getByRole("textbox", { name: "Edit replacement for hunk 1", exact: true });
     const safeReplacement = await replacement.inputValue();
     expect(safeReplacement).toContain("the boundary with her finger");
@@ -65,7 +75,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByRole("button", { name: "Apply together", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText("modifies protected text");
     for (const id of ["scene-0001", "scene-0064"]) expect((await json(["scene", "get", "--id", id])).body.trim()).toBe(fixture.originals[id]);
-    await page.getByRole("button", { name: "Edit change hunk 1", exact: true }).click();
+    await page.locator(".review-card").getByRole("button", { name: "Edit", exact: true }).first().click();
     await replacement.fill(safeReplacement);
     await page.getByRole("button", { name: "Save hunk", exact: true }).click();
     await expect(replacement).toHaveCount(0);
@@ -103,7 +113,10 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByTitle("New thread", { exact: true }).click();
     await page.getByRole("combobox", { name: "Assistant conversation scope" }).selectOption("project");
     await page.getByPlaceholder("Type a message... (@ to mention)").fill("Trace who knows about the tide key beneath the western bridge. Cite the early secret, premature knowledge and later disclosure.");
-    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: "Context", exact: true }).click();
+    const chatContext = page.getByRole("region", { name: "Review AI context", exact: true });
+    await chatContext.getByRole("checkbox", { name: /Allow Canon fact:.*Bell deadline/ }).check();
+    await chatContext.getByRole("button", { name: "Send reviewed context", exact: true }).click();
     await expect(page.getByRole("button", { name: "Save as…", exact: true })).toBeVisible();
     const [thread] = await json(["chat", "thread", "list"]);
     const messages = await json(["chat", "message", "list", "--thread", thread.id]);
@@ -132,11 +145,11 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     const findings = page.getByRole("region", { name: "Continuity findings" });
     const finding = findings.getByRole("article", { name: "Possible POV knowledge leak" });
     await expect(finding).toBeVisible();
-    await finding.getByText("Review evidence (2)", { exact: true }).click();
-    await expect(finding).toContainText("Only Ivo knew the tide key was hidden beneath the western bridge.");
-    await finding.getByRole("button", { name: "Open scene: Knowledge Before Its Time" }).click();
+    await expect(finding.getByText("Review evidence (2)", { exact: true })).toBeVisible();
+    await expect(finding.getByText("Only Ivo knew the tide key was hidden beneath the western bridge.", { exact: true })).toBeVisible();
+    await finding.getByRole("button", { name: /^Open evidence \d+ in Knowledge Before Its Time$/ }).click();
     await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(fixture.originals["scene-0032"] + "\n");
-    await page.getByRole("tab", { name: "Canon & Continuity", exact: true }).click();
+    await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
     await finding.getByText("Record review decision", { exact: true }).click();
     await finding.getByRole("combobox", { name: "Decision", exact: true }).selectOption("intentional");
     await finding.getByRole("textbox", { name: "Review notes" }).fill("Consider whether Mara is bluffing here.");
@@ -157,7 +170,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await expect(finding).toBeHidden();
     await findings.getByRole("combobox", { name: "Filter continuity findings" }).selectOption("attention");
     await expect(finding).toContainText("Author decision: Review later");
-    await finding.getByText("Review evidence (2)", { exact: true }).click();
+    await expect(finding.getByText("Only Ivo knew the tide key was hidden beneath the western bridge.", { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("continuity-evidence-review.png") });
     await finding.getByRole("button", { name: "Plan a revision" }).click();
     await expect(page.getByRole("combobox", { name: "Scene", exact: true })).toHaveValue("scene-0032");
@@ -171,7 +184,8 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
 
     // An obsolete Memory fact can be withdrawn without rewriting the novel,
     // then inspected and restored only with current supporting text.
-    await page.getByRole("tab", { name: "Canon & Continuity", exact: true }).click();
+    await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
+    await page.getByText("Add or update story records", { exact: true }).click();
     const facts = page.getByRole("region", { name: "Canon Facts", exact: true });
     const fact = facts.getByRole("article", { name: "Story: Hidden tide key", exact: true });
     await fact.getByRole("button", { name: "Correct or withdraw fact" }).click();
@@ -186,14 +200,16 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.reload();
     await page.getByRole("button", { name: /^Story Memory \(/ }).click();
     await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();
+    await page.getByText("Add or update story records", { exact: true }).click();
     await facts.getByRole("combobox", { name: "Filter Canon Facts" }).selectOption("rejected");
     await expect(fact).toContainText("Excluded from new Copilot canon context");
     await fact.getByRole("button", { name: "Correct or withdraw fact" }).click();
     await fact.getByRole("combobox", { name: "Canon status" }).selectOption("accepted");
     await fact.getByRole("textbox", { name: "Supporting passage 1" }).fill("This passage was never in the book.");
     await fact.getByRole("button", { name: "Save fact correction" }).click();
-    await expect(fact.getByRole("alert")).toContainText("supporting passage is missing");
+    await expect(fact.getByRole("alert")).toContainText("Evidence must be an exact passage from the current scene");
     await expect(fact.getByRole("textbox", { name: "Supporting passage 1" })).toHaveValue("This passage was never in the book.");
+    expect((await json(["memory", "fact-list"])).find((row: any) => row.id === withdrawn.id).status).toBe("rejected");
     await fact.getByRole("textbox", { name: "Supporting passage 1" }).fill("Only Ivo knew the tide key was hidden beneath the western bridge.");
     await fact.getByRole("button", { name: "Save fact correction" }).click();
     await expect(page.getByText("Canon Fact corrected.", { exact: true })).toBeVisible();

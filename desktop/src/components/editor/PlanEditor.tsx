@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   addPlanAct,
   addPlanBeat,
@@ -52,8 +52,14 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
   const [previewKey, setPreviewKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [arcStates, setArcStates] = useState<CharacterArcState[]>([]);
+  const [briefExpanded, setBriefExpanded] = useState(false);
+  const briefFieldsId = useId();
   const loadSequence = useRef(0);
   const mutationPending = useRef(false);
+  const hasSavedBrief = Boolean(plan.brief.synopsis.trim() || plan.brief.genre.trim() || plan.brief.themes.length || plan.brief.style_guide.trim() || plan.brief.outline.trim());
+  const hasBriefDraft = Boolean(retained.value.brief);
+  const showBriefEditor = briefExpanded || hasBriefDraft || !hasSavedBrief;
+  const hasPlanDraft = hasBriefDraft || Boolean(newAct) || Object.keys(chapterDrafts).length > 0 || Object.keys(beatDrafts).length > 0;
 
   useEffect(() => {
     // A note can be saved from the sidebar while Plan remains open. Refresh
@@ -111,7 +117,7 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
     const submitted = brief;
     void runMutation(() => updateProjectBrief(projectRoot, submitted, initial.workspace ? { workspace: initial.workspace, value: retained.value.baseline || plan.brief } : undefined), "Project brief saved.", () => {
       setPlan((old) => ({ ...old, brief: submitted }));
-      retained.change((old) => ({ ...old, baseline: !old.brief || old.brief === submitted ? null : submitted, brief: old.brief === submitted ? null : old.brief }));
+      retained.change((old) => ({ ...old, baseline: !old.brief || old.brief === submitted ? null : submitted, brief: old.brief === submitted ? null : old.brief, themesText: old.brief === submitted ? undefined : old.themesText }));
     });
   }
 
@@ -210,25 +216,35 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
           </section>
         )}
 
-        <RecoveryNotice draft={retained} label="Plan drafts" />
-        <details><summary>Inspect retained Plan text</summary><p>Unfinished text is kept even if its act or scene was removed. Copy it before discarding.</p><pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(retained.value, null, 2)}</pre></details>
+        {(hasPlanDraft || retained.warning || retained.restored || retained.alternatives.length > 0) && <RecoveryNotice draft={retained} label="Plan drafts" />}
+        {hasPlanDraft && <details><summary>Inspect retained Plan text</summary><p>Unfinished text is kept even if its act or scene was removed. Copy it before discarding.</p><pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(retained.value, null, 2)}</pre></details>}
         {retained.value.baseline && JSON.stringify(retained.value.baseline) !== JSON.stringify(plan.brief) && <section role="alert" style={panelStyle}>
           <p>The saved brief changed. Your draft has been kept. Compare the saved brief below before choosing to replace it.</p>
           <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(plan.brief, null, 2)}</pre>
           <button className="btn" onClick={() => retained.change((old) => ({ ...old, baseline: plan.brief }))}>I reviewed the saved brief; keep my draft for the next save</button>
         </section>}
-        <section style={panelStyle}>
-          <h2 style={sectionTitle}>Project Brief</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(220px, 1fr)", gap: "var(--space-3)" }}>
-            <textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} />
-            <div style={{ display: "grid", gap: "var(--space-2)" }}>
-              <input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} />
-              <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={retained.value.themesText ?? brief.themes.join(", ")} onChange={(event) => { const themesText = event.target.value; retained.change(old => ({ ...old, brief: { ...brief, themes: themesText.split(",").map(value => value.trim()).filter(Boolean) }, baseline: old.baseline || plan.brief, themesText })); }} />
-              <button className="btn btn--primary" disabled={busy} onClick={saveBrief}>Save Brief</button>
-            </div>
+        <section className="plan-brief" aria-label="Project Brief" style={panelStyle}>
+          <div className="plan-brief__header">
+            <div><h2 style={{ ...sectionTitle, margin: 0 }}>Project Brief</h2><p role="status" className="plan-brief__status">{hasBriefDraft ? "Unsaved brief · kept on this device" : hasSavedBrief ? "Saved story guidance" : "Set the direction for your story"}</p></div>
+            {hasSavedBrief && !hasBriefDraft && <button className="btn btn--sm" aria-expanded={showBriefEditor} aria-controls={briefFieldsId} onClick={() => setBriefExpanded(value => !value)}>{showBriefEditor ? "Collapse saved brief" : "Edit saved brief"}</button>}
+            {showBriefEditor && <button className="btn btn--primary" disabled={busy} onClick={saveBrief}>Save Brief</button>}
           </div>
-          <textarea className="input" rows={3} aria-label="Style guide" placeholder="Style guide: voice, tense, prose boundaries…" style={{ marginTop: "var(--space-3)" }} value={brief.style_guide} onChange={(event) => setBrief({ ...brief, style_guide: event.target.value })} />
-          <textarea className="input" rows={4} aria-label="Outline" placeholder="High-level outline or north-star ending…" style={{ marginTop: "var(--space-3)" }} value={brief.outline} onChange={(event) => setBrief({ ...brief, outline: event.target.value })} />
+          {!showBriefEditor && <div className="plan-brief__summary">
+            {plan.brief.synopsis && <p className="plan-brief__synopsis">{plan.brief.synopsis}</p>}
+            {(plan.brief.genre || plan.brief.themes.length > 0) && <p className="plan-brief__tags">{[plan.brief.genre, ...plan.brief.themes].filter(Boolean).join(" · ")}</p>}
+            {(plan.brief.style_guide || plan.brief.outline) && <p className="plan-brief__status">{[plan.brief.style_guide && "Writing guidance saved", plan.brief.outline && "Outline saved"].filter(Boolean).join(" · ")}</p>}
+          </div>}
+          <div id={briefFieldsId} hidden={!showBriefEditor}>
+            <div className="plan-brief__fields">
+              <textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} />
+              <div style={{ display: "grid", gap: "var(--space-2)" }}>
+                <input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} />
+                <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={retained.value.themesText ?? brief.themes.join(", ")} onChange={(event) => { const themesText = event.target.value; retained.change(old => ({ ...old, brief: { ...brief, themes: themesText.split(",").map(value => value.trim()).filter(Boolean) }, baseline: old.baseline || plan.brief, themesText })); }} />
+              </div>
+            </div>
+            <textarea className="input" rows={3} aria-label="Style guide" placeholder="Style guide: voice, tense, prose boundaries…" style={{ marginTop: "var(--space-3)" }} value={brief.style_guide} onChange={(event) => setBrief({ ...brief, style_guide: event.target.value })} />
+            <textarea className="input" rows={4} aria-label="Outline" placeholder="High-level outline or north-star ending…" style={{ marginTop: "var(--space-3)" }} value={brief.outline} onChange={(event) => setBrief({ ...brief, outline: event.target.value })} />
+          </div>
         </section>
 
         <PlanNotes notes={plan.notes} scenes={scenes} focusNoteId={focusNoteId} onOpenScene={(scene) => void openScene(scene)} onRevise={(note) => {
