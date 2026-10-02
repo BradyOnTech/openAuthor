@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-02",
+  "base_commit": "010eeafd8fcdba1d61452c14d34d9d14d3e5c36c",
+  "scope": "local disposable PostgreSQL 17.11; real SQL and RLS with synthetic identities, minimal Storage metadata schema",
+  "red": "Deleted actual Auth session remained authorized on previous migrations",
+  "green": "Existing encrypted-sync suite and new authority/key state suite pass",
+  "sql_assertions": 26,
+  "source_sha256": {
+    "supabase/migrations/20261002140000_mobile_active_authority.sql": "bdcdd4cc589ea08439db36e150f455bccc79e8199c08c76f3c2d2bb21ee096a4",
+    "supabase/tests/mobile_active_authority.sql": "eb6df85906d6dd1bb3118617f9ac4db653c2a64c6eda480b2702ca374f0bb948",
+    "supabase/tests/mobile_encrypted_sync_rls.sql": "be4fb56a53f930b6f7cababe267578b30a268679dc2a047fcc6c933981f2dc27",
+    "supabase/tests/realtime_rate_limit_fixtures.sql": "aca387df20ff2f66adc8779c2931231879708dbd77e315fb8387d8d35e72d279",
+    "scripts/verify_shared_gateway_limiter.py": "3cb0f98ca16c7ca286480a6afc72f9a1220c79e239eec3fbd7f5f0d99b467880"
+  },
+  "evidence_sha256": {
+    "red.txt": "b01fe3b37b949861211ef493f41a234e49f83e9b2808b041996191fc17864abc",
+    "green-sql.txt": "b2b2659e034fba72fa415085f4fa63ec7277767f9fbe34527c89d023f301b4d9",
+    "green-sql-storage.txt": "05de1e3f2d5534d9c1986c3691166e0d11def548c74ddabe5f19e1a5c10ada80"
+  },
+  "live_provider_calls": 0,
+  "deployed_mutations": 0,
+  "deletion_lifecycle": "not implemented by this checkpoint",
+  "release_certified": false
+}
