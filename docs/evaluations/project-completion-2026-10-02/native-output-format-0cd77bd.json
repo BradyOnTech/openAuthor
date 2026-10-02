@@ -1,0 +1,23 @@
+{
+  "native-build-0cd77bd.txt": {
+    "raw_archive": "native-build-0cd77bd.txt.raw.gz",
+    "raw_sha256": "49d2947f084e0e12a2e93634bc5c71920970a5f86bfdf4b31e2a0a46454bfc3b",
+    "archive_sha256": "b359591bcbf31e0abd985569dc8121f536b8f165ef2e3c84c2a7ad0c35279562",
+    "display_sha256": "02571d890bb14c0a19cb762b308cb3b8a0bbbdbcd201f881514023ecd4f2bd9e",
+    "normalization": "Trailing line whitespace and final blank lines only; exact raw bytes retained."
+  },
+  "native-bundle-check-0cd77bd.txt": {
+    "raw_archive": "native-bundle-check-0cd77bd.txt.raw.gz",
+    "raw_sha256": "80061f77b4e1b74f38596f8f0cdd138e623203edfc91e2def123e5b9aa4154df",
+    "archive_sha256": "7fe1cbda7b5e0c6a4c41a7a6e688d150bf129cf07db03160bd261bbeb32dadf0",
+    "display_sha256": "80061f77b4e1b74f38596f8f0cdd138e623203edfc91e2def123e5b9aa4154df",
+    "normalization": "Trailing line whitespace and final blank lines only; exact raw bytes retained."
+  },
+  "repository-check-0cd77bd.txt": {
+    "raw_archive": "repository-check-0cd77bd.txt.raw.gz",
+    "raw_sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+    "archive_sha256": "5802b7194b3a67161d09206a69aa7276fb049786242b0bc27e0a7ccdc626d9a3",
+    "display_sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+    "normalization": "Trailing line whitespace and final blank lines only; exact raw bytes retained."
+  }
+}

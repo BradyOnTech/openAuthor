@@ -81,7 +81,7 @@
       "regression_log": "metro-format-red.txt",
       "meaning": "Guard initially rejected actual Metro NUL-prefixed virtual web source; specific failing regression preceded correction"
     },
-    "git_diff_check": "passed for lane-owned changes"
+    "git_diff_check": "Passed after root normalized display-log EOF in the documentation checkpoint; raw archives unchanged."
   },
   "policy": {
     "entrypoints": [
@@ -134,7 +134,7 @@
     "mobile/node_modules/@expo/env/build/index.js": "ef2879daa5cb4d801c71e23a114a5c0f789b9bcfe52966979f6db832d55e1baa",
     "mobile/node_modules/@expo/config/build/Config.js": "cf6ce6da50cd131b5df308b0658cbfa66958f70a4a94f578b3d65dc8d8c28049"
   },
-  "evidence_preservation": "Each original log is retained as exact decompressed .raw.gz bytes; .txt changes trailing horizontal whitespace/CR only. No secrets or private author data in fixtures.",
+  "evidence_preservation": "Each original log is retained as exact decompressed .raw.gz bytes; .txt normalizes trailing horizontal whitespace/CR and final blank lines only. No secrets or private author data in fixtures.",
   "evidence_sha256": {
     "README.md": "75f6c44ce0eef5f057f404b322e823c86e514be5b319d5d8c6f7f10abb0700d5",
     "all-platform-build.json": "71cf8959357975cef7b490b062d6a6dbdca2e48c9f0faba18627ce2e397b5c7b",
@@ -143,14 +143,14 @@
     "first-export-format-red.raw.gz": "5d86a791055851d4d4da84da0a38784ff16ff701591c6a6ebd43c44742bb3776",
     "first-export-format-red.txt": "df7f3b0f1a6aee7f6c604e45cfbc1f754355c7b04450cf19b0bb66b48426d04b",
     "guard-interface-red.raw.gz": "f834f680be12c215cc654066ade38cd0b064c1642f59548d23ec3e53ed91b672",
-    "guard-interface-red.txt": "b188e21174b2185bc0143035be6049a3a23f9c956403aa5966f77634e9ec3d7f",
+    "guard-interface-red.txt": "b5d928b7855e26bbfe237cab0b7eb67f42d73678e96499303f6c285a1d2e0537",
     "hosted-test-build.json": "ac94280f781e037b09c090cbe2c9c617187cf7b8bcce761433ed8fa7e4a45923",
     "hosted-test-export.raw.gz": "c6aaf72aa52863b5927d16a71b4358ac8eaabc424322c9090a7caebda9fca552",
     "hosted-test-export.txt": "eef98a525ff4d60bc02e8f0fbdf835c8412e35824e02fb505412155f3fb45a1e",
     "metro-format-red.raw.gz": "86b6a433a120d2a05d26129d9319b42ee4099c8ab5d544cc6778400174ce4624",
-    "metro-format-red.txt": "a5069f9fc02398a825ac332a8a76f0899eb7c865122b81bf0e31a6806f2c4aa0",
+    "metro-format-red.txt": "292dde05d24da460a2e79ff8f057a814c33188c6b046202f48943a6c0632b72f",
     "mobile-final.raw.gz": "b6a2b018c7ced23f104f87953cc7c8bc54557d96819a9a94c88cf1b6d168c7ff",
-    "mobile-final.txt": "6ef4f6784414f40ccd57176b35576ee39302ae4ffbcbd168035dc44f5be20e3d",
+    "mobile-final.txt": "9336982668ce7afdbf09f53a92b2fcca77b3651747cd5b796630af0e7beb8565",
     "npm-audit.json": "c5ed6b267cc61fa2ec196b090fccc5448d3d28d66ff8cfe73ce55a693d1d33e0",
     "upstream-packages.json": "ee297082eac3df74edf9b77da8d0b3691981b11339347407801e2e1d4c0275bd",
     "web-build.json": "6813f6240c4c675309c535b7e96f1fbaf276b2628fe22026e66d80f42db51d07",

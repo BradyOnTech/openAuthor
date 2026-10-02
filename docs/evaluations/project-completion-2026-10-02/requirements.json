@@ -15,7 +15,10 @@
         "Read-only critique cannot be applied as a prose mutation",
         "Unique exact source quotation can recover inaccurate provider offsets, with disclosed correction and unchanged raw feedback",
         "Fresh Writing Voice analysis aligns captured exemplar/source versions so approved learned guidance reaches revision context",
-        "Malformed supplied Writing Voice source-version maps are rejected before saving; legacy malformed metadata stays unverified"
+        "Malformed supplied Writing Voice source-version maps are rejected before saving; legacy malformed metadata stays unverified",
+        "Optional authored fact/knowledge/uncertainty/protected-text/end-beat constraints retained exactly with source-bound fingerprints and immutable preview receipts across refinement/staging",
+        "Consistency self-review requires exact original-source and candidate excerpts; unsupported candidate-only consistency praise withheld",
+        "Retained preservation drafts and profile/refinement recovery remain book/Storyline/version scoped during late completions"
       ],
       "verification": [
         "tests/test_editorial_review.py",
@@ -29,11 +32,15 @@
         "docs/evaluations/connected-voice-2026-10-02/verification.json",
         "docs/evaluations/connected-voice-2026-10-02/review.md",
         "tests/test_style_profile_source_metadata.py",
-        "docs/evaluations/voice-source-metadata-2026-10-02/verification.json"
+        "docs/evaluations/voice-source-metadata-2026-10-02/verification.json",
+        "tests/test_voice_preservation.py",
+        "desktop/src/components/editor/VoicePreservation.test.tsx",
+        "docs/evaluations/voice-preservation-2026-10-02/results.json",
+        "docs/evaluations/voice-preservation-2026-10-02/desktop-verification.json"
       ],
       "remaining": [
         "Author assessment of connected chapter critique, including omissions, false alarms and kept/rejected edits",
-        "Complete refinement and author assessment of fresh connected Writing Voice revisions; the first two live alternatives introduce a departure ambiguity absent from the source"
+        "Approved connected refinement after preservation-input repair and author assessment; existing live alternatives remain unchanged and require revision. Replay verifies mechanics, not improved live prose."
       ],
       "status": "in_progress"
     },
@@ -50,7 +57,8 @@
         "Typed Memory values validate before new writes while unchanged legacy values remain readable and retained",
         "Explicit scanning limits describe uncased names and person/place review",
         "Optional reviewed AI Memory scan interprets uncased names and entry types from selected exact prose; unverifiable candidates are withheld and unresolved type ambiguity requires explicit author confirmation",
-        "Direct accepted-fact correction drafts recover by book, Storyline and fact while preserving the loaded version and newer edits during delayed saves"
+        "Direct accepted-fact correction drafts recover by book, Storyline and fact while preserving the loaded version and newer edits during delayed saves",
+        "Local fact proposals withhold recognized dialogue, speculation, conditional/question contexts and reported prefix/suffix claims while preserving exact Unicode evidence offsets and accepted-name mentions"
       ],
       "verification": [
         "tests/test_memory_review.py",
@@ -67,11 +75,15 @@
         "desktop/e2e/canon-correction-recovery.spec.ts",
         "docs/evaluations/memory-semantic-scan-2026-10-02/core-verification.json",
         "docs/evaluations/canon-correction-recovery-2026-10-02/verification.json",
-        "docs/evaluations/project-completion-2026-10-02/native-gui-memory-preview.json"
+        "docs/evaluations/project-completion-2026-10-02/native-gui-memory-preview.json",
+        "tests/test_memory_assertions.py",
+        "docs/evaluations/memory-assertions-2026-10-02/verification.json",
+        "docs/evaluations/memory-assertions-2026-10-02/results.json"
       ],
       "remaining": [
         "Observe author review time, omissions and unwanted suggestions on fresh original prose",
-        "Validate optional semantic extraction on fresh original prose and measure uncased-name omissions and ambiguous entry classifications; the automatic local capitalization heuristic still retains its disclosed limitations"
+        "Validate optional semantic extraction on fresh original prose and measure uncased-name omissions and ambiguous entry classifications; the automatic local capitalization heuristic still retains its disclosed limitations",
+        "Validate assertion filters on fresh original prose; the English marker grammar conservatively withholds some affirmative indirect claims and does not understand arbitrary attribution or all languages."
       ],
       "status": "in_progress"
     },
@@ -85,7 +97,8 @@
         "Arrow/Home/End continuity navigation",
         "Exact-text word comparison with additions/removals",
         "WebKit first-focus caret restored after native focus handling; pointer choice and latest caret preserved",
-        "Stale chat reconciles completed/indeterminate delivery before fresh context review; the old request ID closes durably and one-time grants reset"
+        "Stale chat reconciles completed/indeterminate delivery before fresh context review; the old request ID closes durably and one-time grants reset",
+        "Roving document tabs with manual arrow/Home/End focus, Enter/Space activation, reachable close controls, named panels and neighboring focus after keyboard close"
       ],
       "verification": [
         "docs/evaluations/daily-review-2026-10-02/verification.json",
@@ -95,7 +108,11 @@
         "docs/evaluations/caret-focus-2026-10-02/verification.json",
         "docs/evaluations/project-completion-2026-10-02/native-gui.json",
         "tests/test_chat_delivery_recovery.py",
-        "desktop/e2e/chat-delivery-recovery.spec.ts"
+        "desktop/e2e/chat-delivery-recovery.spec.ts",
+        "desktop/src/components/editor/TabBar.keyboard.test.tsx",
+        "desktop/e2e/tab-keyboard.spec.ts",
+        "docs/evaluations/tab-keyboard-2026-10-02/results.json",
+        "docs/evaluations/project-completion-2026-10-02/native-gui-0cd77bd.json"
       ],
       "remaining": [
         "Physical/native accessibility walkthrough, including VoiceOver and long writing sessions"
@@ -186,20 +203,24 @@
         "Reviewed core files compared byte-for-byte to the arm64 packaged runtime",
         "Developer ID, hardened runtime, notarization, Gatekeeper and architecture gates wired into release verification",
         "Compatible fast-uri and brace-expansion security patches installed",
-        "Committed-source bundle provenance with clean tracked source scope and exact core/binary hashes"
+        "Committed-source bundle provenance with clean tracked source scope and exact core/binary hashes",
+        "Fail-closed current mobile export guard resolves config offline, refuses signing/EAS setup and inspects actual platform Metro maps before publishing/cache generation; audit failure remains visible"
       ],
       "verification": [
         "scripts/verify_macos_bundle.sh",
         ".github/workflows/package-macos.yml",
         ".github/workflows/release-macos.yml",
         "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
-        "docs/evaluations/project-completion-2026-10-02/forge-reachability.md"
+        "docs/evaluations/project-completion-2026-10-02/forge-reachability.md",
+        "mobile/test/buildSecurity.test.mjs",
+        "docs/evaluations/mobile-build-security-2026-10-02/results.json",
+        "docs/evaluations/project-completion-2026-10-02/native-bundle-0cd77bd.json"
       ],
       "remaining": [
         "Developer ID signing and notarization",
         "Clean Apple Silicon and Intel installation and upgrades",
         "Native accessibility verification",
-        "Resolve or verify mitigation of unpatched node-forge mobile build dependency advisory",
+        "Resolve unpatched node-forge advisory through a supported patch or independently reviewed replacement, then accept the actual configured signing/artifact path. Current unused-export containment does not clear the mandatory audit gate.",
         "Target deployment authorization, revocation, key rotation and deletion drills"
       ],
       "status": "in_progress"
@@ -210,42 +231,56 @@
     "product_subscription_runtime": "available after pinned runtime preparation",
     "product_subscription_authentication": "authenticated at current check; one synthetic connected-chapter subscription call completed",
     "physical_devices": "not available through current tooling; user resource question pending",
-    "release_secret_metadata": "Owner-profile inspection returned zero repository Actions secrets; the active GitHub account was retained."
+    "release_secret_metadata": "Owner-profile inspection returned zero repository Actions secrets; the active GitHub account was retained.",
+    "local_tooling_recheck": "Zero valid code-signing identities; CommandLineTools only; devicectl and adb unavailable. No new user resource reply observed."
   },
   "completion_rule": "Do not mark the project goal complete while any required acceptance outcome is unverified. Local fixtures, browser tests and native bridge checks cannot certify physical-device, human-judgment or clean-machine outcomes.",
   "date": "2026-10-02",
   "local_verification": {
     "python_3_13": {
-      "discovered": 548,
-      "passed": 547,
-      "optional_runtime_skipped": 1
+      "discovered": 577,
+      "passed": 577,
+      "optional_runtime_skipped": 0,
+      "evidence": "docs/evaluations/voice-preservation-2026-10-02/full-core-tests-final.txt"
     },
     "actual_packaged_python_3_11": {
-      "discovered": 548,
-      "passed": 548,
-      "skipped": 0
+      "discovered": 577,
+      "passed": 577,
+      "skipped": 0,
+      "version": "3.11.15",
+      "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "scope": "Actual bundled interpreter and installed byte-identical core before app rebuild; rebuilt app verifies the same core hash. Runs overlap.",
+      "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt"
     },
     "desktop": {
-      "tests": 465,
-      "files": 79,
-      "typecheck_build": "passed",
-      "native_caret_repair": "passed actual keyboard insertion after SIGKILL",
-      "webkit_focus_and_evidence_journeys": 2,
-      "chromium_focus_and_evidence_journeys": 2,
-      "full_browser_journeys": 19,
-      "full_browser_scope": "All 19 real-core browser workflows passed before the transport-only publication repair; the final 465-test suite includes that repair and 61 affected sync/provisioning checks.",
-      "native_memory_preview": "Read-only exact full source preview and reachable controls verified in rebuilt native app; no inference"
+      "tests": 564,
+      "files": 86,
+      "typecheck_build": "passed; production frontend and unsigned arm64 application rebuilt",
+      "current_real_core_journeys": {
+        "chromium": 6,
+        "webkit": 6,
+        "scope": "Caret, daily review, evidence workspace, Memory review, tab keyboard and Writing Voice; offline provider baseline."
+      },
+      "earlier_full_browser_journeys": 19,
+      "earlier_scope": "Previous checkpoint; not a current rerun of all workflows.",
+      "native_keyboard_and_retention": "passed; separately scoped native-gui-0cd77bd.json",
+      "native_caret_repair": "Earlier actual keyboard insertion after SIGKILL; original binary identity retained.",
+      "evidence": "docs/evaluations/tab-keyboard-2026-10-02/results.json"
     },
     "mobile": {
-      "tests": 126,
-      "files": 27,
-      "hosted_journeys": 1,
-      "preview_journeys": 4,
-      "platform_exports": [
+      "tests": 181,
+      "files": 30,
+      "typecheck": "passed",
+      "current_platform_exports": [
         "ios",
         "android",
         "web"
-      ]
+      ],
+      "current_web_and_hosted_test_builds": "passed guarded Metro exports; source maps removed before PWA cache",
+      "earlier_hosted_journeys": 1,
+      "earlier_preview_journeys": 4,
+      "scope": "Current build-containment tests/exports; prior browser journeys retain their original checkpoint. No physical phones.",
+      "evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json"
     },
     "packaged_sigkill": {
       "stages": 5,
@@ -260,7 +295,7 @@
         "underlying_advisories": 1,
         "advisory": "GHSA-86w9-cpqp-85rv",
         "patched_release": "none at verification",
-        "reachability": "Affected verifier reached by installed Expo signing helpers; current no-signing configuration exits offline; fresh web/iOS/Android JavaScript exports omit affected modules. Signed-runtime/future-config certification not observed."
+        "reachability": "Installed affected verifier remains vulnerable. Current wrapper resolves config offline, refuses signing/EAS fields, verifies absence in real web/iOS/Android Metro maps, and keeps audit gate failing. Direct CLI can bypass wrapper; supported patch/replacement and signed-path acceptance remain open."
       }
     },
     "connected_editorial": {
@@ -292,10 +327,10 @@
       "release_certified": false
     },
     "gateway": {
-      "tests": 33,
+      "tests": 66,
       "skipped": 0,
-      "typecheck_build": "passed",
-      "database": "Disposable PostgreSQL 17.11; shared quota and existing encrypted-sync RLS checks passed",
+      "typecheck_build": "passed at unchanged 5fe9d7c checkpoint; not rerun this desktop/core/export iteration",
+      "database": "Disposable PostgreSQL 17.11; exact SQL/RPC/concurrency boundaries retained in deletion packet",
       "deployed_supabase": "not_observed"
     },
     "mobile_publication": {
@@ -373,16 +408,39 @@
       "deployed_mutations": 0
     },
     "native_bundle_latest": {
-      "source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
-      "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
-      "application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+      "source_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+      "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
       "source_checkout_clean": true,
       "packaged_sigkill_stages": 5,
       "runtime_contract": "passed",
       "unsigned_arm64": true,
       "release_certified": false,
-      "gui_scope": "Read-only retained-tabs/Plan/prose check recorded separately; no cloud, Keychain, signing or accessibility certificate",
-      "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-5fe9d7c.json"
+      "gui_scope": "Actual tab focus/activation/close and recovered scene/Plan drafts on normal reopening; no cloud/Keychain/signing/VoiceOver certificate.",
+      "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-0cd77bd.json",
+      "bundle_evidence": "docs/evaluations/project-completion-2026-10-02/native-bundle-0cd77bd.json",
+      "build_advisories": [
+        "Existing Vite static/dynamic import and bundle-size advisories.",
+        "Optional rust-objcopy debug stripping failed for missing libLLVM; optimized build and bundle verification succeeded."
+      ]
+    },
+    "preservation_and_assertion_checkpoint": {
+      "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+      "memory_authored_cases": 31,
+      "memory_matched": 31,
+      "memory_extra": 0,
+      "memory_missed": 0,
+      "memory_name_corpus": "Historical 25/27 names, zero extras, two uncased misses, two classification errors remain.",
+      "voice_live_calls_this_iteration": 0,
+      "voice_replay": "Retained outputs unchanged; source-linked consistency self-review and exact authored preservation constraints mechanically verified. Live prose/author quality absent.",
+      "independent_review": {
+        "standards_open": 0,
+        "spec_initial": 1,
+        "spec_fixed": 1,
+        "spec_open": 0
+      },
+      "evidence_hash_audit": "All declared source/evidence/archive/display hashes verified; historical scale hash explicitly scoped.",
+      "documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
     }
   },
   "known_code_gaps": [
@@ -393,9 +451,30 @@
         "tests/test_memory_review.py"
       ],
       "scope": "The automatic capitalization-based local path retains two uncased-name misses and two place/character type errors in its authored cases. The optional reviewed semantic path is implemented and mechanically verified; provider accuracy on fresh original prose remains unmeasured."
+    },
+    {
+      "name": "Account-deletion orchestration",
+      "scope": "Reviewed resumable project deletion exists; a complete multi-project account lifecycle remains unimplemented.",
+      "evidence": [
+        "docs/evaluations/project-deletion-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Strict voice expiry through host outage and unknown allocation",
+      "scope": "Known calls have durable cleanup and renewable/hard deadlines. Independent call control through host outage and allocation before a durable call ID remain unresolved.",
+      "evidence": [
+        "docs/evaluations/voice-session-enforcement-2026-10-02/verification.json"
+      ]
+    },
+    {
+      "name": "No-snapshot key recovery",
+      "scope": "No current committed snapshot or independently verified key means recovery stays refused. Reviewed new rotation or a future project-bound commitment remains required.",
+      "evidence": [
+        "docs/evaluations/book-key-recovery-2026-10-02/results.json"
+      ]
     }
   ],
-  "implementation_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+  "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
   "closed_code_gaps": [
     {
       "name": "Typed Memory detail validation",
@@ -420,6 +499,27 @@
         "desktop/e2e/chat-delivery-recovery.spec.ts"
       ],
       "scope": "Old delivery is reconciled/closed before fresh review. Completed receipts recover without inference; unresolved completed turns remain blocked."
+    },
+    {
+      "name": "Revision constraint loss and unsupported candidate-only consistency self-review",
+      "scope": "Exact authored constraints now reach generation/refinement and guarded staging; unverifiable consistency assessments withheld. Semantic compliance and live improvement remain unproven.",
+      "evidence": [
+        "docs/evaluations/voice-preservation-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Recognized quoted, uncertain and reported local fact claims",
+      "scope": "31/31 authored assertion cases with exact offsets, zero extras/misses; broader grammar/language acceptance remains open.",
+      "evidence": [
+        "docs/evaluations/memory-assertions-2026-10-02/results.json"
+      ]
+    },
+    {
+      "name": "Native tab keyboard navigation and close focus",
+      "scope": "Unit, two-browser and actual unsigned Mac observations pass; VoiceOver and long sessions remain open.",
+      "evidence": [
+        "docs/evaluations/tab-keyboard-2026-10-02/results.json"
+      ]
     }
   ],
   "approval_pending": {
@@ -427,5 +527,182 @@
     "reason": "Automatic approval review rejected fourth call beyond three-call authorization.",
     "question_status": "sent; no human reply observed",
     "feedback": "docs/evaluations/connected-voice-2026-10-02/refinement-feedback.txt"
-  }
+  },
+  "local_checkpoint_history": [
+    {
+      "name": "before-preservation-and-keyboard-iteration",
+      "implementation_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+      "local_verification": {
+        "python_3_13": {
+          "discovered": 548,
+          "passed": 547,
+          "optional_runtime_skipped": 1
+        },
+        "actual_packaged_python_3_11": {
+          "discovered": 548,
+          "passed": 548,
+          "skipped": 0
+        },
+        "desktop": {
+          "tests": 465,
+          "files": 79,
+          "typecheck_build": "passed",
+          "native_caret_repair": "passed actual keyboard insertion after SIGKILL",
+          "webkit_focus_and_evidence_journeys": 2,
+          "chromium_focus_and_evidence_journeys": 2,
+          "full_browser_journeys": 19,
+          "full_browser_scope": "All 19 real-core browser workflows passed before the transport-only publication repair; the final 465-test suite includes that repair and 61 affected sync/provisioning checks.",
+          "native_memory_preview": "Read-only exact full source preview and reachable controls verified in rebuilt native app; no inference"
+        },
+        "mobile": {
+          "tests": 126,
+          "files": 27,
+          "hosted_journeys": 1,
+          "preview_journeys": 4,
+          "platform_exports": [
+            "ios",
+            "android",
+            "web"
+          ]
+        },
+        "packaged_sigkill": {
+          "stages": 5,
+          "result": "exact rollback before commit; committed writing preserved"
+        },
+        "dependency_audits": {
+          "contracts": 0,
+          "desktop": 0,
+          "gateway": 0,
+          "mobile": {
+            "high_entries": 5,
+            "underlying_advisories": 1,
+            "advisory": "GHSA-86w9-cpqp-85rv",
+            "patched_release": "none at verification",
+            "reachability": "Affected verifier reached by installed Expo signing helpers; current no-signing configuration exits offline; fresh web/iOS/Android JavaScript exports omit affected modules. Signed-runtime/future-config certification not observed."
+          }
+        },
+        "connected_editorial": {
+          "provider_calls": 1,
+          "provider": "openai-codex",
+          "resolved_model": "gpt-5.6-sol",
+          "input_tokens": 4620,
+          "output_tokens": 2411,
+          "source_unchanged": true,
+          "critique_apply_refused": true,
+          "finding_validation": "originally withheld; local reparsing of same retained response verifies one finding with disclosed unique-exact-quote offset correction",
+          "author_review": "not_observed"
+        },
+        "connected_voice": {
+          "provider_calls": 3,
+          "resolved_model": "gpt-5.6-sol",
+          "input_tokens": 11508,
+          "output_tokens": 2757,
+          "source_unchanged": true,
+          "literary_acceptance": "not_observed",
+          "initial_alternatives": "require_revision",
+          "refinement": "approval_pending"
+        },
+        "native_bundle": {
+          "source_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+          "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+          "application_sha256": "21fedbc26d0c97e7921f434240d736c1a056e0ca98fb9bfec9fe9b37341eb161",
+          "unsigned_arm64": true,
+          "release_certified": false
+        },
+        "gateway": {
+          "tests": 33,
+          "skipped": 0,
+          "typecheck_build": "passed",
+          "database": "Disposable PostgreSQL 17.11; shared quota and existing encrypted-sync RLS checks passed",
+          "deployed_supabase": "not_observed"
+        },
+        "mobile_publication": {
+          "affected_tests": 61,
+          "files": 4,
+          "live_provider_calls": 0,
+          "deployed_acceptance": "not_observed",
+          "guarantee": "No ciphertext deletion on failed/lost publication replies; exact metadata readback only; orphan lifecycle remains open"
+        },
+        "mobile_current_authority": {
+          "implementation_commit": "2a4f015",
+          "database": "Disposable PostgreSQL17.11 with synthetic real Auth-session rows and installed Storage RLS against minimal metadata schema",
+          "regressions": 26,
+          "red": "Previous migrations retained voice authority after Auth-session deletion",
+          "green": "Existing encrypted-sync suite plus current authority/key-state suite pass",
+          "deployed_supabase": "not_observed",
+          "physical_storage_deletion": "not_implemented_or_observed"
+        },
+        "companion_voice_checkpoint": {
+          "implementation_commit": "f32a435",
+          "gateway_tests": 50,
+          "gateway_skipped": 0,
+          "gateway_typecheck_build": "passed",
+          "mobile_tests": 167,
+          "mobile_test_files": 29,
+          "mobile_typecheck": "passed",
+          "mobile_hosted_browser_journeys": 1,
+          "gateway_independent_affected_controls": 21,
+          "live_provider_calls": 0,
+          "deployed_mutations": 0,
+          "strict_provider_outage_expiry": "not_verified_or_implemented",
+          "immutable_provider_configuration_and_spend": "not_verified_or_implemented",
+          "physical_phone_acceptance": "not_observed"
+        },
+        "trusted_devices_checkpoint": {
+          "implementation_commit": "58395c3",
+          "desktop_tests": 494,
+          "desktop_test_files": 81,
+          "focused_tests": 82,
+          "typecheck_build": "passed",
+          "synthetic_chromium_journeys": 1,
+          "viewport": [
+            1024,
+            768
+          ],
+          "independent_final_recovery_review": "clean",
+          "deployed_mutations": 0,
+          "live_provider_calls": 0,
+          "native_bundle": "Still earlier d5aea8a unsigned development checkpoint; no rebuilt current desktop GUI acceptance claimed"
+        },
+        "key_recovery_checkpoint": {
+          "implementation_commit": "e80ff81",
+          "desktop_tests": 547,
+          "desktop_test_files": 84,
+          "focused_tests": 140,
+          "typecheck_build": "passed",
+          "synthetic_browser_journeys": 3,
+          "database_assertions": 13,
+          "source_and_session_races": "passed",
+          "live_provider_calls": 0,
+          "deployed_acceptance": "not_observed"
+        },
+        "project_deletion_checkpoint": {
+          "implementation_commit": "5fe9d7c",
+          "gateway_tests": 66,
+          "skipped": 0,
+          "typecheck_build": "passed",
+          "database_assertions": 31,
+          "real_database_concurrency_controls": 8,
+          "worker_controls": 15,
+          "worker_sigkill_stages": 2,
+          "real_rpc_to_postgres_worker": "passed with synthetic Storage HTTP metadata effects",
+          "backend_verification": "separate operator attestation; target backing/queue not observed",
+          "account_deletion_orchestration": "not_implemented",
+          "deployed_mutations": 0
+        },
+        "native_bundle_latest": {
+          "source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+          "core_source_sha256": "cb1fc2ae00b41c6f783175ed21bc681364fc2c3417951f525bdd666ecdba400f",
+          "application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+          "source_checkout_clean": true,
+          "packaged_sigkill_stages": 5,
+          "runtime_contract": "passed",
+          "unsigned_arm64": true,
+          "release_certified": false,
+          "gui_scope": "Read-only retained-tabs/Plan/prose check recorded separately; no cloud, Keychain, signing or accessibility certificate",
+          "gui_evidence": "docs/evaluations/project-completion-2026-10-02/native-gui-5fe9d7c.json"
+        }
+      }
+    }
+  ]
 }

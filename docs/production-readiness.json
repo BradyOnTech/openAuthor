@@ -45,7 +45,7 @@
         "Rendered Memory and Plan reopening regressions",
         "Plan/Memory/Canon writes and scene creation are guarded across version changes; 11 focused concurrency tests and a rendered save-then-Storyline regression",
         "Native held-lock test verifies a delayed brief save completes in Primary before the requested Storyline opens",
-        "October 2 native GUI force-quit/restart preserved a synthetic unfinished Plan draft and document tabs. The final current-source arm64 native walkthrough also recovered active Plan, unsaved Synopsis and new-act drafts, and verified caret typing through physical Tab/Shift-Tab after forced termination.",
+        "Earlier native-gui.json checkpoint at 9feb892: forced-termination caret application SHA-256 486733f4b506fd2c13ed0241ef7e622e074481e95afffda100341ffde99fb48f; backup/restore binary has its separate recorded hash. The earlier walkthrough recovered active Plan, unsaved Synopsis/new-act drafts and physical Tab/Shift-Tab caret insertion after SIGKILL. Current 0cd77bd observations cover normal reopen and tab keyboard controls only.",
         "Typed Memory values reject new invalid JSON types/dates/references while unchanged legacy data and invalid editor drafts are retained. Direct Canon assertion corrections recover across navigation/restart with original-version and delayed-save safeguards. See docs/evaluations/memory-values-2026-10-02/ and canon-correction-recovery-2026-10-02/."
       ],
       "remaining": [
@@ -166,7 +166,7 @@
       "remaining": [
         "Broader live-provider editorial and voice quality measurement on synthetic content, plus author comparison of retained/rejected revisions; the one October 2 critique is not an acceptance benchmark.",
         "Broader extraction corpus and independent review; authored regression cases are not an independent benchmark",
-        "Complete signed/clean-machine native workflow and failure-recovery acceptance; local current-source forced-kill and caret checks passed.",
+        "Complete signed/clean-machine native workflow and failure-recovery acceptance; earlier native-gui.json forced-kill/caret observations retain their 9feb892 checkpoint and distinct binary identity. Current 0cd77bd GUI checks cover normal reopen and tabs.",
         "Evaluate broader multilingual relevance, uncased-name extraction and source-backed chapter memory; basic Unicode retrieval and unsupported metrics are repaired."
       ]
     },
@@ -192,7 +192,7 @@
       "evidence": [
         "Native product review observed flat scene navigation, a dominant expanded brief, and cramped Memory evidence cards.",
         "October 2 compact saved Plan guidance, full-width source comparison, keyboard continuity triage, durable Memory correction drafts, reachable selection actions and exact-text word comparisons are implemented and rendered-tested.",
-        "The combined browser run passed 13 journeys and exposed a stale Storyline-regeneration assertion; the corrected targeted rerun passed 2/2. Native GUI inspection preserved Plan/tab drafts after force quit and verified exact synthetic backup/restore; the final native caret repair subsequently passed physical Tab/Shift-Tab and typing after forced termination on the current-source arm64 bundle.",
+        "Historical browser checkpoint:13 journeys passed, then a corrected Storyline-regeneration targeted rerun passed2/2. Earlier native-gui.json at9feb892 records exact backup/restore and SIGKILL caret insertion under distinct binary hashes. Current0cd77bd checks cover normal reopen and manual tab controls; no repeated GUI kill/caret acceptance.",
         "Final desktop suite passed 368 tests across 74 files. Native force-quit recovery reopened both document tabs and active Plan, retained unsaved Synopsis/new-act drafts, and resumed typing at the restored caret through Tab and Shift-Tab. This is a targeted local unsigned walkthrough, not full accessibility acceptance.",
         "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks."
       ],
@@ -229,11 +229,12 @@
         "Durable manuscript transactions are tested with real SIGKILL subprocesses at journal, scene, HEAD, proposal and commit stages, protecting newer external writing and Storyline identity. Committed-journal resolution preserves successful edits; identity-changing full Revision restore fails before writes. Explicit reviewed recovery fingerprints refuse third-writer races. See docs/manuscript-transactions.md.",
         "Native encrypted mobile migration and auth cleanup now handle refresh/migration races, vanished legacy files, pending SDK credential writes and cross-tab commit fences. Native-adapter tests use real SQLite/WebCrypto through ports; physical iOS/Android acceptance remains unobserved.",
         "Dependency patches are compatible fast-uri 3.1.8 and brace-expansion 5.0.12. Current contracts/desktop/gateway audits report 0 vulnerabilities; mobile reports 5 high dependency entries from one unpatched node-forge advisory. Subsequent retained Forge analysis establishes affected-verifier reachability in installed Expo signing helpers. Current no-signing configuration exits offline and fresh web/iOS/Android exports omit affected modules; signed-runtime/future-config certification remains unobserved. See docs/evaluations/project-completion-2026-10-02/dependencies.json.",
-        "Earlier October 2 arm64 provenance, embedded runtimes and real packaged-engine forced-kill recovery were recorded before the final caret rebuild. Native GUI synthetic backup/restore preserved exact prose and Plan/tab force-quit restart passed; subsequent final current-source caret evidence is recorded below. No signed or clean-machine certificate was produced.",
-        "Final current-source packaged Python suite passed 494/494 with no skip; default Python 3.13 suite passed 493/494 with one optional contract skip. Final desktop passed 368 tests across 74 files. Exact packaged core SHA-256 is 21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92; bundled wire contract and five real SIGKILL recovery stages passed.",
+        "Historical October2 packaged-engine provenance and forced-kill recovery preceded the9feb892 caret checkpoint. Earlier native-gui.json retains GUI backup/restore and Plan/tab/caret force-quit observations with separate binary identities. No signed/clean-machine certificate.",
+        "Historical21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92 core checkpoint: packaged Python494/494, Python3.13 default493/494 with1optional skip; desktop368/74; runtime contract and five SIGKILL stages. These are not current0cd77bd suite counts; current results appear in latest_automated_checkpoint.",
         "Earlier unsigned arm64 GUI forced-termination walkthrough recovered both tabs, active Plan, unsaved Synopsis/new-act drafts, and resumed physical Tab/Shift-Tab typing at the restored caret. At that historical checkpoint the combined 15-journey rerun was pending; the subsequent 17-journey checkpoint passed.",
         "The final pre-followup combined browser checkpoint passed all 17 journeys. Original failures/repaired responses retain separate evidence; later Canon/Memory followups have dedicated real-core browser checks.",
-        "Latest local followup: default Python discovers 548 tests with 547 passing and one optional runtime skip; desktop passes 465 tests across 79 files plus typecheck/build. All 19 combined browser workflows pass; the subsequent transport-only publication repair passes 61 affected sync/provisioning checks. Shared gateway quota passes 33 tests against disposable PostgreSQL without skips. Separate evidence retains each boundary and source hashes."
+        "Earlier local followup, before0cd77bd: default Python discovers 548 tests with 547 passing and one optional runtime skip; desktop passes 465 tests across 79 files plus typecheck/build. All 19 combined browser workflows pass; the subsequent transport-only publication repair passes 61 affected sync/provisioning checks. Shared gateway quota passes 33 tests against disposable PostgreSQL without skips. Separate evidence retains each boundary and source hashes.",
+        "Current0cd77bd checkpoint:577/577 on both interpreters, desktop564/86, mobile181/30, six real-core workflows in each Chromium/WebKit; exact committed unsigned app, runtime contract and five packaged-engine SIGKILL stages. Actual native normal reopen/manual tab observations only. Author/physical/signed/deployed acceptance open. See current completion review and latest_automated_checkpoint."
       ],
       "remaining": [
         "Resolve the unpatched node-forge security finding with a supported patch or reviewed/tested mitigation plus vulnerable-path analysis; rerun audits and affected bundle checks.",
@@ -246,48 +247,55 @@
   ],
   "latest_automated_checkpoint": {
     "date": "2026-10-02",
-    "verification_stage": "Latest cloud lifecycle checkpoint: desktop547/84+3synthetic recovery browser journeys, gateway66/66 with0skips, recovery13/deletion31SQL assertions and8real concurrency controls. Unsigned5fe9d7c native bundle/runtime/five SIGKILL stages pass. Earlier core548/mobile167/real-core19browser results retain their original scopes; no new full combined browser/physical/signed/deployed acceptance.",
-    "python_tests_passed": 548,
-    "python_test_scope": "Actual packaged Python 3.11 suite: 548 passed, no skip. Default Python 3.13 discovery: 547 passed and one optional runtime skip. Interpreter runs overlap.",
-    "desktop_tests_passed": 547,
-    "desktop_test_files_passed": 84,
-    "mobile_tests_passed": 167,
-    "mobile_test_files_passed": 29,
+    "verification_stage": "Current preservation/Memory/tab/export iteration: 577 tests on both Python interpreters, desktop564/86, mobile181/30, six real-core journeys in each Chromium/WebKit. Exact committed arm64 app runtime/contract/five SIGKILL stages and separately scoped native keyboard/reopen observations pass. Author/physical/signed/deployed acceptance remains open.",
+    "python_tests_passed": 577,
+    "python_test_scope": "577/577 on Python3.13 and actual bundled Python3.11.15, no skips; interpreter runs overlap.",
+    "desktop_tests_passed": 564,
+    "desktop_test_files_passed": 86,
+    "mobile_tests_passed": 181,
+    "mobile_test_files_passed": 30,
     "contracts_tests_passed": 19,
     "gateway_tests_passed": 66,
     "rust_tests_passed": 10,
     "rust_tests_ignored": 1,
     "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
-    "frontend_build": "Production frontend and unsigned arm64 app rebuilt from committed source; unchanged all-platform Expo exports retain their earlier evidence.",
-    "macos_unsigned_bundle_and_bundled_runtime": "Exact committed core source, runtime contract and five real SIGKILL stages passed. Current native read-only Memory source preview and retained tabs/Plan drafts verified. Earlier caret/backup GUI evidence keeps its own binary identity. Signed/clean-machine acceptance remains open.",
-    "dependency_audit": "Contracts, desktop and gateway: zero findings. Mobile: five high entries from one unpatched node-forge GHSA-86w9-cpqp-85rv at the retained audit. Installed Expo signing helpers reach the affected verifier; the current no-signing offline path exits and fresh platform exports omit affected modules. Signed-runtime/future-configuration certification remains unobserved.",
-    "dependency_evidence": "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
+    "frontend_build": "Current desktop production/unsigned Mac build and guarded Expo web/iOS/Android exports plus web/hosted-PWA builds passed.",
+    "macos_unsigned_bundle_and_bundled_runtime": "0cd77bd exact source/core, pinned runtimes, wire contract and five SIGKILL stages passed; native manual tab controls and recovered scene/Plan drafts observed on normal reopen. Earlier caret/backup drills retain their original app identity. No release certificate.",
+    "dependency_audit": "Five high mobile entries from one unpatched node-forge advisory remain. Current offline config/signing guard and actual Metro source-map containment verified; no audit suppression, no supported patch or signed-artifact acceptance. Other packages retain earlier clean audits.",
+    "dependency_evidence": "docs/evaluations/mobile-build-security-2026-10-02/results.json",
     "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
-    "scale_gate": "Not rerun for this iteration; historical scale evidence remains in the September30 checkpoint and docs/product-review-followup-evidence.json.",
+    "scale_gate": "No new full-product scale gate. Memory sample before root quote/suffix refinements retains its explicit source hash; historical full-product scale evidence remains separate.",
     "live_provider_api_estimated_cost_usd": 0.0,
     "live_provider_usage_scope": "One authenticated subscription call on a fresh synthetic three-scene chapter; gen-74db96940b37; resolved gpt-5.6-sol;4620 input / 2411 output tokens; one attempt. API estimate is not proof of subscription billing or exact monetary cost.",
     "live_selection_evaluation": "Raw critique caught planted unexplained character knowledge and preserved explicit change/ambiguity. Original evidence finding was withheld for a one-character offset error; same-response exact-quote recovery locally verified. Assistant assessment only; author acceptance absent.",
     "completion_evidence": "docs/evaluations/project-completion-2026-10-02/requirements.json",
     "literary_assessment": "docs/evaluations/connected-editorial-2026-10-02/assessment.md",
     "production_readiness_claim": false,
-    "python_tests_discovered": 494,
+    "python_tests_discovered": 577,
     "python_tests_skipped": 0,
-    "packaged_python_tests_last_passed": 494,
-    "python313_tests_passed": 493,
-    "python313_tests_skipped": 1,
-    "packaged_core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92",
-    "combined_browser_gate": "15-journey Chrome rerun underway; preliminary 13-pass/1-failure Storyline-regeneration run and repaired 2/2 targeted rerun retained.",
+    "packaged_python_tests_last_passed": 577,
+    "python313_tests_passed": 577,
+    "python313_tests_skipped": 0,
+    "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+    "combined_browser_gate": "Six current real-core offline workflows passed separately in Chromium and WebKit; older19-workflow checkpoint retains its own source scope.",
     "native_gui_observations": [
-      "Exact synthetic scene backup/restore",
-      "Both document tabs and active Plan restored after forced termination",
-      "Unsaved Synopsis and new-act drafts retained",
-      "Physical Tab/Shift-Tab and typing resume at restored, subsequently updated caret"
+      "Normal reopening retained exact synthetic saved scene and both writing/Plan tabs.",
+      "Unfinished Synopsis and new-act drafts retained; no save/discard.",
+      "Manual tab focus, activation, named panel entry and neighboring focus after closing read-only workspace observed."
     ],
-    "desktop_test_scope": "374 tests across74 files; replacement-safe caret regressions included",
-    "desktop_full_browser_journeys": "15/15 passed after immediate replacement and caret regression repairs",
-    "gateway_test_scope": "Disposable PostgreSQL 17.11 shared-quota/RLS checks: 33 tests passed without a skip, plus typecheck/build. Target deployed Supabase remains unobserved.",
-    "combined_desktop_browser_journeys": 19,
-    "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442"
+    "desktop_test_scope": "564 tests across86 files, TypeScript and production build.",
+    "desktop_full_browser_journeys": "6/6 Chromium and6/6 WebKit current focused real-core workflows.",
+    "gateway_test_scope": "Unchanged 5fe9d7c checkpoint:66/66, no skips, disposable PostgreSQL17.11, TypeScript/build; not rerun in this iteration.",
+    "combined_desktop_browser_journeys": 6,
+    "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+    "native_application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
+    "browser_engine_runs": {
+      "chromium": 6,
+      "webkit": 6
+    },
+    "new_live_provider_calls": 0,
+    "independent_review_open_findings": 0,
+    "independent_documentation_review": "Consistency-only wording and historical checkpoint scope corrected; final re-review has zero open findings."
   },
   "external_constraints": {
     "live_provider_spend_usd_max_total": 5,
@@ -312,6 +320,51 @@
       "live_selection_evaluation": "Seven native calls through the configured subscription to date, no API-key billing used; cumulative reported 57181 input and 915 output tokens. Mixed quality, not a benchmark. Latest targeted critique: gen-80bf5dd501c8 in docs/product-review-followup-evidence.json. This revision-context slice added three local-only calls and no remote calls.",
       "subscription_runtime_audit": "Unreviewed automatic instruction/skill discovery removed or refused; isolated runtime context verified against a local wire endpoint and the packaged binary. Resolved model, cumulative usage and reported failed-turn usage retained. Native configured subscription still works. Model-selected scaffolding and additional configuration/fault variants remain to audit. See docs/subscription-runtime-evaluation.json.",
       "production_readiness_claim": false
+    },
+    {
+      "date": "2026-10-02",
+      "verification_stage": "Latest cloud lifecycle checkpoint: desktop547/84+3synthetic recovery browser journeys, gateway66/66 with0skips, recovery13/deletion31SQL assertions and8real concurrency controls. Unsigned5fe9d7c native bundle/runtime/five SIGKILL stages pass. Earlier core548/mobile167/real-core19browser results retain their original scopes; no new full combined browser/physical/signed/deployed acceptance.",
+      "python_tests_passed": 548,
+      "python_test_scope": "Actual packaged Python 3.11 suite: 548 passed, no skip. Default Python 3.13 discovery: 547 passed and one optional runtime skip. Interpreter runs overlap.",
+      "desktop_tests_passed": 547,
+      "desktop_test_files_passed": 84,
+      "mobile_tests_passed": 167,
+      "mobile_test_files_passed": 29,
+      "contracts_tests_passed": 19,
+      "gateway_tests_passed": 66,
+      "rust_tests_passed": 10,
+      "rust_tests_ignored": 1,
+      "rust_ignored_scope": "macOS Keychain test ignored in standard native run; no signed-app Keychain certificate.",
+      "frontend_build": "Production frontend and unsigned arm64 app rebuilt from committed source; unchanged all-platform Expo exports retain their earlier evidence.",
+      "macos_unsigned_bundle_and_bundled_runtime": "Exact committed core source, runtime contract and five real SIGKILL stages passed. Current native read-only Memory source preview and retained tabs/Plan drafts verified. Earlier caret/backup GUI evidence keeps its own binary identity. Signed/clean-machine acceptance remains open.",
+      "dependency_audit": "Contracts, desktop and gateway: zero findings. Mobile: five high entries from one unpatched node-forge GHSA-86w9-cpqp-85rv at the retained audit. Installed Expo signing helpers reach the affected verifier; the current no-signing offline path exits and fresh platform exports omit affected modules. Signed-runtime/future-configuration certification remains unobserved.",
+      "dependency_evidence": "docs/evaluations/project-completion-2026-10-02/forge-reachability.json",
+      "synthetic_apply_undo_backup_workflow": "real subprocess transaction recovery and exact apply/undo; native GUI backup/restore preserved exact synthetic scene. Signed GUI/power-loss limits remain open.",
+      "scale_gate": "Not rerun for this iteration; historical scale evidence remains in the September30 checkpoint and docs/product-review-followup-evidence.json.",
+      "live_provider_api_estimated_cost_usd": 0.0,
+      "live_provider_usage_scope": "One authenticated subscription call on a fresh synthetic three-scene chapter; gen-74db96940b37; resolved gpt-5.6-sol;4620 input / 2411 output tokens; one attempt. API estimate is not proof of subscription billing or exact monetary cost.",
+      "live_selection_evaluation": "Raw critique caught planted unexplained character knowledge and preserved explicit change/ambiguity. Original evidence finding was withheld for a one-character offset error; same-response exact-quote recovery locally verified. Assistant assessment only; author acceptance absent.",
+      "completion_evidence": "docs/evaluations/project-completion-2026-10-02/requirements.json",
+      "literary_assessment": "docs/evaluations/connected-editorial-2026-10-02/assessment.md",
+      "production_readiness_claim": false,
+      "python_tests_discovered": 494,
+      "python_tests_skipped": 0,
+      "packaged_python_tests_last_passed": 494,
+      "python313_tests_passed": 493,
+      "python313_tests_skipped": 1,
+      "packaged_core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92",
+      "combined_browser_gate": "15-journey Chrome rerun underway; preliminary 13-pass/1-failure Storyline-regeneration run and repaired 2/2 targeted rerun retained.",
+      "native_gui_observations": [
+        "Exact synthetic scene backup/restore",
+        "Both document tabs and active Plan restored after forced termination",
+        "Unsaved Synopsis and new-act drafts retained",
+        "Physical Tab/Shift-Tab and typing resume at restored, subsequently updated caret"
+      ],
+      "desktop_test_scope": "374 tests across74 files; replacement-safe caret regressions included",
+      "desktop_full_browser_journeys": "15/15 passed after immediate replacement and caret regression repairs",
+      "gateway_test_scope": "Disposable PostgreSQL 17.11 shared-quota/RLS checks: 33 tests passed without a skip, plus typecheck/build. Target deployed Supabase remains unobserved.",
+      "combined_desktop_browser_journeys": 19,
+      "implementation_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442"
     }
   ],
   "companion_checkpoint_2026_10_02": {
@@ -366,5 +419,22 @@
       "docs/evaluations/project-deletion-2026-10-02/results.json",
       "docs/evaluations/project-completion-2026-10-02/native-bundle-5fe9d7c.json"
     ]
+  },
+  "preservation_and_assertion_checkpoint": {
+    "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+    "memory_authored_cases": 31,
+    "memory_matched": 31,
+    "memory_extra": 0,
+    "memory_missed": 0,
+    "memory_name_corpus": "Historical 25/27 names, zero extras, two uncased misses, two classification errors remain.",
+    "voice_live_calls_this_iteration": 0,
+    "voice_replay": "Retained outputs unchanged; source-linked consistency self-review and exact authored preservation constraints mechanically verified. Live prose/author quality absent.",
+    "independent_review": {
+      "standards_open": 0,
+      "spec_initial": 1,
+      "spec_fixed": 1,
+      "spec_open": 0
+    },
+    "evidence_hash_audit": "All declared source/evidence/archive/display hashes verified; historical scale hash explicitly scoped."
   }
 }

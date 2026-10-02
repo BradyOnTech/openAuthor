@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-02",
+  "evidence_kind": "assistant_observed_actual_native_ui",
+  "source_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+  "application_sha256": "f1eec08b99af7bb1b2e78948fbc0aedfb13fb88c31065c201747d90598791ed4",
+  "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+  "app_path": "~/Developer/openAuthor/desktop/src-tauri/target/release/bundle/macos/openAuthor.app",
+  "project": "Disposable Native recovery acceptance book; no author manuscript",
+  "reopen": "Old process confirmed stopped through app inventory before rebuild; rebuilt application launched and recent disposable book reopened.",
+  "retained_tabs": [
+    "The Ferry Office",
+    "Plan",
+    "Story Memory"
+  ],
+  "saved_prose_observed": "Leah waited at the office. [setup verified] [restart verified] [focus verified] She kept the receipt folded.\n\nJonas moved the paperweight. Neither of them opened the ledger.\n",
+  "retained_unsaved_plan": {
+    "Synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "new_act_title": "A still unfinished act"
+  },
+  "keyboard_observations": [
+    "Focused Story Memory tab + Left moved focus to Plan while Story Memory stayed selected.",
+    "Return activated Plan; both original unsaved draft values remained visible.",
+    "Home focused The Ferry Office while Plan stayed selected; Return activated the scene.",
+    "Tab focused Close The Ferry Office; next Tab focused its named active panel.",
+    "Shift-Tab twice returned to the scene tab; End focused Story Memory while scene stayed selected.",
+    "Tab reached Close Story Memory; Return closed that read-only workspace and focused neighboring Plan without changing the selected scene.",
+    "Space activated Plan; both draft values remained unchanged."
+  ],
+  "final_tabs": [
+    "The Ferry Office",
+    "Plan"
+  ],
+  "final_active_tab": "Plan",
+  "screenshot_inspection": "Native Plan screenshot inspected: named tabs, recovered-draft notice, exact Synopsis and new-act title readable.",
+  "manuscript_or_plan_saved": false,
+  "memory_decisions": 0,
+  "provider_calls": 0,
+  "voiceover_enabled": false,
+  "scope_limits": [
+    "Normal reopening, not a new native process-kill drill.",
+    "No text insertion or new caret certification; earlier SIGKILL/typing observations retain their own binary identity.",
+    "No signed Keychain, clean-machine, upgrade, long-session, physical-phone or full accessibility acceptance."
+  ],
+  "release_certified": false
+}
