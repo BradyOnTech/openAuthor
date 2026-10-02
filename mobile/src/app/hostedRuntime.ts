@@ -11,11 +11,13 @@ import { gatewayRealtimeDependencies } from "../adapters/gatewayRealtime";
 import { gatewayVoicePolicy } from "../adapters/gatewaySession";
 import { SodiumDeviceCrypto } from "../adapters/sodiumDeviceCrypto";
 import { decryptHostedSnapshotManifest } from "../adapters/snapshotManifest";
+import { verifyProjectKeyVerifier } from "../adapters/projectKeyVerifier";
 import {
   SupabaseAuth,
   SupabaseDeviceEnrollmentTransport,
   SupabaseOutboxTransport,
   SupabaseProjects,
+  SupabaseProjectKeyVerifier,
   SupabaseSnapshotSyncTransport,
 } from "../adapters/supabaseAdapters";
 import { asMobileSupabaseClient, clearMobileAuthSession, createMobileSupabaseClient } from "../adapters/supabaseClient";
@@ -47,7 +49,7 @@ async function disconnected(): Promise<boolean> {
   return network.isConnected === false || network.isInternetReachable === false;
 }
 
-type VoiceAttempt = { abort: AbortController; controller?: MobileVoiceController; cleanup(): void };
+type VoiceAttempt = { abort: AbortController; controller?: MobileVoiceController; closeAccess?(): void; cleanup(): void };
 
 export class HostedRuntime implements AppRuntime {
   readonly mode = "hosted" as const;
@@ -58,6 +60,10 @@ export class HostedRuntime implements AppRuntime {
   #modeAttempt = 0;
   #modeWrite: Promise<void> = Promise.resolve();
   #voice: VoiceAttempt | null = null;
+  #identityUnsubscribe: (() => void) | null = null;
+  #onlineContext: { client: ReturnType<typeof createMobileSupabaseClient>; userId: string; deviceId: string; keyId: string; sessionId: string } | null = null;
+  #viewClosed = false;
+  readonly #accessListeners = new Set<() => void>();
   readonly #projectTitles = new Map<string, string>();
   readonly #devices = new ExpoDeviceStore();
   readonly #secrets = new ExpoSecretStore();
@@ -100,6 +106,43 @@ export class HostedRuntime implements AppRuntime {
     current?.abort.abort(new Error("Voice session was stopped because its access or context changed."));
     current?.controller?.stop();
     current?.cleanup();
+  }
+
+  #closeLocalView(): void {
+    if (this.#viewClosed) return;
+    this.#viewClosed = true;
+    this.#accessEpoch++;
+    this.#modeAttempt++;
+    try { this.#voice?.closeAccess?.(); } catch { /* The local view still closes if an event consumer fails. */ }
+    this.#stopVoice();
+    this.#identityUnsubscribe?.();
+    this.#identityUnsubscribe = null;
+    this.#onlineContext = null;
+    const client = this.#clientInstance;
+    this.#clientInstance = null;
+    const lock = this.#authCleanup.then(() => this.#local.lock());
+    this.#authCleanup = lock.catch(() => {});
+    void client?.auth.dispose().catch(() => {});
+    for (const listener of this.#accessListeners) listener();
+  }
+
+  async #watchOnlineIdentity(session: AppSession, device: EnrolledDevice): Promise<void> {
+    const client = this.#client;
+    const identity = await new SupabaseAuth(asMobileSupabaseClient(client)).recoveryIdentity(device.deviceId);
+    if (identity.userId !== session.userId || this.#clientInstance !== client) {
+      throw new Error("The online account identity changed. Sign in again.");
+    }
+    const previous = this.#onlineContext;
+    if (previous && (previous.client !== client || previous.userId !== identity.userId || previous.deviceId !== device.deviceId
+      || previous.keyId !== device.keyId || previous.sessionId !== identity.sessionId)) {
+      this.#closeLocalView();
+      throw new Error("The online sign-in session changed. Sign in again.");
+    }
+    if (previous) return;
+    this.#viewClosed = false;
+    this.#onlineContext = { client, ...identity, deviceId: device.deviceId, keyId: device.keyId };
+    this.#identityUnsubscribe = new SupabaseAuth(asMobileSupabaseClient(client)).observeRecoveryIdentity(
+      { ...identity, deviceId: device.deviceId }, () => this.#closeLocalView());
   }
 
   async #setLibraryMode(attempt: number, downloadedOnly: boolean): Promise<void> {
@@ -167,6 +210,7 @@ export class HostedRuntime implements AppRuntime {
     const session = await this.#session();
     if (!session) return null;
     const device = await this.#ensureDevice(session.userId);
+    await this.#watchOnlineIdentity(session, device);
     await this.#local.authorize(session, device);
     if (attempt !== this.#modeAttempt) throw new Error("Session restore was superseded.");
     await this.#setLibraryMode(attempt, false);
@@ -176,6 +220,11 @@ export class HostedRuntime implements AppRuntime {
   async openDownloadedLibrary(): Promise<AppSession> {
     this.#accessEpoch++;
     this.#stopVoice();
+    // Downloaded access is governed by the persistent local lock, not by an
+    // expired or unavailable online Auth session. Reconnection attaches a new
+    // verified online identity watch before any hosted operation.
+    this.#identityUnsubscribe?.(); this.#identityUnsubscribe = null; this.#onlineContext = null;
+    await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     const identity = await this.#local.require();
     if (attempt !== this.#modeAttempt) throw new Error("Local access request was superseded.");
@@ -184,47 +233,52 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async #onlineIdentity(): Promise<{ session: AppSession; device: EnrolledDevice }> {
+    const epoch = this.#accessEpoch;
     if (this.#downloadedOnly) throw new Error("Reconnect to the online library to use sync, voice or key recovery. Downloaded reading and captures remain available.");
     if (await disconnected()) throw new Error("An internet connection and a verified sign-in are required for sync, voice and key recovery. Downloaded reading and captures remain available.");
     const session = await this.#session();
     if (!session) throw new Error("Sign in again to use the online library, sync or voice. Saved captures have not been deleted.");
     const device = await this.#ensureDevice(session.userId);
+    await this.#watchOnlineIdentity(session, device);
     await this.#local.authorize(session, device);
+    if (epoch !== this.#accessEpoch) throw new Error("Online access changed. Sign in again.");
     return { session, device };
   }
 
   async signIn(email: string, password: string): Promise<AppSession> {
     this.#accessEpoch++;
+    const epoch = this.#accessEpoch;
     this.#stopVoice();
+    this.#identityUnsubscribe?.(); this.#identityUnsubscribe = null; this.#onlineContext = null;
     await this.#authCleanup;
     const attempt = ++this.#modeAttempt;
     if (await disconnected()) throw new Error("Sign-in needs an internet connection. Use downloaded books if this device was previously signed in.");
     const session = await this.#auth.signInWithPassword(email, password);
     const device = await this.#ensureDevice(session.userId);
+    await this.#watchOnlineIdentity(session, device);
     if (attempt !== this.#modeAttempt) throw new Error("Sign-in was superseded.");
-    await this.#local.authorize(session, device, true);
+    await this.#local.authorize(session, device, true, () => {
+      if (epoch !== this.#accessEpoch || attempt !== this.#modeAttempt) throw new Error("Sign-in identity changed. Sign in again.");
+    });
     await this.#setLibraryMode(attempt, false);
     return session;
   }
 
   subscribeLocalAccessLock(listener: () => void): () => void {
+    this.#accessListeners.add(listener);
     const check = () => { void this.#local.require().catch(() => {
-      this.#accessEpoch++;
-      this.#stopVoice();
-      const client = this.#clientInstance;
-      this.#clientInstance = null;
-      void client?.auth.dispose().catch(() => {});
-      listener();
+      this.#closeLocalView();
     }); };
     const unsubscribe = this.#secrets.subscribeLocalAccessChanges(check);
     const foreground = AppState.addEventListener("change", (state) => { if (state === "active") check(); });
-    return () => { unsubscribe(); foreground.remove(); };
+    return () => { this.#accessListeners.delete(listener); unsubscribe(); foreground.remove(); };
   }
 
   async signOut(): Promise<void> {
     this.#modeAttempt++;
     this.#accessEpoch++;
     this.#stopVoice();
+    this.#identityUnsubscribe?.(); this.#identityUnsubscribe = null; this.#onlineContext = null;
     const localOnly = this.#downloadedOnly;
     const client = this.#clientInstance;
     this.#clientInstance = null;
@@ -267,7 +321,8 @@ export class HostedRuntime implements AppRuntime {
         id: project.id,
         title: project.name,
         role: "member" as const,
-        lastPublishedAt: project.updatedAt,
+        // Project metadata updates are not snapshot publication receipts.
+        lastPublishedAt: null,
       }));
     for (const project of projects) this.#projectTitles.set(project.id, project.title);
     return projects;
@@ -432,6 +487,7 @@ export class HostedRuntime implements AppRuntime {
       cancel();
       if (!input.signal?.aborted) input.onEvent({ type: "session.error", code: "disconnected", providerEventId: "local-policy", param: "", message });
     };
+    attempt.closeAccess = () => reportClosed("Voice identity changed. Audio is closed; sign in again before starting a new session.");
     const current = () => {
       input.signal?.throwIfAborted(); abort.signal.throwIfAborted();
       if (epoch !== this.#accessEpoch || this.#voice !== attempt || this.#downloadedOnly
@@ -514,26 +570,89 @@ export class HostedRuntime implements AppRuntime {
   }
 
   async importRecoveryKey(projectId: string, keyVersion: number, recoveryKey: string): Promise<void> {
-    const { device } = await this.#onlineIdentity();
-    try { await this.#enrollmentTransport.enrollProject(projectId, device.deviceId); }
-    catch { /* Existing viewer enrollment is checked by the manifest RPC. */ }
-    await verifyAndImportRecoveryKey({
-      projectId, keyVersion, recoveryKey,
-      verify: async (key) => {
-        const transport = new SupabaseSnapshotSyncTransport(this.#mobileClient, {
-          deviceId: device.deviceId,
-          decodeManifest: async (manifest) => {
-            if (manifest.keyVersion !== keyVersion) {
-              throw new Error(`This book currently uses key version ${manifest.keyVersion}. Use that version's recovery key from desktop.`);
-            }
-            try { return await decryptHostedSnapshotManifest(manifest, key); }
-            catch { throw new Error("This recovery key cannot unlock the selected book. Check the key and version on desktop."); }
-          },
-        });
-        return transport.latestManifest(projectId, device.deviceId);
-      },
-      persist: (key) => this.#enrollment.importProjectKey(projectId, keyVersion, key),
-    });
+    const epoch = this.#accessEpoch;
+    const deployment = this.config.supabaseUrl;
+    const publishableKey = this.config.supabasePublishableKey;
+    const { device, session } = await this.#onlineIdentity();
+    const client = this.#client;
+    const mobileClient = asMobileSupabaseClient(client);
+    let identityChanged = false;
+    const current = () => {
+      if (identityChanged || epoch !== this.#accessEpoch || this.#clientInstance !== client || this.#downloadedOnly
+        || this.config.supabaseUrl !== deployment || this.config.supabasePublishableKey !== publishableKey) {
+        throw new Error("Access changed during book key recovery. Reconnect and try again.");
+      }
+    };
+    current();
+    const auth = new SupabaseAuth(mobileClient);
+    const original = await auth.recoveryIdentity(device.deviceId);
+    current();
+    if (original.userId !== session.userId) throw new Error("The recovery sign-in identity changed. Sign in again.");
+    const unsubscribe = auth.observeRecoveryIdentity({ ...original, deviceId: device.deviceId }, () => { identityChanged = true; });
+    try {
+      const normalizedProjectId = projectId.toLowerCase();
+      const expectedKey = await this.#secrets.get(`openauthor.project.${normalizedProjectId}.key.${keyVersion}`);
+      current();
+      try { await this.#enrollmentTransport.enrollProject(projectId, device.deviceId); }
+      catch { /* Existing viewer enrollment is checked by the verifier/manifest RPC. */ }
+      current();
+      const verifierTransport = new SupabaseProjectKeyVerifier(mobileClient, device.deviceId);
+      const identity = async () => {
+        current();
+        const local = await this.#local.require(); current();
+        const confirmed = await auth.recoveryIdentity(device.deviceId); current();
+        const saved = await this.#enrollment.localDevice(session.userId); current();
+        if (confirmed.userId !== original.userId || confirmed.sessionId !== original.sessionId
+          || saved.deviceId !== device.deviceId || saved.keyId !== device.keyId || saved.publicKey !== device.publicKey
+          || local.userId !== original.userId || local.deviceId !== device.deviceId || local.keyId !== device.keyId) {
+          throw new Error("The recovery account, device or sign-in session changed. Sign in again.");
+        }
+        return local;
+      };
+      let reviewed: string | null = null;
+      await verifyAndImportRecoveryKey({
+        projectId: normalizedProjectId, keyVersion, recoveryKey,
+        verify: async (key) => {
+          const verifier = await verifierTransport.get(normalizedProjectId, keyVersion); current();
+          await identity();
+          if (verifier) {
+            const proof = await verifyProjectKeyVerifier(verifier, key, { projectId: normalizedProjectId, keyVersion }); current();
+            reviewed = JSON.stringify([verifier.nonce_hex, verifier.ciphertext_hex, verifier.ciphertext_sha256]);
+            return proof;
+          }
+          const transport = new SupabaseSnapshotSyncTransport(mobileClient, {
+            deviceId: device.deviceId,
+            decodeManifest: async (manifest) => {
+              if (manifest.keyVersion !== keyVersion) {
+                throw new Error(`This book currently uses key version ${manifest.keyVersion}. Use that version's recovery key from desktop.`);
+              }
+              try { return await decryptHostedSnapshotManifest(manifest, key); }
+              catch { throw new Error("This recovery key cannot unlock the selected book. Check the key and version on desktop."); }
+            },
+          });
+          const manifest = await transport.latestManifest(normalizedProjectId, device.deviceId); current();
+          return manifest;
+        },
+        persist: async (key) => {
+          await identity();
+          // This RPC also checks current live Auth, enrollment and active key
+          // version for legacy keys, for which the value remains null.
+          const latest = await verifierTransport.get(normalizedProjectId, keyVersion); current();
+          // Exact schema, algorithm, selected project/version and AAD version
+          // were validated on each read. Canonicalize the remaining bytes so
+          // JSON object property order cannot invalidate an identical receipt.
+          if ((latest ? JSON.stringify([latest.nonce_hex, latest.ciphertext_hex, latest.ciphertext_sha256]) : null) !== reviewed) {
+            throw new Error("The book key verifier changed during recovery. Review the current key on desktop.");
+          }
+          const local = await identity();
+          await this.#secrets.setProjectKeyIfCurrent({
+            projectId: normalizedProjectId, keyVersion, projectKey: key, expectedKey,
+            identity: local, device, current,
+          });
+          current();
+        },
+      });
+    } finally { unsubscribe(); }
   }
 
   async revokeDeviceAndDeleteLocalData(): Promise<void> {

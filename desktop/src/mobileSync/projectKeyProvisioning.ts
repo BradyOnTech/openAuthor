@@ -29,6 +29,7 @@ export type MobileProjectKeyProvisioningTransport = {
     expectedPreviousVersion: number;
     reasonCode: string;
     envelopes: MobileProjectKeyEnvelope[];
+    verifier: ProjectKeyVerifier;
   }): Promise<{ keyVersion: number }>;
 };
 
@@ -236,6 +237,7 @@ export function createMobileProjectKeyProvisioningService(options: {
         projectId: input.projectId,
         expectedPreviousVersion,
         reasonCode: input.reasonCode,
+        verifier: await createProjectKeyVerifier(projectKey, input.projectId, expectedPreviousVersion + 1, cryptoProvider),
         envelopes: sealedRecipients.map((sealed) => ({
           envelopeId: cryptoProvider.randomUUID(),
           recipientDeviceId: sealed.recipient.deviceId,
@@ -244,7 +246,7 @@ export function createMobileProjectKeyProvisioningService(options: {
           sealedProjectKey: bytesToBase64Url(sealed.sealedProjectKey),
         })),
       });
-      if (!Number.isSafeInteger(rotation.keyVersion) || rotation.keyVersion < 1) {
+      if (rotation.keyVersion !== expectedPreviousVersion + 1) {
         throw new Error("Hosted project key version is invalid.");
       }
 
@@ -257,3 +259,5 @@ export function createMobileProjectKeyProvisioningService(options: {
     },
   };
 }
+import type { ProjectKeyVerifier } from "@openauthor/contracts";
+import { createProjectKeyVerifier } from "./projectKeyVerifier";

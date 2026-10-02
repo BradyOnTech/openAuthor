@@ -105,7 +105,9 @@ export class SessionLeases {
         lease.hardDeadline = Date.parse(lease.controlState.hard_expires_at);
         lease.deadline = Date.parse(lease.controlState.lease_expires_at);
       }
-      const creation = this.#options.upstream.createCall({ ...call, onCallCreated: async callId => {
+      // Independent control persists this UUID before provider submission.
+      // It remains available for support correlation if no headers arrive.
+      const creation = this.#options.upstream.createCall({ ...call, requestId: lease.id, onCallCreated: async callId => {
         if (!validCallId(callId) || lease.callId) throw new LeaseProblem(503);
         lease.callId = callId;
         this.#options.journal.record(lease.id, callId);

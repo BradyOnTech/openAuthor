@@ -213,7 +213,7 @@ function ProjectMobileInbox() {
         />}
 
         <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
-          Recovery verifies the current key against this desktop's envelope or this book's authenticated published snapshot. If the envelope is missing, a verified snapshot can restore access for this desktop only. Unavailable or damaged snapshots require reconnecting or reviewing a new key rotation. Recovery never publishes automatically.
+          Recovery checks the current key against this desktop's envelope, the verification recorded when the key was created, or an authenticated published snapshot for an older key. New keys can recover before the first snapshot. An older key without independent verification requires reconnecting or reviewing a new rotation for future access; rotation cannot recover unavailable old encrypted captures. Recovery never publishes automatically.
         </p>
         <div style={syncControlsStyle}>
           <label style={syncLabelStyle}>

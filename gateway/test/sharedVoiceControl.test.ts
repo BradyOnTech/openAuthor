@@ -99,6 +99,61 @@ test('lost attach reply is reconciled only against the exact immutable current r
   await assert.rejects(control.attach(original,'rtc_other'));
 });
 
+test('startup attaches a durably known ID only after forcing allocating or unknown intent closed',async()=>{
+  for(const phase of ['allocating','unknown'] as const){
+    let row:VoiceControlRecord={...record(),phase,call_id:null};
+    const calls:string[]=[];
+    const control=new SupabaseGatewayVoiceControl({...options(),leaseMs:30000,maxDurationMs:60000,fetchImpl:async(input,init)=>{
+      const name=String(input).split('/').at(-1)!;calls.push(name);
+      const body=JSON.parse(String(init?.body));
+      assert.equal(body.p_lease_id,row.lease_id);assert.equal(body.p_binding,binding);
+      if(name==='mobile_voice_close')row={...row,phase:row.call_id?'closing':'unknown',revision:row.revision+1};
+      if(name==='mobile_voice_attach'){
+        assert.equal(row.phase,'unknown','A recovered call cannot enter registering or active.');
+        assert.equal(body.p_call_id,'rtc_journaled_before_attach');
+        row={...row,phase:'closing',call_id:body.p_call_id,revision:row.revision+1};
+      }
+      if(name==='mobile_voice_get'&&row.phase==='closing')row={...row,phase:'closed',revision:row.revision+1};
+      return Response.json(row);
+    }});
+    await control.recover(row.lease_id,'rtc_journaled_before_attach');
+    assert.deepEqual(calls,['mobile_voice_get','mobile_voice_close','mobile_voice_attach','mobile_voice_get']);
+  }
+});
+
+test('startup refuses missing, foreign, malformed or inconsistent journal attachment without mutation',async()=>{
+  const original={...record(),phase:'unknown' as const,call_id:null};
+  for(const value of [null,{...original,lease_id:randomUUID()},{...original,binding_sha256:'b'.repeat(64)},
+    {...original,call_id:'rtc_already_bound'},{...original,phase:'closing'},
+    {...original,phase:'closed',identity_redacted:true,user_id:null,tenant_id:null,project_id:null,device_id:null,session_id:null},
+    {...original,session_id:null}]){
+    const calls:string[]=[];
+    const control=new SupabaseGatewayVoiceControl({...options(),leaseMs:30000,maxDurationMs:60000,fetchImpl:async input=>{
+      calls.push(String(input).split('/').at(-1)!);return Response.json(value);
+    }});
+    await assert.rejects(control.recover(original.lease_id,'rtc_journaled_before_attach'));
+    assert.deepEqual(calls,['mobile_voice_get']);
+  }
+  let requested=0;
+  const control=new SupabaseGatewayVoiceControl({...options(),leaseMs:30000,maxDurationMs:60000,fetchImpl:async()=>{requested++;return Response.json(original);}});
+  for(const callId of ['', '../foreign','rtc_foreign?secret=1'])await assert.rejects(control.recover(original.lease_id,callId));
+  assert.equal(requested,0);
+});
+
+test('startup attachment preserves immutable scope and never substitutes an unconfirmed closure',async()=>{
+  const original={...record(),phase:'unknown' as const,call_id:null};
+  for(const change of [{session_id:randomUUID()},{user_id:randomUUID()},{hard_expires_at:new Date(Date.now()+120000).toISOString()},
+    {call_id:'rtc_different'},{phase:'active',controller_observed:true}]){
+    const calls:string[]=[];
+    const control=new SupabaseGatewayVoiceControl({...options(),leaseMs:30000,maxDurationMs:60000,registrationTimeoutMs:20,fetchImpl:async input=>{
+      const name=String(input).split('/').at(-1)!;calls.push(name);
+      return Response.json(name==='mobile_voice_attach'?{...original,phase:'closing',call_id:'rtc_journaled_before_attach',...change}:original);
+    }});
+    await assert.rejects(control.recover(original.lease_id,'rtc_journaled_before_attach'));
+    assert.equal(calls.includes('mobile_voice_attach'),true,'This exercises attestation after the exact-ID mutation.');
+  }
+});
+
 test('unobserved, expired or foreign current record cannot release an answer',async()=>{
   const row=record();
   for(const response of [row,{...row,phase:'active',controller_observed:true,lease_expires_at:new Date(Date.now()-1).toISOString()},

@@ -10,6 +10,7 @@ import mobileSnapshotEnvelopeSchema from "../schemas/mobile-snapshot-envelope.v1
 import mobileSnapshotManifestSchema from "../schemas/mobile-snapshot-manifest.v1.schema.json" with {type: "json"};
 import outboxEnvelopeSchema from "../schemas/outbox-envelope.v1.schema.json" with {type: "json"};
 import projectKeyEnvelopeSchema from "../schemas/project-key-envelope.v1.schema.json" with {type: "json"};
+import projectKeyVerifierSchema from "../schemas/project-key-verifier.v1.schema.json" with {type: "json"};
 import toolCallSchema from "../schemas/tool-call.v1.schema.json" with {type: "json"};
 import toolOutcomeSchema from "../schemas/tool-outcome.v1.schema.json" with {type: "json"};
 import voiceSessionSchema from "../schemas/voice-session.v1.schema.json" with {type: "json"};
@@ -31,6 +32,25 @@ import type {
 } from "./types.ts";
 
 export type * from "./types.ts";
+export const PROJECT_KEY_VERIFIER_PLAINTEXT = "openauthor.mobile.project-key-verifier.v1";
+export type ProjectKeyVerifier = {
+  schema: "openauthor.mobile.project-key-verifier";
+  schema_version: 1;
+  project_id: string;
+  key_version: number;
+  algorithm: "aes-256-gcm-v1";
+  aad_version: 1;
+  nonce_hex: string;
+  ciphertext_hex: string;
+  ciphertext_sha256: string;
+};
+export function projectKeyVerifierAdditionalData(projectId: string, keyVersion: number): Uint8Array {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)
+    || !Number.isSafeInteger(keyVersion) || keyVersion < 1 || keyVersion > 2147483647) {
+    throw new TypeError("Project key verifier identity is invalid.");
+  }
+  return new TextEncoder().encode([PROJECT_KEY_VERIFIER_PLAINTEXT, projectId.toLowerCase(), String(keyVersion)].join("\0"));
+}
 
 /** Maximum UTF-8 byte length of the base64 ciphertext object stored in Supabase Storage. */
 export const MOBILE_SNAPSHOT_OBJECT_MAX_BYTES = 64 * 1024 * 1024;
@@ -64,6 +84,7 @@ export const CONTRACT_SCHEMAS = Object.freeze({
   mobileSnapshotManifest: mobileSnapshotManifestSchema,
   outboxEnvelope: outboxEnvelopeSchema,
   projectKeyEnvelope: projectKeyEnvelopeSchema,
+  projectKeyVerifier: projectKeyVerifierSchema,
   toolCall: toolCallSchema,
   toolOutcome: toolOutcomeSchema,
   voiceSession: voiceSessionSchema,
@@ -96,6 +117,7 @@ for (const schema of [
   deviceEnrollmentSchema,
   outboxEnvelopeSchema,
   projectKeyEnvelopeSchema,
+  projectKeyVerifierSchema,
 ]) {
   ajv.addSchema(schema);
 }
@@ -110,6 +132,7 @@ const validators = {
   mobileSnapshotManifest: ajv.getSchema("https://openauthor.dev/contracts/mobile-snapshot-manifest/v1"),
   outboxEnvelope: ajv.getSchema("https://openauthor.dev/contracts/outbox-envelope/v1"),
   projectKeyEnvelope: ajv.getSchema("https://openauthor.dev/contracts/project-key-envelope/v1"),
+  projectKeyVerifier: ajv.getSchema("https://openauthor.dev/contracts/project-key-verifier/v1"),
   toolCall: ajv.getSchema("https://openauthor.dev/contracts/tool-call/v1"),
   toolOutcome: ajv.getSchema("https://openauthor.dev/contracts/tool-outcome/v1"),
   voiceSession: ajv.getSchema("https://openauthor.dev/contracts/voice-session/v1"),
@@ -291,6 +314,10 @@ function requireContextIdentity(
 
 export function parseContextPackReference(input: unknown): ContextPackReference {
   return parseWith("Context Pack Reference v1", validators.contextPackReference, input);
+}
+
+export function parseProjectKeyVerifier(input: unknown): ProjectKeyVerifier {
+  return parseWith("Project Key Recovery Verifier v1", validators.projectKeyVerifier, input);
 }
 
 export function parseContextPackProjection(input: unknown): ContextPackProjection {

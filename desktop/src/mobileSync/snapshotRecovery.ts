@@ -1,4 +1,4 @@
-import { parseEncryptedSnapshotBlobMetadata, parseMobileSnapshotManifest, MOBILE_SNAPSHOT_OBJECT_MAX_BYTES } from "@openauthor/contracts";
+import { parseEncryptedSnapshotBlobMetadata, parseMobileSnapshotManifest, MOBILE_SNAPSHOT_OBJECT_MAX_BYTES, type ProjectKeyVerifier } from "@openauthor/contracts";
 
 export type RecoverySnapshot = {
   snapshotId: string;
@@ -14,6 +14,7 @@ export type RecoverySnapshot = {
 };
 
 export type ProjectKeyRecoveryTransport = {
+  getProjectKeyVerifier(projectId: string, expectedKeyVersion: number): Promise<ProjectKeyVerifier | null>;
   getRecoverySnapshot(projectId: string, expectedKeyVersion: number): Promise<RecoverySnapshot | null>;
   downloadRecoverySnapshot(snapshot: RecoverySnapshot): Promise<string>;
   recoverProjectKeyEnvelope(input: { projectId: string; expectedKeyVersion: number; expectedDeviceKeyId: string; envelopeId: string; sealedProjectKey: string }): Promise<void>;

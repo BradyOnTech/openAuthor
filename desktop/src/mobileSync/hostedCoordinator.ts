@@ -13,6 +13,7 @@ import {
 } from "./projectKeyProvisioning";
 import { SupabaseMobileSyncTransport } from "./supabaseTransport";
 import { validateRecoverySnapshot, verifyRecoverySnapshot, type ProjectKeyRecoveryTransport } from "./snapshotRecovery";
+import { verifyProjectKeyVerifier } from "./projectKeyVerifier";
 
 export type HostedMobileSyncState = {
   status: "setup_required" | "locked" | "ready";
@@ -348,13 +349,18 @@ export function createHostedMobileSyncCoordinator(
           if (!recovery || !deviceKey || !originalAuthority || !identity) {
             throw new Error("A verified current book key is unavailable. Reconnect this desktop before using authenticated snapshot recovery, or explicitly review a new key rotation.");
           }
-          const located = await recovery.getRecoverySnapshot(projectId, version);
-          if (!located) throw new Error("No committed snapshot exists for the current book key. Recovery cannot verify this book; reconnect for an envelope or review a new key rotation.");
-          const snapshot = { ...located, manifestNonce: new Uint8Array(located.manifestNonce), manifestCiphertext: new Uint8Array(located.manifestCiphertext) };
-          validateRecoverySnapshot(snapshot, projectId, version);
-          const ciphertext = await recovery.downloadRecoverySnapshot(snapshot);
-          validateRecoverySnapshot(snapshot, projectId, version);
-          await verifyRecoverySnapshot(projectKey, snapshot, ciphertext);
+          const verifier = await recovery.getProjectKeyVerifier(projectId, version);
+          if (verifier !== null) {
+            await verifyProjectKeyVerifier(projectKey, verifier, projectId, version);
+          } else {
+            const located = await recovery.getRecoverySnapshot(projectId, version);
+            if (!located) throw new Error("No committed snapshot or immutable key verifier exists for this legacy book key. Reconnect for an envelope or explicitly review a new rotation for future access; an unavailable old key cannot recover historical ciphertext.");
+            const snapshot = { ...located, manifestNonce: new Uint8Array(located.manifestNonce), manifestCiphertext: new Uint8Array(located.manifestCiphertext) };
+            validateRecoverySnapshot(snapshot, projectId, version);
+            const ciphertext = await recovery.downloadRecoverySnapshot(snapshot);
+            validateRecoverySnapshot(snapshot, projectId, version);
+            await verifyRecoverySnapshot(projectKey, snapshot, ciphertext);
+          }
           await recheckAuthority();
           const sealedProjectKey = await sealMobileRecoveryKey(recoveryKey, deviceKey.publicKey);
           try {

@@ -4,6 +4,7 @@ import {
   libsodiumSealedBox,
   type MobileProjectKeyProvisioningTransport,
 } from "./projectKeyProvisioning";
+import { verifyProjectKeyVerifier } from "./projectKeyVerifier";
 
 const PROJECT_ID = "10000000-0000-4000-8000-000000000001";
 const DEVICE_ONE = "20000000-0000-4000-8000-000000000001";
@@ -35,6 +36,19 @@ function deterministicCrypto() {
 }
 
 describe("mobile project-key provisioning", () => {
+  it("records an independently authenticated book/version verifier in the exact envelope rotation", async () => {
+    const rotate = vi.fn(async () => ({ keyVersion: 4 }));
+    const transport: MobileProjectKeyProvisioningTransport = {
+      listProjectDevices: async () => [{ deviceId: DEVICE_ONE, keyId: KEY_ONE, keyAlgorithm: "x25519-v1", publicKey: base64Url(new Uint8Array(32)), projectEnrolledAt: "now", projectRevokedAt: null }],
+      rotateProjectKeyWithEnvelopes: rotate,
+    };
+    const service = createMobileProjectKeyProvisioningService({ transport, sealedBox: { seal: () => new Uint8Array(80) }, cryptoProvider: deterministicCrypto() });
+    const result = await service.provisionProjectKey({ projectId: PROJECT_ID, expectedPreviousVersion: 3, reasonCode: "test" });
+    const submitted = (rotate.mock.calls[0] as unknown as [{ verifier: unknown }])[0];
+    await expect(verifyProjectKeyVerifier(result.projectKey, submitted.verifier, PROJECT_ID, 4)).resolves.toBeUndefined();
+    expect(JSON.stringify(submitted)).not.toContain(result.recoveryKey);
+  });
+
   it("refuses a changed reviewed device/key set before creating or sending envelopes", async () => {
     const current = { deviceId: DEVICE_ONE, keyId: KEY_TWO, keyAlgorithm: "x25519-v1", publicKey: base64Url(new Uint8Array(32)), projectEnrolledAt: "now", projectRevokedAt: null };
     const transport: MobileProjectKeyProvisioningTransport = {
@@ -110,6 +124,7 @@ describe("mobile project-key provisioning", () => {
       projectId: PROJECT_ID,
       expectedPreviousVersion: 3,
       reasonCode: "desktop-provisioning",
+      verifier: expect.objectContaining({ project_id: PROJECT_ID, key_version: 4, schema_version: 1 }),
       envelopes: [
         {
           envelopeId: "40000000-0000-4000-8000-000000000001",

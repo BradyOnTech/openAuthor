@@ -203,9 +203,21 @@ export class SupabaseGatewayVoiceControl implements GatewayVoiceControl {
   }
   async closed(row: VoiceControlRecord) { await this.#wait(row, true); }
   async recover(id: string, callId: string) {
-    const row = voiceRecord(await this.#rpc.call("mobile_voice_get", { p_lease_id: id, p_binding: this.#rpc.binding }), this.#rpc.binding);
-    if (row.lease_id !== id || row.call_id !== callId) throw new VoiceControlProblem();
-    if (row.phase !== "closed") await this.closed(await this.close(row));
+    if (!uuidPattern.test(id) || !validCallId(callId)) throw new VoiceControlProblem();
+    let row = voiceRecord(await this.#rpc.call("mobile_voice_get", { p_lease_id: id, p_binding: this.#rpc.binding }), this.#rpc.binding);
+    if (row.lease_id !== id || (row.call_id !== null && row.call_id !== callId)) throw new VoiceControlProblem();
+    if (row.call_id === null) {
+      if (row.identity_redacted || !["allocating", "unknown"].includes(row.phase)) throw new VoiceControlProblem();
+      // A private journal can precede SQL attachment. Fence recovery closed
+      // before publishing that exact known ID, so it cannot become active.
+      row = await this.close(row);
+      if (row.call_id === null) {
+        if (row.phase !== "unknown") throw new VoiceControlProblem();
+        row = await this.attach(row, callId);
+      }
+      if (row.call_id !== callId || !["closing", "closed"].includes(row.phase)) throw new VoiceControlProblem();
+    }
+    if (row.phase !== "closed") await this.closed(row.phase === "closing" ? row : await this.close(row));
   }
 }
 

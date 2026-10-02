@@ -166,7 +166,7 @@ function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: A
       {!!error && <Button label="Retry loading projects" variant="secondary" onPress={() => setAttempt((value) => value + 1)} />}
       {runtime.mode === "hosted" && <Button label={session.downloadedOnly ? "Reconnect to online library" : "Use downloaded books"} disabled={switching} variant="secondary" onPress={() => void switchLibrary()} />}
       <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(() => onSignedOut()).catch(() => onSignedOut("Sign-out cleanup did not finish. The local view was closed; sign in to retry."))} />
-      {projects?.length === 0 && <Text style={styles.empty}>{session.downloadedOnly ? "No downloaded books on this device. Connect online and open a published book first." : "No mobile-enabled projects yet. Publish one from desktop first."}</Text>}
+      {projects?.length === 0 && <Text style={styles.empty}>{session.downloadedOnly ? "No downloaded books on this device. Connect online and open a published book first." : "No mobile-enabled projects yet. Enable one from desktop Mobile Inbox first."}</Text>}
       <ScrollView contentContainerStyle={styles.list}>
         {projects?.map((project) => (
           <Pressable
@@ -177,7 +177,7 @@ function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: A
             style={({ pressed }) => [styles.card, pressed && styles.pressed]}
           >
             <Text style={styles.cardTitle}>{project.title}</Text>
-            <Text style={styles.muted}>{project.role} · {project.lastPublishedAt ? `${project.downloaded ? "downloaded" : "published"} ${new Date(project.lastPublishedAt).toLocaleString()}` : "not published"}</Text>
+            <Text style={styles.muted}>{project.role} · {project.lastPublishedAt ? `${project.downloaded ? "downloaded" : "published"} ${new Date(project.lastPublishedAt).toLocaleString()}` : "Open to check publication"}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -185,7 +185,7 @@ function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: A
   );
 }
 
-function BookUnlock({ projectId, onUnlocked }: { projectId: string; onUnlocked(): void }) {
+function BookUnlock({ projectId, onUnlocked, onEdit }: { projectId: string; onUnlocked(keyVersion: number): void; onEdit(): void }) {
   const [version, setVersion] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -200,7 +200,7 @@ function BookUnlock({ projectId, onUnlocked }: { projectId: string; onUnlocked()
     setError("");
     try {
       await runtime.importRecoveryKey(projectId, Number(version), code);
-      if (active.current) { setCode(""); onUnlocked(); }
+      if (active.current) { setCode(""); onUnlocked(Number(version)); }
     } catch (caught) {
       if (active.current) setError(caught instanceof Error ? caught.message : "The book could not be unlocked.");
     } finally {
@@ -210,12 +210,13 @@ function BookUnlock({ projectId, onUnlocked }: { projectId: string; onUnlocked()
   };
   return <View style={styles.card}>
     <Text style={styles.cardTitle}>Unlock this book on your phone</Text>
-    <Text style={styles.body}>On desktop, open Mobile Inbox and publish an encrypted snapshot. Enter that book's recovery key and version below. If desktop has already shared a key with this device, use Retry opening book instead.</Text>
+    <Text style={styles.body}>Enter this book's recovery key and current version from desktop Mobile Inbox. Newly provisioned keys can be verified before a snapshot is published. Older books need an encrypted snapshot with their existing key or a reviewed key rotation on desktop. Reading still needs a published snapshot. If desktop has already shared a key with this device, use Retry opening book instead.</Text>
     <Text style={styles.muted}>The key is checked on this device and is never sent to the server. Keep it out of chat and email.</Text>
-    <TextInput accessibilityLabel="Book key version" keyboardType="number-pad" editable={!busy} onChangeText={setVersion}
+    <Text style={styles.muted}>Rotating creates a new key. It does not restore data encrypted with a missing old key.</Text>
+    <TextInput accessibilityLabel="Book key version" keyboardType="number-pad" editable={!busy} onChangeText={(value) => { setVersion(value); onEdit(); }}
       placeholder="Key version, e.g. 1" placeholderTextColor="#697386" style={styles.input} value={version} />
     <TextInput accessibilityLabel="Book recovery key" autoCapitalize="none" autoCorrect={false} secureTextEntry editable={!busy}
-      onChangeText={setCode} placeholder="OA1-…" placeholderTextColor="#697386" style={styles.input} value={code} />
+      onChangeText={(value) => { setCode(value); onEdit(); }} placeholder="OA1-…" placeholderTextColor="#697386" style={styles.input} value={code} />
     <ErrorBanner message={error} />
     <Button label={busy ? "Checking and unlocking…" : "Verify key and open book"} disabled={busy || !version.trim() || !code.trim()}
       onPress={() => void unlock()} />
@@ -615,6 +616,7 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
   const [tab, setTab] = useState<Tab>("scenes");
   const [scene, setScene] = useState<SnapshotScene | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [verifiedKeyVersion, setVerifiedKeyVersion] = useState<number | null>(null);
   const [recovery, setRecovery] = useState<CompanionState>(emptyCompanionState);
   const recoveryRef = useRef(recovery);
   const [recoveryReady, setRecoveryReady] = useState(false);
@@ -710,10 +712,12 @@ function ProjectShell({ selected, onExit, onSignedOut }: { selected: AppProject;
   if (!loaded) return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.list}>
     <Text style={styles.h1}>{selected.title}</Text>
     <ErrorBanner message={error} />
+    {verifiedKeyVersion !== null && <Text accessibilityLiveRegion="polite" style={styles.notice}>Key version {verifiedKeyVersion} verified and saved on this device. Publish a snapshot from desktop to read this book.</Text>}
     {!error && <ActivityIndicator color="#7d5cff" size="large" />}
     {!!error && <>
       <Button label="Retry opening book" variant="secondary" onPress={() => setAttempt((value) => value + 1)} />
-      {runtime.mode === "hosted" && <BookUnlock projectId={selected.id} onUnlocked={() => setAttempt((value) => value + 1)} />}
+      {runtime.mode === "hosted" && <BookUnlock key={selected.id} projectId={selected.id} onEdit={() => setVerifiedKeyVersion(null)}
+        onUnlocked={(keyVersion) => { setVerifiedKeyVersion(keyVersion); setAttempt((value) => value + 1); }} />}
     </>}
     <Button label="Back to projects" variant="secondary" onPress={onExit} />
   </ScrollView></SafeAreaView>;

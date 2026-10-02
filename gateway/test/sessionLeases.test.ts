@@ -45,9 +45,9 @@ async function fixture(managerOverrides: Partial<ConstructorParameters<typeof Se
   let createDelay = 0;
   let holdAnswer = false;
   const calls = new Set<string>();
-  const requests: Array<{ path: string; auth: string | undefined }> = [];
+  const requests: Array<{ path: string; auth: string | undefined; clientRequestId: string | undefined }> = [];
   const provider = createServer(async (incoming, response) => {
-    requests.push({ path: incoming.url!, auth: incoming.headers.authorization });
+    requests.push({ path: incoming.url!, auth: incoming.headers.authorization, clientRequestId: incoming.headers['x-client-request-id'] as string | undefined });
     for await (const _chunk of incoming) { /* Consume the actual multipart request. */ }
     if (incoming.url === "/v1/realtime/calls") {
       if (createDelay) await new Promise(resolve => setTimeout(resolve, createDelay));
@@ -86,6 +86,7 @@ test("durably registers before answer delivery and expires without any client re
   const f = await fixture();
   try {
     const { result, receipt } = await f.manager.issue(f.request, CALL);
+    assert.equal(f.requests.find(row => row.path === '/v1/realtime/calls')?.clientRequestId, receipt.lease_id);
     assert.deepEqual(f.journal.entries(), [[receipt.lease_id, result.callId]]);
     const saved = readFileSync(f.path, "utf8");
     for (const privateValue of [f.request.principal.bearerToken, f.request.projectId, CALL.sdp, CALL.session.instructions]) assert.equal(saved.includes(privateValue), false);

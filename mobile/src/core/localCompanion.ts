@@ -26,6 +26,16 @@ function validIdentity(value: LocalIdentity): boolean {
     && typeof value.deployment === "string" && value.deployment.length > 0 && value.deployment.length <= 512;
 }
 
+export function validateLocalAuthorization(encoded: string, device: EnrolledDevice | null): void {
+  let access: AccessRecord;
+  try { access = JSON.parse(encoded) as AccessRecord; }
+  catch { throw new Error("Local authorization is invalid."); }
+  if (!access || access.version !== 1 || access.state !== "active" || !validIdentity(access) || !device
+    || device.userId !== access.userId || device.deviceId !== access.deviceId || device.keyId !== access.keyId) {
+    throw new Error("The saved device changed during local authorization. Sign in again.");
+  }
+}
+
 export function decodeDownloadedBook(encoded: string): DownloadedBook {
   try {
     const value = JSON.parse(encoded) as DownloadedBook;
@@ -61,7 +71,7 @@ export class LocalCompanion {
     return record?.state === "locked" || (record?.state === "active" && record.deployment !== this.input.deployment);
   }
 
-  async authorize(session: { userId: string; email: string }, device: EnrolledDevice, explicitSignIn = false): Promise<void> {
+  async authorize(session: { userId: string; email: string }, device: EnrolledDevice, explicitSignIn = false, current?: () => void): Promise<void> {
     const candidate: AccessRecord = {
       version: 1, state: "active", ...session,
       deviceId: device.deviceId, keyId: device.keyId, deployment: this.input.deployment,
@@ -69,10 +79,13 @@ export class LocalCompanion {
     if (!validIdentity(candidate) || device.userId !== session.userId) throw new Error("Verified device identity does not match this account.");
     // Only a deliberate sign-in may unlock a signed-out device. A late session
     // restore uses create, so it cannot overwrite a concurrent sign-out lock.
-    if (explicitSignIn) await this.input.secrets.set(ACCESS_SLOT, JSON.stringify(candidate));
+    if (explicitSignIn && current) {
+      if (!this.input.secrets.setLocalAccessIfCurrent) throw new Error("Guarded local authorization is unavailable. Sign in again.");
+      await this.input.secrets.setLocalAccessIfCurrent(JSON.stringify(candidate), current);
+    } else if (explicitSignIn) await this.input.secrets.set(ACCESS_SLOT, JSON.stringify(candidate));
     else await this.input.secrets.create(ACCESS_SLOT, JSON.stringify(candidate));
-    const current = await this.require();
-    if (current.userId !== session.userId || current.deviceId !== device.deviceId || current.keyId !== device.keyId) {
+    const identity = await this.require();
+    if (identity.userId !== session.userId || identity.deviceId !== device.deviceId || identity.keyId !== device.keyId) {
       throw new Error("Saved local access belongs to another identity. Sign in again.");
     }
   }

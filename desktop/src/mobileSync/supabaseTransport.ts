@@ -15,6 +15,7 @@ import {
   type MobileProjectKeyProvisioningTransport,
 } from "./projectKeyProvisioning";
 import { validateRecoverySnapshot, type RecoverySnapshot, type ProjectKeyRecoveryTransport } from "./snapshotRecovery";
+import { parseProjectKeyVerifier, type ProjectKeyVerifier } from "@openauthor/contracts";
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -324,6 +325,19 @@ export class SupabaseMobileSyncTransport implements
     return { latestKeyVersion: latest, activeKeyVersion: active as number | null };
   }
 
+  async getProjectKeyVerifier(projectId: string, expectedKeyVersion: number): Promise<ProjectKeyVerifier | null> {
+    const expectedProject = required(projectId, "Project id").toLowerCase();
+    const version = positiveInteger(expectedKeyVersion, "Recovery key version");
+    const value = await this.#rpc<unknown>("mobile_get_project_key_verifier", {
+      p_requesting_device_id: this.#deviceId, p_project_id: expectedProject, p_expected_key_version: version,
+    });
+    if (value === null) return null;
+    const verifier = parseProjectKeyVerifier(value);
+    if (verifier.project_id !== expectedProject || verifier.key_version !== version) throw new Error("The recovery verifier belongs to another book or key version.");
+    await this.#accessToken();
+    return verifier;
+  }
+
   async getRecoverySnapshot(projectId: string, expectedKeyVersion: number): Promise<RecoverySnapshot | null> {
     const expectedProject = required(projectId, "Project id");
     const version = positiveInteger(expectedKeyVersion, "Recovery key version");
@@ -413,8 +427,12 @@ export class SupabaseMobileSyncTransport implements
     expectedPreviousVersion: number;
     reasonCode: string;
     envelopes: MobileProjectKeyEnvelope[];
+    verifier: ProjectKeyVerifier;
   }): Promise<{ keyVersion: number }> {
-    const projectId = required(input.projectId, "Project id");
+    const projectId = required(input.projectId, "Project id").toLowerCase();
+    const previousVersion = nonNegativeInteger(input.expectedPreviousVersion, "Expected previous project key version");
+    const verifier = parseProjectKeyVerifier(input.verifier);
+    if (verifier.project_id !== projectId || verifier.key_version !== previousVersion + 1) throw new Error("The rotation verifier belongs to another book or key version.");
     if (input.envelopes.length === 0) {
       throw new Error("At least one project key envelope is required.");
     }
@@ -440,20 +458,20 @@ export class SupabaseMobileSyncTransport implements
       };
     }));
     const row = record(await this.#rpc<unknown>(
-      "mobile_rotate_project_key_with_envelopes",
+      "mobile_rotate_project_key_with_verifier",
       {
         p_requesting_device_id: this.#deviceId,
         p_project_id: projectId,
-        p_expected_previous_version: nonNegativeInteger(
-          input.expectedPreviousVersion,
-          "Expected previous project key version"
-        ),
+        p_expected_previous_version: previousVersion,
         p_reason_code: required(input.reasonCode, "Project key rotation reason"),
         p_envelopes: envelopes,
+        p_verifier: verifier,
       }
     ));
-    if (stringField(row, "project_id") !== projectId) {
-      throw new Error("Hosted project key rotation belongs to another project.");
+    const receivedVerifier = parseProjectKeyVerifier(row.recovery_verifier);
+    if (stringField(row, "project_id") !== projectId || row.key_version !== previousVersion + 1
+      || !Object.entries(verifier).every(([key, value]) => receivedVerifier[key as keyof ProjectKeyVerifier] === value)) {
+      throw new Error("Hosted project key rotation did not confirm the exact reviewed verifier and version. Reconnect before another rotation.");
     }
     return {
       keyVersion: positiveInteger(row.key_version, "Hosted project key version"),

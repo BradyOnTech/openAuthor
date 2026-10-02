@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { createMobileSyncService, type EncryptedMobileOutboxItem, type MobileSyncSidecar } from "../../desktop/src/mobileSync/mobileSync";
 import { encodeRecoveryKey } from "../src/core/recoveryKey";
+import { PROJECT_KEY_VERIFIER_PLAINTEXT, projectKeyVerifierAdditionalData } from "@openauthor/contracts";
 import type { OutboxEnvelope } from "../src/core/outbox";
 import { exerciseVoiceControls } from "./voiceControls";
 
@@ -81,6 +82,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
       return reply({ id: deviceId, enrolled_at: new Date().toISOString() });
     }
     if (path.endsWith("/mobile_enroll_project_device")) return reply({});
+    if (path.endsWith("/mobile_get_project_key_verifier")) return reply(null);
     if (path.endsWith("/mobile_get_project_key_envelopes")) {
       expect(missingBookKey).toBe(true);
       return reply([]);
@@ -563,4 +565,138 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   expect(errors).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("paired-companion.png"), fullPage: true });
+});
+
+test.describe("no-snapshot key recovery", () => {
+  // Route the synthetic hosted API through Playwright; service-worker routing
+  // is a separate cold-restart control in the original journey above.
+  test.use({ serviceWorkers: "block" });
+  test("an enrolled phone verifies its selected book before any snapshot exists", async ({ page }, testInfo) => {
+    const projectId = "30000000-0000-4000-8000-000000000091", userId = "10000000-0000-4000-8000-000000000091";
+    const keyBytes = new Uint8Array(Array.from({ length: 32 }, (_, index) => index));
+    const rawKey = Buffer.from(keyBytes).toString("base64"), recoveryKey = await encodeRecoveryKey(rawKey);
+    const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+    const nonce = new Uint8Array(12).fill(9);
+    const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce,
+      additionalData: new Uint8Array(projectKeyVerifierAdditionalData(projectId, 4)), tagLength: 128 }, key,
+    new TextEncoder().encode(PROJECT_KEY_VERIFIER_PLAINTEXT)));
+    const verifier = { schema: "openauthor.mobile.project-key-verifier", schema_version: 1, project_id: projectId, key_version: 4,
+      algorithm: "aes-256-gcm-v1", aad_version: 1, nonce_hex: Buffer.from(nonce).toString("hex"), ciphertext_hex: Buffer.from(ciphertext).toString("hex"),
+      ciphertext_sha256: Buffer.from(await crypto.subtle.digest("SHA-256", ciphertext)).toString("hex") };
+    let deviceId: string | null = null;
+    let sessionId = "11000000-0000-4000-8000-000000000091";
+    let pauseVerifier = false;
+    let proofEntered!: () => void, releaseProof!: () => void;
+    const enteredProof = new Promise<void>(resolve => { proofEntered = resolve; });
+    const resumedProof = new Promise<void>(resolve => { releaseProof = resolve; });
+    const user = { id: userId, email: "no-snapshot@author.test", aud: "authenticated", role: "authenticated" };
+    const requests: Array<{ path: string; body: string }> = [], errors: string[] = [];
+    const session = () => {
+      const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+      const token = `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub: userId, aud: "authenticated", role: "authenticated", email: user.email,
+        exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000), session_id: sessionId,
+        ...(deviceId ? { device_id: deviceId } : {}) })}.${Buffer.from("fixture-signature").toString("base64url")}`;
+      return { access_token: token, refresh_token: "local-fixture-refresh", expires_in: 3600, token_type: "bearer", user };
+    };
+    page.on("pageerror", error => errors.push(error.message));
+    await page.route("https://companion-backend.test/**", async route => {
+      const request = route.request(), path = new URL(request.url()).pathname, body = request.postData() ?? "";
+      requests.push({ path, body });
+      const reply = (data: unknown) => route.fulfill({ contentType: "application/json", body: JSON.stringify(data) });
+      if (path === "/auth/v1/token") return reply(session());
+      if (path === "/auth/v1/user") return reply(user);
+      if (path === "/auth/v1/logout") return reply({});
+      if (path === "/rest/v1/projects") return reply([{ id: projectId, workspace_id: "20000000-0000-4000-8000-000000000091",
+        name: "The Unpublished Book", slug: "unpublished-book", kind: "book", status: "active", updated_at: "2026-10-02T12:00:00Z" }]);
+      if (path.endsWith("/mobile_register_device")) { deviceId = JSON.parse(body).p_device_id; return reply({ id: deviceId, enrolled_at: "2026-10-02T12:00:00Z" }); }
+      if (path.endsWith("/mobile_enroll_project_device")) return reply({});
+      if (path.endsWith("/mobile_get_project_key_verifier")) {
+        expect(JSON.parse(body)).toEqual({ p_requesting_device_id: deviceId, p_project_id: projectId, p_expected_key_version: 4 });
+        if (pauseVerifier) { proofEntered(); await resumedProof; }
+        return reply(verifier);
+      }
+      if (path.endsWith("/mobile_list_snapshot_manifests")) return reply([]);
+      if (path.endsWith("/mobile_get_project_key_envelopes")) return reply([]);
+      throw new Error(`Unexpected no-snapshot fixture request: ${path}`);
+    });
+    const storedKey = async () => page.evaluate(async ({ projectId }) => {
+      const database = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open("openauthor-companion-v1"); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      });
+      const read = <T>(store: string, name: string) => new Promise<T | undefined>(resolve => {
+        const request = database.transaction(store).objectStore(store).get(name); request.onsuccess = () => resolve(request.result);
+      });
+      try {
+        const slot = `secret:openauthor.project.${projectId}.key.4`;
+        const record = await read<{ iv: Uint8Array<ArrayBuffer>; bytes: ArrayBuffer }>("records", slot);
+        if (!record) return null;
+        const wrapping = await read<CryptoKey>("keys", "wrapping-key");
+        if (!wrapping) throw new Error("Encrypted storage wrapping key missing");
+        return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: record.iv,
+          additionalData: new TextEncoder().encode(slot) }, wrapping, record.bytes));
+      } finally { database.close(); }
+    }, { projectId });
+    await page.goto("/");
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.getByRole("button", { name: /The Unpublished Book/ }).click();
+    await expect(page.getByText("No encrypted mobile snapshot has been published for this project.", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Book recovery key")).toBeVisible(); expect(await storedKey()).toBeNull();
+    await page.getByLabel("Book key version").fill("4");
+    await page.getByLabel("Book recovery key").fill(await encodeRecoveryKey(Buffer.alloc(32, 9).toString("base64")));
+    await page.getByRole("button", { name: "Verify key and open book" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(2); expect(await storedKey()).toBeNull();
+    await page.getByLabel("Book recovery key").fill(recoveryKey);
+    await page.getByRole("button", { name: "Verify key and open book" }).click();
+    await expect(page.getByText("Key version 4 verified and saved on this device. Publish a snapshot from desktop to read this book.", { exact: true })).toBeVisible();
+    await expect.poll(storedKey).toBe(rawKey); await expect(page.getByLabel("Book recovery key")).toHaveValue("");
+    await expect(page.getByText("No encrypted mobile snapshot has been published for this project.", { exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("no-snapshot-key-recovery.png"), fullPage: true });
+    await page.getByRole("button", { name: "Back to projects" }).click(); await page.reload();
+    await page.getByRole("button", { name: /The Unpublished Book/ }).click();
+    await expect(page.getByLabel("Book recovery key")).toBeVisible(); expect(await storedKey()).toBe(rawKey);
+    const replaceAuth = async (nextSessionId: string) => {
+      sessionId = nextSessionId;
+      await page.evaluate(async session => {
+        // Exercise the installed SDK's real cross-tab Auth event subscriber.
+        // This origin-local event can revoke a view but cannot grant recovery.
+        const channel = new BroadcastChannel("sb-companion-backend-auth-token");
+        channel.postMessage({ event: "SIGNED_IN", session });
+        await new Promise(resolve => setTimeout(resolve, 30)); channel.close();
+      }, session());
+    };
+    // A replacement session also redacts a recovery form before submission.
+    await page.getByLabel("Book recovery key").fill(recoveryKey);
+    await replaceAuth("11000000-0000-4000-8000-000000000092");
+    await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Book recovery key")).toHaveCount(0);
+    await expect(page.getByText("The Unpublished Book", { exact: true })).toHaveCount(0);
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.getByRole("button", { name: /The Unpublished Book/ }).click();
+    await expect(page.getByLabel("Book recovery key")).toBeVisible();
+    // Remove only this synthetic test's imported key, then hold a new proof.
+    await page.evaluate(async projectId => {
+      const database = await new Promise<IDBDatabase>(resolve => { const request = indexedDB.open("openauthor-companion-v1"); request.onsuccess = () => resolve(request.result); });
+      try { await new Promise<void>((resolve, reject) => {
+        const transaction = database.transaction("records", "readwrite"); transaction.objectStore("records").delete(`secret:openauthor.project.${projectId}.key.4`);
+        transaction.oncomplete = () => resolve(); transaction.onabort = () => reject(transaction.error);
+      }); } finally { database.close(); }
+    }, projectId);
+    pauseVerifier = true;
+    await page.getByLabel("Book key version").fill("4"); await page.getByLabel("Book recovery key").fill(recoveryKey);
+    await page.getByRole("button", { name: "Verify key and open book" }).click(); await enteredProof;
+    await replaceAuth("11000000-0000-4000-8000-000000000093");
+    await expect(page.getByLabel("Email", { exact: true })).toBeVisible(); releaseProof();
+    await expect(page.getByLabel("Book recovery key")).toHaveCount(0);
+    await expect(page.getByText("The Unpublished Book", { exact: true })).toHaveCount(0);
+    expect(await storedKey()).toBeNull();
+    await page.screenshot({ path: testInfo.outputPath("recovery-redacted-after-session-replacement.png"), fullPage: true });
+    const bodies = requests.map(request => request.body).join("\n"); expect(bodies).not.toContain(rawKey); expect(bodies).not.toContain(recoveryKey);
+    expect(requests.filter(request => request.path.includes("mobile_get_project_key_verifier"))).toHaveLength(4);
+    expect(requests.some(request => request.path.includes("/storage/v1/"))).toBe(false);
+    expect(errors).toEqual([]); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
 });

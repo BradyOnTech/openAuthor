@@ -100,6 +100,88 @@ export class BrowserStorage {
     this.#changed(key);
   }
 
+  /** Decrypt and encrypt outside IndexedDB, then compare every observed
+   * ciphertext and commit related records in one cross-tab transaction. */
+  async updateRecordsIfUnchanged(
+    keys: string[],
+    derive: (values: ReadonlyMap<string, string | null>) => ReadonlyMap<string, string>,
+    current: () => void,
+  ): Promise<void> {
+    if (keys.length === 0 || new Set(keys).size !== keys.length) throw new Error("A local update must read distinct original records.");
+    type Stored = { iv: Uint8Array<ArrayBuffer>; bytes: ArrayBuffer };
+    const observed = await this.transaction<Map<string, Stored | null>>("records", "readonly", (store, done) => {
+      const records = new Map<string, Stored | null>();
+      for (const key of keys) {
+        const read = store.get(key);
+        read.onsuccess = () => { records.set(key, read.result ?? null); if (records.size === keys.length) done(records); };
+      }
+    });
+    const wrappingKey = await this.key();
+    const values = new Map<string, string | null>();
+    for (const [key, record] of observed) {
+      values.set(key, record ? new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: record.iv,
+        additionalData: new TextEncoder().encode(key) }, wrappingKey, record.bytes)) : null);
+    }
+    current();
+    const updates = derive(values);
+    const encrypted = new Map<string, Stored>();
+    for (const [key, value] of updates) {
+      if (!observed.has(key)) throw new Error("A local update must include its original record.");
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const bytes = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: new TextEncoder().encode(key) }, wrappingKey, new TextEncoder().encode(value));
+      encrypted.set(key, { iv, bytes });
+    }
+    const equal = (left: Stored | null, right: Stored | null) => {
+      if (!left || !right) return left === right;
+      const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((byte, index) => byte === b[index]);
+      return same(left.iv, right.iv) && same(new Uint8Array(left.bytes), new Uint8Array(right.bytes));
+    };
+    const saved = await this.transaction<boolean>("records", "readwrite", (store, done) => {
+      let remaining = keys.length;
+      let matched = true;
+      for (const key of keys) {
+        const read = store.get(key);
+        read.onsuccess = () => {
+          matched &&= equal(observed.get(key) ?? null, read.result ?? null);
+          if (--remaining !== 0) return;
+          try { current(); } catch { done(false); return; }
+          if (!matched) { done(false); return; }
+          for (const [changedKey, value] of encrypted) store.put(value, changedKey);
+          done(true);
+        };
+      }
+    });
+    if (!saved) throw new Error("Local access or the saved book key changed during recovery. Sign in again and review the current book key.");
+    try { current(); }
+    catch (reason) {
+      // The Auth event may arrive after the last read callback but before the
+      // transaction's completion. Revert only ciphertext written by this
+      // attempt; a newer key or replacement device from another tab wins.
+      try {
+        await this.transaction<void>("records", "readwrite", (store, done) => {
+          let remaining = encrypted.size;
+          for (const [key, value] of encrypted) {
+            const read = store.get(key);
+            read.onsuccess = () => {
+              if (equal(value, read.result ?? null)) {
+                const previous = observed.get(key);
+                if (previous) store.put(previous, key);
+                else store.delete(key);
+              }
+              if (--remaining === 0) done();
+            };
+          }
+          if (remaining === 0) done();
+        });
+      } catch {
+        throw new Error("Book key recovery could not be rolled back safely. Keep this device signed out and retry explicit device cleanup.");
+      }
+      for (const key of updates.keys()) this.#changed(key);
+      throw reason;
+    }
+    for (const key of updates.keys()) this.#changed(key);
+  }
+
   authLease(prefix: string): { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void>; delete(key: string): Promise<void> } {
     let closed = false;
     const close = () => { closed = true; };

@@ -23,6 +23,7 @@ vi.mock("../src/adapters/expoSecrets", () => ({
   ExpoSecretStore: class {
     async get(key: string) { return state.keys.get(key) ?? null; }
     async set(key: string, value: string) { state.keys.set(key, value); }
+    async setLocalAccessIfCurrent(value: string, current: () => void) { current(); state.keys.set("openauthor.mobile.local-access.v1", value); current(); }
     async create(key: string, value: string) { if (!state.keys.has(key)) state.keys.set(key, value); return state.keys.get(key)!; }
     subscribeLocalAccessChanges(handler: () => void) { state.accessListeners.add(handler); return () => state.accessListeners.delete(handler); }
   },
@@ -52,6 +53,8 @@ vi.mock("../src/adapters/supabaseClient", () => ({
 vi.mock("../src/adapters/supabaseAdapters", () => ({
   SupabaseAuth: class {
     async accessToken(id: string) { if (id !== state.deviceId) throw new Error("wrong device"); return "fresh-token"; }
+    async recoveryIdentity() { return { userId: state.userId, sessionId: "session1" }; }
+    observeRecoveryIdentity() { return () => {}; }
     async signInWithPassword() { return { userId: state.userId, email: "author@example.test" }; }
     signOut = state.signOut;
   },

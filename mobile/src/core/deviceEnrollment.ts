@@ -24,6 +24,7 @@ export interface SecretStore {
   delete(key: string): Promise<void>;
   /** Atomically return the existing value or persist and return the candidate. */
   create(key: string, candidate: string): Promise<string>;
+  setLocalAccessIfCurrent?(value: string, current: () => void): Promise<void>;
 }
 
 export interface DeviceStore {

@@ -21,16 +21,24 @@ is foreground-only and requires a network connection.
 Configure the public values in `.env.example` before building. Permanent OpenAI
 credentials belong only in the Session Gateway. Deploy the browser-platform
 migration along with the existing mobile sync migrations, configure the gateway's
-allowed browser origin, and publish an encrypted desktop project snapshot before
-enrolling the phone. No hosted configuration means an explicitly labeled sample
+allowed browser origin, and enable the project and review its current key from
+desktop Mobile Inbox before enrolling the phone. Reading needs an encrypted
+desktop snapshot; key recovery for newly provisioned versions can happen first.
+No hosted configuration means an explicitly labeled sample
 preview with voice disabled; it is not a live mobile release.
 
 On a new phone, sign in with the book's account and select the book. If it has no
 key for this device, the opening screen offers **Unlock this book on your phone**
 without requiring a previously downloaded snapshot. Enter the desktop recovery
-key and its version. The app verifies the key by decrypting that book's hosted
-manifest locally before saving it. Wrong keys/versions do not replace local
-keys; a snapshot must first be published on desktop. Keep recovery keys private,
+key and its current version. Newly provisioned keys have an immutable, fixed
+AES-GCM verifier; the app authenticates its exact book/version and plaintext
+locally before guarded encrypted key storage. Only an explicitly absent legacy
+verifier permits the existing authenticated manifest proof. A failed/unavailable
+verifier does not fall back to another witness. A legacy book with neither proof
+needs a snapshot with its existing key or an explicitly reviewed desktop
+rotation. Rotation restores future key access and cannot recover historical
+ciphertext or pending captures encrypted with a missing old key. Wrong
+keys/versions preserve existing local keys. Keep recovery keys private,
 outside chat/email. This is the current first-use recovery flow, not QR pairing
 or automatic device-to-device key distribution.
 

@@ -41,6 +41,7 @@ describe("HostedMobileSyncCoordinator", () => {
       fetch: async (url, init) => {
         const route = String(url).split("/").pop()!; requests.push(route);
         if (route === "mobile_get_project_key_state") return new Response(JSON.stringify({ project_id: runtime.projectId, latest_key_version: 3, active_key_version: 3 }));
+        if (route === "mobile_get_project_key_verifier") return new Response("null");
         if (route === "mobile_get_recovery_snapshot") return new Response(JSON.stringify(recoveryManifestRow(snapshot)));
         if (route.endsWith(".bin")) return new Response(snapshot.ciphertext_base64);
         if (route === "mobile_recover_project_key_envelope") {

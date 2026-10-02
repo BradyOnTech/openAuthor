@@ -43,8 +43,9 @@ async function fixture() {
   const request={principal:{subject:user,tenantId:"synthetic-issuer",deviceId:device,sessionId:session,expiresAt:Date.now()+60000,bearerToken:"private-author-bearer"},projectId:project,deviceId:device};
   const directory=mkdtempSync(join(tmpdir(),"openauthor-shared-control-"));
   const gatewayToken=token("mobile_voice_gateway"), controllerToken=token("mobile_voice_controller");
-  let count=0, controllerUnavailable=false, lostHangup=false;
+  let count=0, controllerUnavailable=false, lostHangup=false, lostCreate=false, holdCreateBody=false;
   const calls=new Set<string>(), hangups:string[]=[], rpcRequests:Record<string,unknown>[]=[];
+  const providerRequestIds=new Map<string,string>();
   const types:Record<string,Record<string,string>>={
     mobile_voice_begin:{p_lease_id:"uuid",p_user_id:"uuid",p_tenant_id:"text",p_project_id:"uuid",p_device_id:"uuid",p_session_id:"uuid",p_binding:"text",p_lease_ms:"integer",p_max_duration_ms:"integer",p_jwt_expires_at:"timestamptz"},
     mobile_voice_get:{p_lease_id:"uuid",p_binding:"text"},mobile_voice_attach:{p_lease_id:"uuid",p_binding:"text",p_call_id:"text"},
@@ -77,7 +78,12 @@ async function fixture() {
       }
       assert.equal(incoming.headers.authorization,'Bearer sk-synthetic-shared');assert.equal(incoming.headers['openai-project'],'proj_synthetic_shared');
       if(incoming.url==='/v1/realtime/calls'){
-        const id=`rtc_shared_${++count}`;calls.add(id);response.writeHead(201,{location:`/v1/realtime/calls/${id}`});response.end('v=0\r\ns=answer\r\n');
+        const id=`rtc_shared_${++count}`;calls.add(id);
+        assert.equal(typeof incoming.headers['x-client-request-id'],'string');providerRequestIds.set(id,incoming.headers['x-client-request-id'] as string);
+        if(lostCreate){incoming.socket.destroy();return;}
+        response.writeHead(201,{location:`/v1/realtime/calls/${id}`});response.flushHeaders();
+        while(holdCreateBody&&!response.destroyed)await new Promise(resolve=>setTimeout(resolve,10));
+        response.end('v=0\r\ns=answer\r\n');
       }else if(incoming.url?.endsWith('/hangup')){
         const id=incoming.url.split('/')[4]!;hangups.push(id);
         if(!calls.has(id)){response.writeHead(404);response.end();return;}
@@ -110,14 +116,15 @@ async function fixture() {
       const worker=new VoiceControllerWorker({store:new SupabaseControllerVoiceControl(${JSON.stringify({...controllerOptions,controllerId:randomUUID()})}),journal:new ControllerJournal(${JSON.stringify(path)},${JSON.stringify(binding)}),upstream:new OpenAIRealtimeUpstream(${JSON.stringify(upstreamOptions)})});
       while(true){try{await worker.runOnce();process.stdout.write('TICK\\n');}catch{process.stdout.write('UNCONFIRMED\\n');}await new Promise(resolve=>setTimeout(resolve,100));}`);
   }
-  function gateway(path=join(directory,`gateway-${randomUUID()}.json`)){
+  function gateway(path=join(directory,`gateway-${randomUUID()}.json`),pauseBeforeAttach=false,recoveryOnly=false){
     return child(`import{SupabaseGatewayVoiceControl}from ${moduleUrl('sharedVoiceControl')};import{CallJournal}from ${moduleUrl('callJournal')};import{SessionLeases}from ${moduleUrl('sessionLeases')};import{OpenAIRealtimeUpstream}from ${moduleUrl('openAIRealtimeUpstream')};
-      const request=${JSON.stringify(request)};const manager=new SessionLeases({journal:new CallJournal(${JSON.stringify(path)}),control:new SupabaseGatewayVoiceControl(${JSON.stringify(gatewayOptions)}),upstream:new OpenAIRealtimeUpstream(${JSON.stringify(upstreamOptions)}),principalVerifier:{verify:async()=>request.principal},authorizer:{authorize:async()=>true},clock:{now:()=>new Date()},leaseTtlMs:1200,maxDurationMs:3000,pollIntervalMs:100,authorizationTimeoutMs:1500,maxCalls:10});
-      await manager.initialize();try{const answer=await manager.issue(request,${JSON.stringify(CALL)});process.stdout.write('READY '+JSON.stringify(answer.receipt)+'\\n');}catch{process.stdout.write('REFUSED\\n');}setInterval(()=>{},1000);`);
+      class InterruptedControl extends SupabaseGatewayVoiceControl{async attach(row,callId){process.stdout.write('JOURNALED '+JSON.stringify({lease_id:row.lease_id,call_id:callId})+'\\n');return await new Promise(()=>{});}}
+      const request=${JSON.stringify(request)};const manager=new SessionLeases({journal:new CallJournal(${JSON.stringify(path)}),control:new ${pauseBeforeAttach?'InterruptedControl':'SupabaseGatewayVoiceControl'}(${JSON.stringify(gatewayOptions)}),upstream:new OpenAIRealtimeUpstream(${JSON.stringify(upstreamOptions)}),principalVerifier:{verify:async()=>request.principal},authorizer:{authorize:async()=>true},clock:{now:()=>new Date()},leaseTtlMs:1200,maxDurationMs:3000,pollIntervalMs:100,authorizationTimeoutMs:1500,maxCalls:10,recoveryOnly:${recoveryOnly}});
+      try{await manager.initialize();if(${recoveryOnly})process.stdout.write('RECOVERED\\n');else{const answer=await manager.issue(request,${JSON.stringify(CALL)});process.stdout.write('READY '+JSON.stringify(answer.receipt)+'\\n');}}catch{process.stdout.write('REFUSED\\n');}setInterval(()=>{},1000);`);
   }
   async function kill(child:ReturnType<typeof spawn>){if(child.exitCode===null&&child.signalCode===null){const done=once(child,'exit');child.kill('SIGKILL');assert.equal((await done)[1],'SIGKILL');}}
-  return{sql,request,directory,calls,hangups,rpcRequests,binding,common,gatewayOptions,controllerOptions,upstreamOptions,controller,gateway,kill,
-    controllerUnavailable:(value:boolean)=>{controllerUnavailable=value;},lostHangup:(value:boolean)=>{lostHangup=value;},
+  return{sql,request,directory,calls,hangups,rpcRequests,providerRequestIds,binding,common,gatewayOptions,controllerOptions,upstreamOptions,controller,gateway,kill,
+    controllerUnavailable:(value:boolean)=>{controllerUnavailable=value;},lostHangup:(value:boolean)=>{lostHangup=value;},lostCreate:(value:boolean)=>{lostCreate=value;},holdCreateBody:(value:boolean)=>{holdCreateBody=value;},
     async stopDatabase(){assert.ok(data);await execute(`${binaries}/pg_ctl`,['-D',data,'-m','immediate','-w','stop']);},
     async startDatabase(){assert.ok(data);await execute(`${binaries}/pg_ctl`,['-D',data,'-l',join(data,'server.log'),'-w','start']);},
     async closed(id:string){return await sql(`select phase from public.mobile_voice_calls where lease_id=${literal(id)};`)==='closed';},
@@ -130,6 +137,68 @@ async function fixture() {
     }
   };
 }
+
+test('gateway SIGKILL after private journal fsync recovers exact known ID before SQL attach without creating a replacement',{skip:!socket},async()=>{
+  for(const initialPhase of ['allocating','unknown'] as const){
+    const f=await fixture();
+    try{
+      const worker=f.controller();await eventually(()=>worker.output().includes('TICK'));
+      const path=join(f.directory,'interrupted-gateway.json');
+      f.holdCreateBody(true);
+      const gateway=f.gateway(path,true);await eventually(()=>gateway.output().includes('JOURNALED'));
+      const receipt=JSON.parse(gateway.output().split('JOURNALED ')[1]!.split('\n')[0]!);
+      assert.equal(gateway.output().includes('READY'),false);
+      assert.deepEqual(JSON.parse(readFileSync(path,'utf8')).calls,[[receipt.lease_id,receipt.call_id]]);
+      assert.equal(f.providerRequestIds.get(receipt.call_id),receipt.lease_id);
+      await f.kill(gateway.process);
+      const original=voiceRecord(JSON.parse(await f.sql(`select public.mobile_voice_get(${literal(receipt.lease_id)},${literal(f.binding)});`)),f.binding);
+      assert.equal(original.call_id,null);
+      if(initialPhase==='unknown')await new SupabaseGatewayVoiceControl(f.gatewayOptions).close(original);
+      else assert.equal(original.phase,'allocating');
+      const next=f.gateway(path,false,true);await eventually(()=>next.output().includes('RECOVERED')||next.output().includes('REFUSED'));
+      assert.ok(next.output().includes('RECOVERED'),'An exact durably journaled provider identity must survive the pre-attachment crash.');
+      assert.equal(next.output().includes('READY'),false);
+      assert.equal(await f.closed(receipt.lease_id),true);assert.equal(f.calls.size,0);assert.deepEqual(f.hangups,[receipt.call_id]);
+      assert.equal(f.providerRequestIds.size,1);assert.deepEqual(JSON.parse(readFileSync(path,'utf8')).calls,[]);
+      const row=JSON.parse(await f.sql(`select public.mobile_voice_get(${literal(receipt.lease_id)},${literal(f.binding)});`));
+      for(const field of ['user_id','project_id','device_id','session_id','hard_expires_at'] as const)assert.equal(row[field],original[field]);
+    }finally{await f.cleanup();}
+  }
+});
+
+test('a recovered known ID keeps its journal and issuance blocked after lost independent hangup acknowledgement',{skip:!socket},async()=>{
+  const f=await fixture();
+  try{
+    const worker=f.controller();await eventually(()=>worker.output().includes('TICK'));
+    const path=join(f.directory,'unconfirmed-recovery.json');
+    const gateway=f.gateway(path,true);await eventually(()=>gateway.output().includes('JOURNALED'));
+    const receipt=JSON.parse(gateway.output().split('JOURNALED ')[1]!.split('\n')[0]!);
+    await f.kill(gateway.process);f.lostHangup(true);
+    const next=f.gateway(path,false,true);await eventually(()=>next.output().includes('REFUSED'));
+    assert.equal(next.output().includes('RECOVERED'),false);assert.equal(await f.closed(receipt.lease_id),false);
+    assert.equal(f.calls.size,0);assert.equal(f.providerRequestIds.size,1);
+    assert.deepEqual(JSON.parse(readFileSync(path,'utf8')).calls,[[receipt.lease_id,receipt.call_id]]);
+    const control=new SupabaseGatewayVoiceControl(f.gatewayOptions);await assert.rejects(control.begin(randomUUID(),f.request));
+    assert.equal(await f.sql(`select phase from public.mobile_voice_calls where lease_id=${literal(receipt.lease_id)};`),'closing');
+  }finally{await f.cleanup();}
+});
+
+test('provider allocation with no response headers retains durable request correlation and unknown intent without a blind retry',{skip:!socket},async()=>{
+  const f=await fixture();
+  const path=join(f.directory,'unknown-gateway.json');
+  const journal=new CallJournal(path);
+  const manager=new SessionLeases({journal,control:new SupabaseGatewayVoiceControl(f.gatewayOptions),upstream:new OpenAIRealtimeUpstream(f.upstreamOptions),
+    principalVerifier:{verify:async()=>f.request.principal},authorizer:{authorize:async()=>true},clock:{now:()=>new Date()},leaseTtlMs:1200,maxDurationMs:3000,pollIntervalMs:100,authorizationTimeoutMs:1500,maxCalls:10});
+  try{
+    const worker=f.controller();await eventually(()=>worker.output().includes('TICK'));
+    await manager.initialize();f.lostCreate(true);await assert.rejects(manager.issue(f.request,CALL));
+    assert.equal(f.calls.size,1);assert.equal(f.providerRequestIds.size,1);assert.deepEqual(journal.entries(),[]);
+    const providerRequestId=[...f.providerRequestIds.values()][0]!;
+    const row=JSON.parse(await f.sql(`select public.mobile_voice_get(${literal(providerRequestId)},${literal(f.binding)});`));
+    assert.equal(row.lease_id,providerRequestId);assert.equal(row.call_id,null);assert.equal(row.phase,'unknown');
+    await assert.rejects(manager.issue(f.request,CALL));assert.equal(f.providerRequestIds.size,1);assert.deepEqual(f.hangups,[]);
+  }finally{await manager.shutdown().catch(()=>undefined);await f.cleanup();}
+});
 
 test('independent real-PG controller survives gateway SIGKILL and fsynced-journal worker failover',{skip:!socket},async()=>{
   const f=await fixture();
@@ -164,6 +233,8 @@ test('observed controller cache hangs up during DB outage; lost provider reply c
     const successor=f.controller();await eventually(()=>successor.output().includes('UNCONFIRMED'));
     await f.startDatabase();await eventually(()=>f.closed(receipt.lease_id));
     assert.equal(f.hangups.length,1,'Durable accepted receipt survives worker restart without an undocumented 404 assumption.');
+    // Receipt recovery precedes the poll which restores allocation readiness.
+    await eventually(()=>successor.output().includes('TICK'));
     const next=f.gateway();await eventually(()=>next.output().includes('READY'));
     const second=JSON.parse(next.output().split('READY ')[1]!.split('\n')[0]!);
     f.lostHangup(true);await f.sql(`update public.mobile_devices set revoked_at=clock_timestamp(),revocation_reason_code='author-revoked' where id=${literal(f.request.deviceId)};`);

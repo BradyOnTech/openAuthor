@@ -19,6 +19,14 @@ until it reads that exact active/observed record and rechecks application
 authority and expiry. An empty controller scan or heartbeat alone cannot
 release an answer.
 
+Managed creation sends that already durable lease UUID as `X-Client-Request-Id`.
+Startup can now recover an exact call ID fsynced in the gateway journal before
+SQL attachment: it first closes the allocating/unknown intent, attaches only
+that journaled ID, and requires independent accepted closure. It never resumes
+the recovered call or returns its SDP. The
+[allocation recovery packet](evaluations/voice-allocation-recovery-2026-10-02/README.md)
+records actual pre-attachment SIGKILL controls and the unresolved boundaries.
+
 Renewal preserves the original subject, tenant, project, device, GoTrue session
 and provider binding. A database revision CAS admits only one concurrent
 renewal. Only short/JWT deadlines can advance, within the original hard limit.
@@ -128,8 +136,8 @@ final media, usage or monetary accounting. [Sideband control](https://developers
 could add observation but is not an automatic expiry guarantee and is outside
 this implementation. Do not infer closure from disconnecting a sideband socket.
 
-A provider allocation can precede delivery of Location or the durable attachment
-of that identity. A timeout/crash in that window leaves an unknown intent and
+A provider allocation can precede delivery of a valid Location or durable
+journaling of that identity. A timeout/crash in that window leaves an unknown intent and
 withholds the answer. The inspected [create schema](https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/create)
 and [calls index](https://developers.openai.com/api/reference/resources/realtime/subresources/calls)
 offer no documented request-ID-to-call recovery. Do not blindly retry creation

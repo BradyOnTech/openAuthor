@@ -2,6 +2,8 @@ import {
   MOBILE_SNAPSHOT_OBJECT_MAX_BYTES,
   parseEncryptedSnapshotBlobMetadata,
   parseOutboxEnvelope,
+  parseProjectKeyVerifier,
+  type ProjectKeyVerifier,
 } from "@openauthor/contracts";
 
 import type { DeviceEnrollmentTransport } from "../core/deviceEnrollment";
@@ -27,6 +29,7 @@ export interface MobileSupabaseClient {
     }>>;
     refreshSession(): Promise<Result<{ session: SessionShape | null }>>;
     signOut(options?: { scope: "local" }): Promise<{ error: { message?: string } | null }>;
+    onAuthStateChange?(listener: (event: string, session: SessionShape | null) => void): { data: { subscription: { unsubscribe(): void } } };
   };
   from(table: string): {
     select(columns: string): {
@@ -195,7 +198,7 @@ async function rpc(
 async function verifiedSession(
   client: MobileSupabaseClient,
   expectedDeviceId?: string,
-): Promise<{ accessToken: string; userId: string; email: string }> {
+): Promise<{ accessToken: string; userId: string; email: string; sessionId: string | null; expiresAt: number | null }> {
   const sessionResult = await client.auth.getSession();
   const session = sessionResult.data?.session;
   if (sessionResult.error || !session?.access_token) {
@@ -208,7 +211,7 @@ async function verifySessionClaims(
   client: MobileSupabaseClient,
   session: SessionShape,
   expectedDeviceId?: string,
-): Promise<{ accessToken: string; userId: string; email: string }> {
+): Promise<{ accessToken: string; userId: string; email: string; sessionId: string | null; expiresAt: number | null }> {
   const claimsResult = await client.auth.getClaims(session.access_token);
   const claims = claimsResult.data?.claims;
   if (claimsResult.error || !claims) throw new Error("Supabase JWT verification failed.");
@@ -226,6 +229,8 @@ async function verifySessionClaims(
     accessToken: session.access_token,
     userId: subject,
     email: typeof claims.email === "string" ? claims.email : session.user.email ?? "",
+    sessionId: typeof claims.session_id === "string" && UUID_PATTERN.test(claims.session_id) ? claims.session_id.toLowerCase() : null,
+    expiresAt: typeof claims.exp === "number" && Number.isFinite(claims.exp) ? claims.exp : null,
   };
 }
 
@@ -248,6 +253,30 @@ export class SupabaseAuth {
     return (await verifiedSession(this.client, expectedDeviceId)).accessToken;
   }
 
+  async recoveryIdentity(expectedDeviceId: string): Promise<{ userId: string; sessionId: string }> {
+    const identity = await verifiedSession(this.client, expectedDeviceId);
+    if (!identity.sessionId || identity.expiresAt === null || identity.expiresAt <= Date.now() / 1000) {
+      throw new Error("A current verified sign-in session identity is required for book key recovery.");
+    }
+    return { userId: identity.userId, sessionId: identity.sessionId };
+  }
+
+  observeRecoveryIdentity(expected: { userId: string; deviceId: string; sessionId: string }, changed: () => void): () => void {
+    const subscription = this.client.auth.onAuthStateChange?.((_event, session) => {
+      // These event claims only revoke pending local work. They never authorize
+      // an import; recoveryIdentity still verifies the signed current claims.
+      try {
+        if (!session) { changed(); return; }
+        const encoded = session.access_token.split(".")[1];
+        if (!encoded || encoded.length > 16384) { changed(); return; }
+        const claims = JSON.parse(new TextDecoder().decode(decodeBase64(encoded))) as Record<string, unknown>;
+        if (session.user.id !== expected.userId || claims.sub !== expected.userId
+          || claims.device_id !== expected.deviceId || claims.session_id !== expected.sessionId) changed();
+      } catch { changed(); }
+    }).data.subscription;
+    return () => subscription?.unsubscribe();
+  }
+
   async refreshAfterEnrollment(expectedDeviceId: string): Promise<string> {
     const result = await this.client.auth.refreshSession();
     if (result.error || !result.data?.session) {
@@ -259,6 +288,29 @@ export class SupabaseAuth {
   async signOut(): Promise<void> {
     const result = await this.client.auth.signOut({ scope: "local" });
     if (result.error) throw new Error("Supabase sign-out failed.");
+  }
+}
+
+export class SupabaseProjectKeyVerifier {
+  constructor(private readonly client: MobileSupabaseClient, private readonly deviceId: string) {}
+
+  async get(projectId: string, keyVersion: number): Promise<ProjectKeyVerifier | null> {
+    const deviceId = requiredUuid(this.deviceId, "Device identity");
+    const normalizedProjectId = requiredUuid(projectId, "Project identity");
+    const expectedKeyVersion = positiveInteger(keyVersion, "Project key version");
+    if (expectedKeyVersion > 2147483647) throw new Error("Project key version is invalid.");
+    await verifiedSession(this.client, deviceId);
+    const value = await rpc(this.client, "mobile_get_project_key_verifier", {
+      p_requesting_device_id: deviceId,
+      p_project_id: normalizedProjectId,
+      p_expected_key_version: expectedKeyVersion,
+    });
+    if (value === null) return null;
+    const verifier = parseProjectKeyVerifier(value);
+    if (verifier.project_id !== normalizedProjectId || verifier.key_version !== expectedKeyVersion) {
+      throw new Error("The key verifier does not match the selected book and version.");
+    }
+    return verifier;
   }
 }
 

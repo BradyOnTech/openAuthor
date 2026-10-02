@@ -6,6 +6,7 @@ import {
   SupabaseDeviceEnrollmentTransport,
   SupabaseOutboxTransport,
   SupabaseProjects,
+  SupabaseProjectKeyVerifier,
   SupabaseSnapshotSyncTransport,
   type MobileSupabaseClient,
 } from "../src/adapters/supabaseAdapters";
@@ -26,6 +27,11 @@ class FakeClient implements MobileSupabaseClient {
   readonly rpcCalls: Array<{ name: string; params: Record<string, unknown> }> = [];
   downloadedPath = "";
   snapshotObjectSha256 = "b".repeat(64);
+  sessionClaim: string | null = "11000000-0000-4000-8000-000000000001";
+  expiresAt = Date.now() / 1000 + 300;
+  verifier: unknown = { schema: "openauthor.mobile.project-key-verifier", schema_version: 1, project_id: PROJECT_ID, key_version: 4,
+    algorithm: "aes-256-gcm-v1", aad_version: 1, nonce_hex: "09".repeat(12), ciphertext_hex: "a1".repeat(57), ciphertext_sha256: "b".repeat(64) };
+  verifierError = false;
 
   readonly auth = {
     getSession: async () => ({
@@ -44,6 +50,8 @@ class FakeClient implements MobileSupabaseClient {
           role: "authenticated",
           device_id: this.deviceClaim,
           email: "author@example.com",
+          session_id: this.sessionClaim,
+          exp: this.expiresAt,
         },
       },
       error: null,
@@ -93,6 +101,8 @@ class FakeClient implements MobileSupabaseClient {
 
   async rpc(name: string, params: Record<string, unknown>) {
     this.rpcCalls.push({ name, params });
+    if (name === "mobile_get_project_key_verifier") return { data: this.verifier,
+      error: this.verifierError ? { message: "private backend detail" } : null };
     if (name === "mobile_register_device") {
       return { data: {
         id: DEVICE_ID,
@@ -152,6 +162,44 @@ class FakeClient implements MobileSupabaseClient {
 }
 
 describe("Supabase mobile adapters", () => {
+  it("reads only the exact enrolled-device/current-key verifier RPC and validates its scope", async () => {
+    const client = new FakeClient();
+    expect(await new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).toEqual(client.verifier);
+    expect(client.rpcCalls).toEqual([{ name: "mobile_get_project_key_verifier", params: {
+      p_requesting_device_id: DEVICE_ID, p_project_id: PROJECT_ID, p_expected_key_version: 4,
+    } }]);
+  });
+  it("accepts only an explicit null as a legacy absent verifier", async () => {
+    const client = new FakeClient(); client.verifier = null;
+    await expect(new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).resolves.toBeNull();
+  });
+  it.each([undefined, [], { unexpected: true }])("refuses malformed absent verifier %s", async data => {
+    const client = new FakeClient(); client.verifier = data;
+    await expect(new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).rejects.toThrow();
+  });
+  it.each(["project_id", "key_version"])("refuses a verifier from a different %s", async field => {
+    const client = new FakeClient(); client.verifier = { ...(client.verifier as Record<string, unknown>),
+      [field]: field === "project_id" ? "30000000-0000-4000-8000-000000000002" : 5 };
+    await expect(new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).rejects.toThrow("selected book and version");
+  });
+  it("refuses unavailable verifiers without treating private backend errors as legacy absence", async () => {
+    const client = new FakeClient(); client.verifierError = true;
+    await expect(new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).rejects.toThrow("mobile_get_project_key_verifier failed");
+  });
+  it("requires a bound device before requesting any verifier", async () => {
+    const client = new FakeClient(); client.deviceClaim = null;
+    await expect(new SupabaseProjectKeyVerifier(client, DEVICE_ID).get(PROJECT_ID, 4)).rejects.toThrow(); expect(client.rpcCalls).toEqual([]);
+  });
+  it("exposes a verified immutable Auth-session identity for recovery", async () => {
+    const client = new FakeClient();
+    await expect(new SupabaseAuth(client).recoveryIdentity(DEVICE_ID)).resolves.toEqual({ userId: "10000000-0000-4000-8000-000000000001", sessionId: client.sessionClaim });
+  });
+  it.each(["missing-session", "expired", "invalid-expiry"])("refuses %s recovery identity", async failure => {
+    const client = new FakeClient();
+    if (failure === "missing-session") client.sessionClaim = null;
+    else client.expiresAt = failure === "expired" ? Date.now() / 1000 - 1 : Number.NaN;
+    await expect(new SupabaseAuth(client).recoveryIdentity(DEVICE_ID)).rejects.toThrow("current verified");
+  });
   it("signs out only the current session instead of every device", async () => {
     const client = new FakeClient();
     const signOut = vi.spyOn(client.auth, "signOut");

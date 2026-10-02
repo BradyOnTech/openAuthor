@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { SupabaseMobileSyncTransport } from "./supabaseTransport";
 import type { EncryptedMobileSnapshot } from "./mobileSync";
+import { createProjectKeyVerifier } from "./projectKeyVerifier";
+import { importMobileRecoveryKey } from "./projectKeyProvisioning";
+import { recoveryFixtureKey } from "./recoverySnapshot.fixture";
 
 const PROJECT_ID = "10000000-0000-4000-8000-000000000001";
 
@@ -210,6 +213,7 @@ describe("SupabaseMobileSyncTransport", () => {
   });
 
   it("atomically rotates with exact recipient envelope metadata", async () => {
+    const verifier = await createProjectKeyVerifier(await importMobileRecoveryKey(recoveryFixtureKey), PROJECT_ID, 4);
     const sealed = Uint8Array.from({ length: 80 }, (_, index) => index + 10);
     const sealedBase64Url = bytesToBase64(sealed)
       .replace(/\+/g, "-")
@@ -218,6 +222,7 @@ describe("SupabaseMobileSyncTransport", () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
       project_id: PROJECT_ID,
       key_version: 4,
+      recovery_verifier: verifier,
     }), {
       status: 200,
       headers: { "content-type": "application/json" },
@@ -234,6 +239,7 @@ describe("SupabaseMobileSyncTransport", () => {
       projectId: PROJECT_ID,
       expectedPreviousVersion: 3,
       reasonCode: "desktop-provisioning",
+      verifier,
       envelopes: [{
         envelopeId: "50000000-0000-4000-8000-000000000001",
         recipientDeviceId: "20000000-0000-4000-8000-000000000001",
@@ -245,13 +251,14 @@ describe("SupabaseMobileSyncTransport", () => {
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(
-      "https://example.supabase.co/rest/v1/rpc/mobile_rotate_project_key_with_envelopes"
+      "https://example.supabase.co/rest/v1/rpc/mobile_rotate_project_key_with_verifier"
     );
     expect(JSON.parse(String(init?.body))).toEqual({
       p_requesting_device_id: "40000000-0000-4000-8000-000000000001",
       p_project_id: PROJECT_ID,
       p_expected_previous_version: 3,
       p_reason_code: "desktop-provisioning",
+      p_verifier: verifier,
       p_envelopes: [{
         envelope_id: "50000000-0000-4000-8000-000000000001",
         recipient_device_id: "20000000-0000-4000-8000-000000000001",
