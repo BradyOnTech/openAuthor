@@ -47,5 +47,6 @@
     "No physical-phone execution",
     "No signed/clean-machine distribution or upgrade",
     "No full native accessibility certification"
-  ]
+  ],
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
 }

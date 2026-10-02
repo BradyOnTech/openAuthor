@@ -40,5 +40,6 @@
     "caret_and_force_quit_bundle_application_sha256": "486733f4b506fd2c13ed0241ef7e622e074481e95afffda100341ffde99fb48f",
     "earlier_backup_restore_bundle_application_sha256": "e6216ce7f8131fedcf44d44d3104d45ab82c6e4b77be625f55d49c0f354c7d21",
     "final_core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92"
-  }
+  },
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
 }

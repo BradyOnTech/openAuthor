@@ -4,7 +4,7 @@
   "core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92",
   "architecture": "arm64",
   "python": "3.11.15",
-  "source_commit": "f154d78aaaafb5c1f0b42fdbe35b242aeadff705",
+  "source_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
   "workflow_run_id": "",
   "signed_bundle_required": false,
   "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate",
@@ -16,7 +16,7 @@
     "upgrade_from_released_version": "not_observed",
     "voiceover_keyboard_contrast": "not_observed"
   },
-  "source_checkout_clean": false,
+  "source_checkout_clean": true,
   "application": {
     "identifier": "com.openauthor.desktop",
     "version": "0.1.0"
@@ -43,7 +43,7 @@
       "architectures": [
         "arm64"
       ],
-      "sha256": "ef6b2ef485864084967f1796c37d7ebb7baf0e785510ccacaa16b878f05d1655"
+      "sha256": "486733f4b506fd2c13ed0241ef7e622e074481e95afffda100341ffde99fb48f"
     },
     "python": {
       "architectures": [

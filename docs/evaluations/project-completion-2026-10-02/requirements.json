@@ -134,7 +134,8 @@
         "Pinned local Python, Codex and Git runtimes prepared",
         "Reviewed core files compared byte-for-byte to the arm64 packaged runtime",
         "Developer ID, hardened runtime, notarization, Gatekeeper and architecture gates wired into release verification",
-        "Compatible fast-uri and brace-expansion security patches installed"
+        "Compatible fast-uri and brace-expansion security patches installed",
+        "Committed-source bundle provenance with clean tracked source scope and exact core/binary hashes"
       ],
       "verification": [
         "scripts/verify_macos_bundle.sh",
@@ -142,7 +143,6 @@
         ".github/workflows/release-macos.yml"
       ],
       "remaining": [
-        "Final committed-source bundle provenance",
         "Developer ID signing and notarization",
         "Clean Apple Silicon and Intel installation and upgrades",
         "Native accessibility verification",
@@ -251,5 +251,6 @@
       ],
       "scope": "Pending chat can retry its immutable stale reviewed payload or discard; safe re-review must first reconcile any completed result."
     }
-  ]
+  ],
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c"
 }
