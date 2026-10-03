@@ -1,0 +1,1685 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-03T14:55:40.023585+00:00",
+  "archives": {
+    "root-validation.tar.gz": {
+      "file_count": 59,
+      "archive_sha256": "bbb331d51b5ab04c7635285ef6970330d5067b2b4d4c720e000705f1f137e6d8",
+      "bytes": 3841707,
+      "members": {
+        "apply-invocation.json": {
+          "sha256": "c02597a008618a224e7bccd26059f7ea0c64856e41b6bb54c7463751acee9846",
+          "bytes": 599,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/apply-invocation.json"
+        },
+        "apply.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/apply.stderr.txt"
+        },
+        "apply.stdout.txt": {
+          "sha256": "5c4e9a4d349ef90751039b74e26f910237fcfa3abc8b336e66434b22ea2baaa3",
+          "bytes": 1666,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/apply.stdout.txt"
+        },
+        "before.json": {
+          "sha256": "0f03f3a63d9955e23a930a0512b2e77924a7283789d1071c8dfb4dcdbb1f0151",
+          "bytes": 13456,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/before.json"
+        },
+        "check-invocation.json": {
+          "sha256": "66ca25b07b747e9a35956c91991820ab7b1b512f463960a749522eb3978a7e9a",
+          "bytes": 599,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/check-invocation.json"
+        },
+        "check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/check.stderr.txt"
+        },
+        "check.stdout.txt": {
+          "sha256": "dab52aab1b80d3ae5c7827ddbd958096949f8400901ee7d2a3a440834354db93",
+          "bytes": 1359,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/check.stdout.txt"
+        },
+        "export-all-invocation.json": {
+          "sha256": "0d303042e6ba7b9a62faa0bc73eccae2c43f4fe261d6438b6470f999252427b3",
+          "bytes": 711,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all-invocation.json"
+        },
+        "export-all.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all.stderr.txt"
+        },
+        "export-all.stdout.txt": {
+          "sha256": "82930e393dcbd2bb17f9563523f38cfb3f998744db9ae7019530082bfd214211",
+          "bytes": 1041,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all.stdout.txt"
+        },
+        "export-all/_expo/static/js/android/index-8292893dac05d3f01c6cd9dd8d85b7e6.hbc": {
+          "sha256": "5a4b713980cb0fac883f553e54e5937b957ec2109086697e284ea6db74130d6c",
+          "bytes": 2510508,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/_expo/static/js/android/index-8292893dac05d3f01c6cd9dd8d85b7e6.hbc"
+        },
+        "export-all/_expo/static/js/ios/index-7f054a3296efaf5eadd2d6f6d0fa721b.hbc": {
+          "sha256": "a1b9e214610519c7da31e9ac11682ab05e7a6cd28ec3d0498c3b416626cc0c3a",
+          "bytes": 2506080,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/_expo/static/js/ios/index-7f054a3296efaf5eadd2d6f6d0fa721b.hbc"
+        },
+        "export-all/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js": {
+          "sha256": "d1053ec38ee6ec13cf0c47cd39c52b95f149dcf4fd9cabca5e39785b44e2dfc6",
+          "bytes": 1406758,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js"
+        },
+        "export-all/icon.png": {
+          "sha256": "c037af31e4ff314c2880a54ba48b83111ac29025c6294c178ca794df025647ba",
+          "bytes": 2415,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/icon.png"
+        },
+        "export-all/index.html": {
+          "sha256": "0aff3ce7e2844a85f67834f3608f3737ba5b482569b04bf5a1d98df2fca09549",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/index.html"
+        },
+        "export-all/manifest.webmanifest": {
+          "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8",
+          "bytes": 394,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/manifest.webmanifest"
+        },
+        "export-all/metadata.json": {
+          "sha256": "4beeccaf56168ea46edd6457a46b13cbe9f7b493b6ef724eb1f15a15af847b59",
+          "bytes": 244,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/metadata.json"
+        },
+        "export-all/security-build.json": {
+          "sha256": "61f5f14330ab415f98a9f02b876835c3e2dbf4db7d6e5182fdd26cb0bafed8c9",
+          "bytes": 4198,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-all/security-build.json"
+        },
+        "export-invocation.json": {
+          "sha256": "5b62d52e1b23a7e476ad447d8f4d5164edaaa4b9a54536fee4b91d8a00b25d91",
+          "bytes": 678,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export-invocation.json"
+        },
+        "export.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export.stderr.txt"
+        },
+        "export.stdout.txt": {
+          "sha256": "aa6f088b8e5e403561adafb9db15a5748126c42221eb5ccc94ee328f23731b0b",
+          "bytes": 597,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export.stdout.txt"
+        },
+        "export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js": {
+          "sha256": "d1053ec38ee6ec13cf0c47cd39c52b95f149dcf4fd9cabca5e39785b44e2dfc6",
+          "bytes": 1406758,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js"
+        },
+        "export/icon.png": {
+          "sha256": "c037af31e4ff314c2880a54ba48b83111ac29025c6294c178ca794df025647ba",
+          "bytes": 2415,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/icon.png"
+        },
+        "export/index.html": {
+          "sha256": "0aff3ce7e2844a85f67834f3608f3737ba5b482569b04bf5a1d98df2fca09549",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/index.html"
+        },
+        "export/manifest.webmanifest": {
+          "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8",
+          "bytes": 394,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/manifest.webmanifest"
+        },
+        "export/metadata.json": {
+          "sha256": "aa5f19cc84d41c0f8c70ececb2bc82e863227ea1e121632aca879eb616056991",
+          "bytes": 49,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/metadata.json"
+        },
+        "export/security-build.json": {
+          "sha256": "a08d5c85ae9f596d89854a198dc44db662c9636501e9219e7c018d1e356ceaf8",
+          "bytes": 3518,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/export/security-build.json"
+        },
+        "first-candidate-reset.json": {
+          "sha256": "5739ce6f91443cba3059b83cae49f306042f68b13a86beb5ea23951abfee42e5",
+          "bytes": 2380,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/first-candidate-reset.json"
+        },
+        "focused-invocation.json": {
+          "sha256": "1b5456d6fc7e63b9852107815f3a4cd5e6d12423761fd7b6af6c7b89ed182507",
+          "bytes": 755,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/focused-invocation.json"
+        },
+        "focused.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/focused.stderr.txt"
+        },
+        "focused.stdout.txt": {
+          "sha256": "a5dfe51dad2bab7a2a9a0da73f5c69ffe90fb51dea61a42db10f2c7ec8780793",
+          "bytes": 2632,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/focused.stdout.txt"
+        },
+        "forge-check-invocation.json": {
+          "sha256": "1831f6b1a8fe6ff690897ab081b79d330a705919b5dbb2bfe4e666a0c569c94c",
+          "bytes": 598,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/forge-check-invocation.json"
+        },
+        "forge-check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/forge-check.stderr.txt"
+        },
+        "forge-check.stdout.txt": {
+          "sha256": "dfc820f2812a993537cdef42f466cb2ef30ba7a92b3d562b8cdd27a6428d52ec",
+          "bytes": 902,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/forge-check.stdout.txt"
+        },
+        "fresh-ci.py": {
+          "sha256": "fed4c239a913926fec0e0dc9cfa38a568c16f2a6bbd203859ec36a827f2f227d",
+          "bytes": 2312,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/fresh-ci.py"
+        },
+        "full-invocation.json": {
+          "sha256": "51b471a1e889b6f639edaeafea7ac54e681163443d6675c7b10c95078517230f",
+          "bytes": 600,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/full-invocation.json"
+        },
+        "full.stderr.txt": {
+          "sha256": "1a3a5010b5e661604202ea27c25f14ac63e36659c084019e62bfa95f044faca6",
+          "bytes": 338,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/full.stderr.txt"
+        },
+        "full.stdout.txt": {
+          "sha256": "ca63dcf47af1c708c5a680ab35d59ff536a3f24c5b798725b0f9dcf5583387b1",
+          "bytes": 6279,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/full.stdout.txt"
+        },
+        "green-inputs.json": {
+          "sha256": "ad0057ce927df242bdc695f0606a9bac5ca2d8925e3f8bf0fda600f5156826c1",
+          "bytes": 13490,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/green-inputs.json"
+        },
+        "green-inputs.tar.gz": {
+          "sha256": "07211e2a43b72300c16e107e29e5e6dc7caeee9fcfc0eb1195c0dc86f70aa24e",
+          "bytes": 290553,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/green-inputs.tar.gz"
+        },
+        "initial-focused-invocation.json": {
+          "sha256": "ac8114aae4729c5559266ca519af113e4db90805e2d934295b5d5c9e56eabd33",
+          "bytes": 755,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/initial-focused-invocation.json"
+        },
+        "initial-focused.stderr.txt": {
+          "sha256": "3255ea8d9c06859de8cbc419809342b90148424401af0245d1b84d1cea950663",
+          "bytes": 4069,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/initial-focused.stderr.txt"
+        },
+        "initial-focused.stdout.txt": {
+          "sha256": "746131be268679d2d9698b7fd8d41e4d711506dffc9148455c82518980e74003",
+          "bytes": 23241,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/initial-focused.stdout.txt"
+        },
+        "inputs-before.tar.gz": {
+          "sha256": "c82aaa825bd38f612ac2663fb1e62a591daca0f5e71fd4a65b7c0d6711766766",
+          "bytes": 289862,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/inputs-before.tar.gz"
+        },
+        "intermediate-focused-invocation.json": {
+          "sha256": "39143421a8aaffe1c6dfe04a1c204126414ce093855325da451881e747865beb",
+          "bytes": 755,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/intermediate-focused-invocation.json"
+        },
+        "intermediate-focused.stderr.txt": {
+          "sha256": "4575da875aee413f4659bd86b1f722dd2ff5b1b3f9469c3e4cb136da7835cf30",
+          "bytes": 517,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/intermediate-focused.stderr.txt"
+        },
+        "intermediate-focused.stdout.txt": {
+          "sha256": "c825c4ccde37e8878389f25f47ffa6cee49629617b41b90a836ae63bc307fdbe",
+          "bytes": 20998,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/intermediate-focused.stdout.txt"
+        },
+        "intermediate-green-inputs.json": {
+          "sha256": "24fbcd643b606594f71ddfb5c1111d89cb21736aac826c5b9975ea610f533e7b",
+          "bytes": 13425,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/intermediate-green-inputs.json"
+        },
+        "intermediate-green-inputs.tar.gz": {
+          "sha256": "797f07f7ab1abc93729a5a8a225a4a32d676844cfa74b6a25c1a4a2b8e3cedc6",
+          "bytes": 290544,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/intermediate-green-inputs.tar.gz"
+        },
+        "original-check-invocation.json": {
+          "sha256": "a2fdad560ada0315e41af0cbab7c43ca470a4140d2bb1da809bb8373a4b02c7e",
+          "bytes": 599,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/original-check-invocation.json"
+        },
+        "original-check.stderr.txt": {
+          "sha256": "d5a1b54023aafd7856d2b91de29650591f3623c539cb67cf27ec85481d1fd492",
+          "bytes": 61,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/original-check.stderr.txt"
+        },
+        "original-check.stdout.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/original-check.stdout.txt"
+        },
+        "preflight-invocation.json": {
+          "sha256": "da5085f1a10582fc9f67c7890fa89f649b3ccc7bb8fb9c6f92d87fca768c1f1a",
+          "bytes": 602,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/preflight-invocation.json"
+        },
+        "preflight.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/preflight.stderr.txt"
+        },
+        "preflight.stdout.txt": {
+          "sha256": "86b8eddb2d20b38b70ee467f31069256d0beba0024a68dbbc6cb6afc7a82a9b6",
+          "bytes": 2622,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/preflight.stdout.txt"
+        },
+        "run.py": {
+          "sha256": "7863cc1d3cc3911117559c9d151f6f34ce8e6f98b1b3cb1ba575dc69394bd135",
+          "bytes": 2324,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/run.py"
+        },
+        "typecheck-invocation.json": {
+          "sha256": "11f2e32bdace7c3757abfef7a07bb1eb8565f36068c1357f8c7b90759430f23a",
+          "bytes": 606,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/typecheck-invocation.json"
+        },
+        "typecheck.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/typecheck.stderr.txt"
+        },
+        "typecheck.stdout.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/typecheck.stdout.txt"
+        }
+      }
+    },
+    "original-design.tar.gz": {
+      "file_count": 8,
+      "archive_sha256": "c01c161161c216bc227fd8ec46e5efe994021904b686fab0c4318e5215a19f6a",
+      "bytes": 571974,
+      "members": {
+        "algorithm-findings.json": {
+          "sha256": "3cc428a597451e90c40668487641e56803d5f3630cdc99aa3deb9f546cc760cb",
+          "bytes": 4709,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/algorithm-findings.json"
+        },
+        "final-design-contract.json": {
+          "sha256": "78f34d2cc255718c20c6bbf3305e378b892f3227229ed23e8ab950f575a162fb",
+          "bytes": 1804,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/final-design-contract.json"
+        },
+        "first-implementation-findings.json": {
+          "sha256": "64552fd19dbb4c6c02a49153d65d9b26ed8b4d4294b8498080e4567997076eab",
+          "bytes": 2796,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/first-implementation-findings.json"
+        },
+        "original-hashes-and-modules.json": {
+          "sha256": "f5479494514b8fd02ef0bddd4972b6c7276d6fda1731669b3af5601ce6f5dcbe",
+          "bytes": 36383,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/original-hashes-and-modules.json"
+        },
+        "original-source-sha256.json": {
+          "sha256": "a059ea73ad4bdfd2a78d89583aa714ee80dffafa5a8a1060cbe5a65feab82ad0",
+          "bytes": 12479,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/original-source-sha256.json"
+        },
+        "originals.tar.gz": {
+          "sha256": "166899a53abcf47bee0cbcbec3b68ed731a2f97a09621dc50f8f5d000a257bb0",
+          "bytes": 545859,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/originals.tar.gz"
+        },
+        "proposal.md": {
+          "sha256": "a7d0fe0f1b11fd2c4b0ce54e2eeaba6220efa78899a08b692ce7b74ee5e3dac4",
+          "bytes": 11052,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/proposal.md"
+        },
+        "review-sha256.json": {
+          "sha256": "ea2ffd8dbbd648a4b93f85e1c9b7fe47b4e55751cafc8b225dfc94600cabdc19",
+          "bytes": 385,
+          "original_path": "/private/tmp/openauthor-braces-design-review-zt_akrvn/review-sha256.json"
+        }
+      }
+    },
+    "source-reviews.tar.gz": {
+      "file_count": 28,
+      "archive_sha256": "db973027f58f9964765b732bfec192bc39bb59a2a47c43d4e60679c99d0ab9c5",
+      "bytes": 65549,
+      "members": {
+        "spec/findings.json": {
+          "sha256": "6f8d94e9657d9cbe8219b6686a24568485b35143b6d32b8d6cb23a8c37569446",
+          "bytes": 11083,
+          "original_path": "/private/tmp/openauthor-braces-final-spec-review-y0m662ec/findings.json"
+        },
+        "spec/review.md": {
+          "sha256": "51d4645b1c465ac686d898e42bb5d8587746525da43a593ec29f5635b4c71555",
+          "bytes": 1042,
+          "original_path": "/private/tmp/openauthor-braces-final-spec-review-y0m662ec/review.md"
+        },
+        "spec/reviewed-sha256.json": {
+          "sha256": "df233c6ccbe2b5f7e536c696f0996af37b68d52d172de26367c5c598488c15d4",
+          "bytes": 1841,
+          "original_path": "/private/tmp/openauthor-braces-final-spec-review-y0m662ec/reviewed-sha256.json"
+        },
+        "standards/findings-intermediate.json": {
+          "sha256": "dc744853a18e0c2796ca60fba822acfc6d2a3d77588cacc52445860c4a619e9a",
+          "bytes": 825,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/findings-intermediate.json"
+        },
+        "standards/findings.json": {
+          "sha256": "e4220b99996caf6e37d2feb336c3b24e53e4bf92a8882405c03a133637412829",
+          "bytes": 965,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/findings.json"
+        },
+        "standards/inputs/mobile/README.md": {
+          "sha256": "eba28822e1f430ecf557330ad8e727ccfb1c1b37d7d33cea235b6c6df2ebb411",
+          "bytes": 19247,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/README.md"
+        },
+        "standards/inputs/mobile/package.json": {
+          "sha256": "31ef64dc1a3767f2bf0f8b0ea08ceb94a7b0e79782faba1652c14cc7b0f311fd",
+          "bytes": 3267,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/package.json"
+        },
+        "standards/inputs/mobile/scripts/braces-backport.mjs": {
+          "sha256": "85d1f16395d6987f736087afa2077266c77fed9e1997905c49fdaeada8f6bd13",
+          "bytes": 12811,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/scripts/braces-backport.mjs"
+        },
+        "standards/inputs/mobile/scripts/build-security.mjs": {
+          "sha256": "9747e34d7c4cd56da7f9356ceb18c442a1655cc025725739936586e6b3d27ec3",
+          "bytes": 10555,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/scripts/build-security.mjs"
+        },
+        "standards/inputs/mobile/security/braces-backport-3.0.3.json": {
+          "sha256": "bf51826586e72f83adcd862515bf48d744e143701069bd651414486440009127",
+          "bytes": 68690,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces-backport-3.0.3.json"
+        },
+        "standards/inputs/mobile/security/braces/LICENSE": {
+          "sha256": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+          "bytes": 1091,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/LICENSE"
+        },
+        "standards/inputs/mobile/security/braces/index.js": {
+          "sha256": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+          "bytes": 4508,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/index.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/compile.js": {
+          "sha256": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+          "bytes": 1627,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/compile.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/constants.js": {
+          "sha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+          "bytes": 1589,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/constants.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/expand.js": {
+          "sha256": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+          "bytes": 3987,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/expand.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/parse.js": {
+          "sha256": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+          "bytes": 7199,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/parse.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/stringify.js": {
+          "sha256": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+          "bytes": 743,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/stringify.js"
+        },
+        "standards/inputs/mobile/security/braces/lib/utils.js": {
+          "sha256": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+          "bytes": 6832,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/lib/utils.js"
+        },
+        "standards/inputs/mobile/security/braces/originals.json": {
+          "sha256": "7e96943ad654eae708d8a13395c9c24910527050965ab42c9a0c28a389279c29",
+          "bytes": 23603,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/security/braces/originals.json"
+        },
+        "standards/inputs/mobile/test/bracesBackportBehavior.test.mjs": {
+          "sha256": "b155b10fcb50fad78db364a75d52a57601dee2ebb406a15ff939be11d6dcdf1b",
+          "bytes": 13177,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/test/bracesBackportBehavior.test.mjs"
+        },
+        "standards/inputs/mobile/test/bracesBackportGuard.test.mjs": {
+          "sha256": "2c2ba95cf849dd5447ab451a70bf5a617addbd5ec24f8a1668cf1675aebb2071",
+          "bytes": 11499,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/test/bracesBackportGuard.test.mjs"
+        },
+        "standards/inputs/mobile/test/forgeBackport.test.mjs": {
+          "sha256": "6b55f14d73930cb0ecb3a78f1eaaf9bf0c996b46a2b2fed9ef030cc67a71e51b",
+          "bytes": 19677,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/inputs/mobile/test/forgeBackport.test.mjs"
+        },
+        "standards/review-intermediate.md": {
+          "sha256": "865aec01a96de642406c54460126304e0f4e37526705319b30cdc444c726b457",
+          "bytes": 2199,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/review-intermediate.md"
+        },
+        "standards/review.md": {
+          "sha256": "99da96b9aa4ebd86dba7ceffb7e3df36ad679a819a155237aa37536cb80a8908",
+          "bytes": 2403,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/review.md"
+        },
+        "standards/reviewed-sha256-intermediate.json": {
+          "sha256": "179e348ae5dce6ff26888f88425633e9c97136b3141de18ab5816489b0b27147",
+          "bytes": 2718,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/reviewed-sha256-intermediate.json"
+        },
+        "standards/reviewed-sha256.json": {
+          "sha256": "d6b3cc7da2fd7ef19749582dbfcf9db29e2fb94b0a518b78f2bc3684a68a0595",
+          "bytes": 2718,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/reviewed-sha256.json"
+        },
+        "standards/static-validation-intermediate.json": {
+          "sha256": "ee0604a570bda6ce316fe17c46e92daec8051231012eacb5f1e2e8f742287a12",
+          "bytes": 19439,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/static-validation-intermediate.json"
+        },
+        "standards/static-validation.json": {
+          "sha256": "75b6640218ee3644a7405a15a0076908dc8eb73c54198e00c333fe8a10eee7a5",
+          "bytes": 19439,
+          "original_path": "/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-braces-final-standards-review-njt1l_lw/static-validation.json"
+        }
+      }
+    },
+    "fresh-mobile-only.tar.gz": {
+      "file_count": 181,
+      "archive_sha256": "45195c2db8fca994eac0e59d3f710bfeccd423e32eb6f3cbe10892af0063d63d",
+      "bytes": 646170,
+      "members": {
+        "braces-check-invocation.json": {
+          "sha256": "c194ce2cd86fe4c98bda2b6baa2270d28da54d9928cab06ab9a0fed8b3d4c85d",
+          "bytes": 893,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-check-invocation.json"
+        },
+        "braces-check-started.json": {
+          "sha256": "27d4701442cb80565ece3da7ac922c091eb2e463cbe42641ca3914854ffa4258",
+          "bytes": 274,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-check-started.json"
+        },
+        "braces-check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-check.stderr.txt"
+        },
+        "braces-check.stdout.txt": {
+          "sha256": "dab52aab1b80d3ae5c7827ddbd958096949f8400901ee7d2a3a440834354db93",
+          "bytes": 1359,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-check.stdout.txt"
+        },
+        "cache-final-receipt.json": {
+          "sha256": "2e10ebacb9e952efb738426b1c598672134465638fcc4d14efcc7a9c833bfde2",
+          "bytes": 342986,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/cache-final-receipt.json"
+        },
+        "cache-receipt.json": {
+          "sha256": "24f0cd470625acd9b18f39164939046b09ea60f1a59cffa515e64d9c25424d27",
+          "bytes": 342281,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/cache-receipt.json"
+        },
+        "ci-invocation.json": {
+          "sha256": "3384eed109a519685784750611ffbd8f50faeb468e9ef525bd14c8375cf0bf13",
+          "bytes": 1078,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/ci-invocation.json"
+        },
+        "ci-started.json": {
+          "sha256": "454baeb94c07bbd78ba5d919ff5702a02b724b1ad52db7cea62a6926a0f597b0",
+          "bytes": 459,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/ci-started.json"
+        },
+        "ci.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/ci.stderr.txt"
+        },
+        "ci.stdout.txt": {
+          "sha256": "822bf9ea79b11805a7808d6f5adfa1a92a15f716864a27554b3aa9877d4ad092",
+          "bytes": 2715,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/ci.stdout.txt"
+        },
+        "empty-global.npmrc": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/empty-global.npmrc"
+        },
+        "empty-user.npmrc": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/empty-user.npmrc"
+        },
+        "fetch-missing.py": {
+          "sha256": "5c802e87b20bd76e575b2052ce731975a0cdff5830f588c93b80ee8126f9793e",
+          "bytes": 1738,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/fetch-missing.py"
+        },
+        "fetched-pinned-package.json": {
+          "sha256": "0fbf104bac92d15ed4f325ba10a356f972b3bb657a9cf253cd1a503791d84128",
+          "bytes": 797,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/fetched-pinned-package.json"
+        },
+        "focused-invocation.json": {
+          "sha256": "1e40d006329ff432fb19134a253beee1c21644545d62ef6dbb898fc922c9907a",
+          "bytes": 1049,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/focused-invocation.json"
+        },
+        "focused-started.json": {
+          "sha256": "769bd18339deaacc69bd3b66fbc6bcee80f330186100c7a9f856d628deeff5f4",
+          "bytes": 430,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/focused-started.json"
+        },
+        "focused.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/focused.stderr.txt"
+        },
+        "focused.stdout.txt": {
+          "sha256": "378d82486f77a92d6358aa09be69d0032b4af8d8d8529c496b66660af1e7df1e",
+          "bytes": 2436,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/focused.stdout.txt"
+        },
+        "forge-check-invocation.json": {
+          "sha256": "0df246d81dcc4ea1dea48745fa5c1eea9072e3445d707cad2d6fabeb85a49867",
+          "bytes": 892,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-check-invocation.json"
+        },
+        "forge-check-started.json": {
+          "sha256": "a70234fffd8cc34d521c459089eee985bc9f84056a2880d0e034b324c4e71bdd",
+          "bytes": 273,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-check-started.json"
+        },
+        "forge-check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-check.stderr.txt"
+        },
+        "forge-check.stdout.txt": {
+          "sha256": "dfc820f2812a993537cdef42f466cb2ef30ba7a92b3d562b8cdd27a6428d52ec",
+          "bytes": 902,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-check.stdout.txt"
+        },
+        "preflight-invocation.json": {
+          "sha256": "32c08667eaffa141018e875d144a69e5828d45528e489d1d8364c1856a197267",
+          "bytes": 896,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preflight-invocation.json"
+        },
+        "preflight-started.json": {
+          "sha256": "82894506dc469430248dc95c4711844f8e5e08b997c3d0f642638b44c897179b",
+          "bytes": 277,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preflight-started.json"
+        },
+        "preflight.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preflight.stderr.txt"
+        },
+        "preflight.stdout.txt": {
+          "sha256": "86b8eddb2d20b38b70ee467f31069256d0beba0024a68dbbc6cb6afc7a82a9b6",
+          "bytes": 2622,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preflight.stdout.txt"
+        },
+        "preliminary-source-receipt.json": {
+          "sha256": "dbc0fed052eac572857dd2ab984241d275326af2c8a260d1ee4d26d32fe72400",
+          "bytes": 16689,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preliminary-source-receipt.json"
+        },
+        "preparation-summary.json": {
+          "sha256": "4755d7d44b5abf5166036a1d245691659010e02fd2db76b76162a7b8f97aaa3e",
+          "bytes": 2003,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/preparation-summary.json"
+        },
+        "prepared-files-sha256.json": {
+          "sha256": "e332a0e531fd20f45fb647202f9591568c0e0c7cd9e4a858c74262eb48f2c110",
+          "bytes": 148041,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/prepared-files-sha256.json"
+        },
+        "project/contracts/README.md": {
+          "sha256": "765b837153f9ca9c689e88fcc22db0d2a4c55fe59bee84a0d26a69c2609b6c73",
+          "bytes": 5860,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/README.md"
+        },
+        "project/contracts/fixtures/assistant-turn.v1.json": {
+          "sha256": "341da7d9a3a460f2ae77538cad9d9f107fc15d3c6e5659b67983c73bc32044d2",
+          "bytes": 932,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/assistant-turn.v1.json"
+        },
+        "project/contracts/fixtures/context-pack-projection.v1.json": {
+          "sha256": "8342f56e6a64638f173a315ab42b7bb32cffc3b616fe71bdfc2504cf1d35756d",
+          "bytes": 691,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/context-pack-projection.v1.json"
+        },
+        "project/contracts/fixtures/context-pack-reference.v1.json": {
+          "sha256": "e2f1c07b5a5ae71cbc23d1420a9e5bcfad328e28f8854effb687cf562c6c14f4",
+          "bytes": 284,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/context-pack-reference.v1.json"
+        },
+        "project/contracts/fixtures/device-enrollment.v1.json": {
+          "sha256": "e2f256134a15f0cd9bffc0848d453d9f689af976cafec7ff0d81cd38546aac59",
+          "bytes": 740,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/device-enrollment.v1.json"
+        },
+        "project/contracts/fixtures/encrypted-snapshot-blob-metadata.v1.json": {
+          "sha256": "f15567e98124a624456187704de2495d347542398c1ef9e32bd9206e1c48df36",
+          "bytes": 615,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/encrypted-snapshot-blob-metadata.v1.json"
+        },
+        "project/contracts/fixtures/mobile-snapshot-envelope.v1.json": {
+          "sha256": "0d89649288fc0cb4574d59ac32c5a0854c7209d9c73ed4d5b9c280c1f2b4c8c3",
+          "bytes": 1288,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/mobile-snapshot-envelope.v1.json"
+        },
+        "project/contracts/fixtures/mobile-snapshot-manifest.v1.json": {
+          "sha256": "b546ece77118ddcfffdad94cdced64a0e07fb47439ccbb9fae61b4f4280a10a6",
+          "bytes": 257,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/mobile-snapshot-manifest.v1.json"
+        },
+        "project/contracts/fixtures/outbox-envelope.v1.json": {
+          "sha256": "81a8973f9bd92ca7363cdb7ab0ce1aa99b9b04eab996f36326d8d8afa7bfe6b6",
+          "bytes": 628,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/outbox-envelope.v1.json"
+        },
+        "project/contracts/fixtures/project-key-envelope.v1.json": {
+          "sha256": "c54ead529824696a83046ecc89fb30988afb672098e713c1c6e66adc85ee6350",
+          "bytes": 660,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/project-key-envelope.v1.json"
+        },
+        "project/contracts/fixtures/tool-call.v1.json": {
+          "sha256": "a6cff937bda8e6b107a4866da2059dc514c36b23f34d666424d15f0784b49ac1",
+          "bytes": 468,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/tool-call.v1.json"
+        },
+        "project/contracts/fixtures/tool-outcome.v1.json": {
+          "sha256": "678de757475cb6b41e2e9a36339c45f58c56c9ff2df6fe873c65710c6293ab12",
+          "bytes": 486,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/tool-outcome.v1.json"
+        },
+        "project/contracts/fixtures/voice-session.v1.json": {
+          "sha256": "6690e105565fb384d7bc9993116c522d35a1fd8b73b30bc3cdef58d19960e2fb",
+          "bytes": 837,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/fixtures/voice-session.v1.json"
+        },
+        "project/contracts/package.json": {
+          "sha256": "6b8f7fd01390c53ab7f58622c4295a1e318416ecd3581398761bf4586d1aec96",
+          "bytes": 573,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/package.json"
+        },
+        "project/contracts/schemas/assistant-turn.v1.schema.json": {
+          "sha256": "06ac26a86f9fc0e47125deffbe27cb01fc30bb0a2a6fa14a5905b66c74c1f10f",
+          "bytes": 2451,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/assistant-turn.v1.schema.json"
+        },
+        "project/contracts/schemas/common.v1.schema.json": {
+          "sha256": "12559cf072cf53eb27871cd81afb6484f00a3e80c5f140f2f72156c8ff41ffe4",
+          "bytes": 1190,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/common.v1.schema.json"
+        },
+        "project/contracts/schemas/context-pack-projection.v1.schema.json": {
+          "sha256": "c9c05096c27645463d9d69b9ce1647515b456ecc164066cb2294ff102864f244",
+          "bytes": 2308,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/context-pack-projection.v1.schema.json"
+        },
+        "project/contracts/schemas/context-pack-reference.v1.schema.json": {
+          "sha256": "707c36db2eec974248d24e49f8d053c15eeb98446b280fd61cf5698b95a4743c",
+          "bytes": 902,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/context-pack-reference.v1.schema.json"
+        },
+        "project/contracts/schemas/device-enrollment.v1.schema.json": {
+          "sha256": "20b44290f20137bc1f691f02273c6b4d73cef08809b202b6daf8c4c184f57936",
+          "bytes": 2143,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/device-enrollment.v1.schema.json"
+        },
+        "project/contracts/schemas/encrypted-snapshot-blob-metadata.v1.schema.json": {
+          "sha256": "2d607dad63b2f34a69771febf71a899dcbb814e4f0e2e9ee75f670deff0ae81c",
+          "bytes": 1667,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/encrypted-snapshot-blob-metadata.v1.schema.json"
+        },
+        "project/contracts/schemas/mobile-snapshot-envelope.v1.schema.json": {
+          "sha256": "dbfb2ace673a4d26b858201afad9cefac4ec3043782729d9d8ebf67abbb3289a",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/mobile-snapshot-envelope.v1.schema.json"
+        },
+        "project/contracts/schemas/mobile-snapshot-manifest.v1.schema.json": {
+          "sha256": "b3b8194bb2272a09c1515ec48b3ac82dec81bf173b6d279ea9fe26b13b776859",
+          "bytes": 887,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/mobile-snapshot-manifest.v1.schema.json"
+        },
+        "project/contracts/schemas/outbox-envelope.v1.schema.json": {
+          "sha256": "412b912e770bfe0cfab8cad40977fba4fbce38544583b55d2d2a06516d9f7d99",
+          "bytes": 1942,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/outbox-envelope.v1.schema.json"
+        },
+        "project/contracts/schemas/project-key-envelope.v1.schema.json": {
+          "sha256": "0bc2b18be27045ce40559c6f0553aba29b81e9051ccac73a4a84d41798218fd9",
+          "bytes": 1538,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/project-key-envelope.v1.schema.json"
+        },
+        "project/contracts/schemas/project-key-verifier.v1.schema.json": {
+          "sha256": "a66b5d528d9b44f30dfa6454686c438bab66fee918eb62ca3ac0489b7563d1db",
+          "bytes": 1040,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/project-key-verifier.v1.schema.json"
+        },
+        "project/contracts/schemas/tool-call.v1.schema.json": {
+          "sha256": "23b9e1a4d907e57966cc8cf0631696c3faa67fb1ad34a099c64491b271b5d2a2",
+          "bytes": 1430,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/tool-call.v1.schema.json"
+        },
+        "project/contracts/schemas/tool-outcome.v1.schema.json": {
+          "sha256": "75f78871346609d0999d4d50e092f11e155b9b1f9a8670336d9f88c549dbb7e9",
+          "bytes": 2401,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/tool-outcome.v1.schema.json"
+        },
+        "project/contracts/schemas/voice-session.v1.schema.json": {
+          "sha256": "4a8be95e5161dabaad27f83e969e41516d48ba016908dc3874815329a4164125",
+          "bytes": 1817,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/schemas/voice-session.v1.schema.json"
+        },
+        "project/contracts/src/index.ts": {
+          "sha256": "0842c90fa0aff9436482c04acc7cefb8990b49a8437e434e8e965e0d0c25c0f1",
+          "bytes": 18453,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/src/index.ts"
+        },
+        "project/contracts/src/types.ts": {
+          "sha256": "0c76e6686ee62e0e5546ecf2401c49a81b04c51a44785a0859bbab03293a4a4e",
+          "bytes": 7787,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/src/types.ts"
+        },
+        "project/mobile/App.tsx": {
+          "sha256": "df1b7d01ac0263b0b3a443972dbf2eef36c91416f836cf42d47adfd7a4430fd2",
+          "bytes": 52975,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/App.tsx"
+        },
+        "project/mobile/README.md": {
+          "sha256": "eba28822e1f430ecf557330ad8e727ccfb1c1b37d7d33cea235b6c6df2ebb411",
+          "bytes": 19247,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/README.md"
+        },
+        "project/mobile/app.json": {
+          "sha256": "6b4595e91d9785ec19455d039d668c62f03fb9c7327f5d1ff6c2a812cba63a5f",
+          "bytes": 1737,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/app.json"
+        },
+        "project/mobile/e2e/companion.spec.ts": {
+          "sha256": "279d5d2e22a48a8a9b78803a291d138b3bfd05f304b593caa640cc193be48a44",
+          "bytes": 8687,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/e2e/companion.spec.ts"
+        },
+        "project/mobile/e2e/hosted-companion.spec.ts": {
+          "sha256": "e0381b2fea2abcdcd8bfbf33b6f3d96e6e98e081d717f399a5cdc26a7d351bd8",
+          "bytes": 47770,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/e2e/hosted-companion.spec.ts"
+        },
+        "project/mobile/e2e/voiceControls.ts": {
+          "sha256": "bdc97cf5ec4f28b8310d9996b786398bf8281e3947f78ec1b195ecacaee4ec3f",
+          "bytes": 13153,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/e2e/voiceControls.ts"
+        },
+        "project/mobile/eas.json": {
+          "sha256": "6d46bcbded5224fabd27cb6c5b8e98a44189277bbfa41bbaa0d2dcb44af46b48",
+          "bytes": 402,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/eas.json"
+        },
+        "project/mobile/index.ts": {
+          "sha256": "3c87f11c5dfcdcf20361d011834a570d10c3142549ad1eba90053f9c9430d65f",
+          "bytes": 101,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/index.ts"
+        },
+        "project/mobile/package-lock.json": {
+          "sha256": "ef1a7c49e89423bea406bd7360b58e29fed2e48e35a4ecf2ffb47cba09d5756f",
+          "bytes": 279416,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/package-lock.json"
+        },
+        "project/mobile/package.json": {
+          "sha256": "31ef64dc1a3767f2bf0f8b0ea08ceb94a7b0e79782faba1652c14cc7b0f311fd",
+          "bytes": 3267,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/package.json"
+        },
+        "project/mobile/playwright.config.ts": {
+          "sha256": "a6741b7d9c7671f1d86497f176174856ba790d454b34f754f5278030150dc6eb",
+          "bytes": 706,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/playwright.config.ts"
+        },
+        "project/mobile/playwright.hosted.config.ts": {
+          "sha256": "44ad68dba900ee4cc4565b72e70446f330ee8df065e45e92b25b636f1982bc27",
+          "bytes": 556,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/playwright.hosted.config.ts"
+        },
+        "project/mobile/scripts/braces-backport.mjs": {
+          "sha256": "85d1f16395d6987f736087afa2077266c77fed9e1997905c49fdaeada8f6bd13",
+          "bytes": 12811,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/scripts/braces-backport.mjs"
+        },
+        "project/mobile/scripts/build-hosted-test.mjs": {
+          "sha256": "db4b8566d2c573a8a70d5b4bc8d5c3c341309cea3481cbca37073c20fa4ee582",
+          "bytes": 695,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/scripts/build-hosted-test.mjs"
+        },
+        "project/mobile/scripts/build-pwa.mjs": {
+          "sha256": "ef8ca449cc10b811af819ccce4f884383afba7fb6aeb67a84865fb66940fb18b",
+          "bytes": 3666,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/scripts/build-pwa.mjs"
+        },
+        "project/mobile/scripts/build-security.mjs": {
+          "sha256": "9747e34d7c4cd56da7f9356ceb18c442a1655cc025725739936586e6b3d27ec3",
+          "bytes": 10555,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/scripts/build-security.mjs"
+        },
+        "project/mobile/scripts/forge-backport.mjs": {
+          "sha256": "71a4dd6721d274ef187c0dbe91693b2bfd6ab1c04f4afc5a1337dab66835b379",
+          "bytes": 8371,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/scripts/forge-backport.mjs"
+        },
+        "project/mobile/security/braces-backport-3.0.3.json": {
+          "sha256": "bf51826586e72f83adcd862515bf48d744e143701069bd651414486440009127",
+          "bytes": 68690,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces-backport-3.0.3.json"
+        },
+        "project/mobile/security/braces/LICENSE": {
+          "sha256": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+          "bytes": 1091,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/LICENSE"
+        },
+        "project/mobile/security/braces/index.js": {
+          "sha256": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+          "bytes": 4508,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/index.js"
+        },
+        "project/mobile/security/braces/lib/compile.js": {
+          "sha256": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+          "bytes": 1627,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/compile.js"
+        },
+        "project/mobile/security/braces/lib/constants.js": {
+          "sha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+          "bytes": 1589,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/constants.js"
+        },
+        "project/mobile/security/braces/lib/expand.js": {
+          "sha256": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+          "bytes": 3987,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/expand.js"
+        },
+        "project/mobile/security/braces/lib/parse.js": {
+          "sha256": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+          "bytes": 7199,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/parse.js"
+        },
+        "project/mobile/security/braces/lib/stringify.js": {
+          "sha256": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+          "bytes": 743,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/stringify.js"
+        },
+        "project/mobile/security/braces/lib/utils.js": {
+          "sha256": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+          "bytes": 6832,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/lib/utils.js"
+        },
+        "project/mobile/security/braces/originals.json": {
+          "sha256": "7e96943ad654eae708d8a13395c9c24910527050965ab42c9a0c28a389279c29",
+          "bytes": 23603,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/braces/originals.json"
+        },
+        "project/mobile/security/forge-backport-1.4.0.json": {
+          "sha256": "01767e261bbf56a58b02ed6dbb6bab993a14c3eb905b7b60b1787de377a1af5a",
+          "bytes": 63205,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/security/forge-backport-1.4.0.json"
+        },
+        "project/mobile/src/adapters/browserStorage.ts": {
+          "sha256": "84c0e9c77b9cc968b442c30d576d842fb4df1136c198a1778c935ab64710c001",
+          "bytes": 14628,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/browserStorage.ts"
+        },
+        "project/mobile/src/adapters/downloadedBookStore.ts": {
+          "sha256": "e1b62fbcc0c6fafaeeaaec75ecfa85132c8481a05cf53c05915932931317340d",
+          "bytes": 2899,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/downloadedBookStore.ts"
+        },
+        "project/mobile/src/adapters/downloadedBookStore.web.ts": {
+          "sha256": "cca2d13ade573c2bc1728d724800c01d436e93229b57a9e4960b951270dfd7d4",
+          "bytes": 1286,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/downloadedBookStore.web.ts"
+        },
+        "project/mobile/src/adapters/encryptedSnapshotCache.ts": {
+          "sha256": "5e77be1885dfe18995842d7cfa76975602ba61f41fd1b625a45d3b55b4ed64ba",
+          "bytes": 7606,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/encryptedSnapshotCache.ts"
+        },
+        "project/mobile/src/adapters/encryptedSnapshotCache.web.ts": {
+          "sha256": "4f8e325ca66601f5afc7ebdafee9ffb5f2e3f5678b4de090bc6338e6fb0825b5",
+          "bytes": 1680,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/encryptedSnapshotCache.web.ts"
+        },
+        "project/mobile/src/adapters/expoProjectCipher.ts": {
+          "sha256": "6a0dbadcb9dd3136240e02371e0af9397d8f9927ff1ff434bd542fde8f05e928",
+          "bytes": 3959,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/expoProjectCipher.ts"
+        },
+        "project/mobile/src/adapters/expoSecrets.ts": {
+          "sha256": "857af3d31d1bb40f55d9dda8a504fa87ff26a1c95791ac3672af6522e3dd08a3",
+          "bytes": 5291,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/expoSecrets.ts"
+        },
+        "project/mobile/src/adapters/expoSecrets.web.ts": {
+          "sha256": "2fe9bfc1512a558596b572e87b02d0011c52abcb511e91ba1efdd2dc48445b1b",
+          "bytes": 2598,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/expoSecrets.web.ts"
+        },
+        "project/mobile/src/adapters/gatewayRealtime.ts": {
+          "sha256": "6ec2379c47ac685f20a47cb35b898e3885da84546f8768e9d61d399bbf6d0afd",
+          "bytes": 1793,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/gatewayRealtime.ts"
+        },
+        "project/mobile/src/adapters/gatewayRealtime.web.ts": {
+          "sha256": "51843aa80fdceca3ae090b7e5d1d2ffebed268403a14ad203282317ec5f299a8",
+          "bytes": 1308,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/gatewayRealtime.web.ts"
+        },
+        "project/mobile/src/adapters/gatewaySession.ts": {
+          "sha256": "c6d102ef4d7315c81f82408422d7ec7d26469920431906d371bb72d0e812b43e",
+          "bytes": 3547,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/gatewaySession.ts"
+        },
+        "project/mobile/src/adapters/projectKeyVerifier.ts": {
+          "sha256": "dbf688e5b4429efbf7093df9140bd454f89490f319ee61d21ac061fef05eef75",
+          "bytes": 2314,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/projectKeyVerifier.ts"
+        },
+        "project/mobile/src/adapters/snapshotManifest.ts": {
+          "sha256": "04a3148bc555c96ec5fa85c4bb090058dc90b9686866861f01f26ade86901d63",
+          "bytes": 1987,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/snapshotManifest.ts"
+        },
+        "project/mobile/src/adapters/sodiumDeviceCrypto.ts": {
+          "sha256": "35b631a56eb101fedc1b9fabb2cd6132b715662c7aaa1b143645e99fd13c873a",
+          "bytes": 1648,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/sodiumDeviceCrypto.ts"
+        },
+        "project/mobile/src/adapters/sodiumDeviceCrypto.web.ts": {
+          "sha256": "f1eadb3fc0757aca92333978c50d0b5a12a5afc0b88433854d837524dad557bf",
+          "bytes": 1212,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/sodiumDeviceCrypto.web.ts"
+        },
+        "project/mobile/src/adapters/sqliteOutboxStore.ts": {
+          "sha256": "79e3a7e3e910b9d11e5ff5bcd6fdc58dad7829342d22e5207768ca86d831d935",
+          "bytes": 10537,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/sqliteOutboxStore.ts"
+        },
+        "project/mobile/src/adapters/sqliteOutboxStore.web.ts": {
+          "sha256": "3831718e4e3df332b20a61888324678bd8b87ce2915f382ccc9697f468e330a2",
+          "bytes": 2419,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/sqliteOutboxStore.web.ts"
+        },
+        "project/mobile/src/adapters/supabaseAdapters.ts": {
+          "sha256": "d897c74621b0a487774e3e04ff0577a9a8ed5cbe69168812ae58d3a689cc92a0",
+          "bytes": 26379,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/supabaseAdapters.ts"
+        },
+        "project/mobile/src/adapters/supabaseClient.ts": {
+          "sha256": "2a879c29c3f56ade7676a22a22a6016142ea91a6f39ad7692ca416e44c83707c",
+          "bytes": 1384,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/supabaseClient.ts"
+        },
+        "project/mobile/src/adapters/supabaseClient.web.ts": {
+          "sha256": "7d679106ab4104f6516604fd3a166d76204476b5d58ee9f94333e2de4ddfd774",
+          "bytes": 1212,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/adapters/supabaseClient.web.ts"
+        },
+        "project/mobile/src/app/hostedRuntime.ts": {
+          "sha256": "f43388df463efead6a377d246d3ba812a536109ba7de39ee3e72debbfe30d1cc",
+          "bytes": 33891,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/app/hostedRuntime.ts"
+        },
+        "project/mobile/src/app/previewRuntime.ts": {
+          "sha256": "2e8c5d79363f4600212297dcfe4936fe62a529cddbb4e28e5aa9996e3ca8ee0a",
+          "bytes": 3964,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/app/previewRuntime.ts"
+        },
+        "project/mobile/src/app/runtime.ts": {
+          "sha256": "689eb1273f09e84f4aec4a2095a682e3b4b42136442ceec5f62ddfc5c8abe1f7",
+          "bytes": 438,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/app/runtime.ts"
+        },
+        "project/mobile/src/app/types.ts": {
+          "sha256": "2ce0469958a29f94633a866dc20539ec894f8077b2a6cd92a937909a5000f9f4",
+          "bytes": 2214,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/app/types.ts"
+        },
+        "project/mobile/src/config.ts": {
+          "sha256": "0f6f6ffc8d25fa579e2298948e8b63aff61455eb04f22b0f802d533590d991db",
+          "bytes": 3704,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/config.ts"
+        },
+        "project/mobile/src/core/acceptedCanon.ts": {
+          "sha256": "bbc4f4d85ebbd4ea73bcca47fa10e6ba647cdc33dcfe887115c1620cb5fb6d14",
+          "bytes": 4698,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/acceptedCanon.ts"
+        },
+        "project/mobile/src/core/authStorageKey.ts": {
+          "sha256": "e99a12e5094cb0e419632f0b900e69c27858d3259cd0c424e73bf64bc3c9a971",
+          "bytes": 437,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/authStorageKey.ts"
+        },
+        "project/mobile/src/core/companionRecovery.ts": {
+          "sha256": "91c6db941d5a2d49921e6dbcf86e5d98a0df17bc99e83714889ed038959b3ee1",
+          "bytes": 4848,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/companionRecovery.ts"
+        },
+        "project/mobile/src/core/deviceEnrollment.ts": {
+          "sha256": "9735c9e1041f5c3aad6713394594be4b0c9e8fdac0630e4f10b8cb34a8e6bab8",
+          "bytes": 12486,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/deviceEnrollment.ts"
+        },
+        "project/mobile/src/core/encryptedAuthStorage.ts": {
+          "sha256": "f07c1b864dcfa7638cfa786f373a773950f3719e5149f62e5741a8ec47823d05",
+          "bytes": 5526,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/encryptedAuthStorage.ts"
+        },
+        "project/mobile/src/core/hostedLifecycle.ts": {
+          "sha256": "d6f5c183189c9b2240081af9c5c8b7ffbf8b6625f1743341a30758a983098d18",
+          "bytes": 983,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/hostedLifecycle.ts"
+        },
+        "project/mobile/src/core/localCompanion.ts": {
+          "sha256": "a52933b0f7637d4cbdb953bad02fc1bb5f7e63cf7c91b5fe6013565257893367",
+          "bytes": 7172,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/localCompanion.ts"
+        },
+        "project/mobile/src/core/mobileAssistant.ts": {
+          "sha256": "3e3395515a1dfb201f8c6da8052afa0acec7d9b7c7e10e83a32bb8f7cbcd535e",
+          "bytes": 3395,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/mobileAssistant.ts"
+        },
+        "project/mobile/src/core/outbox.ts": {
+          "sha256": "6cb29fb642931ed710c48dfc2e9924e6e188d6a25fef4e71bd1b422fcb87604a",
+          "bytes": 7149,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/outbox.ts"
+        },
+        "project/mobile/src/core/outboxReview.ts": {
+          "sha256": "c711a481ddc968ef76981b428a2f214239e0df5903af69adb76b667a1ec6cdb1",
+          "bytes": 4657,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/outboxReview.ts"
+        },
+        "project/mobile/src/core/projectRecovery.ts": {
+          "sha256": "24de1fce9e06abc266a659df8787053f2d48203d3f7f664ecd696c9f3f92829b",
+          "bytes": 3412,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/projectRecovery.ts"
+        },
+        "project/mobile/src/core/recoveryKey.ts": {
+          "sha256": "16ade5f579c64d633b5d458e4e4e1b98e6b48b3cbcd00109ac3f205bf54358ce",
+          "bytes": 1663,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/recoveryKey.ts"
+        },
+        "project/mobile/src/core/snapshotProject.ts": {
+          "sha256": "d6803354da5988612f04337acaf540220de9568b3f4d3a031196761ba34470a8",
+          "bytes": 11184,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/snapshotProject.ts"
+        },
+        "project/mobile/src/core/snapshotSync.ts": {
+          "sha256": "756296e0b79e87079f08203690fa5e05a5c33a58f7e9d3ff128b16f7c86db703",
+          "bytes": 5734,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/snapshotSync.ts"
+        },
+        "project/mobile/src/core/writingVoice.ts": {
+          "sha256": "274054d023b4c4d5bf56671f41c50861778caa02ea24cc5f59c685a207fb4046",
+          "bytes": 2717,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/core/writingVoice.ts"
+        },
+        "project/mobile/src/voice/realtimeEvents.ts": {
+          "sha256": "44fae97135ae4d9d8a6dc691c8fe27b6c630f69a28e1eec35423882e626bf2c0",
+          "bytes": 4538,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/realtimeEvents.ts"
+        },
+        "project/mobile/src/voice/realtimeTransport.ts": {
+          "sha256": "ab4cbcf81fb5e82a0bc55009f6ffd4a081413a3c4099ed3f96d51b771700f793",
+          "bytes": 8966,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/realtimeTransport.ts"
+        },
+        "project/mobile/src/voice/voiceController.ts": {
+          "sha256": "7917a646f6a73c112f3dd92fe11d09652f91525cfd3dcbd9a0254f52e1eebfcf",
+          "bytes": 4237,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/voiceController.ts"
+        },
+        "project/mobile/src/voice/voiceLease.ts": {
+          "sha256": "8cd60078c627caa01e0bd768136d67bd6d9192e93f160624054b68b68f11d6f4",
+          "bytes": 1554,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/voiceLease.ts"
+        },
+        "project/mobile/src/voice/voicePolicySession.ts": {
+          "sha256": "b64eadfa96177a865d80a425aa0f8554fe2d3c328975c3a3d70d010ea38e43e8",
+          "bytes": 5229,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/voicePolicySession.ts"
+        },
+        "project/mobile/src/voice/voiceSession.ts": {
+          "sha256": "8909920408ba46e51caa66370a72ac29341f0fef7259f543fa2283de2b17bc9b",
+          "bytes": 3145,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/src/voice/voiceSession.ts"
+        },
+        "project/mobile/test/acceptedCanon.test.ts": {
+          "sha256": "bb6ddd373f72107d1111dc10a9cf5a478efa86be46974a430429046f7e1a9357",
+          "bytes": 5282,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/acceptedCanon.test.ts"
+        },
+        "project/mobile/test/authStorageLease.test.ts": {
+          "sha256": "902a5c7a170e110f6db4dc5c2c2f9ddbd60166ec1d8f4838c524aad5f1cb9a76",
+          "bytes": 5852,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/authStorageLease.test.ts"
+        },
+        "project/mobile/test/bracesBackportBehavior.test.mjs": {
+          "sha256": "b155b10fcb50fad78db364a75d52a57601dee2ebb406a15ff939be11d6dcdf1b",
+          "bytes": 13177,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/bracesBackportBehavior.test.mjs"
+        },
+        "project/mobile/test/bracesBackportGuard.test.mjs": {
+          "sha256": "2c2ba95cf849dd5447ab451a70bf5a617addbd5ec24f8a1668cf1675aebb2071",
+          "bytes": 11499,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/bracesBackportGuard.test.mjs"
+        },
+        "project/mobile/test/browserStorage.test.ts": {
+          "sha256": "f24481fe351d0ac10c5690343665aca928f7a46394786a6f87f5e71e166e1571",
+          "bytes": 4760,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/browserStorage.test.ts"
+        },
+        "project/mobile/test/buildSecurity.test.mjs": {
+          "sha256": "79ceee1fa739dea02c1b883eeeb25ada68920a65672fdb5a210cd20cafae8d54",
+          "bytes": 11320,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/buildSecurity.test.mjs"
+        },
+        "project/mobile/test/companionRecovery.test.ts": {
+          "sha256": "0d50e747f834cf44e553cb40dd5e88a202bf87cb9a21549a7ab9b8bbe2af1e6f",
+          "bytes": 7016,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/companionRecovery.test.ts"
+        },
+        "project/mobile/test/deviceEnrollment.test.ts": {
+          "sha256": "d5354f9d67c168204b0da08d79bf463398de4ae24b021409071d29beff75a3d5",
+          "bytes": 11444,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/deviceEnrollment.test.ts"
+        },
+        "project/mobile/test/downloadedBookStore.test.ts": {
+          "sha256": "d384c718cc10d2e9c623ac12a38278f1da4804d72e1d0fa21e959bdc9baae8a2",
+          "bytes": 2637,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/downloadedBookStore.test.ts"
+        },
+        "project/mobile/test/encryptedAuthStorage.test.ts": {
+          "sha256": "239fc5a9038cced35213d969b803aa38c02cbe808020680e10f9b6ba9bc19f10",
+          "bytes": 8127,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/encryptedAuthStorage.test.ts"
+        },
+        "project/mobile/test/forgeBackport.test.mjs": {
+          "sha256": "6b55f14d73930cb0ecb3a78f1eaaf9bf0c996b46a2b2fed9ef030cc67a71e51b",
+          "bytes": 19677,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/forgeBackport.test.mjs"
+        },
+        "project/mobile/test/gatewaySession.test.ts": {
+          "sha256": "7c1ba0a20e5d5a903708c1bec40fd29af369a49395fec2daa4b2cc878b5c5c57",
+          "bytes": 4640,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/gatewaySession.test.ts"
+        },
+        "project/mobile/test/hostedKeyRecovery.test.ts": {
+          "sha256": "ba2cc5a7e46c1cd90d6b45fbab003b911c37d6ec3448123b839b1484277761bb",
+          "bytes": 18387,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/hostedKeyRecovery.test.ts"
+        },
+        "project/mobile/test/hostedRuntime.test.ts": {
+          "sha256": "f781adb7149d307d939b34d0a3b7c9b9c96006fb7f6a4a721e0ec4e5899d3114",
+          "bytes": 1301,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/hostedRuntime.test.ts"
+        },
+        "project/mobile/test/hostedVoiceLifetime.test.ts": {
+          "sha256": "b41c3c7ba6cc7910a5cafc4db2dbe012763a3193a4e8df5dfa044510566ee271",
+          "bytes": 15225,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/hostedVoiceLifetime.test.ts"
+        },
+        "project/mobile/test/localCompanion.test.ts": {
+          "sha256": "42450daba2197384af0c3b1ba7358340107b737e02025b10b7f9637be61c97e7",
+          "bytes": 8261,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/localCompanion.test.ts"
+        },
+        "project/mobile/test/mobileAssistant.test.ts": {
+          "sha256": "ffe2036f4788838dc08ffe1ad2302a635e2005e527069441e9632c9e2452d5ea",
+          "bytes": 3017,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/mobileAssistant.test.ts"
+        },
+        "project/mobile/test/nativeBuildCompatibility.test.mjs": {
+          "sha256": "c4ce9d21dbffab0c5634d711d4a04b16e8c7bf31093dfb1be58add0acc65ecab",
+          "bytes": 1393,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/nativeBuildCompatibility.test.mjs"
+        },
+        "project/mobile/test/nativeProjectKeyPersistence.test.ts": {
+          "sha256": "f68791ed50eff3a19b65ca4910f7cc49a3e1ae0f7d15f38c6bdca541267aa1ad",
+          "bytes": 4795,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/nativeProjectKeyPersistence.test.ts"
+        },
+        "project/mobile/test/nativeSnapshotMigration.test.mjs": {
+          "sha256": "59085fb279f58880bc4d2c3d7c9ad4def4c2fe08dc3d08181cba1fe1070c2892",
+          "bytes": 8399,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/nativeSnapshotMigration.test.mjs"
+        },
+        "project/mobile/test/outbox.test.ts": {
+          "sha256": "dbf2cc8be4b3dc63a717faf0673b23603f9be70bba87109345e103c68e35c8b5",
+          "bytes": 3973,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/outbox.test.ts"
+        },
+        "project/mobile/test/outboxReview.test.ts": {
+          "sha256": "9e00b8bd91613b6ca79394dbb2cc71785ee4ceea3311372de27d1be4eda471a8",
+          "bytes": 7766,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/outboxReview.test.ts"
+        },
+        "project/mobile/test/projectKeyPersistence.test.ts": {
+          "sha256": "9f03c660f47449602cb058996cbb9a923772380b20b045d39d951090032675e3",
+          "bytes": 8707,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/projectKeyPersistence.test.ts"
+        },
+        "project/mobile/test/projectKeyVerifier.test.ts": {
+          "sha256": "18876c8d48ef680c2db14a0059338c6906306ab41574e237f2c2e7e857e37a47",
+          "bytes": 4362,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/projectKeyVerifier.test.ts"
+        },
+        "project/mobile/test/projectRecovery.test.ts": {
+          "sha256": "ecc2f375b9429ae11b8c8f6468f017e76fcea58cdf57087579281b45fcd2547f",
+          "bytes": 2014,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/projectRecovery.test.ts"
+        },
+        "project/mobile/test/realtimeTransport.test.ts": {
+          "sha256": "3b28ab149ef888f32ec7603c72e45c88c87ceb647dabd16b3a9c3b33325ef6ec",
+          "bytes": 6383,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/realtimeTransport.test.ts"
+        },
+        "project/mobile/test/recoveryKey.test.ts": {
+          "sha256": "19b2ecaee3315e10f14eea0ce176e0fc2798eedb32b65bc1d8ec9b9b04876db5",
+          "bytes": 609,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/recoveryKey.test.ts"
+        },
+        "project/mobile/test/snapshotProject.test.ts": {
+          "sha256": "2616bce00282e16a2c9b834450bcb3f0e3e84ca0e330111d7135965db7997a11",
+          "bytes": 6808,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/snapshotProject.test.ts"
+        },
+        "project/mobile/test/snapshotSync.test.ts": {
+          "sha256": "610347bf33f3cf965363c818f35724d126f3ecb9100647b2a5668ad0c38332e6",
+          "bytes": 3176,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/snapshotSync.test.ts"
+        },
+        "project/mobile/test/sodiumDeviceCrypto.test.ts": {
+          "sha256": "1748e6b2cdc1184ffaa39b96aff7f0a021ad6e951ff71da0f4236d79fac10f7f",
+          "bytes": 1654,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/sodiumDeviceCrypto.test.ts"
+        },
+        "project/mobile/test/sqliteOutboxStore.test.ts": {
+          "sha256": "bfb6803e63d7e1d8905c65f2cb9ffa7522b1b317d04b927c97f70b3ae9ade3e6",
+          "bytes": 4848,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/sqliteOutboxStore.test.ts"
+        },
+        "project/mobile/test/sqliteRecoveryDurability.test.mjs": {
+          "sha256": "bd4e7dc90fa475c3f9ea4c29783b52cd56f2a33302986c3a50cf7bfa988bd518",
+          "bytes": 5661,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/sqliteRecoveryDurability.test.mjs"
+        },
+        "project/mobile/test/supabaseAdapters.test.ts": {
+          "sha256": "943794cc760d1c6326088a9b17ad470399ea26199e7df63f01d32755aa590c19",
+          "bytes": 16179,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/supabaseAdapters.test.ts"
+        },
+        "project/mobile/test/supabaseConfig.test.ts": {
+          "sha256": "d8417551fe5e12cf4590c8ff0b85cd178f48653e1e6be9de7b272d232b2c8978",
+          "bytes": 1807,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/supabaseConfig.test.ts"
+        },
+        "project/mobile/test/voiceController.test.ts": {
+          "sha256": "848c14e047ef2542a5eae72b4f62737c1e851848d873b9238afb143e94ba9444",
+          "bytes": 7353,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/voiceController.test.ts"
+        },
+        "project/mobile/test/voicePolicySession.test.ts": {
+          "sha256": "5ab8dfd817069b65e664355fbd684bdae2fe84ae74fe43b917aee802feaf8025",
+          "bytes": 5882,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/voicePolicySession.test.ts"
+        },
+        "project/mobile/test/voiceSession.test.ts": {
+          "sha256": "0637453f9e819f95426e4abd0da51d63e91c1f5c9674848a85663cbb579baa01",
+          "bytes": 1399,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/voiceSession.test.ts"
+        },
+        "project/mobile/test/writingVoiceFixture.ts": {
+          "sha256": "70ea00bcfd0e195b24f69fef112d162e777cbccc17edcb4f17d5efb8f1852c02",
+          "bytes": 435,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/test/writingVoiceFixture.ts"
+        },
+        "project/mobile/tsconfig.json": {
+          "sha256": "d242c9767e63ba4f44ed8327f217eeae92618d09762743bf7e31c5c81105c4bd",
+          "bytes": 281,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/mobile/tsconfig.json"
+        },
+        "run-plan.json": {
+          "sha256": "84d5ffcf5b1e88c0f62aa7c77212b56b4f5a26c43dadf4f372a86f0da7ca1ff9",
+          "bytes": 3622,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/run-plan.json"
+        },
+        "source-receipt.json": {
+          "sha256": "9df2e7340e37ced6ba099b5e394c22d3aa48aee4f0505c31c1624d92dbd69af6",
+          "bytes": 16912,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/source-receipt.json"
+        },
+        "source-snapshot.json": {
+          "sha256": "ad0057ce927df242bdc695f0606a9bac5ca2d8925e3f8bf0fda600f5156826c1",
+          "bytes": 13490,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/source-snapshot.json"
+        },
+        "tools-receipt.json": {
+          "sha256": "2bf99e5c8368eb236a4617f741187559efe9c029876162227b2592e4610ee441",
+          "bytes": 1258,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/tools-receipt.json"
+        },
+        "typecheck-invocation.json": {
+          "sha256": "7ebc7836557373037d0dbdfccebcd580ce686a50ca5266c644762322e38aa3a8",
+          "bytes": 900,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-invocation.json"
+        },
+        "typecheck-started.json": {
+          "sha256": "7eb3aa0d7b110407b15e0877b026c94c03d96ff6a784dfbeaab5b3369b66a5d9",
+          "bytes": 281,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-started.json"
+        },
+        "typecheck.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck.stderr.txt"
+        },
+        "typecheck.stdout.txt": {
+          "sha256": "89eb0bd206bda6c9428abe509e3c57dd92fedb0e2016bf5bb06fd35ead06fcf2",
+          "bytes": 125,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck.stdout.txt"
+        },
+        "version-temp-cleanup.json": {
+          "sha256": "d6a98bc0c732385e34aca531b44e431184934fa854540891544c6fd1c34d907f",
+          "bytes": 8534,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/version-temp-cleanup.json"
+        }
+      }
+    },
+    "fresh-contracts-bootstrap.tar.gz": {
+      "file_count": 40,
+      "archive_sha256": "bb6b5e111026a475c0f6e787bc685327a62b723e81c4e10d9ecf7e83ac237b0c",
+      "bytes": 2534748,
+      "members": {
+        "braces-apply-invocation.json": {
+          "sha256": "8e62ed21976772d8726ec531783abc64181518ff58d7302852cd7e24cf240744",
+          "bytes": 1112,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-apply-invocation.json"
+        },
+        "braces-apply-started.json": {
+          "sha256": "6f9f5ab173f12074be48c9c782ab99be5e9c9955b59981426f83cd0aaafc3b4a",
+          "bytes": 274,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-apply-started.json"
+        },
+        "braces-apply.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-apply.stderr.txt"
+        },
+        "braces-apply.stdout.txt": {
+          "sha256": "dab52aab1b80d3ae5c7827ddbd958096949f8400901ee7d2a3a440834354db93",
+          "bytes": 1359,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/braces-apply.stdout.txt"
+        },
+        "contracts-bootstrap-cache.json": {
+          "sha256": "8a6623ccb3ed5cb0f8f0a38de34e4d04a839117c506702ec52e03ce236c8cd2e",
+          "bytes": 4943,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-cache.json"
+        },
+        "contracts-bootstrap-ci-invocation.json": {
+          "sha256": "6ee8b7937bbae31752373a6da7c8b8cad72a593197717ce44b2470a5055ee9b4",
+          "bytes": 1316,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-ci-invocation.json"
+        },
+        "contracts-bootstrap-ci-started.json": {
+          "sha256": "9431c32abdffec5b65bef7c0c864381ff40970f0558f3b6275155d5d29b2d748",
+          "bytes": 478,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-ci-started.json"
+        },
+        "contracts-bootstrap-ci.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-ci.stderr.txt"
+        },
+        "contracts-bootstrap-ci.stdout.txt": {
+          "sha256": "de1b16a905c45e0dd0ce1e6aa7360aa720a95ff47ec58c5b4ec83951a0c3172f",
+          "bytes": 27,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-ci.stdout.txt"
+        },
+        "contracts-bootstrap-fetch.py": {
+          "sha256": "5bc98fd9bcd96a60f12e4f79d97d8df5c4d5cbe95e0f1986b97fe2644f7b0839",
+          "bytes": 1740,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-fetch.py"
+        },
+        "contracts-bootstrap-fetched-package.json": {
+          "sha256": "5029e2691514706af295725e02314b45606c8f46394b2a6913c296259d955617",
+          "bytes": 798,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-fetched-package.json"
+        },
+        "contracts-bootstrap-final-cache.json": {
+          "sha256": "c9746ff05409eb0558ad953f31951ee6c01a6be2f4006ec206df5f2ef7050d4d",
+          "bytes": 4172,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-final-cache.json"
+        },
+        "contracts-bootstrap-final-seal.json": {
+          "sha256": "260c929245cca4e25f01481fd8611eb2a7ca2147a1408ff65d702b56adff5799",
+          "bytes": 817,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-final-seal.json"
+        },
+        "contracts-bootstrap-final-sources.json": {
+          "sha256": "33b8eb0cf7a01eeb4c5cd72e9d5b22514235c448c9f44440ea1f1ad4b06fe7e0",
+          "bytes": 17561,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-final-sources.json"
+        },
+        "contracts-bootstrap-global.npmrc": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-global.npmrc"
+        },
+        "contracts-bootstrap-plan.json": {
+          "sha256": "c6394a9e11d027d2b3465aa9976e90fc77b135997aba6e366a266ff3b92c8f5d",
+          "bytes": 2100,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-plan.json"
+        },
+        "contracts-bootstrap-sha256.json": {
+          "sha256": "14600585e2dd56120d7801ff042bdad0f6440dc4c563f5c7f2af232bfe173b7b",
+          "bytes": 2665,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-sha256.json"
+        },
+        "contracts-bootstrap-source.json": {
+          "sha256": "0e3589ca2efc512594330633916b2ca92ef0594141c5b4c463867e97a2b58945",
+          "bytes": 2094,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-source.json"
+        },
+        "contracts-bootstrap-user.npmrc": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/contracts-bootstrap-user.npmrc"
+        },
+        "export-all-invocation.json": {
+          "sha256": "5cc0004fd60bc40ab73c9db95493097276f35f4124ac5e643643c41b29736264",
+          "bytes": 1233,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all-invocation.json"
+        },
+        "export-all-started.json": {
+          "sha256": "ebdbb4e70055cda2503cc0265523c54a34227bf5b19374f1e01a302896c702a3",
+          "bytes": 395,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all-started.json"
+        },
+        "export-all.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all.stderr.txt"
+        },
+        "export-all.stdout.txt": {
+          "sha256": "cc26081cd63123837e38c7dff19d1603c79056b507fa7e5a72a6911e3b45083d",
+          "bytes": 1050,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all.stdout.txt"
+        },
+        "export-all/_expo/static/js/android/index-0220a2a7c3c89036a189633bcffd13aa.hbc": {
+          "sha256": "cffe161e5d22564d6eefd433b90e550cc3cf918e08bea09103dd1972be04aea2",
+          "bytes": 2509988,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/_expo/static/js/android/index-0220a2a7c3c89036a189633bcffd13aa.hbc"
+        },
+        "export-all/_expo/static/js/ios/index-62765ee66ebb7a0cee1d91d54eaa2668.hbc": {
+          "sha256": "e0e58b1fd5049774127299388f3986fc1b57cd69fe2cfa58058af5e5b82edbab",
+          "bytes": 2505536,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/_expo/static/js/ios/index-62765ee66ebb7a0cee1d91d54eaa2668.hbc"
+        },
+        "export-all/_expo/static/js/web/index-ca3d3b007f75cc9bf2b73a5981f76f36.js": {
+          "sha256": "b4aa2965e74bd62498b2f5229f753b8026e932948522c43e33e9df0da49bfec4",
+          "bytes": 1407380,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/_expo/static/js/web/index-ca3d3b007f75cc9bf2b73a5981f76f36.js"
+        },
+        "export-all/index.html": {
+          "sha256": "80aaaf698ec996c5d34b82ac28715fb2b9d7858756e3006fe019dbc08266fc98",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/index.html"
+        },
+        "export-all/metadata.json": {
+          "sha256": "2d21a9a4a6a69014c8c6e39295ffac8bc9371bf050272b774fa9f1f7925adeac",
+          "bytes": 244,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/metadata.json"
+        },
+        "export-all/security-build.json": {
+          "sha256": "6ced7ace2ae146fff0b5dc3032b3af764781eb6d4c7e7baeb282e7cc5bb149fe",
+          "bytes": 4198,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/export-all/security-build.json"
+        },
+        "finish-fresh.py": {
+          "sha256": "acc74cf328b320d5532f08aa08505bda33da3e24ebe5a8258435130631b6f994",
+          "bytes": 2915,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/finish-fresh.py"
+        },
+        "forge-apply-invocation.json": {
+          "sha256": "95f5f2ec89e3fc4ccf290e8098e7356690f7e1b7caba019feec01843cbe6e258",
+          "bytes": 1111,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-apply-invocation.json"
+        },
+        "forge-apply-started.json": {
+          "sha256": "49fc57ef78bd4d9b84b570e99cbb012fc009d0da84dcb4fcbf9740c3e3a031ea",
+          "bytes": 273,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-apply-started.json"
+        },
+        "forge-apply.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-apply.stderr.txt"
+        },
+        "forge-apply.stdout.txt": {
+          "sha256": "dfc820f2812a993537cdef42f466cb2ef30ba7a92b3d562b8cdd27a6428d52ec",
+          "bytes": 902,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/forge-apply.stdout.txt"
+        },
+        "project/contracts/package-lock.json": {
+          "sha256": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279",
+          "bytes": 3654,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/project/contracts/package-lock.json"
+        },
+        "tools-receipt.json": {
+          "sha256": "2bf99e5c8368eb236a4617f741187559efe9c029876162227b2592e4610ee441",
+          "bytes": 1258,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/tools-receipt.json"
+        },
+        "typecheck-after-bootstrap-invocation.json": {
+          "sha256": "d97aafe41edc02f2502f58ed7c13d7121dbb2c70c3f41822e5d13e788ef5579e",
+          "bytes": 1119,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-after-bootstrap-invocation.json"
+        },
+        "typecheck-after-bootstrap-started.json": {
+          "sha256": "797f92ee5e8827158eeaeb8272edcac764f3c9bf096ff00d5412566f7fd0802a",
+          "bytes": 281,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-after-bootstrap-started.json"
+        },
+        "typecheck-after-bootstrap.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-after-bootstrap.stderr.txt"
+        },
+        "typecheck-after-bootstrap.stdout.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-braces-fresh-install-l8kiljzo/typecheck-after-bootstrap.stdout.txt"
+        }
+      }
+    },
+    "source-commit.tar.gz": {
+      "file_count": 11,
+      "archive_sha256": "9a6980f2b12863f4e13146915ee9cb616549b073914884817d6dfe8b529027b3",
+      "bytes": 4880,
+      "members": {
+        "commit-source.py": {
+          "sha256": "fc4125de9eef74c3a48c6f522648fbdf105cc5906f2c5c27b1fad3211d2a065c",
+          "bytes": 1855,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/commit-source.py"
+        },
+        "post-validation.json": {
+          "sha256": "e79c905adaf598ec42934c420522cc246cceb4b631b1c6f938b89715a0fdb661",
+          "bytes": 7084,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/post-validation.json"
+        },
+        "repository-check-invocation.json": {
+          "sha256": "f95d441ddd8420762d0a2d723f8355c2c52059d8f812a1d197cacd66089d9332",
+          "bytes": 501,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-invocation.json"
+        },
+        "repository-check-with-rg-invocation.json": {
+          "sha256": "d973112dd6a611389a9360ec70b569ac50385c64decf57bb2aef93866f87fbdc",
+          "bytes": 501,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-with-rg-invocation.json"
+        },
+        "repository-check-with-rg.py": {
+          "sha256": "a8e40b4d79c7ed9fab3dd48a2a7397a5e21066f8039994aeefed4d77b497cfce",
+          "bytes": 1313,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-with-rg.py"
+        },
+        "repository-check-with-rg.stderr.txt": {
+          "sha256": "9be89810bccd44cab5ea0ef848239780aa50c9b9bddc6f84b508bedbc56b689f",
+          "bytes": 107,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-with-rg.stderr.txt"
+        },
+        "repository-check-with-rg.stdout.txt": {
+          "sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+          "bytes": 361,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-with-rg.stdout.txt"
+        },
+        "repository-check.py": {
+          "sha256": "114fd9736624e1226a23327ec6623ad3364956f09f80a01578c3ba9c4fa65684",
+          "bytes": 1287,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check.py"
+        },
+        "repository-check.stderr.txt": {
+          "sha256": "a044a6d2e8318c73983b055ccddb4065479122f404b2eb7c6e8f4083c7096fbc",
+          "bytes": 243,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check.stderr.txt"
+        },
+        "repository-check.stdout.txt": {
+          "sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+          "bytes": 361,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check.stdout.txt"
+        },
+        "source-commit.json": {
+          "sha256": "7d2826a19cff95dfb3aab76c12dd009a48f065da1a7dc0b2152a854304b20850",
+          "bytes": 2604,
+          "original_path": "/private/tmp/openauthor-braces-root-zoq2gjiq/source-commit.json"
+        }
+      }
+    }
+  },
+  "scope": "Original file bytes only; private fixtures remain unmodified. Cache and installed dependencies are omitted.",
+  "completed_at": "2026-10-03T15:04:49.473849+00:00"
+}

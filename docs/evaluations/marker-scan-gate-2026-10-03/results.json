@@ -1,0 +1,74 @@
+{
+  "scope": "Narrow marker-gate repair and retained integrity evidence. No mobile/dependency audit, provider, author quality, deployment or release acceptance claim.",
+  "source_commit": "2a561cc1edacc3117017ef5f39d2a5109b5b3181",
+  "makefile_sha256": "bf11c9a4ee351eab9b761eaee15aee8be468b22ea688816f73e682438d73780e",
+  "behavior": "Only rg exit1/no matches passes; rg0/matches keeps prior marker failure output and fails; every other rg status fails with diagnostic. Scan pattern and directories unchanged.",
+  "private_fixture_cases": {
+    "no-markers": {
+      "exit_code": 0,
+      "timed_out": false,
+      "invocation": "fixtures/no-markers.invocation.json",
+      "stdout": "fixtures/no-markers.stdout.txt",
+      "stderr": "fixtures/no-markers.stderr.txt"
+    },
+    "marker": {
+      "exit_code": 2,
+      "timed_out": false,
+      "invocation": "fixtures/marker.invocation.json",
+      "stdout": "fixtures/marker.stdout.txt",
+      "stderr": "fixtures/marker.stderr.txt"
+    },
+    "missing-rg": {
+      "exit_code": 2,
+      "timed_out": false,
+      "invocation": "fixtures/missing-rg.invocation.json",
+      "stdout": "fixtures/missing-rg.stdout.txt",
+      "stderr": "fixtures/missing-rg.stderr.txt"
+    },
+    "unavailable-input": {
+      "exit_code": 2,
+      "timed_out": false,
+      "invocation": "fixtures/unavailable-input.invocation.json",
+      "stdout": "fixtures/unavailable-input.stdout.txt",
+      "stderr": "fixtures/unavailable-input.stderr.txt"
+    }
+  },
+  "root_final_repository_checks": {
+    "repository-check-final": {
+      "exit_code": 0,
+      "invocation": "repository/repository-check-final-invocation.json",
+      "stdout": "repository/repository-check-final.stdout.txt",
+      "stderr": "repository/repository-check-final.stderr.txt",
+      "driver": "repository/repository-check-final.py"
+    },
+    "repository-check-final-missing-rg": {
+      "exit_code": 2,
+      "invocation": "repository/repository-check-final-missing-rg-invocation.json",
+      "stdout": "repository/repository-check-final-missing-rg.stdout.txt",
+      "stderr": "repository/repository-check-final-missing-rg.stderr.txt",
+      "driver": "repository/repository-check-final-missing-rg.py"
+    }
+  },
+  "original_false_success": {
+    "exit_code": 0,
+    "classification": "invalid_evidence",
+    "reason": "rg was unavailable; original make check0 is not an accepted marker audit",
+    "invocation": "fixtures/original-repository-check-invocation.json",
+    "stderr": "fixtures/original-repository-check.stderr.txt"
+  },
+  "independent_spec": {
+    "status": "PASS",
+    "open_findings": 0,
+    "findings": "spec/findings.json",
+    "review": "spec/review.md",
+    "source_hashes": "spec/reviewed-sha256.json"
+  },
+  "provenance_limits": [
+    "Standards tool text is not archived or relied upon in this packet; including it later requires a clearly labeled root transcription, not an invented original report.",
+    "Root final make check receipts cover repository integrity/capability and marker audit only; their benign confstr warning is retained where recorded.",
+    "This packet records prior commands and checks byte/receipt relations only. Its verifier never reruns those commands."
+  ],
+  "original_fixture_seal_files": 29,
+  "archive_members": 44,
+  "packaging": "All original receipt bytes retained unchanged; original paths recorded in receipt-index.json."
+}

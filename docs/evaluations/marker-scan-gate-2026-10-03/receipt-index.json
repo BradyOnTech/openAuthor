@@ -1,0 +1,233 @@
+{
+  "scope": "Lossless bytes of original sealed29 files plus their original seal, current committed Makefile, two original commit files, three independent Spec files and eight original final repository-check files. No Standards report invented.",
+  "count": 44,
+  "groups": {
+    "original_fixture_files_and_seal": 30,
+    "committed_makefile": 1,
+    "source_commit_originals": 2,
+    "independent_spec_originals": 3,
+    "final_repository_commands_originals": 8
+  },
+  "members": {
+    "fixtures/marker/desktop/src/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker/desktop/src/fixture.txt"
+    },
+    "fixtures/marker/openauthor/fixture.txt": {
+      "sha256": "298112081504c0a3f451fbcfd101fa5061547e37200c8c41ff4ef39e21c5d63a",
+      "bytes": 26,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker/openauthor/fixture.txt"
+    },
+    "fixtures/marker/tests/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker/tests/fixture.txt"
+    },
+    "fixtures/marker.invocation.json": {
+      "sha256": "16929558f8f37bf13531c583a2238bb2bb4a2fb64719968e18d62c508561fdde",
+      "bytes": 1016,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker.invocation.json"
+    },
+    "fixtures/marker.stderr.txt": {
+      "sha256": "38a65c318a70618d18186987cb312eec7a95504db2c77699d1b88d2413a059cb",
+      "bytes": 35,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker.stderr.txt"
+    },
+    "fixtures/marker.stdout.txt": {
+      "sha256": "c61f995da4b335fc40d461302514b7b450723ede8adbdd3d0dd172caabb47fee",
+      "bytes": 146,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/marker.stdout.txt"
+    },
+    "fixtures/missing-rg/desktop/src/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg/desktop/src/fixture.txt"
+    },
+    "fixtures/missing-rg/openauthor/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg/openauthor/fixture.txt"
+    },
+    "fixtures/missing-rg/tests/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg/tests/fixture.txt"
+    },
+    "fixtures/missing-rg.invocation.json": {
+      "sha256": "abf34025ecbdaf1e1664ec5c7a0e3f0ef5c3df4bbb090a934d0c91cafca32b2e",
+      "bytes": 1002,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg.invocation.json"
+    },
+    "fixtures/missing-rg.stderr.txt": {
+      "sha256": "e5e453874eb0c353124ab62bbc666c9ce5376b199b1ca8fe1efb26375dcbbfb2",
+      "bytes": 123,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg.stderr.txt"
+    },
+    "fixtures/missing-rg.stdout.txt": {
+      "sha256": "db082baca104a262e7a479dadf6c03f5ca3878f35c7573e1552ac65957440322",
+      "bytes": 41,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/missing-rg.stdout.txt"
+    },
+    "fixtures/no-markers/desktop/src/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers/desktop/src/fixture.txt"
+    },
+    "fixtures/no-markers/openauthor/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers/openauthor/fixture.txt"
+    },
+    "fixtures/no-markers/tests/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers/tests/fixture.txt"
+    },
+    "fixtures/no-markers.invocation.json": {
+      "sha256": "9a4f2ffc4e3dc8c01e8b73687c17f35cd7a3525ccda719cbc51d2abf9b32e85b",
+      "bytes": 1020,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers.invocation.json"
+    },
+    "fixtures/no-markers.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers.stderr.txt"
+    },
+    "fixtures/no-markers.stdout.txt": {
+      "sha256": "db082baca104a262e7a479dadf6c03f5ca3878f35c7573e1552ac65957440322",
+      "bytes": 41,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/no-markers.stdout.txt"
+    },
+    "fixtures/original-evidence-assessment.json": {
+      "sha256": "b8a2bfbecb723f0011a4974323a9a6eff5e19080cdf76bdde01723297fc818fe",
+      "bytes": 648,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/original-evidence-assessment.json"
+    },
+    "fixtures/original-repository-check-invocation.json": {
+      "sha256": "f95d441ddd8420762d0a2d723f8355c2c52059d8f812a1d197cacd66089d9332",
+      "bytes": 501,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/original-repository-check-invocation.json"
+    },
+    "fixtures/original-repository-check.stderr.txt": {
+      "sha256": "a044a6d2e8318c73983b055ccddb4065479122f404b2eb7c6e8f4083c7096fbc",
+      "bytes": 243,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/original-repository-check.stderr.txt"
+    },
+    "fixtures/original-repository-check.stdout.txt": {
+      "sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+      "bytes": 361,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/original-repository-check.stdout.txt"
+    },
+    "fixtures/results.json": {
+      "sha256": "9996debf0ab899cab1513de3e412c59b4fd87896f1139ed41b0f8c40027aecae",
+      "bytes": 917,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/results.json"
+    },
+    "fixtures/tmp/xcrun_db": {
+      "sha256": "71c77f9081be736f100b95cba8bb916ce590195453de67ef30d02538960cf754",
+      "bytes": 391,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/tmp/xcrun_db"
+    },
+    "fixtures/unavailable-input/desktop/src/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/unavailable-input/desktop/src/fixture.txt"
+    },
+    "fixtures/unavailable-input/openauthor/fixture.txt": {
+      "sha256": "d1168fb129a1a7a9c6208f62c50b4ab40661429349212f7c7d69f74b8b5ced6f",
+      "bytes": 24,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/unavailable-input/openauthor/fixture.txt"
+    },
+    "fixtures/unavailable-input.invocation.json": {
+      "sha256": "e5d58b650fdd8b6c8edb5f0ba36d2bcb91c8101eea5b1df29866343842d67ad3",
+      "bytes": 1027,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/unavailable-input.invocation.json"
+    },
+    "fixtures/unavailable-input.stderr.txt": {
+      "sha256": "e0562958c163b9dfa7cc7480ba1067dffcb1ecd0f73645fb79dac1715b63f7c7",
+      "bytes": 140,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/unavailable-input.stderr.txt"
+    },
+    "fixtures/unavailable-input.stdout.txt": {
+      "sha256": "db082baca104a262e7a479dadf6c03f5ca3878f35c7573e1552ac65957440322",
+      "bytes": 41,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/unavailable-input.stdout.txt"
+    },
+    "fixtures/evidence-sha256.json": {
+      "sha256": "f0460cfa70fd0ff3d1f34783e7f2d76a094a49fc2e8453f2a2f195c8af543559",
+      "bytes": 3150,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/evidence-sha256.json"
+    },
+    "source-commit/source-commit.json": {
+      "sha256": "45b7439b4b0165611c258aa4df54b3745a70ec75c8e6241004c7fa8079e56336",
+      "bytes": 789,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/source-commit.json"
+    },
+    "source-commit/commit-source.py": {
+      "sha256": "496d47f21597b7e3740ff65f317d11ab9d29ae2e8e73cad59ed1351f4de0757d",
+      "bytes": 1692,
+      "original_source": "/private/tmp/openauthor-marker-gate-3evgjsaj/commit-source.py"
+    },
+    "spec/findings.json": {
+      "sha256": "1254fa9a29ba7d9e5d7ed97a229d4e2b766f8d1d98a3f634e6bc9a6a0edcac79",
+      "bytes": 2737,
+      "original_source": "/private/tmp/openauthor-marker-gate-spec-08hs54i8/findings.json"
+    },
+    "spec/review.md": {
+      "sha256": "2c10132bff132d81788ec9024b848cd2d5c334b06c9536811313074cf716f335",
+      "bytes": 956,
+      "original_source": "/private/tmp/openauthor-marker-gate-spec-08hs54i8/review.md"
+    },
+    "spec/reviewed-sha256.json": {
+      "sha256": "7ecc0fce93f00e579bfd8b125b27fc49121050f099285ad63004b2473d08a78b",
+      "bytes": 85,
+      "original_source": "/private/tmp/openauthor-marker-gate-spec-08hs54i8/reviewed-sha256.json"
+    },
+    "repository/repository-check-final.py": {
+      "sha256": "f272d237501d125e8fc689cde1f85d9cbb39dcfbb2c5fbb83ca70ed1206632cb",
+      "bytes": 1422,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final.py"
+    },
+    "repository/repository-check-final-invocation.json": {
+      "sha256": "6b6b16efc78ed0e65ea7638dc6f7f181ca87e31b39a85846e4e3128a483630ba",
+      "bytes": 590,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final-invocation.json"
+    },
+    "repository/repository-check-final.stdout.txt": {
+      "sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+      "bytes": 361,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final.stdout.txt"
+    },
+    "repository/repository-check-final.stderr.txt": {
+      "sha256": "9be89810bccd44cab5ea0ef848239780aa50c9b9bddc6f84b508bedbc56b689f",
+      "bytes": 107,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final.stderr.txt"
+    },
+    "repository/repository-check-final-missing-rg.py": {
+      "sha256": "2c7d61116eaf94653e299e180290a62d9913f6cfaaac3ae2c2cf3b69fd16ca7e",
+      "bytes": 1415,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final-missing-rg.py"
+    },
+    "repository/repository-check-final-missing-rg-invocation.json": {
+      "sha256": "d366857d36822860da929e7814804555f642eef04f9c4ac7a882cba7bb00042b",
+      "bytes": 590,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final-missing-rg-invocation.json"
+    },
+    "repository/repository-check-final-missing-rg.stdout.txt": {
+      "sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+      "bytes": 361,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final-missing-rg.stdout.txt"
+    },
+    "repository/repository-check-final-missing-rg.stderr.txt": {
+      "sha256": "22cc0010a5a321af3117bd230eaa77581b6ecafdd6bf85d66ef1c8f868665f63",
+      "bytes": 259,
+      "original_source": "/private/tmp/openauthor-braces-root-zoq2gjiq/repository-check-final-missing-rg.stderr.txt"
+    },
+    "source/Makefile": {
+      "sha256": "bf11c9a4ee351eab9b761eaee15aee8be468b22ea688816f73e682438d73780e",
+      "bytes": 8090,
+      "original_source": "~/Developer/openAuthor/Makefile"
+    }
+  }
+}

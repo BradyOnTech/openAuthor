@@ -25,6 +25,36 @@ build alone satisfies this goal.
 | Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `36a4058` normal unsigned arm64 bundle passes strict identity, exact core, five instrumented packaged-engine recovery stages and all 583 bundled Python tests with the local Codex contract. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
+## Latest local dependency and marker-gate checkpoint — 2026-10-03
+
+The [Braces packet](../mobile/evidence/2026-10-03-braces-local-backport/results.json) records the maintained three-copy repair at
+`98f4d4a`: 501 mobile tests in 37 files and 272 focused checks pass, with no
+failures or skips. Both final independent source reviews have zero findings.
+The standalone parser and both embedded workspace/Doctor implementations share
+bounded parser/AST stack paths, iterative queues and exact byte-bound guards.
+The earlier [canonical Forge repair](../mobile/evidence/2026-10-03-forge-node-verifier/results.json) remains unchanged.
+
+An isolated offline mobile `npm ci` applied both fixes and passed 272 focused
+checks. Its missing sibling-Ajv typecheck failure remains recorded. Installing
+the exact committed contracts lock separately makes the mobile typecheck pass;
+repeat guard applications change no files. Separate normal and fresh-fixture
+web/iOS/Android exports pass containment checks. The bootstrap actually followed
+mobile installation; full `make install-js` and byte-identical exports are not
+claimed. The packet retains 113 root and 144 final fixture inputs, historical
+failures, raw bundles and reports. Removed maps and cache blobs are not retained;
+integrity verification does not replay installation or acceptance.
+
+The separate [marker-gate repair](evaluations/marker-scan-gate-2026-10-03/results.json) at `2a561cc` refuses missing `rg`
+and input/read errors. Only a completed no-match scan passes. Four real-target
+fixture controls and actual repository success/missing-tool refusal pass; the
+original exit-zero check with missing `rg` is explicitly invalid evidence.
+
+These checks preserve the four author artifacts and make no new provider calls,
+deployed mutations or system/account changes. Mandatory raw dependency audits,
+broader signing/tooling copies and actual signed artifact acceptance remain
+open. All six priorities still require their outstanding author, accessibility,
+physical-device, deployed and signed-distribution acceptance.
+
 ## Latest native Canon and interrupted restore checkpoint — 2026-10-03, `36a4058`
 
 [Current native evidence](evaluations/current-native-canon-restore-2026-10-03/results.json)

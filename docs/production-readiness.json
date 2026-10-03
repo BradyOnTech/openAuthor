@@ -1570,5 +1570,56 @@
     "release_certified": false,
     "all_six_priorities": "in_progress",
     "remaining": "Author prose quality and Memory workload, VoiceOver/scaling/long sessions, physical mobile/deployed lifecycle, signing/notarization and clean-machine/Intel install/upgrade, strict dependency remediation and physical power loss remain open."
+  },
+  "local_dependency_backport_checkpoint": {
+    "date": "2026-10-03",
+    "braces_implementation_commit": "98f4d4a67c32941b23beb5d7bcdaf1d6e901bfbe",
+    "marker_gate_implementation_commit": "2a561cc1edacc3117017ef5f39d2a5109b5b3181",
+    "forge_implementation_commit": "ba245b1",
+    "braces_evidence": "mobile/evidence/2026-10-03-braces-local-backport/results.json",
+    "forge_evidence": "mobile/evidence/2026-10-03-forge-node-verifier/results.json",
+    "marker_gate_evidence": "docs/evaluations/marker-scan-gate-2026-10-03/results.json",
+    "root_mobile_tests": {
+      "passed": 501,
+      "files": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    "root_focused_tests": {
+      "passed": 272,
+      "files": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fresh_focused_tests": {
+      "passed": 272,
+      "files": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "source_inputs": {
+      "root_final": 113,
+      "fresh_mobile_and_published_contracts": 143,
+      "fresh_after_sibling_lock": 144,
+      "selected_braces": 17
+    },
+    "fresh_install": "Offline mobile npm ci applied both backports. Original missing sibling-Ajv typecheck failure retained; separate exact-lock contracts npm ci and mobile typecheck retry passed. Actual contracts bootstrap followed mobile install, rather than claiming full make install-js execution.",
+    "exports": "Separate normal-root and fresh-fixture guarded web/iOS/Android exports passed. Raw bundles/reports retained separately; removed source-map bytes and npm cache omitted, and byte-identical reproducibility not claimed.",
+    "braces_scope": "Bounded stack paths across standalone3.0.3 and seven modules in each pinned workspace/Doctor bundle; nine target hashes, eight changed files. Ordinary compatibility and controlled depth/AST/queue refusals pass; general expansion resources and arbitrary JavaScript behavior remain outside this mitigation.",
+    "independent_source_reviews": {
+      "standards_open": 0,
+      "spec_open": 0,
+      "reviewed_files": 17
+    },
+    "marker_gate": "Only rg exit1 passes. Four private target controls and actual make check success/missing-tool refusal pass. Original exit0 with missing rg explicitly invalid and retained.",
+    "raw_dependency_audit_gate": "open",
+    "fresh_dependency_audit_run": false,
+    "actual_signing_artifact_acceptance": false,
+    "new_provider_calls": 0,
+    "deployed_mutations": 0,
+    "system_or_account_changes": 0,
+    "author_files_unchanged": 4,
+    "release_certified": false,
+    "all_six_priorities": "in_progress"
   }
 }

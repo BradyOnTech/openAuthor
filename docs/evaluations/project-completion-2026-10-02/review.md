@@ -1,9 +1,40 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `36a4058`; all six
-acceptance priorities remain open. The [requirements ledger](requirements.json)
+Status: **in progress**. Desktop/core acceptance remains scoped to `36a4058`;
+local mobile dependency fixes are at `98f4d4a`, with the marker gate at `2a561cc`.
+All six acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
+
+## Latest local dependency and marker-gate checkpoint — 2026-10-03
+
+The [Braces packet](../../../mobile/evidence/2026-10-03-braces-local-backport/results.json) records the maintained three-copy repair at
+`98f4d4a`: 501 mobile tests in 37 files and 272 focused checks pass, with no
+failures or skips. Both final independent source reviews have zero findings.
+The standalone parser and both embedded workspace/Doctor implementations share
+bounded parser/AST stack paths, iterative queues and exact byte-bound guards.
+The earlier [canonical Forge repair](../../../mobile/evidence/2026-10-03-forge-node-verifier/results.json) remains unchanged.
+
+An isolated offline mobile `npm ci` applied both fixes and passed 272 focused
+checks. Its missing sibling-Ajv typecheck failure remains recorded. Installing
+the exact committed contracts lock separately makes the mobile typecheck pass;
+repeat guard applications change no files. Separate normal and fresh-fixture
+web/iOS/Android exports pass containment checks. The bootstrap actually followed
+mobile installation; full `make install-js` and byte-identical exports are not
+claimed. The packet retains 113 root and 144 final fixture inputs, historical
+failures, raw bundles and reports. Removed maps and cache blobs are not retained;
+integrity verification does not replay installation or acceptance.
+
+The separate [marker-gate repair](../marker-scan-gate-2026-10-03/results.json) at `2a561cc` refuses missing `rg`
+and input/read errors. Only a completed no-match scan passes. Four real-target
+fixture controls and actual repository success/missing-tool refusal pass; the
+original exit-zero check with missing `rg` is explicitly invalid evidence.
+
+These checks preserve the four author artifacts and make no new provider calls,
+deployed mutations or system/account changes. Mandatory raw dependency audits,
+broader signing/tooling copies and actual signed artifact acceptance remain
+open. All six priorities still require their outstanding author, accessibility,
+physical-device, deployed and signed-distribution acceptance.
 
 ## Latest native Canon and interrupted restore checkpoint — 2026-10-03, `36a4058`
 

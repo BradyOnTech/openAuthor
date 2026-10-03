@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "scope": "Final retained originals and completed source/bootstrap receipts; integrity only",
+  "files": {
+    "README.md": "9313f8055981203520b8b0113e5d708ba840726b1b92f3627d5e635b39c5557a",
+    "fresh-contracts-bootstrap.tar.gz": "bb6b5e111026a475c0f6e787bc685327a62b723e81c4e10d9ecf7e83ac237b0c",
+    "fresh-mobile-only.tar.gz": "45195c2db8fca994eac0e59d3f710bfeccd423e32eb6f3cbe10892af0063d63d",
+    "original-design.tar.gz": "c01c161161c216bc227fd8ec46e5efe994021904b686fab0c4318e5215a19f6a",
+    "receipts.json": "ffe4f2dac78da0bfe9170e0ea02937bb3dc8a69d7d1d76087dbf3fdd64639ba1",
+    "results.json": "9ee12d9d013c0464af3eb8871cdee23da21e410b32b5e6ee263d4895c8f17ee8",
+    "root-validation.tar.gz": "bbb331d51b5ab04c7635285ef6970330d5067b2b4d4c720e000705f1f137e6d8",
+    "source-commit.tar.gz": "9a6980f2b12863f4e13146915ee9cb616549b073914884817d6dfe8b529027b3",
+    "source-reviews.tar.gz": "db973027f58f9964765b732bfec192bc39bb59a2a47c43d4e60679c99d0ab9c5",
+    "verify.py": "0b04dbece6fb4d1e28999d7799a5909e73439d087801c1e369350eb2fcdb8e4d"
+  }
+}
