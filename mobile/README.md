@@ -232,6 +232,22 @@ override when an upstream Xcode dependency supplies a patched version itself.
 
 ### Current export security gate
 
+`npm ci` applies the repository's byte-bound local Forge backport. Run
+`npm run security:forge` to verify it. With npm lifecycle scripts enabled,
+supported npm Expo commands refuse unpatched or unexpected verifier,
+caller, dependency-lock or package-copy bytes. Dependency updates require review
+of `security/forge-backport-1.4.0.json`; the guard never accepts new bytes itself.
+The direct guarded export/preflight entry points also perform this check.
+
+The patch rejects extra nested AlgorithmIdentifier children in the pinned
+Node/lib verifier; it does not newly validate primitive NULL parameter content
+or establish fully strict DER validation. It retains Forge's package version
+and does not patch browser distributions or global/cloud EAS tooling. This
+limited mitigation does not clear either Forge or Braces release/audit gate,
+or certify signed native
+artifacts. Direct Expo commands and disabled npm lifecycle scripts require
+separate verification.
+
 `npm run build:web` and `npm run build:test-hosted` run the build-security guard
 before exporting. `npm run build:security` checks the fully resolved production
 dotenv/config-plugin configuration offline. Use `npm run build:export --
@@ -244,7 +260,8 @@ Until that gate is reviewed and resolved, the guard refuses configuration of
 `updates.codeSigningCertificate`, `updates.codeSigningMetadata` or an EAS project
 ID, including values supplied by dynamic config and plugins. The EAS ID also
 enables Expo-root development-signing branches, so this check intentionally
-blocks newly linking an EAS project. It changes no signing settings or crypto.
+blocks newly linking an EAS project. These configuration checks change no
+signing settings.
 
 The guard verifies the three inspected installed signing-header branches return
 without network access, then inspects source maps for every exported Metro
@@ -255,4 +272,4 @@ caching. This contains the currently unused tooling path. `npm audit` still
 reports the advisory and remains a mandatory failing CI gate. Direct Expo
 commands bypass this wrapper; native signing, EAS services and store artifacts
 require their separate release checks. See the
-[current verification](../docs/evaluations/mobile-build-security-2026-10-02/README.md).
+[export-containment verification](../docs/evaluations/mobile-build-security-2026-10-02/README.md).
