@@ -1876,7 +1876,7 @@ describe("active V2 author workflow", () => {
 
     await user.selectOptions(screen.getByLabelText("Move The Arrival to"), "chapter-golden");
     expect(await screen.findByText("Move The Arrival from Unassigned to False Morning.")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Move" }));
+    await user.click(screen.getByRole("button", { name: "Move The Arrival" }));
     await waitFor(() => expect(harness.plan.unassigned_scene_ids).not.toContain("scene-0001"));
     expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "scene-assign")).toBe(true);
 

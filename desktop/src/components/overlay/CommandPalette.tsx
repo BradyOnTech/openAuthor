@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef, useId } from "react";
 import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
@@ -25,18 +25,40 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [focusIndex, setFocusIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef(new Map<string, HTMLDivElement>());
+  const listId = useId();
+  const optionId = (id: string) => `${listId}-${encodeURIComponent(id)}`;
+  const restoreOnClose = useRef(true);
+  const [opener] = useState(() => {
+    const element = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const selection = element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement
+      ? { start: element.selectionStart, end: element.selectionEnd, direction: element.selectionDirection }
+      : null;
+    return { element, selection };
+  });
   const {
     toggleSidebar, toggleSecondarySidebar, togglePanel,
     toggleZenMode, toggleTheme,
     setSecondaryTab, setSecondarySidebarOpen,
   } = useUI();
   const { projectRoot, scenes, codexEntities, setError } = useWorkspace();
-  const { openTab } = useEditor();
+  const { openTab, tabs, setActiveTab, beginNavigation } = useEditor();
   const navigateTo = useWorkspaceNavigation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
     inputRef.current?.focus();
-  }, []);
+    return () => {
+      if (!restoreOnClose.current || !opener.element?.isConnected) return;
+      if (document.activeElement !== document.body && !dialog?.contains(document.activeElement)) return;
+      opener.element.focus({ preventScroll: true });
+      if (opener.selection && opener.selection.start !== null && opener.selection.end !== null
+        && (opener.element instanceof HTMLTextAreaElement || opener.element instanceof HTMLInputElement)) {
+        opener.element.setSelectionRange(opener.selection.start, opener.selection.end, opener.selection.direction || "none");
+      }
+    };
+  }, [opener]);
 
   const commands: ResultItem[] = useMemo(() => [
     { id: "cmd:zen", kind: "command", label: "Toggle Zen Mode", shortcut: "Cmd+Shift+Z" },
@@ -122,9 +144,11 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
     return items.slice(0, 20);
   }, [query, scenes, codexEntities, commands]);
 
+  const selectedIndex = results.length ? Math.min(focusIndex, results.length - 1) : -1;
+  const selectedResult = results[selectedIndex];
   useEffect(() => {
-    setFocusIndex(0);
-  }, [query]);
+    if (selectedResult) optionRefs.current.get(selectedResult.id)?.scrollIntoView?.({ block: "nearest" });
+  }, [selectedResult]);
 
   const executeCommand = useCallback((id: string) => {
     switch (id) {
@@ -147,83 +171,113 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   }, [toggleZenMode, toggleTheme, toggleSidebar, toggleSecondarySidebar, togglePanel, navigateTo, setSecondaryTab, setSecondarySidebarOpen]);
 
   const handleSelect = useCallback(async (item: ResultItem) => {
+    // Dismissal returns to writing; activation lets the chosen destination own
+    // focus instead of replaying the old document's selection after navigation.
+    restoreOnClose.current = false;
     onClose();
     if (item.kind === "command") {
       executeCommand(item.id);
-    } else if (item.kind === "scene") {
+      return;
+    }
+    if (tabs.some(tab => tab.id === item.id)) {
+      setActiveTab(item.id);
+      return;
+    }
+    const isCurrent = beginNavigation();
+    if (item.kind === "scene") {
       const sceneId = item.id.replace("scene:", "");
       try {
         const scene = await getScene(projectRoot, sceneId);
-        openTab({ id: item.id, kind: "scene", label: item.label, data: scene });
+        if (isCurrent()) openTab({ id: item.id, kind: "scene", label: scene.title, data: scene });
       } catch (e) {
-        setError(`Failed to open scene: ${e instanceof Error ? e.message : String(e)}`);
+        if (isCurrent()) setError(`Failed to open scene: ${e instanceof Error ? e.message : String(e)}`);
       }
     } else if (item.kind === "codex") {
       const entityId = item.id.replace("codex:", "");
       try {
         const entity = await getCodexEntity(projectRoot, entityId);
-        openTab({ id: item.id, kind: "codex", label: item.label, data: entity });
+        if (isCurrent()) openTab({ id: item.id, kind: "codex", label: entity.name, data: entity });
       } catch (e) {
-        setError(`Failed to open entity: ${e instanceof Error ? e.message : String(e)}`);
+        if (isCurrent()) setError(`Failed to open entity: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
-  }, [onClose, executeCommand, projectRoot, openTab, setError]);
+  }, [onClose, executeCommand, projectRoot, openTab, tabs, setActiveTab, beginNavigation, setError]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing) return;
     if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       onClose();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      inputRef.current?.focus();
+    } else if (e.altKey || e.ctrlKey || e.metaKey) {
+      return;
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setFocusIndex((i) => Math.min(i + 1, results.length - 1));
+      if (results.length) setFocusIndex(Math.min(selectedIndex + 1, results.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setFocusIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && results[focusIndex]) {
+      if (results.length) setFocusIndex(Math.max(selectedIndex - 1, 0));
+    } else if (e.key === "Enter" && selectedResult) {
       e.preventDefault();
-      handleSelect(results[focusIndex]);
+      void handleSelect(selectedResult);
     }
   }
 
   return (
     <div className="command-palette-backdrop" onClick={onClose}>
-      <div className="command-palette" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+      <div ref={dialogRef} className="command-palette" role="dialog" aria-modal="true" aria-label="Command Palette" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
         <div className="command-palette__input-wrap">
-          <span className="command-palette__icon">{"\u2315"}</span>
+          <span className="command-palette__icon" aria-hidden="true">{"\u2315"}</span>
           <input
             ref={inputRef}
             className="command-palette__input"
+            role="combobox"
+            aria-label="Search scenes, entities, commands"
+            aria-autocomplete="list"
+            aria-expanded="true"
+            aria-controls={listId}
+            aria-activedescendant={selectedResult ? optionId(selectedResult.id) : undefined}
             placeholder="Search scenes, entities, commands..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setFocusIndex(0); }}
           />
         </div>
-        <div className="command-palette__results">
+        <div id={listId} className="command-palette__results" role="listbox" aria-label="Search results">
           {results.map((item, i) => (
             <div
               key={item.id}
-              className={`command-palette__result${i === focusIndex ? " command-palette__result--focused" : ""}`}
-              onClick={() => handleSelect(item)}
+              id={optionId(item.id)}
+              role="option"
+              aria-label={item.label}
+              aria-describedby={item.detail ? `${optionId(item.id)}-detail` : undefined}
+              aria-selected={i === selectedIndex}
+              ref={node => { if (node) optionRefs.current.set(item.id, node); else optionRefs.current.delete(item.id); }}
+              className={`command-palette__result${i === selectedIndex ? " command-palette__result--focused" : ""}`}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => void handleSelect(item)}
               onMouseEnter={() => setFocusIndex(i)}
             >
-              <span className="command-palette__result-icon">
+              <span className="command-palette__result-icon" aria-hidden="true">
                 {item.kind === "scene" ? "\u25CB" : item.kind === "codex" ? "\u25C6" : "\u25B8"}
               </span>
               <span className="command-palette__result-label">{item.label}</span>
               {item.detail && (
-                <span className="command-palette__result-category">{item.detail}</span>
+                <span id={`${optionId(item.id)}-detail`} className="command-palette__result-category">{item.detail}</span>
               )}
               {item.shortcut && (
                 <span className="command-palette__result-shortcut">{item.shortcut}</span>
               )}
             </div>
           ))}
-          {results.length === 0 && query.trim() && (
-            <div style={{ padding: "var(--space-4)", textAlign: "center", color: "var(--text-ghost)", fontSize: "var(--text-sm)" }}>
-              No results
-            </div>
-          )}
         </div>
+        {results.length === 0 && query.trim() && (
+          <div role="status" style={{ padding: "var(--space-4)", textAlign: "center", color: "var(--text-ghost)", fontSize: "var(--text-sm)" }}>
+            No results
+          </div>
+        )}
       </div>
     </div>
   );

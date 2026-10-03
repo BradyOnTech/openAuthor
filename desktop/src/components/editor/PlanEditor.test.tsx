@@ -1,20 +1,216 @@
 // @vitest-environment jsdom
 import { StrictMode } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { addPlanAct, getManuscriptPlan, listCharacterArcStates, updateProjectBrief, getScene } from "../../api";
-import type { ManuscriptPlan } from "../../types";
+import { addPlanAct, assignPlanScene, getManuscriptPlan, listCharacterArcStates, previewPlanSceneMove, updateProjectBrief, getScene } from "../../api";
+import type { ManuscriptPlan, PlanMovePreview } from "../../types";
 import { PlanEditor } from "./PlanEditor";
 
 const editor = vi.hoisted(() => ({ openTab: vi.fn(), setActiveTab: vi.fn(), beginNavigation: vi.fn(() => () => true), tabs: [] as Array<{ id: string; modified?: boolean }> }));
 const workspace = vi.hoisted(() => ({ projectRoot: "/books/plan", scenes: [] as Array<{ id: string; title: string }>, codexEntities: [], setError: vi.fn(), setMessage: vi.fn() }));
-vi.mock("../../api", () => ({ addPlanAct: vi.fn(), getManuscriptPlan: vi.fn(), listCharacterArcStates: vi.fn(), updateProjectBrief: vi.fn(), getScene: vi.fn() }));
+vi.mock("../../api", () => ({ addPlanAct: vi.fn(), assignPlanScene: vi.fn(), getManuscriptPlan: vi.fn(), listCharacterArcStates: vi.fn(), previewPlanSceneMove: vi.fn(), updateProjectBrief: vi.fn(), getScene: vi.fn() }));
 vi.mock("../../contexts/EditorContext", () => ({ useEditor: () => editor }));
 vi.mock("../../contexts/WorkspaceContext", () => ({ useWorkspace: () => workspace }));
 const plan: ManuscriptPlan = { schema_version: 1, brief: { synopsis: "", genre: "", themes: [], style_guide: "", outline: "" }, acts: [], beats: [], unassigned_scene_ids: [], scene_metadata: {}, notes: [] };
 
+function orderedPlan(): ManuscriptPlan {
+  workspace.scenes = ["A", "B", "C", "D", "E", "F", "G"].map((title) => ({ id: title.toLowerCase(), title }));
+  return { ...plan, workspace: "main", acts: [{ id: "act", title: "Opening", position: 1, synopsis: "", chapters: [
+    { id: "chapter", title: "Arrival", position: 1, synopsis: "", scene_ids: ["a", "b", "c"] },
+    { id: "return", title: "Return", position: 2, synopsis: "", scene_ids: ["d", "e"] },
+  ] }], unassigned_scene_ids: ["f", "g"] };
+}
+
+function preview(summary: string): PlanMovePreview {
+  return { scene_id: "c", from: { act_id: "act", act_title: "Opening", chapter_id: "chapter", chapter_title: "Arrival", chapter_position: 3, narrative_index: 3 }, to: { act_id: "act", chapter_id: "chapter", chapter_title: "Arrival", before_scene_id: "a", position: 1 }, crossed_scene_ids: ["a", "b"], warnings: [], summary };
+}
+
 beforeEach(() => { vi.resetAllMocks(); editor.tabs = []; workspace.scenes = []; editor.beginNavigation.mockReturnValue(() => true); localStorage.clear(); vi.mocked(listCharacterArcStates).mockResolvedValue([]); });
 afterEach(cleanup);
+
+it("places C before A using the scene's keyboard move controls", async () => {
+  const user = userEvent.setup();
+  workspace.scenes = ["A", "B", "C"].map((title) => ({ id: title.toLowerCase(), title }));
+  const initial = { ...plan, workspace: "main", acts: [{ id: "act", title: "Opening", position: 1, synopsis: "", chapters: [{ id: "chapter", title: "Arrival", position: 1, synopsis: "", scene_ids: ["a", "b", "c"] }] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockResolvedValue(preview("Move C to position 1 in Arrival."));
+  vi.mocked(assignPlanScene).mockResolvedValue(initial);
+  render(<PlanEditor />);
+  const card = (await screen.findByRole("button", { name: "C" })).closest("article")!;
+  const position = within(card).getByRole("combobox", { name: "Reading position for C" });
+  await user.selectOptions(position, "a");
+  await waitFor(() => expect(previewPlanSceneMove).toHaveBeenCalledWith("/books/plan", "c", "chapter", "a"));
+  const saved = { ...initial, acts: [{ ...initial.acts[0], chapters: [{ ...initial.acts[0].chapters[0], scene_ids: ["c", "a", "b"] }] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  const move = within(card).getByRole("button", { name: "Move C" });
+  move.focus();
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(assignPlanScene).toHaveBeenCalledWith("/books/plan", "c", "chapter", "a", "main"));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[ABC]$/ }).map((button) => button.textContent)).toEqual(["C", "A", "B"]));
+});
+
+it("keeps the latest selected reading-position preview when an earlier reply arrives late", async () => {
+  const user = userEvent.setup();
+  let finishFirst!: (value: PlanMovePreview) => void;
+  let finishSecond!: (value: PlanMovePreview) => void;
+  vi.mocked(getManuscriptPlan).mockResolvedValue(orderedPlan());
+  vi.mocked(previewPlanSceneMove)
+    .mockReturnValueOnce(new Promise((resolve) => { finishFirst = resolve; }))
+    .mockReturnValueOnce(new Promise((resolve) => { finishSecond = resolve; }));
+  render(<PlanEditor />);
+  const position = await screen.findByRole("combobox", { name: "Reading position for C" });
+  await user.selectOptions(position, "a");
+  await user.selectOptions(position, "b");
+  await act(async () => finishSecond(preview("Selected: before B.")));
+  expect(screen.getByRole("region", { name: "Structural move preview" }).textContent).toContain("Selected: before B.");
+  await act(async () => finishFirst(preview("Older: before A.")));
+  expect((position as HTMLSelectElement).value).toBe("b");
+  expect(screen.getByRole("region", { name: "Structural move preview" }).textContent).toContain("Selected: before B.");
+  expect(screen.queryByText("Older: before A.")).toBeNull();
+  expect(assignPlanScene).not.toHaveBeenCalled();
+});
+
+it("inserts a scene before a chosen scene in another chapter, keeping drafts and keyboard focus", async () => {
+  const user = userEvent.setup();
+  const initial = orderedPlan();
+  let finish!: (value: ManuscriptPlan) => void;
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockResolvedValue(preview("C will precede E in Return."));
+  vi.mocked(assignPlanScene).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  render(<PlanEditor />);
+  const target = await screen.findByRole("combobox", { name: "Move C to" });
+  fireEvent.change(screen.getByRole("textbox", { name: "Synopsis" }), { target: { value: "Unfinished direction" } });
+  fireEvent.change(screen.getByRole("textbox", { name: "New beat for C" }), { target: { value: "An unfinished beat" } });
+  await user.selectOptions(target, "return");
+  const position = screen.getByRole("combobox", { name: "Reading position for C" });
+  expect(within(position).getAllByRole("option").map((option) => option.textContent)).toEqual(["Before D", "Before E", "At end of chapter"]);
+  await user.selectOptions(position, "e");
+  await waitFor(() => expect(previewPlanSceneMove).toHaveBeenLastCalledWith("/books/plan", "c", "return", "e"));
+  const move = screen.getByRole("button", { name: "Move C" });
+  move.focus();
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(assignPlanScene).toHaveBeenCalledWith("/books/plan", "c", "return", "e", "main"));
+  expect((target as HTMLSelectElement).disabled).toBe(true);
+  expect((position as HTMLSelectElement).disabled).toBe(true);
+  expect((move as HTMLButtonElement).disabled).toBe(true);
+  const saved = { ...initial, acts: [{ ...initial.acts[0], chapters: [
+    { ...initial.acts[0].chapters[0], scene_ids: ["a", "b"] },
+    { ...initial.acts[0].chapters[1], scene_ids: ["d", "c", "e"] },
+  ] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  await act(async () => finish(saved));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[A-G]$/ }).map((button) => button.textContent)).toEqual(["A", "B", "D", "C", "E", "F", "G"]));
+  const restored = screen.getByRole("combobox", { name: "Reading position for C" });
+  await waitFor(() => expect(document.activeElement).toBe(restored));
+  expect((restored as HTMLSelectElement).disabled).toBe(false);
+  expect((restored as HTMLSelectElement).value).toBe("e");
+  expect((screen.getByRole("button", { name: "Move C" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("textbox", { name: "Synopsis" }) as HTMLTextAreaElement).value).toBe("Unfinished direction");
+  expect((screen.getByRole("textbox", { name: "New beat for C" }) as HTMLInputElement).value).toBe("An unfinished beat");
+  expect(updateProjectBrief).not.toHaveBeenCalled();
+  await user.selectOptions(screen.getByRole("combobox", { name: "Move C to" }), "chapter");
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(assignPlanScene).mockResolvedValue(initial);
+  await user.click(screen.getByRole("button", { name: "Move C" }));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[A-G]$/ }).map((button) => button.textContent)).toEqual(["A", "B", "C", "D", "E", "F", "G"]));
+  expect(document.activeElement).not.toBe(screen.getByRole("combobox", { name: "Reading position for C" }));
+});
+
+it("disables current positions and can deliberately append within the same chapter", async () => {
+  const user = userEvent.setup();
+  const initial = orderedPlan();
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockResolvedValue(preview("Move A to the end."));
+  vi.mocked(assignPlanScene).mockResolvedValue(initial);
+  render(<PlanEditor />);
+  const position = await screen.findByRole("combobox", { name: "Reading position for A" });
+  const move = screen.getByRole("button", { name: "Move A" });
+  expect((position as HTMLSelectElement).value).toBe("b");
+  expect((move as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Move C" }) as HTMLButtonElement).disabled).toBe(true);
+  await user.selectOptions(position, "");
+  expect((move as HTMLButtonElement).disabled).toBe(false);
+  await user.selectOptions(position, "b");
+  expect((move as HTMLButtonElement).disabled).toBe(true);
+  await user.click(move);
+  expect(assignPlanScene).not.toHaveBeenCalled();
+  await user.selectOptions(position, "");
+  const saved = { ...initial, acts: [{ ...initial.acts[0], chapters: [{ ...initial.acts[0].chapters[0], scene_ids: ["b", "c", "a"] }, initial.acts[0].chapters[1]] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  move.focus();
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(assignPlanScene).toHaveBeenCalledWith("/books/plan", "a", "chapter", undefined, "main"));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[ABC]$/ }).map((button) => button.textContent)).toEqual(["B", "C", "A"]));
+  expect((screen.getByRole("button", { name: "Move A" }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("orders the scene inbox without creating a chapter or changing its unassigned meaning", async () => {
+  const user = userEvent.setup();
+  workspace.scenes = ["A", "B", "C"].map((title) => ({ id: title.toLowerCase(), title }));
+  const initial = { ...plan, workspace: "main", unassigned_scene_ids: ["a", "b", "c"] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockResolvedValue(preview("Move C before A in the scene inbox."));
+  vi.mocked(assignPlanScene).mockResolvedValue(initial);
+  render(<PlanEditor />);
+  const position = await screen.findByRole("combobox", { name: "Reading position for C" });
+  expect(within(screen.getByRole("combobox", { name: "Move C to" })).getAllByRole("option").map((option) => option.textContent)).toEqual(["Unassigned scene inbox"]);
+  expect(within(position).getAllByRole("option").map((option) => option.textContent)).toEqual(["Before A", "Before B", "At end of scene inbox"]);
+  await user.selectOptions(position, "a");
+  await waitFor(() => expect(previewPlanSceneMove).toHaveBeenCalledWith("/books/plan", "c", null, "a"));
+  const saved = { ...initial, unassigned_scene_ids: ["c", "a", "b"] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  screen.getByRole("button", { name: "Move C" }).focus();
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(assignPlanScene).toHaveBeenCalledWith("/books/plan", "c", null, "a", "main"));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[ABC]$/ }).map((button) => button.textContent)).toEqual(["C", "A", "B"]));
+  expect(screen.getByRole("heading", { name: "Scene Inbox" })).toBeTruthy();
+  expect(addPlanAct).not.toHaveBeenCalled();
+});
+
+it.each(["pointer move", "new author focus"])("does not restore keyboard focus over a %s", async (interaction) => {
+  const user = userEvent.setup();
+  const initial = orderedPlan();
+  let finish!: (value: ManuscriptPlan) => void;
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockResolvedValue(preview("Move C into Return."));
+  vi.mocked(assignPlanScene).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  render(<PlanEditor />);
+  await user.selectOptions(await screen.findByRole("combobox", { name: "Move C to" }), "return");
+  const move = screen.getByRole("button", { name: "Move C" });
+  if (interaction === "pointer move") await user.click(move);
+  else {
+    move.focus();
+    await user.keyboard("{Enter}");
+  }
+  await waitFor(() => expect(assignPlanScene).toHaveBeenCalledTimes(1));
+  const synopsis = screen.getByRole("textbox", { name: "Synopsis" });
+  if (interaction === "new author focus") await user.click(synopsis);
+  const saved = { ...initial, acts: [{ ...initial.acts[0], chapters: [{ ...initial.acts[0].chapters[0], scene_ids: ["a", "b"] }, { ...initial.acts[0].chapters[1], scene_ids: ["d", "e", "c"] }] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  await act(async () => finish(saved));
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[A-G]$/ }).map((button) => button.textContent)).toEqual(["A", "B", "D", "E", "C", "F", "G"]));
+  expect(document.activeElement).not.toBe(screen.getByRole("combobox", { name: "Reading position for C" }));
+  if (interaction === "new author focus") expect(document.activeElement).toBe(synopsis);
+});
+
+it("does not bring back a delayed preview after the author applies the move", async () => {
+  const user = userEvent.setup();
+  let finish!: (value: PlanMovePreview) => void;
+  const initial = orderedPlan();
+  vi.mocked(getManuscriptPlan).mockResolvedValue(initial);
+  vi.mocked(previewPlanSceneMove).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  vi.mocked(assignPlanScene).mockResolvedValue(initial);
+  render(<PlanEditor />);
+  await user.selectOptions(await screen.findByRole("combobox", { name: "Reading position for C" }), "a");
+  const saved = { ...initial, acts: [{ ...initial.acts[0], chapters: [{ ...initial.acts[0].chapters[0], scene_ids: ["c", "a", "b"] }, initial.acts[0].chapters[1]] }] };
+  vi.mocked(getManuscriptPlan).mockResolvedValue(saved);
+  screen.getByRole("button", { name: "Move C" }).focus();
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(screen.getAllByRole("button", { name: /^[ABC]$/ }).map((button) => button.textContent)).toEqual(["C", "A", "B"]));
+  await act(async () => finish(preview("Already applied: before A.")));
+  expect(screen.queryByRole("region", { name: "Structural move preview" })).toBeNull();
+});
 
 it("keeps an author's new brief when an older initial load completes late", async () => {
   let finishOld!: (value: ManuscriptPlan) => void;
