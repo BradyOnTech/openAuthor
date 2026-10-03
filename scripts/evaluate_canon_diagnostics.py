@@ -9,8 +9,9 @@ from typing import Any
 
 from openauthor.canon import add_arc_state, add_canon_fact, add_open_question, add_setup, run_canon_diagnostics
 from openauthor.codex import add_entity
+from openauthor.planning import assign_scene
 from openauthor.project import initialize_project
-from openauthor.scenes import add_scene
+from openauthor.scenes import add_scene, list_scenes
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CORPUS = ROOT / "tests" / "fixtures" / "canon_evaluation.json"
@@ -55,6 +56,15 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
         add_open_question(paths, question=question["question"], scene_id=question.get("scene", ""), intentionally_unresolved=question.get("intentional", False))
       for arc in case.get("arcs", []):
         add_arc_state(paths, character_entity_id=entity_ids[arc["character"]], dimension=arc["dimension"], value=arc["value"], scene_id=arc["scene"], excerpt=arc["excerpt"], state_type=arc.get("type", "observed"))
+      reading_order = case.get("reading_order")
+      if reading_order is not None:
+        identifiers = {scene["id"] for scene in list_scenes(paths)}
+        if not isinstance(reading_order, list) or len(reading_order) != len(identifiers) or set(reading_order) != identifiers:
+          raise ValueError("A fixture reading order must list every saved scene exactly once.")
+        # A later author reorder may invalidate previously valid Canon. Create
+        # the fact through normal validation, then exercise that actual move.
+        for identifier in reading_order:
+          assign_scene(paths, scene_id=identifier, chapter_id=None)
       actual = Counter(row["code"] for row in run_canon_diagnostics(paths)["diagnostics"])
       expected = Counter(case.get("expected", {}))
       for code in set(actual).union(expected):

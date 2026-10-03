@@ -1,4 +1,4 @@
-// Contain the currently unpatched tooling path; this does not clear npm audit.
+// Contain unpatched tooling modules in exports; dependency remediation remains open.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const mobile = resolve(import.meta.dirname, "..");
 const advisory = "GHSA-86w9-cpqp-85rv";
+const advisories = [advisory, "GHSA-vfj7-8cjw-p6xm"];
 const fail = message => { throw new Error(message); };
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const owns = (value, key) => object(value) && Object.hasOwn(value, key);
@@ -49,7 +50,7 @@ function resolveProject(projectRoot) {
     owns(exp.extra?.eas, "projectId") || exp.extra?.eas?.projectId !== undefined) {
     fail("Signing configuration requires security review");
   }
-  const installed = Object.fromEntries(["expo", "@expo/cli", "@expo/code-signing-certificates", "node-forge"].map(name => [name, require(`${name}/package.json`).version]));
+  const installed = Object.fromEntries(["expo", "@expo/cli", "@expo/code-signing-certificates", "node-forge", "braces", "micromatch"].map(name => [name, require(`${name}/package.json`).version]));
   return { exp, require, installed };
 }
 
@@ -58,7 +59,7 @@ export function inspectProject(projectRoot = mobile) {
   try {
     const { installed } = resolveProject(projectRoot);
     if (probe.attempts() !== 0) fail("Network access refused during signing inspection");
-    return { advisory, dependency_audit_gate: "open", installed };
+    return { advisory, advisories, dependency_audit_gate: "open", installed };
   } finally { probe.restore(); }
 }
 
@@ -72,7 +73,7 @@ export async function preflight(projectRoot = mobile) {
       assert.equal(await signing.getCodeSigningInfoAsync(exp, header), null);
     }
     assert.equal(probe.attempts(), 0);
-    return { advisory, dependency_audit_gate: "open", installed, signing_header_checks: 3, network_attempts: 0 };
+    return { advisory, advisories, dependency_audit_gate: "open", installed, signing_header_checks: 3, network_attempts: 0 };
   } finally { probe.restore(); }
 }
 
@@ -106,8 +107,16 @@ function sourceNames(map, depth = 0) {
   return map.sources.map(source => `${map.sourceRoot ? map.sourceRoot.replace(/\/$/, "") + "/" : ""}${source}`.replaceAll("\\", "/"));
 }
 
-function affected(source) {
-  return /(?:^|\/)node-forge(?:\/|$)|(?:^|\/)@expo\/code-signing-certificates(?:\/|$)|(?:^|\/)@expo\/cli\/(?:build\/)?src\/(?:utils\/codesigning(?:\.|\/)|run\/ios\/codeSigning\/)/.test(source);
+function exportModuleRejection(source) {
+  if (/(?:^|\/)node-forge(?:\/|$)|(?:^|\/)@expo\/code-signing-certificates(?:\/|$)|(?:^|\/)@expo\/cli\/(?:build\/)?src\/(?:utils\/codesigning(?:\.|\/)|run\/ios\/codeSigning\/)/.test(source)) {
+    return "Affected signing module entered export";
+  }
+  // Micromatch imports Braces; workspace-root and doctor embed copies in compiled modules.
+  // Exclusion is an export boundary, not proof that every matcher invokes a vulnerable walker.
+  if (/(?:^|\/)(?:braces|micromatch|resolve-workspace-root|expo-doctor)(?:\/|$)/.test(source)) {
+    return "Pattern tooling module entered export";
+  }
+  return null;
 }
 
 export function inspectExport(output, platforms) {
@@ -127,13 +136,16 @@ export function inspectExport(output, platforms) {
         const mapStat = lstatSync(mapFile);
         if (!mapStat.isFile() || mapStat.size > 64 * 1024 * 1024) fail("Export inspection incomplete");
         const sources = sourceNames(JSON.parse(readFileSync(mapFile, "utf8")));
-        if (sources.some(affected)) fail("Affected signing module entered export");
+        for (const source of sources) {
+          const rejection = exportModuleRejection(source);
+          if (rejection) fail(rejection);
+        }
         bundles.push({ file: name, platform, source_count: sources.length, bundle_sha256: hash(file), map_sha256: hash(mapFile) });
       }
     }
   };
   try { walk(output); } catch (error) {
-    if (error.message === "Affected signing module entered export") throw error;
+    if (["Affected signing module entered export", "Pattern tooling module entered export"].includes(error.message)) throw error;
     fail("Export inspection incomplete");
   }
   if (!bundles.length || platforms.some(platform => !bundles.some(bundle => bundle.platform === platform))) fail("Export inspection incomplete");
@@ -156,16 +168,16 @@ async function main() {
   });
   if (result.error || result.status !== 0) fail("Guarded export failed");
   const output = resolve(mobile, options.output);
-  const report = { ...config, scope: "Current Metro module/config containment; signed and native acceptance unverified", ...inspectExport(output, options.platforms) };
+  const report = { ...config, scope: "Metro export module containment; dependency remediation, exposed developer tooling, signing and native acceptance unverified", ...inspectExport(output, options.platforms) };
   writeFileSync(join(output, "security-build.json"), JSON.stringify(report, null, 2) + "\n");
   // Inspect maps before removing them from public app-shell assets.
   for (const bundle of report.bundles) unlinkSync(join(output, bundle.file) + ".map");
-  console.log(`Mobile build containment passed (${report.map_count} maps); ${advisory} dependency audit remains open.`);
+  console.log(`Mobile export containment passed (${report.map_count} maps); dependency remediation remains open for ${advisories.join(", ")}.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => {
-    const allowed = ["Signing configuration requires security review", "Affected signing module entered export", "Export inspection incomplete", "Unsupported guarded export arguments", "Guarded export failed"];
+    const allowed = ["Signing configuration requires security review", "Affected signing module entered export", "Pattern tooling module entered export", "Export inspection incomplete", "Unsupported guarded export arguments", "Guarded export failed"];
     console.error(allowed.includes(error.message) ? error.message : "Mobile build security inspection failed");
     process.exitCode = 1;
   });

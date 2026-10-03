@@ -640,6 +640,7 @@ def build_parser() -> argparse.ArgumentParser:
   memory_fact_review.add_argument("--disposition", choices=["accepted", "rejected"], required=True)
   memory_fact_review.add_argument("--evidence-json", default=None)
   memory_fact_review.add_argument("--expected-updated-at", default=None)
+  memory_fact_review.add_argument("--expected-version", default=None, help="Original loaded fact version, including its Storyline.")
   memory_fact_review.add_argument("--json", action="store_true", help="Output JSON.")
   memory_arc_add = memory_sub.add_parser("arc-add", help="Add an evidence-backed Character Arc State.")
   memory_arc_add.add_argument("--character", required=True)
@@ -1625,7 +1626,7 @@ def _run(args: argparse.Namespace) -> int:
     elif args.memory_command == "fact-list":
       row = list_canon_facts(paths, status=args.status, for_editing=args.for_editing)
     elif args.memory_command == "fact-review":
-      row = review_canon_fact(paths, args.id, disposition=args.disposition, evidence=json.loads(args.evidence_json) if args.evidence_json is not None else None, expected_updated_at=args.expected_updated_at)
+      row = review_canon_fact(paths, args.id, disposition=args.disposition, evidence=json.loads(args.evidence_json) if args.evidence_json is not None else None, expected_updated_at=args.expected_updated_at, expected_version=args.expected_version)
     elif args.memory_command == "fact-update":
       row = update_canon_fact(paths, args.id, expected_version=args.expected_version, changes=json.loads(args.changes_json))
     elif args.memory_command == "arc-add":

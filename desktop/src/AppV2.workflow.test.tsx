@@ -293,9 +293,11 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "fact-review") {
       const fact = harness.facts.find(row => row.id === argument(args, "--id"));
       if (!fact) return response("Unknown fact", 1);
+      if (argument(args, "--expected-version") !== fact.edit_version) return response("Canon Fact or Storyline changed", 1);
       fact.status = argument(args, "--disposition");
       if (argument(args, "--evidence-json")) fact.evidence = JSON.parse(argument(args, "--evidence-json"));
       fact.updated_at = "2026-09-30T20:00:00Z";
+      fact.edit_version = `${fact.edit_version}:reviewed`;
       return response(fact);
     }
     if (root === "check" && action === "startup") {
@@ -843,7 +845,7 @@ describe("active V2 author workflow", () => {
 
   it("recovers an unfinished Canon evidence correction and can retire a fact without deleting it", async () => {
     const { user } = await openWritingScene();
-    harness.facts.push({ id: "fact-gate", subject_entity_id: "", predicate: "color", value: "blue", status: "accepted", updated_at: "2026-09-30T19:00:00Z", evidence: [{ scene_id: "scene-0001", excerpt: "The gate is blue.", start: 0, end: 17 }], validity: {} });
+    harness.facts.push({ id: "fact-gate", edit_version: "loaded-canon-version", subject_entity_id: "", predicate: "color", value: "blue", status: "accepted", updated_at: "2026-09-30T19:00:00Z", evidence: [{ scene_id: "scene-0001", excerpt: "The gate is blue.", start: 0, end: 17 }], validity: {} });
     await user.click(screen.getByTitle(/Story Memory \(/));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     await user.click(screen.getByText("Add or update story records"));
@@ -856,7 +858,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Save verified evidence" }));
     await waitFor(() => expect((harness.facts[0].evidence as Array<{ excerpt: string }>)[0].excerpt).toBe("The gate gleams blue."));
     const request = harness.calls.find(args => args[0] === "memory" && args[1] === "fact-review")!;
-    expect(argument(request, "--expected-updated-at")).toBe("2026-09-30T19:00:00Z");
+    expect(argument(request, "--expected-version")).toBe("loaded-canon-version");
     await user.click(screen.getByRole("button", { name: "Retire fact" }));
     await waitFor(() => expect(harness.facts[0].status).toBe("rejected"));
     expect(harness.facts).toHaveLength(1);

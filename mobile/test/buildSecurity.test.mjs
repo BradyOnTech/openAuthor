@@ -30,9 +30,12 @@ describe("mobile build security containment", () => {
     expect(result.status, result.stderr).toBe(0);
     const report = JSON.parse(result.stdout);
     expect(report.dependency_audit_gate).toBe("open");
+    expect(report.advisories).toEqual(["GHSA-86w9-cpqp-85rv", "GHSA-vfj7-8cjw-p6xm"]);
     expect(report.signing_header_checks).toBe(3);
     expect(report.network_attempts).toBe(0);
     expect(report.installed["node-forge"]).toBe("1.4.0");
+    expect(report.installed.braces).toBe("3.0.3");
+    expect(report.installed.micromatch).toBe("4.0.8");
   });
 
   it("refuses a configured certificate before reading its nonexistent key or certificate", () => fixture(directory => {
@@ -99,6 +102,52 @@ describe("mobile build security containment", () => {
       });
     }
   });
+
+  it.each([
+    "/node_modules/braces/lib/compile.js",
+    "C:\\build\\node_modules\\braces\\lib\\expand.js",
+    "/node_modules/micromatch/index.js",
+    "/node_modules/resolve-workspace-root/build/index.js",
+    "/node_modules/expo-doctor/build/index.js",
+    "/node_modules/expo/node_modules/resolve-workspace-root/build/index.js",
+    "C:\\build\\node_modules\\expo-doctor\\build\\index.js",
+    "C:\\build\\node_modules\\expo\\node_modules\\micromatch\\index.js",
+  ])("refuses pattern tooling in an app export: %s", source => fixture(directory => {
+    bundle(directory, "web", [source]);
+    expect(() => inspectExport(directory, ["web"])).toThrow("Pattern tooling module entered export");
+  }));
+
+  it("permits distinct pattern libraries and similarly named application sources", () => fixture(directory => {
+    const sources = [
+      "/node_modules/picomatch/lib/parse.js",
+      "/node_modules/brace-expansion/dist/commonjs/index.js",
+      "/node_modules/micromatch-tools/index.js",
+      "/app/braces.css",
+      "/app/index.ts",
+    ];
+    bundle(directory, "web", sources);
+    expect(inspectExport(directory, ["web"]).bundles[0].source_count).toBe(sources.length);
+  }));
+
+  it("refuses an embedded pattern-tooling module hidden in nested source-map sections", () => fixture(directory => {
+    const file = bundle(directory, "ios");
+    writeFileSync(file + ".map", JSON.stringify({
+      version: 3,
+      sections: [{ offset: { line: 0, column: 0 }, map: {
+        version: 3,
+        sections: [{ offset: { line: 0, column: 0 }, map: {
+          version: 3, sources: ["/node_modules/resolve-workspace-root/build/index.js"], mappings: "AAAA",
+        } }],
+      } }],
+    }));
+    expect(() => inspectExport(directory, ["ios"])).toThrow("Pattern tooling module entered export");
+  }));
+
+  it("resolves sourceRoot before refusing a relative Braces module", () => fixture(directory => {
+    const file = bundle(directory, "android");
+    writeFileSync(file + ".map", JSON.stringify({ version: 3, sourceRoot: "C:\\build\\node_modules\\braces", sources: ["lib/compile.js"], mappings: "AAAA" }));
+    expect(() => inspectExport(directory, ["android"])).toThrow("Pattern tooling module entered export");
+  }));
 
   it("requires every bundle map and every requested platform, with valid nonempty maps", () => {
     fixture(directory => {

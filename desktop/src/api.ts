@@ -1992,11 +1992,11 @@ export async function listNarrativeSetups(projectRoot: string): Promise<Narrativ
 }
 
 export async function reviewCanonFact(projectRoot: string, factId: string, payload: {
-  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedUpdatedAt?: string;
+  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedVersion: string;
 }): Promise<CanonFact> {
-  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--json"];
+  if (!payload.expectedVersion) throw new Error("Reload Canon & Continuity before reviewing this fact.");
+  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--expected-version", payload.expectedVersion, "--json"];
   if (payload.evidence) args.push("--evidence-json", JSON.stringify(payload.evidence));
-  if (payload.expectedUpdatedAt) args.push("--expected-updated-at", payload.expectedUpdatedAt);
   return decodeJson(await runCoreCommand(projectRoot, args));
 }
 

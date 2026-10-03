@@ -148,6 +148,8 @@ def add_canon_fact(
     "created_at": now,
     "updated_at": now,
   }
+  if status == "accepted":
+    _validate_accepted_fact(paths, row)
   payload = _read_memory(paths)
   payload["facts"].append(row)
   _write_memory(paths, payload)
@@ -157,6 +159,18 @@ def add_canon_fact(
 def _fact_edit_version(paths: ProjectPaths, fact: dict[str, Any]) -> str:
   source = json.dumps([workspace_edit_scope(paths)[0], fact], sort_keys=True, ensure_ascii=False)
   return hashlib.sha256(source.encode("utf-8")).hexdigest()
+
+
+def _validate_accepted_fact(paths: ProjectPaths, fact: dict[str, Any]) -> None:
+  positions = _scene_positions(paths)
+  if any(boundary and boundary not in positions for boundary in fact["validity"].values()):
+    raise OpenAuthorError("A validity scene is unavailable. Choose a current scene.")
+  if _validity_range(fact, positions)[0] > _validity_range(fact, positions)[1]:
+    raise OpenAuthorError("The fact cannot stop being true before it begins.")
+  for evidence in fact["evidence"]:
+    body = get_scene(paths, evidence["scene_id"])["body"]
+    if not evidence["excerpt"].strip() or evidence["excerpt"] not in body:
+      raise OpenAuthorError("A supporting passage is missing from the current scene. Correct the excerpt before accepting this fact.")
 
 
 @serialized_project_access
@@ -196,15 +210,7 @@ def update_canon_fact(paths: ProjectPaths, fact_id: str, *, expected_version: st
   # Retiring an obsolete fact must still work when its original source was
   # removed. Accepting or correcting active canon requires current sources.
   if updated["status"] == "accepted":
-    positions = _scene_positions(paths)
-    if any(boundary and boundary not in positions for boundary in validity.values()):
-      raise OpenAuthorError("A validity scene is unavailable. Choose a current scene.")
-    if _validity_range(updated, positions)[0] > _validity_range(updated, positions)[1]:
-      raise OpenAuthorError("The fact cannot stop being true before it begins.")
-    for evidence in updated["evidence"]:
-      body = get_scene(paths, evidence["scene_id"])["body"]
-      if not evidence["excerpt"].strip() or evidence["excerpt"] not in body:
-        raise OpenAuthorError("A supporting passage is missing from the current scene. Correct the excerpt before accepting this fact.")
+    _validate_accepted_fact(paths, updated)
   if updated != current:
     updated["updated_at"] = utc_now()
     memory["facts"] = [updated if row["id"] == fact_id else row for row in memory["facts"]]
@@ -220,6 +226,7 @@ def review_canon_fact(
   disposition: str,
   evidence: list[dict[str, Any]] | None = None,
   expected_updated_at: str | None = None,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   if disposition not in {"accepted", "rejected"}:
     raise OpenAuthorError("A Canon Fact review must accept or retire the fact.")
@@ -227,14 +234,19 @@ def review_canon_fact(
   fact = next((row for row in memory["facts"] if row["id"] == fact_id), None)
   if fact is None:
     raise OpenAuthorError(f"Unknown Canon Fact '{fact_id}'.")
+  if expected_version is not None and (not expected_version or expected_version != _fact_edit_version(paths, fact)):
+    raise OpenAuthorError("This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.")
   if expected_updated_at is not None and fact["updated_at"] != expected_updated_at:
     raise OpenAuthorError("This Canon Fact changed since you opened it. Reload and review the current evidence before saving.")
+  updated = {**fact, "status": disposition}
   if evidence is not None or disposition == "accepted":
-    fact["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
-  fact["status"] = disposition
-  fact["updated_at"] = utc_now()
+    updated["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
+  if disposition == "accepted":
+    _validate_accepted_fact(paths, updated)
+  updated["updated_at"] = utc_now()
+  memory["facts"] = [updated if row["id"] == fact_id else row for row in memory["facts"]]
   _write_memory(paths, memory)
-  return fact
+  return {**updated, "edit_version": _fact_edit_version(paths, updated)} if expected_version is not None else updated
 
 
 @serialized_project_access
