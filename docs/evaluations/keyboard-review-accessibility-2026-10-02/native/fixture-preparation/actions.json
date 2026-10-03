@@ -1,0 +1,212 @@
+[
+  {
+    "label": "01-init",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "init",
+      "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+      "--name",
+      "Native coordinated recovery acceptance",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.211763+00:00",
+    "completed_at": "2026-10-03T03:01:49.374107+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "02-add-scene-1",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "scene",
+      "add",
+      "--title",
+      "Recovery scene 1",
+      "--body",
+      "The signal began to drift.",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.374320+00:00",
+    "completed_at": "2026-10-03T03:01:49.467590+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "03-add-scene-2",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "scene",
+      "add",
+      "--title",
+      "Recovery scene 2",
+      "--body",
+      "Mara started to pace beside the gate.",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.467797+00:00",
+    "completed_at": "2026-10-03T03:01:49.552639+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "04-add-scene-3",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "scene",
+      "add",
+      "--title",
+      "Recovery scene 3",
+      "--body",
+      "Ivo really waited beside the very narrow door.",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.552815+00:00",
+    "completed_at": "2026-10-03T03:01:49.644163+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "05-generate-scene-1",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "generate",
+      "--scene",
+      "scene-0001",
+      "--instruction",
+      "Tighten the prose. Preserve every fact, name, action, and uncertainty. Remove unnecessary verbal scaffolding.",
+      "--change-group",
+      "native-recovery-drill",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.645419+00:00",
+    "completed_at": "2026-10-03T03:01:49.770369+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "06-draft-scene-1",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "draft",
+      "--id",
+      "proposal-9f2042600b36",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.770590+00:00",
+    "completed_at": "2026-10-03T03:01:49.877032+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "07-generate-scene-2",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "generate",
+      "--scene",
+      "scene-0002",
+      "--instruction",
+      "Tighten the prose. Preserve every fact, name, action, and uncertainty. Remove unnecessary verbal scaffolding.",
+      "--change-group",
+      "native-recovery-drill",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.877437+00:00",
+    "completed_at": "2026-10-03T03:01:49.993150+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "08-draft-scene-2",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "draft",
+      "--id",
+      "proposal-c4236380a8e0",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:49.993421+00:00",
+    "completed_at": "2026-10-03T03:01:50.172187+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "09-generate-scene-3",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "generate",
+      "--scene",
+      "scene-0003",
+      "--instruction",
+      "Tighten the prose. Preserve every fact, name, action, and uncertainty. Remove unnecessary verbal scaffolding.",
+      "--change-group",
+      "native-recovery-drill",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:50.172690+00:00",
+    "completed_at": "2026-10-03T03:01:50.281815+00:00",
+    "exit_code": 0
+  },
+  {
+    "label": "10-draft-scene-3",
+    "argv": [
+      "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "-I",
+      "-m",
+      "openauthor",
+      "proposal",
+      "draft",
+      "--id",
+      "proposal-67c5883b1d6d",
+      "--provider",
+      "local",
+      "--json"
+    ],
+    "cwd": "/private/tmp/openauthor-native-coordinated-u6h5ipmm/book",
+    "started_at": "2026-10-03T03:01:50.282118+00:00",
+    "completed_at": "2026-10-03T03:01:50.382729+00:00",
+    "exit_code": 0
+  }
+]

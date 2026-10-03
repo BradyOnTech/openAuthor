@@ -1,0 +1,4167 @@
+{
+  "scope": "bare native select; installed headless engines; no app server, providers, network or repository source edits",
+  "results": [
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "focus-arrows-tab",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "focus-arrows-enter-tab",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "space-arrows-enter-tab",
+      "keys": [
+        "Space",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "alt-open-arrows-enter-tab",
+      "keys": [
+        "Alt+ArrowDown",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Alt+ArrowDown",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "home-enter-tab",
+      "keys": [
+        "Home",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Home",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "typing-a-enter-tab",
+      "keys": [
+        "a",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "a",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "focus-arrows-tab",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "focus-arrows-enter-tab",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "space-arrows-enter-tab",
+      "keys": [
+        "Space",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "alt-open-arrows-enter-tab",
+      "keys": [
+        "Alt+ArrowDown",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Alt+ArrowDown",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowDown",
+              "code": "ArrowDown",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Alt",
+              "code": "AltLeft",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "home-enter-tab",
+      "keys": [
+        "Home",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Home",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Home",
+              "code": "Home",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "typing-a-enter-tab",
+      "keys": [
+        "a",
+        "Enter",
+        "Tab"
+      ],
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "a",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

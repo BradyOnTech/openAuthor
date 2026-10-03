@@ -1,0 +1,80 @@
+{
+  "stage": "native-gui-undo-complete",
+  "check_correction": "Initial read-only validator incorrectly required status=undone. Core retains status=applied and records undone_at/undo_revision; UI displays undone. Exact original files and bodies matched. No product repair was needed.",
+  "scenes": [
+    {
+      "id": "scene-0001",
+      "body": "The signal began to drift.\n",
+      "exact_original_file_restored": true,
+      "file_sha256": "f5c0604383392c233b166b14e4d87f24849f06939f71cc2df2fc9105abe36bda",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23",
+      "undone_at": "2026-10-03T03:39:43.144061+00:00"
+    },
+    {
+      "id": "scene-0002",
+      "body": "Mara started to pace beside the gate.\n",
+      "exact_original_file_restored": true,
+      "file_sha256": "b1d9007c8fdf8a7f9aa6a4e9ed6084337ff502296abb5ead9cf0de00394fd10c",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23",
+      "undone_at": "2026-10-03T03:39:43.144061+00:00"
+    },
+    {
+      "id": "scene-0003",
+      "body": "Ivo really waited beside the very narrow door.\n",
+      "exact_original_file_restored": true,
+      "file_sha256": "a96a696170b00b0aad1022b2b71b8214b4e0528bc3c9487dd4ee410539706c34",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23",
+      "undone_at": "2026-10-03T03:39:43.144061+00:00"
+    }
+  ],
+  "revision": {
+    "schema_version": 1,
+    "id": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23",
+    "parent": "bfd07a92ba30f6f4b91cf8614e35553e5e2de95ee1cdacc99688e9d2c5b4709c",
+    "created_at": "2026-10-03T03:39:43.142506+00:00",
+    "message": "Undo coordinated Change Set native-recovery-drill",
+    "kind": "change_group_undo",
+    "manifest": {
+      ".openauthor/generation_budget_policy.json": "4e7587fa956e6019c5c8c8c3a0fac6bbe118085784a8814c76c12c0aace38da6",
+      ".openauthor/project.json": "0114653e53e81dd9e1757d217fa941a46ccfe4c652c71f9ff5a708512df31980",
+      ".openauthor/provider_pricing.json": "82ca849b7d19b25346f0add58e378e1ca6da228061d535b7eea82178390efd4f",
+      "codex/codex.json": "e8fe555948b5d77aadade20bfb68e8c06b9ccc8e317081485b649aa005016bb4",
+      "codex/suggestions.json": "a676e20c4ce4377fad061f3fa397bb4896d38d119f1bb93beb96d1a5c4047598",
+      "manuscript/scenes/0001-recovery-scene-1.md": "f5c0604383392c233b166b14e4d87f24849f06939f71cc2df2fc9105abe36bda",
+      "manuscript/scenes/0002-recovery-scene-2.md": "b1d9007c8fdf8a7f9aa6a4e9ed6084337ff502296abb5ead9cf0de00394fd10c",
+      "manuscript/scenes/0003-recovery-scene-3.md": "a96a696170b00b0aad1022b2b71b8214b4e0528bc3c9487dd4ee410539706c34",
+      "manuscript/structure.json": "8e27be4fa63f35aafb2ee89d4d2fd332e5313bb856b1ce2b898ef8f8f930e85c"
+    },
+    "metadata": {
+      "change_group_id": "native-recovery-drill",
+      "proposal_ids": [
+        "proposal-67c5883b1d6d",
+        "proposal-9f2042600b36",
+        "proposal-c4236380a8e0"
+      ],
+      "scene_ids": [
+        "scene-0001",
+        "scene-0002",
+        "scene-0003"
+      ],
+      "undo_schema_version": 1,
+      "workspace": "dff0cceb688f85d037b2651c3d010a9834a259316157adf17c387e516ef80ba9",
+      "proposal_scenes": {
+        "proposal-67c5883b1d6d": {
+          "id": "scene-0003",
+          "path": "manuscript/scenes/0003-recovery-scene-3.md"
+        },
+        "proposal-9f2042600b36": {
+          "id": "scene-0001",
+          "path": "manuscript/scenes/0001-recovery-scene-1.md"
+        },
+        "proposal-c4236380a8e0": {
+          "id": "scene-0002",
+          "path": "manuscript/scenes/0002-recovery-scene-2.md"
+        }
+      },
+      "applied_revision": "bfd07a92ba30f6f4b91cf8614e35553e5e2de95ee1cdacc99688e9d2c5b4709c",
+      "restored_revision": "e0c2192170b24705134338f86cb16b24d04f82aaef493e412740738e9bf6631b"
+    }
+  }
+}

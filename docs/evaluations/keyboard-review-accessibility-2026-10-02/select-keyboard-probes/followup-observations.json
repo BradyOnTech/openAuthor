@@ -1,0 +1,6683 @@
+{
+  "scope": "bare native select; installed headless engines; no app server, providers, network or repository source edits",
+  "results": [
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "typing-before-prefix",
+      "keys": [
+        "b",
+        "Enter",
+        "Tab"
+      ],
+      "size": 1,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "b",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "typing-full-before-A",
+      "keys": [
+        "b",
+        "e",
+        "f",
+        "o",
+        "r",
+        "e",
+        "Space",
+        "a",
+        "Enter",
+        "Tab"
+      ],
+      "size": 1,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "b",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "e",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "f",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "o",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "r",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "e",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "a",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "native-listbox-arrows",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Tab"
+      ],
+      "size": 3,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "b",
+          "selectedIndex": 1,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "chrome",
+      "version": "154.0.8037.95",
+      "name": "native-listbox-space-arrows",
+      "keys": [
+        "Space",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "size": 3,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "b",
+          "selectedIndex": 1,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "move",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "typing-before-prefix",
+      "keys": [
+        "b",
+        "Enter",
+        "Tab"
+      ],
+      "size": 1,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "b",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "typing-full-before-A",
+      "keys": [
+        "b",
+        "e",
+        "f",
+        "o",
+        "r",
+        "e",
+        "Space",
+        "a",
+        "Enter",
+        "Tab"
+      ],
+      "size": 1,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "b",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "e",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "f",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "o",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "r",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "e",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "a",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "b",
+              "code": "KeyB",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "f",
+              "code": "KeyF",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "o",
+              "code": "KeyO",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "r",
+              "code": "KeyR",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "e",
+              "code": "KeyE",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "a",
+              "code": "KeyA",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "native-listbox-arrows",
+      "keys": [
+        "ArrowUp",
+        "ArrowUp",
+        "Tab"
+      ],
+      "size": 3,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "b",
+          "selectedIndex": 1,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "name": "native-listbox-space-arrows",
+      "keys": [
+        "Space",
+        "ArrowUp",
+        "ArrowUp",
+        "Enter",
+        "Tab"
+      ],
+      "size": 3,
+      "steps": [
+        {
+          "step": "initial",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "",
+          "events": []
+        },
+        {
+          "step": "focused",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Space",
+          "value": "",
+          "selectedIndex": 2,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "b",
+          "selectedIndex": 1,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "ArrowUp",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Enter",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "position",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            }
+          ]
+        },
+        {
+          "step": "Tab",
+          "value": "a",
+          "selectedIndex": 0,
+          "active": "",
+          "events": [
+            {
+              "type": "focus",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": " ",
+              "code": "Space",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "",
+              "selectedIndex": 2,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "b",
+              "selectedIndex": 1,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "input",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "change",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "ArrowUp",
+              "code": "ArrowUp",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keypress",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keyup",
+              "key": "Enter",
+              "code": "Enter",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "keydown",
+              "key": "Tab",
+              "code": "Tab",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "position",
+              "defaultPrevented": false
+            },
+            {
+              "type": "blur",
+              "key": "",
+              "code": "",
+              "trusted": true,
+              "value": "a",
+              "selectedIndex": 0,
+              "active": "",
+              "defaultPrevented": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

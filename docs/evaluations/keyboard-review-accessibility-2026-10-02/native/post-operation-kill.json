@@ -1,0 +1,23 @@
+{
+  "pid": 98100,
+  "command": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop",
+  "source_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "action": "SIGKILL verified QA app and its exact-path owned serve sidecars after apply, undo and backup/restore completed",
+  "children_before_kill": [
+    {
+      "pid": 98132,
+      "command": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3 -m openauthor serve"
+    },
+    {
+      "pid": 98184,
+      "command": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3 -m openauthor serve"
+    },
+    {
+      "pid": 99509,
+      "command": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3 -m openauthor serve"
+    }
+  ],
+  "active_mutation_workers": 0,
+  "scope": "Post-operation restart; not interrupted transaction timing",
+  "setup_scope": "First sandbox ps unavailable; then guard requiring zero children halted before mutation. Persistent serve sidecars were identified and individually guarded."
+}

@@ -1,11 +1,57 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `ae3eb2e`; all six
+Status: **in progress**. The latest implementation is `a523097`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
-## Latest navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
+## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+
+Command Palette now exposes a named dialog, search combobox and results list,
+keeps Tab navigation inside the search, and restores the exact opener/caret on
+dismissal. Opening a result leaves focus with its destination and refuses late
+scene/entity responses after newer navigation. Existing dirty tabs stay intact.
+Plan now supports exact keyboard reading positions before another scene or at
+the end of a chapter/inbox. Moves preserve unfinished guidance, prevent duplicate
+submission and stale preview results, and restore useful focus after remount
+without overriding a later author choice.
+
+The [keyboard evidence packet](../keyboard-review-accessibility-2026-10-02/README.md)
+records 699 desktop tests in 91 files, TypeScript/Vite and 13 unique offline
+real-core journeys in each Chrome/WebKit engine. The final 26-case batch uses
+actual keyboard typeahead for native position selectors and keyboard Move
+activation; an earlier `selectOption` batch remains intermediate evidence.
+All 356 archived inputs match committed source. The broader snapshot was
+captured shortly after final browser launch and stayed unchanged through
+completion; production/rendered hashes match independent reviews made before
+desktop/build execution. Standards has zero hard findings and one optional
+Data Clumps suggestion; Spec has zero open findings.
+
+The [normal native report](../keyboard-review-accessibility-2026-10-02/native/default-bundle-report.json)
+verifies the current unsigned arm64 bundle's canonical identity, exact packaged
+core and runtime contract. Five instrumented packaged-engine crash stages pass.
+A separate empty-cloud/local QA flavor uses the same core. Its GUI applies
+three reviewed synthetic scenes in one Revision, then restores all three original
+whole-file bytes through coordinated undo. A GUI-created verified 41-file backup
+restores exact original prose and identical seven-revision history to a new
+folder, leaving the source book intact. After those operations complete, verified
+same-executable SIGKILL/relaunch restores the active proposal tab, Changes panel
+and undone history. Packaged-core readback retains `status=applied` with
+`undone_at` and the shared undo Revision; the UI displays undone.
+
+[Native GUI observations](../keyboard-review-accessibility-2026-10-02/native/observations.json)
+are manually transcribed from CUA, with inline AX and screenshots in the chat. This verifies completed-operation roundtrip and
+post-operation restart. Mid-write GUI interruption, VoiceOver/scaling, long
+sessions, cloud/account/Keychain, signed, upgrade, physical-device and clean-machine
+acceptance remain open; no native screenshot archive is claimed.
+
+No new provider request or deployed mutation occurred. All six priorities remain
+in progress. Earlier core, mobile, contracts, gateway, SQL and native authoring
+results retain their named source/binary scopes; these suites were not rerun for
+the keyboard repairs. Author judgment, Memory review burden, full accessibility,
+long writing sessions and external delivery/release gates remain open.
+
+## Prior navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
 
 Same-book restart now preserves independent document, activity and panel choices.
 Delayed registry, folder attachment/import and legacy migration cannot override
@@ -21,7 +67,7 @@ retains 25 observations per theme/engine, causal failures and final measurements
 Independent Spec has zero open findings; Standards has zero hard findings and
 one optional import/scaffold lifecycle cleanup note.
 
-The [current native packet](../navigation-restoration-2026-10-02/final-validation/native/README.md)
+The [native packet at that prior checkpoint](../navigation-restoration-2026-10-02/final-validation/native/README.md)
 records the normal unsigned arm64 copied-bundle verifier and five recovery
 stages. The separate local QA build restores Search beside active Plan, two tabs
 and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.
@@ -45,7 +91,7 @@ when a Saved prose comparison is present. Independent Spec has zero open
 findings; Standards has zero hard findings and one optional low maintenance
 suggestion. Native final builds include final TypeScript/build checks.
 
-The normal current-source Mac app passes canonical identity, exact core,
+The normal Mac app at `96bd04d` passes canonical identity, exact core,
 runtime contract and five copied-bundle recovery stages. A separate local
 acceptance app also passes observed light-theme title/prose focus, Escape
 caret typing, tab/unfinished Plan restoration after SIGKILL, and keyboard
@@ -169,17 +215,17 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Desktop | Current 660 tests in 90 files; final native builds include TypeScript/production build | Current native account/Keychain acceptance is unobserved |
-| Writing/accessibility browser workflows | Seven initial journeys and two strengthened repeated theme/caret journeys per engine | Seven unique workflows; five were not repeated after the final Zen selector refinement |
-| Account/key-recovery browser workflows | 8aaf17d checkpoint:11/11 Chromium and11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries; not rerun for the writing CSS/Zen changes |
-| Gateway/database | Current 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; nine real database/process voice cases |
-| Python 3.13 | Prior 0cd77bd: 577/577, no skip | Unchanged core; not rerun this iteration |
-| Actual bundled Python 3.11.15 | Prior 0cd77bd: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
-| Writing browser workflows | Prior 0cd77bd: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows; not current account journeys |
-| Mobile | Current 243 tests in 34 files, TypeScript and guarded web App build; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; prior 0cd77bd iOS/Android exports retain their scope; no physical phones or deployed acceptance |
-| Normal native arm64 app | Current `96bd04d`: exact core, strict canonical identity, runtime contract and five copied-bundle SIGKILL stages | Unsigned; no signed or clean-machine certificate |
-| Isolated native GUI | Current `96bd04d` local flavor: light-theme focus/Escape, tabs/Plan drafts and keyboard caret after SIGKILL | Different application identity and cloud/provider configuration; no full accessibility/account/Keychain acceptance |
-| Independent review | Current Spec: 0 open; Standards: 0 hard and 1 optional low suggestion | Local implementation review, not release acceptance |
+| Desktop | Current `a523097`: 699 tests in 91 files; TypeScript/production build | Current native account/Keychain acceptance is unobserved |
+| Writing/accessibility browser workflows | Current `a523097`: 13/13 Chrome and 13/13 WebKit, no fail/skip/flake; actual keyboard typeahead and Move activation | Real-core offline shell; native GUI and VoiceOver separate. Earlier selectOption run is intermediate evidence |
+| Account/key-recovery browser workflows | Historical `8aaf17d`: 11/11 Chromium and 11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries; not rerun for keyboard repairs |
+| Gateway/database | Historical `8aaf17d`: 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; nine real database/process voice cases; not rerun for keyboard repairs |
+| Python 3.13 | Historical `0cd77bd`: 577/577, no skip | Unchanged core; not rerun this iteration |
+| Actual bundled Python 3.11.15 | Historical `0cd77bd`: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
+| Writing browser workflows | Historical `0cd77bd`: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows |
+| Mobile | Historical `8aaf17d`: 243 tests in 34 files, TypeScript and guarded web App build; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; prior `0cd77bd` iOS/Android exports retain their scope; no physical phones/deployed acceptance; not rerun for keyboard repairs |
+| Normal native arm64 app | Current `a523097`: exact core, strict canonical identity, runtime contract and five instrumented copied-bundle SIGKILL stages | Unsigned packaged-engine verification; no GUI interruption, signed or clean-machine certificate |
+| Isolated native GUI | Current `a523097` local flavor: three-scene apply/whole-file exact undo, verified 41-file backup/restore, seven-revision history and post-operation SIGKILL restart | Separate application/cloud/provider configuration; completed-operation roundtrip only, no mid-write GUI interruption, full accessibility/account/Keychain acceptance |
+| Independent review | Current Spec: 0 open; Standards: 0 hard and 1 optional low Data Clumps suggestion | Local implementation review, not release acceptance |
 
 The earlier [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
 core SHA-256 `671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440`
@@ -251,7 +297,8 @@ The [fresh dependency recheck](../../../mobile/evidence/2026-10-02-dependency-re
 reports 17 high dependency entries from two root advisories (Forge and Braces)
 at October 3 02:09 UTC. Neither has a supported patched release in the inspected
 official chain. The prior five-entry result retains its historical scope. No dependency or
-signing setting was changed; existing export containment does not clear the gate.
+signing setting was changed; existing export containment does not clear either gate.
+Braces runtime-input reachability remains unestablished.
 
 No valid signing identities are available locally. Current tooling has only
 CommandLineTools and cannot use devicectl or adb; this is not proof that no user

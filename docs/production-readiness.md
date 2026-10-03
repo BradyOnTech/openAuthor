@@ -17,15 +17,61 @@ build alone satisfies this goal.
 | Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save and stale-response safeguards plus durable multi-file recovery now have real subprocess-kill evidence; unknown newer writing requires reviewed comparison. Noncooperating writers, physical power loss and full signed-GUI acceptance remain explicit limits |
 | Authoring | Create/import a book, draft and organize chapters/scenes, read, search, reopen and export with predictable structure and no unexplained loss | Connected browser/real-Python journey now covers import, planning, chapter reading, Memory, search, local copilot notes and Word export; packaged/full-novel acceptance remains required |
 | AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | An authenticated October 2 chapter critique caught a planted knowledge problem. Fresh Voice analysis and two alternatives exposed a profile-version defect and invented departure ambiguity; original responses and fixes are retained. Refinement and author judgment remain open |
-| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Existing core/rendered tests; independent failure-path review and packaged end-to-end coverage required |
+| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Current isolated `a523097` native GUI applies three synthetic scenes together, byte-exactly undoes, verifies backup/restore and resumes after post-operation SIGKILL. Mid-write GUI recovery and signed/clean-machine acceptance remain required |
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
-| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Expanded sampled browser contrast/focus and current isolated native Search/Plan restart pass at `ae3eb2e`; earlier native caret evidence retains `96bd04d` scope. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `ae3eb2e` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five packaged recovery stages. Contracts/desktop/gateway audits retain earlier clean results; mobile retains unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Current `a523097` named Command Palette/focus restoration and exact keyboard Plan ordering pass 13 real-core journeys per engine; prior sampled contrast and native Search/Plan/caret evidence retain their source scopes. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `a523097` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five instrumented packaged-engine recovery stages. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
+## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+
+Command Palette now exposes a named dialog, search combobox and results list,
+keeps Tab navigation inside the search, and restores the exact opener/caret on
+dismissal. Opening a result leaves focus with its destination and refuses late
+scene/entity responses after newer navigation. Existing dirty tabs stay intact.
+Plan now supports exact keyboard reading positions before another scene or at
+the end of a chapter/inbox. Moves preserve unfinished guidance, prevent duplicate
+submission and stale preview results, and restore useful focus after remount
+without overriding a later author choice.
+
+The [keyboard evidence packet](evaluations/keyboard-review-accessibility-2026-10-02/README.md)
+records 699 desktop tests in 91 files, TypeScript/Vite and 13 unique offline
+real-core journeys in each Chrome/WebKit engine. The final 26-case batch uses
+actual keyboard typeahead for native position selectors and keyboard Move
+activation; an earlier `selectOption` batch remains intermediate evidence.
+All 356 archived inputs match committed source. The broader snapshot was
+captured shortly after final browser launch and stayed unchanged through
+completion; production/rendered hashes match independent reviews made before
+desktop/build execution. Standards has zero hard findings and one optional
+Data Clumps suggestion; Spec has zero open findings.
+
+The [normal native report](evaluations/keyboard-review-accessibility-2026-10-02/native/default-bundle-report.json)
+verifies the current unsigned arm64 bundle's canonical identity, exact packaged
+core and runtime contract. Five instrumented packaged-engine crash stages pass.
+A separate empty-cloud/local QA flavor uses the same core. Its GUI applies
+three reviewed synthetic scenes in one Revision, then restores all three original
+whole-file bytes through coordinated undo. A GUI-created verified 41-file backup
+restores exact original prose and identical seven-revision history to a new
+folder, leaving the source book intact. After those operations complete, verified
+same-executable SIGKILL/relaunch restores the active proposal tab, Changes panel
+and undone history. Packaged-core readback retains `status=applied` with
+`undone_at` and the shared undo Revision; the UI displays undone.
+
+[Native GUI observations](evaluations/keyboard-review-accessibility-2026-10-02/native/observations.json)
+are manually transcribed from CUA, with inline AX and screenshots in the chat. This verifies completed-operation roundtrip and
+post-operation restart. Mid-write GUI interruption, VoiceOver/scaling, long
+sessions, cloud/account/Keychain, signed, upgrade, physical-device and clean-machine
+acceptance remain open; no native screenshot archive is claimed.
+
+No new provider request or deployed mutation occurred. All six priorities remain
+in progress. Earlier core, mobile, contracts, gateway, SQL and native authoring
+results retain their named source/binary scopes; these suites were not rerun for
+the keyboard repairs. Author judgment, Memory review burden, full accessibility,
+long writing sessions and external delivery/release gates remain open.
+
+## Prior navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
 
 Same-book restart now preserves independent document, activity and panel choices.
 Delayed registry, folder attachment/import and legacy migration cannot override
@@ -41,7 +87,7 @@ retains 25 observations per theme/engine, causal failures and final measurements
 Independent Spec has zero open findings; Standards has zero hard findings and
 one optional import/scaffold lifecycle cleanup note.
 
-The [current native packet](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
+The [native packet at this prior checkpoint](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
 records the normal unsigned arm64 copied-bundle verifier and five recovery
 stages. The separate local QA build restores Search beside active Plan, two tabs
 and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.

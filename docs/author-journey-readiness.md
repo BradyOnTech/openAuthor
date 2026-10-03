@@ -7,10 +7,10 @@ advances evidence-based review, Memory triage, daily writing ergonomics, encrypt
 companion restart recovery and packaged transaction recovery. A first connected
 chapter review and native backup restoration have run. Author evaluation,
 physical phones, native accessibility and signed clean-machine distribution
-remain open. Native testing also found a first-focus caret regression; the repaired bundle
-now passes actual keyboard insertion after forced termination. The detailed assessment below retains the earlier journey evidence.
+remain open. Earlier native testing found a first-focus caret regression; its repaired
+`96bd04d` bundle passes actual keyboard insertion after forced termination. The detailed assessment below retains the earlier journey evidence.
 
-The latest [recovery checkpoint](evaluations/no-snapshot-recovery-integration-2026-10-02/README.md)
+The separately scoped [recovery checkpoint](evaluations/no-snapshot-recovery-integration-2026-10-02/README.md)
 at `8aaf17d` also authenticates newly provisioned recovery keys before the first
 snapshot and closes exact journaled voice calls lost before database attachment.
 The mobile App removes recovery material on identity replacement and restores
@@ -22,7 +22,53 @@ retain their explicit limits. Tabs/caret restoration and the wider evidence-firs
 workspace are implemented; fresh-author quality, review burden, long sessions,
 accessibility and signed clean-machine acceptance remain required.
 
-## Current navigation and review checks
+## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+
+Command Palette now exposes a named dialog, search combobox and results list,
+keeps Tab navigation inside the search, and restores the exact opener/caret on
+dismissal. Opening a result leaves focus with its destination and refuses late
+scene/entity responses after newer navigation. Existing dirty tabs stay intact.
+Plan now supports exact keyboard reading positions before another scene or at
+the end of a chapter/inbox. Moves preserve unfinished guidance, prevent duplicate
+submission and stale preview results, and restore useful focus after remount
+without overriding a later author choice.
+
+The [keyboard evidence packet](evaluations/keyboard-review-accessibility-2026-10-02/README.md)
+records 699 desktop tests in 91 files, TypeScript/Vite and 13 unique offline
+real-core journeys in each Chrome/WebKit engine. The final 26-case batch uses
+actual keyboard typeahead for native position selectors and keyboard Move
+activation; an earlier `selectOption` batch remains intermediate evidence.
+All 356 archived inputs match committed source. The broader snapshot was
+captured shortly after final browser launch and stayed unchanged through
+completion; production/rendered hashes match independent reviews made before
+desktop/build execution. Standards has zero hard findings and one optional
+Data Clumps suggestion; Spec has zero open findings.
+
+The [normal native report](evaluations/keyboard-review-accessibility-2026-10-02/native/default-bundle-report.json)
+verifies the current unsigned arm64 bundle's canonical identity, exact packaged
+core and runtime contract. Five instrumented packaged-engine crash stages pass.
+A separate empty-cloud/local QA flavor uses the same core. Its GUI applies
+three reviewed synthetic scenes in one Revision, then restores all three original
+whole-file bytes through coordinated undo. A GUI-created verified 41-file backup
+restores exact original prose and identical seven-revision history to a new
+folder, leaving the source book intact. After those operations complete, verified
+same-executable SIGKILL/relaunch restores the active proposal tab, Changes panel
+and undone history. Packaged-core readback retains `status=applied` with
+`undone_at` and the shared undo Revision; the UI displays undone.
+
+[Native GUI observations](evaluations/keyboard-review-accessibility-2026-10-02/native/observations.json)
+are manually transcribed from CUA, with inline AX and screenshots in the chat. This verifies completed-operation roundtrip and
+post-operation restart. Mid-write GUI interruption, VoiceOver/scaling, long
+sessions, cloud/account/Keychain, signed, upgrade, physical-device and clean-machine
+acceptance remain open; no native screenshot archive is claimed.
+
+No new provider request or deployed mutation occurred. All six priorities remain
+in progress. Earlier core, mobile, contracts, gateway, SQL and native authoring
+results retain their named source/binary scopes; these suites were not rerun for
+the keyboard repairs. Author judgment, Memory review burden, full accessibility,
+long writing sessions and external delivery/release gates remain open.
+
+## Prior navigation and review checks — `ae3eb2e`
 
 Same-book restart now preserves independent document, activity and panel choices.
 Delayed registry, folder attachment/import and legacy migration cannot override
@@ -38,7 +84,7 @@ retains 25 observations per theme/engine, causal failures and final measurements
 Independent Spec has zero open findings; Standards has zero hard findings and
 one optional import/scaffold lifecycle cleanup note.
 
-The [current native packet](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
+The [native packet at that checkpoint](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
 records the normal unsigned arm64 copied-bundle verifier and five recovery
 stages. The separate local QA build restores Search beside active Plan, two tabs
 and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.
@@ -78,15 +124,15 @@ phone, or live-model quality.
 | Author's job | Available now | Evidence and remaining gap |
 | --- | --- | --- |
 | Start a book | New project; previewed Markdown/TXT/DOCX/Scrivener import | Browser verifies heading-based Markdown import with unchanged source. Full format fidelity and packaged file dialogs remain open. |
-| Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Browser verifies planning, navigation in Plan order and actual save/focus/reopen. Retained brief/structure/metadata drafts and stale-save checks are implemented; long-session ergonomics and crash recovery remain gates. |
+| Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Current browser checks also verify exact keyboard same-chapter, cross-chapter and inbox positions with useful focus and retained guidance. Planning, save/reopen, recoverable drafts and stale-save guards are implemented; long-session ergonomics and interrupted native GUI recovery remain gates. |
 | Read the book | Desktop chapter reader and saved position; mobile Plan-ordered scenes, chapter labels, Previous/Next and direct discussion | Browser verifies desktop position restoration and mobile reading through reversed file order, chapter search and unassigned scenes. Older mobile snapshots retain their downloaded order. Long desktop chapters render at most 25 scenes per page. Encrypted mobile scene/scroll restoration now passes cold/offline browser restart; physical-device reading remains open. |
 | Discuss and retain ideas | Scoped copilot, retrieval/citations, note/suggestion/experiment promotion; one-request Memory permission and context receipts | Browser verifies scene/chapter/character focus, regeneration, Memory permission, saving a note and the chapter/accepted-canon/Storyline receipt. Shared text/desktop-voice context includes brief, Plan order, relevant accepted facts and active experiment intent. Estimated assembled-input budgeting and oversized-request recovery are tested; exact provider token accounting, ongoing voice-session limits and novel-scale judgment remain gates. |
-| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Durable journals and packaged-engine SIGKILL tests now verify multi-file rollback and commit preservation. Author-rated creative quality and signed/clean-machine acceptance remain open. |
+| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Current isolated native GUI applies/byte-exactly undoes three synthetic scenes, verifies backup/restore with identical history and resumes after post-operation SIGKILL. Durable journals and packaged-engine SIGKILL checks verify rollback/commit preservation; interrupted GUI recovery, author-rated quality and signed/clean-machine acceptance remain open. |
 | Shape writing quality | Editable Writing Voice, original craft presets, review-first exemplar analysis, bounded sample comparisons and author assessments; approved mobile profile projection | Browser verifies approval, offline comparison/assessment/reopen, chat promotion and the approved voice receipt. The encrypted phone journey now verifies profile publication, display and reopening; controller tests check its voice context. Live prose quality remains open. |
 | Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The main-editor inbox now verifies retained corrections, person/place repair, exact evidence and stale-review refusal. The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy, uncased-name extraction and review workload on original prose remain open. |
 | Explore alternatives | Storylines, comparison, selective integration into Changes | Browser exercises an original six-scene alternate ending, returns to Primary, integrates one of two changed scenes, verifies the other is unchanged and undoes. Clean scene tabs reload the active Storyline; comprehensive unsaved-navigation policy remains open. |
 | Finish the book | Word and Markdown export with loss reports | Both now follow Plan order, with unassigned scenes last. Browser exports/re-reads Word; core checks both formats. Export remains scene-oriented, not a typesetting feature. |
-| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | Companion checks now include 243 tests in 34 files, two current hosted Chrome App journeys and one selected WebKit recovery/redaction journey. Encrypted cold-restart reading/capture retention, atomic native migration and late-refresh sign-out fencing pass local checks; Current guarded web App build passes; prior iOS/Android exports retain their 0cd77bd scope. Real keys and migration on devices, approved deployed authorization, physical voice, interruption/audio routing and accessibility remain gates. |
+| Work on mobile | Plan-ordered encrypted reading, offline capture, explicit sync, desktop inbox; Realtime voice paths with approved Writing Voice and accepted Canon Facts | The separately scoped `8aaf17d` companion checkpoint includes 243 tests in 34 files, two Chrome App journeys and one selected WebKit recovery/redaction journey. Encrypted cold-restart reading/capture retention, atomic native migration and late-refresh sign-out fencing pass local checks; its guarded web App build passes; prior iOS/Android exports retain their 0cd77bd scope. Real keys and migration on devices, approved deployed authorization, physical voice, interruption/audio routing and accessibility remain gates. |
 
 ## Connected author journey and reading
 

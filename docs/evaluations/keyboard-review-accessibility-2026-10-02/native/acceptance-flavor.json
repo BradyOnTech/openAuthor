@@ -1,0 +1,12 @@
+{
+  "source_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "identifier": "com.openauthor.acceptance.qa2d6a9172491741c192636a4a51a729e7",
+  "version": "0.1.0",
+  "sha256": {
+    "application": "90b9f1b612cefd788360a359a267b4e5b2cd7153dbf105f827659fc91f1c3d78",
+    "python": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c",
+    "launcher": "c4e0005fc329a37fd36975845e3966168df031217982b1a896f67bf3bfa9900e"
+  },
+  "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+  "scope": "QA alternate identifier, local registry/empty cloud/disabled Codex launcher. Canonical --app verifier not applied to alternate identifier; no signed acceptance."
+}
