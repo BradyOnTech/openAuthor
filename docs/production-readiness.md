@@ -22,10 +22,34 @@ build alone satisfies this goal.
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
 | Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Prior `a523097` named Command Palette/focus restoration and exact keyboard Plan ordering pass 13 real-core journeys per engine; prior sampled contrast and native Search/Plan/caret evidence retain their source scopes. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Prior `a523097` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five instrumented packaged-engine recovery stages. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `36a4058` normal unsigned arm64 bundle passes strict identity, exact core, five instrumented packaged-engine recovery stages and all 583 bundled Python tests with the local Codex contract. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+
+The [current packaged-runtime packet](evaluations/current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
+arm64 canonical application and **583/583 tests on its actual bundled Python
+3.11.15, with no failures, errors or skips**, including the local Codex contract.
+All 64 current core files match; a separate packaged CLI probe verifies original
+Storyline-version and accepted-validity refusals without changing Memory/prose.
+The earlier Python 3.13 result of 582 passed/one skipped remains separately scoped.
+
+The 506 build inputs and 119 original test inputs were archived before their
+respective checks. App manifests were captured after bundle verification and
+before the full suite; the final build receipt seal followed suite launch.
+The retained verifier checks integrity, not acceptance replay or absent binaries.
+QA verification covers its matching core under an isolated local configuration.
+Root separately observed only its initial **Choose a project** screen and quit;
+no current Canon GUI workflow, accessibility or recovery acceptance is claimed.
+
+Read-only inventory found zero visible valid signing identities; configured
+native iOS/Android acceptance is unavailable here. Phone availability, Apple
+membership and notarization credentials remain unknown. Current native GUI,
+interrupted restore, VoiceOver/scaling/long sessions, author quality, physical
+mobile/deployed security, signed clean Apple Silicon/Intel installs/upgrades and
+both dependency advisories remain open. All six priorities remain in progress.
+
+## Prior Canon and recovery checkpoint — 2026-10-02, `36a4058`
 
 Desktop Canon evidence review now carries the original fact/Storyline version.
 Accepted creation, correction and review share current-passage and Plan validity
@@ -55,8 +79,8 @@ stopped after one of three scene replacements with an active journal. After exac
 owned-process termination, native startup recovered every original/applied
 baseline file before successful root core readback. Retrying undo restored all
 three original scene files exactly. Raw journals/files and root CUA transcriptions
-are retained; no native screenshot archive or current `36a4058` native bundle
-acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+are retained; no native screenshot archive or `36a4058` native bundle
+acceptance was claimed at that checkpoint. Interrupted restore, VoiceOver, power loss, signed installs,
 upgrades and clean-machine acceptance remain open.
 
 No provider request or deployed mutation occurred. Author files stayed unchanged.

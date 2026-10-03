@@ -1,6 +1,6 @@
 # Author journey readiness
 
-Updated 2026-10-02. Working product assessment, not a release certificate.
+Updated 2026-10-03. Working product assessment, not a release certificate.
 
 The [current six-priority quality pass](evaluations/project-completion-2026-10-02/review.md)
 advances evidence-based review, Memory triage, daily writing ergonomics, encrypted
@@ -22,7 +22,31 @@ retain their explicit limits. Tabs/caret restoration and the wider evidence-firs
 workspace are implemented; fresh-author quality, review burden, long sessions,
 accessibility and signed clean-machine acceptance remain required.
 
-## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+
+The [current packaged-runtime packet](evaluations/current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
+arm64 canonical application and **583/583 tests on its actual bundled Python
+3.11.15, with no failures, errors or skips**, including the local Codex contract.
+All 64 current core files match; a separate packaged CLI probe verifies original
+Storyline-version and accepted-validity refusals without changing Memory/prose.
+The earlier Python 3.13 result of 582 passed/one skipped remains separately scoped.
+
+The 506 build inputs and 119 original test inputs were archived before their
+respective checks. App manifests were captured after bundle verification and
+before the full suite; the final build receipt seal followed suite launch.
+The retained verifier checks integrity, not acceptance replay or absent binaries.
+QA verification covers its matching core under an isolated local configuration.
+Root separately observed only its initial **Choose a project** screen and quit;
+no current Canon GUI workflow, accessibility or recovery acceptance is claimed.
+
+Read-only inventory found zero visible valid signing identities; configured
+native iOS/Android acceptance is unavailable here. Phone availability, Apple
+membership and notarization credentials remain unknown. Current native GUI,
+interrupted restore, VoiceOver/scaling/long sessions, author quality, physical
+mobile/deployed security, signed clean Apple Silicon/Intel installs/upgrades and
+both dependency advisories remain open. All six priorities remain in progress.
+
+## Prior Canon and recovery checkpoint — 2026-10-02, `36a4058`
 
 Desktop Canon evidence review now carries the original fact/Storyline version.
 Accepted creation, correction and review share current-passage and Plan validity
@@ -52,8 +76,8 @@ stopped after one of three scene replacements with an active journal. After exac
 owned-process termination, native startup recovered every original/applied
 baseline file before successful root core readback. Retrying undo restored all
 three original scene files exactly. Raw journals/files and root CUA transcriptions
-are retained; no native screenshot archive or current `36a4058` native bundle
-acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+are retained; no native screenshot archive or `36a4058` native bundle
+acceptance was claimed at that checkpoint. Interrupted restore, VoiceOver, power loss, signed installs,
 upgrades and clean-machine acceptance remain open.
 
 No provider request or deployed mutation occurred. Author files stayed unchanged.
@@ -165,7 +189,7 @@ phone, or live-model quality.
 | Plan and draft | Brief, acts/chapters, scene placement, beats, metadata, autosave, focus; chapter-aware navigation with title/chapter/POV filtering | Current browser checks also verify exact keyboard same-chapter, cross-chapter and inbox positions with useful focus and retained guidance. Planning, save/reopen, recoverable drafts and stale-save guards are implemented; long-session ergonomics and interrupted native GUI recovery remain gates. |
 | Read the book | Desktop chapter reader and saved position; mobile Plan-ordered scenes, chapter labels, Previous/Next and direct discussion | Browser verifies desktop position restoration and mobile reading through reversed file order, chapter search and unassigned scenes. Older mobile snapshots retain their downloaded order. Long desktop chapters render at most 25 scenes per page. Encrypted mobile scene/scroll restoration now passes cold/offline browser restart; physical-device reading remains open. |
 | Discuss and retain ideas | Scoped copilot, retrieval/citations, note/suggestion/experiment promotion; one-request Memory permission and context receipts | Browser verifies scene/chapter/character focus, regeneration, Memory permission, saving a note and the chapter/accepted-canon/Storyline receipt. Shared text/desktop-voice context includes brief, Plan order, relevant accepted facts and active experiment intent. Estimated assembled-input budgeting and oversized-request recovery are tested; exact provider token accounting, ongoing voice-session limits and novel-scale judgment remain gates. |
-| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. Current isolated native GUI applies/byte-exactly undoes three synthetic scenes, verifies backup/restore with identical history and resumes after post-operation SIGKILL. Durable journals and packaged-engine SIGKILL checks verify rollback/commit preservation; interrupted GUI recovery, author-rated quality and signed/clean-machine acceptance remain open. |
+| Review revisions | Change Sets, hunk selection, coordinated apply/undo, revisions, conflict review | Browser verifies two distant scenes applied/restored together in a 64-scene workload, protected-text refusal, newer-writing refusal and stale-save reconciliation. The earlier isolated `a523097` native GUI applies/byte-exactly undoes three synthetic scenes, verifies backup/restore with identical history and resumes after post-operation SIGKILL. Durable journals and packaged-engine SIGKILL checks verify rollback/commit preservation; interrupted GUI recovery, author-rated quality and signed/clean-machine acceptance remain open. |
 | Shape writing quality | Editable Writing Voice, original craft presets, review-first exemplar analysis, bounded sample comparisons and author assessments; approved mobile profile projection | Browser verifies approval, offline comparison/assessment/reopen, chat promotion and the approved voice receipt. The encrypted phone journey now verifies profile publication, display and reopening; controller tests check its voice context. Live prose quality remains open. |
 | Manage story knowledge | Structured entries, temporal facts/relationships, readable source evidence, fact correction/withdrawal/restoration, suggestion review, editable diagnostic decisions, revision handoff | The main-editor inbox now verifies retained corrections, person/place repair, exact evidence and stale-review refusal. The 64-scene browser journey reviews distant evidence and decisions, prepares a revision, withdraws a fact, reloads it and restores it after correcting invalid evidence, without changing prose. Accepted corrections check exact current passages, not semantic truth. Diagnostic accuracy, uncased-name extraction and review workload on original prose remain open. |
 | Explore alternatives | Storylines, comparison, selective integration into Changes | Browser exercises an original six-scene alternate ending, returns to Primary, integrates one of two changed scenes, verifies the other is unchanged and undoes. Clean scene tabs reload the active Storyline; comprehensive unsaved-navigation policy remains open. |

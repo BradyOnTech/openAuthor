@@ -81,7 +81,8 @@
         "tests/test_memory_assertions.py",
         "docs/evaluations/memory-assertions-2026-10-02/verification.json",
         "docs/evaluations/memory-assertions-2026-10-02/results.json",
-        "docs/evaluations/canon-review-security-2026-10-02/results.json"
+        "docs/evaluations/canon-review-security-2026-10-02/results.json",
+        "docs/evaluations/current-packaged-runtime-2026-10-03/results.json"
       ],
       "remaining": [
         "Observe author review time, omissions and unwanted suggestions on fresh original prose",
@@ -225,7 +226,8 @@
         "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/undo-validation.json",
         "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/restore-validation.json",
         "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/observations.json",
-        "docs/evaluations/native-midwrite-recovery-2026-10-02/results.json"
+        "docs/evaluations/native-midwrite-recovery-2026-10-02/results.json",
+        "docs/evaluations/current-packaged-runtime-2026-10-03/results.json"
       ],
       "remaining": [
         "Full signed/clean-machine multi-scene GUI recovery and upgrade acceptance",
@@ -257,7 +259,8 @@
         "docs/evaluations/project-completion-2026-10-02/native-bundle-0cd77bd.json",
         "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/default-bundle-report.json",
         "mobile/evidence/2026-10-02-dependency-recheck-followup/assessment.json",
-        "docs/evaluations/canon-review-security-2026-10-02/results.json"
+        "docs/evaluations/canon-review-security-2026-10-02/results.json",
+        "docs/evaluations/current-packaged-runtime-2026-10-03/results.json"
       ],
       "remaining": [
         "Developer ID signing and notarization",
@@ -273,12 +276,12 @@
     "local_codesigning_identities": 0,
     "product_subscription_runtime": "available after pinned runtime preparation",
     "product_subscription_authentication": "authenticated at current check; one synthetic connected-chapter subscription call completed",
-    "physical_devices": "not available through current tooling; user resource question pending",
+    "physical_devices": "No functional device access verified; zero USB phone hints is not proof of physical/wireless phone absence. Availability remains unknown.",
     "release_secret_metadata": "Owner-profile inspection returned zero repository Actions secrets; the active GitHub account was retained.",
-    "local_tooling_recheck": "Zero valid code-signing identities; CommandLineTools only; devicectl and adb unavailable. No new user resource reply observed."
+    "local_tooling_recheck": "Current read-only inventory: zero valid signing identities visible in sandboxed/approved unsandboxed checks; active CLT only, native iOS tools absent; Android tools/configured/default SDK absent in inspected scope. Phone availability, Apple membership and notarization credentials unknown. See docs/evaluations/current-packaged-runtime-2026-10-03/release-inventory.json"
   },
   "completion_rule": "Do not mark the project goal complete while any required acceptance outcome is unverified. Local fixtures, browser tests and native bridge checks cannot certify physical-device, human-judgment or clean-machine outcomes.",
-  "date": "2026-10-02",
+  "date": "2026-10-03",
   "local_verification": {
     "python_3_13": {
       "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
@@ -289,14 +292,15 @@
       "evidence": "docs/evaluations/canon-review-security-2026-10-02/results.json"
     },
     "actual_packaged_python_3_11": {
-      "discovered": 577,
-      "passed": 577,
+      "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+      "discovered": 583,
+      "passed": 583,
       "skipped": 0,
       "version": "3.11.15",
-      "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
-      "scope": "Actual bundled interpreter and installed byte-identical core before app rebuild; rebuilt app verifies the same core hash. Runs overlap.",
-      "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt",
-      "checkpoint_scope": "Historical 0cd77bd full suite and unchanged packaged a523097 core. Current 36a4058 Canon source differs; bundled full suite not rerun."
+      "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+      "imported_core_modules": 63,
+      "scope": "Actual canonical normal-bundle Python -I -B with installed current core, original 119-file test inputs and local Codex contract; no external provider/GUI/author acceptance.",
+      "evidence": "docs/evaluations/current-packaged-runtime-2026-10-03/core-acceptance-summary.json"
     },
     "desktop": {
       "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
@@ -336,10 +340,10 @@
     "packaged_sigkill": {
       "stages": 5,
       "result": "exact rollback before commit; committed writing preserved",
-      "implementation_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
-      "evidence": "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/default-verification.txt.gz",
-      "scope": "Five historical a523097 canonical unsigned copied-bundle instrumented engine stages; separate from native GUI interruption timing.",
-      "checkpoint_scope": "Historical a523097 canonical copied-bundle engine checks. Separate native GUI mid-write apply/undo uses the same old core; new 36a4058 Canon bundle is not verified."
+      "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+      "evidence": "docs/evaluations/current-packaged-runtime-2026-10-03/build-handoff.tar.gz",
+      "receipt": "normal-verification.txt",
+      "scope": "Current canonical unsigned 36a4058 copied-bundle instrumented engine stages; not actual GUI interruption or physical power loss."
     },
     "dependency_audits": {
       "contracts": 0,
@@ -501,10 +505,10 @@
     "native_bundle_latest": {
       "schema_version": 1,
       "bundled_core_source": "exact_match",
-      "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+      "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
       "architecture": "arm64",
       "python": "3.11.15",
-      "source_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+      "source_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
       "workflow_run_id": "",
       "signed_bundle_required": false,
       "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate",
@@ -543,7 +547,7 @@
           "architectures": [
             "arm64"
           ],
-          "sha256": "631146585b3ca010493718419aef82a9b6542e88418e5a7ade9edd15529f1ef7"
+          "sha256": "07de03e92e892a28192bfb55d5ecf7b4b2720e4c58ad1a9686f50867c90841c1"
         },
         "python": {
           "architectures": [
@@ -997,7 +1001,11 @@
       "captured_source_scope": "Production/rendered hashes match independent reviews made before desktop/build execution. The broader source snapshot was captured just after final browser launch and stayed unchanged through completion. Only the new E2E file changed after desktop/build; it was rerun in the final browser batch.",
       "checkpoint_scope": "Historical a523097 keyboard checkpoint; retained unchanged apart from this label. Not current 36a4058 verification."
     },
-    "inherited_scope": "Other entries retain their named historical source/binary checkpoints; no current 36a4058 cloud, broad mobile, native bundled-Python or provider replay is implied. New Canon/security and separate a523097 mid-write checkpoints are explicit."
+    "inherited_scope": "Other entries retain historical source/binary scopes. Current 36a4058 bundled Python and canonical unsigned packaging are now verified in current_packaged_runtime_checkpoint; cloud/broad mobile/contracts/Rust/provider and a523097 GUI scopes remain separate.",
+    "current_packaged_runtime_checkpoint": {
+      "evidence": "docs/evaluations/current-packaged-runtime-2026-10-03/results.json",
+      "scope": "See top-level current_packaged_runtime_checkpoint; unsigned current bundled mechanics only, no native GUI or release acceptance."
+    }
   },
   "known_code_gaps": [
     {
@@ -4066,6 +4074,31 @@
         }
       },
       "scope": "Historical before Canon/security and unsigned a523097 GUI mid-write checkpoint; retain earlier suite and native scopes."
+    },
+    {
+      "name": "Canon/security before current packaged-runtime verification",
+      "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+      "local_verification": {
+        "actual_packaged_python_3_11": {
+          "discovered": 577,
+          "passed": 577,
+          "skipped": 0,
+          "version": "3.11.15",
+          "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+          "scope": "Actual bundled interpreter and installed byte-identical core before app rebuild; rebuilt app verifies the same core hash. Runs overlap.",
+          "evidence": "docs/evaluations/voice-preservation-2026-10-02/packaged-python-tests-complete.txt",
+          "checkpoint_scope": "Historical 0cd77bd full suite and unchanged packaged a523097 core. Current 36a4058 Canon source differs; bundled full suite not rerun."
+        },
+        "packaged_sigkill": {
+          "stages": 5,
+          "result": "exact rollback before commit; committed writing preserved",
+          "implementation_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+          "evidence": "docs/evaluations/keyboard-review-accessibility-2026-10-02/native/default-verification.txt.gz",
+          "scope": "Five historical a523097 canonical unsigned copied-bundle instrumented engine stages; separate from native GUI interruption timing.",
+          "checkpoint_scope": "Historical a523097 canonical copied-bundle engine checks. Separate native GUI mid-write apply/undo uses the same old core; new 36a4058 Canon bundle is not verified."
+        }
+      },
+      "scope": "Preserves prior packaged aliases exactly. The full a523097 native_bundle_latest report already remains in the existing a523097 history entry; not duplicated here."
     }
   ],
   "writing_accessibility_checkpoint": {
@@ -4240,5 +4273,31 @@
     "action": "Temporarily enable VoiceOver on this Mac for isolated QA, then restore its original state.",
     "reason": "Computer-use confirmation policy requires specific approval before changing a system setting.",
     "question_status": "sent; no human reply observed; setting unchanged"
+  },
+  "current_packaged_runtime_checkpoint": {
+    "date": "2026-10-03",
+    "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+    "evidence": "docs/evaluations/current-packaged-runtime-2026-10-03/results.json",
+    "packaged_python_tests_passed": 583,
+    "packaged_python_tests_skipped": 0,
+    "packaged_python_version": "3.11.15",
+    "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+    "core_files": 64,
+    "imported_core_modules": 63,
+    "normal_application_sha256": "07de03e92e892a28192bfb55d5ecf7b4b2720e4c58ad1a9686f50867c90841c1",
+    "normal_verification": "Canonical unsigned arm64 identity, exact core and pinned runtime; five instrumented packaged-engine recovery stages and local Codex contract passed.",
+    "qa_application_sha256": "195c81233806fda9fc3f68d6d162af3f7c294357e88f352200ef218ccf31946f",
+    "qa_verification": "Isolated alternate identifier, local registry/empty Supabase; exact core only, canonical identity guard omitted.",
+    "original_cli_guard_probe": "Passed real Storyline-switch accept/reject original-version refusals and inverted-validity acceptance refusal; Memory/prose unchanged. Legacy timestamp-only Storyline protection not claimed.",
+    "capture_scope": "506 source inputs archived before refresh/build; 119 original test inputs before suite; app manifests after verification and before suite; final build evidence seal after suite launch. Verifier checks integrity, not acceptance replay or absent binaries.",
+    "local_capability_inventory": "docs/evaluations/current-packaged-runtime-2026-10-03/release-inventory.json",
+    "inventory_scope": "Read-only local inventory; zero visible valid signing identities, configured native iOS/Android acceptance unavailable; phone availability, Apple membership and notarization credentials unknown.",
+    "current_gui_scope": "Root separately launched exact QA PID 30846 through trusted Finder, observed only initial Choose a project screen, then quit. Launch only; no Canon GUI, native accessibility or recovery acceptance. Not in packaged evidence.",
+    "historical_gui_scope": "Existing a523097 completed-operation and mid-write apply/undo GUI evidence retains that source/binary scope.",
+    "remaining": "Current native Canon/recovery GUI, interrupted restore, VoiceOver/scaling/long sessions, author quality, physical mobile/deployed security, signing/notarization, Apple Silicon/Intel clean installs/upgrades and both dependency advisories remain open.",
+    "new_external_provider_calls": 0,
+    "deployed_mutations": 0,
+    "release_certified": false,
+    "all_six_priorities": "in_progress"
   }
 }

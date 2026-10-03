@@ -5,7 +5,31 @@ acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
-## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+
+The [current packaged-runtime packet](../current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
+arm64 canonical application and **583/583 tests on its actual bundled Python
+3.11.15, with no failures, errors or skips**, including the local Codex contract.
+All 64 current core files match; a separate packaged CLI probe verifies original
+Storyline-version and accepted-validity refusals without changing Memory/prose.
+The earlier Python 3.13 result of 582 passed/one skipped remains separately scoped.
+
+The 506 build inputs and 119 original test inputs were archived before their
+respective checks. App manifests were captured after bundle verification and
+before the full suite; the final build receipt seal followed suite launch.
+The retained verifier checks integrity, not acceptance replay or absent binaries.
+QA verification covers its matching core under an isolated local configuration.
+Root separately observed only its initial **Choose a project** screen and quit;
+no current Canon GUI workflow, accessibility or recovery acceptance is claimed.
+
+Read-only inventory found zero visible valid signing identities; configured
+native iOS/Android acceptance is unavailable here. Phone availability, Apple
+membership and notarization credentials remain unknown. Current native GUI,
+interrupted restore, VoiceOver/scaling/long sessions, author quality, physical
+mobile/deployed security, signed clean Apple Silicon/Intel installs/upgrades and
+both dependency advisories remain open. All six priorities remain in progress.
+
+## Prior Canon and recovery checkpoint — 2026-10-02, `36a4058`
 
 Desktop Canon evidence review now carries the original fact/Storyline version.
 Accepted creation, correction and review share current-passage and Plan validity
@@ -35,8 +59,8 @@ stopped after one of three scene replacements with an active journal. After exac
 owned-process termination, native startup recovered every original/applied
 baseline file before successful root core readback. Retrying undo restored all
 three original scene files exactly. Raw journals/files and root CUA transcriptions
-are retained; no native screenshot archive or current `36a4058` native bundle
-acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+are retained; no native screenshot archive or `36a4058` native bundle
+acceptance was claimed at that checkpoint. Interrupted restore, VoiceOver, power loss, signed installs,
 upgrades and clean-machine acceptance remain open.
 
 No provider request or deployed mutation occurred. Author files stayed unchanged.
@@ -259,13 +283,22 @@ still required; current unused-export containment does not clear that gate.
 | Account/key-recovery browser workflows | Historical `8aaf17d`: 11/11 Chromium and 11/11 WebKit, no skip | Synthetic SDK, vault and RPC boundaries; not rerun for Canon repairs |
 | Gateway/database | Historical `8aaf17d`: 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP; nine database/process voice cases; not rerun for Canon repairs |
 | Python 3.13 | Current `36a4058`: 583 discovered, 582 passed, one skipped | Existing optional Codex contract requires an explicit binary; current full suite includes Canon fixture correction |
-| Actual bundled Python 3.11.15 | Historical `0cd77bd`: 577/577, no skip | Not rerun for current Canon source |
+| Actual bundled Python 3.11.15 | Current `36a4058`: 583/583, no failures/errors/skips; actual bundled Codex local contract enabled | Canonical normal-bundle installed core and original tests; no GUI or author quality claim |
 | Writing browser workflows | Historical `0cd77bd`: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows |
 | Mobile export guard | Current `36a4058`: 25/25 tests and normal offline web/iOS/Android exports; three maps retained by a separate observational export | Export containment keeps both dependency remediation gates open; normal/observed artifacts differ |
 | Broader mobile | Historical `8aaf17d`: 243 tests in 34 files; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; broader suite not rerun; no physical phones or deployed acceptance |
-| Normal native arm64 app | Historical `a523097`: exact core, strict canonical identity, runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; new `36a4058` Canon bundle not verified |
+| Normal native arm64 app | Current `36a4058`: exact 64-file core, strict canonical identity, pinned runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; current Canon GUI, signed/clean-machine/upgrade acceptance remain open |
 | Isolated native GUI | Separate unsigned `a523097`: actual apply/undo interrupted after one of three scenes; native restart restores exact eight-file baselines; retry undo restores original files | Root CUA/raw evidence, not replay or current Canon-build acceptance. Prior completed backup/restore remains scoped separately; interrupted restore, VoiceOver, signing, upgrades and clean-machine gates open |
 | Independent review | Current 13 changed files: Spec 0 open; Standards 0 hard/optional | Implementation review; prior keyboard optional Data Clumps remains historical; no release certificate |
+
+### Previous bundled verification summary — before 2026-10-03
+
+These original table rows retain their earlier checkpoint scope.
+
+| Scope | Result | Limit at that checkpoint |
+| --- | --- | --- |
+| Actual bundled Python 3.11.15 | Historical `0cd77bd`: 577/577, no skip | Not rerun for current Canon source |
+| Normal native arm64 app | Historical `a523097`: exact core, strict canonical identity, runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; new `36a4058` Canon bundle not verified |
 
 The earlier [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
 core SHA-256 `671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440`

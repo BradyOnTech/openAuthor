@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-10-03T05:06:54.412164+00:00",
+  "paths": {
+    "~/Developer/openAuthor/desktop/src-tauri/resources/runtime/git/share/git-core/templates": {
+      "exists": true,
+      "is_directory": true,
+      "entries": 0
+    },
+    "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/git/share/git-core/templates": {
+      "exists": false,
+      "is_directory": false,
+      "entries": null
+    }
+  },
+  "original_suite_stderr_warning_count": 2,
+  "interpretation": "Nonfatal direct-git-init diagnostic; all packaged engine assertions passed. No actual bundled Git repair was performed."
+}

@@ -1,0 +1,37 @@
+{
+  "observed_at_utc": "2026-10-03T04:59:17.461020+00:00",
+  "repository_head_at_start": "df780fb943026b0667cf18f1b34cf93ac4e2fb1c",
+  "repository_head_at_finish": "df780fb943026b0667cf18f1b34cf93ac4e2fb1c",
+  "author_hashes_unchanged": true,
+  "capabilities": {
+    "host": "Native Apple Silicon arm64, macOS 15.7.3 build 24G419",
+    "desktop_arm64": "CLT, macOS SDK 15.5, Apple clang 17.0.0, Rust/Cargo 1.98.1 and aarch64-apple-darwin installed; Rust absolute toolchain paths work despite inherited PATH omission.",
+    "desktop_intel": "Current default Rust target list contains no x86_64-apple-darwin. Native Intel acceptance unavailable on this ARM host; both repository workflows configure a separate macos-15-intel runner, not inspected/executed here.",
+    "ios": "Active developer directory is CLT. Default Xcode app absent; xcodebuild -version fails and xcrun cannot find devicectl/simctl. Native iOS device/build acceptance cannot proceed with this configured toolchain.",
+    "android": "No adb, sdkmanager or emulator in PATH; no Android SDK path env configuration; default SDK and Android Studio locations absent. Other possible installations were not exhaustively searched.",
+    "phones": "No USB phone type hints observed. Physical or wirelessly connected phone availability remains unknown; no functional phone/device access verified.",
+    "signing": "Zero valid code-signing identities observed in both sandboxed and approved unsandboxed security count; Developer ID Application and Apple Development/Distribution counts zero. Account membership remains unknown.",
+    "notarization": "notarytool executable available; no explicit local Keychain profile configured in inspected release configs. Profile existence and credential validity remain unknown; no Keychain credential records or remote repository secrets read.",
+    "release_credential_environment": "Expected Apple credential variable names are absent from this subprocess environment; no value read. This does not establish absence from other storage or remote secrets."
+  },
+  "safe_next_actions": [
+    "Build and verify the current unsigned ARM desktop bundle using installed toolchains and reviewed embedded runtime inputs, without signing or provider/deployment calls.",
+    "Continue isolated native GUI recovery and keyboard checks on exact-current source; keep physical/signed/clean-machine acceptance unverified.",
+    "Prepare an exact physical-device/manual release matrix and artifact checksum recording from existing approved criteria; no device pairing, software installation or remote mutation required."
+  ],
+  "external_requirements": [
+    "Owner-supplied valid Developer ID/private-key and notarization configuration; signed artifact validation must succeed, not just credential presence.",
+    "Configured native iOS/Android toolchains and accessible physical phones with appropriate authorization for installation/audio/system-setting checks.",
+    "Separate clean Apple Silicon and Intel installation/upgrade acceptance; this developer machine is not a clean-machine substitute."
+  ],
+  "mutations": {
+    "source_docs_author_files": 0,
+    "system_settings": 0,
+    "keychain": 0,
+    "device_pairing_or_installation": 0,
+    "signing": 0,
+    "software_install_update_download": 0,
+    "remote_provider_or_deployment_calls": 0
+  },
+  "scope": "Local read-only capability inventory; private evidence written only under its /private/tmp packet. No requirement 4/6 completion or release certification claim."
+}

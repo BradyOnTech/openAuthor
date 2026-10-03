@@ -1,0 +1,157 @@
+{
+  "sealed_at_utc": "2026-10-03T05:02:14.006129+00:00",
+  "head": "df780fb943026b0667cf18f1b34cf93ac4e2fb1c",
+  "source_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "source_input_count": 506,
+  "source_inputs_unchanged": true,
+  "installed_inputs_unchanged_excluding_caches": true,
+  "author_artifacts_unchanged": true,
+  "apps": {
+    "normal": {
+      "app": "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app",
+      "identifier": "com.openauthor.desktop",
+      "version": "0.1.0",
+      "binaries": {
+        "application": {
+          "sha256": "07de03e92e892a28192bfb55d5ecf7b4b2720e4c58ad1a9686f50867c90841c1",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "python": {
+          "sha256": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "codex": {
+          "sha256": "80a3933d11a9d13ef806aa24f7bb8afc9169cfe4e9b09d6da6a92922cbde9cff",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "git": {
+          "sha256": "4387eed8ef6f08893a676a2971235f72707f886ee0ebd28b71e7482caa91d655",
+          "architectures": [
+            "arm64"
+          ]
+        }
+      },
+      "core_py_files": 64,
+      "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+      "runtime_manifests": {
+        "python": {
+          "schema_version": 1,
+          "python_version": "3.11.15",
+          "python_build_release": "20260510",
+          "architecture": "aarch64",
+          "source_asset": "cpython-3.11.15+20260510-aarch64-apple-darwin-install_only.tar.gz",
+          "sha256": "03bcedae9b19a48888d7dc8ba064f73f6efaaf2b13f6a8e1a1bcc062df13e855"
+        },
+        "codex": {
+          "schema_version": 1,
+          "codex_version": "0.144.6",
+          "architecture": "aarch64-apple-darwin",
+          "source_asset": "codex-0.144.6-darwin-arm64.tgz",
+          "sha512": "eb382f87bd0ccc1352793d7b1c48523ab9a618664600acd20bbc7a240abe79d90991d3d803d3f4235b46eda278f46941901c6e0be30a047d6a9bafb60a085cc3"
+        }
+      },
+      "immutable_file_count": 2205,
+      "app_manifest_sha256": "8b1bd8998d24d6c94b9eba5b77b75f12c5336102bfe1b5e0628806429b8c7f33"
+    },
+    "qa": {
+      "app": "/private/tmp/openauthor-current-native-36a4058-pd_q29st/acceptance-36a4058.app",
+      "identifier": "com.openauthor.acceptance.qa8a72a69524f346419109a9338e5527e3",
+      "version": "0.1.0",
+      "binaries": {
+        "application": {
+          "sha256": "195c81233806fda9fc3f68d6d162af3f7c294357e88f352200ef218ccf31946f",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "python": {
+          "sha256": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "codex": {
+          "sha256": "80a3933d11a9d13ef806aa24f7bb8afc9169cfe4e9b09d6da6a92922cbde9cff",
+          "architectures": [
+            "arm64"
+          ]
+        },
+        "git": {
+          "sha256": "4387eed8ef6f08893a676a2971235f72707f886ee0ebd28b71e7482caa91d655",
+          "architectures": [
+            "arm64"
+          ]
+        }
+      },
+      "core_py_files": 64,
+      "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+      "runtime_manifests": {
+        "python": {
+          "schema_version": 1,
+          "python_version": "3.11.15",
+          "python_build_release": "20260510",
+          "architecture": "aarch64",
+          "source_asset": "cpython-3.11.15+20260510-aarch64-apple-darwin-install_only.tar.gz",
+          "sha256": "03bcedae9b19a48888d7dc8ba064f73f6efaaf2b13f6a8e1a1bcc062df13e855"
+        },
+        "codex": {
+          "schema_version": 1,
+          "codex_version": "0.144.6",
+          "architecture": "aarch64-apple-darwin",
+          "source_asset": "codex-0.144.6-darwin-arm64.tgz",
+          "sha512": "eb382f87bd0ccc1352793d7b1c48523ab9a618664600acd20bbc7a240abe79d90991d3d803d3f4235b46eda278f46941901c6e0be30a047d6a9bafb60a085cc3"
+        }
+      },
+      "immutable_file_count": 2205,
+      "app_manifest_sha256": "924317f3e962426e1234249730dc82262d3cf7d64802af37528db0d395f8e03c"
+    }
+  },
+  "normal_canonical_verification": "passed",
+  "normal_recovery": {
+    "packaged_recovery": "passed",
+    "forced_termination": [
+      {
+        "stage": "scene",
+        "result": "exact_original_restored"
+      },
+      {
+        "stage": "head",
+        "result": "exact_original_restored"
+      },
+      {
+        "stage": "proposal",
+        "result": "exact_original_restored"
+      },
+      {
+        "stage": "before_commit",
+        "result": "exact_original_restored"
+      },
+      {
+        "stage": "committed",
+        "result": "preserved_commit"
+      }
+    ],
+    "system_tools_on_path": false,
+    "architecture": "arm64",
+    "python": "3.11.15",
+    "gui_acceptance": "not_observed"
+  },
+  "normal_local_codex_contract": "1 passed",
+  "qa_core_verification": "passed; canonical identifier check deliberately omitted for isolated flavor",
+  "provider_calls": false,
+  "apps_launched": false,
+  "all_build_and_verification_processes_terminal": true,
+  "warnings": [
+    "Existing rust-objcopy debug-info stripping warning due to missing libLLVM",
+    "Vite mixed import and large chunk warnings",
+    "Full Xcode absent; Command Line Tools installed"
+  ],
+  "release_certified": false,
+  "remaining_scope": "Unsigned arm64 packaging only. No GUI, signed/notarized, clean-machine, Intel, upgrade, physical power-loss, VoiceOver or deployed-service acceptance."
+}

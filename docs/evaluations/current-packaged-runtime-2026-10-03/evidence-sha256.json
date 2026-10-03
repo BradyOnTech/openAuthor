@@ -1,0 +1,14 @@
+{
+  "README.md": "71fc29432e99381ee38f0c828619acb4e1db2ac578f65a6995ec7e986fa370ca",
+  "build-handoff.tar.gz": "609862e322997615fa408934bdbdb1b90522ffdcd7d0bb7dadf71426f6668113",
+  "build-summary.json": "54788c670bf667883085a81afff082ab13dd0148ff78a4b0ccf8145ff9fd9880",
+  "cli-guard-result.json": "233e4b47ddc2861d19025c63afca452851d792aaeb70ba5e35e7d5924f8d2902",
+  "core-acceptance-summary.json": "724c0f7c1f93b995d813d7635e97531223466759e32e1a2848830f62146c0d9f",
+  "core-handoff.tar.gz": "58e87bc05efaeb37d723572bd58b7a715a52c4f15ec5ea9e1c27c269425b180a",
+  "git-template-observation.json": "afa30bd16e5d4e3311c163c70deddcb5279a9d5e52791ede7a18112b60387a03",
+  "handoffs.json": "3299b62b7d516376578f583c130eddf2b4ab6b694cd78099dc08511564315f4f",
+  "inventory-handoff.tar.gz": "7633cb2177215000945e2f41b68f432a67dfbe0fe475331e343bbb0176786c07",
+  "release-inventory.json": "aa2c2e7854558b31657f302c6d2d3f062cde3a19dda17100ba2f76dc055c6816",
+  "results.json": "e927065e2d51fdd4904c02fa98545e8f07b3a2d45bdfd8d8cb4772ce5cad86d2",
+  "verify.py": "c943026916c2b227376e65e1b0468c1e2698aeac7575f607676c0589dfbb63e9"
+}
