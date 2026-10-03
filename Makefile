@@ -64,9 +64,14 @@ capability-check:
 
 audit-no-mocks:
 	@echo "Scanning for placeholder/stub markers..."
-	@! rg -n -i "TODO|FIXME|TBD|NotImplemented|mock data|stubbed|hardcoded demo|will be ported|coming soon|not yet implemented" \
+	@audit_status=0; rg -n -i "TODO|FIXME|TBD|NotImplemented|mock data|stubbed|hardcoded demo|will be ported|coming soon|not yet implemented" \
 		openauthor desktop/src tests \
-		|| (echo "Placeholder/stub markers found. Resolve before merge." && exit 1)
+		|| audit_status=$$?; \
+		if [ "$$audit_status" -eq 0 ]; then \
+			echo "Placeholder/stub markers found. Resolve before merge."; exit 1; \
+		elif [ "$$audit_status" -ne 1 ]; then \
+			echo "Placeholder/stub scan failed: rg exited with status $$audit_status." >&2; exit "$$audit_status"; \
+		fi
 
 test:
 	@echo "Running tests..."
