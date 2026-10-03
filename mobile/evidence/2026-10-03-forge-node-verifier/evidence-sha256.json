@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "files": {
+    "README.md": "1e1eb955796c3946688efa0584e1d09c0cc70adeea0cbac2e757a414c5679deb",
+    "canonical-node-verifier.tar.gz": "696266cad0522c1e4ad4000a102a55d9d2eeb31ce641ab151b8727596b6eea3d",
+    "initial-node-backport.tar.gz": "375efd625d8548b352f410b62d3e63c3ecbb584fa7c111d7b85174c7f3338ec5",
+    "receipts.json": "7029ce276b2f4b812690cae58c5c7f30c230a00de2984d9f5d809656262dfe07",
+    "results.json": "385ec401f2c0ed0a51ffe1fcc756e4a84c423633d7a24549a1b644bbf24dac74",
+    "source-reviews.tar.gz": "09077ce4ca82579299e2466e395b9dfa6e5962d24e981b6e565ef1126ece94cf",
+    "verify.py": "2d432ab6681243b1ca8d0c2d8d16ba208a796098d64ed0a48b0f78c720dcb062"
+  },
+  "scope": "Pinned local Node verifier two-phase evidence; integrity seal only, no crypto/release certification"
+}
