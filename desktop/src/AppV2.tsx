@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { RegistryAuthGate } from "./cloud/RegistryAuthGate";
 import { UIProvider, useUI } from "./contexts/UIContext";
 import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
@@ -6,6 +6,7 @@ import { EditorProvider } from "./contexts/EditorContext";
 import { Workbench } from "./components/workbench/Workbench";
 import { CommandPalette } from "./components/overlay/CommandPalette";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
+import { loadProjectBindings } from "./projectBindings";
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
   const { theme } = useUI();
@@ -140,6 +141,26 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
 
 function ProjectScopedEditor({ children }: { children: React.ReactNode }) {
   const { activeProjectId, projectRoot, branches } = useWorkspace();
+  const { setActiveView, setSidebarOpen, setSecondarySidebarOpen, setPanelOpen } = useUI();
+  // The ID cache may be absent while the registry/route restores the last book.
+  // Its retained initial root is evidence only when one valid binding owns it.
+  const boundIds = activeProjectId || !projectRoot ? [] : Object.entries(loadProjectBindings())
+    .filter(([id, binding]) => binding.projectId === id && binding.localPath === projectRoot).map(([id]) => id);
+  const previousProjectId = useRef(activeProjectId || (boundIds.length === 1 ? boundIds[0] : ""));
+  const resolvingInitialProject = useRef(!activeProjectId && boundIds.length === 1);
+  useEffect(() => {
+    if (resolvingInitialProject.current && !activeProjectId) return;
+    resolvingInitialProject.current = false;
+    const changed = previousProjectId.current !== activeProjectId;
+    previousProjectId.current = activeProjectId;
+    if (!changed || !activeProjectId) return;
+    // This wrapper survives the keyed editor. Reset for a different project,
+    // while restart keeps the author's independent document and tool choices.
+    setActiveView("manuscript");
+    setSidebarOpen(true);
+    setSecondarySidebarOpen(false);
+    setPanelOpen(false);
+  }, [activeProjectId, setActiveView, setPanelOpen, setSecondarySidebarOpen, setSidebarOpen]);
   const scope = branches.find(row => row.current)?.name || "main";
   return <EditorProvider key={activeProjectId || "welcome"} projectRoot={projectRoot} scope={scope}>{children}</EditorProvider>;
 }

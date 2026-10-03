@@ -312,7 +312,7 @@ export function ProposalReview({ proposal: initial }: Props) {
               </div>
             ))}
             {changeSet.hunks.map((hunk) => (
-              <div key={hunk.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden", opacity: hunk.decision === "rejected" ? 0.7 : 1 }}>
+              <div key={hunk.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-2)", padding: "var(--space-2)", background: "var(--bg-elevated)" }}>
                   <div>
                     <span className="badge">{hunk.kind}</span>
@@ -334,11 +334,11 @@ export function ProposalReview({ proposal: initial }: Props) {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border-subtle)" }}>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--danger) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
-                    <div style={{ color: "var(--danger)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
+                    <div style={{ color: "var(--danger-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
                     {hunk.before_text || "∅"}
                   </div>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--success) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
-                    <div style={{ color: "var(--success)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
+                    <div style={{ color: "var(--success-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
                     {hunk.after_text || "∅"}
                   </div>
                 </div>

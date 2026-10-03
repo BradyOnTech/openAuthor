@@ -17,10 +17,7 @@ export function Workbench() {
     sidebarOpen,
     secondarySidebarOpen,
     panelOpen,
-    setActiveView,
     setSidebarOpen,
-    setSecondarySidebarOpen,
-    setPanelOpen,
   } = useUI();
   const {
     activeProjectId,
@@ -44,14 +41,6 @@ export function Workbench() {
     window.addEventListener("resize", revealEditor);
     return () => window.removeEventListener("resize", revealEditor);
   }, [projectReady, activeTabId, setSidebarOpen]);
-
-  useEffect(() => {
-    if (!activeProjectId) return;
-    setActiveView("manuscript");
-    setSidebarOpen(true);
-    setSecondarySidebarOpen(false);
-    setPanelOpen(false);
-  }, [activeProjectId, setActiveView, setPanelOpen, setSecondarySidebarOpen, setSidebarOpen]);
 
   useEffect(() => {
     if (!message) return;

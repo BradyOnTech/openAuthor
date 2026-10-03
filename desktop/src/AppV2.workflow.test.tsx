@@ -5,6 +5,9 @@ import { invoke as mockedInvoke } from "@tauri-apps/api/core";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppV2 } from "./AppV2";
+import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
+import * as projectRegistry from "./projectRegistry";
+import { setProjectBinding } from "./projectBindings";
 
 const harness = vi.hoisted(() => ({
   initialized: false,
@@ -13,6 +16,9 @@ const harness = vi.hoisted(() => ({
   projectRoot: "/tmp/openauthor-golden-loop",
   scenes: [] as Array<Record<string, unknown>>,
   sceneListWait: null as Promise<void> | null,
+  pickedFolder: null as string | null,
+  projectInspectGate: null as null | ((root: string) => Promise<{ project_id: string; name: string }>),
+  projectInitGate: null as null | (() => Promise<void>),
   undoBatchError: "",
   undoBatchWait: null as Promise<void> | null,
   proposals: [] as Array<Record<string, unknown>>,
@@ -81,6 +87,7 @@ function hasArgument(args: string[], name: string): boolean {
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command: string, payload: { projectRoot?: string; args?: string[] }) => {
+    if (command === "pick_folder") return harness.pickedFolder;
     if (command === "project_status") {
       return {
         found: harness.initialized,
@@ -100,6 +107,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     const action = args[1];
 
     if (root === "init") {
+      if (harness.projectInitGate) await harness.projectInitGate();
       harness.initialized = true;
       harness.projectRoot = args[1];
       harness.projectId = argument(args, "--project-id") || harness.projectId;
@@ -114,6 +122,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ project_id: harness.projectId, name: "Golden Novel" });
     }
     if (root === "project" && action === "inspect") {
+      if (harness.projectInspectGate) return response(await harness.projectInspectGate(payload.projectRoot || ""));
       return response({ project_id: harness.projectId, name: "Golden Novel" });
     }
     if (root === "backup") {
@@ -630,6 +639,29 @@ vi.mock("@tauri-apps/api/core", () => ({
   }),
 }));
 
+type FolderSelectionMethod = "attach" | "scaffold" | "archive" | "folder";
+
+// Exercise the public selection methods used by folder/import callers, including
+// a newer explicit close while their file initialization or inspection awaits.
+function FolderSelectionControls({ method, onFinished }: { method: FolderSelectionMethod; onFinished: (result: boolean) => void }) {
+  const workspace = useWorkspace();
+  const start = () => {
+    const root = "/tmp/openauthor-delayed-folder-selection";
+    const result = method === "attach" ? workspace.attachProjectRoot(root)
+      : method === "scaffold" ? workspace.createLocalProjectScaffold(root, "Delayed Book")
+      : method === "archive" ? workspace.importProjectArchive("/tmp/synthetic-novel.zip", root, "Delayed Book")
+      : workspace.importProjectFolder("/tmp/synthetic-novel-source", root, "Delayed Book");
+    void result.then(onFinished);
+  };
+  return <>
+    <output aria-label="Current workspace">{workspace.activeWorkspaceId}</output>
+    <output aria-label="Selected project">{workspace.activeProjectId}</output>
+    <output aria-label="Selected folder">{workspace.projectRoot}</output>
+    <button onClick={start}>Start folder selection</button>
+    <button onClick={workspace.closeProject}>Return to Projects</button>
+  </>;
+}
+
 describe("active V2 author workflow", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
@@ -641,6 +673,9 @@ describe("active V2 author workflow", () => {
       configurable: true,
     });
     harness.initialized = false;
+    harness.pickedFolder = null;
+    harness.projectInspectGate = null;
+    harness.projectInitGate = null;
     harness.bookScope = crypto.randomUUID().replace(/-/g, "").repeat(2);
     harness.projectId = "proj-golden-loop";
     harness.projectRoot = `/tmp/openauthor-golden-loop-${crypto.randomUUID()}`;
@@ -1299,6 +1334,318 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByDisplayValue("Mara crosses before the signal changes.")).toBeTruthy();
   });
 
+  it("restores the selected Plan document with its Plan activity rail after restarting the shell", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("plan");
+
+    cleanup();
+    render(<AppV2 />);
+    await screen.findByText("Project Brief");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("true");
+    expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("retains explicitly selected Search and independent panels beside the Plan document on restart", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    fireEvent.keyDown(window, { key: "j", metaKey: true });
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
+
+    cleanup();
+    render(<AppV2 />);
+    await screen.findByRole("tab", { name: "Plan" });
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search manuscript...")).toBeTruthy();
+  });
+
+  it.each(["route", "workspace user state"])("retains the same book's activity and panels through delayed %s restoration without a cached project ID", async (source) => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    fireEvent.keyDown(window, { key: "j", metaKey: true });
+    const retainedRoot = JSON.parse(localStorage.getItem("openauthor.activeProjectRoot") || "null");
+    expect(retainedRoot).toBe(harness.projectRoot);
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    if (source === "workspace user state") window.history.replaceState({}, "", "/");
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = 0;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { ++requested; await gate; return read(id); };
+      return client;
+    });
+    try {
+      render(<AppV2 />);
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("search");
+      await act(async () => { release(); });
+      await screen.findByRole("tab", { name: "Plan" });
+      expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+      expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+      expect.soft(screen.queryByRole("button", { name: "Chat" })).not.toBeNull();
+      expect.soft(screen.queryByText("Runs", { selector: ".panel-area__tab" })).not.toBeNull();
+    } finally {
+      release();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it("uses project defaults for an initial route to a genuinely different bound book", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    const workspaceId = JSON.parse(localStorage.getItem("openauthor.activeWorkspaceId") || "null");
+    const different = await projectRegistry.createProjectRegistryClient("local").createProject({ workspaceId, name: "Different Book", kind: "book" });
+    setProjectBinding(different.id, "/tmp/openauthor-different-bound-book");
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    window.history.replaceState({}, "", `/w/personal-workspace/p/${different.id}`);
+    render(<AppV2 />);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(different.id));
+    await screen.findByRole("button", { name: "Manuscript (Cmd+Shift+E)" });
+    expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(different.id);
+    expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
+  });
+
+  it("keeps an explicit return to Projects while delayed automatic restoration completes", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    cleanup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = 0;
+    let finished = 0;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { ++requested; await gate; const result = await read(id); ++finished; return result; };
+      return client;
+    });
+    try {
+      render(<AppV2 />);
+      await screen.findByRole("tab", { name: "Plan" });
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      await user.click(screen.getByRole("button", { name: "Projects" }));
+      await screen.findByText("Choose a project to begin writing.");
+      await act(async () => { release(); await gate; });
+      await waitFor(() => expect(finished).toBe(requested));
+      expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe("");
+      expect(screen.getByText("Choose a project to begin writing.")).toBeTruthy();
+      expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
+    } finally {
+      release();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each(["workspace state", "workspace list", "legacy restart"])("keeps existing-folder attachment intent ahead of delayed startup %s selection", async delayedSource => {
+    const { user } = await openWritingScene();
+    const workspaceId = JSON.parse(localStorage.getItem("openauthor.activeWorkspaceId") || "null");
+    const targetRoot = "/tmp/openauthor-existing-folder-selected";
+    const target = await projectRegistry.createProjectRegistryClient("local").createProject({ workspaceId, name: "Attached Book", kind: "book" });
+    const legacyRoot = harness.projectRoot;
+    const legacyId = harness.projectId;
+    cleanup();
+    if (delayedSource === "legacy restart") localStorage.setItem("openauthor.projectRoot", legacyRoot);
+    localStorage.removeItem("openauthor.activeProjectId");
+    let releaseRegistry!: () => void;
+    let releaseInspect!: () => void;
+    let releaseLegacy!: () => void;
+    const registryGate = new Promise<void>(resolve => { releaseRegistry = resolve; });
+    const inspectGate = new Promise<void>(resolve => { releaseInspect = resolve; });
+    const legacyGate = new Promise<void>(resolve => { releaseLegacy = resolve; });
+    let legacyAttempts = 0;
+    let requested = 0;
+    let finished = 0;
+    let inspecting = false;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      if (delayedSource === "workspace list") {
+        const list = client.listWorkspaces.bind(client);
+        client.listWorkspaces = async () => {
+          const result = await list();
+          await registryGate;
+          return result;
+        };
+      }
+      client.getWorkspaceUserState = async id => {
+        const result = await read(id);
+        ++requested;
+        await registryGate;
+        ++finished;
+        return result;
+      };
+      return client;
+    });
+    harness.pickedFolder = targetRoot;
+    harness.projectInspectGate = async root => {
+      if (delayedSource === "legacy restart" && root === legacyRoot) {
+        ++legacyAttempts;
+        if (legacyAttempts === 1) await legacyGate;
+        return { project_id: legacyId, name: "Legacy Book" };
+      }
+      if (root !== targetRoot) throw new Error("Unexpected inspected folder in attachment regression.");
+      inspecting = true;
+      await inspectGate;
+      return { project_id: target.id, name: target.name };
+    };
+    try {
+      render(<AppV2 />);
+      await screen.findByText("Choose a project to begin writing.");
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      if (delayedSource === "legacy restart") await waitFor(() => expect(legacyAttempts).toBe(1));
+      await user.click(screen.getByRole("button", { name: "Open Project" }));
+      await waitFor(() => expect(inspecting).toBe(true));
+      await act(async () => { releaseRegistry(); await registryGate; });
+      await waitFor(() => expect(finished).toBe(requested));
+      const selectedId = JSON.parse(localStorage.getItem("openauthor.activeProjectId") || '\"\"');
+      if (delayedSource === "legacy restart") {
+        expect({ selectedId, legacyAttempts }).toEqual({ selectedId: "", legacyAttempts: 1 });
+      } else {
+        expect(selectedId).toBe("");
+      }
+      expect(screen.getByText("Choose a project to begin writing.")).toBeTruthy();
+      await act(async () => { releaseInspect(); await inspectGate; });
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(target.id));
+      await screen.findByRole("button", { name: "Manuscript (Cmd+Shift+E)" });
+      expect(JSON.parse(localStorage.getItem("openauthor.activeProjectRoot") || "null")).toBe(targetRoot);
+      const records = await factory("local").listProjects(workspaceId, { includeArchived: true });
+      expect(records.filter(project => project.id === target.id)).toHaveLength(1);
+    } finally {
+      releaseRegistry();
+      releaseInspect();
+      releaseLegacy();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each<FolderSelectionMethod>(["attach", "scaffold", "archive", "folder"])("does not adopt a delayed %s folder after a newer explicit close", async method => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = false;
+    const finished = vi.fn();
+    render(<WorkspaceProvider registryMode="local"><FolderSelectionControls method={method} onFinished={finished} /></WorkspaceProvider>);
+    await waitFor(() => expect(screen.getByLabelText("Current workspace").textContent).not.toBe(""));
+    harness.initialized = true;
+    if (method === "attach") {
+      harness.projectInspectGate = async () => {
+        requested = true;
+        await gate;
+        return { project_id: "proj-late-folder", name: "Delayed Book" };
+      };
+    } else {
+      harness.projectInitGate = async () => { requested = true; await gate; };
+    }
+    try {
+      await user.click(screen.getByRole("button", { name: "Start folder selection" }));
+      await waitFor(() => expect(requested).toBe(true));
+      await user.click(screen.getByRole("button", { name: "Return to Projects" }));
+      await act(async () => { release(); await gate; });
+      await waitFor(() => expect(finished).toHaveBeenCalledWith(false));
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      expect(screen.getByLabelText("Selected folder").textContent).toBe("");
+      expect(harness.calls.some(args => args[0] === "project" && args[1] === "ensure-id")).toBe(false);
+    } finally {
+      release();
+    }
+  });
+
+  it("does not adopt a delayed legacy-folder migration after a newer explicit close", async () => {
+    const { user } = await openWritingScene();
+    const legacyRoot = harness.projectRoot;
+    const legacyId = harness.projectId;
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    localStorage.setItem("openauthor.projectRoot", legacyRoot);
+    let releaseRegistry!: () => void;
+    let releaseInspect!: () => void;
+    const registryGate = new Promise<void>(resolve => { releaseRegistry = resolve; });
+    const inspectGate = new Promise<void>(resolve => { releaseInspect = resolve; });
+    let inspecting = false;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { await registryGate; return read(id); };
+      return client;
+    });
+    harness.projectInspectGate = async root => {
+      if (root !== legacyRoot) throw new Error("Unexpected inspected legacy folder.");
+      inspecting = true;
+      await inspectGate;
+      return { project_id: legacyId, name: "Legacy Book" };
+    };
+    try {
+      render(<WorkspaceProvider registryMode="local"><FolderSelectionControls method="attach" onFinished={() => {}} /></WorkspaceProvider>);
+      await waitFor(() => expect(inspecting).toBe(true));
+      await user.click(screen.getByRole("button", { name: "Return to Projects" }));
+      await act(async () => { releaseInspect(); await inspectGate; });
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      expect(screen.getByLabelText("Selected folder").textContent).toBe("");
+      await act(async () => { releaseRegistry(); await registryGate; });
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      const workspaceId = screen.getByLabelText("Current workspace").textContent || "";
+      const records = await factory("local").listProjects(workspaceId, { includeArchived: true });
+      expect(records.filter(project => project.id === legacyId)).toHaveLength(1);
+    } finally {
+      releaseRegistry();
+      releaseInspect();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each(["mismatched key", "ambiguous", "absent"])("does not infer prior book activity from %s initial bindings", async (invalid) => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    const id = JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null");
+    const bindings = JSON.parse(localStorage.getItem("openauthor.projectBindings") || "{}");
+    cleanup();
+    if (invalid === "mismatched key") bindings[id].projectId = "proj-not-the-map-key";
+    else if (invalid === "ambiguous") bindings["proj-second-owner"] = { ...bindings[id], projectId: "proj-second-owner" };
+    else delete bindings[id];
+    localStorage.setItem("openauthor.projectBindings", JSON.stringify(bindings));
+    localStorage.removeItem("openauthor.activeProjectId");
+    render(<AppV2 />);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(id));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("manuscript"));
+    expect(JSON.parse(localStorage.getItem("openauthor.v2.secondarySidebarOpen") || "null")).toBe(false);
+  });
+
   it("resets editor tabs and panels when a different novel is created", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -1324,6 +1671,8 @@ describe("active V2 author workflow", () => {
     expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
     expect(screen.queryByText("Project Brief")).toBeNull();
     expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("previews manuscript structure before importing a new project", async () => {

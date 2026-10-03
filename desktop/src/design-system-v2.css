@@ -129,9 +129,9 @@
 
   /* Text — warm off-whites */
   --text-primary: #e8e4df;
-  --text-secondary: #8a8680;
+  --text-secondary: #a09a92;
   --text-tertiary: #9a938c;
-  --text-ghost: #3a3834;
+  --text-ghost: var(--text-tertiary);
   --text-inverse: #111114;
 
   /* Borders */
@@ -152,7 +152,7 @@
   /* AI accent — muted teal */
   --ai: #3d8b8b;
   --ai-hover: #4d9b9b;
-  --ai-text: #ffffff;
+  --ai-text: #111114;
   --ai-subtle: rgba(61, 139, 139, 0.10);
   --ai-muted: rgba(61, 139, 139, 0.06);
   --ai-border: rgba(61, 139, 139, 0.25);
@@ -226,7 +226,7 @@
   --text-primary: #1a1815;
   --text-secondary: #6a6560;
   --text-tertiary: #625d58;
-  --text-ghost: #c5c0ba;
+  --text-ghost: var(--text-tertiary);
   --text-inverse: #faf8f4;
 
   /* Borders */
@@ -256,7 +256,7 @@
   --success: #2d7a3e;
   --success-subtle: rgba(45, 122, 62, 0.08);
   --success-border: rgba(45, 122, 62, 0.20);
-  --success-text: #2d7a3e;
+  --success-text: #276b36;
 
   --warning: #a46c10;
   --warning-subtle: rgba(164, 108, 16, 0.08);
@@ -1285,7 +1285,7 @@ body {
 }
 
 .chat-message__role--user { color: var(--accent); }
-.chat-message__role--assistant { color: var(--ai); }
+.chat-message__role--assistant { color: var(--info-text); }
 .chat-message__role--tool { color: var(--text-tertiary); }
 
 .chat-message__time {
@@ -1354,6 +1354,11 @@ body {
 .chat-composer__input:focus {
   border-color: var(--ai);
   outline: none;
+}
+
+.chat-composer__input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
 }
 
 .chat-composer__send {
@@ -2034,8 +2039,7 @@ body {
 
 .chat-context-hint--tip {
   background: none;
-  color: var(--ai);
-  opacity: 0.6;
+  color: var(--info-text);
 }
 
 
@@ -2291,7 +2295,7 @@ body {
 .connection-map__filter--active {
   border-color: var(--ai-border);
   background: var(--ai-subtle);
-  color: var(--ai-text);
+  color: var(--text-primary);
 }
 
 .connection-map__workspace {
@@ -2844,6 +2848,7 @@ button.status-bar__item {
 
 .command-palette__input::placeholder {
   color: var(--text-ghost);
+  opacity: 1;
 }
 
 .command-palette__results {
@@ -2942,7 +2947,7 @@ button.status-bar__item {
   color: var(--editor-text-secondary);
   background: transparent;
   border: none;
-  opacity: 0.75;
+  opacity: 1;
   transition: opacity var(--duration-normal) ease;
   cursor: pointer;
 }
@@ -3038,7 +3043,7 @@ button.status-bar__item {
 
 .btn--success:hover:not(:disabled) {
   background: var(--success);
-  color: white;
+  color: var(--text-inverse);
 }
 
 /* Small */
@@ -3081,6 +3086,7 @@ button.status-bar__item {
 
 .input::placeholder {
   color: var(--text-ghost);
+  opacity: 1;
 }
 
 .input--mono {

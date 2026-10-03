@@ -1,6 +1,52 @@
 import { test, expect } from "@playwright/test";
 import { localBook } from "./localBook";
 
+for (const cachedProjectId of [true, false]) {
+  test(`restores the selected activity beside recovered document tabs ${cachedProjectId ? "with" : "without"} a cached project ID`, async ({ page }, testInfo) => {
+    const book = await localBook(page);
+    try {
+      await page.goto("/");
+      await page.getByRole("button", { name: "New Project", exact: true }).click();
+      await page.getByRole("textbox", { name: "Novel title" }).fill("Navigation acceptance");
+      await page.getByRole("textbox", { name: "Project folder" }).fill(book.projectRoot);
+      await page.getByRole("button", { name: "Create novel", exact: true }).click();
+      await page.getByPlaceholder("New scene title...").fill("The Ferry Office");
+      await page.getByRole("button", { name: "Add Scene", exact: true }).click();
+      await expect(page.getByRole("tab", { name: "The Ferry Office", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Hide first-run guide" }).click();
+      const plan = page.getByRole("button", { name: "Plan (Cmd+Shift+P)", exact: true });
+      const manuscript = page.getByRole("button", { name: "Manuscript (Cmd+Shift+E)", exact: true });
+      const search = page.getByRole("button", { name: "Search (Cmd+Shift+F)", exact: true });
+      await plan.click();
+      await page.getByRole("textbox", { name: "Synopsis", exact: true }).fill("Unfinished navigation notes.");
+      await expect(plan).toHaveAttribute("aria-pressed", "true");
+      if (!cachedProjectId) await page.evaluate(() => localStorage.removeItem("openauthor.activeProjectId"));
+      await page.reload();
+      await expect(page.getByRole("tab", { name: "Plan", exact: true })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("tab", { name: "The Ferry Office", exact: true })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Synopsis", exact: true })).toHaveValue("Unfinished navigation notes.");
+      await expect.soft(plan, "restored Plan navigation").toHaveAttribute("aria-pressed", "true");
+      await expect.soft(manuscript, "inactive Manuscript navigation").toHaveAttribute("aria-pressed", "false");
+
+      // A tool sidebar can intentionally stay open beside a different document.
+      await search.click();
+      await expect(search).toHaveAttribute("aria-pressed", "true");
+      if (!cachedProjectId) await page.evaluate(() => localStorage.removeItem("openauthor.activeProjectId"));
+      await page.reload();
+      await expect(page.getByRole("tab", { name: "Plan", exact: true })).toHaveAttribute("aria-selected", "true");
+      await expect.soft(search, "restored explicit Search navigation").toHaveAttribute("aria-pressed", "true");
+      await expect.soft(plan, "document restoration does not select Plan sidebar").toHaveAttribute("aria-pressed", "false");
+      const savedPlan = await book.core(book.projectRoot, ["plan", "get", "--json"]);
+      expect(savedPlan.status, savedPlan.stderr).toBe(0);
+      expect(JSON.parse(savedPlan.stdout).brief.synopsis).toBe("");
+      expect(book.errors).toEqual([]);
+      await page.screenshot({ path: testInfo.outputPath("restored-navigation.png") });
+    } finally {
+      await book.close();
+    }
+  });
+}
+
 test("recovers Plan text, reading position and an unfinished voice assessment after reload", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const book = await localBook(page);
@@ -77,8 +123,9 @@ test("recovers Plan text, reading position and an unfinished voice assessment af
     await sample.getByRole("textbox", { name: "Assessment notes" }).fill("Check whether Ivo's suggestion sounds like him.");
     await sample.getByRole("combobox").first().selectOption("needs_revision");
     await page.reload();
-    if (await page.getByRole("button", { name: "Writing Voice", exact: true }).count() === 0) await page.getByRole("button", { name: "Assistant (Cmd+L)" }).click();
-    await page.getByRole("button", { name: "Writing Voice", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Writing Voice", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("button", { name: "Assistant (Cmd+L)" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Writing Voice", exact: true })).toBeVisible();
     await expect(sample.getByRole("textbox", { name: "Assessment notes" })).toHaveValue("Check whether Ivo's suggestion sounds like him.");
     await expect(sample.getByRole("combobox").first()).toHaveValue("needs_revision");
     expect((await json(["style", "workspace"])).previews[0].directions[0].author_review.notes).toBe("");
