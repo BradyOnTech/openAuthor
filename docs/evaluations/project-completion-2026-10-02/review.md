@@ -1,11 +1,41 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `96bd04d`; all six
+Status: **in progress**. The latest implementation is `ae3eb2e`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
-## Latest repairs and evidence
+## Latest navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
+
+Same-book restart now preserves independent document, activity and panel choices.
+Delayed registry, folder attachment/import and legacy migration cannot override
+newer explicit project choices; opening an existing folder reuses its record.
+Expanded writing/review controls have readable sampled placeholders, headings,
+AI button states and excluded-hunk controls in both themes.
+
+The [final validation](../navigation-restoration-2026-10-02/final-validation/README.md)
+passes 677 desktop tests/90 files, TypeScript/Vite and 11 unique real-core offline
+journeys in each Chrome/WebKit engine. All 354 captured tracked inputs stayed
+unchanged and match the source commit. The [contrast packet](../writing-control-contrast-2026-10-02/README.md)
+retains 25 observations per theme/engine, causal failures and final measurements.
+Independent Spec has zero open findings; Standards has zero hard findings and
+one optional import/scaffold lifecycle cleanup note.
+
+The [current native packet](../navigation-restoration-2026-10-02/final-validation/native/README.md)
+records the normal unsigned arm64 copied-bundle verifier and five recovery
+stages. The separate local QA build restores Search beside active Plan, two tabs
+and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.
+Saved prose and Plan remain unchanged. An obsolete binding attempt is retained
+and excluded; accepted observations bind the current app by full path and PID.
+Native observations are manually transcribed from CUA, with inline screenshots
+in the chat. No new native caret/full contrast/VoiceOver, cloud/account/provider,
+signed, physical-device or clean-machine acceptance is claimed.
+
+No new live provider request occurred. All six priorities remain in progress;
+author judgment/review effort and the external acceptance gates remain open.
+Earlier core/mobile/contracts/gateway and writing results retain their scopes.
+
+## Prior writing repairs at `96bd04d`
 
 The [writing accessibility packet](../writing-accessibility-2026-10-02/README.md)
 records 660 desktop tests/90 files, seven initial offline journeys per browser
@@ -130,8 +160,8 @@ offline, refuse signing/EAS fields and inspect actual web/iOS/Android Metro maps
 for affected Forge/signing modules before removing public maps and generating
 PWA caches. Fourteen new controls and actual export/web/hosted-test commands
 pass. The [containment packet](../mobile-build-security-2026-10-02/README.md)
-keeps the mandatory audit failing: five high entries still derive from one
-unpatched advisory. Direct Expo commands can bypass the wrapper. A supported
+kept the audit failing at that checkpoint: five high entries derived from one
+unpatched Forge advisory. The fresh dependency recheck below supersedes that count. Direct Expo commands can bypass the wrapper. A supported
 patch or reviewed replacement plus configured signing/artifact acceptance is
 still required; current unused-export containment does not clear that gate.
 
@@ -217,9 +247,10 @@ operator evidence and cannot be inferred from empty metadata.
 6. Supported mobile dependency repair, Developer ID signing/notarization, clean
    Apple Silicon and Intel installation/upgrades, and signed credential checks.
 
-The [latest dependency recheck](../mobile-dependency-recheck-2026-10-02/README.md)
-still reports five high entries from one unpatched advisory and found no
-supported released remedy in the inspected official packages. No dependency or
+The [fresh dependency recheck](../../../mobile/evidence/2026-10-02-dependency-recheck-followup/README.md)
+reports 17 high dependency entries from two root advisories (Forge and Braces)
+at October 3 02:09 UTC. Neither has a supported patched release in the inspected
+official chain. The prior five-entry result retains its historical scope. No dependency or
 signing setting was changed; existing export containment does not clear the gate.
 
 No valid signing identities are available locally. Current tooling has only

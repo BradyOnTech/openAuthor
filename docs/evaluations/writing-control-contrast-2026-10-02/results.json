@@ -1,0 +1,1460 @@
+{
+  "schema": "openauthor.writing-control-contrast-evidence.v1",
+  "date": "2026-10-02",
+  "status": "final_sampled_browser_and_desktop_gates_passed_native_unclaimed",
+  "baseline_production_commit": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+  "assembly": {
+    "source": "Existing root-produced files only. No new tests, builds, network/provider calls or UI/native actions during packet assembly.",
+    "raw_logs_retained_byte_for_byte_after_gzip_decompression": true,
+    "independent_packet_review": "pending_separate_reviewer"
+  },
+  "source_provenance": {
+    "manifest": "source-sha256.json",
+    "baseline_production_files": 2,
+    "exact_archived_baseline_test": false,
+    "baseline_test_note": "The corrected baseline test differs from the broader later gradient/review test. Its exact test source was not archived; later test snapshots must not be represented as the executed baseline source.",
+    "final_selected_source_files": 3,
+    "final_source_freeze": "Root-declared stable three selected contrast files; unchanged archived/current/committed hashes.",
+    "final_source_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+    "broader_input_freeze": {
+      "owner": "root navigation final-validation",
+      "root_reported_direct_frozen_inputs": 8,
+      "root_reported_broader_inputs": 354,
+      "root_reported_unchanged_across_final_runs": true,
+      "contrast_packet_verification_scope": "Only the three selected contrast inputs; the broader archive is not duplicated or verified here.",
+      "reference": "docs/evaluations/navigation-restoration-2026-10-02/README.md"
+    }
+  },
+  "runs": {
+    "chrome-initial-fixture-attempt": {
+      "engine": "chromium",
+      "failed": 2,
+      "passed": 1,
+      "log": "logs/openauthor-navigation-and-contrast-chrome-check.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-navigation-and-contrast-chrome-check",
+      "interpretation": "Incorrect command-palette animation timing and New thread role selector; both themed journeys stop at the selector. The separate navigation journey passes. Shared input failures are retained, but palette measurements are not the valid settled baseline.",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/chrome-initial-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+          "count": 9,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 1.571700956209494,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 1
+          },
+          "below_text_threshold": {
+            "new scene placeholder": 1.571700956209494,
+            "command palette placeholder": 1
+          }
+        },
+        "light": {
+          "artifact": "browser/chrome-initial-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+          "count": 9,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 1.4640083567018443,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 1.193491527205631
+          },
+          "below_text_threshold": {
+            "new scene placeholder": 1.4640083567018443,
+            "command palette placeholder": 1.193491527205631
+          }
+        }
+      }
+    },
+    "chrome-corrected-baseline": {
+      "engine": "chromium",
+      "failed": 2,
+      "passed": 0,
+      "log": "logs/openauthor-expanded-contrast-chrome-baseline.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-expanded-contrast-chrome-baseline",
+      "interpretation": "Both completed themed journeys fail eight contrast assertions: five dark, three light. No fixture failure is reported. Thirteen appearance observations per theme; no gradient or proposal-hunk samples in this run.",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/chrome-corrected-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+          "count": 13,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 1.571700956209494,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 1.3052804284871047,
+            "enabled AI button": 3.9891468498053047,
+            "hovered enabled AI button": 3.2420387665350376,
+            "unfocused focus-mode Exit": 3.210313985761794,
+            "Plan metadata": 6.524093595279786
+          },
+          "below_text_threshold": {
+            "new scene placeholder": 1.571700956209494,
+            "command palette placeholder": 1.3052804284871047,
+            "enabled AI button": 3.9891468498053047,
+            "hovered enabled AI button": 3.2420387665350376,
+            "unfocused focus-mode Exit": 3.210313985761794
+          }
+        },
+        "light": {
+          "artifact": "browser/chrome-corrected-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+          "count": 13,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 1.4640083567018443,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 1.8067698838496826,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 3.30922501037988,
+            "Plan metadata": 5.140531976246024
+          },
+          "below_text_threshold": {
+            "new scene placeholder": 1.4640083567018443,
+            "command palette placeholder": 1.8067698838496826,
+            "unfocused focus-mode Exit": 3.30922501037988
+          }
+        }
+      }
+    },
+    "chrome-local-draft-fixture-attempt": {
+      "engine": "chromium",
+      "failed": 2,
+      "passed": 1,
+      "log": "logs/openauthor-expanded-controls-chrome-final.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-expanded-controls-chrome-final",
+      "interpretation": "Both themed journeys reach sixteen passing appearance observations, then the chosen local draft is rejected because it produces no prose change. Proposal review is not reached. The separate navigation journey passes; this is not a passing contrast journey.",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/chrome-local-draft-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+          "count": 16,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 6.064006611517583,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 5.036091068697725,
+            "enabled AI button": 4.725080825382539,
+            "hovered enabled AI button": 5.813946916432252,
+            "unfocused focus-mode Exit": 5.353890836658566,
+            "Plan metadata": 6.524093595279786,
+            "Plan synopsis placeholder": 6.064006611517583,
+            "Inspector heading": 5.843311609724055,
+            "selected Connection Map filter gradient bound": 13.489199763915922
+          },
+          "below_text_threshold": {}
+        },
+        "light": {
+          "artifact": "browser/chrome-local-draft-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+          "count": 16,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 5.274689790472263,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 6.50962859361298,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 5.621719496712627,
+            "Plan metadata": 5.140531976246024,
+            "Plan synopsis placeholder": 5.274689790472263,
+            "Inspector heading": 5.825985389580873,
+            "selected Connection Map filter gradient bound": 12.081326263898479
+          },
+          "below_text_threshold": {}
+        }
+      }
+    },
+    "chrome-expanded-controls-partial-final": {
+      "engine": "chromium",
+      "failed": 0,
+      "passed": 2,
+      "log": "logs/openauthor-expanded-controls-chrome-final-fixture.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture",
+      "interpretation": "Both expanded themed journeys pass after using a local revision fixture with an actual deterministic prose change. Twenty-five appearance observations per theme. This run predates the final explicit Comment-enabled assertion and navigation hydration changes; final frozen multi-engine and full-suite verification remain pending.",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/chrome-expanded-controls-partial-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 6.064006611517583,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 5.036091068697725,
+            "enabled AI button": 4.725080825382539,
+            "hovered enabled AI button": 5.813946916432252,
+            "unfocused focus-mode Exit": 5.353890836658566,
+            "Plan metadata": 6.524093595279786,
+            "Plan synopsis placeholder": 6.064006611517583,
+            "Inspector heading": 5.843311609724055,
+            "selected Connection Map filter gradient bound": 13.489199763915922,
+            "Revision History heading": 5.843311609724055,
+            "included hunk": 5.934765510319871,
+            "hovered included hunk": 5.755289458505426,
+            "hovered enabled Apply": 5.755289458505426,
+            "BEFORE status": 5.300618472005672,
+            "AFTER status": 7.145426080235287,
+            "excluded hunk remains interactive": 5.476602487944993,
+            "excluded hunk Comment": 5.476602487944993,
+            "excluded hunk comment placeholder": 6.064006611517583
+          },
+          "below_text_threshold": {}
+        },
+        "light": {
+          "artifact": "browser/chrome-expanded-controls-partial-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 5.274689790472263,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 6.50962859361298,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 5.621719496712627,
+            "Plan metadata": 5.140531976246024,
+            "Plan synopsis placeholder": 5.274689790472263,
+            "Inspector heading": 5.825985389580873,
+            "selected Connection Map filter gradient bound": 12.081326263898479,
+            "Revision History heading": 5.825985389580873,
+            "included hunk": 5.822165804062237,
+            "hovered included hunk": 4.993274548337067,
+            "hovered enabled Apply": 4.993274548337067,
+            "BEFORE status": 4.861317452121339,
+            "AFTER status": 5.234973124257235,
+            "excluded hunk remains interactive": 5.764144284177048,
+            "excluded hunk Comment": 5.764144284177048,
+            "excluded hunk comment placeholder": 5.274689790472263
+          },
+          "below_text_threshold": {}
+        }
+      }
+    },
+    "chrome-frozen-contrast-intermediate-batch": {
+      "engine": "chromium",
+      "failed": 1,
+      "passed": 10,
+      "log": "logs/openauthor-writing-controls-chrome-final.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-writing-controls-chrome-final",
+      "interpretation": "Both expanded contrast theme cases pass all twenty-five observations after the explicit Comment-enabled assertion. The eleven-test batch has ten passes and one obsolete WritingVoice recovery-click fixture failure. The later strengthened restored-tab/Assistant fixture and navigation follow-up require another run; this whole batch is intermediate.",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 6.064006611517583,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 5.036091068697725,
+            "enabled AI button": 4.725080825382539,
+            "hovered enabled AI button": 5.813946916432252,
+            "unfocused focus-mode Exit": 5.353890836658566,
+            "Plan metadata": 6.524093595279786,
+            "Plan synopsis placeholder": 6.064006611517583,
+            "Inspector heading": 5.843311609724055,
+            "selected Connection Map filter gradient bound": 13.489199763915922,
+            "Revision History heading": 5.843311609724055,
+            "included hunk": 5.934765510319871,
+            "hovered included hunk": 5.755289458505426,
+            "hovered enabled Apply": 5.755289458505426,
+            "BEFORE status": 5.300618472005672,
+            "AFTER status": 7.145426080235287,
+            "excluded hunk remains interactive": 5.476602487944993,
+            "excluded hunk Comment": 5.476602487944993,
+            "excluded hunk comment placeholder": 6.064006611517583
+          },
+          "below_text_threshold": {}
+        },
+        "light": {
+          "artifact": "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 5.274689790472263,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 6.50962859361298,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 5.621719496712627,
+            "Plan metadata": 5.140531976246024,
+            "Plan synopsis placeholder": 5.274689790472263,
+            "Inspector heading": 5.825985389580873,
+            "selected Connection Map filter gradient bound": 12.081326263898479,
+            "Revision History heading": 5.825985389580873,
+            "included hunk": 5.822165804062237,
+            "hovered included hunk": 4.993274548337067,
+            "hovered enabled Apply": 4.993274548337067,
+            "BEFORE status": 4.861317452121339,
+            "AFTER status": 5.234973124257235,
+            "excluded hunk remains interactive": 5.764144284177048,
+            "excluded hunk Comment": 5.764144284177048,
+            "excluded hunk comment placeholder": 5.274689790472263
+          },
+          "below_text_threshold": {}
+        }
+      },
+      "selected_contrast_source_archive": "tested-source.tar.gz"
+    },
+    "final-chromium": {
+      "engine": "chromium",
+      "failed": 0,
+      "passed": 11,
+      "reported_exit_code": 0,
+      "log": "logs/openauthor-navigation-controls-final-chrome.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-navigation-controls-final-chrome",
+      "interpretation": "Final eleven-case batch passes, including both expanded twenty-five-observation contrast cases, explicit Comment-enabled assertion, strengthened direct WritingVoice restoration fixture and final navigation fences. Three selected contrast inputs are archived here; full broader inputs belong to the separately owned navigation validation.",
+      "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/final-chromium/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 6.064006611517583,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 5.036091068697725,
+            "enabled AI button": 4.725080825382539,
+            "hovered enabled AI button": 5.813946916432252,
+            "unfocused focus-mode Exit": 5.353890836658566,
+            "Plan metadata": 6.524093595279786,
+            "Plan synopsis placeholder": 6.064006611517583,
+            "Inspector heading": 5.843311609724055,
+            "selected Connection Map filter gradient bound": 13.489199763915922,
+            "Revision History heading": 5.843311609724055,
+            "included hunk": 5.934765510319871,
+            "hovered included hunk": 5.755289458505426,
+            "hovered enabled Apply": 5.755289458505426,
+            "BEFORE status": 5.300618472005672,
+            "AFTER status": 7.145426080235287,
+            "excluded hunk remains interactive": 5.476602487944993,
+            "excluded hunk Comment": 5.476602487944993,
+            "excluded hunk comment placeholder": 6.064006611517583
+          },
+          "below_text_threshold": {}
+        },
+        "light": {
+          "artifact": "browser/final-chromium/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 5.274689790472263,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 6.50962859361298,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 5.621719496712627,
+            "Plan metadata": 5.140531976246024,
+            "Plan synopsis placeholder": 5.274689790472263,
+            "Inspector heading": 5.825985389580873,
+            "selected Connection Map filter gradient bound": 12.081326263898479,
+            "Revision History heading": 5.825985389580873,
+            "included hunk": 5.822165804062237,
+            "hovered included hunk": 4.993274548337067,
+            "hovered enabled Apply": 4.993274548337067,
+            "BEFORE status": 4.861317452121339,
+            "AFTER status": 5.234973124257235,
+            "excluded hunk remains interactive": 5.764144284177048,
+            "excluded hunk Comment": 5.764144284177048,
+            "excluded hunk comment placeholder": 5.274689790472263
+          },
+          "below_text_threshold": {}
+        }
+      },
+      "selected_contrast_source_archive": "tested-source.tar.gz"
+    },
+    "final-webkit": {
+      "engine": "webkit",
+      "failed": 0,
+      "passed": 11,
+      "reported_exit_code": 0,
+      "log": "logs/openauthor-navigation-controls-final-webkit.txt.gz",
+      "original_output_directory": "/private/tmp/openauthor-navigation-controls-final-webkit",
+      "interpretation": "Final eleven-case batch passes, including both expanded twenty-five-observation contrast cases, explicit Comment-enabled assertion, strengthened direct WritingVoice restoration fixture and final navigation fences. Three selected contrast inputs are archived here; full broader inputs belong to the separately owned navigation validation.",
+      "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+      "themed_observations": {
+        "dark": {
+          "artifact": "browser/final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 5.982685546023507,
+            "hovered primary button": 7.246346861151614,
+            "new scene placeholder": 6.064006611517583,
+            "title keyboard focus": 14.09415872176488,
+            "title placeholder": 5.353890836658566,
+            "prose keyboard focus": 16.454601179573576,
+            "prose placeholder": 5.353890836658566,
+            "unsaved status": 5.3943365180532,
+            "command palette placeholder": 5.036091068697725,
+            "enabled AI button": 4.725080825382539,
+            "hovered enabled AI button": 5.813946916432252,
+            "unfocused focus-mode Exit": 5.353890836658566,
+            "Plan metadata": 6.524093595279786,
+            "Plan synopsis placeholder": 6.064006611517583,
+            "Inspector heading": 5.843311609724055,
+            "selected Connection Map filter gradient bound": 13.489199763915922,
+            "Revision History heading": 5.843311609724055,
+            "included hunk": 5.934765510319871,
+            "hovered included hunk": 5.755289458505426,
+            "hovered enabled Apply": 5.755289458505426,
+            "BEFORE status": 5.300618472005672,
+            "AFTER status": 7.145426080235287,
+            "excluded hunk remains interactive": 12.525567924854638,
+            "excluded hunk Comment": 5.476602487944993,
+            "excluded hunk comment placeholder": 6.064006611517583
+          },
+          "below_text_threshold": {}
+        },
+        "light": {
+          "artifact": "browser/final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json",
+          "count": 25,
+          "names": [
+            "primary button",
+            "hovered primary button",
+            "new scene placeholder",
+            "title keyboard focus",
+            "title placeholder",
+            "prose keyboard focus",
+            "prose placeholder",
+            "unsaved status",
+            "command palette placeholder",
+            "enabled AI button",
+            "hovered enabled AI button",
+            "unfocused focus-mode Exit",
+            "Plan metadata",
+            "Plan synopsis placeholder",
+            "Inspector heading",
+            "selected Connection Map filter gradient bound",
+            "Revision History heading",
+            "included hunk",
+            "hovered included hunk",
+            "hovered enabled Apply",
+            "BEFORE status",
+            "AFTER status",
+            "excluded hunk remains interactive",
+            "excluded hunk Comment",
+            "excluded hunk comment placeholder"
+          ],
+          "contrasts": {
+            "primary button": 4.860578195571781,
+            "hovered primary button": 5.432887169095995,
+            "new scene placeholder": 5.274689790472263,
+            "title keyboard focus": 17.715470529998143,
+            "title placeholder": 5.764144284177048,
+            "prose keyboard focus": 17.715470529998143,
+            "prose placeholder": 5.764144284177048,
+            "unsaved status": 5.807688999006388,
+            "command palette placeholder": 6.50962859361298,
+            "enabled AI button": 5.753287964843865,
+            "hovered enabled AI button": 4.585874489106563,
+            "unfocused focus-mode Exit": 5.621719496712627,
+            "Plan metadata": 5.140531976246024,
+            "Plan synopsis placeholder": 5.274689790472263,
+            "Inspector heading": 5.825985389580873,
+            "selected Connection Map filter gradient bound": 12.081326263898479,
+            "Revision History heading": 5.825985389580873,
+            "included hunk": 5.822165804062237,
+            "hovered included hunk": 4.993274548337067,
+            "hovered enabled Apply": 4.993274548337067,
+            "BEFORE status": 4.861317452121339,
+            "AFTER status": 5.234973124257235,
+            "excluded hunk remains interactive": 14.091752642630203,
+            "excluded hunk Comment": 5.764144284177048,
+            "excluded hunk comment placeholder": 5.274689790472263
+          },
+          "below_text_threshold": {}
+        }
+      },
+      "selected_contrast_source_archive": "tested-source.tar.gz"
+    }
+  },
+  "logs": {
+    "logs/openauthor-navigation-and-contrast-chrome-check.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check.txt",
+      "raw_bytes": 8642,
+      "raw_sha256": "98af15d932ce524c2cbd7b272bdfedce7e83da23fe40734bc37fb4ec899ab9be"
+    },
+    "logs/openauthor-expanded-contrast-chrome-baseline.txt.gz": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline.txt",
+      "raw_bytes": 10042,
+      "raw_sha256": "ee2b9ab0a8489b07c7f2379c5ef8aaa57c6f21b042310f27213e6d6bfd3abb4b"
+    },
+    "logs/openauthor-expanded-controls-chrome-final.txt.gz": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final.txt",
+      "raw_bytes": 5301,
+      "raw_sha256": "fa988f4455bc37ab6dd44aa7e3838cc884d2a2f5fa167c88ca6cdc0833c01d6a"
+    },
+    "logs/openauthor-expanded-controls-chrome-final-fixture.txt.gz": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture.txt",
+      "raw_bytes": 628,
+      "raw_sha256": "f86c2d2adcf3a9c57356bf999cf266d0ce01b137cf34973db0f0ca908f712670"
+    },
+    "logs/openauthor-writing-controls-chrome-final.txt.gz": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final.txt",
+      "raw_bytes": 4274,
+      "raw_sha256": "4b0c2e7cbe64706f7a863b7a2e7dd1bb4217bb15480a6edee435d922aef92897"
+    },
+    "logs/openauthor-navigation-controls-final-desktop.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-desktop.txt",
+      "raw_bytes": 286,
+      "raw_sha256": "690beb5b198904e328cc5bf2ad17b8f5a0b6dec4b94efc07fb05a62d1dcf525a"
+    },
+    "logs/openauthor-navigation-controls-final-build.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-build.txt",
+      "raw_bytes": 1726,
+      "raw_sha256": "d5f0a7af84f543403a260e41e11a9e6dce4a07c798abae5d465ca5f7df45074a"
+    },
+    "logs/openauthor-navigation-controls-final-chrome.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome.txt",
+      "raw_bytes": 2091,
+      "raw_sha256": "40e09ef37ce5502e31a787e33e8ecdfc11eb3d2ee1c0ad5a41f324a6cf190ae2"
+    },
+    "logs/openauthor-navigation-controls-final-webkit.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit.txt",
+      "raw_bytes": 2066,
+      "raw_sha256": "10f51bcedec0ea94919f0f4ac70d144446488b43475fb12260bfd8770a1a0022"
+    }
+  },
+  "browser_artifacts": {
+    "browser/chrome-initial-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2674,
+      "sha256": "06e0d6b0391fe0f002e8e056ac6dc9af784f480ec0dbc7c27c6b9fdac70b80c1"
+    },
+    "browser/chrome-initial-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md",
+      "bytes": 10153,
+      "sha256": "617cb4360c38be42de594dfe9bbe1d2f06334ddf436cd314a55a31c7a6025446"
+    },
+    "browser/chrome-initial-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2736,
+      "sha256": "1d8bb803cbee027cb071c9e2ec79080256e0d9ce96bcceef335744c8ceb67223"
+    },
+    "browser/chrome-initial-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md",
+      "bytes": 10171,
+      "sha256": "3dc0a977b508dd92e638298135373c8bc1a8878f0017cad614e7a98d4d9a761e"
+    },
+    "browser/chrome-initial-fixture-attempt/session-continuity-restore-e8304--overriding-tool-navigation/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-navigation-and-contrast-chrome-check/session-continuity-restore-e8304--overriding-tool-navigation/restored-navigation.png",
+      "bytes": 79212,
+      "sha256": "ac2ddd5cf9f7696e01b72fd65739f27e8960abe68dbe3c21ad57adbeeac12cb8"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 3913,
+      "sha256": "68e4f5abb5ec68f7e764e1f53d393f2e2c7f9be6fe1e8ef890eb2ca65cc8ab5e"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 45445,
+      "sha256": "6c6b49b01ab31ed038e715e24a5242700dfd24e747dfc82cc464560ccaddc087"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md",
+      "bytes": 10770,
+      "sha256": "387faddd04fb20873eebcd9ec909d04046bb21f16fe246c775ebb253ea6d6c4a"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 3893,
+      "sha256": "651fb0240c2473544468847b2e96184a10991bbdbf1b1940afc967dd591e1c05"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md",
+      "bytes": 10493,
+      "sha256": "96efa59dc6ba179c316ae0adb679b0c6907d557d245149f188810a3cea08018f"
+    },
+    "browser/chrome-corrected-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-contrast-chrome-baseline/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 45680,
+      "sha256": "4caa48dd655f2b12be573200bbe18b68618e4d091ec1ec2f710e4722e1ca69d0"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 5293,
+      "sha256": "feada83a0ccb32917075d3740e1c99e0ac7776928bd3bbfeac3cca688f591fb4"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png",
+      "bytes": 142490,
+      "sha256": "53eb00569833d752d5f08ae6b654c9cb582f7b752d91ee22b1bb09e6f3db8ebd"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 46468,
+      "sha256": "9a563bb555bba7c5c3ae5e48cecd9f55bc2e18ddb153b0a32aa59be4ceb964db"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/error-context.md",
+      "bytes": 13340,
+      "sha256": "8c279af99a7b355e4d66c49b76a6d070e0f1665cbcf6770cd43e640e64b72fe2"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 5293,
+      "sha256": "fe6480020e49a4c85032fe01c5124e5233b6b1629d66d36ba796deae6d87b20a"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/error-context.md",
+      "bytes": 13341,
+      "sha256": "ff694a75c6867aed9b67c91a76363c69327a8ce73a9a556d905eb74b77804fc1"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png",
+      "bytes": 145406,
+      "sha256": "4f823848ec4ca04f050c42b21666a657b70ca95b9018b682f3770155d6d88967"
+    },
+    "browser/chrome-local-draft-fixture-attempt/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 46514,
+      "sha256": "9961bbbe8121f62a9a98daa8bff905b900117e0a7695d06c9fef82135c169ae6"
+    },
+    "browser/chrome-local-draft-fixture-attempt/session-continuity-restore-e8304--overriding-tool-navigation/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final/session-continuity-restore-e8304--overriding-tool-navigation/restored-navigation.png",
+      "bytes": 81406,
+      "sha256": "40223d64a5de247733c27f680e5368d6257b27827f32a00df42ce9d10033650d"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 8252,
+      "sha256": "9c03d5d781d13f862c65efa63d68d25caeadc5c93f816eb595bbf9b1803a4f79"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png",
+      "bytes": 142490,
+      "sha256": "53eb00569833d752d5f08ae6b654c9cb582f7b752d91ee22b1bb09e6f3db8ebd"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-excluded-review.png",
+      "bytes": 93890,
+      "sha256": "833e93e0ee87c9a71fc4876325a432527083541fd6bd33274b5e549cadf374a4"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 46468,
+      "sha256": "9a563bb555bba7c5c3ae5e48cecd9f55bc2e18ddb153b0a32aa59be4ceb964db"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 8274,
+      "sha256": "58163f682ed5d97625c850c763c6eda94daf5587d5c168c7d83bd7fcc84e711b"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png",
+      "bytes": 145406,
+      "sha256": "4f823848ec4ca04f050c42b21666a657b70ca95b9018b682f3770155d6d88967"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-excluded-review.png",
+      "bytes": 94158,
+      "sha256": "e637f3b9327ecfd954ce1056ab9ed272ef8211fbcc206537f98f70618bfcdf04"
+    },
+    "browser/chrome-expanded-controls-partial-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-expanded-controls-chrome-final-fixture/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 46514,
+      "sha256": "9961bbbe8121f62a9a98daa8bff905b900117e0a7695d06c9fef82135c169ae6"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/daily-review-polish-keeps--f5402-actions-beside-long-context/compact-saved-plan.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/compact-saved-plan.png",
+      "bytes": 91287,
+      "sha256": "4bd60767c8e0077cb3ee8823e85472edc5adcb6d00db1736a40dc557b213144c"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions-narrow.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions-narrow.png",
+      "bytes": 103024,
+      "sha256": "146be35cc9bf8a1e3d69398fde4f9cbf3c222003d475e61938ef92bf8c144b36"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions.png",
+      "bytes": 92631,
+      "sha256": "9fe817d730fd34af2c0ccfa0d2ce65c44c599e9f84532d8b920a0f67b58042ad"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 8252,
+      "sha256": "9c03d5d781d13f862c65efa63d68d25caeadc5c93f816eb595bbf9b1803a4f79"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-connections.png",
+      "bytes": 142490,
+      "sha256": "53eb00569833d752d5f08ae6b654c9cb582f7b752d91ee22b1bb09e6f3db8ebd"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-excluded-review.png",
+      "bytes": 93890,
+      "sha256": "833e93e0ee87c9a71fc4876325a432527083541fd6bd33274b5e549cadf374a4"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 46468,
+      "sha256": "9a563bb555bba7c5c3ae5e48cecd9f55bc2e18ddb153b0a32aa59be4ceb964db"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 8274,
+      "sha256": "58163f682ed5d97625c850c763c6eda94daf5587d5c168c7d83bd7fcc84e711b"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-connections.png",
+      "bytes": 145406,
+      "sha256": "4f823848ec4ca04f050c42b21666a657b70ca95b9018b682f3770155d6d88967"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-excluded-review.png",
+      "bytes": 94158,
+      "sha256": "e637f3b9327ecfd954ce1056ab9ed272ef8211fbcc206537f98f70618bfcdf04"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 46514,
+      "sha256": "9961bbbe8121f62a9a98daa8bff905b900117e0a7695d06c9fef82135c169ae6"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace-narrow.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace-narrow.png",
+      "bytes": 88433,
+      "sha256": "8f069fa4e564d3898c1b66ab791f84bb3d01eb42f797ca26a92794bb9d3b5b5b"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace.png",
+      "bytes": 123897,
+      "sha256": "980054b5490f90d9a33a3d9c4703383597105fdcb6809c2a5154dedc0a8e25ba"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review-narrow.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review-narrow.png",
+      "bytes": 84699,
+      "sha256": "a09123bf0d8ec05e68de98c4440fb671d21cb31bacb6221f09eac93ae6ed775a"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review.png",
+      "bytes": 129627,
+      "sha256": "52fd9b25afe5acd9a54627d8cae45791addc37d1ea4e8a7143722a661c0e898f"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-recover-74bae-ice-assessment-after-reload/error-context.md": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-recover-74bae-ice-assessment-after-reload/error-context.md",
+      "bytes": 9863,
+      "sha256": "731d1cc738dda19bf671e0ee45e081aa0cc0b38cb5909f40d67e798a79fe05ba"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-recover-74bae-ice-assessment-after-reload/last-screen.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-recover-74bae-ice-assessment-after-reload/last-screen.png",
+      "bytes": 85875,
+      "sha256": "27bfaf3ef476ed2dab0b26e97e1552b318637a7dcf05464f0b4e5dd7323aa08c"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-recover-74bae-ice-assessment-after-reload/recovered-plan.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-recover-74bae-ice-assessment-after-reload/recovered-plan.png",
+      "bytes": 97597,
+      "sha256": "8e9f7f87fd01e7ea75e18ffba0f49a19be40deb37373561beb905916439d63d3"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-recover-74bae-ice-assessment-after-reload/resumed-reading.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-recover-74bae-ice-assessment-after-reload/resumed-reading.png",
+      "bytes": 185648,
+      "sha256": "c49ca0d9f9f32891cfd5c5f7d56f92d2dba1d6e4bdc3465e815010b4551cbdaa"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-restore-60be5-without-a-cached-project-ID/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-restore-60be5-without-a-cached-project-ID/restored-navigation.png",
+      "bytes": 81406,
+      "sha256": "40223d64a5de247733c27f680e5368d6257b27827f32a00df42ce9d10033650d"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID/restored-navigation.png",
+      "bytes": 81406,
+      "sha256": "40223d64a5de247733c27f680e5368d6257b27827f32a00df42ce9d10033650d"
+    },
+    "browser/chrome-frozen-contrast-intermediate-batch/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing/keyboard-scene-panel.png": {
+      "original_path": "/private/tmp/openauthor-writing-controls-chrome-final/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing/keyboard-scene-panel.png",
+      "bytes": 49725,
+      "sha256": "3fc9a005abe1f4918ad4b7c387c62a56990bf19d0be2301c172ac9bde848db7a"
+    },
+    "browser/final-chromium/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/compact-saved-plan.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/compact-saved-plan.png",
+      "bytes": 91287,
+      "sha256": "4bd60767c8e0077cb3ee8823e85472edc5adcb6d00db1736a40dc557b213144c"
+    },
+    "browser/final-chromium/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/selection-context-actions-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/selection-context-actions-narrow.png",
+      "bytes": 103024,
+      "sha256": "146be35cc9bf8a1e3d69398fde4f9cbf3c222003d475e61938ef92bf8c144b36"
+    },
+    "browser/final-chromium/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/selection-context-actions.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/daily-review-polish-keeps--f5402-actions-beside-long-context-chromium/selection-context-actions.png",
+      "bytes": 92631,
+      "sha256": "9fe817d730fd34af2c0ccfa0d2ce65c44c599e9f84532d8b920a0f67b58042ad"
+    },
+    "browser/final-chromium/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/appearance.json",
+      "bytes": 8252,
+      "sha256": "9c03d5d781d13f862c65efa63d68d25caeadc5c93f816eb595bbf9b1803a4f79"
+    },
+    "browser/final-chromium/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-connections.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-connections.png",
+      "bytes": 146372,
+      "sha256": "caf981e6f206ec2bd304743d44d7a42da380f2a37a9988431627965907dfa87e"
+    },
+    "browser/final-chromium/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-excluded-review.png",
+      "bytes": 93890,
+      "sha256": "833e93e0ee87c9a71fc4876325a432527083541fd6bd33274b5e549cadf374a4"
+    },
+    "browser/final-chromium/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text-chromium/dark-writing-focus.png",
+      "bytes": 46468,
+      "sha256": "9a563bb555bba7c5c3ae5e48cecd9f55bc2e18ddb153b0a32aa59be4ceb964db"
+    },
+    "browser/final-chromium/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/appearance.json",
+      "bytes": 8274,
+      "sha256": "58163f682ed5d97625c850c763c6eda94daf5587d5c168c7d83bd7fcc84e711b"
+    },
+    "browser/final-chromium/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-connections.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-connections.png",
+      "bytes": 145413,
+      "sha256": "16d9324555b2d91f9ecbeb47a4d76e8c1037edeb3ba0d7c3f09fbf7ff55eb01d"
+    },
+    "browser/final-chromium/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-excluded-review.png",
+      "bytes": 94158,
+      "sha256": "e637f3b9327ecfd954ce1056ab9ed272ef8211fbcc206537f98f70618bfcdf04"
+    },
+    "browser/final-chromium/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text-chromium/light-writing-focus.png",
+      "bytes": 46514,
+      "sha256": "9961bbbe8121f62a9a98daa8bff905b900117e0a7695d06c9fef82135c169ae6"
+    },
+    "browser/final-chromium/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-chromium/evidence-workspace-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-chromium/evidence-workspace-narrow.png",
+      "bytes": 88433,
+      "sha256": "8f069fa4e564d3898c1b66ab791f84bb3d01eb42f797ca26a92794bb9d3b5b5b"
+    },
+    "browser/final-chromium/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-chromium/evidence-workspace.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-chromium/evidence-workspace.png",
+      "bytes": 123897,
+      "sha256": "980054b5490f90d9a33a3d9c4703383597105fdcb6809c2a5154dedc0a8e25ba"
+    },
+    "browser/final-chromium/memory-review-workspace-sc-3f860--and-reopens-review-history-chromium/memory-evidence-review-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/memory-review-workspace-sc-3f860--and-reopens-review-history-chromium/memory-evidence-review-narrow.png",
+      "bytes": 84699,
+      "sha256": "a09123bf0d8ec05e68de98c4440fb671d21cb31bacb6221f09eac93ae6ed775a"
+    },
+    "browser/final-chromium/memory-review-workspace-sc-3f860--and-reopens-review-history-chromium/memory-evidence-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/memory-review-workspace-sc-3f860--and-reopens-review-history-chromium/memory-evidence-review.png",
+      "bytes": 129627,
+      "sha256": "52fd9b25afe5acd9a54627d8cae45791addc37d1ea4e8a7143722a661c0e898f"
+    },
+    "browser/final-chromium/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/last-screen.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/last-screen.png",
+      "bytes": 124166,
+      "sha256": "ef3a2e314059998e4e8c0bab01694b18ceed71d8586ff1a7e0b7a5642ed83510"
+    },
+    "browser/final-chromium/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/recovered-assessment.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/recovered-assessment.png",
+      "bytes": 124166,
+      "sha256": "ef3a2e314059998e4e8c0bab01694b18ceed71d8586ff1a7e0b7a5642ed83510"
+    },
+    "browser/final-chromium/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/recovered-plan.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/recovered-plan.png",
+      "bytes": 97601,
+      "sha256": "4cea05af332905ef2f808b8e38ba8679d16c22ea31799554576fa47828c1f36c"
+    },
+    "browser/final-chromium/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/resumed-reading.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-recover-74bae-ice-assessment-after-reload-chromium/resumed-reading.png",
+      "bytes": 185439,
+      "sha256": "ad4ea578c4e9456bc7ab2aebf4919785e06ec53cfdaa718cee4f1b0400e43d1c"
+    },
+    "browser/final-chromium/session-continuity-restore-60be5-without-a-cached-project-ID-chromium/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-restore-60be5-without-a-cached-project-ID-chromium/restored-navigation.png",
+      "bytes": 81406,
+      "sha256": "40223d64a5de247733c27f680e5368d6257b27827f32a00df42ce9d10033650d"
+    },
+    "browser/final-chromium/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID-chromium/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID-chromium/restored-navigation.png",
+      "bytes": 81406,
+      "sha256": "40223d64a5de247733c27f680e5368d6257b27827f32a00df42ce9d10033650d"
+    },
+    "browser/final-chromium/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-chromium/keyboard-scene-panel.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-chromium/keyboard-scene-panel.png",
+      "bytes": 49725,
+      "sha256": "3fc9a005abe1f4918ad4b7c387c62a56990bf19d0be2301c172ac9bde848db7a"
+    },
+    "browser/final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/compact-saved-plan.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/compact-saved-plan.png",
+      "bytes": 120202,
+      "sha256": "0c4d3d0c3c7c650b79d89b504e4c11d4c225f38a9e2d7acccb4b2664028e5aa2"
+    },
+    "browser/final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions-narrow.png",
+      "bytes": 123221,
+      "sha256": "fee11aaa1db7055eca2220574382c88d4ff3a7cd04344a23bde5e77d3bfffada"
+    },
+    "browser/final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions.png",
+      "bytes": 125448,
+      "sha256": "ad0bd1fac9c3648b860b64029cf89c7d299158cbdd49f40c9b14ab64acd9f7cc"
+    },
+    "browser/final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 8254,
+      "sha256": "48a88ab6368bc7f0c1d39e54eb4be87941ab33bb2e9e990d332d8883b3bb46e6"
+    },
+    "browser/final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-connections.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-connections.png",
+      "bytes": 220706,
+      "sha256": "10111e94829b06afb96311e3335034653fc83236bd67de6884b708ba05b361c2"
+    },
+    "browser/final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-excluded-review.png",
+      "bytes": 122927,
+      "sha256": "a30f684a8b0281d99d98452c1b2ada52c8a65bb3bb773a305a2c655f35d1722d"
+    },
+    "browser/final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png",
+      "bytes": 71543,
+      "sha256": "429cf4b6f579f2e23e7fdd835c1466665c7cb2d4050fdbc4988cc11915aa3a14"
+    },
+    "browser/final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 8274,
+      "sha256": "92493006d9e9222dd89cf187f11e78caa3f2e8748ca5efe91c1549f05ce894c2"
+    },
+    "browser/final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-connections.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-connections.png",
+      "bytes": 231786,
+      "sha256": "529a2c45cd12bdf7e2ac0b16bfb7868578b028545ef6305d936cc50e582c00de"
+    },
+    "browser/final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-excluded-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-excluded-review.png",
+      "bytes": 123343,
+      "sha256": "26c686c7d76c548bf1781306ae8eae61a08205ed921b0bd36babf083c436c68a"
+    },
+    "browser/final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png",
+      "bytes": 71912,
+      "sha256": "4573aa1b0c536e499c5767157d8da2bfe9a1d0ae4ac36f9a3aace4c282d73ebb"
+    },
+    "browser/final-webkit/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace-narrow.png",
+      "bytes": 107985,
+      "sha256": "c482e1cb6efbe992c7169ea7f0c86c74fef571af383266bd8a2bd289cab0a93b"
+    },
+    "browser/final-webkit/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace.png",
+      "bytes": 157544,
+      "sha256": "09b43289e82b5cd8d334b6b28fcd39ed6c7d532e6b980fc9ba74bf7f58c7cf3b"
+    },
+    "browser/final-webkit/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review-narrow.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review-narrow.png",
+      "bytes": 104755,
+      "sha256": "7567c4482c190b845b6e32bc312ee41f417bacbfc44cef6cea255b9a4f3e33c7"
+    },
+    "browser/final-webkit/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review.png",
+      "bytes": 161586,
+      "sha256": "086861d018f4d233e76f699e46e5e55dc7fd70966aa468645476443323eadb4e"
+    },
+    "browser/final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/last-screen.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/last-screen.png",
+      "bytes": 160534,
+      "sha256": "4a5e6bd7fb6729e8de8a35a663ca8fb43823d8f1285c9eccbefd0db20e518864"
+    },
+    "browser/final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/recovered-assessment.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/recovered-assessment.png",
+      "bytes": 160534,
+      "sha256": "4a5e6bd7fb6729e8de8a35a663ca8fb43823d8f1285c9eccbefd0db20e518864"
+    },
+    "browser/final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/recovered-plan.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/recovered-plan.png",
+      "bytes": 128858,
+      "sha256": "78399638458e1115af40a25002e86e78ae462e4d03f737f186d8b44b5f9da2b6"
+    },
+    "browser/final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/resumed-reading.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-recover-74bae-ice-assessment-after-reload-webkit/resumed-reading.png",
+      "bytes": 224058,
+      "sha256": "2625bf88b16219358a5824d5167954f5c47a2368df5b3bebe0f5dd414133ca30"
+    },
+    "browser/final-webkit/session-continuity-restore-60be5-without-a-cached-project-ID-webkit/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-restore-60be5-without-a-cached-project-ID-webkit/restored-navigation.png",
+      "bytes": 110930,
+      "sha256": "b0f1c4728b38169fcfc4c63d2fb0c9940710ce27d57ce5fff715b69b54e25dcf"
+    },
+    "browser/final-webkit/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID-webkit/restored-navigation.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/session-continuity-restore-d7dc3-bs-with-a-cached-project-ID-webkit/restored-navigation.png",
+      "bytes": 110930,
+      "sha256": "b0f1c4728b38169fcfc4c63d2fb0c9940710ce27d57ce5fff715b69b54e25dcf"
+    },
+    "browser/final-webkit/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-webkit/keyboard-scene-panel.png": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-webkit/keyboard-scene-panel.png",
+      "bytes": 73037,
+      "sha256": "bf0c38ac3163403dbf5fd64f853cb1b5f141902cf544ff61b594a1fdd7071114"
+    }
+  },
+  "artifact_counts": {
+    "raw_logs": 9,
+    "appearance_json": 14,
+    "png": 73,
+    "failure_context_markdown": 7
+  },
+  "browser_scope": {
+    "valid_corrected_baseline": {
+      "themes": 2,
+      "observations_per_theme": 13,
+      "contrast_failures": 8,
+      "dark_failures": 5,
+      "light_failures": 3,
+      "fixture_failures": 0
+    },
+    "retained_partial_final": {
+      "themes_passed": 2,
+      "observations_per_theme": 25,
+      "scope": "Pre-final Comment-enabled assertion; pre-final navigation hydration changes. Gradient bound, review status, enabled Apply hover and excluded-hunk/comment samples are final-state samples without matching actual-browser baseline in this packet."
+    },
+    "current_frozen_final": {
+      "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+      "source_archive": "tested-source.tar.gz",
+      "contrast_theme_cases_per_engine": 2,
+      "observations_per_theme": 25,
+      "explicit_Comment_enabled_assertion": true,
+      "engines": {
+        "chromium": {
+          "run": "final-chromium",
+          "batch_passed": 11,
+          "batch_failed": 0,
+          "reported_exit_code": 0
+        },
+        "webkit": {
+          "run": "final-webkit",
+          "batch_passed": 11,
+          "batch_failed": 0,
+          "reported_exit_code": 0
+        }
+      },
+      "whole_batch_scope": "Eleven case executions per engine, including two theme cases of the same contrast journey; not eleven distinct author workflows."
+    },
+    "multi_engine_final": {
+      "engines": 2,
+      "case_executions_per_engine": 11,
+      "total_case_executions": 22,
+      "contrast_case_executions": 4,
+      "contrast_observations_per_theme_per_engine": 25,
+      "full_batch_failures": 0,
+      "native_acceptance": false
+    },
+    "full_desktop_suite": {
+      "tests_passed": 677,
+      "test_files_passed": 90,
+      "reported_exit_code": 0,
+      "log": "logs/openauthor-navigation-controls-final-desktop.txt.gz",
+      "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0"
+    },
+    "typecheck_build": {
+      "result": "passed",
+      "command": "tsc && vite build",
+      "reported_exit_code": 0,
+      "log": "logs/openauthor-navigation-controls-final-build.txt.gz",
+      "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+      "native_build_or_GUI_acceptance": false
+    },
+    "retained_frozen_intermediate": {
+      "contrast_theme_cases_passed": 2,
+      "observations_per_theme": 25,
+      "explicit_Comment_enabled_assertion": true,
+      "source_archive": "tested-source.tar.gz",
+      "run": "chrome-frozen-contrast-intermediate-batch",
+      "whole_batch_result": "10 passed, 1 obsolete WritingVoice recovery-click fixture failed; not a final all-pass batch."
+    }
+  },
+  "actions": {
+    "assistant_Send_clicked": false,
+    "proposal_Apply_clicked": false,
+    "Regenerate_clicked": false,
+    "live_provider_calls": 0,
+    "local_offline_draft_generated": true,
+    "hunk_inclusion_toggled": true,
+    "comment_input_opened": true,
+    "review_scene_unchanged_assertion_in_partial_final": true,
+    "scope": "Contrast cases in editor-accessibility.spec.ts only; not every case in wider batch logs/screenshots."
+  },
+  "pending": [
+    "Native acceptance remains separately owned and unclaimed by this packet."
+  ],
+  "limits": [
+    "Measured sampled controls, themes and engines only; no universal contrast/WCAG or accessibility certification.",
+    "The valid browser baseline proves only its thirteen sampled observations per theme. Broader gradient/review failures identified earlier were source-calculated, not retrospectively claimed as browser-red measurements.",
+    "The retained chrome-expanded-controls-partial-final result predates later test/navigation changes, and chrome-frozen-contrast-intermediate-batch remains the historical ten-pass/one-failure intermediate. Neither is relabeled by the later final all-pass runs.",
+    "No native GUI, signed distribution, release, clean-machine or physical-device acceptance is established by this packet.",
+    "No Send, Apply, Regenerate or live-provider execution acceptance is established by the contrast cases; their Send/Apply samples were only enabled and hover-measured.",
+    "No exact archived baseline test source, and only two baseline production files are retained.",
+    "native/ is excluded from the parent manifest/verifier and must have separate evidence if added.",
+    "Three selected contrast files are archived/current/committed verified. Root owns the separate broader eight-input/354-input navigation freeze; this contrast archive does not include every wider-batch or full-suite input."
+  ],
+  "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+  "final_gates": {
+    "desktop": {
+      "log": "logs/openauthor-navigation-controls-final-desktop.txt.gz",
+      "reported_exit_code": 0,
+      "required_log_text": [
+        "Test Files  90 passed (90)",
+        "Tests  677 passed (677)"
+      ]
+    },
+    "build": {
+      "log": "logs/openauthor-navigation-controls-final-build.txt.gz",
+      "reported_exit_code": 0,
+      "required_log_text": [
+        "tsc && vite build",
+        "built in"
+      ]
+    },
+    "chromium": {
+      "log": "logs/openauthor-navigation-controls-final-chrome.txt.gz",
+      "reported_exit_code": 0,
+      "required_log_text": [
+        "Running 11 tests",
+        "11 passed"
+      ]
+    },
+    "webkit": {
+      "log": "logs/openauthor-navigation-controls-final-webkit.txt.gz",
+      "reported_exit_code": 0,
+      "required_log_text": [
+        "Running 11 tests",
+        "11 passed"
+      ]
+    }
+  },
+  "independent_review": {
+    "kind": "Separate read-only evidence review",
+    "open_findings": 0,
+    "retained_checks_passed": 250,
+    "scope": "Original final packet source/archive/measurements/log summaries; no application tests/builds/network/UI performed by reviewer."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "baseline": {
+    "source/baseline/desktop/src/design-system-v2.css": {
+      "repo_path": "desktop/src/design-system-v2.css",
+      "commit": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+      "bytes": 90992,
+      "sha256": "93b10d6ccf173d4299c53c4148a2881cb953d5c94845186ce8c9ff1d949b2227"
+    },
+    "source/baseline/desktop/src/components/editor/ProposalReview.tsx": {
+      "repo_path": "desktop/src/components/editor/ProposalReview.tsx",
+      "commit": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+      "bytes": 29209,
+      "sha256": "130a1fb211ecd256f83873ce8317053be7f04d48687fe5a5da96e75fc907af19"
+    }
+  },
+  "final": {
+    "status": "frozen",
+    "commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+    "based_on_commit": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+    "root_freeze_scope": "Three selected contrast files only; other navigation/batch inputs were not frozen by this signal.",
+    "archive": "tested-source.tar.gz",
+    "files": {
+      "source/final/desktop/src/design-system-v2.css": {
+        "repo_path": "desktop/src/design-system-v2.css",
+        "bytes": 91145,
+        "sha256": "b60e389c5f801406678c51220b4914b88b81dc3497a5697a0d9acab19df8624d"
+      },
+      "source/final/desktop/src/components/editor/ProposalReview.tsx": {
+        "repo_path": "desktop/src/components/editor/ProposalReview.tsx",
+        "bytes": 29170,
+        "sha256": "2ac5a86b14dcc83b9946154a908558da1f6fffd1bf6d71c6f576f3e14dcbd9a0"
+      },
+      "source/final/desktop/e2e/editor-accessibility.spec.ts": {
+        "repo_path": "desktop/e2e/editor-accessibility.spec.ts",
+        "bytes": 13695,
+        "sha256": "2b3e4a3a11d4de70fde6de5cb98ae38b789eb061aa9e1a51268c2f7a4e84dad3"
+      }
+    }
+  }
+}

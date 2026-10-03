@@ -21,11 +21,41 @@ build alone satisfies this goal.
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
-| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Targeted browser contrast/focus and isolated light-theme native keyboard/caret/Plan restart pass at `96bd04d`. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `96bd04d` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five packaged recovery stages. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Expanded sampled browser contrast/focus and current isolated native Search/Plan restart pass at `ae3eb2e`; earlier native caret evidence retains `96bd04d` scope. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `ae3eb2e` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five packaged recovery stages. Contracts/desktop/gateway audits retain earlier clean results; mobile retains unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest writing checkpoint — 2026-10-02, `96bd04d`
+## Latest navigation and contrast checkpoint — 2026-10-02, `ae3eb2e`
+
+Same-book restart now preserves independent document, activity and panel choices.
+Delayed registry, folder attachment/import and legacy migration cannot override
+newer explicit project choices; opening an existing folder reuses its record.
+Expanded writing/review controls have readable sampled placeholders, headings,
+AI button states and excluded-hunk controls in both themes.
+
+The [final validation](evaluations/navigation-restoration-2026-10-02/final-validation/README.md)
+passes 677 desktop tests/90 files, TypeScript/Vite and 11 unique real-core offline
+journeys in each Chrome/WebKit engine. All 354 captured tracked inputs stayed
+unchanged and match the source commit. The [contrast packet](evaluations/writing-control-contrast-2026-10-02/README.md)
+retains 25 observations per theme/engine, causal failures and final measurements.
+Independent Spec has zero open findings; Standards has zero hard findings and
+one optional import/scaffold lifecycle cleanup note.
+
+The [current native packet](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
+records the normal unsigned arm64 copied-bundle verifier and five recovery
+stages. The separate local QA build restores Search beside active Plan, two tabs
+and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.
+Saved prose and Plan remain unchanged. An obsolete binding attempt is retained
+and excluded; accepted observations bind the current app by full path and PID.
+Native observations are manually transcribed from CUA, with inline screenshots
+in the chat. No new native caret/full contrast/VoiceOver, cloud/account/provider,
+signed, physical-device or clean-machine acceptance is claimed.
+
+No new live provider request occurred. All six priorities remain in progress;
+author judgment/review effort and the external acceptance gates remain open.
+Earlier core/mobile/contracts/gateway and writing results retain their scopes.
+
+## Prior writing checkpoint — 2026-10-02, `96bd04d`
 
 Scene title/prose now show keyboard focus rings. Primary labels, sampled metadata,
 editor placeholders and Unsaved status have improved contrast in both themes.
@@ -127,11 +157,13 @@ media/billing cleanup remain unestablished. No new provider call occurred; the f
 refinement still awaits approval after automatic review rejected it beyond the
 three-call allowance.
 
-The [current dependency recheck](evaluations/mobile-dependency-recheck-2026-10-02/README.md)
-still reports five high entries from one unpatched Forge advisory. No supported
-released remedy was found in the inspected official packages. The installed
-dependency and signing settings remain unchanged; existing export containment
-does not clear this release gate.
+The [fresh dependency recheck](../mobile/evidence/2026-10-02-dependency-recheck-followup/README.md)
+finished October 3 at 02:09 UTC (October 2 locally). It reports 17 high dependency
+entries from two root advisories: Forge and Braces. No supported released remedy
+was found in the inspected official packages. The earlier five-entry report
+remains historical. Dependency and signing settings are unchanged; existing
+export containment does not clear either dependency gate. Braces runtime-input
+reachability was not assessed.
 
 ## Iteration record
 

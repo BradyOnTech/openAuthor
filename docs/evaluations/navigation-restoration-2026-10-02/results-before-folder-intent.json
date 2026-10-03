@@ -1,0 +1,39 @@
+{
+  "evidence_kind": "synthetic_rendered_restart_navigation_with_delayed_registry_hydration",
+  "head": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+  "source_sha256": {
+    "desktop/src/AppV2.tsx": "91eeaaef57237c02985a2c165a49abea111777ecf17490e8b4c41eb531c15f62",
+    "desktop/src/components/workbench/Workbench.tsx": "bf70b823de7633dbd4082e8febab4b93e4f395b5dccaac722fdf6712890a1dc4",
+    "desktop/src/contexts/WorkspaceContext.tsx": "478d11db4d4ae33b3fe9dad0aa9c03fda7030d35910448ef3814d55ed4d4be3b",
+    "desktop/src/AppV2.workflow.test.tsx": "166792c77f94dd502dce66bd5b43eb6778d0ee5efa0f4de84a9acc813ddf28b4"
+  },
+  "verification": [
+    {
+      "command": "npx vitest run src/AppV2.workflow.test.tsx src/tabRecovery.test.ts src/hooks/useWorkspaceNavigation.test.tsx src/contexts/WorkspaceContext.test.ts",
+      "passed": 56,
+      "files": 4,
+      "app_workflow_tests": 48,
+      "tab_recovery_tests": 6,
+      "navigation_race_tests": 1,
+      "workspace_context_tests": 1
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    }
+  ],
+  "provider_calls": 0,
+  "network_calls": 0,
+  "author_data_untouched": true,
+  "gui_used": false,
+  "temporary_probe_removed": true,
+  "initial_identity_evidence": "cached ID or unique valid exact-root binding; no inference from missing/ambiguous/mismatched bindings",
+  "controls": [
+    "delayed route restore",
+    "delayed workspace-user-state restore",
+    "different-book route",
+    "explicit Projects choice during delayed restore",
+    "new-book defaults",
+    "Search alongside Plan and independent panels"
+  ]
+}

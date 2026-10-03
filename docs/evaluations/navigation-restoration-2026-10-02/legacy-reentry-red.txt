@@ -1,0 +1,32 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (56 tests | 1 failed | 55 skipped) 509ms
+     × keeps existing-folder attachment intent ahead of delayed startup legacy restart selection 508ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > keeps existing-folder attachment intent ahead of delayed startup legacy restart selection
+AssertionError: expected 'proj-05842926-a97a-4951-8502-cdd7554b…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ proj-05842926-a97a-4951-8502-cdd7554b49ae
+
+ ❯ src/AppV2.workflow.test.tsx:1532:88
+    1530|       await act(async () => { releaseRegistry(); await registryGate; }…
+    1531|       await waitFor(() => expect(finished).toBe(requested));
+    1532|       expect(JSON.parse(localStorage.getItem("openauthor.activeProject…
+       |                                                                                        ^
+    1533|       expect(screen.getByText("Choose a project to begin writing.")).t…
+    1534|       if (delayedSource === "legacy restart") expect(legacyAttempts).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 55 skipped (56)
+   Start at  21:20:24
+   Duration  2.42s (transform 997ms, setup 0ms, import 1.41s, tests 509ms, environment 418ms)
+

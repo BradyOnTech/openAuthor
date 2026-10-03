@@ -1,0 +1,47 @@
+{
+  "supported_released_forge_remedy_found": false,
+  "dependency_audit_gate": "open",
+  "current_audit_high_entries": 17,
+  "root_advisory_count": 2,
+  "root_advisories": {
+    "GHSA-vfj7-8cjw-p6xm": {
+      "package": "braces",
+      "range": "<=3.0.3",
+      "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+      "severity": "high"
+    },
+    "GHSA-86w9-cpqp-85rv": {
+      "package": "node-forge",
+      "range": "<=1.4.0",
+      "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+      "severity": "high"
+    }
+  },
+  "previous_audit_high_entries": 5,
+  "previous_audit_observed_at": "2026-10-02T20:10:46.683164+00:00",
+  "new_dependency_entries": [
+    "@expo/metro",
+    "@expo/metro-config",
+    "@expo/metro-file-map",
+    "@react-native/community-cli-plugin",
+    "@react-native/virtualized-lists",
+    "braces",
+    "metro",
+    "metro-config",
+    "metro-file-map",
+    "metro-transform-worker",
+    "micromatch",
+    "react-native"
+  ],
+  "installed_rsa_sha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+  "installed_rsa_matches_fresh_latest_official_archive": true,
+  "fresh_official_parent_archive_hashes_match_previous_inspection": {
+    "@expo/cli": true,
+    "@expo/code-signing-certificates": true
+  },
+  "no_supported_patch_reason": "Forge latest remains 1.4.0 within the affected range and the official advisory lists no patched release. Its repair PR is open/unmerged. The newest inspected Expo CLI/helper archives still depend on and use Forge; archive hashes match the prior reviewed sources. The additional braces advisory covers the latest public braces 3.0.3 and also lists no patched release.",
+  "metro_upgrade_limit": "Public @expo/metro latest is 56.1.0, outside the ~56.0.2 range required by current and newest inspected Expo 57. Changing to it is not established as a supported advisory repair; no upgrade was applied.",
+  "audit_suggested_downgrades": "npm suggests Expo 44.0.6 and React Native 0.72.17 for portions of the graph. Those versions are outside this app's Expo 57 / React Native 0.86.3 configuration and are not established compatible repairs.",
+  "next_required_evidence": "An accepted supported patched release or independently reviewed replacement for each root advisory; fresh installed-tree audit and actual configured signing/native artifact verification. Current export containment is distinct from dependency remediation.",
+  "limits": "No exploit reproduction or application/runtime input reachability was assessed for the new braces advisory. Dependency presence and advisory coverage do not establish author-facing exploitation. No packages, lockfiles, source, signing settings, EAS configuration, deployments, secrets or provider calls were changed."
+}

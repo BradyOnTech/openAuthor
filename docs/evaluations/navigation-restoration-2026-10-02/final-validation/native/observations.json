@@ -1,0 +1,37 @@
+{
+  "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+  "kind": "Root-observed CUA AX and inline screenshots, manually transcribed; raw screenshots/AX not archived.",
+  "valid_bound_application": "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app",
+  "before_pid": 73961,
+  "after_pid": 74048,
+  "same_executable_different_pid": true,
+  "theme": "light",
+  "before_and_after": {
+    "activity": {
+      "Search": "on",
+      "Plan": "off",
+      "Manuscript": "off"
+    },
+    "document_tabs": [
+      "The Ferry Office",
+      "Plan"
+    ],
+    "selected_document": "Plan",
+    "synopsis": "Unfinished navigation: keep the ferry unresolved.",
+    "new_act": "A navigation restart act"
+  },
+  "recovery_clicks_after_valid_restart": 0,
+  "saved_scene_body_unchanged": true,
+  "saved_plan_synopsis": "",
+  "saved_acts": 0,
+  "new_live_provider_calls": 0,
+  "Save_Brief_clicked": false,
+  "Add_Act_clicked": false,
+  "release_certified": false,
+  "excluded_attempt": "Old nativeAcceptance binding selected96bd04d while current PID73752 was running. Its screenshots/termination are excluded from current GUI pass. Correct full-path binding used the sole current executable73961 before valid restart74048.",
+  "limits": [
+    "No current native caret, full contrast calculation, VoiceOver, multi-scene GUI transaction, cloud/account/Keychain/provider, signing, upgrade, clean-machine or physical-device acceptance.",
+    "QA overlay/version/core/runtime comparisons do not replace canonical bundle identity verification.",
+    "Current-source scene/Plan/Search and two unsaved fields only; no cacheless native route claim."
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "pid": 73752,
+  "command": "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/MacOS/openauthor-desktop",
+  "signal": "SIGKILL",
+  "sent_at_utc": "2026-10-03T02:33:05.674197+00:00",
+  "precondition": "Cua observed Search on, Plan selected, two tabs and exact retained Synopsis/new-act before signal; no save/apply/generation action."
+}

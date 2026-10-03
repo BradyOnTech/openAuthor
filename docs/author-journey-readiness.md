@@ -22,13 +22,43 @@ retain their explicit limits. Tabs/caret restoration and the wider evidence-firs
 workspace are implemented; fresh-author quality, review burden, long sessions,
 accessibility and signed clean-machine acceptance remain required.
 
+## Current navigation and review checks
+
+Same-book restart now preserves independent document, activity and panel choices.
+Delayed registry, folder attachment/import and legacy migration cannot override
+newer explicit project choices; opening an existing folder reuses its record.
+Expanded writing/review controls have readable sampled placeholders, headings,
+AI button states and excluded-hunk controls in both themes.
+
+The [final validation](evaluations/navigation-restoration-2026-10-02/final-validation/README.md)
+passes 677 desktop tests in 90 files, TypeScript/Vite and 11 unique real-core offline
+journeys in each Chrome/WebKit engine. All 354 captured tracked inputs stayed
+unchanged and match the source commit. The [contrast packet](evaluations/writing-control-contrast-2026-10-02/README.md)
+retains 25 observations per theme/engine, causal failures and final measurements.
+Independent Spec has zero open findings; Standards has zero hard findings and
+one optional import/scaffold lifecycle cleanup note.
+
+The [current native packet](evaluations/navigation-restoration-2026-10-02/final-validation/native/README.md)
+records the normal unsigned arm64 copied-bundle verifier and five recovery
+stages. The separate local QA build restores Search beside active Plan, two tabs
+and exact unfinished Synopsis/new-act after verified same-executable SIGKILL.
+Saved prose and Plan remain unchanged. An obsolete binding attempt is retained
+and excluded; accepted observations bind the current app by full path and PID.
+Native observations are manually transcribed from CUA, with inline screenshots
+in the chat. No new native caret/full contrast/VoiceOver, cloud/account/provider,
+signed, physical-device or clean-machine acceptance is claimed.
+
+No new live provider request occurred. All six priorities remain in progress;
+author judgment/review effort and the external acceptance gates remain open.
+Earlier core/mobile/contracts/gateway and writing results retain their scopes.
+
 ## Purpose
 
-The [writing accessibility checkpoint](evaluations/writing-accessibility-2026-10-02/README.md)
+The prior [writing accessibility checkpoint](evaluations/writing-accessibility-2026-10-02/README.md)
 at `96bd04d` passes 660 desktop tests and the bounded browser focus/contrast/caret
 workflows. Its separately configured native test app restores scene/Plan tabs,
 unfinished Plan fields and keyboard caret insertion after forced termination.
-The normal current-source bundle also passes packaged runtime/recovery checks.
+The normal bundle at that checkpoint also passes packaged runtime/recovery checks.
 These local results do not close author, full accessibility, native account,
 physical-phone, deployed or signed clean-machine acceptance.
 
@@ -129,7 +159,10 @@ Memory accuracy and observed triage effort, final native keyboard/accessibility
 acceptance, physical-phone reading/voice/capture, and signed Mac distribution.
 The [current ledger](evaluations/project-completion-2026-10-02/requirements.json)
 separates implemented local recovery and review mechanics from these outcomes.
-An unpatched mobile build dependency advisory also remains a release gate.
+Two unpatched mobile dependency advisories also remain release gates; the
+[fresh read-only audit](../mobile/evidence/2026-10-02-dependency-recheck-followup/README.md)
+reports 17 high dependency entries from Forge and Braces. This does not establish
+Braces runtime reachability, and no dependency or signing settings changed.
 Historical checkpoints below explain how this assessment developed.
 
 The September 29 writing iteration adds the saved original to comparison and

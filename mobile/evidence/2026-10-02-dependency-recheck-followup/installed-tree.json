@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "name": "openauthor-mobile",
+  "dependencies": {
+    "expo": {
+      "version": "57.0.18",
+      "resolved": "https://registry.npmjs.org/expo/-/expo-57.0.18.tgz",
+      "overridden": false,
+      "dependencies": {
+        "@expo/cli": {
+          "version": "57.0.20",
+          "resolved": "https://registry.npmjs.org/@expo/cli/-/cli-57.0.20.tgz",
+          "overridden": false,
+          "dependencies": {
+            "@expo/code-signing-certificates": {
+              "version": "0.0.6",
+              "resolved": "https://registry.npmjs.org/@expo/code-signing-certificates/-/code-signing-certificates-0.0.6.tgz",
+              "overridden": false,
+              "dependencies": {
+                "node-forge": {
+                  "version": "1.4.0"
+                }
+              }
+            },
+            "node-forge": {
+              "version": "1.4.0",
+              "resolved": "https://registry.npmjs.org/node-forge/-/node-forge-1.4.0.tgz",
+              "overridden": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

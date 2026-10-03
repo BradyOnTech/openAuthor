@@ -1,0 +1,49 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+stdout | src/AppV2.workflow.test.tsx > active V2 author workflow > restores the selected Plan document with its Plan activity rail after restarting the shell
+[DEBUG-navigation-restore] [{"value":"\"manuscript\"","stack":"Error: [DEBUG-navigation-restore]\n    at Proxy.<anonymous> (~/Developer/openAuthor/desktop/src/AppV2.workflow.test.tsx:1314:75)\n    at Proxy.setItem (file://~/Developer/openAuthor/desktop/node_modules/@vitest/spy/dist/index.js:332:34)\n    at ~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:20:31\n    at basicStateReducer (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:15721:41)\n    at dispatchSetState (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:16678:28)\n    at ~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:17:7\n    at ~/Developer/openAuthor/desktop/src/components/workbench/Workbench.tsx:50:5\n    at commitHookEffectListMount (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:23189:26)\n    at commitPassiveMountOnFiber (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:24970:11)\n    at commitPassiveMountEffects_complete (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:24930:9)"}]
+
+ ❯ src/AppV2.workflow.test.tsx (40 tests | 1 failed | 39 skipped) 409ms
+     × restores the selected Plan document with its Plan activity rail after restarting the shell 408ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > restores the selected Plan document with its Plan activity rail after restarting the shell
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/AppV2.workflow.test.tsx:1327:106
+    1325|     expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("ari…
+    1326|     expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    1327|     expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)…
+       |                                                                                                          ^
+    1328|     expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Sh…
+    1329|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > restores the selected Plan document with its Plan activity rail after restarting the shell
+AssertionError: expected 'true' to be 'false' // Object.is equality
+
+Expected: "false"
+Received: "true"
+
+ ❯ src/AppV2.workflow.test.tsx:1328:112
+    1326|     expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    1327|     expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)…
+    1328|     expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Sh…
+       |                                                                                                                ^
+    1329|   });
+    1330|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 39 skipped (40)
+   Start at  20:36:50
+   Duration  1.89s (transform 740ms, setup 0ms, import 1.06s, tests 409ms, environment 345ms)
+

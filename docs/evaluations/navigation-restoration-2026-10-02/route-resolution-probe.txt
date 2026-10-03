@@ -1,0 +1,199 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+stdout | src/AppV2.workflow.test.tsx > active V2 author workflow > uses project defaults for an initial route to a genuinely different bound book
+[DEBUG-route-resolution] {"expected":"proj-728b91d1-6665-41d3-a7db-2d89fa7015c8","writes":[{"value":"\"proj-728b91d1-6665-41d3-a7db-2d89fa7015c8\"","stack":"Error: [DEBUG-route-resolution]\n    at Proxy.<anonymous> (~/Developer/openAuthor/desktop/src/AppV2.workflow.test.tsx:1397:77)\n    at Proxy.setItem (file://~/Developer/openAuthor/desktop/node_modules/@vitest/spy/dist/index.js:332:34)\n    at ~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:20:31\n    at basicStateReducer (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:15721:41)\n    at updateReducer (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:15845:22)\n    at updateState (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:16185:10)\n    at Object.useState (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:17096:16)\n    at useState (~/Developer/openAuthor/desktop/node_modules/react/cjs/react.development.js:1622:21)\n    at useLocalStorage (~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:4:31)\n    at WorkspaceProvider (~/Developer/openAuthor/desktop/src/contexts/WorkspaceContext.tsx:217:52)"},{"value":"\"proj-5c75fabf-5a7f-417e-ab1e-192f371d3aac\"","stack":"Error: [DEBUG-route-resolution]\n    at Proxy.<anonymous> (~/Developer/openAuthor/desktop/src/AppV2.workflow.test.tsx:1397:77)\n    at Proxy.setItem (file://~/Developer/openAuthor/desktop/node_modules/@vitest/spy/dist/index.js:332:34)\n    at ~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:20:31\n    at basicStateReducer (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:15721:41)\n    at updateReducer (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:15845:22)\n    at updateState (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:16185:10)\n    at Object.useState (~/Developer/openAuthor/desktop/node_modules/react-dom/cjs/react-dom.development.js:17096:16)\n    at useState (~/Developer/openAuthor/desktop/node_modules/react/cjs/react.development.js:1622:21)\n    at useLocalStorage (~/Developer/openAuthor/desktop/src/hooks/useLocalStorage.ts:4:31)\n    at WorkspaceProvider (~/Developer/openAuthor/desktop/src/contexts/WorkspaceContext.tsx:217:52)"}]}
+
+ ❯ src/AppV2.workflow.test.tsx (44 tests | 1 failed | 43 skipped) 1489ms
+     × uses project defaults for an initial route to a genuinely different bound book 1488ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > uses project defaults for an initial route to a genuinely different bound book
+AssertionError: expected 'proj-5c75fabf-5a7f-417e-ab1e-192f371d…' to be 'proj-728b91d1-6665-41d3-a7db-2d89fa70…' // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"workbench-frame"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Getting started"[39m
+          [33mclass[39m=[32m"first-run-guide"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"first-run-guide__heading"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-weight: 650; color: var(--text-primary);"[39m
+              [36m>[39m
+                [0mGetting started[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-xs); color: var(--text-tertiary);"[39m
+              [36m>[39m
+                [0m1[0m
+                [0m/3 complete[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Hide first-run guide"[39m
+              [33mclass[39m=[32m"btn btn--ghost btn--sm"[39m
+            [36m>[39m
+              [0m×[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: grid; grid-template-columns: 20px 1fr; gap: var(--space-2);"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"color: var(--text-ghost);"[39m
+            [36m>[39m
+              [0m○[0m
+            [36m</span>[39m
+            [36m<div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-sm); font-weight: 600; color: var(--text-primary);"[39m
+              [36m>[39m
+                [0mTry a safe revision[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-xs); line-height: var(--leading-relaxed); color: var(--text-secondary); margin-top: 2px;"[39m
+              [36m>[39m
+                [0mOpen Changes and ask for one small, reviewable improvement.[0m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn btn--ghost btn--sm"[39m
+                [33mstyle[39m=[32m"margin-top: var(--space-1);"[39m
+              [36m>[39m
+                [0mOpen Changes[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"workbench workbench--no-secondary workbench--no-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"activity-bar"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Manuscript (Cmd+Shift+E)"[39m
+              [33maria-pressed[39m=[32m"true"[39m
+              [33mclass[39m=[32m"activity-bar__item activity-bar__item--active"[39m
+              [33mtitle[39m=[32m"Manuscript (Cmd+Shift+E)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 2h10a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 6h6M7 9h6M7 12h4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Plan (Cmd+Shift+P)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"activity-bar__item"[39m
+              [33mtitle[39m=[32m"Plan (Cmd+Shift+P)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"3"[39m
+                [36m/>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"11"[39m
+                  [33my[39m=[32m"3"[39m
+                [36m/>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"12"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 14.5h5M14.5 12v5"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Story Memory (Cmd+Shift+X)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"activity-bar__item"[39m
+              [33mtitle[39m=[32m"Story Memory (Cmd+Shift+X)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 3h11a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V3z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 7h14M8 3v4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Storylines (Cmd+Shift+L)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=...
+
+Expected: "proj-728b91d1-6665-41d3-a7db-2d89fa7015c8"
+Received: "proj-5c75fabf-5a7f-417e-ab1e-192f371d3aac"
+
+ ❯ src/AppV2.workflow.test.tsx:1402:108
+    1400|     try {
+    1401|       render(<AppV2 />);
+    1402|       await waitFor(() => expect(JSON.parse(localStorage.getItem("open…
+       |                                                                                                            ^
+    1403|     } finally {
+    1404|       probe.mockRestore();
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 43 skipped (44)
+   Start at  20:51:30
+   Duration  3.03s (transform 774ms, setup 0ms, import 1.09s, tests 1.49s, environment 366ms)
+
