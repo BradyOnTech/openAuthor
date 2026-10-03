@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "files": {
+    "README.md": "31430dd9bf4343985faeed5f15567dfb0b80e3d1c06f7195a0a2d65c07d61c10",
+    "canon-originals.tar.gz": "66d5bf4adce9d17b5bbc61c129965ef6a9beec94827b9fc0577245ac02aa90c3",
+    "cli-originals.tar.gz": "c310422eaa172e304a5355ecdaa80e9a99e74d7663973d1e14420d25b62d4cb4",
+    "gui-originals.tar.gz": "1afe4fe932290f82a3d30c3748f794f5c3c59f0d6fe01cd7bc003a30ba407dd1",
+    "gui-restored-files.tar.gz": "bea8a2ec77f3c6157ad4676ce273de56a7bc8f90f2faae945cbb9b5558d1af4b",
+    "receipts.json": "4d74beb148c46c14b538b8d72d76d065a7541ebbfdcfdf16bc47d8d31baf6142",
+    "results.json": "3d389793478e5f613e8757f1499a9f070e2f7a7adbce96f3bc05149cf5fcc4fd",
+    "verify.py": "2036108a5e1ef8388a459f0e754088599c000b4bc0205b9e5f24d8d2bcfc0f2d"
+  },
+  "scope": "Current unsigned local native Canon and interrupted restore receipt packet; integrity seal only"
+}

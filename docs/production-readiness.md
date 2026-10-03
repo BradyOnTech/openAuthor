@@ -17,7 +17,7 @@ build alone satisfies this goal.
 | Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save and stale-response safeguards plus durable multi-file recovery now have real subprocess-kill evidence; unknown newer writing requires reviewed comparison. Noncooperating writers, physical power loss and full signed-GUI acceptance remain explicit limits |
 | Authoring | Create/import a book, draft and organize chapters/scenes, read, search, reopen and export with predictable structure and no unexplained loss | Connected browser/real-Python journey now covers import, planning, chapter reading, Memory, search, local copilot notes and Word export; packaged/full-novel acceptance remains required |
 | AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | An authenticated October 2 chapter critique caught a planted knowledge problem. Fresh Voice analysis and two alternatives exposed a profile-version defect and invented departure ambiguity; original responses and fixes are retained. Refinement and author judgment remain open |
-| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Separate unsigned `a523097` GUI apply/undo mid-write interruption recovers exact original/applied baselines and supports retry. Prior completed backup/restore remains scoped separately. Current-source signed/clean-machine acceptance and interrupted restore remain required |
+| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Separate unsigned `a523097` GUI apply/undo mid-write interruption recovers exact original/applied baselines and supports retry. Prior completed backup/restore remains scoped separately. Current unsigned36a4058 interrupted GUI backup restore now passes separately; signed/clean-machine and upgrade acceptance remain required |
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Current `36a4058` guards original Canon review versions, accepted validity and delayed drafts. Fresh-author accuracy and review workload remain unmeasured |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
@@ -25,7 +25,36 @@ build alone satisfies this goal.
 | Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `36a4058` normal unsigned arm64 bundle passes strict identity, exact core, five instrumented packaged-engine recovery stages and all 583 bundled Python tests with the local Codex contract. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+## Latest native Canon and interrupted restore checkpoint — 2026-10-03, `36a4058`
+
+[Current native evidence](evaluations/current-native-canon-restore-2026-10-03/results.json)
+verifies three actual unsigned arm64 GUI cases: a Storyline change refuses a
+stale evidence review while retaining its unfinished correction; deliberately
+returning to the original Storyline recovers and saves that correction; an
+inverted validity interval cannot be accepted. Opening the synthetic fixture
+normalizes its Plan inbox; refused actions are compared with that fresh baseline.
+
+An actual GUI restore was paused during extraction with 375 complete archived
+files, one partial and 26 missing. Its requested destination stayed absent.
+After the exact QA parent was SIGKILLed, the stopped worker disappeared before
+the harness's final signal lookup; the resulting `ProcessLookupError` was checked
+with terminal/file readback. After trusted relaunch, the partial book was absent
+from Projects. A native retry opened all 64 scenes; packaged readback and retained
+raw files verify 401 exact project files, 129 Revisions and both Storyline refs.
+The source's 490 files and backup ZIP stayed unchanged. Unpublished temporary
+staging residue remains; automatic cleanup is not claimed.
+
+Root observations are manual CUA AX/inline screenshot transcriptions, without
+an archived native screenshot or GUI replay. The Canon readback's original
+interpreter invocation receipt was not retained. Both bundles' manifested
+immutable files and the four author artifacts stayed unchanged; owned processes
+and the Finder window were cleaned up. This adds
+local mechanics evidence to the prior 583/583 packaged-core result; it does not
+repeat that suite or establish fresh-author quality, VoiceOver, physical-device,
+deployed, signed, clean-machine, Intel, upgrade or power-loss acceptance.
+All six priorities and both dependency release gates remain open.
+
+## Prior packaged runtime checkpoint — 2026-10-03, `36a4058`
 
 The [current packaged-runtime packet](evaluations/current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
 arm64 canonical application and **583/583 tests on its actual bundled Python

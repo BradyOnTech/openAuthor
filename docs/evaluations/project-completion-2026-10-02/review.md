@@ -5,7 +5,36 @@ acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
-## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+## Latest native Canon and interrupted restore checkpoint — 2026-10-03, `36a4058`
+
+[Current native evidence](../current-native-canon-restore-2026-10-03/results.json)
+verifies three actual unsigned arm64 GUI cases: a Storyline change refuses a
+stale evidence review while retaining its unfinished correction; deliberately
+returning to the original Storyline recovers and saves that correction; an
+inverted validity interval cannot be accepted. Opening the synthetic fixture
+normalizes its Plan inbox; refused actions are compared with that fresh baseline.
+
+An actual GUI restore was paused during extraction with 375 complete archived
+files, one partial and 26 missing. Its requested destination stayed absent.
+After the exact QA parent was SIGKILLed, the stopped worker disappeared before
+the harness's final signal lookup; the resulting `ProcessLookupError` was checked
+with terminal/file readback. After trusted relaunch, the partial book was absent
+from Projects. A native retry opened all 64 scenes; packaged readback and retained
+raw files verify 401 exact project files, 129 Revisions and both Storyline refs.
+The source's 490 files and backup ZIP stayed unchanged. Unpublished temporary
+staging residue remains; automatic cleanup is not claimed.
+
+Root observations are manual CUA AX/inline screenshot transcriptions, without
+an archived native screenshot or GUI replay. The Canon readback's original
+interpreter invocation receipt was not retained. Both bundles' manifested
+immutable files and the four author artifacts stayed unchanged; owned processes
+and the Finder window were cleaned up. This adds
+local mechanics evidence to the prior 583/583 packaged-core result; it does not
+repeat that suite or establish fresh-author quality, VoiceOver, physical-device,
+deployed, signed, clean-machine, Intel, upgrade or power-loss acceptance.
+All six priorities and both dependency release gates remain open.
+
+## Prior packaged runtime checkpoint — 2026-10-03, `36a4058`
 
 The [current packaged-runtime packet](../current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
 arm64 canonical application and **583/583 tests on its actual bundled Python
@@ -287,7 +316,7 @@ still required; current unused-export containment does not clear that gate.
 | Writing browser workflows | Historical `0cd77bd`: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows |
 | Mobile export guard | Current `36a4058`: 25/25 tests and normal offline web/iOS/Android exports; three maps retained by a separate observational export | Export containment keeps both dependency remediation gates open; normal/observed artifacts differ |
 | Broader mobile | Historical `8aaf17d`: 243 tests in 34 files; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; broader suite not rerun; no physical phones or deployed acceptance |
-| Normal native arm64 app | Current `36a4058`: exact 64-file core, strict canonical identity, pinned runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; current Canon GUI, signed/clean-machine/upgrade acceptance remain open |
+| Normal native arm64 app | Current `36a4058`: exact 64-file core, strict canonical identity, pinned runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; Current native Canon and interrupted backup GUI acceptance passes separately; signed/clean-machine/upgrade acceptance remains open |
 | Isolated native GUI | Separate unsigned `a523097`: actual apply/undo interrupted after one of three scenes; native restart restores exact eight-file baselines; retry undo restores original files | Root CUA/raw evidence, not replay or current Canon-build acceptance. Prior completed backup/restore remains scoped separately; interrupted restore, VoiceOver, signing, upgrades and clean-machine gates open |
 | Independent review | Current 13 changed files: Spec 0 open; Standards 0 hard/optional | Implementation review; prior keyboard optional Data Clumps remains historical; no release certificate |
 

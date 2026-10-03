@@ -22,7 +22,36 @@ retain their explicit limits. Tabs/caret restoration and the wider evidence-firs
 workspace are implemented; fresh-author quality, review burden, long sessions,
 accessibility and signed clean-machine acceptance remain required.
 
-## Latest packaged runtime checkpoint — 2026-10-03, `36a4058`
+## Latest native Canon and interrupted restore checkpoint — 2026-10-03, `36a4058`
+
+[Current native evidence](evaluations/current-native-canon-restore-2026-10-03/results.json)
+verifies three actual unsigned arm64 GUI cases: a Storyline change refuses a
+stale evidence review while retaining its unfinished correction; deliberately
+returning to the original Storyline recovers and saves that correction; an
+inverted validity interval cannot be accepted. Opening the synthetic fixture
+normalizes its Plan inbox; refused actions are compared with that fresh baseline.
+
+An actual GUI restore was paused during extraction with 375 complete archived
+files, one partial and 26 missing. Its requested destination stayed absent.
+After the exact QA parent was SIGKILLed, the stopped worker disappeared before
+the harness's final signal lookup; the resulting `ProcessLookupError` was checked
+with terminal/file readback. After trusted relaunch, the partial book was absent
+from Projects. A native retry opened all 64 scenes; packaged readback and retained
+raw files verify 401 exact project files, 129 Revisions and both Storyline refs.
+The source's 490 files and backup ZIP stayed unchanged. Unpublished temporary
+staging residue remains; automatic cleanup is not claimed.
+
+Root observations are manual CUA AX/inline screenshot transcriptions, without
+an archived native screenshot or GUI replay. The Canon readback's original
+interpreter invocation receipt was not retained. Both bundles' manifested
+immutable files and the four author artifacts stayed unchanged; owned processes
+and the Finder window were cleaned up. This adds
+local mechanics evidence to the prior 583/583 packaged-core result; it does not
+repeat that suite or establish fresh-author quality, VoiceOver, physical-device,
+deployed, signed, clean-machine, Intel, upgrade or power-loss acceptance.
+All six priorities and both dependency release gates remain open.
+
+## Prior packaged runtime checkpoint — 2026-10-03, `36a4058`
 
 The [current packaged-runtime packet](evaluations/current-packaged-runtime-2026-10-03/README.md) verifies the normal unsigned
 arm64 canonical application and **583/583 tests on its actual bundled Python
