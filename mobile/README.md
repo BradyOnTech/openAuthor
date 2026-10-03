@@ -239,14 +239,15 @@ caller, dependency-lock or package-copy bytes. Dependency updates require review
 of `security/forge-backport-1.4.0.json`; the guard never accepts new bytes itself.
 The direct guarded export/preflight entry points also perform this check.
 
-The patch rejects extra nested AlgorithmIdentifier children in the pinned
-Node/lib verifier; it does not newly validate primitive NULL parameter content
-or establish fully strict DER validation. It retains Forge's package version
-and does not patch browser distributions or global/cloud EAS tooling. This
-limited mitigation does not clear either Forge or Braces release/audit gate,
-or certify signed native
-artifacts. Direct Expo commands and disabled npm lifecycle scripts require
-separate verification.
+The pinned Node/lib PKCS#1 v1.5 verifier requires complete, canonical DER
+DigestInfo values and empty NULL parameter content. Valid SHA algorithm
+identifiers with absent or NULL parameters remain supported. Older BER-only
+DigestInfo encodings are refused; PSS and NONE verification remain separate.
+The patch retains Forge's package version and does not patch browser
+distributions or global/cloud EAS tooling. This mitigation does not clear
+either Forge or Braces release/audit gate, or certify signed native artifacts.
+Direct Expo commands and disabled npm lifecycle scripts require separate
+verification.
 
 `npm run build:web` and `npm run build:test-hosted` run the build-security guard
 before exporting. `npm run build:security` checks the fully resolved production

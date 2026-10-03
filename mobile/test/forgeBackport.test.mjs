@@ -39,13 +39,13 @@ function fixture(run) {
   try { return run(root); } finally { rmSync(root, { recursive: true, force: true }); }
 }
 
-function digestInfo(forge, digest, algorithm = "sha256", extra = [], parameters = true, outer = []) {
+function digestInfo(forge, digest, algorithm = "sha256", extra = [], parameters = true, outer = [], algorithmValue) {
   const { asn1 } = forge;
   const value = (type, bytes) => asn1.create(asn1.Class.UNIVERSAL, type, false, bytes);
   const sequence = nodes => asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, nodes);
   return Buffer.from(asn1.toDer(sequence([
-    sequence([value(asn1.Type.OID, asn1.oidToDer(forge.oids[algorithm]).getBytes()),
-      ...(parameters ? [value(asn1.Type.NULL, "")] : []), ...extra]),
+    sequence([value(asn1.Type.OID, algorithmValue ?? asn1.oidToDer(forge.oids[algorithm]).getBytes()),
+      ...(parameters ? [value(asn1.Type.NULL, typeof parameters === "string" ? parameters : "")] : []), ...extra]),
     value(asn1.Type.OCTETSTRING, digest.toString("latin1")), ...outer,
   ])).getBytes(), "latin1");
 }
@@ -218,8 +218,11 @@ describe("Forge and actual Expo helper signature compatibility", () => {
     const key = keys[1];
     const message = Buffer.from("Synthetic algorithm encoding controls");
     const digest = createHash("sha256").update(message).digest();
-    const withoutNull = encodedSignature(key.privateKey, digestInfo(forge, digest, "sha256", [], false));
-    expect(accepts(key.forgePair.publicKey, digest, withoutNull)).toBe(true);
+    for (const candidate of keys) for (const algorithm of ["sha1", "sha256", "sha384", "sha512"]) {
+      const hash = createHash(algorithm).update(message).digest();
+      const withoutNull = encodedSignature(candidate.privateKey, digestInfo(forge, hash, algorithm, [], false));
+      expect(accepts(candidate.forgePair.publicKey, hash, withoutNull)).toBe(true);
+    }
     const extra = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, "outer-garbage");
     const outer = encodedSignature(key.privateKey, digestInfo(forge, digest, "sha256", [], true, [extra]));
     const trailing = encodedSignature(key.privateKey, Buffer.concat([digestInfo(forge, digest), Buffer.from([0]) ]));
@@ -227,6 +230,47 @@ describe("Forge and actual Expo helper signature compatibility", () => {
       expect(verify("sha256", message, key.publicKey, signature)).toBe(false);
       expect(accepts(key.forgePair.publicKey, digest, signature)).toBe(false);
     }
+  });
+
+  it("rejects nonempty primitive NULL parameters", () => {
+    for (const key of keys) {
+      const message = Buffer.from("Synthetic invalid parameter content");
+      const digest = createHash("sha256").update(message).digest();
+      const signature = encodedSignature(key.privateKey, digestInfo(forge, digest, "sha256", [], "invalid"));
+      expect(verify("sha256", message, key.publicKey, signature)).toBe(false);
+      expect(accepts(key.forgePair.publicKey, digest, signature)).toBe(false);
+    }
+  });
+
+  it("requires canonical DigestInfo lengths", () => {
+    const key = keys[1];
+    const digest = createHash("sha256").update("Synthetic encoding policy").digest();
+    const canonical = digestInfo(forge, digest);
+    expect(canonical[1]).toBeLessThan(128);
+    const noncanonical = Buffer.concat([canonical.subarray(0, 1), Buffer.from([0x81, canonical[1]]), canonical.subarray(2)]);
+    const signature = encodedSignature(key.privateKey, noncanonical);
+    expect(accepts(key.forgePair.publicKey, digest, signature)).toBe(false);
+  });
+
+  it("requires canonical hash algorithm identifier bytes", () => {
+    const key = keys[1];
+    const digest = createHash("sha256").update("Synthetic identifier encoding policy").digest();
+    const canonical = forge.asn1.oidToDer(forge.oids.sha256).getBytes();
+    const noncanonical = canonical.slice(0, 1) + "\x80" + canonical.slice(1);
+    expect(forge.asn1.derToOid(noncanonical)).toBe(forge.oids.sha256);
+    const signature = encodedSignature(key.privateKey, digestInfo(forge, digest, "sha256", [], true, [], noncanonical));
+    expect(accepts(key.forgePair.publicKey, digest, signature)).toBe(false);
+  });
+
+  it("retains required NULL parameters for MD5", () => {
+    const key = keys[1];
+    const message = Buffer.from("Synthetic legacy algorithm compatibility");
+    const digest = createHash("md5").update(message).digest();
+    const withNull = encodedSignature(key.privateKey, digestInfo(forge, digest, "md5"));
+    const withoutNull = encodedSignature(key.privateKey, digestInfo(forge, digest, "md5", [], false));
+    expect(verify("md5", message, key.publicKey, withNull)).toBe(true);
+    expect(accepts(key.forgePair.publicKey, digest, withNull)).toBe(true);
+    expect(accepts(key.forgePair.publicKey, digest, withoutNull)).toBe(false);
   });
 
   it("leaves PSS and NONE verification paths compatible", () => {
@@ -263,17 +307,29 @@ describe("Forge and actual Expo helper signature compatibility", () => {
     }
   });
 
-  it("actual Expo certificate/CSR helpers refuse malformed nested signature encodings", () => {
+  it("actual Expo certificate/CSR helpers refuse incomplete or noncanonical DigestInfo", () => {
     const key = keys[0];
     const extra = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, "unconsumed-garbage");
-    const cert = certificate(key);
-    const certificateDigest = createHash("sha256").update(tbsBytes(cert)).digest();
-    cert.signature = encodedSignature(key.privateKey, digestInfo(forge, certificateDigest, "sha256", [extra])).toString("latin1");
-    expect(() => helper.validateSelfSignedCertificate(cert, key.forgePair)).toThrow(/DigestInfo/);
-    const csr = helper.generateCSR(key.forgePair, "Synthetic malformed CSR");
-    const request = Buffer.from(forge.asn1.toDer(forge.pki.getCertificationRequestInfo(csr)).getBytes(), "latin1");
-    const requestDigest = createHash("sha256").update(request).digest();
-    csr.signature = encodedSignature(key.privateKey, digestInfo(forge, requestDigest, "sha256", [extra])).toString("latin1");
-    expect(() => helper.generateDevelopmentCertificateFromCSR(key.forgePair.privateKey, certificate(key), csr, "synthetic-project", "synthetic-scope")).toThrow(/DigestInfo/);
+    const canonicalOid = forge.asn1.oidToDer(forge.oids.sha256).getBytes();
+    const encodings = [
+      digest => digestInfo(forge, digest, "sha256", [extra]),
+      digest => digestInfo(forge, digest, "sha256", [], "invalid"),
+      digest => digestInfo(forge, digest, "sha256", [], true, [], canonicalOid.slice(0, 1) + "\x80" + canonicalOid.slice(1)),
+      digest => {
+        const canonical = digestInfo(forge, digest);
+        return Buffer.concat([canonical.subarray(0, 1), Buffer.from([0x81, canonical[1]]), canonical.subarray(2)]);
+      },
+    ];
+    for (const encode of encodings) {
+      const cert = certificate(key);
+      const certificateDigest = createHash("sha256").update(tbsBytes(cert)).digest();
+      cert.signature = encodedSignature(key.privateKey, encode(certificateDigest)).toString("latin1");
+      expect(() => helper.validateSelfSignedCertificate(cert, key.forgePair)).toThrow(/DigestInfo/);
+      const csr = helper.generateCSR(key.forgePair, "Synthetic malformed CSR");
+      const request = Buffer.from(forge.asn1.toDer(forge.pki.getCertificationRequestInfo(csr)).getBytes(), "latin1");
+      const requestDigest = createHash("sha256").update(request).digest();
+      csr.signature = encodedSignature(key.privateKey, encode(requestDigest)).toString("latin1");
+      expect(() => helper.generateDevelopmentCertificateFromCSR(key.forgePair.privateKey, certificate(key), csr, "synthetic-project", "synthetic-scope")).toThrow(/DigestInfo/);
+    }
   });
 });

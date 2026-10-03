@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "advisory": "GHSA-86w9-cpqp-85rv",
-  "scope": "Bounded extra AlgorithmIdentifier-child mitigation for the pinned local Expo Node/lib callers only; primitive NULL content is not newly validated. Strict DER validation, browser dist, global/cloud EAS, native artifact acceptance and raw dependency audit remain unremediated.",
+  "scope": "Maintained canonical DER DigestInfo validation for the pinned local Expo Node/lib PKCS#1 v1.5 verifier, including empty NULL content. Browser dist, global/cloud EAS, native artifact acceptance and raw dependency audit remain unremediated.",
   "upstream_proposal": "https://github.com/digitalbazaar/forge/pull/1152/files",
   "forge": {
     "path": "node_modules/node-forge",
@@ -70,9 +70,9 @@
     "patch": {
       "path": "lib/rsa.js",
       "before": "          if(!asn1.validate(obj, digestInfoValidator, capture, errors) ||\n            obj.value.length !== 2) {",
-      "after": "          // asn1.validate permits unconsumed nested children. Bind the\n          // AlgorithmIdentifier to its captured OID and optional NULL only.\n          if(!asn1.validate(obj, digestInfoValidator, capture, errors) ||\n            obj.value.length !== 2 ||\n            obj.value[0].value.length !==\n              (('parameters' in capture) ? 2 : 1)) {",
+      "after": "          // Require every child and canonical DER. NULL has no content.\n          if(!asn1.validate(obj, digestInfoValidator, capture, errors) ||\n            obj.value.length !== 2 ||\n            obj.value[0].value.length !==\n              (('parameters' in capture) ? 2 : 1) ||\n            (('parameters' in capture) && capture.parameters !== '') ||\n            asn1.toDer(obj).getBytes() !== d ||\n            asn1.oidToDer(asn1.derToOid(capture.algorithmIdentifier))\n              .getBytes() !== capture.algorithmIdentifier) {",
       "original_sha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
-      "patched_sha256": "16eefbcc077f2e91ea017fa87d0186c747f0d439df2765b5d59b4c0ba67a9068"
+      "patched_sha256": "3dde91b05b403e062e0c7c8e97e63e79337c651db59f18fa7c836d18b15697d5"
     },
     "unmodified_distribution_files": [
       "dist/forge.all.min.js",
@@ -679,5 +679,6 @@
     "path": "node_modules/expo/bin/cli",
     "sha256": "644f576d9a0d2347142ae3dc0cad7f13a79171d012cf1a361e2af0880cbb85bd",
     "cli_path": "node_modules/expo/node_modules/@expo/cli/build/bin/cli"
-  }
+  },
+  "local_validation_reference": "https://www.rfc-editor.org/rfc/rfc8017#section-9.2"
 }
