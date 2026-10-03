@@ -160,9 +160,9 @@ describe("byte-bound local Expo Forge backport", () => {
 
   it("fresh install applies the repair and supported Expo entry points require check-only verification", () => {
     const { scripts } = JSON.parse(readFileSync(join(mobile, "package.json")));
-    expect(scripts.postinstall).toBe("node scripts/forge-backport.mjs apply");
+    expect(scripts.postinstall).toBe("node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply");
     for (const command of ["web", "start", "android", "ios", "prebuild", "doctor", "build:web", "build:export", "build:security", "build:test-hosted"]) {
-      expect(scripts["pre" + command], command).toBe("node scripts/forge-backport.mjs check");
+      expect(scripts["pre" + command], command).toBe("node scripts/forge-backport.mjs check && node scripts/braces-backport.mjs check");
     }
     expect(JSON.parse(readFileSync(join(mobile, "package-lock.json"))).packages[""].hasInstallScript).toBe(true);
     expect(() => maintainForgeBackport(mobile, "unknown")).toThrow("unsupported mode");

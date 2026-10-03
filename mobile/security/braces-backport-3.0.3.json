@@ -1,0 +1,568 @@
+{
+  "schema_version": 1,
+  "advisory": "GHSA-vfj7-8cjw-p6xm",
+  "scope": "Maintained local three-copy bounded-depth Braces backport; raw advisory, broader expansion resources, browser/global/cloud/native release acceptance remain open",
+  "upstream_version": "3.0.3",
+  "references": [
+    "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+    "https://github.com/micromatch/braces/pull/72/files"
+  ],
+  "source_root": "security/braces",
+  "sources": {
+    "index.js": {
+      "path": "security/braces/index.js",
+      "sha256": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054"
+    },
+    "lib/compile.js": {
+      "path": "security/braces/lib/compile.js",
+      "sha256": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4"
+    },
+    "lib/constants.js": {
+      "path": "security/braces/lib/constants.js",
+      "sha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b"
+    },
+    "lib/expand.js": {
+      "path": "security/braces/lib/expand.js",
+      "sha256": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5"
+    },
+    "lib/parse.js": {
+      "path": "security/braces/lib/parse.js",
+      "sha256": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb"
+    },
+    "lib/stringify.js": {
+      "path": "security/braces/lib/stringify.js",
+      "sha256": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba"
+    },
+    "lib/utils.js": {
+      "path": "security/braces/lib/utils.js",
+      "sha256": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13"
+    }
+  },
+  "source_material": {
+    "LICENSE": {
+      "path": "security/braces/LICENSE",
+      "sha256": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2"
+    },
+    "originals.json": {
+      "path": "security/braces/originals.json",
+      "sha256": "7e96943ad654eae708d8a13395c9c24910527050965ab42c9a0c28a389279c29"
+    }
+  },
+  "packages": [
+    {
+      "name": "braces",
+      "version": "3.0.3",
+      "path": "node_modules/braces",
+      "files": {
+        "LICENSE": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+        "README.md": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
+        "index.js": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+        "lib/compile.js": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+        "lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+        "lib/expand.js": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+        "lib/parse.js": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+        "lib/stringify.js": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+        "lib/utils.js": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+        "package.json": "56f08b888a4f30dc7cf8a7dbb36ffe92b737912ba36abe9d069d32167c957ac7"
+      }
+    },
+    {
+      "name": "resolve-workspace-root",
+      "version": "2.0.1",
+      "path": "node_modules/resolve-workspace-root",
+      "files": {
+        "LICENSE.md": "0cff14eaf2736ff712a34ef8d61f4144082e61387fff1ee3bef9da003d96a4ce",
+        "README.md": "c5674c21ebb3356a01758bb95f5557f0f6bdc24b21a639e73f3a39780da822aa",
+        "build/index.d.ts": "4e5e42c6632ef9e9859a8d22b4c71572c2a19f8088a84ccaeab7f2f0a30a623e",
+        "build/index.js": "ee3be37ce5bce6f0de05ee538653d13f8cbf6a7ec8c8f4ed24466025e5e34f2e",
+        "package.json": "2a4dd519ada0fb79a87f4de720961be61cd906ee3c91dbf17dcc82bd31236ade"
+      }
+    },
+    {
+      "name": "expo-doctor",
+      "version": "1.20.4",
+      "path": "node_modules/expo-doctor",
+      "files": {
+        "LICENSE": "f1beda6c9678519e02cecff21c6ede7acd2ea46356f1eade2183b6681e8c684a",
+        "README.md": "5bfac42168f778638f8bb117c5db7f510d417c2d2421a96d40b7d1607df26dc4",
+        "bin/expo-doctor.js": "65a66743e8143093b879e61eff2369b6fab81fb617ca657ccc133ed9d9009a87",
+        "build/api/getNativeModuleVersionsAsync.d.ts": "8ec2422f79979583e8d9367671dbf347e506334fc74020429fe9741220536154",
+        "build/api/getSchemaAsync.d.ts": "733eedfdd8dceae4215660458b669a620835f01ab76198098f2d8bf5fdd3b8ef",
+        "build/api/getVersionsAsync.d.ts": "1caa35df2a63f3a07abc143a780f332ec1df79e193e74122a82319d6b017bb11",
+        "build/checks/AppConfigFieldsNotSyncedToNativeProjectsCheck.d.ts": "1b5f3e57baf9e0bdecaf8d930dc3d7b2f4f8957893a60bae6aa30a19e68a1382",
+        "build/checks/AutolinkingDependencyDuplicatesCheck.d.ts": "b9293e1b80f4c5cac590a011bd71c92a26abfd4584bd792510935d9ed17369ed",
+        "build/checks/DependencyVersionOverrideCheck.d.ts": "842cd2f7c652fd494ce2900759c774e5082a9a484cb7adc7345e54652231a6c4",
+        "build/checks/DirectPackageInstallCheck.d.ts": "40286bb105329ee0e1d5675eaea4e18594a0ae028d6cdbd2588c3f6a27e5424e",
+        "build/checks/DoctorMultiCheck.d.ts": "955c4a24c14810d596756eb6e7e5553450e322b7f0541dc2ebd57ad7be3da879",
+        "build/checks/EnvLocalFilesCheck.d.ts": "80e3cbdefb300667861e3670fab01108cdcc228816aaa6eaf0b69a024828eb79",
+        "build/checks/ExpoConfigCommonIssueCheck.d.ts": "8ff483e628dc00a2f85d1bff4b247f444ebd11123a65c003366f971570efa6f0",
+        "build/checks/ExpoConfigSchemaCheck.d.ts": "a94b71e50365cc5fef9eaf49d37cd22d3724659976c85b1a726c0f03a5261439",
+        "build/checks/ExpoRouterReactNavigationCheck.d.ts": "a924b3870c6264304e1dd67b9f974a9a3f39b717af4f5638d15220eff3b735a3",
+        "build/checks/GlobalPackageInstalledLocallyCheck.d.ts": "180a4220a7bdaf232bd32277dd06d895108079233fba2edf60600b2e77be21b1",
+        "build/checks/HermesV1VersionCheck.d.ts": "9c677e9b1ced95f2bf15b8fd093e3387dde548bef3655a2ba5f5a62b93bbd9cc",
+        "build/checks/IllegalPackageCheck.d.ts": "52a4ce9b008c221181cb409e36bb05d3f7560b68d64f2155b7557f234cbe1b2c",
+        "build/checks/InstalledDependencyVersionCheck.d.ts": "052b8445bc0057a9a5b260f7253e4417b7e41793aa840dc9356b8aec4980bce9",
+        "build/checks/LockfileCheck.d.ts": "6049a69358eeba7394a3dae7efe60d2852c77fb06a1fa279eb9b4496606e7e94",
+        "build/checks/MetroConfigCheck.d.ts": "f651659fb5e1e30ce360bcd04b9d1264da8e206312594b857f1580a21655db98",
+        "build/checks/NativeToolingVersionCheck.d.ts": "4992776d50418730333984998608dd4c06a2bb692c49ecf94f06557288722123",
+        "build/checks/PackageJsonCheck.d.ts": "db833bf08b6b624387ad8e94000cdff2497eb0a68e0a200bb49ee85501911867",
+        "build/checks/PackageManagerVersionCheck.d.ts": "551905d7900002be68f67b0b7f105b6838c0d73860708cefa88fbb8148464440",
+        "build/checks/PeerDependencyChecks.d.ts": "094a4fe63efbf65afb4fdfee8a97b2f15e6c9a531f35c41878b7c8e1b390f5f7",
+        "build/checks/ProjectSetupCheck.d.ts": "7ce8d9156b5cddf95e7ac53c278573b6e719616a2d6b8f526bb20e6fc95b7b1f",
+        "build/checks/ReactNativeDirectoryCheck.d.ts": "3663f13d37997f74397b56084aac698a6c21e8667ba2ac4738589b225e002b83",
+        "build/checks/StoreCompatibilityCheck.d.ts": "86960e87e4b5a545acc9e37e68b3e458a4f66836eaccd1523b8ffbdae0846cf2",
+        "build/checks/SupportPackageVersionCheck.d.ts": "2fa7c60be6d625cd4db4dfffd2dedf65f31507de381ca5780287177ed30964ee",
+        "build/checks/VectorIconsCheck.d.ts": "ebd0deca64c843da8e9aeab210dc08787872b6213a1356933b44cccda58e9bf2",
+        "build/checks/checks.types.d.ts": "7486fe4453cd701ce218202aa83e312f678667cc01cb7d90d3e68e62752df15c",
+        "build/doctor.d.ts": "96538d8fc2719973370578e17897e117eb2cefd1ce123c1a123b5306e2a2be26",
+        "build/index.d.ts": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "build/index.js": "749b9af71763d47658d9673a1b7db5814c07d9281b49f21794171d1b928b7e57",
+        "build/utils/TerminalLink.d.ts": "a2c7e9f108a4c15f482d3bc2d581924c0c1fb7f84f0a5e7037c44d38e17c2673",
+        "build/utils/autolinkingResolutions.d.ts": "f3bf8851920f14f4ae4b94207e9cf7dd5da9145db798b3cc7eced2bb26e116cb",
+        "build/utils/babelConfigLoader.d.ts": "7856bcef71fff94cf226a06f04d4d01fcad1b55a647b2d66393c101d0ced402e",
+        "build/utils/checkResolver.d.ts": "4c77e5bb2f398db0f008f485a1b76e7b79ff483df515520562693fbf74b8959b",
+        "build/utils/doctorConfig.d.ts": "c6c7ca92ad1cc77514dbbee8d26107027dbadc4518e103f6341a518a76f3f145",
+        "build/utils/dynamicRequire.d.ts": "fd30eb7dc6e72222c840b022b80d48040a706333bbcd8484a158eee13fee1450",
+        "build/utils/env.d.ts": "5e6e711565b8a503de8d979d9e089354899c2ce764c98d787027783ccec9e581",
+        "build/utils/errors.d.ts": "d02b1ef069bec0ec2e3f1ebdb7acb70e7deecace86dc7c65226878da7c4d7503",
+        "build/utils/explainAsync.d.ts": "6e9ca006105b6c6fdad031bbce2d3020bded6bbafa651fe2b07f4447fa050835",
+        "build/utils/explainDependencies.d.ts": "dacffe6d6d491d413b790f91bf21033b1bf2a685b94dcbe253c1b654fdae0fad",
+        "build/utils/explainDependencies.types.d.ts": "dc0b281dd194f53cb5ff3dc1362cc054d91827be1d055648eb67d4b2d1404e93",
+        "build/utils/files.d.ts": "d5ca5dd2ac82438af485758d5169897fec88e8ac33a9ddd8a3a2d51edd920af8",
+        "build/utils/getProjectConfig.d.ts": "c0e0716376adea58dc772572c19f552f88617c3adc324383ee5f747ae98740cd",
+        "build/utils/getRemoteVersionsForSdkAsync.d.ts": "7b135b0de1e5c2f18da1313cd379a808b4c0b167d7c10083bc2b9d61ac5367a2",
+        "build/utils/getXcodeVersionAsync.d.ts": "dde5e843132aecce32da330fc28941324def78c3f16abe67a8955f3a6b201175",
+        "build/utils/hermesVersion.d.ts": "7424419ec256283ebe1ca4511a58ac573f881c68d9071211af87d8bd449a7250",
+        "build/utils/ignoreFiles.d.ts": "19e60c6e01410fd4fcd9a387f64b1a1f2d7cf9403830d4eb1a393fea4de2865d",
+        "build/utils/interactive.d.ts": "6b308b737ddaab748bbb25d310092b768afac8eb0db66db740e4f8af6bae0094",
+        "build/utils/log.d.ts": "40430e3d3926c846f7e7c42203f397b5592958b0804b55ccdb36476c637b0817",
+        "build/utils/metroConfigLoader.d.ts": "7c97803e73e8882e1742d33b6dcd124a5aac2707f62072d783997e069b9ed2ea",
+        "build/utils/nodeEnv.d.ts": "a5996cca2608b684d78ec9fd09bb17d1f7c237f4fcd6d4e4df3c8380e6778e3a",
+        "build/utils/ora.d.ts": "f8406f57f328cdc37cf7365f7724b58eed64f749a2aba6a9c37e63d785b9f606",
+        "build/utils/parseInstallCheckOutput.d.ts": "0e64f81bd258c9ee3028ca3f1b56de20cdeeaa90b2bd98613a782e62717b3ee9",
+        "build/utils/reactNativeDirectoryApi.d.ts": "53cdb0b47ff4ea75b8cea36eeb94a440b2a3abffe8968149e6de13b05f3274cf",
+        "build/utils/schema.d.ts": "ec275eca3225961f93e27cee9d8bc86eff6aa00fc375f4115a4d245c7ebe29d2",
+        "build/utils/spawnExpoCLI.d.ts": "3a48c7961c1789dbf5f1898693e67b89106a1024db07a568c669d9a38fb91d07",
+        "build/utils/strings.d.ts": "59abfcbc1d0206bc2ed2a88feb4b1c4f3cfa4d4b8d69eda005b2db1dc86a726a",
+        "build/utils/timer.d.ts": "ba29ee958ad90a378b3709b096ed4b3b89d725e4bb9fc687a988c74bfbf7c399",
+        "build/utils/versionedNativeModules.d.ts": "8b69a1e7e657093ffb1e272a5298e161e73e92248f9eca7a7974209162711801",
+        "build/utils/versions.d.ts": "2d7d4211da6f06dbbd42e0d35bf144693d2788286b30d34d0778f3fcb4b0580c",
+        "package.json": "10f84ca24a619515164dd891685ee2f52c1e616b0fb3ef2b42fe5f1e4883cbb3"
+      }
+    }
+  ],
+  "patches": [
+    {
+      "path": "node_modules/braces/index.js",
+      "source": "index.js",
+      "original_sha256": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+      "patched_sha256": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+      "original_text": "'use strict';\n\nconst stringify = require('./lib/stringify');\nconst compile = require('./lib/compile');\nconst expand = require('./lib/expand');\nconst parse = require('./lib/parse');\n\n/**\n * Expand the given pattern or create a regex-compatible string.\n *\n * ```js\n * const braces = require('braces');\n * console.log(braces('{a,b,c}', { compile: true })); //=> ['(a|b|c)']\n * console.log(braces('{a,b,c}')); //=> ['a', 'b', 'c']\n * ```\n * @param {String} `str`\n * @param {Object} `options`\n * @return {String}\n * @api public\n */\n\nconst braces = (input, options = {}) => {\n  let output = [];\n\n  if (Array.isArray(input)) {\n    for (const pattern of input) {\n      const result = braces.create(pattern, options);\n      if (Array.isArray(result)) {\n        output.push(...result);\n      } else {\n        output.push(result);\n      }\n    }\n  } else {\n    output = [].concat(braces.create(input, options));\n  }\n\n  if (options && options.expand === true && options.nodupes === true) {\n    output = [...new Set(output)];\n  }\n  return output;\n};\n\n/**\n * Parse the given `str` with the given `options`.\n *\n * ```js\n * // braces.parse(pattern, [, options]);\n * const ast = braces.parse('a/{b,c}/d');\n * console.log(ast);\n * ```\n * @param {String} pattern Brace pattern to parse\n * @param {Object} options\n * @return {Object} Returns an AST\n * @api public\n */\n\nbraces.parse = (input, options = {}) => parse(input, options);\n\n/**\n * Creates a braces string from an AST, or an AST node.\n *\n * ```js\n * const braces = require('braces');\n * let ast = braces.parse('foo/{a,b}/bar');\n * console.log(stringify(ast.nodes[2])); //=> '{a,b}'\n * ```\n * @param {String} `input` Brace pattern or AST.\n * @param {Object} `options`\n * @return {Array} Returns an array of expanded values.\n * @api public\n */\n\nbraces.stringify = (input, options = {}) => {\n  if (typeof input === 'string') {\n    return stringify(braces.parse(input, options), options);\n  }\n  return stringify(input, options);\n};\n\n/**\n * Compiles a brace pattern into a regex-compatible, optimized string.\n * This method is called by the main [braces](#braces) function by default.\n *\n * ```js\n * const braces = require('braces');\n * console.log(braces.compile('a/{b,c}/d'));\n * //=> ['a/(b|c)/d']\n * ```\n * @param {String} `input` Brace pattern or AST.\n * @param {Object} `options`\n * @return {Array} Returns an array of expanded values.\n * @api public\n */\n\nbraces.compile = (input, options = {}) => {\n  if (typeof input === 'string') {\n    input = braces.parse(input, options);\n  }\n  return compile(input, options);\n};\n\n/**\n * Expands a brace pattern into an array. This method is called by the\n * main [braces](#braces) function when `options.expand` is true. Before\n * using this method it's recommended that you read the [performance notes](#performance))\n * and advantages of using [.compile](#compile) instead.\n *\n * ```js\n * const braces = require('braces');\n * console.log(braces.expand('a/{b,c}/d'));\n * //=> ['a/b/d', 'a/c/d'];\n * ```\n * @param {String} `pattern` Brace pattern\n * @param {Object} `options`\n * @return {Array} Returns an array of expanded values.\n * @api public\n */\n\nbraces.expand = (input, options = {}) => {\n  if (typeof input === 'string') {\n    input = braces.parse(input, options);\n  }\n\n  let result = expand(input, options);\n\n  // filter out empty strings if specified\n  if (options.noempty === true) {\n    result = result.filter(Boolean);\n  }\n\n  // filter out duplicates if specified\n  if (options.nodupes === true) {\n    result = [...new Set(result)];\n  }\n\n  return result;\n};\n\n/**\n * Processes a brace pattern and returns either an expanded array\n * (if `options.expand` is true), a highly optimized regex-compatible string.\n * This method is called by the main [braces](#braces) function.\n *\n * ```js\n * const braces = require('braces');\n * console.log(braces.create('user-{200..300}/project-{a,b,c}-{1..10}'))\n * //=> 'user-(20[0-9]|2[1-9][0-9]|300)/project-(a|b|c)-([1-9]|10)'\n * ```\n * @param {String} `pattern` Brace pattern\n * @param {Object} `options`\n * @return {Array} Returns an array of expanded values.\n * @api public\n */\n\nbraces.create = (input, options = {}) => {\n  if (input === '' || input.length < 3) {\n    return [input];\n  }\n\n  return options.expand !== true\n    ? braces.compile(input, options)\n    : braces.expand(input, options);\n};\n\n/**\n * Expose \"braces\"\n */\n\nmodule.exports = braces;\n"
+    },
+    {
+      "path": "node_modules/braces/lib/compile.js",
+      "source": "lib/compile.js",
+      "original_sha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "patched_sha256": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+      "original_text": "'use strict';\n\nconst fill = require('fill-range');\nconst utils = require('./utils');\n\nconst compile = (ast, options = {}) => {\n  const walk = (node, parent = {}) => {\n    const invalidBlock = utils.isInvalidBrace(parent);\n    const invalidNode = node.invalid === true && options.escapeInvalid === true;\n    const invalid = invalidBlock === true || invalidNode === true;\n    const prefix = options.escapeInvalid === true ? '\\\\' : '';\n    let output = '';\n\n    if (node.isOpen === true) {\n      return prefix + node.value;\n    }\n\n    if (node.isClose === true) {\n      console.log('node.isClose', prefix, node.value);\n      return prefix + node.value;\n    }\n\n    if (node.type === 'open') {\n      return invalid ? prefix + node.value : '(';\n    }\n\n    if (node.type === 'close') {\n      return invalid ? prefix + node.value : ')';\n    }\n\n    if (node.type === 'comma') {\n      return node.prev.type === 'comma' ? '' : invalid ? node.value : '|';\n    }\n\n    if (node.value) {\n      return node.value;\n    }\n\n    if (node.nodes && node.ranges > 0) {\n      const args = utils.reduce(node.nodes);\n      const range = fill(...args, { ...options, wrap: false, toRegex: true, strictZeros: true });\n\n      if (range.length !== 0) {\n        return args.length > 1 && range.length > 1 ? `(${range})` : range;\n      }\n    }\n\n    if (node.nodes) {\n      for (const child of node.nodes) {\n        output += walk(child, node);\n      }\n    }\n\n    return output;\n  };\n\n  return walk(ast);\n};\n\nmodule.exports = compile;\n"
+    },
+    {
+      "path": "node_modules/braces/lib/constants.js",
+      "source": "lib/constants.js",
+      "original_sha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "patched_sha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "original_text": "'use strict';\n\nmodule.exports = {\n  MAX_LENGTH: 10000,\n\n  // Digits\n  CHAR_0: '0', /* 0 */\n  CHAR_9: '9', /* 9 */\n\n  // Alphabet chars.\n  CHAR_UPPERCASE_A: 'A', /* A */\n  CHAR_LOWERCASE_A: 'a', /* a */\n  CHAR_UPPERCASE_Z: 'Z', /* Z */\n  CHAR_LOWERCASE_Z: 'z', /* z */\n\n  CHAR_LEFT_PARENTHESES: '(', /* ( */\n  CHAR_RIGHT_PARENTHESES: ')', /* ) */\n\n  CHAR_ASTERISK: '*', /* * */\n\n  // Non-alphabetic chars.\n  CHAR_AMPERSAND: '&', /* & */\n  CHAR_AT: '@', /* @ */\n  CHAR_BACKSLASH: '\\\\', /* \\ */\n  CHAR_BACKTICK: '`', /* ` */\n  CHAR_CARRIAGE_RETURN: '\\r', /* \\r */\n  CHAR_CIRCUMFLEX_ACCENT: '^', /* ^ */\n  CHAR_COLON: ':', /* : */\n  CHAR_COMMA: ',', /* , */\n  CHAR_DOLLAR: '$', /* . */\n  CHAR_DOT: '.', /* . */\n  CHAR_DOUBLE_QUOTE: '\"', /* \" */\n  CHAR_EQUAL: '=', /* = */\n  CHAR_EXCLAMATION_MARK: '!', /* ! */\n  CHAR_FORM_FEED: '\\f', /* \\f */\n  CHAR_FORWARD_SLASH: '/', /* / */\n  CHAR_HASH: '#', /* # */\n  CHAR_HYPHEN_MINUS: '-', /* - */\n  CHAR_LEFT_ANGLE_BRACKET: '<', /* < */\n  CHAR_LEFT_CURLY_BRACE: '{', /* { */\n  CHAR_LEFT_SQUARE_BRACKET: '[', /* [ */\n  CHAR_LINE_FEED: '\\n', /* \\n */\n  CHAR_NO_BREAK_SPACE: '\\u00A0', /* \\u00A0 */\n  CHAR_PERCENT: '%', /* % */\n  CHAR_PLUS: '+', /* + */\n  CHAR_QUESTION_MARK: '?', /* ? */\n  CHAR_RIGHT_ANGLE_BRACKET: '>', /* > */\n  CHAR_RIGHT_CURLY_BRACE: '}', /* } */\n  CHAR_RIGHT_SQUARE_BRACKET: ']', /* ] */\n  CHAR_SEMICOLON: ';', /* ; */\n  CHAR_SINGLE_QUOTE: '\\'', /* ' */\n  CHAR_SPACE: ' ', /*   */\n  CHAR_TAB: '\\t', /* \\t */\n  CHAR_UNDERSCORE: '_', /* _ */\n  CHAR_VERTICAL_LINE: '|', /* | */\n  CHAR_ZERO_WIDTH_NOBREAK_SPACE: '\\uFEFF' /* \\uFEFF */\n};\n"
+    },
+    {
+      "path": "node_modules/braces/lib/expand.js",
+      "source": "lib/expand.js",
+      "original_sha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "patched_sha256": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+      "original_text": "'use strict';\n\nconst fill = require('fill-range');\nconst stringify = require('./stringify');\nconst utils = require('./utils');\n\nconst append = (queue = '', stash = '', enclose = false) => {\n  const result = [];\n\n  queue = [].concat(queue);\n  stash = [].concat(stash);\n\n  if (!stash.length) return queue;\n  if (!queue.length) {\n    return enclose ? utils.flatten(stash).map(ele => `{${ele}}`) : stash;\n  }\n\n  for (const item of queue) {\n    if (Array.isArray(item)) {\n      for (const value of item) {\n        result.push(append(value, stash, enclose));\n      }\n    } else {\n      for (let ele of stash) {\n        if (enclose === true && typeof ele === 'string') ele = `{${ele}}`;\n        result.push(Array.isArray(ele) ? append(item, ele, enclose) : item + ele);\n      }\n    }\n  }\n  return utils.flatten(result);\n};\n\nconst expand = (ast, options = {}) => {\n  const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;\n\n  const walk = (node, parent = {}) => {\n    node.queue = [];\n\n    let p = parent;\n    let q = parent.queue;\n\n    while (p.type !== 'brace' && p.type !== 'root' && p.parent) {\n      p = p.parent;\n      q = p.queue;\n    }\n\n    if (node.invalid || node.dollar) {\n      q.push(append(q.pop(), stringify(node, options)));\n      return;\n    }\n\n    if (node.type === 'brace' && node.invalid !== true && node.nodes.length === 2) {\n      q.push(append(q.pop(), ['{}']));\n      return;\n    }\n\n    if (node.nodes && node.ranges > 0) {\n      const args = utils.reduce(node.nodes);\n\n      if (utils.exceedsLimit(...args, options.step, rangeLimit)) {\n        throw new RangeError('expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit.');\n      }\n\n      let range = fill(...args, options);\n      if (range.length === 0) {\n        range = stringify(node, options);\n      }\n\n      q.push(append(q.pop(), range));\n      node.nodes = [];\n      return;\n    }\n\n    const enclose = utils.encloseBrace(node);\n    let queue = node.queue;\n    let block = node;\n\n    while (block.type !== 'brace' && block.type !== 'root' && block.parent) {\n      block = block.parent;\n      queue = block.queue;\n    }\n\n    for (let i = 0; i < node.nodes.length; i++) {\n      const child = node.nodes[i];\n\n      if (child.type === 'comma' && node.type === 'brace') {\n        if (i === 1) queue.push('');\n        queue.push('');\n        continue;\n      }\n\n      if (child.type === 'close') {\n        q.push(append(q.pop(), queue, enclose));\n        continue;\n      }\n\n      if (child.value && child.type !== 'open') {\n        queue.push(append(queue.pop(), child.value));\n        continue;\n      }\n\n      if (child.nodes) {\n        walk(child, node);\n      }\n    }\n\n    return queue;\n  };\n\n  return utils.flatten(walk(ast));\n};\n\nmodule.exports = expand;\n"
+    },
+    {
+      "path": "node_modules/braces/lib/parse.js",
+      "source": "lib/parse.js",
+      "original_sha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "patched_sha256": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+      "original_text": "'use strict';\n\nconst stringify = require('./stringify');\n\n/**\n * Constants\n */\n\nconst {\n  MAX_LENGTH,\n  CHAR_BACKSLASH, /* \\ */\n  CHAR_BACKTICK, /* ` */\n  CHAR_COMMA, /* , */\n  CHAR_DOT, /* . */\n  CHAR_LEFT_PARENTHESES, /* ( */\n  CHAR_RIGHT_PARENTHESES, /* ) */\n  CHAR_LEFT_CURLY_BRACE, /* { */\n  CHAR_RIGHT_CURLY_BRACE, /* } */\n  CHAR_LEFT_SQUARE_BRACKET, /* [ */\n  CHAR_RIGHT_SQUARE_BRACKET, /* ] */\n  CHAR_DOUBLE_QUOTE, /* \" */\n  CHAR_SINGLE_QUOTE, /* ' */\n  CHAR_NO_BREAK_SPACE,\n  CHAR_ZERO_WIDTH_NOBREAK_SPACE\n} = require('./constants');\n\n/**\n * parse\n */\n\nconst parse = (input, options = {}) => {\n  if (typeof input !== 'string') {\n    throw new TypeError('Expected a string');\n  }\n\n  const opts = options || {};\n  const max = typeof opts.maxLength === 'number' ? Math.min(MAX_LENGTH, opts.maxLength) : MAX_LENGTH;\n  if (input.length > max) {\n    throw new SyntaxError(`Input length (${input.length}), exceeds max characters (${max})`);\n  }\n\n  const ast = { type: 'root', input, nodes: [] };\n  const stack = [ast];\n  let block = ast;\n  let prev = ast;\n  let brackets = 0;\n  const length = input.length;\n  let index = 0;\n  let depth = 0;\n  let value;\n\n  /**\n   * Helpers\n   */\n\n  const advance = () => input[index++];\n  const push = node => {\n    if (node.type === 'text' && prev.type === 'dot') {\n      prev.type = 'text';\n    }\n\n    if (prev && prev.type === 'text' && node.type === 'text') {\n      prev.value += node.value;\n      return;\n    }\n\n    block.nodes.push(node);\n    node.parent = block;\n    node.prev = prev;\n    prev = node;\n    return node;\n  };\n\n  push({ type: 'bos' });\n\n  while (index < length) {\n    block = stack[stack.length - 1];\n    value = advance();\n\n    /**\n     * Invalid chars\n     */\n\n    if (value === CHAR_ZERO_WIDTH_NOBREAK_SPACE || value === CHAR_NO_BREAK_SPACE) {\n      continue;\n    }\n\n    /**\n     * Escaped chars\n     */\n\n    if (value === CHAR_BACKSLASH) {\n      push({ type: 'text', value: (options.keepEscaping ? value : '') + advance() });\n      continue;\n    }\n\n    /**\n     * Right square bracket (literal): ']'\n     */\n\n    if (value === CHAR_RIGHT_SQUARE_BRACKET) {\n      push({ type: 'text', value: '\\\\' + value });\n      continue;\n    }\n\n    /**\n     * Left square bracket: '['\n     */\n\n    if (value === CHAR_LEFT_SQUARE_BRACKET) {\n      brackets++;\n\n      let next;\n\n      while (index < length && (next = advance())) {\n        value += next;\n\n        if (next === CHAR_LEFT_SQUARE_BRACKET) {\n          brackets++;\n          continue;\n        }\n\n        if (next === CHAR_BACKSLASH) {\n          value += advance();\n          continue;\n        }\n\n        if (next === CHAR_RIGHT_SQUARE_BRACKET) {\n          brackets--;\n\n          if (brackets === 0) {\n            break;\n          }\n        }\n      }\n\n      push({ type: 'text', value });\n      continue;\n    }\n\n    /**\n     * Parentheses\n     */\n\n    if (value === CHAR_LEFT_PARENTHESES) {\n      block = push({ type: 'paren', nodes: [] });\n      stack.push(block);\n      push({ type: 'text', value });\n      continue;\n    }\n\n    if (value === CHAR_RIGHT_PARENTHESES) {\n      if (block.type !== 'paren') {\n        push({ type: 'text', value });\n        continue;\n      }\n      block = stack.pop();\n      push({ type: 'text', value });\n      block = stack[stack.length - 1];\n      continue;\n    }\n\n    /**\n     * Quotes: '|\"|`\n     */\n\n    if (value === CHAR_DOUBLE_QUOTE || value === CHAR_SINGLE_QUOTE || value === CHAR_BACKTICK) {\n      const open = value;\n      let next;\n\n      if (options.keepQuotes !== true) {\n        value = '';\n      }\n\n      while (index < length && (next = advance())) {\n        if (next === CHAR_BACKSLASH) {\n          value += next + advance();\n          continue;\n        }\n\n        if (next === open) {\n          if (options.keepQuotes === true) value += next;\n          break;\n        }\n\n        value += next;\n      }\n\n      push({ type: 'text', value });\n      continue;\n    }\n\n    /**\n     * Left curly brace: '{'\n     */\n\n    if (value === CHAR_LEFT_CURLY_BRACE) {\n      depth++;\n\n      const dollar = prev.value && prev.value.slice(-1) === '$' || block.dollar === true;\n      const brace = {\n        type: 'brace',\n        open: true,\n        close: false,\n        dollar,\n        depth,\n        commas: 0,\n        ranges: 0,\n        nodes: []\n      };\n\n      block = push(brace);\n      stack.push(block);\n      push({ type: 'open', value });\n      continue;\n    }\n\n    /**\n     * Right curly brace: '}'\n     */\n\n    if (value === CHAR_RIGHT_CURLY_BRACE) {\n      if (block.type !== 'brace') {\n        push({ type: 'text', value });\n        continue;\n      }\n\n      const type = 'close';\n      block = stack.pop();\n      block.close = true;\n\n      push({ type, value });\n      depth--;\n\n      block = stack[stack.length - 1];\n      continue;\n    }\n\n    /**\n     * Comma: ','\n     */\n\n    if (value === CHAR_COMMA && depth > 0) {\n      if (block.ranges > 0) {\n        block.ranges = 0;\n        const open = block.nodes.shift();\n        block.nodes = [open, { type: 'text', value: stringify(block) }];\n      }\n\n      push({ type: 'comma', value });\n      block.commas++;\n      continue;\n    }\n\n    /**\n     * Dot: '.'\n     */\n\n    if (value === CHAR_DOT && depth > 0 && block.commas === 0) {\n      const siblings = block.nodes;\n\n      if (depth === 0 || siblings.length === 0) {\n        push({ type: 'text', value });\n        continue;\n      }\n\n      if (prev.type === 'dot') {\n        block.range = [];\n        prev.value += value;\n        prev.type = 'range';\n\n        if (block.nodes.length !== 3 && block.nodes.length !== 5) {\n          block.invalid = true;\n          block.ranges = 0;\n          prev.type = 'text';\n          continue;\n        }\n\n        block.ranges++;\n        block.args = [];\n        continue;\n      }\n\n      if (prev.type === 'range') {\n        siblings.pop();\n\n        const before = siblings[siblings.length - 1];\n        before.value += prev.value + value;\n        prev = before;\n        block.ranges--;\n        continue;\n      }\n\n      push({ type: 'dot', value });\n      continue;\n    }\n\n    /**\n     * Text\n     */\n\n    push({ type: 'text', value });\n  }\n\n  // Mark imbalanced braces and brackets as invalid\n  do {\n    block = stack.pop();\n\n    if (block.type !== 'root') {\n      block.nodes.forEach(node => {\n        if (!node.nodes) {\n          if (node.type === 'open') node.isOpen = true;\n          if (node.type === 'close') node.isClose = true;\n          if (!node.nodes) node.type = 'text';\n          node.invalid = true;\n        }\n      });\n\n      // get the location of the block on parent.nodes (block's siblings)\n      const parent = stack[stack.length - 1];\n      const index = parent.nodes.indexOf(block);\n      // replace the (invalid) block with it's nodes\n      parent.nodes.splice(index, 1, ...block.nodes);\n    }\n  } while (stack.length > 0);\n\n  push({ type: 'eos' });\n  return ast;\n};\n\nmodule.exports = parse;\n"
+    },
+    {
+      "path": "node_modules/braces/lib/stringify.js",
+      "source": "lib/stringify.js",
+      "original_sha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "patched_sha256": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+      "original_text": "'use strict';\n\nconst utils = require('./utils');\n\nmodule.exports = (ast, options = {}) => {\n  const stringify = (node, parent = {}) => {\n    const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);\n    const invalidNode = node.invalid === true && options.escapeInvalid === true;\n    let output = '';\n\n    if (node.value) {\n      if ((invalidBlock || invalidNode) && utils.isOpenOrClose(node)) {\n        return '\\\\' + node.value;\n      }\n      return node.value;\n    }\n\n    if (node.value) {\n      return node.value;\n    }\n\n    if (node.nodes) {\n      for (const child of node.nodes) {\n        output += stringify(child);\n      }\n    }\n    return output;\n  };\n\n  return stringify(ast);\n};\n\n"
+    },
+    {
+      "path": "node_modules/braces/lib/utils.js",
+      "source": "lib/utils.js",
+      "original_sha256": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "patched_sha256": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+      "original_text": "'use strict';\n\nexports.isInteger = num => {\n  if (typeof num === 'number') {\n    return Number.isInteger(num);\n  }\n  if (typeof num === 'string' && num.trim() !== '') {\n    return Number.isInteger(Number(num));\n  }\n  return false;\n};\n\n/**\n * Find a node of the given type\n */\n\nexports.find = (node, type) => node.nodes.find(node => node.type === type);\n\n/**\n * Find a node of the given type\n */\n\nexports.exceedsLimit = (min, max, step = 1, limit) => {\n  if (limit === false) return false;\n  if (!exports.isInteger(min) || !exports.isInteger(max)) return false;\n  return ((Number(max) - Number(min)) / Number(step)) >= limit;\n};\n\n/**\n * Escape the given node with '\\\\' before node.value\n */\n\nexports.escapeNode = (block, n = 0, type) => {\n  const node = block.nodes[n];\n  if (!node) return;\n\n  if ((type && node.type === type) || node.type === 'open' || node.type === 'close') {\n    if (node.escaped !== true) {\n      node.value = '\\\\' + node.value;\n      node.escaped = true;\n    }\n  }\n};\n\n/**\n * Returns true if the given brace node should be enclosed in literal braces\n */\n\nexports.encloseBrace = node => {\n  if (node.type !== 'brace') return false;\n  if ((node.commas >> 0 + node.ranges >> 0) === 0) {\n    node.invalid = true;\n    return true;\n  }\n  return false;\n};\n\n/**\n * Returns true if a brace node is invalid.\n */\n\nexports.isInvalidBrace = block => {\n  if (block.type !== 'brace') return false;\n  if (block.invalid === true || block.dollar) return true;\n  if ((block.commas >> 0 + block.ranges >> 0) === 0) {\n    block.invalid = true;\n    return true;\n  }\n  if (block.open !== true || block.close !== true) {\n    block.invalid = true;\n    return true;\n  }\n  return false;\n};\n\n/**\n * Returns true if a node is an open or close node\n */\n\nexports.isOpenOrClose = node => {\n  if (node.type === 'open' || node.type === 'close') {\n    return true;\n  }\n  return node.open === true || node.close === true;\n};\n\n/**\n * Reduce an array of text nodes.\n */\n\nexports.reduce = nodes => nodes.reduce((acc, node) => {\n  if (node.type === 'text') acc.push(node.value);\n  if (node.type === 'range') node.type = 'text';\n  return acc;\n}, []);\n\n/**\n * Flatten an array\n */\n\nexports.flatten = (...args) => {\n  const result = [];\n\n  const flat = arr => {\n    for (let i = 0; i < arr.length; i++) {\n      const ele = arr[i];\n\n      if (Array.isArray(ele)) {\n        flat(ele);\n        continue;\n      }\n\n      if (ele !== undefined) {\n        result.push(ele);\n      }\n    }\n    return result;\n  };\n\n  flat(args);\n  return result;\n};\n"
+    },
+    {
+      "path": "node_modules/resolve-workspace-root/build/index.js",
+      "original_sha256": "ee3be37ce5bce6f0de05ee538653d13f8cbf6a7ec8c8f4ed24466025e5e34f2e",
+      "patched_sha256": "c92afd8c2444be75f1e03c006a612158c27a3253d64a320da90ef58029f3c12e",
+      "modules": [
+        {
+          "source": "index.js",
+          "module_id": 610,
+          "original_entry_sha256": "027c7133947eee71eb32337c555b93b75bdd0d75b85a7de2c1630b57ded490c7",
+          "patched_entry_sha256": "f89b53ebc7ccafb6f81d61266de66ca4bf550c57bf7836914d9ff5b529ced46d",
+          "original_entry": "610:(e,t,r)=>{const n=r(8750);const i=r(9434);const o=r(5873);const a=r(6477);const braces=(e,t={})=>{let r=[];if(Array.isArray(e)){for(const n of e){const e=braces.create(n,t);if(Array.isArray(e)){r.push(...e)}else{r.push(e)}}}else{r=[].concat(braces.create(e,t))}if(t&&t.expand===true&&t.nodupes===true){r=[...new Set(r)]}return r};braces.parse=(e,t={})=>a(e,t);braces.stringify=(e,t={})=>{if(typeof e===\"string\"){return n(braces.parse(e,t),t)}return n(e,t)};braces.compile=(e,t={})=>{if(typeof e===\"string\"){e=braces.parse(e,t)}return i(e,t)};braces.expand=(e,t={})=>{if(typeof e===\"string\"){e=braces.parse(e,t)}let r=o(e,t);if(t.noempty===true){r=r.filter(Boolean)}if(t.nodupes===true){r=[...new Set(r)]}return r};braces.create=(e,t={})=>{if(e===\"\"||e.length<3){return[e]}return t.expand!==true?braces.compile(e,t):braces.expand(e,t)};e.exports=braces}"
+        },
+        {
+          "source": "lib/compile.js",
+          "module_id": 9434,
+          "original_entry_sha256": "805e846113c782d560e1f5e408e27d8cb43ba7c11c12eb609545385308efa51d",
+          "patched_entry_sha256": "2d23a0a9e42711c3a60a817bdc62c3f7f5410c95fd962022f7f32fe8e2393e05",
+          "original_entry": "9434:(e,t,r)=>{const n=r(6330);const i=r(5207);const compile=(e,t={})=>{const walk=(e,r={})=>{const o=i.isInvalidBrace(r);const a=e.invalid===true&&t.escapeInvalid===true;const s=o===true||a===true;const l=t.escapeInvalid===true?\"\\\\\":\"\";let u=\"\";if(e.isOpen===true){return l+e.value}if(e.isClose===true){console.log(\"node.isClose\",l,e.value);return l+e.value}if(e.type===\"open\"){return s?l+e.value:\"(\"}if(e.type===\"close\"){return s?l+e.value:\")\"}if(e.type===\"comma\"){return e.prev.type===\"comma\"?\"\":s?e.value:\"|\"}if(e.value){return e.value}if(e.nodes&&e.ranges>0){const r=i.reduce(e.nodes);const o=n(...r,{...t,wrap:false,toRegex:true,strictZeros:true});if(o.length!==0){return r.length>1&&o.length>1?`(${o})`:o}}if(e.nodes){for(const t of e.nodes){u+=walk(t,e)}}return u};return walk(e)};e.exports=compile}"
+        },
+        {
+          "source": "lib/constants.js",
+          "module_id": 8774,
+          "original_entry_sha256": "7f6af8883bf28c18d19f880990f144ad667335b0e08dbc47e0bb98b915e53bdf",
+          "patched_entry_sha256": "d5bf151b99ccf19a5cc25cbfbaeaec9ebd48a9385ab7dc4b79c7026d097b9477",
+          "original_entry": "8774:e=>{e.exports={MAX_LENGTH:1e4,CHAR_0:\"0\",CHAR_9:\"9\",CHAR_UPPERCASE_A:\"A\",CHAR_LOWERCASE_A:\"a\",CHAR_UPPERCASE_Z:\"Z\",CHAR_LOWERCASE_Z:\"z\",CHAR_LEFT_PARENTHESES:\"(\",CHAR_RIGHT_PARENTHESES:\")\",CHAR_ASTERISK:\"*\",CHAR_AMPERSAND:\"&\",CHAR_AT:\"@\",CHAR_BACKSLASH:\"\\\\\",CHAR_BACKTICK:\"`\",CHAR_CARRIAGE_RETURN:\"\\r\",CHAR_CIRCUMFLEX_ACCENT:\"^\",CHAR_COLON:\":\",CHAR_COMMA:\",\",CHAR_DOLLAR:\"$\",CHAR_DOT:\".\",CHAR_DOUBLE_QUOTE:'\"',CHAR_EQUAL:\"=\",CHAR_EXCLAMATION_MARK:\"!\",CHAR_FORM_FEED:\"\\f\",CHAR_FORWARD_SLASH:\"/\",CHAR_HASH:\"#\",CHAR_HYPHEN_MINUS:\"-\",CHAR_LEFT_ANGLE_BRACKET:\"<\",CHAR_LEFT_CURLY_BRACE:\"{\",CHAR_LEFT_SQUARE_BRACKET:\"[\",CHAR_LINE_FEED:\"\\n\",CHAR_NO_BREAK_SPACE:\"\u00a0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIGHT_CURLY_BRACE:\"}\",CHAR_RIGHT_SQUARE_BRACKET:\"]\",CHAR_SEMICOLON:\";\",CHAR_SINGLE_QUOTE:\"'\",CHAR_SPACE:\" \",CHAR_TAB:\"\\t\",CHAR_UNDERSCORE:\"_\",CHAR_VERTICAL_LINE:\"|\",CHAR_ZERO_WIDTH_NOBREAK_SPACE:\"\\ufeff\"}}"
+        },
+        {
+          "source": "lib/expand.js",
+          "module_id": 5873,
+          "original_entry_sha256": "b93c10cfb143c4322220f4f3819030395ee723a9b46ed8af9c1f0013f9ef643f",
+          "patched_entry_sha256": "6f27386c0918814e3d339775b82997188c0e9e6ee81f0a65b95a56a31fda7fa7",
+          "original_entry": "5873:(e,t,r)=>{const n=r(6330);const i=r(8750);const o=r(5207);const append=(e=\"\",t=\"\",r=false)=>{const n=[];e=[].concat(e);t=[].concat(t);if(!t.length)return e;if(!e.length){return r?o.flatten(t).map((e=>`{${e}}`)):t}for(const i of e){if(Array.isArray(i)){for(const e of i){n.push(append(e,t,r))}}else{for(let e of t){if(r===true&&typeof e===\"string\")e=`{${e}}`;n.push(Array.isArray(e)?append(i,e,r):i+e)}}}return o.flatten(n)};const expand=(e,t={})=>{const r=t.rangeLimit===undefined?1e3:t.rangeLimit;const walk=(e,a={})=>{e.queue=[];let s=a;let l=a.queue;while(s.type!==\"brace\"&&s.type!==\"root\"&&s.parent){s=s.parent;l=s.queue}if(e.invalid||e.dollar){l.push(append(l.pop(),i(e,t)));return}if(e.type===\"brace\"&&e.invalid!==true&&e.nodes.length===2){l.push(append(l.pop(),[\"{}\"]));return}if(e.nodes&&e.ranges>0){const a=o.reduce(e.nodes);if(o.exceedsLimit(...a,t.step,r)){throw new RangeError(\"expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit.\")}let s=n(...a,t);if(s.length===0){s=i(e,t)}l.push(append(l.pop(),s));e.nodes=[];return}const u=o.encloseBrace(e);let c=e.queue;let p=e;while(p.type!==\"brace\"&&p.type!==\"root\"&&p.parent){p=p.parent;c=p.queue}for(let t=0;t<e.nodes.length;t++){const r=e.nodes[t];if(r.type===\"comma\"&&e.type===\"brace\"){if(t===1)c.push(\"\");c.push(\"\");continue}if(r.type===\"close\"){l.push(append(l.pop(),c,u));continue}if(r.value&&r.type!==\"open\"){c.push(append(c.pop(),r.value));continue}if(r.nodes){walk(r,e)}}return c};return o.flatten(walk(e))};e.exports=expand}"
+        },
+        {
+          "source": "lib/parse.js",
+          "module_id": 6477,
+          "original_entry_sha256": "33b8f2c7e1dbe4059b34a29288d7a3180e3500c7b74b2fabbea5442d80a7ebe9",
+          "patched_entry_sha256": "6290e263d6eaf77412d3a223b2394dcba1b418ff2ee96dcfc1c08c5a0b6c2885",
+          "original_entry": "6477:(e,t,r)=>{const n=r(8750);const{MAX_LENGTH:i,CHAR_BACKSLASH:o,CHAR_BACKTICK:a,CHAR_COMMA:s,CHAR_DOT:l,CHAR_LEFT_PARENTHESES:u,CHAR_RIGHT_PARENTHESES:c,CHAR_LEFT_CURLY_BRACE:p,CHAR_RIGHT_CURLY_BRACE:f,CHAR_LEFT_SQUARE_BRACKET:d,CHAR_RIGHT_SQUARE_BRACKET:h,CHAR_DOUBLE_QUOTE:g,CHAR_SINGLE_QUOTE:m,CHAR_NO_BREAK_SPACE:A,CHAR_ZERO_WIDTH_NOBREAK_SPACE:y}=r(8774);const parse=(e,t={})=>{if(typeof e!==\"string\"){throw new TypeError(\"Expected a string\")}const r=t||{};const v=typeof r.maxLength===\"number\"?Math.min(i,r.maxLength):i;if(e.length>v){throw new SyntaxError(`Input length (${e.length}), exceeds max characters (${v})`)}const _={type:\"root\",input:e,nodes:[]};const E=[_];let b=_;let S=_;let w=0;const R=e.length;let C=0;let x=0;let k;const advance=()=>e[C++];const push=e=>{if(e.type===\"text\"&&S.type===\"dot\"){S.type=\"text\"}if(S&&S.type===\"text\"&&e.type===\"text\"){S.value+=e.value;return}b.nodes.push(e);e.parent=b;e.prev=S;S=e;return e};push({type:\"bos\"});while(C<R){b=E[E.length-1];k=advance();if(k===y||k===A){continue}if(k===o){push({type:\"text\",value:(t.keepEscaping?k:\"\")+advance()});continue}if(k===h){push({type:\"text\",value:\"\\\\\"+k});continue}if(k===d){w++;let e;while(C<R&&(e=advance())){k+=e;if(e===d){w++;continue}if(e===o){k+=advance();continue}if(e===h){w--;if(w===0){break}}}push({type:\"text\",value:k});continue}if(k===u){b=push({type:\"paren\",nodes:[]});E.push(b);push({type:\"text\",value:k});continue}if(k===c){if(b.type!==\"paren\"){push({type:\"text\",value:k});continue}b=E.pop();push({type:\"text\",value:k});b=E[E.length-1];continue}if(k===g||k===m||k===a){const e=k;let r;if(t.keepQuotes!==true){k=\"\"}while(C<R&&(r=advance())){if(r===o){k+=r+advance();continue}if(r===e){if(t.keepQuotes===true)k+=r;break}k+=r}push({type:\"text\",value:k});continue}if(k===p){x++;const e=S.value&&S.value.slice(-1)===\"$\"||b.dollar===true;const t={type:\"brace\",open:true,close:false,dollar:e,depth:x,commas:0,ranges:0,nodes:[]};b=push(t);E.push(b);push({type:\"open\",value:k});continue}if(k===f){if(b.type!==\"brace\"){push({type:\"text\",value:k});continue}const e=\"close\";b=E.pop();b.close=true;push({type:e,value:k});x--;b=E[E.length-1];continue}if(k===s&&x>0){if(b.ranges>0){b.ranges=0;const e=b.nodes.shift();b.nodes=[e,{type:\"text\",value:n(b)}]}push({type:\"comma\",value:k});b.commas++;continue}if(k===l&&x>0&&b.commas===0){const e=b.nodes;if(x===0||e.length===0){push({type:\"text\",value:k});continue}if(S.type===\"dot\"){b.range=[];S.value+=k;S.type=\"range\";if(b.nodes.length!==3&&b.nodes.length!==5){b.invalid=true;b.ranges=0;S.type=\"text\";continue}b.ranges++;b.args=[];continue}if(S.type===\"range\"){e.pop();const t=e[e.length-1];t.value+=S.value+k;S=t;b.ranges--;continue}push({type:\"dot\",value:k});continue}push({type:\"text\",value:k})}do{b=E.pop();if(b.type!==\"root\"){b.nodes.forEach((e=>{if(!e.nodes){if(e.type===\"open\")e.isOpen=true;if(e.type===\"close\")e.isClose=true;if(!e.nodes)e.type=\"text\";e.invalid=true}}));const e=E[E.length-1];const t=e.nodes.indexOf(b);e.nodes.splice(t,1,...b.nodes)}}while(E.length>0);push({type:\"eos\"});return _};e.exports=parse}"
+        },
+        {
+          "source": "lib/stringify.js",
+          "module_id": 8750,
+          "original_entry_sha256": "8212613e7a2532ddc23004152bad88bfa5d39494b42824a99c6111645c342680",
+          "patched_entry_sha256": "284cb2fbd51ec9f6619666790ea9d275c2c7cdfaf21dd8d3fa3226df0a7c1c1a",
+          "original_entry": "8750:(e,t,r)=>{const n=r(5207);e.exports=(e,t={})=>{const stringify=(e,r={})=>{const i=t.escapeInvalid&&n.isInvalidBrace(r);const o=e.invalid===true&&t.escapeInvalid===true;let a=\"\";if(e.value){if((i||o)&&n.isOpenOrClose(e)){return\"\\\\\"+e.value}return e.value}if(e.value){return e.value}if(e.nodes){for(const t of e.nodes){a+=stringify(t)}}return a};return stringify(e)}}"
+        },
+        {
+          "source": "lib/utils.js",
+          "module_id": 5207,
+          "original_entry_sha256": "91f04568ed248e1293718f4beb13538aaf18e1004771e6fae7c7d6ad49f27feb",
+          "patched_entry_sha256": "33b5bb9b64f3853abb83874ce2949462d005434816acaf725ddcce63aed0ccde",
+          "original_entry": "5207:(e,t)=>{t.isInteger=e=>{if(typeof e===\"number\"){return Number.isInteger(e)}if(typeof e===\"string\"&&e.trim()!==\"\"){return Number.isInteger(Number(e))}return false};t.find=(e,t)=>e.nodes.find((e=>e.type===t));t.exceedsLimit=(e,r,n=1,i)=>{if(i===false)return false;if(!t.isInteger(e)||!t.isInteger(r))return false;return(Number(r)-Number(e))/Number(n)>=i};t.escapeNode=(e,t=0,r)=>{const n=e.nodes[t];if(!n)return;if(r&&n.type===r||n.type===\"open\"||n.type===\"close\"){if(n.escaped!==true){n.value=\"\\\\\"+n.value;n.escaped=true}}};t.encloseBrace=e=>{if(e.type!==\"brace\")return false;if(e.commas>>0+e.ranges>>0===0){e.invalid=true;return true}return false};t.isInvalidBrace=e=>{if(e.type!==\"brace\")return false;if(e.invalid===true||e.dollar)return true;if(e.commas>>0+e.ranges>>0===0){e.invalid=true;return true}if(e.open!==true||e.close!==true){e.invalid=true;return true}return false};t.isOpenOrClose=e=>{if(e.type===\"open\"||e.type===\"close\"){return true}return e.open===true||e.close===true};t.reduce=e=>e.reduce(((e,t)=>{if(t.type===\"text\")e.push(t.value);if(t.type===\"range\")t.type=\"text\";return e}),[]);t.flatten=(...e)=>{const t=[];const flat=e=>{for(let r=0;r<e.length;r++){const n=e[r];if(Array.isArray(n)){flat(n);continue}if(n!==undefined){t.push(n)}}return t};flat(e);return t}}"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/expo-doctor/build/index.js",
+      "original_sha256": "749b9af71763d47658d9673a1b7db5814c07d9281b49f21794171d1b928b7e57",
+      "patched_sha256": "a6c3a6458e2934e880d283629e42d2f9e13cda1dd3f8383cd3bff56a2b8bbe9f",
+      "modules": [
+        {
+          "source": "index.js",
+          "module_id": 610,
+          "original_entry_sha256": "6446057bc9acd6f9c9637a283877138a8f7d25c1fee982881af015bd36338eec",
+          "patched_entry_sha256": "f89b53ebc7ccafb6f81d61266de66ca4bf550c57bf7836914d9ff5b529ced46d",
+          "original_entry": "610:(i,u,p)=>{const g=p(8750);const y=p(9434);const v=p(5873);const E=p(6477);const braces=(i,u={})=>{let p=[];if(Array.isArray(i)){for(const g of i){const i=braces.create(g,u);if(Array.isArray(i)){p.push(...i)}else{p.push(i)}}}else{p=[].concat(braces.create(i,u))}if(u&&u.expand===true&&u.nodupes===true){p=[...new Set(p)]}return p};braces.parse=(i,u={})=>E(i,u);braces.stringify=(i,u={})=>{if(typeof i===\"string\"){return g(braces.parse(i,u),u)}return g(i,u)};braces.compile=(i,u={})=>{if(typeof i===\"string\"){i=braces.parse(i,u)}return y(i,u)};braces.expand=(i,u={})=>{if(typeof i===\"string\"){i=braces.parse(i,u)}let p=v(i,u);if(u.noempty===true){p=p.filter(Boolean)}if(u.nodupes===true){p=[...new Set(p)]}return p};braces.create=(i,u={})=>{if(i===\"\"||i.length<3){return[i]}return u.expand!==true?braces.compile(i,u):braces.expand(i,u)};i.exports=braces}"
+        },
+        {
+          "source": "lib/compile.js",
+          "module_id": 9434,
+          "original_entry_sha256": "984f170aa317a09db48683861677e06bc3752a1862e74c50464b8180efda62a8",
+          "patched_entry_sha256": "2d23a0a9e42711c3a60a817bdc62c3f7f5410c95fd962022f7f32fe8e2393e05",
+          "original_entry": "9434:(i,u,p)=>{const g=p(6330);const y=p(5207);const compile=(i,u={})=>{const walk=(i,p={})=>{const v=y.isInvalidBrace(p);const E=i.invalid===true&&u.escapeInvalid===true;const w=v===true||E===true;const C=u.escapeInvalid===true?\"\\\\\":\"\";let D=\"\";if(i.isOpen===true){return C+i.value}if(i.isClose===true){console.log(\"node.isClose\",C,i.value);return C+i.value}if(i.type===\"open\"){return w?C+i.value:\"(\"}if(i.type===\"close\"){return w?C+i.value:\")\"}if(i.type===\"comma\"){return i.prev.type===\"comma\"?\"\":w?i.value:\"|\"}if(i.value){return i.value}if(i.nodes&&i.ranges>0){const p=y.reduce(i.nodes);const v=g(...p,{...u,wrap:false,toRegex:true,strictZeros:true});if(v.length!==0){return p.length>1&&v.length>1?`(${v})`:v}}if(i.nodes){for(const u of i.nodes){D+=walk(u,i)}}return D};return walk(i)};i.exports=compile}"
+        },
+        {
+          "source": "lib/constants.js",
+          "module_id": 8774,
+          "original_entry_sha256": "30e41bf32cf9264fae13e071ea6c2ebed8c15dceb305c906d469915912330022",
+          "patched_entry_sha256": "d5bf151b99ccf19a5cc25cbfbaeaec9ebd48a9385ab7dc4b79c7026d097b9477",
+          "original_entry": "8774:i=>{i.exports={MAX_LENGTH:1e4,CHAR_0:\"0\",CHAR_9:\"9\",CHAR_UPPERCASE_A:\"A\",CHAR_LOWERCASE_A:\"a\",CHAR_UPPERCASE_Z:\"Z\",CHAR_LOWERCASE_Z:\"z\",CHAR_LEFT_PARENTHESES:\"(\",CHAR_RIGHT_PARENTHESES:\")\",CHAR_ASTERISK:\"*\",CHAR_AMPERSAND:\"&\",CHAR_AT:\"@\",CHAR_BACKSLASH:\"\\\\\",CHAR_BACKTICK:\"`\",CHAR_CARRIAGE_RETURN:\"\\r\",CHAR_CIRCUMFLEX_ACCENT:\"^\",CHAR_COLON:\":\",CHAR_COMMA:\",\",CHAR_DOLLAR:\"$\",CHAR_DOT:\".\",CHAR_DOUBLE_QUOTE:'\"',CHAR_EQUAL:\"=\",CHAR_EXCLAMATION_MARK:\"!\",CHAR_FORM_FEED:\"\\f\",CHAR_FORWARD_SLASH:\"/\",CHAR_HASH:\"#\",CHAR_HYPHEN_MINUS:\"-\",CHAR_LEFT_ANGLE_BRACKET:\"<\",CHAR_LEFT_CURLY_BRACE:\"{\",CHAR_LEFT_SQUARE_BRACKET:\"[\",CHAR_LINE_FEED:\"\\n\",CHAR_NO_BREAK_SPACE:\"\u00a0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIGHT_CURLY_BRACE:\"}\",CHAR_RIGHT_SQUARE_BRACKET:\"]\",CHAR_SEMICOLON:\";\",CHAR_SINGLE_QUOTE:\"'\",CHAR_SPACE:\" \",CHAR_TAB:\"\\t\",CHAR_UNDERSCORE:\"_\",CHAR_VERTICAL_LINE:\"|\",CHAR_ZERO_WIDTH_NOBREAK_SPACE:\"\\ufeff\"}}"
+        },
+        {
+          "source": "lib/expand.js",
+          "module_id": 5873,
+          "original_entry_sha256": "4bd69dbc47d5d8354ee7d8b23dbeef922a25b3d8517ce2482dd2c6361492fe31",
+          "patched_entry_sha256": "6f27386c0918814e3d339775b82997188c0e9e6ee81f0a65b95a56a31fda7fa7",
+          "original_entry": "5873:(i,u,p)=>{const g=p(6330);const y=p(8750);const v=p(5207);const append=(i=\"\",u=\"\",p=false)=>{const g=[];i=[].concat(i);u=[].concat(u);if(!u.length)return i;if(!i.length){return p?v.flatten(u).map((i=>`{${i}}`)):u}for(const y of i){if(Array.isArray(y)){for(const i of y){g.push(append(i,u,p))}}else{for(let i of u){if(p===true&&typeof i===\"string\")i=`{${i}}`;g.push(Array.isArray(i)?append(y,i,p):y+i)}}}return v.flatten(g)};const expand=(i,u={})=>{const p=u.rangeLimit===undefined?1e3:u.rangeLimit;const walk=(i,E={})=>{i.queue=[];let w=E;let C=E.queue;while(w.type!==\"brace\"&&w.type!==\"root\"&&w.parent){w=w.parent;C=w.queue}if(i.invalid||i.dollar){C.push(append(C.pop(),y(i,u)));return}if(i.type===\"brace\"&&i.invalid!==true&&i.nodes.length===2){C.push(append(C.pop(),[\"{}\"]));return}if(i.nodes&&i.ranges>0){const E=v.reduce(i.nodes);if(v.exceedsLimit(...E,u.step,p)){throw new RangeError(\"expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit.\")}let w=g(...E,u);if(w.length===0){w=y(i,u)}C.push(append(C.pop(),w));i.nodes=[];return}const D=v.encloseBrace(i);let A=i.queue;let S=i;while(S.type!==\"brace\"&&S.type!==\"root\"&&S.parent){S=S.parent;A=S.queue}for(let u=0;u<i.nodes.length;u++){const p=i.nodes[u];if(p.type===\"comma\"&&i.type===\"brace\"){if(u===1)A.push(\"\");A.push(\"\");continue}if(p.type===\"close\"){C.push(append(C.pop(),A,D));continue}if(p.value&&p.type!==\"open\"){A.push(append(A.pop(),p.value));continue}if(p.nodes){walk(p,i)}}return A};return v.flatten(walk(i))};i.exports=expand}"
+        },
+        {
+          "source": "lib/parse.js",
+          "module_id": 6477,
+          "original_entry_sha256": "6c9681f1fb780d5f30ea6d1d804905a60c8d450ab0d1bc0b8b61ba9150b026f9",
+          "patched_entry_sha256": "6290e263d6eaf77412d3a223b2394dcba1b418ff2ee96dcfc1c08c5a0b6c2885",
+          "original_entry": "6477:(i,u,p)=>{const g=p(8750);const{MAX_LENGTH:y,CHAR_BACKSLASH:v,CHAR_BACKTICK:E,CHAR_COMMA:w,CHAR_DOT:C,CHAR_LEFT_PARENTHESES:D,CHAR_RIGHT_PARENTHESES:A,CHAR_LEFT_CURLY_BRACE:S,CHAR_RIGHT_CURLY_BRACE:x,CHAR_LEFT_SQUARE_BRACKET:k,CHAR_RIGHT_SQUARE_BRACKET:O,CHAR_DOUBLE_QUOTE:T,CHAR_SINGLE_QUOTE:$,CHAR_NO_BREAK_SPACE:P,CHAR_ZERO_WIDTH_NOBREAK_SPACE:N}=p(8774);const parse=(i,u={})=>{if(typeof i!==\"string\"){throw new TypeError(\"Expected a string\")}const p=u||{};const I=typeof p.maxLength===\"number\"?Math.min(y,p.maxLength):y;if(i.length>I){throw new SyntaxError(`Input length (${i.length}), exceeds max characters (${I})`)}const j={type:\"root\",input:i,nodes:[]};const M=[j];let B=j;let L=j;let U=0;const G=i.length;let H=0;let z=0;let W;const advance=()=>i[H++];const push=i=>{if(i.type===\"text\"&&L.type===\"dot\"){L.type=\"text\"}if(L&&L.type===\"text\"&&i.type===\"text\"){L.value+=i.value;return}B.nodes.push(i);i.parent=B;i.prev=L;L=i;return i};push({type:\"bos\"});while(H<G){B=M[M.length-1];W=advance();if(W===N||W===P){continue}if(W===v){push({type:\"text\",value:(u.keepEscaping?W:\"\")+advance()});continue}if(W===O){push({type:\"text\",value:\"\\\\\"+W});continue}if(W===k){U++;let i;while(H<G&&(i=advance())){W+=i;if(i===k){U++;continue}if(i===v){W+=advance();continue}if(i===O){U--;if(U===0){break}}}push({type:\"text\",value:W});continue}if(W===D){B=push({type:\"paren\",nodes:[]});M.push(B);push({type:\"text\",value:W});continue}if(W===A){if(B.type!==\"paren\"){push({type:\"text\",value:W});continue}B=M.pop();push({type:\"text\",value:W});B=M[M.length-1];continue}if(W===T||W===$||W===E){const i=W;let p;if(u.keepQuotes!==true){W=\"\"}while(H<G&&(p=advance())){if(p===v){W+=p+advance();continue}if(p===i){if(u.keepQuotes===true)W+=p;break}W+=p}push({type:\"text\",value:W});continue}if(W===S){z++;const i=L.value&&L.value.slice(-1)===\"$\"||B.dollar===true;const u={type:\"brace\",open:true,close:false,dollar:i,depth:z,commas:0,ranges:0,nodes:[]};B=push(u);M.push(B);push({type:\"open\",value:W});continue}if(W===x){if(B.type!==\"brace\"){push({type:\"text\",value:W});continue}const i=\"close\";B=M.pop();B.close=true;push({type:i,value:W});z--;B=M[M.length-1];continue}if(W===w&&z>0){if(B.ranges>0){B.ranges=0;const i=B.nodes.shift();B.nodes=[i,{type:\"text\",value:g(B)}]}push({type:\"comma\",value:W});B.commas++;continue}if(W===C&&z>0&&B.commas===0){const i=B.nodes;if(z===0||i.length===0){push({type:\"text\",value:W});continue}if(L.type===\"dot\"){B.range=[];L.value+=W;L.type=\"range\";if(B.nodes.length!==3&&B.nodes.length!==5){B.invalid=true;B.ranges=0;L.type=\"text\";continue}B.ranges++;B.args=[];continue}if(L.type===\"range\"){i.pop();const u=i[i.length-1];u.value+=L.value+W;L=u;B.ranges--;continue}push({type:\"dot\",value:W});continue}push({type:\"text\",value:W})}do{B=M.pop();if(B.type!==\"root\"){B.nodes.forEach((i=>{if(!i.nodes){if(i.type===\"open\")i.isOpen=true;if(i.type===\"close\")i.isClose=true;if(!i.nodes)i.type=\"text\";i.invalid=true}}));const i=M[M.length-1];const u=i.nodes.indexOf(B);i.nodes.splice(u,1,...B.nodes)}}while(M.length>0);push({type:\"eos\"});return j};i.exports=parse}"
+        },
+        {
+          "source": "lib/stringify.js",
+          "module_id": 8750,
+          "original_entry_sha256": "5d80ad3126471abb7cf00b19df090b49c1d8b8b4a5232b020512d5e7fb926793",
+          "patched_entry_sha256": "284cb2fbd51ec9f6619666790ea9d275c2c7cdfaf21dd8d3fa3226df0a7c1c1a",
+          "original_entry": "8750:(i,u,p)=>{const g=p(5207);i.exports=(i,u={})=>{const stringify=(i,p={})=>{const y=u.escapeInvalid&&g.isInvalidBrace(p);const v=i.invalid===true&&u.escapeInvalid===true;let E=\"\";if(i.value){if((y||v)&&g.isOpenOrClose(i)){return\"\\\\\"+i.value}return i.value}if(i.value){return i.value}if(i.nodes){for(const u of i.nodes){E+=stringify(u)}}return E};return stringify(i)}}"
+        },
+        {
+          "source": "lib/utils.js",
+          "module_id": 5207,
+          "original_entry_sha256": "ba373474a6cb66c70706bd9e89b9edaac1dbcf8f4679595916fab8cf1a83cfd2",
+          "patched_entry_sha256": "33b5bb9b64f3853abb83874ce2949462d005434816acaf725ddcce63aed0ccde",
+          "original_entry": "5207:(i,u)=>{u.isInteger=i=>{if(typeof i===\"number\"){return Number.isInteger(i)}if(typeof i===\"string\"&&i.trim()!==\"\"){return Number.isInteger(Number(i))}return false};u.find=(i,u)=>i.nodes.find((i=>i.type===u));u.exceedsLimit=(i,p,g=1,y)=>{if(y===false)return false;if(!u.isInteger(i)||!u.isInteger(p))return false;return(Number(p)-Number(i))/Number(g)>=y};u.escapeNode=(i,u=0,p)=>{const g=i.nodes[u];if(!g)return;if(p&&g.type===p||g.type===\"open\"||g.type===\"close\"){if(g.escaped!==true){g.value=\"\\\\\"+g.value;g.escaped=true}}};u.encloseBrace=i=>{if(i.type!==\"brace\")return false;if(i.commas>>0+i.ranges>>0===0){i.invalid=true;return true}return false};u.isInvalidBrace=i=>{if(i.type!==\"brace\")return false;if(i.invalid===true||i.dollar)return true;if(i.commas>>0+i.ranges>>0===0){i.invalid=true;return true}if(i.open!==true||i.close!==true){i.invalid=true;return true}return false};u.isOpenOrClose=i=>{if(i.type===\"open\"||i.type===\"close\"){return true}return i.open===true||i.close===true};u.reduce=i=>i.reduce(((i,u)=>{if(u.type===\"text\")i.push(u.value);if(u.type===\"range\")u.type=\"text\";return i}),[]);u.flatten=(...i)=>{const u=[];const flat=i=>{for(let p=0;p<i.length;p++){const g=i[p];if(Array.isArray(g)){flat(g);continue}if(g!==undefined){u.push(g)}}return u};flat(i);return u}}"
+        }
+      ]
+    }
+  ],
+  "lock_packages": {
+    "node_modules/braces": {
+      "version": "3.0.3",
+      "resolved": "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz",
+      "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+      "license": "MIT",
+      "dependencies": {
+        "fill-range": "^7.1.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/resolve-workspace-root": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/resolve-workspace-root/-/resolve-workspace-root-2.0.1.tgz",
+      "integrity": "sha512-nR23LHAvaI6aHtMg6RWoaHpdR4D881Nydkzi2CixINyg9T00KgaJdJI6Vwty+Ps8WLxZHuxsS0BseWjxSA4C+w==",
+      "license": "MIT"
+    },
+    "node_modules/expo-doctor": {
+      "version": "1.20.4",
+      "resolved": "https://registry.npmjs.org/expo-doctor/-/expo-doctor-1.20.4.tgz",
+      "integrity": "sha512-Jm1lIqVdO8br9wiqTg5QhJ1u4zLWAhoue4bXsEuzW543vC3XY+U0cpEOmiLkvJhTTgZgIK+24l4i8VzyZ2VLMg==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "expo-doctor": "bin/expo-doctor.js"
+      },
+      "engines": {
+        "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
+      }
+    },
+    "node_modules/micromatch": {
+      "version": "4.0.8",
+      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz",
+      "integrity": "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==",
+      "license": "MIT",
+      "dependencies": {
+        "braces": "^3.0.3",
+        "picomatch": "^2.3.1"
+      },
+      "engines": {
+        "node": ">=8.6"
+      }
+    },
+    "node_modules/metro-file-map": {
+      "version": "0.84.5",
+      "resolved": "https://registry.npmjs.org/metro-file-map/-/metro-file-map-0.84.5.tgz",
+      "integrity": "sha512-mlm/JL8toSbSc2akpKIGmzvrVRSCgZ5vkbycI34oMLoOnLGuLyC8WTyVJ6P0hZG/usDaGwZSl/s9BCRriqjGJA==",
+      "license": "MIT",
+      "dependencies": {
+        "debug": "^4.4.0",
+        "fb-watchman": "^2.0.0",
+        "flow-enums-runtime": "^0.0.6",
+        "graceful-fs": "^4.2.4",
+        "invariant": "^2.2.4",
+        "jest-worker": "^29.7.0",
+        "micromatch": "^4.0.4",
+        "nullthrows": "^1.1.1",
+        "walker": "^1.0.7"
+      },
+      "engines": {
+        "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
+      }
+    },
+    "node_modules/@expo/metro-file-map": {
+      "version": "57.0.2",
+      "resolved": "https://registry.npmjs.org/@expo/metro-file-map/-/metro-file-map-57.0.2.tgz",
+      "integrity": "sha512-tb50nSIWwKpRufSkGuivOK0FbUxv1Uwqptb0SzFTk0bkmYmcy3gIwnCbOHTfmrQDVndRhPEiu2SYgh9Z0PCvGg==",
+      "license": "MIT",
+      "dependencies": {
+        "debug": "^4.3.4",
+        "fb-watchman": "^2.0.2",
+        "invariant": "^2.2.4",
+        "jest-worker": "^29.7.0",
+        "micromatch": "^4.0.4",
+        "walker": "^1.0.8"
+      }
+    },
+    "node_modules/@expo/config": {
+      "version": "57.0.9",
+      "resolved": "https://registry.npmjs.org/@expo/config/-/config-57.0.9.tgz",
+      "integrity": "sha512-dmzlKraIFxa7wLwV6K7WzI8jp6QZpW6Mc5mGjLimJUFjzh4uQdYaT3m3plEutM5yxBoBEwqzks7l+I/ljCbxAQ==",
+      "license": "MIT",
+      "dependencies": {
+        "@expo/config-plugins": "~57.0.9",
+        "@expo/config-types": "^57.0.2",
+        "@expo/json-file": "^11.0.1",
+        "@expo/require-utils": "^57.0.5",
+        "deepmerge": "^4.3.1",
+        "getenv": "^2.0.0",
+        "glob": "^13.0.0",
+        "resolve-workspace-root": "^2.0.0",
+        "semver": "^7.6.0",
+        "slugify": "^1.3.4"
+      }
+    },
+    "node_modules/@expo/package-manager": {
+      "version": "1.13.1",
+      "resolved": "https://registry.npmjs.org/@expo/package-manager/-/package-manager-1.13.1.tgz",
+      "integrity": "sha512-y/K+CaYYpZpNGZhSX4HyLT/vyIunFjNfyoxNysPBCefeLKI/VCx6f9LNPzrxayr3rCYO5bl9O8H+HRQK265Nkg==",
+      "license": "MIT",
+      "dependencies": {
+        "@expo/json-file": "^11.0.1",
+        "@expo/spawn-async": "^1.8.0",
+        "chalk": "^4.0.0",
+        "npm-package-arg": "^11.0.0",
+        "ora": "^3.4.0",
+        "resolve-workspace-root": "^2.0.0"
+      }
+    },
+    "node_modules/fill-range": {
+      "version": "7.1.1",
+      "resolved": "https://registry.npmjs.org/fill-range/-/fill-range-7.1.1.tgz",
+      "integrity": "sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==",
+      "license": "MIT",
+      "dependencies": {
+        "to-regex-range": "^5.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/to-regex-range": {
+      "version": "5.0.1",
+      "resolved": "https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz",
+      "integrity": "sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==",
+      "license": "MIT",
+      "dependencies": {
+        "is-number": "^7.0.0"
+      },
+      "engines": {
+        "node": ">=8.0"
+      }
+    },
+    "node_modules/is-number": {
+      "version": "7.0.0",
+      "resolved": "https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz",
+      "integrity": "sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.12.0"
+      }
+    }
+  },
+  "caller_files": {
+    "node_modules/micromatch/index.js": "6a56366fcf3ae8e678e574900a0acb2ea6f118ea030d09bcc1b1053ccab916bb",
+    "node_modules/micromatch/package.json": "94dbc881c0329813f2481f35fcfa725a2285d45926d33e9b9b8b80b28487752b",
+    "node_modules/metro-file-map/src/watchers/common.js": "fd54d0713d2066eb474652dcdf3f88ff67f66d84600d1d8013ecbf6c7fdc3c47",
+    "node_modules/metro-file-map/package.json": "6596e02aa02ffa7c8cbc06f1d26014d41df49a22a3f28267978ddf69a36261a5",
+    "node_modules/@expo/metro-file-map/build/watchers/common.js": "d84d9441db0dceb5207d320ba2a2265bed436a91ae14b9d45eb135cf0f6faba2",
+    "node_modules/@expo/metro-file-map/package.json": "b0c56cc4837224e46593dcb354eb4a63385f905181498f3a35357761fc6ce2d3",
+    "node_modules/@expo/config/build/paths/paths.js": "edbeeb31fd0b3717853a8113ce7ec82a457d64174ad8c3ed3f974b197529243a",
+    "node_modules/@expo/package-manager/build/utils/nodeManagers.js": "f5ab7a8ea7f6cd144b38cc7ba1248d76d22b8261c8b984f9dd1994407e27ebb8",
+    "node_modules/@expo/package-manager/build/ios/gemfile.js": "a1d5208ee54241bf57d2315ba929daedaeb0762b25309b262a91a4d8739d29a9",
+    "node_modules/@expo/config/package.json": "9f20bdbaa3bb1d8ae644e252aea9879257920832df557f462cf365aa1cfa4c64",
+    "node_modules/@expo/package-manager/package.json": "abc88343f7184c6dc171ca6ec8a2c3d8a912db5f4fa6eb1b4f88eacc6b939d98",
+    "node_modules/fill-range/package.json": "87f5c78f9b47d21f9ca62b60cff1d250a3b468eab320dd13c3f3ab2464a02735",
+    "node_modules/fill-range/index.js": "ca6199f79a117e4d68be02c6bcd974e2f18f358e711a0aba497bffaf1ccadd4e",
+    "node_modules/to-regex-range/package.json": "766fc1bb34fffcd503c89f4194188ce059795c52fd0dc6753cd4b7dcfc3fe1ec",
+    "node_modules/to-regex-range/index.js": "e32199271f92372a2deb70a3a57f7c0f7f558d04152a905eb97104867870c404",
+    "node_modules/is-number/package.json": "51c133f4e41df982aef69027249ff9d7262645029f437d079adc7c83328fb620",
+    "node_modules/is-number/index.js": "04255e482e181687823a95b207802ddd32e746c65dce4c95a5176fc192735960"
+  },
+  "resolutions": [
+    {
+      "caller": "node_modules/micromatch/index.js",
+      "specifier": "braces",
+      "resolved": "node_modules/braces/index.js"
+    },
+    {
+      "caller": "node_modules/metro-file-map/src/watchers/common.js",
+      "specifier": "micromatch",
+      "resolved": "node_modules/micromatch/index.js"
+    },
+    {
+      "caller": "node_modules/@expo/metro-file-map/build/watchers/common.js",
+      "specifier": "micromatch",
+      "resolved": "node_modules/micromatch/index.js"
+    },
+    {
+      "caller": "node_modules/@expo/config/build/paths/paths.js",
+      "specifier": "resolve-workspace-root",
+      "resolved": "node_modules/resolve-workspace-root/build/index.js"
+    },
+    {
+      "caller": "node_modules/@expo/package-manager/build/utils/nodeManagers.js",
+      "specifier": "resolve-workspace-root",
+      "resolved": "node_modules/resolve-workspace-root/build/index.js"
+    },
+    {
+      "caller": "node_modules/@expo/package-manager/build/ios/gemfile.js",
+      "specifier": "resolve-workspace-root",
+      "resolved": "node_modules/resolve-workspace-root/build/index.js"
+    },
+    {
+      "caller": "node_modules/braces/lib/compile.js",
+      "specifier": "fill-range",
+      "resolved": "node_modules/fill-range/index.js"
+    },
+    {
+      "caller": "node_modules/braces/lib/expand.js",
+      "specifier": "fill-range",
+      "resolved": "node_modules/fill-range/index.js"
+    },
+    {
+      "caller": "node_modules/fill-range/index.js",
+      "specifier": "to-regex-range",
+      "resolved": "node_modules/to-regex-range/index.js"
+    },
+    {
+      "caller": "node_modules/fill-range/index.js",
+      "specifier": "is-number",
+      "resolved": "node_modules/is-number/index.js"
+    },
+    {
+      "caller": "node_modules/to-regex-range/index.js",
+      "specifier": "is-number",
+      "resolved": "node_modules/is-number/index.js"
+    }
+  ],
+  "test_exposure": {
+    "resolve-workspace-root": {
+      "scope": "Private fixture only: expose Braces module610 without invoking workspace/Doctor main",
+      "replacements": [
+        {
+          "before": "var r=__nccwpck_require__(6144);module.exports=r})();",
+          "after": "var r=__nccwpck_require__(610);module.exports=r})();",
+          "before_sha256": "67e2dc95e3fc613c145f26849d2c9c4d3b93fc0bb9ba523863f737d13bc9a9ca",
+          "after_sha256": "cd7906e4ba98fa801672d7ca3fcc68693a3958aca6d5bf084a42561b62fbc571"
+        }
+      ]
+    },
+    "expo-doctor": {
+      "scope": "Private fixture only: expose Braces module610 without invoking workspace/Doctor main",
+      "replacements": [
+        {
+          "before": "var y=__nccwpck_require2_(6144);i.exports=y})()",
+          "after": "var y=__nccwpck_require2_(610);i.exports=y})()",
+          "before_sha256": "eb19edf820abaa0bac07df676acf656f373021117419c4ee526c3d782afc097a",
+          "after_sha256": "4cac32d1dcd5dc4dba27afc134203ccaae611d9274acd25cb11012ea735dd341"
+        },
+        {
+          "before": "var __webpack_exports__=__nccwpck_require__(2712);module.exports=__webpack_exports__})();",
+          "after": "var __webpack_exports__=__nccwpck_require__(9072);module.exports=__webpack_exports__})();",
+          "before_sha256": "727283cbc26f229da778eaa996366c13fe2ab5193a5a1e1f722cba87edfcfeae",
+          "after_sha256": "9420dcb72fde294687334126f533670fd7f68e21cad8f2871311e08e5aec609d"
+        }
+      ]
+    }
+  }
+}

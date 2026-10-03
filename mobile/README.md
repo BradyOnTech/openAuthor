@@ -232,12 +232,14 @@ override when an upstream Xcode dependency supplies a patched version itself.
 
 ### Current export security gate
 
-`npm ci` applies the repository's byte-bound local Forge backport. Run
-`npm run security:forge` to verify it. With npm lifecycle scripts enabled,
-supported npm Expo commands refuse unpatched or unexpected verifier,
-caller, dependency-lock or package-copy bytes. Dependency updates require review
-of `security/forge-backport-1.4.0.json`; the guard never accepts new bytes itself.
-The direct guarded export/preflight entry points also perform this check.
+With npm lifecycle scripts enabled, `npm ci` applies the repository's byte-bound
+local Forge and Braces backports. Run `npm run security:forge` and
+`npm run security:braces` to verify both. Supported npm Expo commands refuse
+unpatched or unexpected verifier, parser, caller, dependency-lock or package-copy
+bytes. Dependency updates require review of `security/forge-backport-1.4.0.json`
+and `security/braces-backport-3.0.3.json`; the guards never accept new bytes
+themselves. Direct guarded export/preflight entry points check both before
+loading Expo tooling.
 
 The pinned Node/lib PKCS#1 v1.5 verifier requires complete, canonical DER
 DigestInfo values and empty NULL parameter content. Valid SHA algorithm
@@ -248,6 +250,40 @@ distributions or global/cloud EAS tooling. This mitigation does not clear
 either Forge or Braces release/audit gate, or certify signed native artifacts.
 Direct Expo commands and disabled npm lifecycle scripts require separate
 verification.
+
+The Braces mitigation covers the standalone `braces@3.0.3` package and the seven
+Braces modules embedded in `resolve-workspace-root@2.0.1` and
+`expo-doctor@1.20.4`. Readable CommonJS sources, original compatibility material,
+whole package inventories, exact embedded module entries and surrounding bundle
+bytes are pinned. Each file replacement is atomic; a stopped apply can leave a
+mix of exact original and patched files. Repeating
+`node scripts/braces-backport.mjs apply` completes a recognized mix;
+`security:braces` refuses it until every target is patched. Unknown bytes,
+missing/duplicate/aliased copies, changed callers or symlinked relevant content
+refuse inspection before any replacement. This is per-file recovery, not an
+atomic transaction across all targets or automatic cleanup of temporary files
+left by process termination.
+
+The maintained Braces sources default and cap `maxDepth` at 100 across public
+entry points. Supplied limits must be safe nonnegative integers; zero disallows
+container nesting and larger limits are capped. Combined brace/parenthesis
+nesting and plain-data AST child paths are checked before recursive walkers;
+every child path is limited to `maxDepth + 1` edges. Parent ancestry has a
+separate 102-node bound, allowing a shallow subtree to retain finite original
+ancestors. Validation rejects child, parent and queue cycles, non-scalar values
+and coercible array/object counts before expansion mutates the AST. Shared
+subtrees, stale imbalanced parent links and legacy nonbrace numeric metadata
+remain supported. Queue flattening and append use iterative traversal. The
+10,000-character input ceiling applies independently of `maxLength`;
+`rangeLimit` controls remain. Arbitrary JavaScript getters/proxies, custom
+transforms and combinatorial expansion output are outside this bounded stack
+mitigation. Current ordinary Metro and workspace matching uses Picomatch;
+that reachability does not remove the requirement to repair all supplied Braces
+copies. Package versions stay unchanged and the raw
+[Braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) gate remains
+open. This local mitigation does not certify browser distributions, global/cloud
+EAS tooling, actual devices or signed native artifacts. Direct Expo/Doctor
+commands and disabled lifecycle scripts require explicit guard checks.
 
 `npm run build:web` and `npm run build:test-hosted` run the build-security guard
 before exporting. `npm run build:security` checks the fully resolved production

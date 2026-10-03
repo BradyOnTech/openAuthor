@@ -8,6 +8,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { maintainForgeBackport } from "./forge-backport.mjs";
+import { maintainBracesBackport } from "./braces-backport.mjs";
 
 const mobile = resolve(import.meta.dirname, "..");
 const advisory = "GHSA-86w9-cpqp-85rv";
@@ -157,13 +158,15 @@ async function main() {
   const [mode, ...args] = process.argv.slice(2);
   if (mode === "preflight" && args.length === 0) {
     const forge_backport = maintainForgeBackport(mobile);
-    console.log(JSON.stringify({ ...await preflight(), forge_backport }));
+    const braces_backport = maintainBracesBackport(mobile);
+    console.log(JSON.stringify({ ...await preflight(), forge_backport, braces_backport }));
     return;
   }
   if (mode !== "export") fail("Unsupported guarded export arguments");
   const options = parseExportArguments(args);
   const forge_backport = maintainForgeBackport(mobile);
-  const config = { ...await preflight(), forge_backport };
+  const braces_backport = maintainBracesBackport(mobile);
+  const config = { ...await preflight(), forge_backport, braces_backport };
   const require = createRequire(join(mobile, "package.json"));
   const cli = join(dirname(require.resolve("expo/package.json")), "bin/cli");
   const result = spawnSync(process.execPath, [cli, "export", "--clear", "--source-maps", "--platform", options.platform, "--output-dir", options.output], {
@@ -181,7 +184,7 @@ async function main() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => {
     const allowed = ["Signing configuration requires security review", "Affected signing module entered export", "Pattern tooling module entered export", "Export inspection incomplete", "Unsupported guarded export arguments", "Guarded export failed"];
-    console.error(allowed.includes(error.message) || error.message.startsWith("Forge backport refused:") ? error.message : "Mobile build security inspection failed");
+    console.error(allowed.includes(error.message) || error.message.startsWith("Forge backport refused:") || error.message.startsWith("Braces backport refused:") ? error.message : "Mobile build security inspection failed");
     process.exitCode = 1;
   });
 }
