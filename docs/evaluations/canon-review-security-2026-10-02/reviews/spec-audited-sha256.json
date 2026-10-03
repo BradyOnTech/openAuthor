@@ -1,0 +1,16 @@
+{
+  "base_commit": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "scope": "Frozen WIP Spec review; no source edits or new commits",
+  "files": {
+    "openauthor/canon.py": "d92a4e300c010832aef8fcbeb38a278e3f9f7f641cccf4e24bf2f281498fd210",
+    "openauthor/cli.py": "171e5b26c5e692d248b50c8289a49c0d526354ee8610e224bc524552d8fce7c7",
+    "desktop/src/api.ts": "b9a48080b195155681caf6d061a00b07aedc97af44a51b8c822d752bde9e740c",
+    "desktop/src/memoryApi.test.ts": "07b478da698f74273876e23421bce8e4a07bf496b20c0bd3b1280a8a6663bd01",
+    "desktop/src/AppV2.workflow.test.tsx": "a7e8dd811a7e53379cf3ca25318842dc1b7961afa1a347850953639b136ce3fc",
+    "desktop/src/components/editor/CanonFactReview.tsx": "35f3a3c4a880fc7776a50f4cb029f766cdf027265a92ea64247fb3af7d1d58ab",
+    "mobile/scripts/build-security.mjs": "175c5510595add3440ef71b3f284db442122352370a3f3170b13ab3beb286c74",
+    "mobile/test/buildSecurity.test.mjs": "79ceee1fa739dea02c1b883eeeb25ada68920a65672fdb5a210cd20cafae8d54",
+    "tests/test_canon_evidence_review.py": "8fe692cc3cce408553694a3539b81739a0a3f16dcc0239b54f1d1772b6256c33",
+    "desktop/src/components/editor/CanonFactReview.test.tsx": "f240bfeee7784bf564d50092d9b18a13400fc69f7f42d5fc98ae3e9ddafdf335"
+  }
+}

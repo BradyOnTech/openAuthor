@@ -1,0 +1,50 @@
+{
+  "scope": "Actual GUI undo-batch worker stopped after first scene restoration. Exact owned serve/app killed while worker remained stopped; mutation worker killed last. No normal core read before native restart.",
+  "owner": {
+    "pid": 6527,
+    "ppid": 1,
+    "start": "Fri Oct 2 23:10:17 2026",
+    "state": "S",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop"
+    ]
+  },
+  "worker": {
+    "pid": 13910,
+    "ppid": 6527,
+    "start": "Fri Oct 2 23:22:48 2026",
+    "state": "T",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+      "-m",
+      "openauthor",
+      "proposal",
+      "undo-batch",
+      "--revision",
+      "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a",
+      "--json"
+    ]
+  },
+  "owned_sidecars": [
+    {
+      "pid": 6553,
+      "ppid": 6527,
+      "start": "Fri Oct 2 23:10:21 2026",
+      "state": "S",
+      "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+      "argv": [
+        "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+        "-m",
+        "openauthor",
+        "serve"
+      ]
+    }
+  ],
+  "journal_sha256": "e161c7c04b3cdc8a66ba308bddb9133ea2502b2cd72163d12d3ad0db62935ac9",
+  "changed_scene_ids": [
+    "scene-0001"
+  ],
+  "normal_core_calls_before_restart": 0
+}

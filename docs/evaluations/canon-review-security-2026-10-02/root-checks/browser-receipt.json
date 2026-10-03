@@ -1,0 +1,15 @@
+{
+  "command": [
+    "./node_modules/.bin/playwright",
+    "test",
+    "--config",
+    "/private/tmp/openauthor-canon-build-acceptance-05ysp_jq/playwright.config.ts",
+    "e2e/canon-correction-recovery.spec.ts",
+    "e2e/memory-review-workspace.spec.ts"
+  ],
+  "cwd": "~/Developer/openAuthor/desktop",
+  "exit_code": 0,
+  "started_at": "2026-10-03T04:30:14.157452+00:00",
+  "completed_at": "2026-10-03T04:31:09.178295+00:00",
+  "scope": "Existing real-core offline Canon correction and Memory review regression journeys, one each perChromium/WebKit. Browserhost transport shim uses disposablebooks; not nativepersistent sidecar/physicalauthor acceptance."
+}

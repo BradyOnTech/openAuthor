@@ -1,0 +1,35 @@
+{
+  "scope": "Verifier portability and rejection checks on disposable copies only; no GUI replay or engine calls",
+  "private_trial_directory": "/private/tmp/openauthor-native-evidence-checks-pm9cyzro",
+  "checks": [
+    {
+      "name": "copied_packet_absolute_path",
+      "exit_code": 0,
+      "expected_success": true,
+      "matched_expected_diagnostic": true,
+      "diagnostic": ""
+    },
+    {
+      "name": "sealed_copied_packet",
+      "exit_code": 0,
+      "expected_success": true,
+      "matched_expected_diagnostic": true,
+      "diagnostic": ""
+    },
+    {
+      "name": "readable_receipt_corruption",
+      "exit_code": 1,
+      "expected_success": false,
+      "matched_expected_diagnostic": true,
+      "diagnostic": "or-native-evidence-checks-pm9cyzro/readable-receipt-corruption/verify.py\", line 321, in <module>\n    main()\n    ~~~~^^\n  File \"/private/tmp/openauthor-native-evidence-checks-pm9cyzro/readable-receipt-corruption/verify.py\", line 82, in main\n    require(source.read_bytes() == data(relative), 'Readable receipt differs from raw archive: ' + relative)\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/openauthor-native-evidence-checks-pm9cyzro/readable-receipt-corruption/verify.py\", line 24, in require\n    raise ValueError(message)\nValueError: Readable receipt differs from raw archive: root/interrupted-apply-kill.json\n"
+    },
+    {
+      "name": "committed_journal_rejected_after_hashes_are_updated",
+      "exit_code": 1,
+      "expected_success": false,
+      "matched_expected_diagnostic": true,
+      "diagnostic": "original, 'apply-batch', 3)\n  File \"/private/tmp/openauthor-native-evidence-checks-pm9cyzro/semantic-journal-corruption/verify.py\", line 147, in verify_capture\n    require(result['operation'] == operation and result['journal_phase'] == journal['phase'] == 'active', 'Capture is not the specified uncommitted operation.')\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/openauthor-native-evidence-checks-pm9cyzro/semantic-journal-corruption/verify.py\", line 24, in require\n    raise ValueError(message)\nValueError: Capture is not the specified uncommitted operation.\n"
+    }
+  ],
+  "all_expected_results": true
+}

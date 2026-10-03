@@ -1,0 +1,24 @@
+{
+  "validated_at": "2026-10-03T04:25:39.735299+00:00",
+  "raw_checks_completed_before_successful_normal_core_reads": true,
+  "first_raw_validation": "Eight files and journal absence passed before a CLI syntax attempt exited2 (--id was missing); unchanged repeat raw check precedes correct readback. Failed syntax stdout/stderr retained.",
+  "journal_absent_before_core_readback": true,
+  "eight_applied_baseline_files_exact": {
+    ".openauthor/project.json": true,
+    ".openauthor/revisions/HEAD": true,
+    ".openauthor/workspace/proposals/proposal-289bdde2305f.json": true,
+    ".openauthor/workspace/proposals/proposal-79f654ab9001.json": true,
+    ".openauthor/workspace/proposals/proposal-a679e40226f7.json": true,
+    "manuscript/scenes/0001-mid-write-scene-1.md": true,
+    "manuscript/scenes/0002-mid-write-scene-2.md": true,
+    "manuscript/scenes/0003-mid-write-scene-3.md": true
+  },
+  "revision_head_exact": "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a",
+  "native_gui": "Root CUA observed three applied proposals, six revisions, enabled coordinated Undo, active proposal1 tab and word count119174 after exact new QA PID14147. Transcription only; inline AX not archived.",
+  "scope": "Actual unmodified unsigned a523097 QA GUI interrupted undo; recovery occurred during native startup before root normal core reads. Not signed, clean-machine, power-loss or current new Canon-source bundle acceptance.",
+  "packaged_core_proposed_bodies_match": {
+    "scene-0001": true,
+    "scene-0002": true,
+    "scene-0003": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "reviewer": "/root/canon_security_standards",
+  "baseline_and_head_at_review": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "scope": "Frozen WIP: eight tracked changes and two new tests",
+  "hard_violations": 0,
+  "actionable_optional_heuristics": 0,
+  "tests_executed_by_reviewer": false,
+  "current_hashes_match_reviewed_hashes_at_archival": true,
+  "report_sha256": "4b89ceba35f30652b9ba67157265c006c763ac97a494c33b9aeb0282c0b3c146",
+  "manifest_sha256": "8f563b146a0f971967a40b23b01f01aa9abb67fbf2ca2070a3763603bb42cee9"
+}

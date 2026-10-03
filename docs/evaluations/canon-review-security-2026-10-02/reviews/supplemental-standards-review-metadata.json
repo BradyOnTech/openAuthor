@@ -1,0 +1,12 @@
+{
+  "reviewer": "/root/canon_security_standards",
+  "baseline_and_head_at_review": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "scope": "Supplemental frozen WIP: three fixture/evaluator changes",
+  "prior_review_archive": "/private/tmp/openauthor-canon-security-standards-1cy2pxrn",
+  "hard_violations": 0,
+  "actionable_optional_heuristics": 0,
+  "tests_executed_by_reviewer": false,
+  "current_hashes_match_reviewed_hashes_at_archival": true,
+  "report_sha256": "2266436c68146640ea9e30fd2f681ffb5da4ef1040923534d7177354a9d51e39",
+  "manifest_sha256": "614e9a88ec7a2dc06846d30a62878bc6deeb3c8b75d5725bda78617abd5d73c7"
+}

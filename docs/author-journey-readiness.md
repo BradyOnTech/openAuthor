@@ -22,7 +22,45 @@ retain their explicit limits. Tabs/caret restoration and the wider evidence-firs
 workspace are implemented; fresh-author quality, review burden, long sessions,
 accessibility and signed clean-machine acceptance remain required.
 
-## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+
+Desktop Canon evidence review now carries the original fact/Storyline version.
+Accepted creation, correction and review share current-passage and Plan validity
+checks. Delayed replies preserve newer authority and unfinished corrections;
+suggested facts clearly await author review. Legacy timestamp-only CLI review
+remains compatible and does not gain Storyline protection.
+
+The [Canon/security packet](evaluations/canon-review-security-2026-10-02/README.md)
+records 583 core tests discovered, 582 passed and one existing opt-in Codex contract
+skipped; all 710 desktop tests in 92 files, TypeScript/Vite and four existing
+real-core Chrome/WebKit journeys pass. Both review axes report zero findings
+across 13 changed files. Initial 537 and final 538 input snapshots are retained:
+desktop/build ran before the fixture-only correction on unchanged desktop inputs;
+final core/browser ran after the final snapshot. Initial launch order is root-recorded; the original initial manifest has no capture timestamp. The prior invalid Canon creation
+fixture now creates valid Canon and genuinely reverses Plan order, retaining the
+same diagnostic. Original failures remain inspectable.
+
+All 25 mobile export guard tests and offline web/iOS/Android exports pass. A
+separate observational export retained three maps and confirmed excluded Forge,
+Braces, Micromatch and embedded tooling sources. Installed Braces still reproduces
+stack exhaustion; inspected Metro/workspace callers use Picomatch paths. Export
+containment leaves both mandatory dependency remediation gates open.
+
+The separate [native recovery packet](evaluations/native-midwrite-recovery-2026-10-02/README.md)
+uses the unsigned isolated `a523097` QA app. Actual GUI apply and undo workers were
+stopped after one of three scene replacements with an active journal. After exact
+owned-process termination, native startup recovered every original/applied
+baseline file before successful root core readback. Retrying undo restored all
+three original scene files exactly. Raw journals/files and root CUA transcriptions
+are retained; no native screenshot archive or current `36a4058` native bundle
+acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+upgrades and clean-machine acceptance remain open.
+
+No provider request or deployed mutation occurred. Author files stayed unchanged.
+All six priorities remain in progress; fresh author usefulness/review workload,
+physical phones, deployment and release acceptance are still required.
+
+## Prior keyboard review checkpoint — 2026-10-02, `a523097`
 
 Command Palette now exposes a named dialog, search combobox and results list,
 keeps Tab navigation inside the search, and restores the exact opener/caret on

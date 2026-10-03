@@ -1,0 +1,8 @@
+{
+  "evaluation-fixture-diagnosis.md": "2bca44c5103ecd0935f3a4897d96bc80a857ebdf141020fefa5e554dfa63f339",
+  "evaluation-fixture-green.txt": "f93e732a13ce732eb5777d56afe9eab3485b2ac909516766017b6c431b8dcbfb",
+  "evaluation-fixture-hashes.json": "14603d8755c18a73a49d94b4bfbd76747189cfc989a47f084430c385b2ee3604",
+  "evaluation-fixture-red.txt": "bb9aab4b8d64dd5a9ad52f7835f5b97004bc383bf5e202184dd153b1c4fb72ed",
+  "evaluation-fixture-report.json": "d55af690c386d60d9a4c3f52a62a636721818365aaa36eb58c8a043da8c5bde9",
+  "validity-after-reorder-probe.json": "068f38c3f56ce5b1ad947a73ac7b7d5900c1926273b1a319708f7a39f17c4f99"
+}

@@ -1,0 +1,66 @@
+{
+  "verified_at": "2026-10-03T04:32:07.365635+00:00",
+  "source": "Root recorded completed exec terminal receipts, logs unchanged; verified_at is recording time, not invented execution time.",
+  "checks": {
+    "core": {
+      "command": [
+        "make",
+        "test"
+      ],
+      "cwd": "~/Developer/openAuthor",
+      "exit_code": 0,
+      "terminal_session_id": 90552,
+      "log": "core-final.txt",
+      "tests": 583,
+      "skipped": 1,
+      "skip_reason": "Existing Codex runtime contract requires OPENAUTHOR_CODEX_CONTRACT_BIN; not configured; no provider invoked.",
+      "log_sha256": "53d2445f2839cb71a420eae2d5f4e7627c3a7f6d6e923a03bafcd5efaae5d552"
+    },
+    "desktop": {
+      "command": [
+        "npm",
+        "run",
+        "test"
+      ],
+      "cwd": "~/Developer/openAuthor/desktop",
+      "exit_code": 0,
+      "terminal_session_id": 98815,
+      "log": "desktop.txt",
+      "tests": 710,
+      "files": 92,
+      "log_sha256": "a34201de917d70f7b3e6eed0f110dd39214f27cc66b4ea7d9ae6111102a5f42f"
+    },
+    "build": {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "~/Developer/openAuthor/desktop",
+      "exit_code": 0,
+      "terminal_session_id": 73583,
+      "log": "build.txt",
+      "scope": "TypeScript + Vite build; unchanged production/desktop inputs between initial537 and final538 snapshots.",
+      "log_sha256": "6b387b9594f7cea9bcf2728889f3cb7943c57eab3eb89d1535d5fc43deec3ecb"
+    }
+  },
+  "initial_sandbox_core": {
+    "exit_code": 2,
+    "tests": 583,
+    "errors": 7,
+    "skipped": 1,
+    "log": "core-sandbox-attempt.txt",
+    "scope": "6local loopbackbind errors plus1 evaluationfixture refusal; original retained"
+  },
+  "intermediate_approved_core": {
+    "exit_code": 2,
+    "tests": 583,
+    "errors": 1,
+    "skipped": 1,
+    "log": "core-approved.txt",
+    "scope": "Local socket restrictions resolved; prior invalidcreationfixture refused; original retained"
+  },
+  "final_inputs_unchanged": true,
+  "broader_inputs": 538,
+  "author_files_unchanged": true
+}

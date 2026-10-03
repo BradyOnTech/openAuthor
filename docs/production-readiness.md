@@ -17,15 +17,53 @@ build alone satisfies this goal.
 | Manuscript safety | Slow/failing saves, rapid scene switching, focus-mode transitions, crash recovery, external edits, and concurrent operations preserve every draft or visibly block conflicting writes | Save and stale-response safeguards plus durable multi-file recovery now have real subprocess-kill evidence; unknown newer writing requires reviewed comparison. Noncooperating writers, physical power loss and full signed-GUI acceptance remain explicit limits |
 | Authoring | Create/import a book, draft and organize chapters/scenes, read, search, reopen and export with predictable structure and no unexplained loss | Connected browser/real-Python journey now covers import, planning, chapter reading, Memory, search, local copilot notes and Word export; packaged/full-novel acceptance remains required |
 | AI assistance | Real configured provider receives relevant, bounded, attributable context; streaming, cancellation, failures and retries work without lost or duplicated turns | An authenticated October 2 chapter critique caught a planted knowledge problem. Fresh Voice analysis and two alternatives exposed a profile-version defect and invented departure ambiguity; original responses and fixes are retained. Refinement and author judgment remain open |
-| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Current isolated `a523097` native GUI applies three synthetic scenes together, byte-exactly undoes, verifies backup/restore and resumes after post-operation SIGKILL. Mid-write GUI recovery and signed/clean-machine acceptance remain required |
-| Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
+| Change review | Exact proposed text, selective acceptance, revisions, staleness/conflict checks, multi-scene atomic apply and undo work together through the actual application | Separate unsigned `a523097` GUI apply/undo mid-write interruption recovers exact original/applied baselines and supports retry. Prior completed backup/restore remains scoped separately. Current-source signed/clean-machine acceptance and interrupted restore remain required |
+| Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Current `36a4058` guards original Canon review versions, accepted validity and delayed drafts. Fresh-author accuracy and review workload remain unmeasured |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
-| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Current `a523097` named Command Palette/focus restoration and exact keyboard Plan ordering pass 13 real-core journeys per engine; prior sampled contrast and native Search/Plan/caret evidence retain their source scopes. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `a523097` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five instrumented packaged-engine recovery stages. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Prior `a523097` named Command Palette/focus restoration and exact keyboard Plan ordering pass 13 real-core journeys per engine; prior sampled contrast and native Search/Plan/caret evidence retain their source scopes. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Prior `a523097` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five instrumented packaged-engine recovery stages. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+
+Desktop Canon evidence review now carries the original fact/Storyline version.
+Accepted creation, correction and review share current-passage and Plan validity
+checks. Delayed replies preserve newer authority and unfinished corrections;
+suggested facts clearly await author review. Legacy timestamp-only CLI review
+remains compatible and does not gain Storyline protection.
+
+The [Canon/security packet](evaluations/canon-review-security-2026-10-02/README.md)
+records 583 core tests discovered, 582 passed and one existing opt-in Codex contract
+skipped; all 710 desktop tests in 92 files, TypeScript/Vite and four existing
+real-core Chrome/WebKit journeys pass. Both review axes report zero findings
+across 13 changed files. Initial 537 and final 538 input snapshots are retained:
+desktop/build ran before the fixture-only correction on unchanged desktop inputs;
+final core/browser ran after the final snapshot. Initial launch order is root-recorded; the original initial manifest has no capture timestamp. The prior invalid Canon creation
+fixture now creates valid Canon and genuinely reverses Plan order, retaining the
+same diagnostic. Original failures remain inspectable.
+
+All 25 mobile export guard tests and offline web/iOS/Android exports pass. A
+separate observational export retained three maps and confirmed excluded Forge,
+Braces, Micromatch and embedded tooling sources. Installed Braces still reproduces
+stack exhaustion; inspected Metro/workspace callers use Picomatch paths. Export
+containment leaves both mandatory dependency remediation gates open.
+
+The separate [native recovery packet](evaluations/native-midwrite-recovery-2026-10-02/README.md)
+uses the unsigned isolated `a523097` QA app. Actual GUI apply and undo workers were
+stopped after one of three scene replacements with an active journal. After exact
+owned-process termination, native startup recovered every original/applied
+baseline file before successful root core readback. Retrying undo restored all
+three original scene files exactly. Raw journals/files and root CUA transcriptions
+are retained; no native screenshot archive or current `36a4058` native bundle
+acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+upgrades and clean-machine acceptance remain open.
+
+No provider request or deployed mutation occurred. Author files stayed unchanged.
+All six priorities remain in progress; fresh author usefulness/review workload,
+physical phones, deployment and release acceptance are still required.
+
+## Prior keyboard review checkpoint — 2026-10-02, `a523097`
 
 Command Palette now exposes a named dialog, search combobox and results list,
 keeps Tab navigation inside the search, and restores the exact opener/caret on

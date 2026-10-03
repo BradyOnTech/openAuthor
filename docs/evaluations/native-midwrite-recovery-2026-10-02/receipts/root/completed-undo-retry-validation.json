@@ -1,0 +1,28 @@
+{
+  "verified_at": "2026-10-03T04:27:07.961116+00:00",
+  "original_whole_scene_files_exact": {
+    "scene-0001": true,
+    "scene-0002": true,
+    "scene-0003": true
+  },
+  "journal_absent": true,
+  "undo_revision": "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a",
+  "proposals": {
+    "proposal-289bdde2305f": {
+      "status": "applied",
+      "undone_at": "2026-10-03T04:25:44.742857+00:00",
+      "undo_revision": "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a"
+    },
+    "proposal-a679e40226f7": {
+      "status": "applied",
+      "undone_at": "2026-10-03T04:25:44.742857+00:00",
+      "undo_revision": "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a"
+    },
+    "proposal-79f654ab9001": {
+      "status": "applied",
+      "undone_at": "2026-10-03T04:25:44.742857+00:00",
+      "undo_revision": "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a"
+    }
+  },
+  "native_gui_observation": "Root CUA: all3 proposals display undone,7revision history, activeproposal1UNDONE,119180words; coordinatedUndo removed. Manual transcription, no native screenshot archived."
+}

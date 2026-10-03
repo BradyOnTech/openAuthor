@@ -1,0 +1,18 @@
+{
+  "captured_at": "2026-10-03T04:22:01.600655+00:00",
+  "book": "/private/tmp/openauthor-native-midwrite-sleAGq/book",
+  "head": "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a",
+  "journal_absent": true,
+  "whole_file_sha256": {
+    ".openauthor/project.json": "31ce6265b5abc54dd92d78d6fea4159d9a88c2967168ea19b8ca0f9dc72bf79d",
+    ".openauthor/revisions/HEAD": "5f9ffe30b2464d314e1eb54851bc547bb15881c9cd37318a2bdd05a78b7d8e91",
+    ".openauthor/workspace/proposals/proposal-289bdde2305f.json": "6b0acb262b8ea6b0c5c1d2ff2578e1786b46bf265a3c2ebf394debc97b4a20de",
+    ".openauthor/workspace/proposals/proposal-79f654ab9001.json": "ece03da19d682ab8b004091dbe1d75c52b7c1d5d74e73f09404a0b62503e1b78",
+    ".openauthor/workspace/proposals/proposal-a679e40226f7.json": "294cc7daa412983b9d3ab3e5bcd8ce70e314cfbb76b272e9291c1962ace7f4ae",
+    "manuscript/scenes/0001-mid-write-scene-1.md": "0882be699dbdc3e78ce05a71e18ebfe037b024bbb83cadae60092ad07382f63e",
+    "manuscript/scenes/0002-mid-write-scene-2.md": "58160e4951515d8478edecc1ba590e91603996e9fe89afd8a95ef18a57cb3e48",
+    "manuscript/scenes/0003-mid-write-scene-3.md": "2c25ab795fc656a9073aae090fe901d6149dccf2c520ee2e759525232fb97737"
+  },
+  "scope": "Actual completed GUI apply state before undo observer is armed; raw files read directly, no normal core commands.",
+  "supersedes": "Incomplete applied-baseline raw copy attempt used wrong proposal field; preparatory assertion failed without product mutation."
+}

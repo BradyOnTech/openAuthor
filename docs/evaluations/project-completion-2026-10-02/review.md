@@ -1,11 +1,49 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `a523097`; all six
+Status: **in progress**. The latest implementation is `36a4058`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
-## Latest keyboard review checkpoint — 2026-10-02, `a523097`
+## Latest Canon and recovery checkpoint — 2026-10-02, `36a4058`
+
+Desktop Canon evidence review now carries the original fact/Storyline version.
+Accepted creation, correction and review share current-passage and Plan validity
+checks. Delayed replies preserve newer authority and unfinished corrections;
+suggested facts clearly await author review. Legacy timestamp-only CLI review
+remains compatible and does not gain Storyline protection.
+
+The [Canon/security packet](../canon-review-security-2026-10-02/README.md)
+records 583 core tests discovered, 582 passed and one existing opt-in Codex contract
+skipped; all 710 desktop tests in 92 files, TypeScript/Vite and four existing
+real-core Chrome/WebKit journeys pass. Both review axes report zero findings
+across 13 changed files. Initial 537 and final 538 input snapshots are retained:
+desktop/build ran before the fixture-only correction on unchanged desktop inputs;
+final core/browser ran after the final snapshot. Initial launch order is root-recorded; the original initial manifest has no capture timestamp. The prior invalid Canon creation
+fixture now creates valid Canon and genuinely reverses Plan order, retaining the
+same diagnostic. Original failures remain inspectable.
+
+All 25 mobile export guard tests and offline web/iOS/Android exports pass. A
+separate observational export retained three maps and confirmed excluded Forge,
+Braces, Micromatch and embedded tooling sources. Installed Braces still reproduces
+stack exhaustion; inspected Metro/workspace callers use Picomatch paths. Export
+containment leaves both mandatory dependency remediation gates open.
+
+The separate [native recovery packet](../native-midwrite-recovery-2026-10-02/README.md)
+uses the unsigned isolated `a523097` QA app. Actual GUI apply and undo workers were
+stopped after one of three scene replacements with an active journal. After exact
+owned-process termination, native startup recovered every original/applied
+baseline file before successful root core readback. Retrying undo restored all
+three original scene files exactly. Raw journals/files and root CUA transcriptions
+are retained; no native screenshot archive or current `36a4058` native bundle
+acceptance is claimed. Interrupted restore, VoiceOver, power loss, signed installs,
+upgrades and clean-machine acceptance remain open.
+
+No provider request or deployed mutation occurred. Author files stayed unchanged.
+All six priorities remain in progress; fresh author usefulness/review workload,
+physical phones, deployment and release acceptance are still required.
+
+## Prior keyboard review checkpoint — 2026-10-02, `a523097`
 
 Command Palette now exposes a named dialog, search combobox and results list,
 keeps Tab navigation inside the search, and restores the exact opener/caret on
@@ -215,17 +253,19 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Desktop | Current `a523097`: 699 tests in 91 files; TypeScript/production build | Current native account/Keychain acceptance is unobserved |
-| Writing/accessibility browser workflows | Current `a523097`: 13/13 Chrome and 13/13 WebKit, no fail/skip/flake; actual keyboard typeahead and Move activation | Real-core offline shell; native GUI and VoiceOver separate. Earlier selectOption run is intermediate evidence |
-| Account/key-recovery browser workflows | Historical `8aaf17d`: 11/11 Chromium and 11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries; not rerun for keyboard repairs |
-| Gateway/database | Historical `8aaf17d`: 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; nine real database/process voice cases; not rerun for keyboard repairs |
-| Python 3.13 | Historical `0cd77bd`: 577/577, no skip | Unchanged core; not rerun this iteration |
-| Actual bundled Python 3.11.15 | Historical `0cd77bd`: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
+| Desktop | Current `36a4058`: 710 tests in 92 files; TypeScript/production build | Native account/Keychain acceptance remains unobserved |
+| Canon/Memory browser workflows | Current `36a4058`: four passed cases, two unique journeys each in Chrome/WebKit; no fail/skip/flake | Existing real-core offline regressions with browser host shim; not native persistent sidecar or fresh-author quality |
+| Writing/accessibility browser workflows | Historical `a523097`: 13/13 Chrome and 13/13 WebKit; actual keyboard typeahead and Move activation | Earlier source scope; not rerun in the Canon pass. VoiceOver remains separate |
+| Account/key-recovery browser workflows | Historical `8aaf17d`: 11/11 Chromium and 11/11 WebKit, no skip | Synthetic SDK, vault and RPC boundaries; not rerun for Canon repairs |
+| Gateway/database | Historical `8aaf17d`: 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP; nine database/process voice cases; not rerun for Canon repairs |
+| Python 3.13 | Current `36a4058`: 583 discovered, 582 passed, one skipped | Existing optional Codex contract requires an explicit binary; current full suite includes Canon fixture correction |
+| Actual bundled Python 3.11.15 | Historical `0cd77bd`: 577/577, no skip | Not rerun for current Canon source |
 | Writing browser workflows | Historical `0cd77bd`: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows |
-| Mobile | Historical `8aaf17d`: 243 tests in 34 files, TypeScript and guarded web App build; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; prior `0cd77bd` iOS/Android exports retain their scope; no physical phones/deployed acceptance; not rerun for keyboard repairs |
-| Normal native arm64 app | Current `a523097`: exact core, strict canonical identity, runtime contract and five instrumented copied-bundle SIGKILL stages | Unsigned packaged-engine verification; no GUI interruption, signed or clean-machine certificate |
-| Isolated native GUI | Current `a523097` local flavor: three-scene apply/whole-file exact undo, verified 41-file backup/restore, seven-revision history and post-operation SIGKILL restart | Separate application/cloud/provider configuration; completed-operation roundtrip only, no mid-write GUI interruption, full accessibility/account/Keychain acceptance |
-| Independent review | Current Spec: 0 open; Standards: 0 hard and 1 optional low Data Clumps suggestion | Local implementation review, not release acceptance |
+| Mobile export guard | Current `36a4058`: 25/25 tests and normal offline web/iOS/Android exports; three maps retained by a separate observational export | Export containment keeps both dependency remediation gates open; normal/observed artifacts differ |
+| Broader mobile | Historical `8aaf17d`: 243 tests in 34 files; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; broader suite not rerun; no physical phones or deployed acceptance |
+| Normal native arm64 app | Historical `a523097`: exact core, strict canonical identity, runtime contract and five copied-bundle SIGKILL stages | Unsigned packaged-engine checks; new `36a4058` Canon bundle not verified |
+| Isolated native GUI | Separate unsigned `a523097`: actual apply/undo interrupted after one of three scenes; native restart restores exact eight-file baselines; retry undo restores original files | Root CUA/raw evidence, not replay or current Canon-build acceptance. Prior completed backup/restore remains scoped separately; interrupted restore, VoiceOver, signing, upgrades and clean-machine gates open |
+| Independent review | Current 13 changed files: Spec 0 open; Standards 0 hard/optional | Implementation review; prior keyboard optional Data Clumps remains historical; no release certificate |
 
 The earlier [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
 core SHA-256 `671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440`

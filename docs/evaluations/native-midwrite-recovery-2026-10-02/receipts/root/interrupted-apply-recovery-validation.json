@@ -1,0 +1,18 @@
+{
+  "stage": "restarted GUI recovered interrupted apply before any root normal core call",
+  "baseline_files_exact": 8,
+  "scene_files_exact": 3,
+  "proposals_exact_and_pending": 3,
+  "original_HEAD_restored": true,
+  "journal_retired": true,
+  "raw_baseline_sha256": {
+    ".openauthor/project.json": "31ce6265b5abc54dd92d78d6fea4159d9a88c2967168ea19b8ca0f9dc72bf79d",
+    ".openauthor/revisions/HEAD": "bedc18b0853d1d97ac674e2c302636ef04bff08a0a8215244a0300d7d3831241",
+    ".openauthor/workspace/proposals/proposal-289bdde2305f.json": "458f90ede6806317b7b269feeec30881c5f5db6080dbfa27c5377dd74ca97472",
+    ".openauthor/workspace/proposals/proposal-79f654ab9001.json": "0580f5c86f791303dc7c024bab4021d22b2144d2186188d1ee6d128e6f98c9eb",
+    ".openauthor/workspace/proposals/proposal-a679e40226f7.json": "f7faf7e5123635b7a65c85d580e0e1277bde6abc97bf0cd61219543302e7f47e",
+    "manuscript/scenes/0001-mid-write-scene-1.md": "59190315a5bc8e1f995d9b4a6a7915ab3d74dbdeba8698ca98d58b696149a1a1",
+    "manuscript/scenes/0002-mid-write-scene-2.md": "24c019688c81db9ccbba383e3fb6d885d432316175d58a91444fb9581f4ceb82",
+    "manuscript/scenes/0003-mid-write-scene-3.md": "e9fb19b68422a445237e154d85d4a3c1048309e1425981af5cad77765302fabc"
+  }
+}

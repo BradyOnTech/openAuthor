@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "source_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "application_identifier": "com.openauthor.acceptance.qa2d6a9172491741c192636a4a51a729e7",
+  "application_sha256": "90b9f1b612cefd788360a359a267b4e5b2cd7153dbf105f827659fc91f1c3d78",
+  "packaged_core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+  "architecture": "arm64",
+  "provider_calls": 0,
+  "fixture_scenes": 3,
+  "scene_body_bytes": [
+    262180,
+    262191,
+    262200
+  ],
+  "actual_gui_apply_capture": {
+    "active_journal_files": 3,
+    "changed_scene_ids": [
+      "scene-0001"
+    ],
+    "unchanged_original_scenes": 2
+  },
+  "actual_gui_undo_capture": {
+    "active_journal_files": 1,
+    "changed_scene_ids": [
+      "scene-0001"
+    ],
+    "unchanged_applied_scenes": 2
+  },
+  "gui_apply_recovery": "eight original baseline files exact; three pending proposals; original HEAD; journal retired before root core read",
+  "gui_undo_recovery": "eight applied baseline files exact; shared apply HEAD; journal retired before successful root core read",
+  "gui_retries": "completed coordinated apply then completed coordinated undo; three whole scene files restored exactly and one shared undo Revision",
+  "preparatory_cli_mechanics_trials": 2,
+  "retained_reachable_revisions_after_completed_undo": 7,
+  "root_manual_observations_retained": true,
+  "root_cleanup_retained": true,
+  "seal_state": "final",
+  "evidence_kind": "External bounded observer of unmodified native GUI-spawned worker, root manual CUA transcription, retained raw file/process/core readbacks.",
+  "native_screenshot_files_archived": false,
+  "gui_replayed_by_verifier": false,
+  "production_hooks_used": false,
+  "release_certified": false,
+  "current_new_canon_source_bundle_verified": false,
+  "not_established": [
+    "Developer ID signing/notarization",
+    "clean-machine installation or upgrade",
+    "physical power loss",
+    "interruption during backup restore",
+    "VoiceOver/display scaling/long-session acceptance",
+    "fresh author editorial or Memory acceptance",
+    "physical mobile/deployed authorization acceptance",
+    "current new Canon-source native bundle acceptance"
+  ],
+  "all_six_priorities_complete": false
+}

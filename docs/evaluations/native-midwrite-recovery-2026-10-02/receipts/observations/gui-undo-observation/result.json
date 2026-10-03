@@ -1,0 +1,94 @@
+{
+  "result": "captured_active_changed_scene_state",
+  "worker": {
+    "pid": 13910,
+    "ppid": 6527,
+    "start": "Fri Oct 2 23:22:48 2026",
+    "state": "T",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+      "-m",
+      "openauthor",
+      "proposal",
+      "undo-batch",
+      "--revision",
+      "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a",
+      "--json"
+    ]
+  },
+  "worker_left_stopped": true,
+  "journal_phase": "active",
+  "journal_id": "5c7b9f6ae4594b488209d41e928c927b",
+  "journal_file_count": 1,
+  "journal_sha256": "e161c7c04b3cdc8a66ba308bddb9133ea2502b2cd72163d12d3ad0db62935ac9",
+  "changed_scene_ids": [
+    "scene-0001"
+  ],
+  "scene_sha256": {
+    "scene-0001": "59190315a5bc8e1f995d9b4a6a7915ab3d74dbdeba8698ca98d58b696149a1a1",
+    "scene-0002": "58160e4951515d8478edecc1ba590e91603996e9fe89afd8a95ef18a57cb3e48",
+    "scene-0003": "2c25ab795fc656a9073aae090fe901d6149dccf2c520ee2e759525232fb97737"
+  },
+  "scene_baseline_sha256": {
+    "scene-0001": "0882be699dbdc3e78ce05a71e18ebfe037b024bbb83cadae60092ad07382f63e",
+    "scene-0002": "58160e4951515d8478edecc1ba590e91603996e9fe89afd8a95ef18a57cb3e48",
+    "scene-0003": "2c25ab795fc656a9073aae090fe901d6149dccf2c520ee2e759525232fb97737"
+  },
+  "raw_files_sha256": {
+    ".openauthor/revisions/HEAD": "5f9ffe30b2464d314e1eb54851bc547bb15881c9cd37318a2bdd05a78b7d8e91",
+    ".openauthor/workspace/proposals/proposal-289bdde2305f.json": "6b0acb262b8ea6b0c5c1d2ff2578e1786b46bf265a3c2ebf394debc97b4a20de",
+    ".openauthor/workspace/proposals/proposal-79f654ab9001.json": "ece03da19d682ab8b004091dbe1d75c52b7c1d5d74e73f09404a0b62503e1b78",
+    ".openauthor/workspace/proposals/proposal-a679e40226f7.json": "294cc7daa412983b9d3ab3e5bcd8ce70e314cfbb76b272e9291c1962ace7f4ae",
+    "manuscript/scenes/0001-mid-write-scene-1.md": "59190315a5bc8e1f995d9b4a6a7915ab3d74dbdeba8698ca98d58b696149a1a1",
+    "manuscript/scenes/0002-mid-write-scene-2.md": "58160e4951515d8478edecc1ba590e91603996e9fe89afd8a95ef18a57cb3e48",
+    "manuscript/scenes/0003-mid-write-scene-3.md": "2c25ab795fc656a9073aae090fe901d6149dccf2c520ee2e759525232fb97737"
+  },
+  "scope_note": "This captures an active uncommitted transaction after scene replacement. Recovery is not yet attempted or proven; root must kill this exact stopped worker and owned QA app before relaunch.",
+  "schema_version": 1,
+  "scope": "Unmodified QA GUI-spawned transaction worker observation",
+  "book": "/private/tmp/openauthor-native-midwrite-sleAGq/book",
+  "manifest": "/private/tmp/openauthor-native-midwrite-sleAGq/preparation/manifest.json",
+  "gui_or_trial_owner_pid": 6527,
+  "owner_guard": {
+    "pid": 6527,
+    "ppid": 1,
+    "start": "Fri Oct 2 23:10:17 2026",
+    "state": "S",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop"
+    ]
+  },
+  "expected_worker_executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+  "operation": "undo-batch",
+  "normal_core_calls_during_observation": 0,
+  "production_hooks_or_monkeypatches": false,
+  "timeout_seconds": 55.0,
+  "elapsed_seconds": 11.6697,
+  "completed_at": "2026-10-03T04:22:49.425517+00:00",
+  "events": [
+    {
+      "event": "exact_owned_worker_found",
+      "elapsed_seconds": 11.5414,
+      "worker": {
+        "pid": 13910,
+        "ppid": 6527,
+        "start": "Fri Oct 2 23:22:48 2026",
+        "state": "U",
+        "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+        "argv": [
+          "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+          "-m",
+          "openauthor",
+          "proposal",
+          "undo-batch",
+          "--revision",
+          "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a",
+          "--json"
+        ]
+      },
+      "cwd": "/private/tmp/openauthor-native-midwrite-sleAGq/book"
+    }
+  ]
+}
