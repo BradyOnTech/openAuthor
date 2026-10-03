@@ -1,0 +1,22 @@
+{
+  "README.md": "d5e71500fb00c8c4b4792899eb66800d65c11bce63e4beab13622d927455478a",
+  "acceptance-bundle-report.json": "4a807995b3204c76299f843b46bc620b1e0bc6902f8bdfd30c8e86e23bd59b53",
+  "author-artifact-sha256-after.json": "ba2a8e6491fb9dd7848773450f7c60ce1842953ae6843c7e5253ddd253706200",
+  "author-artifact-sha256-before.json": "ba2a8e6491fb9dd7848773450f7c60ce1842953ae6843c7e5253ddd253706200",
+  "base-tauri-config.json": "36926fae6122b63d43d9d6fb40a30cea4e0cdd3fea3679a3e97f19795e5c9751",
+  "build.txt.gz": "1e732fb1111ce4397aa2d262be8c10658b66e9c61ed2375bc6a6f42d084db70a",
+  "configuration.json": "e6d8c6a0d2d8cb50941edea9a867f505912c5790e306942bd4f89ab75cb854f4",
+  "default-build-96bd04d.txt.gz": "d6c366d637497e81c30027d62f93626b6c4d372bade4e33e56b33d58221f0f67",
+  "default-bundle-report-96bd04d.json": "2e8c67a41262343b56903a08885802ae01d76ae7f85433f72bbd0b24f9a4b8a2",
+  "default-bundle-verification-96bd04d.txt.gz": "3fac2dfc5343470cd59b3f42b453e8ba7a5b243147beeb3a279cf2e6e3ad736c",
+  "failed-data-store-config.json": "2e9c8bd3efc26ce51dd21eeb6d33f800e1781c74dfdf69f7d83625e1659cb641",
+  "launch-acceptance.sh": "b6f804c17a2a223ea8723033d18dc63f2eea3bef449d2ba150a9ee8891e10f78",
+  "native-termination.json": "3804d2ee0db57a0cc6e7df809de494b214a9ce92be016814adf073f7c0f76475",
+  "observations.json": "9f0b93a569650a928d4e6d95d611cc0f5c156ab93c860da18129deffc370c8ab",
+  "saved-plan-after-termination.json": "3ccfefb88f047b72101840680180a21b16d892f94bc2b83caf910444dab47db4",
+  "saved-scene-after-termination.json": "3f5a9b73a515cf0d0de48a6fd7ca8cf7e983fbecf4ad53c711dec75fad719ad3",
+  "saved-scene-final.json": "096821c717031f1bffb2b4482b209f043047e3f6df0fe02e8e6063651ed8951b",
+  "tauri.acceptance.json": "1227d508d9963324f573688687f47907785c77ea1f3b059408853ea6d7d9d788",
+  "unique-identifier-build.txt.gz": "00b2bc610d12eb61981ec382853c75d7ebb5563eb0a127416bed363ffeb895d0",
+  "verify.py": "1135a9a516df5c7e50f6b4de75d51d3dcc5a65ca6aca091cd6b53df721c8a13c"
+}

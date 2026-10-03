@@ -21,11 +21,33 @@ build alone satisfies this goal.
 | Story knowledge | Author-approved facts are distinguished from suggestions; citations, temporal knowledge, corrections and continuity consequences are useful on real manuscripts | Narrow deterministic fixtures are insufficient evidence of novel-scale creative usefulness |
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
-| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Fresh end-user walkthrough and accessibility pass required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Locked local package checks/builds pass; unsigned arm64 runtime verification belongs to the prior 0cd77bd native checkpoint. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Targeted browser contrast/focus and isolated light-theme native keyboard/caret/Plan restart pass at `96bd04d`. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `96bd04d` normal unsigned arm64 bundle passes strict identity, exact core, runtime contract and five packaged recovery stages. Contracts/desktop/gateway audits retain earlier clean results; mobile retains one unpatched Forge advisory. Signed artifacts, remote CI and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
-## Latest checkpoint — 2026-10-02, `8aaf17d`
+## Latest writing checkpoint — 2026-10-02, `96bd04d`
+
+Scene title/prose now show keyboard focus rings. Primary labels, sampled metadata,
+editor placeholders and Unsaved status have improved contrast in both themes.
+Focus-mode entry, Escape and Exit target the live prose even when a Saved prose
+comparison comes first; exact-caret regressions preserve the manuscript during
+conflict review. The [writing packet](evaluations/writing-accessibility-2026-10-02/README.md)
+retains 660 desktop tests/90 files, seven initial offline journeys per browser
+and two strengthened repeated theme/caret journeys per browser. Those are seven
+unique journeys, not nine. Independent Spec has zero open findings; Standards
+has zero hard findings and one optional low maintenance suggestion.
+
+The normal Mac build at this commit passes the copied-bundle verifier. A separate
+local acceptance flavor also exposes native title/prose focus, restores tabs,
+unfinished Plan fields and keyboard caret insertion after SIGKILL. Its identity,
+configuration and runtime hashes are retained in the [native packet](evaluations/writing-accessibility-2026-10-02/native/README.md).
+It uses empty cloud configuration and a disabled Codex launcher, so this is not
+native cloud/Keychain/provider acceptance. Full native contrast/VoiceOver/scaling,
+active author sessions, signed multi-scene GUI crash/backup and distribution remain
+open. No new provider request occurred; all six priorities remain in progress.
+Core/mobile/contracts/gateway suites keep their separately named earlier scopes.
+
+## Recovery checkpoint — 2026-10-02, `8aaf17d`
 
 New desktop key provisioning now records an immutable authenticated witness
 atomically with reviewed device envelopes. Desktop and mobile can verify a

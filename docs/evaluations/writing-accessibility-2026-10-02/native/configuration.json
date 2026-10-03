@@ -1,0 +1,15 @@
+{
+  "build_env": {
+    "VITE_PROJECT_REGISTRY": "local",
+    "VITE_SUPABASE_URL": "",
+    "VITE_SUPABASE_ANON_KEY": ""
+  },
+  "launch_overrides": {
+    "OPENAUTHOR_CODEX_HOME": "/private/tmp/openauthor-native-accessibility-7wssu5x_/codex-home",
+    "OPENAUTHOR_CODEX_BIN": "/usr/bin/false"
+  },
+  "scope": "Disposable GUI-only acceptance; no provider/cloud, signing or distribution certificate.",
+  "replaced_failed_data_store_config": "2d6a9172-4917-41c1-9263-6a4a51a729e7",
+  "application_identifier": "com.openauthor.acceptance.qa2d6a9172491741c192636a4a51a729e7",
+  "isolation": "macOS default persistent WebsiteDataStore scoped to fresh nonnil NSBundle bundleIdentifier; observed fresh Welcome still required."
+}

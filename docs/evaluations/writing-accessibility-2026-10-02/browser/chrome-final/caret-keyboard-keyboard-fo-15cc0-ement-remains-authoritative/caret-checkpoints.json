@@ -1,0 +1,103 @@
+[
+  {
+    "stage": "before Plan",
+    "locations": [
+      {
+        "key": "openauthor.location.v1:[\"/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-journey-kJEj1U/The Lantern Cartographer\",\"627a6971e0e5d33b81c9d91437c9f1b056b12d84f3a6a898f0a70405be94f0c6\",\"scene-0001\"]",
+        "start": 43,
+        "end": 43,
+        "direction": "none",
+        "scrollTop": 0,
+        "containerScrollTop": 0,
+        "anchor": "",
+        "before": "Leah waited at the office. [setup verified]",
+        "after": " She kept the receipt folded."
+      }
+    ],
+    "editor": {
+      "start": 43,
+      "end": 43,
+      "focused": true
+    }
+  },
+  {
+    "stage": "after Plan",
+    "locations": [
+      {
+        "key": "openauthor.location.v1:[\"/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-journey-kJEj1U/The Lantern Cartographer\",\"627a6971e0e5d33b81c9d91437c9f1b056b12d84f3a6a898f0a70405be94f0c6\",\"scene-0001\"]",
+        "start": 43,
+        "end": 43,
+        "direction": "none",
+        "scrollTop": 0,
+        "containerScrollTop": 0,
+        "anchor": "",
+        "before": "Leah waited at the office. [setup verified]",
+        "after": " She kept the receipt folded."
+      }
+    ],
+    "editor": null
+  },
+  {
+    "stage": "scene active before focus",
+    "locations": [
+      {
+        "key": "openauthor.location.v1:[\"/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-journey-kJEj1U/The Lantern Cartographer\",\"627a6971e0e5d33b81c9d91437c9f1b056b12d84f3a6a898f0a70405be94f0c6\",\"scene-0001\"]",
+        "start": 43,
+        "end": 43,
+        "direction": "none",
+        "scrollTop": 0,
+        "containerScrollTop": 0,
+        "anchor": "",
+        "before": "Leah waited at the office. [setup verified]",
+        "after": " She kept the receipt folded."
+      }
+    ],
+    "editor": {
+      "start": 43,
+      "end": 43,
+      "focused": false
+    }
+  },
+  {
+    "stage": "scene active after keyboard focus",
+    "locations": [
+      {
+        "key": "openauthor.location.v1:[\"/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-journey-kJEj1U/The Lantern Cartographer\",\"627a6971e0e5d33b81c9d91437c9f1b056b12d84f3a6a898f0a70405be94f0c6\",\"scene-0001\"]",
+        "start": 43,
+        "end": 43,
+        "direction": "none",
+        "scrollTop": 0,
+        "containerScrollTop": 0,
+        "anchor": "",
+        "before": "Leah waited at the office. [setup verified]",
+        "after": " She kept the receipt folded.\n"
+      }
+    ],
+    "editor": {
+      "start": 43,
+      "end": 43,
+      "focused": true
+    }
+  },
+  {
+    "stage": "later keyboard focus",
+    "locations": [
+      {
+        "key": "openauthor.location.v1:[\"/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-journey-kJEj1U/The Lantern Cartographer\",\"627a6971e0e5d33b81c9d91437c9f1b056b12d84f3a6a898f0a70405be94f0c6\",\"scene-0001\"]",
+        "start": 15,
+        "end": 15,
+        "direction": "none",
+        "scrollTop": 0,
+        "containerScrollTop": 0,
+        "anchor": "",
+        "before": "Pointer LLater ",
+        "after": "eah waited at the office. [setup verified] [rest"
+      }
+    ],
+    "editor": {
+      "start": 15,
+      "end": 15,
+      "focused": true
+    }
+  }
+]

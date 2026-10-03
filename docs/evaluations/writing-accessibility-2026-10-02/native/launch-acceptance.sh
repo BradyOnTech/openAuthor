@@ -1,0 +1,3 @@
+#!/bin/sh
+cd /private/tmp/openauthor-native-accessibility-7wssu5x_ || exit 1
+exec /usr/bin/env -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u OPENROUTER_API_KEY -u OPENAUTHOR_PYTHON_BIN -u OPENAUTHOR_RUNTIME_DIR -u OPENAUTHOR_GIT_BIN -u VIRTUAL_ENV -u PYTHONPATH OPENAUTHOR_CODEX_HOME=/private/tmp/openauthor-native-accessibility-7wssu5x_/codex-home OPENAUTHOR_CODEX_BIN=/usr/bin/false GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_AUTHOR_NAME=Acceptance GIT_AUTHOR_EMAIL=acceptance@example.test GIT_COMMITTER_NAME=Acceptance GIT_COMMITTER_EMAIL=acceptance@example.test LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 /private/tmp/openauthor-native-accessibility-7wssu5x_/acceptance-96bd04d.app/Contents/MacOS/openauthor-desktop

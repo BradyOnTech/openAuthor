@@ -1,11 +1,30 @@
 # Project quality pass — 2026-10-02
 
-Status: **in progress**. The latest implementation is `8aaf17d`; all six
+Status: **in progress**. The latest implementation is `96bd04d`; all six
 acceptance priorities remain open. The [requirements ledger](requirements.json)
 separates current results from historical checkpoints and required author,
 device, deployment and distribution outcomes.
 
 ## Latest repairs and evidence
+
+The [writing accessibility packet](../writing-accessibility-2026-10-02/README.md)
+records 660 desktop tests/90 files, seven initial offline journeys per browser
+and two strengthened repeated theme/caret journeys per browser. Focus rings and
+sampled contrast pass in both themes. Focus mode restores the live draft/caret
+when a Saved prose comparison is present. Independent Spec has zero open
+findings; Standards has zero hard findings and one optional low maintenance
+suggestion. Native final builds include final TypeScript/build checks.
+
+The normal current-source Mac app passes canonical identity, exact core,
+runtime contract and five copied-bundle recovery stages. A separate local
+acceptance app also passes observed light-theme title/prose focus, Escape
+caret typing, tab/unfinished Plan restoration after SIGKILL, and keyboard
+typing at the recovered caret. See the [native scope](../writing-accessibility-2026-10-02/native/README.md).
+Its empty-cloud/disabled-Codex configuration does not establish native account
+or Keychain handling, full VoiceOver/contrast/scaling, signed multi-scene GUI
+crash/backup, clean-machine or author acceptance. No new provider request occurred.
+
+### Recovery checkpoint at `8aaf17d`
 
 Current verifier-based recovery works before the first snapshot for newly
 provisioned keys. Mobile candidate and explicit authorization writes now roll
@@ -120,15 +139,17 @@ still required; current unused-export containment does not clear that gate.
 
 | Scope | Result | Limit |
 | --- | --- | --- |
-| Desktop | Current 657 tests in 90 files; TypeScript and production build pass | Frontend build; current native account/Keychain acceptance is unobserved |
-| Account/key-recovery browser workflows | Current 11/11 Chromium and 11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries |
+| Desktop | Current 660 tests in 90 files; final native builds include TypeScript/production build | Current native account/Keychain acceptance is unobserved |
+| Writing/accessibility browser workflows | Seven initial journeys and two strengthened repeated theme/caret journeys per engine | Seven unique workflows; five were not repeated after the final Zen selector refinement |
+| Account/key-recovery browser workflows | 8aaf17d checkpoint:11/11 Chromium and11/11 WebKit, no skip | Production UI with synthetic SDK, vault and RPC boundaries; not rerun for the writing CSS/Zen changes |
 | Gateway/database | Current 100/100, no skip; TypeScript/build; ten SQL suites and 37 concurrency/isolation controls | Disposable PostgreSQL/HTTP fixture; nine real database/process voice cases |
 | Python 3.13 | Prior 0cd77bd: 577/577, no skip | Unchanged core; not rerun this iteration |
 | Actual bundled Python 3.11.15 | Prior 0cd77bd: 577/577, no skip | Interpreter runs overlap; not rerun this iteration |
 | Writing browser workflows | Prior 0cd77bd: 6/6 Chromium and 6/6 WebKit | Separate focused offline workflows; not current account journeys |
 | Mobile | Current 243 tests in 34 files, TypeScript and guarded web App build; Chrome 2/2 full journeys and WebKit 1/1 selected recovery/redaction | Native storage uses mocks; prior 0cd77bd iOS/Android exports retain their scope; no physical phones or deployed acceptance |
-| Native arm64 app | Prior 0cd77bd: exact core, runtime contract and five packaged-engine SIGKILL stages | Unsigned development app; no current frontend or clean-machine certificate |
-| Independent review | Current zero open Standards or Spec findings | Local implementation review, not release acceptance |
+| Normal native arm64 app | Current `96bd04d`: exact core, strict canonical identity, runtime contract and five copied-bundle SIGKILL stages | Unsigned; no signed or clean-machine certificate |
+| Isolated native GUI | Current `96bd04d` local flavor: light-theme focus/Escape, tabs/Plan drafts and keyboard caret after SIGKILL | Different application identity and cloud/provider configuration; no full accessibility/account/Keychain acceptance |
+| Independent review | Current Spec: 0 open; Standards: 0 hard and 1 optional low suggestion | Local implementation review, not release acceptance |
 
 The earlier [bundle report](native-bundle-0cd77bd.json) records clean tracked source,
 core SHA-256 `671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440`

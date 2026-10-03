@@ -1,0 +1,822 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-02T22:24:45.934053+00:00",
+  "baseline_commit": "b080cef6f58ae1a1694d221b2827ea4747991f17",
+  "implementation_commit": "96bd04d5d6392bb3de7c8a817cc0ee20cc0c70ab",
+  "status": "Bounded writing-accessibility repair retained; wider readiness remains in progress.",
+  "source_inputs": 4,
+  "committed_input_matches": 4,
+  "source_archive_scope": "Exactly the four changed source/test files; excludes other application/core/native/fixture/dependency/config inputs and is not a full archived-build certificate.",
+  "desktop": {
+    "initial": {
+      "passed": 657,
+      "files": 90,
+      "failed": 0,
+      "skipped": 0
+    },
+    "final": {
+      "passed": 660,
+      "files": 90,
+      "failed": 0,
+      "skipped": 0
+    },
+    "initial_build": "TypeScript and Vite production build passed before final live-body selector and conflict/exact-caret regression; no final build/typecheck claim from this log."
+  },
+  "browser": {
+    "scope": "Actual installed Chrome and WebKit with rendered desktop production UI and synthetic local-book/Tauri/provider boundaries; settled appearances measured with CSS transitions disabled. No native WebView, VoiceOver or release acceptance claim.",
+    "original_missing_browser": {
+      "failed": 2,
+      "evidence": "logs/openauthor-accessibility-baseline.raw.gz",
+      "classification": "Infrastructure failure: absent default Chromium headless-shell executable; no UI result."
+    },
+    "early_measurement_failure": {
+      "failed": 2,
+      "evidence": "logs/openauthor-accessibility-baseline-chrome.raw.gz",
+      "classification": "Early instrumentation sampled disabled-control transition opacity and incorrect background compositing; measurements not used as baseline proof."
+    },
+    "corrected_baseline": {
+      "failed": 2,
+      "soft_assertion_failures": 15,
+      "contrast_assertion_failures": 11,
+      "missing_focus_outline_assertion_failures": 4,
+      "evidence": "logs/openauthor-accessibility-baseline-corrected.raw.gz",
+      "classification": "Corrected Chrome measurement establishes observed deficits for these controls/themes."
+    },
+    "initial_final_gate": {
+      "chrome": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0
+      },
+      "webkit": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0
+      },
+      "journeys": [
+        "caret-keyboard",
+        "daily-review-polish",
+        "editor-accessibility dark",
+        "editor-accessibility light",
+        "editorial-workspace",
+        "memory-review-workspace",
+        "tab-keyboard"
+      ],
+      "timing": "Before final conflict-selector repair and strengthened exact-caret browser assertion."
+    },
+    "final_exact_caret_gate": {
+      "chrome": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0
+      },
+      "webkit": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0
+      },
+      "journeys": [
+        "editor-accessibility dark",
+        "editor-accessibility light"
+      ],
+      "timing": "After final selector repair; these repeat two journeys from the seven-journey gate and are not nine unique journeys."
+    },
+    "measurements": {
+      "baseline-corrected": {
+        "dark": {
+          "primary button": {
+            "contrast": 3.150598697633129,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 3.150598697633129,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 2.601178449061249,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 2.601178449061249,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 14.09415872176488,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 14.09415872176488,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 1.7534748882833846,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 16.454601179573576,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 16.454601179573576,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 1.5065602752067981,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 2.1162930168737186,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 2.1162930168737186,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 2.7868807255173618,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 2.7868807255173618,
+            "focusVisible": false
+          }
+        },
+        "light": {
+          "primary button": {
+            "contrast": 4.438798892599244,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 4.438798892599244,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 3.6600269317760237,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 3.6600269317760237,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 17.715470529998143,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 1.7871819827296607,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 17.715470529998143,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 1.52686752054152,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 5.807688999006388,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 2.34369626615202,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 2.34369626615202,
+            "focusVisible": false
+          }
+        }
+      },
+      "chrome-exact-caret": {
+        "dark": {
+          "primary button": {
+            "contrast": 5.982685546023507,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.982685546023507,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 7.246346861151614,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 7.246346861151614,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 14.09415872176488,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.394336328342333,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 5.353890836658566,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 16.454601179573576,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.394336328342333,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 5.353890836658566,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 5.3943365180532,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.3943365180532,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 6.524093595279786,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 6.524093595279786,
+            "focusVisible": false
+          }
+        },
+        "light": {
+          "primary button": {
+            "contrast": 4.860578195571781,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 4.860578195571781,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 5.432887169095995,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.432887169095995,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 5.764144284177048,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 5.764144284177048,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 5.807688999006388,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 5.140531976246024,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.140531976246024,
+            "focusVisible": false
+          }
+        }
+      },
+      "webkit-exact-caret": {
+        "dark": {
+          "primary button": {
+            "contrast": 5.982685546023507,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.982685546023507,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 7.246346861151614,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 7.246346861151614,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 14.09415872176488,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.394336328342333,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 5.353890836658566,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 16.454601179573576,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.394336328342333,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 5.353890836658566,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.353890836658566,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 5.3943365180532,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.3943365180532,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 6.524093595279786,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 6.524093595279786,
+            "focusVisible": false
+          }
+        },
+        "light": {
+          "primary button": {
+            "contrast": 4.860578195571781,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 4.860578195571781,
+            "focusVisible": false
+          },
+          "hovered primary button": {
+            "contrast": 5.432887169095995,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.432887169095995,
+            "focusVisible": false
+          },
+          "title keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": true
+          },
+          "title placeholder": {
+            "contrast": 5.764144284177048,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "prose keyboard focus": {
+            "contrast": 17.715470529998143,
+            "outlineStyle": "solid",
+            "outlineWidth": 2,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": true
+          },
+          "prose placeholder": {
+            "contrast": 5.764144284177048,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.764144284177048,
+            "focusVisible": true
+          },
+          "unsaved status": {
+            "contrast": 5.807688999006388,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.807688999006388,
+            "focusVisible": false
+          },
+          "Plan metadata": {
+            "contrast": 5.140531976246024,
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "outlineContrast": 5.140531976246024,
+            "focusVisible": false
+          }
+        }
+      }
+    }
+  },
+  "zen_regressions": {
+    "first_escape_red": {
+      "failed": 1,
+      "passed": 0,
+      "filtered": 35,
+      "evidence": "logs/openauthor-zen-escape-red.raw.gz"
+    },
+    "first_escape_green": {
+      "failed": 0,
+      "passed": 1,
+      "filtered": 35,
+      "evidence": "logs/openauthor-zen-escape-green.raw.gz",
+      "qualification": "Initial narrow Escape repair still used a generic textarea selector."
+    },
+    "first_conflict_setup_run": {
+      "failed": 3,
+      "passed": 1,
+      "filtered": 35,
+      "evidence": "logs/openauthor-zen-conflict-caret-red.raw.gz",
+      "qualification": "Entry case failed because its tab label omitted unsaved text; Escape and Exit-click cases showed wrong Saved prose focus."
+    },
+    "confirmed_conflict_red": {
+      "failed": 3,
+      "passed": 1,
+      "filtered": 35,
+      "evidence": "logs/openauthor-zen-conflict-caret-red-confirmed.raw.gz",
+      "qualification": "All three entry/Escape/Exit-click cases reached focus assertion and picked Saved prose; ordinary mid-sentence case passed."
+    },
+    "final_conflict_green": {
+      "failed": 0,
+      "passed": 4,
+      "filtered": 35,
+      "evidence": "logs/openauthor-zen-conflict-caret-green.raw.gz",
+      "qualification": "Live-body focus and exact caret typing; conflict comparison and saved manuscript stay unchanged."
+    },
+    "baseline_replay_intent": "Retained baseline Zen source is a possible overlay for future replay. Historical red/green logs are development runs, not a replay from this archive; confirmed conflict red included the intermediate generic-selector Escape line absent from baseline."
+  },
+  "repository_checks": {
+    "initial": "passed as reported by root; raw log retained",
+    "final": "passed as reported by root; raw log retained"
+  },
+  "independent_review": {
+    "spec_initial_open": 2,
+    "spec_fixed": 2,
+    "spec_open": 0,
+    "standards_hard_open": 0,
+    "standards_optional_low": 1,
+    "optional_suggestion": "Reduce the three repeated live-body focus queries through a shared helper; no required follow-up."
+  },
+  "logs": {
+    "logs/openauthor-accessibility-baseline.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline.txt",
+      "raw_bytes": 5197,
+      "raw_sha256": "eca65b8af0a2aa16412854c7e69e900b7bd72186cf2575e7f57d7cb52b586351"
+    },
+    "logs/openauthor-accessibility-baseline-chrome.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-chrome.txt",
+      "raw_bytes": 15528,
+      "raw_sha256": "005965987ece4e12a2f7682abfbee9cdddf080d21c5fac4932305118100af362"
+    },
+    "logs/openauthor-accessibility-baseline-corrected.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-corrected.txt",
+      "raw_bytes": 15544,
+      "raw_sha256": "3b029a2e7d88971478f4f6b1c799376d59e6f63b4e0d193f7ae6595d3022a026"
+    },
+    "logs/openauthor-accessibility-chrome-final.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final.txt",
+      "raw_bytes": 1370,
+      "raw_sha256": "f3781b71ea92918f62d173ab7d92582e040fd9e619dfb0dd44ae41475e87dca0"
+    },
+    "logs/openauthor-accessibility-webkit-final.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final.txt",
+      "raw_bytes": 1459,
+      "raw_sha256": "6a7d30c8eb257f54bd187c98ff41fd07375182b14c767c8da3bb5b278c2bc3ef"
+    },
+    "logs/openauthor-accessibility-chrome-exact-caret.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-exact-caret.txt",
+      "raw_bytes": 646,
+      "raw_sha256": "3778ac369fc3624e2a126fc2993ed12ee01e32608e5f0299693fd255923c74f3"
+    },
+    "logs/openauthor-accessibility-webkit-exact-caret.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-exact-caret.txt",
+      "raw_bytes": 672,
+      "raw_sha256": "22eff8e5eea2c645d1c1cb7818c4caeaa22e8a58ac08d88b86a338dfc869beec"
+    },
+    "logs/openauthor-accessibility-desktop-tests.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-desktop-tests.txt",
+      "raw_bytes": 286,
+      "raw_sha256": "e618ab471078ba5c3760e88eb4111f208ec32c59f9d70e27525822d75ed1fd11"
+    },
+    "logs/openauthor-accessibility-desktop-final-tests.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-desktop-final-tests.txt",
+      "raw_bytes": 286,
+      "raw_sha256": "7dc263f321fbac45830bd0f2a24031349e748c7f503a07461ae6e89197639bce"
+    },
+    "logs/openauthor-accessibility-build.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-build.txt",
+      "raw_bytes": 1726,
+      "raw_sha256": "e565b24c3dc974395ecb34474357dbcb29ef92cde450478fa2e269e4b304a217"
+    },
+    "logs/openauthor-accessibility-repo-check.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-repo-check.txt",
+      "raw_bytes": 361,
+      "raw_sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0"
+    },
+    "logs/openauthor-accessibility-final-repo-check.raw.gz": {
+      "original_path": "/private/tmp/openauthor-accessibility-final-repo-check.txt",
+      "raw_bytes": 361,
+      "raw_sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0"
+    },
+    "logs/openauthor-zen-escape-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-zen-escape-red.txt",
+      "raw_bytes": 21156,
+      "raw_sha256": "674e12ed2670a94a8aa88a07d5de8516278ea199abbecf0d6b0d7eb4e18b463a"
+    },
+    "logs/openauthor-zen-escape-green.raw.gz": {
+      "original_path": "/private/tmp/openauthor-zen-escape-green.txt",
+      "raw_bytes": 243,
+      "raw_sha256": "0b247ae3ab085a67e416ed6234b05f25a366a126808fdf1b75f251829ed50bc5"
+    },
+    "logs/openauthor-zen-conflict-caret-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-zen-conflict-caret-red.txt",
+      "raw_bytes": 20746,
+      "raw_sha256": "dd79f6d89c6ca527289f4b1523f0571371f830f3cdb73488c59c479415744760"
+    },
+    "logs/openauthor-zen-conflict-caret-red-confirmed.raw.gz": {
+      "original_path": "/private/tmp/openauthor-zen-conflict-caret-red-confirmed.txt",
+      "raw_bytes": 1956,
+      "raw_sha256": "0588f62831a62bd49398b1136065ba1edce5ae6da27d4e4e6ba6f600db809bef"
+    },
+    "logs/openauthor-zen-conflict-caret-green.raw.gz": {
+      "original_path": "/private/tmp/openauthor-zen-conflict-caret-green.txt",
+      "raw_bytes": 243,
+      "raw_sha256": "ac422fc1f1cf4094b39dcab1f67fff23f9849b61f398bc0b4dd303e8cdbfd67c"
+    }
+  },
+  "browser_artifacts": {
+    "browser/baseline-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2431,
+      "sha256": "37cdedcc62bb086693f71d27cd632c49bf662a7409da0d4897278d8d7da27053"
+    },
+    "browser/baseline-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-chrome/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 43919,
+      "sha256": "3bf22ab9ab86fdc1c9219572fcf964e5a8a5eb656f0b8f325f0af3feae5631a8"
+    },
+    "browser/baseline-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2434,
+      "sha256": "82a88024c8e59864f5ff21fe2eeb50e9ff9a3de4d316aed96312155b5210fb23"
+    },
+    "browser/baseline-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-chrome/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 44161,
+      "sha256": "e09a63b70644ea4ea6dd3c23d3e677feb39a9305a826aa1616195efbdb62fcea"
+    },
+    "browser/baseline-corrected/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-corrected/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2417,
+      "sha256": "c7dc3221f727dd9ade658680a3c54717015015b152a3aa78668ee8130c11802a"
+    },
+    "browser/baseline-corrected/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-corrected/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 43919,
+      "sha256": "3bf22ab9ab86fdc1c9219572fcf964e5a8a5eb656f0b8f325f0af3feae5631a8"
+    },
+    "browser/baseline-corrected/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-corrected/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2380,
+      "sha256": "a424774b6e354666ca163514275e6be9f3c03dcfb0e0fef56e84df4d9ab16285"
+    },
+    "browser/baseline-corrected/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-baseline-corrected/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 44161,
+      "sha256": "e09a63b70644ea4ea6dd3c23d3e677feb39a9305a826aa1616195efbdb62fcea"
+    },
+    "browser/chrome-final/caret-keyboard-keyboard-fo-15cc0-ement-remains-authoritative/caret-checkpoints.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/caret-keyboard-keyboard-fo-15cc0-ement-remains-authoritative/caret-checkpoints.json",
+      "bytes": 3280,
+      "sha256": "fc2e436d3bc6b7ec02a922cd6db930dd9a1f7573857d578dce7286b686a77d32"
+    },
+    "browser/chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/compact-saved-plan.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/compact-saved-plan.png",
+      "bytes": 91006,
+      "sha256": "7b1a30d21970fd4765d5f02e75b74187fa436f7dc392cb019e339bfdad85df34"
+    },
+    "browser/chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions-narrow.png",
+      "bytes": 103025,
+      "sha256": "9cab46dfe69aa89f8bb4511dce4c5db144fcf5f1ea3aadc74e23c3c967280537"
+    },
+    "browser/chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/daily-review-polish-keeps--f5402-actions-beside-long-context/selection-context-actions.png",
+      "bytes": 91868,
+      "sha256": "74baac59ebc43b8518571357ebd075f4cd13e2cf44e714d7298567e867481180"
+    },
+    "browser/chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2400,
+      "sha256": "893a7689d20e3b38ac82aba84d1c4184e57e254ec8fe9458bb9f9d5af3aae443"
+    },
+    "browser/chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 44134,
+      "sha256": "cd8068edd510f0a0f09af3aaca344388f13f2222dfa5f1203db9f318e4c8e272"
+    },
+    "browser/chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2372,
+      "sha256": "a56279b3fe5a8f265e8c83e831b939a8db5a80b341675c01d395cc3b0c71034e"
+    },
+    "browser/chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 44420,
+      "sha256": "42e3db2552271f87c01f8e7fa99f6623322c577bfa67642ba91b8d0feebc8b2c"
+    },
+    "browser/chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace-narrow.png",
+      "bytes": 87804,
+      "sha256": "c2601a3eb79ef5777f20fedf8bd7ff441f11d3c39ddfc00f40b96a191ede7a0b"
+    },
+    "browser/chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace/evidence-workspace.png",
+      "bytes": 122359,
+      "sha256": "52adc10ff38d43e8b8aa89c845a34404dbd4677eb44e886d1746f41b68616b56"
+    },
+    "browser/chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review-narrow.png",
+      "bytes": 84682,
+      "sha256": "279e5548c6fdc67d5b8385068115c541bba58fbd46663234fc9a3916570f5524"
+    },
+    "browser/chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/memory-review-workspace-sc-3f860--and-reopens-review-history/memory-evidence-review.png",
+      "bytes": 118663,
+      "sha256": "b779b51c779569fc65bf31207b645b8ac3ad139371696186017c424b3c7f6bba"
+    },
+    "browser/chrome-final/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing/keyboard-scene-panel.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-final/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing/keyboard-scene-panel.png",
+      "bytes": 49719,
+      "sha256": "a45c6ea673974199f2f34f25dd3ebe3b209cdccd2188c4338b164b2c236b5967"
+    },
+    "browser/webkit-final/caret-keyboard-keyboard-fo-15cc0-ement-remains-authoritative-webkit/caret-checkpoints.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/caret-keyboard-keyboard-fo-15cc0-ement-remains-authoritative-webkit/caret-checkpoints.json",
+      "bytes": 3280,
+      "sha256": "d53c43fb765cba4c451019a6b673f37b762e3181a490940ae3856bc3f18493ce"
+    },
+    "browser/webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/compact-saved-plan.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/compact-saved-plan.png",
+      "bytes": 119657,
+      "sha256": "4ce340f99f1c3a03d90290e4ab16f07809aacc5129a223f1990f5de6701b9b19"
+    },
+    "browser/webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions-narrow.png",
+      "bytes": 123193,
+      "sha256": "c57eb3f1f2ad241ddaa40b227294a812ca505d1e087f306d2f48f5ddd02227b6"
+    },
+    "browser/webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/daily-review-polish-keeps--f5402-actions-beside-long-context-webkit/selection-context-actions.png",
+      "bytes": 124670,
+      "sha256": "828f2f5d1e9b651186694459d2c870b5554c782cece0c4f57758b9fbc41d55ea"
+    },
+    "browser/webkit-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 2400,
+      "sha256": "893a7689d20e3b38ac82aba84d1c4184e57e254ec8fe9458bb9f9d5af3aae443"
+    },
+    "browser/webkit-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png",
+      "bytes": 69214,
+      "sha256": "d43290a5cf816d8cd9b4740b6d69799da9d6375507c03bd1297d42197a7335fb"
+    },
+    "browser/webkit-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 2372,
+      "sha256": "a56279b3fe5a8f265e8c83e831b939a8db5a80b341675c01d395cc3b0c71034e"
+    },
+    "browser/webkit-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png",
+      "bytes": 69935,
+      "sha256": "fee9160e112e2482901fa52e252de04f98347b0198894ea95a7097748dd05dd5"
+    },
+    "browser/webkit-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace-narrow.png",
+      "bytes": 108019,
+      "sha256": "33c294a7b4aaf5bb105f2f1f9a0910cef6d670d80d287ec6fa4831e533aa9e04"
+    },
+    "browser/webkit-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/editorial-workspace-restor-acbd4-vidence-in-a-wide-workspace-webkit/evidence-workspace.png",
+      "bytes": 156407,
+      "sha256": "9e19b3486fb234bb75ce74e7c302e36347c4543c055955985e89b7195b5dd30b"
+    },
+    "browser/webkit-final/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review-narrow.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review-narrow.png",
+      "bytes": 104678,
+      "sha256": "45567e79b1a7018207eb9d70d4c0bbc6d85741d9fe43e08df2517694ba59c852"
+    },
+    "browser/webkit-final/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/memory-review-workspace-sc-3f860--and-reopens-review-history-webkit/memory-evidence-review.png",
+      "bytes": 150097,
+      "sha256": "9a8b317362fb06d13eb1470006733cd130681e3aba218c3d4305fb4bafcc47b9"
+    },
+    "browser/webkit-final/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-webkit/keyboard-scene-panel.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-final/tab-keyboard-keyboard-tabs-c9493--retain-focus-after-closing-webkit/keyboard-scene-panel.png",
+      "bytes": 73012,
+      "sha256": "ef33e9cf48609d3ee483bdc3579ca430133efacb907c28d652ce7d66e35c2130"
+    },
+    "browser/chrome-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2400,
+      "sha256": "893a7689d20e3b38ac82aba84d1c4184e57e254ec8fe9458bb9f9d5af3aae443"
+    },
+    "browser/chrome-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text/dark-writing-focus.png",
+      "bytes": 45383,
+      "sha256": "7adfda13bfdfd8d78d075ae1749a071c03cf7b9ca6adcad4ef3470da0fe37796"
+    },
+    "browser/chrome-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text/appearance.json",
+      "bytes": 2372,
+      "sha256": "a56279b3fe5a8f265e8c83e831b939a8db5a80b341675c01d395cc3b0c71034e"
+    },
+    "browser/chrome-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-chrome-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text/light-writing-focus.png",
+      "bytes": 45566,
+      "sha256": "a06d9deab5c7f5578fa4f51b095a81a0a3c2e9884cd7ac3a45239a05923e4a9f"
+    },
+    "browser/webkit-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 2400,
+      "sha256": "893a7689d20e3b38ac82aba84d1c4184e57e254ec8fe9458bb9f9d5af3aae443"
+    },
+    "browser/webkit-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-exact-caret/editor-accessibility-dark--fea30-ard-focus-and-readable-text-webkit/dark-writing-focus.png",
+      "bytes": 70239,
+      "sha256": "c208b339a0e8486f8d1ac83f9ca9749aa2a2c56a4ad0378f152e26c0b7721b99"
+    },
+    "browser/webkit-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/appearance.json",
+      "bytes": 2372,
+      "sha256": "a56279b3fe5a8f265e8c83e831b939a8db5a80b341675c01d395cc3b0c71034e"
+    },
+    "browser/webkit-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png": {
+      "original_path": "/private/tmp/openauthor-accessibility-webkit-exact-caret/editor-accessibility-light-7cea0-ard-focus-and-readable-text-webkit/light-writing-focus.png",
+      "bytes": 70948,
+      "sha256": "87f841f248d01fd96a47fc9dff7278cd0a995d7139c923294511783fd48f01a6"
+    }
+  },
+  "artifact_counts": {
+    "raw_logs": 17,
+    "browser_json": 14,
+    "browser_png": 28
+  },
+  "limits": [
+    "Measured controls and themes only; no universal WCAG compliance or full accessibility certification.",
+    "Final two-browser rerun covers the strengthened two accessibility journeys, not a repeat of all seven journeys after the final selector repair.",
+    "The original nonnative packet does not cover native GUI acceptance. The separate sealed native/ packet records a limited unsigned local synthetic-book GUI checkpoint; VoiceOver, signed clean-machine, physical-device, deployed/provider and release acceptance remain open.",
+    "No new application/browser/core tests, installs, network calls or UI interaction were performed to assemble the original nonnative packet; the later native checkpoint is documented separately.",
+    "The separately owned native/ directory is excluded from this packet verifier and has its own sealed evidence and verifier."
+  ],
+  "native_checkpoint": {
+    "implementation_commit": "96bd04d5d6392bb3de7c8a817cc0ee20cc0c70ab",
+    "evidence": "docs/evaluations/writing-accessibility-2026-10-02/results.json",
+    "desktop_tests": 660,
+    "desktop_files": 90,
+    "browser_unique_journeys_per_engine": 7,
+    "browser_scope": "Seven initial real-core offline journeys plus two strengthened repeated theme/caret journeys per engine; five were not repeated after the final Zen selector. Not nine unique workflows.",
+    "final_typecheck_build": "Passed in final normal and local acceptance native builds.",
+    "standards_hard_open": 0,
+    "standards_optional_low": 1,
+    "spec_open": 0,
+    "normal_native_report": "docs/evaluations/writing-accessibility-2026-10-02/native/default-bundle-report-96bd04d.json",
+    "normal_native_application_sha256": "ad1d3de50ee15b9527ce439f1a68e681cb4b5852efe18f6ff9bfcc65a999e189",
+    "normal_native_packaged_recovery_stages": 5,
+    "native_gui_report": "docs/evaluations/writing-accessibility-2026-10-02/native/observations.json",
+    "native_gui_scope": "Light-theme title/prose focus and Escape caret insertion; same-identifier SIGKILL restores scene/Plan tabs, unsaved Synopsis/new-act and keyboard caret insertion. Separate local/empty-cloud/disabled-Codex flavor; transcribed root observations, not native screenshots archived here.",
+    "native_gui_application_sha256": "f424e7b362716d9ebbfa6ebeb77ddd13c549432b1aa5d3ddeaf72dbcc37e376a",
+    "release_certified": false,
+    "new_provider_calls": 0,
+    "all_six_priorities": "in_progress"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "primary button": {
+    "color": "rgb(255, 255, 255)",
+    "background": [
+      164,
+      108,
+      16
+    ],
+    "opacity": "1",
+    "contrast": 4.438798892599244,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 4.438798892599244,
+    "focusVisible": false
+  },
+  "hovered primary button": {
+    "color": "rgb(255, 255, 255)",
+    "background": [
+      180,
+      122,
+      24
+    ],
+    "opacity": "1",
+    "contrast": 3.6600269317760237,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 3.6600269317760237,
+    "focusVisible": false
+  },
+  "title keyboard focus": {
+    "color": "rgb(26, 24, 21)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "opacity": "1",
+    "contrast": 17.715470529998143,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 17.715470529998143,
+    "focusVisible": true
+  },
+  "title placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "opacity": "0.4",
+    "contrast": 1.7871819827296607,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.764144284177048,
+    "focusVisible": true
+  },
+  "prose keyboard focus": {
+    "color": "rgb(26, 24, 21)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "opacity": "1",
+    "contrast": 17.715470529998143,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 17.715470529998143,
+    "focusVisible": true
+  },
+  "prose placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "opacity": "0.3",
+    "contrast": 1.52686752054152,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.764144284177048,
+    "focusVisible": true
+  },
+  "unsaved status": {
+    "color": "rgb(138, 92, 10)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "opacity": "1",
+    "contrast": 5.807688999006388,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.807688999006388,
+    "focusVisible": false
+  },
+  "Plan metadata": {
+    "color": "rgb(154, 149, 144)",
+    "background": [
+      232,
+      228,
+      222
+    ],
+    "opacity": "1",
+    "contrast": 2.34369626615202,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 2.34369626615202,
+    "focusVisible": false
+  }
+}

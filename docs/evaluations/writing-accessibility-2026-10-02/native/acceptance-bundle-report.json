@@ -1,0 +1,39 @@
+{
+  "source_commit": "96bd04d5d6392bb3de7c8a817cc0ee20cc0c70ab",
+  "verification_kind": "explicit identity-only local GUI acceptance flavor; canonical normal bundle separately verified",
+  "release_certified": false,
+  "application": {
+    "identifier": "com.openauthor.acceptance.qa2d6a9172491741c192636a4a51a729e7",
+    "version": "0.1.0"
+  },
+  "expected_configuration_sha256": "1227d508d9963324f573688687f47907785c77ea1f3b059408853ea6d7d9d788",
+  "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440",
+  "runtime_binaries_match_default_bundle": true,
+  "binaries": {
+    "application": {
+      "sha256": "f424e7b362716d9ebbfa6ebeb77ddd13c549432b1aa5d3ddeaf72dbcc37e376a",
+      "architectures": [
+        "arm64"
+      ]
+    },
+    "python": {
+      "sha256": "59a902c9eee68de88a56099a584fab057e414c800f9c73892383d548b2c4950c",
+      "architectures": [
+        "arm64"
+      ]
+    },
+    "codex": {
+      "sha256": "80a3933d11a9d13ef806aa24f7bb8afc9169cfe4e9b09d6da6a92922cbde9cff",
+      "architectures": [
+        "arm64"
+      ]
+    },
+    "git": {
+      "sha256": "4387eed8ef6f08893a676a2971235f72707f886ee0ebd28b71e7482caa91d655",
+      "architectures": [
+        "arm64"
+      ]
+    }
+  },
+  "launch_script_sha256": "b6f804c17a2a223ea8723033d18dc63f2eea3bef449d2ba150a9ee8891e10f78"
+}

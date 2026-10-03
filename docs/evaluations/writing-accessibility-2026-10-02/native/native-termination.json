@@ -1,0 +1,7 @@
+{
+  "pid": 33743,
+  "expected_executable": "/private/tmp/openauthor-native-accessibility-7wssu5x_/acceptance-96bd04d.app/Contents/MacOS/openauthor-desktop",
+  "signal": "SIGKILL",
+  "requested_at": "2026-10-03T01:13:03.878233+00:00",
+  "scope": "Only the exact copied disposable acceptance app; Plan fields retained locally and saved scene verified through bundled core."
+}

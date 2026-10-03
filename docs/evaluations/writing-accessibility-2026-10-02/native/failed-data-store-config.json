@@ -1,0 +1,31 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "openAuthor",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "label": "main",
+        "dataStoreIdentifier": [
+          45,
+          106,
+          145,
+          114,
+          73,
+          23,
+          65,
+          193,
+          146,
+          99,
+          106,
+          74,
+          81,
+          167,
+          41,
+          231
+        ]
+      }
+    ]
+  }
+}

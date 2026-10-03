@@ -1,0 +1,6 @@
+{
+  "desktop/e2e/editor-accessibility.spec.ts": "d12e5065d44d0853ebd557f6111d60ad631b31d92dc886dc22b9a306dd31bbcc",
+  "desktop/src/AppV2.workflow.test.tsx": "5954b2b59ec930e4dc2e2382f066c002ff57a60b7d5f378a5c446ca613312384",
+  "desktop/src/components/overlay/ZenMode.tsx": "6aea9d9df0fa6abf87bcac284b974f8dc3f8e6d555605186a791b1b151b3303a",
+  "desktop/src/design-system-v2.css": "93b10d6ccf173d4299c53c4148a2881cb953d5c94845186ce8c9ff1d949b2227"
+}

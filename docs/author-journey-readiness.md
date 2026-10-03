@@ -24,6 +24,14 @@ accessibility and signed clean-machine acceptance remain required.
 
 ## Purpose
 
+The [writing accessibility checkpoint](evaluations/writing-accessibility-2026-10-02/README.md)
+at `96bd04d` passes 660 desktop tests and the bounded browser focus/contrast/caret
+workflows. Its separately configured native test app restores scene/Plan tabs,
+unfinished Plan fields and keyboard caret insertion after forced termination.
+The normal current-source bundle also passes packaged runtime/recovery checks.
+These local results do not close author, full accessibility, native account,
+physical-phone, deployed or signed clean-machine acceptance.
+
 openAuthor is a private, local-first novel-writing studio. The author plans and
 writes the book, discusses it with a manuscript-aware copilot, reviews proposed
 changes, maintains story knowledge, explores alternate Storylines, and exports
