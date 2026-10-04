@@ -7,12 +7,20 @@ import { PROJECT_KEY_VERIFIER_PLAINTEXT, projectKeyVerifierAdditionalData } from
 import type { OutboxEnvelope } from "../src/core/outbox";
 import { exerciseVoiceControls } from "./voiceControls";
 
-test.use({ serviceWorkers: "allow" });
+// WebKit does not intercept synthetic HTTPS requests from a controlled page.
+// Preview separately proves its cached shell using a real local-server outage.
+// Chromium retains the hosted service-worker/offline-network restart checks.
+const webkitHostingOutage = process.env.OPENAUTHOR_TEST_BROWSER === "webkit";
+test.use({ serviceWorkers: webkitHostingOutage ? "block" : "allow" });
 
 // Real browser/SDK/storage/crypto plus the real desktop/Python snapshot and
 // outbox import path. Only the hosted HTTP backend is simulated: this does NOT
 // establish production auth/RLS, device trust, or live voice correctness.
 test("a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review", async ({ page, context }, testInfo) => {
+  if (webkitHostingOutage) testInfo.annotations.push({
+    type: "offline-boundary",
+    description: "Synthetic hosting outage with the local shell available; preview independently verifies WebKit service-worker startup after real server shutdown.",
+  });
   const repo = resolve(process.cwd(), "..");
   const projectRoot = testInfo.outputPath("hosted-fixture");
   function python(operation: string, input?: unknown) {
@@ -139,6 +147,9 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   ]);
   await page.getByRole("textbox", { name: "Search scenes" }).fill("Arrival");
   await expect(page.getByRole("button", { name: /^Read / })).toHaveCount(1);
+  // Matching Memory entries must not consume the scene result limit.
+  await page.getByRole("textbox", { name: "Search scenes" }).fill("brass");
+  await expect(page.getByRole("button", { name: /^Read / })).toHaveText([/The Snow Key/]);
   await page.getByRole("textbox", { name: "Search scenes" }).fill("");
   await page.getByRole("button", { name: "Read The Blue Hour" }).click();
   await expect(page.getByText("Winter · Arrival", { exact: true })).toBeVisible();
@@ -395,13 +406,18 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await page.getByRole("tab", { name: "Review", exact: true }).click();
   await expect(page.getByText(note, { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("readable-pending-capture.png"), fullPage: true });
-  // The actual PWA shell must support a cold offline restart. Expire the
-  // persisted SDK session in this disposable fixture; do not fake online auth.
+  // Chromium also proves the PWA shell under offline network emulation.
+  // WebKit blocks service workers so the synthetic API remains interceptable;
+  // its downloaded-mode restart must make no hosted requests even while the
+  // online hint is true. Preview independently proves its shell during outage.
+  // Expire the persisted SDK session; do not replace online auth behavior.
   await page.getByRole("button", { name: "‹ Projects", exact: true }).click();
   await page.getByRole("button", { name: "Use downloaded books", exact: true }).click();
   await expect(page.getByText("Downloaded books", { exact: true })).toBeVisible();
-  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
-  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  if (!webkitHostingOutage) {
+    await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  }
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("openauthor-companion-v1");
@@ -440,8 +456,8 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   });
   let attemptsBeforeOffline = backendAttempts.length;
   hostingOffline = true;
-  await context.setOffline(true);
-  expect(await page.evaluate(() => navigator.onLine)).toBe(false);
+  await context.setOffline(!webkitHostingOutage);
+  expect(await page.evaluate(() => navigator.onLine)).toBe(webkitHostingOutage);
   await page.reload();
   // Chrome 152 may reset navigator.onLine on reload even under offline network
   // emulation. Downloaded mode must persist and never rely on this hint alone.
@@ -487,7 +503,7 @@ test("a new phone retries enrollment, unlocks a desktop book and returns encrypt
   await expect(page.getByText("Downloaded books", { exact: true })).toBeVisible();
   attemptsBeforeOffline = backendAttempts.length;
   hostingOffline = true;
-  await context.setOffline(true);
+  await context.setOffline(!webkitHostingOutage);
   await page.getByRole("button", { name: /The Winter Observatory/ }).click();
   // Signing out offline must lock the downloaded library and clear the saved
   // session without deleting the author's unsynced, encrypted captures.
@@ -698,5 +714,59 @@ test.describe("no-snapshot key recovery", () => {
     expect(requests.filter(request => request.path.includes("mobile_get_project_key_verifier"))).toHaveLength(4);
     expect(requests.some(request => request.path.includes("/storage/v1/"))).toBe(false);
     expect(errors).toEqual([]); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+});
+
+test.describe("library controls during project loading", () => {
+  test.use({ serviceWorkers: "block" });
+  test("finishing the project list does not move a downloaded-library press onto sign-out", async ({ page }) => {
+    const user = { id: "10000000-0000-4000-8000-000000000081", email: "library-press@author.test", aud: "authenticated", role: "authenticated" };
+    let deviceId: string | null = null;
+    let projectsRequested!: () => void, releaseProjects!: () => void;
+    const requested = new Promise<void>(resolve => { projectsRequested = resolve; });
+    const released = new Promise<void>(resolve => { releaseProjects = resolve; });
+    const session = () => {
+      const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+      const token = `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub: user.id, aud: "authenticated", role: "authenticated", email: user.email,
+        exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000), session_id: "11000000-0000-4000-8000-000000000081",
+        ...(deviceId ? { device_id: deviceId } : {}) })}.${Buffer.from("fixture-signature").toString("base64url")}`;
+      return { access_token: token, refresh_token: "local-fixture-refresh", expires_in: 3600, token_type: "bearer", user };
+    };
+    await page.route("https://companion-backend.test/**", async route => {
+      const request = route.request(), path = new URL(request.url()).pathname;
+      const reply = (value: unknown) => route.fulfill({ contentType: "application/json", body: JSON.stringify(value) });
+      if (path === "/auth/v1/token") return reply(session());
+      if (path === "/auth/v1/user") return reply(user);
+      if (path === "/auth/v1/logout") return reply({});
+      if (path.endsWith("/mobile_register_device")) {
+        deviceId = JSON.parse(request.postData()!).p_device_id;
+        return reply({ id: deviceId, enrolled_at: "2026-10-03T12:00:00Z" });
+      }
+      if (path === "/rest/v1/projects") {
+        projectsRequested(); await released;
+        return reply([{ id: "30000000-0000-4000-8000-000000000081", workspace_id: "20000000-0000-4000-8000-000000000081",
+          name: "The Loading Book", slug: "loading-book", kind: "book", status: "active", updated_at: "2026-10-03T12:00:00Z" }]);
+      }
+      throw new Error(`Unexpected library-press fixture request: ${path}`);
+    });
+    await page.goto("/");
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await requested;
+    await expect(page.getByRole("progressbar")).toBeVisible();
+    const button = page.getByRole("button", { name: "Use downloaded books", exact: true });
+    const bounds = await button.boundingBox();
+    if (!bounds) throw new Error("Downloaded-library control is not visible while projects load");
+    // Complete the hosted response between a real press and its release. A
+    // reader's finger stays at the same position when the spinner disappears.
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.down();
+    releaseProjects();
+    await expect(page.getByRole("button", { name: /The Loading Book/ })).toBeVisible();
+    await page.mouse.up();
+    await expect(page.getByText("Downloaded books", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reconnect to online library", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
   });
 });

@@ -8,10 +8,11 @@ export default defineConfig({
   use: {
     actionTimeout: 10_000,
     baseURL: "http://127.0.0.1:4173",
+    defaultBrowserType: process.env.OPENAUTHOR_TEST_BROWSER === "webkit" ? "webkit" : "chromium",
     viewport: { width: 1400, height: 900 },
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
-    launchOptions: { executablePath: process.env.OPENAUTHOR_BROWSER_EXECUTABLE },
+    launchOptions: process.env.OPENAUTHOR_TEST_BROWSER === "webkit" ? {} : { executablePath: process.env.OPENAUTHOR_BROWSER_EXECUTABLE },
   },
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 4173",

@@ -11,7 +11,7 @@ import { useRecoverableDraft } from "../../recoverableDraft";
 import { emptyRevisionRequest, validRevisionRequest, type RevisionRequestDraft } from "../../revisionRequestDraft";
 
 export function GenerateProposal({ initialSceneId, initialInstruction = "", tabId = "generate" }: { initialSceneId?: string; initialInstruction?: string; tabId?: string }) {
-  const { projectRoot, branches, scenes, runtimeConfig, refreshProposals, refreshRuns, setError, setMessage } =
+  const { projectRoot, branches, scenes, runtimeConfig, refreshProposals, refreshRuns, refreshBudget, setError, setMessage } =
     useWorkspace();
   const { openTab, closeTab } = useEditor();
 
@@ -44,6 +44,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
     return () => { view.current.mounted = false; };
   }, []);
   const [passes, setPasses] = useState<EditorialPass[]>([]);
+  const [savingPass, setSavingPass] = useState(false);
 
   useEffect(() => {
     // The composer can open before the project's scenes finish loading. Keep
@@ -75,8 +76,10 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
   }
 
   async function createCustomPass() {
-    if (!passName.trim() || !passGoal.trim() || !passInstruction.trim()) return;
+    if (savingPass || !passName.trim() || !passGoal.trim() || !passInstruction.trim()) return;
+    setSavingPass(true);
     try {
+      setError("");
       const created = await addEditorialPass(projectRoot, {
         name: passName.trim(), goal: passGoal.trim(), instruction: passInstruction.trim(),
         criteria: passCriteria.split("\n").map((row) => row.trim()).filter(Boolean),
@@ -89,13 +92,13 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
       setMessage(`Editorial Pass “${created.name}” saved.`);
     } catch (error) {
       setError(`Failed to create Editorial Pass: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    } finally { setSavingPass(false); }
   }
 
   async function showResults(proposals: ProposalRecord[] | null) {
     if (!view.current.mounted || view.current.projectRoot !== projectRoot) return;
     try {
-      await Promise.all([refreshProposals(), refreshRuns()]);
+      await Promise.all([refreshProposals(), refreshRuns(), refreshBudget()]);
       if (!proposals || !view.current.mounted || view.current.projectRoot !== projectRoot) return;
       const grouped = Boolean(proposals[0].change_group_id);
       setMessage(grouped ? `${proposals.length} coordinated Change Sets ready. Review each scene, then apply the group atomically from Changes.` : proposals.length === 1 ? "Change Set ready: review each hunk before applying." : `${proposals.length} creative directions ready to compare.`);
@@ -217,6 +220,31 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
             <input type="checkbox" checked={coordinatedSceneIds.includes(scene.id)} onChange={e => setCoordinatedSceneIds(ids => e.target.checked ? [...new Set([...ids, scene.id])] : ids.filter(id => id !== scene.id))} /> {scene.title || scene.id}
           </label>)}
         </div>}
+
+        <section aria-label="Editorial Pass library" style={{ display: "grid", gap: 12, padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span>Editorial Pass</span>
+            <select className="input" value={selectedPassId} onChange={event => choosePass(event.target.value)}>
+              <option value="">Write your own request</option>
+              {passes.map(pass => <option key={pass.id} value={pass.id}>{pass.name}{pass.built_in ? "" : " · custom"}</option>)}
+            </select>
+          </label>
+          {selectedPassId && <div>
+            <p>{passes.find(pass => pass.id === selectedPassId)?.goal}</p>
+            <ul>{passes.find(pass => pass.id === selectedPassId)?.evaluation_criteria.map(criterion => <li key={criterion}>{criterion}</li>)}</ul>
+          </div>}
+          <button className="btn" type="button" disabled={savingPass} onClick={() => setShowPassBuilder(value => !value)} style={{ minHeight: 40 }}>
+            {showPassBuilder ? "Close Editorial Pass builder" : "Create custom Editorial Pass"}
+          </button>
+          {showPassBuilder && <fieldset disabled={savingPass} style={{ display: "grid", gap: 12, border: 0, margin: 0, padding: 0 }}>
+            <legend>Save a reusable revision request</legend>
+            <label style={{ display: "grid", gap: 6 }}><span>Pass name</span><input className="input" value={passName} onChange={event => setPassName(event.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span>Pass goal</span><input className="input" value={passGoal} onChange={event => setPassGoal(event.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span>Pass instruction</span><textarea className="input" rows={3} value={passInstruction} onChange={event => setPassInstruction(event.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span>Evaluation criteria</span><textarea className="input" rows={3} value={passCriteria} onChange={event => setPassCriteria(event.target.value)} placeholder="One review criterion per line" /></label>
+            <button className="btn btn--primary" type="button" disabled={!passName.trim() || !passGoal.trim() || !passInstruction.trim()} onClick={() => void createCustomPass()} style={{ minHeight: 40 }}>{savingPass ? "Saving Editorial Pass…" : "Save Editorial Pass"}</button>
+          </fieldset>}
+        </section>
 
         <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
         <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />

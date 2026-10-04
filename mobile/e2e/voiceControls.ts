@@ -39,7 +39,7 @@ export async function exerciseVoiceControls(page: Page, testInfo: TestInfo) {
   await page.evaluate(() => {
     type Track = { enabled: boolean; stopped: boolean; stop(): void };
     const probe = {
-      mode: "deny", tracks: [] as Track[], sent: [] as Array<Record<string, any>>,
+      mode: "deny", tracks: [] as Track[], sent: [] as Array<Record<string, any>>, permissionRequests: 0,
       contextBeforeAudio: false, permissionPending: false,
       grant: () => {}, emit: (_event: Record<string, unknown>) => {}, disconnect: () => {}, remoteAudio: () => {},
     };
@@ -49,7 +49,10 @@ export async function exerciseVoiceControls(page: Page, testInfo: TestInfo) {
       probe.tracks.push(track);
       return { getTracks: () => [track] };
     };
-    Object.defineProperty(navigator.mediaDevices, "getUserMedia", { configurable: true, value: async () => {
+    // WebKit's native method lookup bypasses an override on the instance in
+    // this loaded app. Override the prototype at the same media boundary.
+    Object.defineProperty(Object.getPrototypeOf(navigator.mediaDevices), "getUserMedia", { configurable: true, value: async () => {
+      probe.permissionRequests++;
       if (probe.mode === "deny") throw new DOMException("Microphone permission denied.", "NotAllowedError");
       if (probe.mode === "pending") {
         probe.permissionPending = true;
@@ -90,6 +93,7 @@ export async function exerciseVoiceControls(page: Page, testInfo: TestInfo) {
   const start = page.getByRole("button", { name: "Start voice", exact: true });
   await start.click();
   await expect(page.getByRole("alert")).toHaveText("Microphone permission denied.");
+  expect(await page.evaluate(() => (window as any).__voiceProbe.permissionRequests)).toBe(1);
   expect(negotiations).toBe(0);
   await expect(start).toBeEnabled();
 

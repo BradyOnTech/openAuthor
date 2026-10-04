@@ -8,15 +8,15 @@ export default defineConfig({
   workers: 1,
   use: {
     ...devices["iPhone 13"],
-    defaultBrowserType: "chromium",
+    defaultBrowserType: process.env.OPENAUTHOR_TEST_BROWSER === "webkit" ? "webkit" : "chromium",
     baseURL: "http://127.0.0.1:4175",
-    launchOptions: process.env.OPENAUTHOR_BROWSER_EXECUTABLE ? { executablePath: process.env.OPENAUTHOR_BROWSER_EXECUTABLE } : {},
+    launchOptions: process.env.OPENAUTHOR_TEST_BROWSER !== "webkit" && process.env.OPENAUTHOR_BROWSER_EXECUTABLE ? { executablePath: process.env.OPENAUTHOR_BROWSER_EXECUTABLE } : {},
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   webServer: {
     command: "python3 -m http.server 4175 --bind 127.0.0.1 --directory dist",
     url: "http://127.0.0.1:4175",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 });

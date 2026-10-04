@@ -2071,6 +2071,11 @@ body {
 }
 
 .panel-area__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -2082,6 +2087,11 @@ body {
   transition: all var(--duration-fast) ease;
   border-bottom: 2px solid transparent;
   user-select: none;
+}
+
+.panel-area__tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
 }
 
 .panel-area__tab:hover {

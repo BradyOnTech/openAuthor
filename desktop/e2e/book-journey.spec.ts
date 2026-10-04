@@ -42,11 +42,11 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await page.getByPlaceholder("Chapter title").fill("The Summons");
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await page.getByRole("combobox", { name: "Move The Clocktower to", exact: true }).selectOption({ label: "The Lost Hour · The Summons" });
-    await page.locator("article").filter({ has: page.getByRole("button", { name: "The Clocktower", exact: true }) }).getByRole("button", { name: "Move", exact: true }).click();
+    await page.getByRole("button", { name: "Move The Clocktower", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "Move The Clocktower to", exact: true })).toHaveValue(/chapter-/);
     await page.getByRole("combobox", { name: "Move The Moving Map to", exact: true }).selectOption({ label: "The Lost Hour · The Summons" });
     await expect(page.getByRole("region", { name: "Structural move preview" })).toBeVisible();
-    await page.locator("article").filter({ has: page.getByRole("button", { name: "The Moving Map", exact: true }) }).getByRole("button", { name: "Move", exact: true }).click();
+    await page.getByRole("button", { name: "Move The Moving Map", exact: true }).click();
     await expect(page.getByText("Scene moved. Manuscript order updated.", { exact: true })).toBeVisible();
     await page.getByRole("textbox", { name: "New beat for The Moving Map" }).fill("The map chooses Mara's door.");
     await page.getByRole("button", { name: "Add beat to The Moving Map" }).click();

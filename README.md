@@ -35,7 +35,7 @@ make desktop-smoke
 ## Local setup (blank machine -> first run)
 
 ```bash
-# 1) install Python 3.11+, Node 22.6+ (.nvmrc selects Node 22), Rust stable
+# 1) install Python 3.11+, Node 22.12+ (.nvmrc selects Node 22), Rust stable
 # 2) clone and enter repository
 git clone <your-repo-url> openAuthor
 cd openAuthor
@@ -71,6 +71,17 @@ npm run tauri:dev
 For shared contracts, session gateway, and mobile development, run
 `make install-js` followed by `make test-all`. Current production gates and
 verification evidence are tracked in [Production readiness](docs/production-readiness.md).
+
+Public workflow tests use the pinned [tester-army/e2e](https://github.com/tester-army/e2e)
+runner across desktop, mobile web, core/contracts, gateway and disposable
+PostgreSQL flows. See [the e2e runbook](e2e/README.md) for setup, the complete
+browser verification commands, native target configuration and coverage limits.
+
+```bash
+make install-e2e
+npm run install:browsers --prefix e2e
+make test-e2e
+```
 
 See `desktop/README.md`, `docs/desktop-architecture.md`, and `docs/desktop-runbook.md`.
 

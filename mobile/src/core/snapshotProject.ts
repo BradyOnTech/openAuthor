@@ -193,7 +193,7 @@ export class SnapshotProject {
     return scene ? { ...scene } : null;
   }
 
-  search(query: string, limit = 8): SearchResult[] {
+  search(query: string, limit = 8, kind?: SearchResult["kind"]): SearchResult[] {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
       throw new Error("Search limit must be between 1 and 50.");
     }
@@ -231,6 +231,7 @@ export class SnapshotProject {
       });
     }
     return results
+      .filter((result) => kind === undefined || result.kind === kind)
       .sort((left, right) => (
         right.score - left.score
         || left.kind.localeCompare(right.kind)

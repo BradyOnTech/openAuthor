@@ -29,6 +29,7 @@ desktop/test-results/
 desktop/playwright-report/
 mobile/test-results/
 mobile/playwright-report/
+e2e/.e2e/
 tmp/
 temp/
 .expo/

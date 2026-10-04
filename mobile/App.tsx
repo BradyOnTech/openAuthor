@@ -161,11 +161,11 @@ function ProjectPicker({ session, onOpen, onSignedOut, onSession }: { session: A
         <Text style={styles.h1}>{session.downloadedOnly ? "Downloaded books" : "Projects"}</Text>
       </View>
       {session.downloadedOnly && <Text style={styles.notice}>Local copies · not refreshed from desktop. Reading and captures work offline. Reconnect to the online library for voice and upload.</Text>}
+      {runtime.mode === "hosted" && <Button label={session.downloadedOnly ? "Reconnect to online library" : "Use downloaded books"} disabled={switching} variant="secondary" onPress={() => void switchLibrary()} />}
+      <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(() => onSignedOut()).catch(() => onSignedOut("Sign-out cleanup did not finish. The local view was closed; sign in to retry."))} />
       <ErrorBanner message={error} />
       {!projects && !error && <ActivityIndicator color="#7d5cff" size="large" />}
       {!!error && <Button label="Retry loading projects" variant="secondary" onPress={() => setAttempt((value) => value + 1)} />}
-      {runtime.mode === "hosted" && <Button label={session.downloadedOnly ? "Reconnect to online library" : "Use downloaded books"} disabled={switching} variant="secondary" onPress={() => void switchLibrary()} />}
-      <Button label="Sign out" variant="secondary" onPress={() => void runtime.signOut().then(() => onSignedOut()).catch(() => onSignedOut("Sign-out cleanup did not finish. The local view was closed; sign in to retry."))} />
       {projects?.length === 0 && <Text style={styles.empty}>{session.downloadedOnly ? "No downloaded books on this device. Connect online and open a published book first." : "No mobile-enabled projects yet. Enable one from desktop Mobile Inbox first."}</Text>}
       <ScrollView contentContainerStyle={styles.list}>
         {projects?.map((project) => (
@@ -226,7 +226,7 @@ function BookUnlock({ projectId, onUnlocked, onEdit }: { projectId: string; onUn
 function ScenesView({ project, onScene }: { project: SnapshotProject; onScene(scene: SnapshotScene): void }) {
   const [query, setQuery] = useState("");
   const scenes = query.trim()
-    ? project.search(query, 30).filter((item) => item.kind === "scene").map((item) => project.getScene(item.sourceId)).filter(Boolean) as SnapshotScene[]
+    ? project.search(query, 30, "scene").map((item) => project.getScene(item.sourceId)).filter(Boolean) as SnapshotScene[]
     : project.listScenes();
   return (
     <ScrollView contentContainerStyle={styles.list}>

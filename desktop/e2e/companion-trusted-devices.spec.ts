@@ -36,12 +36,13 @@ function coordinator(projectId){
    if(pauseRevoke)await new Promise(resolve=>{release=resolve});pauseRevoke=false;
    const target=rows.find(row=>row.device_id===args.p_target_device_id);target.project_revoked_at='2026-10-02T01:00:00Z';state.active=null;
    result={project_id:projectId,device_id:target.device_id,revoked_at:target.project_revoked_at,revoked_by_device_id:desktop,revocation_reason_code:args.p_reason_code};
-  }else if(name==='mobile_rotate_project_key_with_envelopes'){
+  }else if(name==='mobile_rotate_project_key_with_verifier'){
    if(drift){drift=false;state.version++;state.active=state.version;return new Response('{}',{status:409})}
-   if(args.p_expected_previous_version!==state.version)return new Response('{}',{status:409});
+    if(args.p_expected_previous_version!==state.version)return new Response('{}',{status:409});
+    if(args.p_verifier.project_id!==projectId||args.p_verifier.key_version!==state.version+1)return new Response('{}',{status:409});
    const actual=rows.filter(row=>!row.project_revoked_at).map(row=>row.device_id+':'+row.key_id).sort();const supplied=args.p_envelopes.map(row=>row.recipient_device_id+':'+row.recipient_key_id).sort();
    if(JSON.stringify(actual)!==JSON.stringify(supplied))return new Response('{}',{status:409});
-   state.version++;state.active=state.version;result={project_id:projectId,key_version:state.version};
+    state.version++;state.active=state.version;result={project_id:projectId,key_version:state.version,recovery_verifier:args.p_verifier};
   }else throw new Error('Unexpected RPC '+name);
   return new Response(JSON.stringify(result),{status:200});
  }});
@@ -89,8 +90,11 @@ test("reviews trusted device revocation and guarded rotation without leaking pen
   await expect(page.getByText(/Book key 4 created/)).toBeVisible();
   const events = await page.evaluate(() => (window as any).fixture.events);
   expect(events.filter((event: any) => event.name === "mobile_revoke_project_device")).toHaveLength(1);
-  const rotations = events.filter((event: any) => event.name === "mobile_rotate_project_key_with_envelopes");
+  const rotations = events.filter((event: any) => event.name === "mobile_rotate_project_key_with_verifier");
   expect(rotations).toHaveLength(1); expect(rotations[0].args.p_expected_previous_version).toBe(3);
+  expect(rotations[0].args.p_verifier).toMatchObject({ project_id: "20000000-0000-4000-8000-000000000001", key_version: 4, algorithm: "aes-256-gcm-v1", aad_version: 1 });
+  expect(rotations[0].args.p_verifier.nonce_hex).toMatch(/^[0-9a-f]{24}$/);
+  expect(rotations[0].args.p_verifier.ciphertext_sha256).toMatch(/^[0-9a-f]{64}$/);
   expect(rotations[0].args.p_envelopes).toHaveLength(1);
   expect(rotations[0].args.p_envelopes[0].recipient_device_id).toBe("10000000-0000-4000-8000-000000000001");
   expect(rotations[0].args.p_envelopes[0].sealed_project_key_hex).toMatch(/^[0-9a-f]{160}$/);

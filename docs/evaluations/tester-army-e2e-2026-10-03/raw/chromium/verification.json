@@ -1,0 +1,89 @@
+{
+  "startedAt": "2026-10-03T23:41:12.437Z",
+  "updatedAt": "2026-10-03T23:47:41.717Z",
+  "status": "passed",
+  "stage": "complete",
+  "exitCode": 0,
+  "requested": [
+    "--all"
+  ],
+  "reports": [
+    {
+      "suite": "mobile-export",
+      "exitCode": 0
+    },
+    {
+      "suite": "backend",
+      "browser": "none",
+      "exitCode": 0,
+      "report": "backend/report.json",
+      "counts": {
+        "passed": 15
+      },
+      "verified": true
+    },
+    {
+      "suite": "desktop",
+      "browser": "chromium",
+      "exitCode": 0,
+      "report": "desktop-chromium/report.json",
+      "counts": {
+        "passed": 12
+      },
+      "verified": true
+    },
+    {
+      "suite": "mobile",
+      "browser": "chromium",
+      "exitCode": 0,
+      "report": "mobile-chromium/report.json",
+      "counts": {
+        "passed": 6
+      },
+      "verified": true
+    },
+    {
+      "suite": "database",
+      "browser": "none",
+      "exitCode": 0,
+      "report": "database/report.json",
+      "counts": {
+        "passed": 1
+      },
+      "verified": true
+    },
+    {
+      "suite": "test:e2e",
+      "project": "desktop",
+      "runner": "playwright",
+      "exitCode": 0,
+      "report": "playwright-desktop-chromium-test-e2e.json",
+      "counts": {
+        "expected": 38
+      },
+      "verified": true
+    },
+    {
+      "suite": "test:e2e",
+      "project": "mobile",
+      "runner": "playwright",
+      "exitCode": 0,
+      "report": "playwright-mobile-chromium-test-e2e.json",
+      "counts": {
+        "expected": 4
+      },
+      "verified": true
+    },
+    {
+      "suite": "test:e2e:hosted",
+      "project": "mobile",
+      "runner": "playwright",
+      "exitCode": 0,
+      "report": "playwright-mobile-chromium-test-e2e-hosted.json",
+      "counts": {
+        "expected": 3
+      },
+      "verified": true
+    }
+  ]
+}

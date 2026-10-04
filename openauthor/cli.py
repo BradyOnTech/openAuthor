@@ -20,6 +20,7 @@ from .ai import (
 from .auth import SUPPORTED_AUTH_PROVIDERS, get_auth_status, login as auth_login, logout as auth_logout
 from .backups import create_backup, restore_backup, verify_backup
 from .budget import (
+  BUDGET_LIMIT_FIELDS,
   get_generation_budget_report,
   reset_generation_budget_policy,
   summarize_generation_usage,
@@ -1039,6 +1040,10 @@ def build_parser() -> argparse.ArgumentParser:
   generation_budget.add_argument("--daily-estimated-cost-usd", type=float, default=None)
   generation_budget.add_argument("--weekly-tokens", type=int, default=None)
   generation_budget.add_argument("--weekly-estimated-cost-usd", type=float, default=None)
+  generation_budget.add_argument(
+    "--clear-limit", action="append", default=[], choices=BUDGET_LIMIT_FIELDS,
+    help="Disable one budget limit while preserving the others; repeat for several limits.",
+  )
   generation_budget.add_argument("--json", action="store_true", help="Output JSON.")
   generation_config = generation_sub.add_parser("config", help="Show generation runtime config.")
   generation_config.add_argument("--json", action="store_true", help="Output JSON.")
@@ -2649,7 +2654,7 @@ def _run(args: argparse.Namespace) -> int:
 
   if args.command == "generation":
     if args.generation_command == "budget":
-      has_updates = any(
+      has_updates = bool(args.clear_limit) or any(
         value is not None
         for value in (
           args.max_input_tokens,
@@ -2682,6 +2687,7 @@ def _run(args: argparse.Namespace) -> int:
           daily_estimated_cost_usd=args.daily_estimated_cost_usd,
           weekly_tokens=args.weekly_tokens,
           weekly_estimated_cost_usd=args.weekly_estimated_cost_usd,
+          clear_limits=args.clear_limit,
         )
         row = {
           "policy": policy,

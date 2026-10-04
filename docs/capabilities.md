@@ -16,6 +16,16 @@ These states are intentionally independent. Core code is not treated as a shippe
 ## Current product truth
 
 The current task-oriented assessment is [Author journey readiness](author-journey-readiness.md).
+The October 3 [tester-army/e2e workflow pass](../e2e/README.md) adds rendered
+coverage for Editorial Passes, Style Profiles, creative alternatives, Assistant
+promotion paths, substantive Revision retrospectives, budget refusal and usage,
+merge reconciliation, startup repair, recovery and private dashboard events.
+The registry now records 20 end-to-end verified capabilities and zero
+release-ready capabilities. The [verification packet](evaluations/tester-army-e2e-2026-10-03/review.md)
+retains both 79-test browser aggregates and the executed flow catalogue.
+Simple-prose import coverage spans all four formats;
+packaged dialogs, rich-format fidelity, physical devices and live-provider
+acceptance remain separate gates. Partial UI entries retain their partial status.
 The [October 2 quality pass](evaluations/project-completion-2026-10-02/review.md)
 adds Memory inbox and daily review evidence, encrypted companion restart
 recovery, and actual packaged-engine forced-termination checks. A small live

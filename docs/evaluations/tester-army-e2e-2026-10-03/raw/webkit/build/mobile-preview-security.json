@@ -1,0 +1,77 @@
+{
+  "advisory": "GHSA-86w9-cpqp-85rv",
+  "advisories": [
+    "GHSA-86w9-cpqp-85rv",
+    "GHSA-vfj7-8cjw-p6xm"
+  ],
+  "dependency_audit_gate": "open",
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0",
+    "braces": "3.0.3",
+    "micromatch": "4.0.8"
+  },
+  "signing_header_checks": 3,
+  "network_attempts": 0,
+  "forge_backport": {
+    "advisory": "GHSA-86w9-cpqp-85rv",
+    "forge_version": "1.4.0",
+    "rsa_sha256": "3dde91b05b403e062e0c7c8e97e63e79337c651db59f18fa7c836d18b15697d5",
+    "status": "pinned_local_node_backport_verified",
+    "applied": false,
+    "callers": [
+      "node_modules/@expo/code-signing-certificates/build/main.js",
+      "node_modules/expo/node_modules/@expo/cli/build/src/utils/codesigning.js",
+      "node_modules/expo/node_modules/@expo/cli/build/src/run/ios/codeSigning/Security.js"
+    ],
+    "unmodified_distribution_files": [
+      "dist/forge.all.min.js",
+      "dist/forge.all.min.js.map",
+      "dist/forge.min.js",
+      "dist/forge.min.js.map",
+      "dist/prime.worker.min.js",
+      "dist/prime.worker.min.js.map"
+    ],
+    "dependency_audit_gate": "open",
+    "scope": "Maintained canonical DER DigestInfo validation for the pinned local Expo Node/lib PKCS#1 v1.5 verifier, including empty NULL content. Browser dist, global/cloud EAS, native artifact acceptance and raw dependency audit remain unremediated."
+  },
+  "braces_backport": {
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "status": "pinned_local_three_copy_backport_verified",
+    "applied": [],
+    "targets": {
+      "node_modules/braces/index.js": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+      "node_modules/braces/lib/compile.js": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+      "node_modules/braces/lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "node_modules/braces/lib/expand.js": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+      "node_modules/braces/lib/parse.js": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+      "node_modules/braces/lib/stringify.js": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+      "node_modules/braces/lib/utils.js": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+      "node_modules/resolve-workspace-root/build/index.js": "c92afd8c2444be75f1e03c006a612158c27a3253d64a320da90ef58029f3c12e",
+      "node_modules/expo-doctor/build/index.js": "a6c3a6458e2934e880d283629e42d2f9e13cda1dd3f8383cd3bff56a2b8bbe9f"
+    },
+    "package_versions": {
+      "braces": "3.0.3",
+      "resolve-workspace-root": "2.0.1",
+      "expo-doctor": "1.20.4"
+    },
+    "dependency_audit_gate": "open",
+    "scope": "Maintained local three-copy bounded-depth Braces backport; raw advisory, broader expansion resources, browser/global/cloud/native release acceptance remain open"
+  },
+  "scope": "Metro export module containment; dependency remediation, exposed developer tooling, signing and native acceptance unverified",
+  "platforms": [
+    "web"
+  ],
+  "map_count": 1,
+  "bundles": [
+    {
+      "file": "_expo/static/js/web/index-fe8dbadcd64b185aa80119ec6d2bf2bd.js",
+      "platform": "web",
+      "source_count": 406,
+      "bundle_sha256": "2b796d9e9cb06c656025f82557e4646c12a058dfc5d010058d8650d6ad935c88",
+      "map_sha256": "4b2f7e1ad6792fe27d778991d0450292064dafbe1b8b1dfb9e956b1f11c27101"
+    }
+  ]
+}

@@ -84,8 +84,12 @@ test("re-reviews stale pending Memory context with fresh permission and a durabl
     await page.screenshot({ path: testInfo.outputPath("fresh-context-reviewed.png") });
     await review.getByRole("button", { name: "Back to message" }).click();
     await page.reload();
-    await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
-    await page.getByRole("button", { name: /No thread/ }).click();
+    // The sidebar's open preference survives a restart. Reveal it only when
+    // needed, then select the saved thread regardless of the current label.
+    await expect(page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true })).toBeVisible();
+    const threadPicker = page.getByTitle("Switch thread", { exact: true });
+    if (!await threadPicker.isVisible()) await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
+    await threadPicker.click();
     await page.locator(".chat-dropdown__item").filter({ hasText: "New Chat" }).click();
     await page.getByRole("button", { name: "Review current context" }).click();
     await expect(review.getByRole("textbox", { name: "Saved question" })).toHaveValue("How can Mara returning the key show responsibility?");
@@ -154,8 +158,10 @@ test("recovers a completed reply after transport loss without re-sending changed
     expect(original).toHaveLength(2);
     await json(["chat", "thread", "update", "--id", thread.id, "--include-current-scene", "false"]);
     await page.reload();
-    await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
-    await page.getByRole("button", { name: /No thread/ }).click();
+    await expect(page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true })).toBeVisible();
+    const threadPicker = page.getByTitle("Switch thread", { exact: true });
+    if (!await threadPicker.isVisible()) await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
+    await threadPicker.click();
     await page.locator(".chat-dropdown__item").filter({ hasText: "New Chat" }).click();
     await page.getByPlaceholder("Type a message... (@ to mention)").fill("A different next question.");
     await page.getByRole("combobox", { name: "Assistant conversation scope" }).selectOption("storyline");

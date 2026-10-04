@@ -2347,17 +2347,26 @@ export async function getGenerationBudget(
 export async function updateGenerationBudget(
   projectRoot: string,
   payload: {
-    maxInputTokens?: number;
-    maxOutputTokens?: number;
-    maxTotalTokens?: number;
-    maxEstimatedCostUsd?: number;
-    dailyTokens?: number;
-    dailyEstimatedCostUsd?: number;
-    weeklyTokens?: number;
-    weeklyEstimatedCostUsd?: number;
+    maxInputTokens?: number | null;
+    maxOutputTokens?: number | null;
+    maxTotalTokens?: number | null;
+    maxEstimatedCostUsd?: number | null;
+    dailyTokens?: number | null;
+    dailyEstimatedCostUsd?: number | null;
+    weeklyTokens?: number | null;
+    weeklyEstimatedCostUsd?: number | null;
   }
 ): Promise<GenerationBudgetReport> {
   const args = ["generation", "budget"];
+  const fields = {
+    maxInputTokens: "max_input_tokens", maxOutputTokens: "max_output_tokens",
+    maxTotalTokens: "max_total_tokens", maxEstimatedCostUsd: "max_estimated_cost_usd",
+    dailyTokens: "daily_tokens", dailyEstimatedCostUsd: "daily_estimated_cost_usd",
+    weeklyTokens: "weekly_tokens", weeklyEstimatedCostUsd: "weekly_estimated_cost_usd",
+  } as const;
+  for (const key of Object.keys(fields) as Array<keyof typeof fields>) {
+    if (payload[key] === null) args.push("--clear-limit", fields[key]);
+  }
   if (typeof payload.maxInputTokens === "number") {
     args.push("--max-input-tokens", String(payload.maxInputTokens));
   }

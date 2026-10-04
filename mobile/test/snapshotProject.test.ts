@@ -52,6 +52,17 @@ const SNAPSHOT = {
 } as const;
 
 describe("SnapshotProject", () => {
+  it("keeps matching scenes searchable when a book has many matching Memory entries", () => {
+    const project = SnapshotProject.open({ ...SNAPSHOT, codex: { relationships: [], entities:
+      Array.from({ length: 35 }, (_, index) => ({
+        id: `key-${index}`, name: "Key", description: "Key key", type: "item",
+      })),
+    } });
+    expect(project.search("key", 30, "scene").map((result) => result.sourceId)).toEqual(["scene-0001"]);
+    expect(project.search("key", 30)).toHaveLength(30);
+    expect(project.search("key", 30).every((result) => result.kind === "codex_entity")).toBe(true);
+  });
+
   it("projects only approved craft fields and includes their full cost before optional context", () => {
     const project = SnapshotProject.open({ ...SNAPSHOT, writing_voice: {
       ...writingVoice, observations: ["PRIVATE-ANALYSIS"], exemplar_scene_ids: ["PRIVATE-EXEMPLAR"],

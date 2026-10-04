@@ -111,7 +111,7 @@ class ChatSidecarServer:
         continue
       try:
         request = json.loads(line)
-      except json.JSONDecodeError:
+      except (ValueError, RecursionError):
         self._writer.respond(
           None,
           error={"message": "Invalid JSON request frame.", "category": "invalid_request"},
@@ -145,7 +145,13 @@ class ChatSidecarServer:
       return
     if method == "chat.messages":
       raw_limit = params.get("limit")
-      limit = int(raw_limit) if isinstance(raw_limit, (int, float)) and raw_limit else None
+      if raw_limit is not None and (type(raw_limit) is not int or raw_limit < 1):
+        self._writer.respond(
+          request_id,
+          error={"message": "limit must be a positive integer.", "category": "invalid_request"},
+        )
+        return
+      limit = raw_limit
       self._respond_call(
         request_id,
         lambda: list_chat_messages(

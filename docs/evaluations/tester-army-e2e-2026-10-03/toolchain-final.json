@@ -1,0 +1,20 @@
+{
+  "node": "v22.17.0",
+  "full_core_python": "Python 3.11.16",
+  "default_python": "Python 3.13.2",
+  "postgresql": "PostgreSQL 17.11 (Homebrew)",
+  "pinned_runner_dependencies": {
+    "@e2e-dev/mobile": "0.9.1",
+    "@e2e-dev/web": "0.11.2",
+    "@types/node": "22.20.1",
+    "ai": "7.0.107",
+    "e2e": "0.16.0",
+    "playwright": "1.63.0",
+    "typescript": "6.0.3"
+  },
+  "native_tooling": {
+    "xcode_developer_directory": "/Library/Developer/CommandLineTools",
+    "adb_available_on_test_path": false,
+    "native_execution": false
+  }
+}

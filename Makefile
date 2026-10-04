@@ -4,12 +4,17 @@ PYTHONPATH := .
 .PHONY: help setup check capability-check audit-no-mocks test test-scale test-canon-eval test-editorial-eval test-desktop desktop-audit test-all tree demo desktop-web desktop-tauri desktop-build tauri-check tauri-test desktop-prereq desktop-smoke runtime-prepare runtime-check macos-bundle macos-bundle-check codex-contract-check
 .PHONY: install-desktop install-js test-contracts test-gateway test-mobile test-desktop-e2e js-audit
 .PHONY: mobile-web mobile-web-build test-mobile-e2e test-mobile-hosted-e2e
+.PHONY: install-e2e test-e2e test-e2e-all test-e2e-webkit
 
 help:
 	@echo "Available targets:"
 	@echo "  make setup  - Verify local toolchain availability"
 	@echo "  make install-desktop - Install locked shared-contract and desktop dependencies"
-	@echo "  make install-js - Install locked dependencies for all four JavaScript packages"
+	@echo "  make install-js - Install locked dependencies for all JavaScript packages and e2e"
+	@echo "  make install-e2e - Install the pinned tester-army/e2e runner"
+	@echo "  make test-e2e - Run desktop, phone-web, and backend tester-army/e2e flows"
+	@echo "  make test-e2e-all - Run all local flows, including disposable PostgreSQL (OPENAUTHOR_TEST_PG_BIN required)"
+	@echo "  make test-e2e-webkit - Run the complete browser flow set on WebKit"
 	@echo "  make check  - Run lightweight repository checks"
 	@echo "  make capability-check - Validate shipped capability claims and active-shell parity"
 	@echo "  make audit-no-mocks - Fail if placeholder/stub markers are present"
@@ -22,7 +27,7 @@ help:
 	@echo "  make test-desktop - Run desktop unit tests (vitest)"
 	@echo "  make desktop-audit - Fail on known npm dependency vulnerabilities"
 	@echo "  make test-all - Run Python, desktop, contracts, gateway, and mobile checks"
-	@echo "  make js-audit - Audit all four JavaScript packages"
+	@echo "  make js-audit - Audit all five JavaScript packages"
 	@echo "  make test-desktop-e2e - Browser authoring workflow using the real Python engine"
 	@echo "  make tree   - Print top-level structure"
 	@echo "  make demo   - Run a minimal CLI workflow in this repo"
@@ -109,6 +114,19 @@ install-desktop:
 install-js: install-desktop
 	@npm ci --prefix gateway
 	@npm ci --prefix mobile
+	@$(MAKE) install-e2e
+
+install-e2e:
+	@npm ci --prefix e2e --ignore-scripts
+
+test-e2e:
+	@npm test --prefix e2e
+
+test-e2e-all:
+	@npm run test:all --prefix e2e
+
+test-e2e-webkit:
+	@npm run test:all --prefix e2e -- --webkit
 
 test-contracts:
 	@npm run check --prefix contracts
@@ -139,6 +157,7 @@ js-audit:
 	@npm audit --prefix desktop --audit-level=low
 	@npm audit --prefix gateway --audit-level=low
 	@npm audit --prefix mobile --audit-level=low
+	@npm audit --prefix e2e --audit-level=low
 
 test-all: test test-desktop test-contracts test-gateway test-mobile
 

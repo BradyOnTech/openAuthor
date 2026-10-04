@@ -13,6 +13,7 @@ from openauthor.scenes import add_scene, get_scene, update_scene
 from openauthor.style_profile import save_style_profile
 from openauthor.canon import add_canon_fact, list_canon_facts, update_canon_fact
 from openauthor.planning import add_act, add_chapter, assign_scene
+from openauthor.codex import add_entity
 
 project_id = "20000000-0000-4000-8000-000000000001"
 operation, directory = sys.argv[1:3]
@@ -40,6 +41,9 @@ if operation == "prepare":
   update_scene(paths, scene_identifier="scene-0001", body=body)
   add_scene(paths, title="The Blue Hour", body="Mara reached the observatory before sunrise.")
   add_scene(paths, title="A Loose Page", body="An unsorted page waited in her notebook.")
+  for index in range(35):
+    add_entity(paths, name=f"Brass key reference {index}", kind="item",
+      description="A brass key with brass fittings.")
   act = add_act(paths, title="Winter")
   arrival = add_chapter(paths, act_id=act["id"], title="Arrival")
   discovery = add_chapter(paths, act_id=act["id"], title="Discovery")
