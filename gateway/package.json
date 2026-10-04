@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "test": "node --experimental-strip-types --test --test-concurrency=1 test/*.test.ts",
+    "test": "node --experimental-strip-types --test --test-reporter=tap --test-concurrency=1 test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test && npm run build"
   },
