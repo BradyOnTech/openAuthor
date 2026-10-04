@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "tested_parent_commit": "e945227f478e257e59a030497c4a52ce7038f4ac",
+  "working_tree_changes_tested": true,
+  "runtime": {
+    "node": "22.17.0",
+    "npm": "10.9.2",
+    "python_reproduction": [
+      "3.11",
+      "3.13"
+    ]
+  },
+  "checks": {
+    "fresh_npm_ci": "passed_lifecycle_guards_enabled",
+    "mobile_typecheck": "passed",
+    "mobile_tests": {
+      "passed": 514,
+      "total": 514,
+      "files": 38,
+      "failed": 0
+    },
+    "raw_npm_audit": {
+      "threshold": "low",
+      "before_high": 17,
+      "after_total": 0
+    },
+    "offline_signing_preflight": {
+      "passed": true,
+      "header_checks": 3,
+      "network_attempts": 0
+    },
+    "guarded_exports": [
+      "web",
+      "ios",
+      "android"
+    ],
+    "offline_fork_reproduction": "passed_exact_bytes"
+  },
+  "open_gates": [
+    "upstream_advisories",
+    "signing_activation",
+    "global_cloud_EAS",
+    "signed_native_builds",
+    "physical_devices",
+    "store_acceptance"
+  ],
+  "release_ready": false
+}

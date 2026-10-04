@@ -1,4 +1,4 @@
-// Maintain byte-bound local Braces copies; raw dependency audit remains open.
+// Verify the modified standalone Braces fork and repair both embedded copies.
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, existsSync, fsyncSync, lstatSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -49,7 +49,8 @@ function inventory(root) {
   return files;
 }
 
-function installedCopies(root, names) {
+function installedCopies(root, packages) {
+  const names = packages.map(item => item.name);
   const found = Object.fromEntries(names.map(name => [name, []]));
   const seen = new Set();
   let count = 0;
@@ -63,7 +64,7 @@ function installedCopies(root, names) {
       if (++count > 10000) fail("dependency package limit");
       const metadata = join(path, "package.json");
       const name = existsSync(metadata) ? JSON.parse(readFileSync(metadata, "utf8")).name : undefined;
-      for (const expected of names) if (name === expected || folderName === expected) found[expected].push(path);
+      for (const item of packages) if (name === item.name || (item.installed_name && name === item.installed_name) || folderName === item.name) found[item.name].push(path);
       scan(join(path, "node_modules"), depth + 1);
     };
     for (const entry of readdirSync(nodeModules, { withFileTypes: true })) {
@@ -127,14 +128,13 @@ function inspect(projectRoot) {
   const actualSources = inventory(resolve(root, manifest.source_root));
   if (JSON.stringify(Object.entries(actualSources).sort()) !== JSON.stringify(Object.entries(sourceFiles).sort())) fail("readable source file inventory changed");
   const lock = JSON.parse(readFileSync(regularFile(root, "package-lock.json"), "utf8"));
-  const names = manifest.packages.map(item => item.name);
-  const copies = installedCopies(root, names);
+  const copies = installedCopies(root, manifest.packages);
   for (const item of manifest.packages) {
-    const locked = Object.entries(lock.packages ?? {}).filter(([path, value]) => path.endsWith("/" + item.name) || value.name === item.name);
+    const locked = Object.entries(lock.packages ?? {}).filter(([path, value]) => path.endsWith("/" + item.name) || value.name === item.name || (item.installed_name && value.name === item.installed_name));
     if (locked.length !== 1 || locked[0][0] !== item.path) fail("unknown locked package copy");
     if (copies[item.name].length !== 1 || copies[item.name][0] !== resolve(root, item.path)) fail("unknown installed package copy");
     const metadata = JSON.parse(readFileSync(regularFile(root, item.path + "/package.json"), "utf8"));
-    if (metadata.name !== item.name || metadata.version !== item.version) fail("installed package identity changed");
+    if (metadata.name !== (item.installed_name ?? item.name) || metadata.version !== item.version) fail("installed package identity changed");
   }
   for (const [name, expected] of Object.entries(manifest.lock_packages)) {
     if (JSON.stringify(lock.packages?.[name]) !== JSON.stringify(expected)) fail(`locked dependency changed: ${name}`);
@@ -210,10 +210,10 @@ export function maintainBracesBackport(projectRoot = mobile, mode = "check") {
     checked = inspect(projectRoot);
   }
   if (checked.targets.some(target => target.state !== "patched")) fail("backport verification failed");
-  return { advisory: checked.manifest.advisory, status: "pinned_local_three_copy_backport_verified", applied,
+  return { advisory: checked.manifest.advisory, status: "pinned_repository_fork_and_embedded_backports_verified", applied,
     targets: Object.fromEntries(checked.targets.map(target => [target.path, hash(target.patched)])),
     package_versions: Object.fromEntries(checked.manifest.packages.map(item => [item.name, item.version])),
-    dependency_audit_gate: "open", scope: checked.manifest.scope };
+    upstream_advisory_gate: "open", dependency_audit_gate: "separate_raw_audit_required", scope: checked.manifest.scope };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

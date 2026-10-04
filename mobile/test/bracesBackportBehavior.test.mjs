@@ -87,7 +87,7 @@ const implementations = {};
 beforeAll(() => {
   for (const [name, text] of Object.entries(original.files)) expect(digest(text)).toBe(original.sha256[name]);
   const verified = maintainBracesBackport(mobile);
-  expect(verified.dependency_audit_gate).toBe("open");
+  expect(verified.dependency_audit_gate).toBe("separate_raw_audit_required");
   implementations.braces = { before: sourceModules(original.files)("index.js"), after: nativeRequire("braces") };
   const manifest = JSON.parse(readFileSync(resolve(mobile, "security/braces-backport-3.0.3.json"), "utf8"));
   for (const patch of manifest.patches.filter(item => item.modules)) {

@@ -29,12 +29,12 @@ describe("mobile build security containment", () => {
     const result = spawnSync(process.execPath, ["scripts/build-security.mjs", "preflight"], { cwd: mobile, encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
     const report = JSON.parse(result.stdout);
-    expect(report.dependency_audit_gate).toBe("open");
+    expect(report.dependency_audit_gate).toBe("separate_raw_audit_required");
     expect(report.advisories).toEqual(["GHSA-86w9-cpqp-85rv", "GHSA-vfj7-8cjw-p6xm"]);
     expect(report.signing_header_checks).toBe(3);
     expect(report.network_attempts).toBe(0);
-    expect(report.installed["node-forge"]).toBe("1.4.0");
-    expect(report.installed.braces).toBe("3.0.3");
+    expect(report.installed["node-forge"]).toBe("1.4.0-openauthor.1");
+    expect(report.installed.braces).toBe("3.0.3-openauthor.1");
     expect(report.installed.micromatch).toBe("4.0.8");
   });
 

@@ -67,15 +67,15 @@ describe("byte-bound local Expo Forge backport", () => {
     expect(readFileSync(rsaFile(root))).toEqual(original);
   }));
 
-  it("applies once, verifies every caller and leaves Forge version/audit scope unchanged", () => fixture(root => {
+  it("repairs a diagnostic preimage once and verifies the fork identity and every caller", () => fixture(root => {
     const metadata = readFileSync(join(root, manifest.forge.path, "package.json"));
     const lock = readFileSync(join(root, "package-lock.json"));
     const first = maintainForgeBackport(root, "apply");
     expect(first.applied).toBe(true);
     expect(first.callers).toEqual(manifest.callers);
-    expect(first.forge_version).toBe("1.4.0");
-    expect(first.dependency_audit_gate).toBe("open");
-    expect(first.unmodified_distribution_files).toContain("dist/forge.min.js");
+    expect(first.forge_version).toBe("1.4.0-openauthor.1");
+    expect(first.dependency_audit_gate).toBe("separate_raw_audit_required");
+    expect(first.omitted_distribution_files).toContain("dist/forge.min.js");
     expect(maintainForgeBackport(root, "apply").applied).toBe(false);
     expect(maintainForgeBackport(root, "check").rsa_sha256).toBe(manifest.forge.patch.patched_sha256);
     expect(readFileSync(join(root, manifest.forge.path, "package.json"))).toEqual(metadata);
@@ -113,40 +113,48 @@ describe("byte-bound local Expo Forge backport", () => {
     expect(() => maintainForgeBackport(root)).toThrow("unknown RSA source bytes");
   }));
 
-  it("refuses an unknown nested or aliased Forge copy before changing either copy", () => {
-    for (const name of ["node_modules/@expo/code-signing-certificates/node_modules/node-forge", "node_modules/synthetic-forge-alias"]) fixture(root => {
+  it.each(["node-forge", manifest.forge.name].flatMap(identity =>
+    ["node_modules/@expo/code-signing-certificates/node_modules/node-forge", "node_modules/synthetic-forge-alias"].map(name => [identity, name])))
+  ("refuses duplicate %s at %s before changing either copy", (identity, name) => fixture(root => {
       const original = readFileSync(rsaFile(root));
       const second = join(root, name);
       mkdirSync(dirname(second), { recursive: true });
       cpSync(join(root, manifest.forge.path), second, { recursive: true });
+      const metadataFile = join(second, "package.json");
+      const metadata = JSON.parse(readFileSync(metadataFile));
+      metadata.name = identity;
+      writeFileSync(metadataFile, JSON.stringify(metadata));
       expect(() => maintainForgeBackport(root, "apply")).toThrow("unknown installed Forge copy");
       expect(readFileSync(rsaFile(root))).toEqual(original);
       expect(readFileSync(join(second, "lib/rsa.js"))).toEqual(original);
-    });
-  });
+  }));
 
-  it("refuses unknown lock copies, versions and package file inventories", () => {
-    for (const change of [
-      root => {
+  it.each([
+      ["nested lock copy", root => {
         const file = join(root, "package-lock.json");
         const lock = JSON.parse(readFileSync(file));
         lock.packages["node_modules/new-parent/node_modules/node-forge"] = lock.packages[manifest.forge.path];
         writeFileSync(file, JSON.stringify(lock));
-      },
-      root => {
+      }],
+      ["aliased fork lock copy", root => {
+        const file = join(root, "package-lock.json");
+        const lock = JSON.parse(readFileSync(file));
+        lock.packages["node_modules/synthetic-forge-alias"] = { name: manifest.forge.name, version: manifest.forge.version };
+        writeFileSync(file, JSON.stringify(lock));
+      }],
+      ["version change", root => {
         const file = join(root, manifest.forge.path, "package.json");
         const metadata = JSON.parse(readFileSync(file));
         metadata.version = "1.4.1";
         writeFileSync(file, JSON.stringify(metadata));
-      },
-      root => writeFileSync(join(root, manifest.forge.path, "lib/new-verifier.js"), "exports.synthetic = true;\n"),
-    ]) fixture(root => {
+      }],
+      ["added verifier", root => writeFileSync(join(root, manifest.forge.path, "lib/new-verifier.js"), "exports.synthetic = true;\n")],
+    ])("refuses %s before changing the verifier", (_label, change) => fixture(root => {
       const original = readFileSync(rsaFile(root));
       change(root);
       expect(() => maintainForgeBackport(root, "apply")).toThrow(/unknown locked Forge copy|source bytes changed|unexpected package file inventory/);
       expect(readFileSync(rsaFile(root))).toEqual(original);
-    });
-  });
+  }));
 
   it("refuses a symlinked RSA file and does not write through it", () => fixture(root => {
     const original = readFileSync(rsaFile(root));
@@ -160,7 +168,7 @@ describe("byte-bound local Expo Forge backport", () => {
 
   it("fresh install applies the repair and supported Expo entry points require check-only verification", () => {
     const { scripts } = JSON.parse(readFileSync(join(mobile, "package.json")));
-    expect(scripts.postinstall).toBe("node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply");
+    expect(scripts.postinstall).toBe("node scripts/verify-security-forks.mjs && node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply");
     for (const command of ["web", "start", "android", "ios", "prebuild", "doctor", "build:web", "build:export", "build:security", "build:test-hosted"]) {
       expect(scripts["pre" + command], command).toBe("node scripts/forge-backport.mjs check && node scripts/braces-backport.mjs check");
     }
