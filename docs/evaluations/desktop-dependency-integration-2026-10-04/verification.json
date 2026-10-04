@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-04",
+  "verified_source_commit": "8d737748463c215f347a7af94f28e92d98e6fd7b",
+  "base_commit": "e945227",
+  "pull_requests": [
+    {
+      "number": 11,
+      "head_sha": "cf28ec7f249e2fc511c9703a34cce392e836bf12",
+      "head_ref": "dependabot/cargo/desktop/src-tauri/tauri-2.10.3",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/11"
+    },
+    {
+      "number": 12,
+      "head_sha": "7f85d3e1eaf7f0bbcf33b0cbf9c3f4623c85977b",
+      "head_ref": "dependabot/cargo/desktop/src-tauri/rfd-0.17.2",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/12"
+    },
+    {
+      "number": 13,
+      "head_sha": "c765f9e9109c881ef4edb6b8ae3fd12194ca55ce",
+      "head_ref": "dependabot/cargo/desktop/src-tauri/serde_json-1.0.151",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/13"
+    },
+    {
+      "number": 14,
+      "head_sha": "c095c83f735923d1582ad08337c5f41a7de9d951",
+      "head_ref": "dependabot/cargo/desktop/src-tauri/tauri-build-2.6.3",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/14"
+    },
+    {
+      "number": 15,
+      "head_sha": "7ce655e0e9d0c1200a4f23ee1b88002203fae1fd",
+      "head_ref": "dependabot/cargo/desktop/src-tauri/serde-1.0.229",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/15"
+    },
+    {
+      "number": 16,
+      "head_sha": "c02fce0b9102d1ee773ad5092337f12b1ba2ee94",
+      "head_ref": "dependabot/npm_and_yarn/desktop/desktop-compatible-955e432184",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/16"
+    },
+    {
+      "number": 17,
+      "head_sha": "3dd3eab40019cfa6d8e325672e108656d7af5926",
+      "head_ref": "dependabot/npm_and_yarn/desktop/vitest-5.0.2",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/17"
+    },
+    {
+      "number": 18,
+      "head_sha": "8d4e4211d92f73bb37ef704f0819824d917aff37",
+      "head_ref": "dependabot/npm_and_yarn/desktop/multi-7f19880bf6",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/18"
+    },
+    {
+      "number": 19,
+      "head_sha": "dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab",
+      "head_ref": "dependabot/npm_and_yarn/desktop/multi-de36fa8f59",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/19"
+    },
+    {
+      "number": 20,
+      "head_sha": "8f302bf79fc010a28de7d18b8b8cae4eff78ee3c",
+      "head_ref": "dependabot/npm_and_yarn/desktop/typescript-7.0.2",
+      "original_head_is_ancestor": true,
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/20"
+    }
+  ],
+  "cargo_versions": {
+    "rfd": "0.17.2",
+    "serde": "1.0.229",
+    "serde_core": "1.0.229",
+    "serde_derive": "1.0.229",
+    "serde_json": "1.0.151",
+    "tauri": "2.12.1",
+    "tauri-build": "2.7.1",
+    "tauri-runtime": "2.12.1",
+    "tauri-runtime-wry": "2.12.1"
+  },
+  "validation": {
+    "desktop_vitest": {
+      "files": 92,
+      "passed": 710,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typescript_vite_build": "passed",
+    "npm_ci": "passed",
+    "npm_peer_dependencies": "passed",
+    "npm_audit_vulnerabilities": 0,
+    "cargo_check_locked": "passed",
+    "cargo_tests_locked": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_test": "credentials::tests::real_keychain_round_trip"
+    },
+    "bundled_git_system_only_path": "passed",
+    "fresh_arm64_app_dmg_build": "passed",
+    "packaged_source_recovery_architecture_codex": "passed"
+  },
+  "dmg": {
+    "bytes": 180902485,
+    "sha256": "1ec061ca6c0ca1663df61bb579304773da00515f80ec6af6b1ec0e94875b3ef2"
+  },
+  "release_certified": false,
+  "not_verified": [
+    "real macOS Keychain opt-in round trip",
+    "x86_64 package on native Intel runner",
+    "Developer ID signing and notarization",
+    "clean-machine GUI authoring and accessibility",
+    "live provider and deployed cloud acceptance"
+  ]
+}
