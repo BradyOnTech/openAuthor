@@ -23,7 +23,7 @@ export function AccountDeletionPanel({ identity, disabled, onRequested, onReques
   const scope = JSON.stringify([identity?.userId, identity?.deviceId]);
   const activeScope = useRef(scope); activeScope.current = scope;
   const client = useRef<{ userId: string; deviceId?: string; value: ReturnType<typeof createAccountDeletionClient> } | null>(null);
-  const unsubscribe = useRef<(() => void) | undefined>();
+  const unsubscribe = useRef<(() => void) | undefined>(undefined);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; serial.current++; unsubscribe.current?.(); }; }, []);
   function clear() {
     serial.current++; running.current = false; client.current = null;

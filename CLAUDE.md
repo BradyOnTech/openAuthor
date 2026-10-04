@@ -35,7 +35,7 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 **Two runtimes, one repo** (not a monorepo):
 - `openauthor/` — Python 3.11+ core engine (CLI, scenes, codex, proposals, AI providers, git ops, retrieval, budget)
-- `desktop/` — Tauri 2.0 + React 18 + TypeScript frontend; `desktop/src-tauri/src/lib.rs` bridges to Python
+- `desktop/` — Tauri 2 + React 19 + TypeScript 7 frontend; `desktop/src-tauri/src/lib.rs` bridges to Python
 
 **Storage model**:
 - Scene files: `manuscript/scenes/*.md` (markdown with YAML frontmatter, git-versioned)

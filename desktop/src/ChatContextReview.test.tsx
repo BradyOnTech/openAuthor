@@ -109,7 +109,9 @@ it("keeps sending closed when permission metadata or an approved preview fails",
   expect(boundary.calls).toHaveLength(0);
   expect((screen.getByRole("button", { name: "Send reviewed context" }) as HTMLButtonElement).disabled).toBe(true);
   boundary.permissionsError = false; boundary.previewError = true;
-  fireEvent.click(screen.getByRole("button", { name: "Refresh preview" }));
+  const refresh = screen.getByRole("button", { name: "Refresh preview" }) as HTMLButtonElement;
+  await waitFor(() => expect(refresh.disabled).toBe(false));
+  fireEvent.click(refresh);
   fireEvent.click(await screen.findByRole("checkbox", { name: "Allow Mara for this turn" }));
   await screen.findByText(/Context preview unavailable/);
   expect((screen.getByRole("button", { name: "Send reviewed context" }) as HTMLButtonElement).disabled).toBe(true);
