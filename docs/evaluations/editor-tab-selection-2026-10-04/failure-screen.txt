@@ -1,0 +1,85 @@
+# Screen at failure
+url: http://127.0.0.1:56094/w/personal-workspace/p/proj-b4e1e163-ddf2-4995-b0ab-f63b4f7f1c80
+revision: b1
+viewport: 1400x900
+nodes: 79
+
+#root document "openAuthor Desktop"
+ #n61 button "Manuscript (Cmd+Shift+E)"
+  #n62 image
+ #n63 button "Plan (Cmd+Shift+P)"
+  #n64 image
+ #n65 button "Story Memory (Cmd+Shift+X)"
+  #n66 image
+ #n67 button "Storylines (Cmd+Shift+L)"
+  #n68 image
+ #n69 button "Search (Cmd+Shift+F)"
+  #n70 image
+ #n71 button "Changes (Cmd+Shift+R)" [pressed]
+  #n72 image
+  #n73 text="1"
+ #n74 button "Checks (Cmd+Shift+C)"
+  #n75 image
+ #n76 button "Assistant (Cmd+L)"
+  #n77 image
+ #n78 button "Settings (Cmd+,)"
+  #n79 image
+ #n80 text="Changes"
+ #n81 text="1 pending"
+ #n82 button "+ AI"
+ #n83 textbox "Version name"
+ #n84 button "Save version" [disabled]
+ #n85 button "The Moving Map: [Editorial Pass: Ominous final beat] Make the... — pending"
+  #n86 text="The Moving Map: [Editorial Pass: Ominous final beat] Make the..."
+  #n87 text="scene-0001 · just now"
+ #n88 button "The Moving Map: [Editorial Pass: Ominous final beat] Make the... — rejected"
+  #n89 text="The Moving Map: [Editorial Pass: Ominous final beat] Make the..."
+  #n90 text="scene-0001 · just now"
+ #n91 button "The Moving Map: [Editorial Pass: Ominous final beat] Make the... — rejected"
+  #n92 text="The Moving Map: [Editorial Pass: Ominous final beat] Make the..."
+  #n93 text="scene-0001 · just now"
+ #n94 text="Revision History"
+ #n95 text="(8)"
+ #n96 button "Style build author_edit · just now"
+  #n97 text="Style build"
+  #n98 text="author_edit · just now"
+ #n99 button "Style reference author_edit · just now"
+  #n100 text="Style reference"
+  #n101 text="author_edit · just now"
+ #n102 button "Style reference author_edit · just now"
+  #n103 text="Style reference"
+  #n104 text="author_edit · just now"
+ #n105 button "Scene update: scene-0001 author_edit · just now"
+  #n106 text="Scene update: scene-0001"
+  #n107 text="author_edit · just now"
+ #n108 button "Style build author_edit · just now"
+  #n109 text="Style build"
+  #n110 text="author_edit · just now"
+ #n111 button "Before Style build author_edit_before · just now"
+  #n112 text="Before Style build"
+  #n113 text="author_edit_before · just now"
+ #n114 button "Scene add: The Moving Map author_edit · just now"
+  #n115 text="Scene add: The Moving Map"
+  #n116 text="author_edit · just now"
+ #n117 button "Before Scene add: The Moving Map author_edit_before · just now"
+  #n118 text="Before Scene add: The Moving Map"
+  #n119 text="author_edit_before · just now"
+ #n120 tablist "Open documents and workspaces"
+  #n121 tab "Direction 2"
+   #n122 text="Direction 2"
+  #n123 button "Close Direction 2" text="×"
+ #n124 text="Continue The Lantern Cartographer"
+ #n125 text="Open a scene and return to the sentence where you left off."
+ #n126 button "Open manuscript"
+ #n127 button "Plan the story"
+ #n128 text="Write"
+ #n129 text="→"
+ #n130 text="Review changes"
+ #n131 text="→"
+ #n132 text="Explore Storylines"
+ #n133 button "Projects"
+ #n134 text="The Lantern Cartographer"
+ #n135 text="1 scene"
+ #n136 text="23 words"
+ #n137 text="—"
+ #n138 button "☀"
