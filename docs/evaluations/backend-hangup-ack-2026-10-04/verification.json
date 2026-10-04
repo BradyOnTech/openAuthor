@@ -1,0 +1,167 @@
+{
+  "tested_parent": "845ba0970bb2863da4edde5d1d713c8125366160",
+  "working_tree_changes": true,
+  "runner": "tester-army/e2e 0.16.0",
+  "backend_engine": "none",
+  "production_source_changed": false,
+  "test_inventory": "existing 15 backend cases; existing revocation/expiry case strengthened",
+  "retries": 0,
+  "retirement_poll_timeout_ms": {
+    "revocation": 1000,
+    "expiry": 3000
+  },
+  "poll_interval_ms": 25,
+  "typecheck": {
+    "command": "npm run typecheck --prefix e2e",
+    "exit_code": 0
+  },
+  "controlled_command": "E2E_TELEMETRY_DISABLED=1 OPENAUTHOR_E2E_SUITE=backend node node_modules/e2e/dist/cli/bin.js run tests/backend-gateway.e2e.ts --grep 'revocation and unrenewed expiry' --retries 0 --repeat-each 3 --output .e2e/<label>",
+  "final_command": "npm run test:backend --prefix e2e",
+  "original_root_red": {
+    "run_id": "01a105ce-d4e0-772d-970e-55de3ef0e0c3",
+    "status": "failed",
+    "exit_code": 1,
+    "results": 15,
+    "passed": 14,
+    "failed": 1,
+    "skipped": 0,
+    "attempts": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "durations_ms": [
+      933,
+      613,
+      1475,
+      5718,
+      1135,
+      1132,
+      1528,
+      819,
+      311,
+      515,
+      83,
+      45,
+      453,
+      48,
+      45
+    ]
+  },
+  "controlled_revocation_red": {
+    "run_id": "01a105d2-4b76-73ad-9f6d-912ca9cabb0c",
+    "status": "failed",
+    "exit_code": 1,
+    "results": 3,
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "attempts": [
+      1,
+      1,
+      1
+    ],
+    "durations_ms": [
+      155,
+      119,
+      115
+    ]
+  },
+  "controlled_expiry_red": {
+    "run_id": "01a105d4-6def-79f4-84c5-d944966c60f4",
+    "status": "failed",
+    "exit_code": 1,
+    "results": 3,
+    "passed": 0,
+    "failed": 3,
+    "skipped": 0,
+    "attempts": [
+      1,
+      1,
+      1
+    ],
+    "durations_ms": [
+      375,
+      358,
+      350
+    ]
+  },
+  "controlled_green": {
+    "run_id": "01a105d3-59d2-7f99-98f8-481f5e73c0dd",
+    "status": "passed",
+    "exit_code": 0,
+    "results": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "attempts": [
+      1,
+      1,
+      1
+    ],
+    "durations_ms": [
+      567,
+      523,
+      506
+    ]
+  },
+  "backend_final": {
+    "run_id": "01a105d4-c84a-7660-928a-6a649361b115",
+    "status": "passed",
+    "exit_code": 0,
+    "results": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "attempts": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "durations_ms": [
+      2306,
+      1326,
+      3618,
+      14858,
+      2770,
+      2660,
+      3676,
+      2049,
+      607,
+      996,
+      97,
+      42,
+      516,
+      54,
+      60
+    ]
+  },
+  "controlled_source_sha256": {
+    "revocation_red": "dac5d9805eb7668676693ee16ac955049b3fe4ca00acd5f2fdc3403f267ea786",
+    "expiry_red": "1766948734bc346eaf6c17214a0cb494c3579eea4f911e4d84b462530a616eed"
+  }
+}

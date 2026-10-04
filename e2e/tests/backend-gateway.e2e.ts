@@ -35,7 +35,7 @@ async function closeServer(server: Server) {
 // Only hosted collaborators are local protocol fixtures. JWT verification,
 // authorization adapter, multipart provider adapter, HTTP routing, rate policy,
 // durable journal and independent lease enforcement are production code.
-async function gateway(options: { limit?: number; ttl?: number; poll?: number } = {}) {
+async function gateway(options: { limit?: number; ttl?: number; poll?: number; holdHangupAcknowledgement?: boolean } = {}) {
   const directory = await mkdtemp(join(tmpdir(), "openauthor-gateway-e2e-"));
   const path = join(directory, "calls.json");
   const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
@@ -44,6 +44,9 @@ async function gateway(options: { limit?: number; ttl?: number; poll?: number } 
   const sessions: RealtimeSessionPolicy[] = [];
   const calls = new Set<string>();
   const hangups: string[] = [];
+  let releaseHangupAcknowledgement!: () => void;
+  const hangupAcknowledgement = new Promise<void>(resolve => { releaseHangupAcknowledgement = resolve; });
+  if (!options.holdHangupAcknowledgement) releaseHangupAcknowledgement();
   let authorizationContacts = 0;
   let allowed = true;
   let failCreation = false;
@@ -85,6 +88,7 @@ async function gateway(options: { limit?: number; ttl?: number; poll?: number } 
         expect(request.headers.authorization).toBe("Bearer synthetic-provider-key");
         hangups.push(match[1]);
         calls.delete(match[1]);
+        await hangupAcknowledgement;
         response.writeHead(200); response.end();
       }
     } catch {
@@ -133,7 +137,7 @@ async function gateway(options: { limit?: number; ttl?: number; poll?: number } 
     return fetch(`${origin}${pathname}`, { method: "POST", headers: { authorization: `Bearer ${bearer}`, "content-type": "application/json", ...headers }, body: JSON.stringify(body), signal: AbortSignal.timeout(5000) });
   }
   return {
-    origin, token, post, journal, path, calls, hangups, audits, sessions,
+    origin, token, post, journal, path, calls, hangups, audits, sessions, releaseHangupAcknowledgement,
     authorizationContacts: () => authorizationContacts,
     revoke() { allowed = false; },
     failCreation(value: boolean) { failCreation = value; },
@@ -212,16 +216,24 @@ test("backend: signed session creation clamps policy, durably registers, renews 
 
 test("backend: revocation and unrenewed expiry independently end known calls", async () => {
   for (const revoke of [true, false]) {
-    const f = await gateway({ ttl: revoke ? 5000 : 300, poll: 50 });
+    const f = await gateway({ ttl: revoke ? 5000 : 300, poll: 50, holdHangupAcknowledgement: true });
     try {
       const issued = await (await f.post()).json() as any;
       if (revoke) f.revoke();
       await expect.poll(() => f.calls.size, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
       if (revoke) expect(Date.now()).toBeLessThan(Date.parse(issued.lease_expires_at));
-      expect(f.journal.entries()).toHaveLength(0);
+      // Provider removal precedes its HTTP acknowledgement; keep recovery
+      // records until the production adapter has received that acknowledgement.
+      expect(f.journal.entries()).toEqual([[issued.lease_id, issued.call_id]]);
+      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toEqual([[issued.lease_id, issued.call_id]]);
+      expect(f.hangups).toEqual([issued.call_id]);
+      f.releaseHangupAcknowledgement();
+      await expect.poll(() => f.journal.entries().length, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
+      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toHaveLength(0);
+      expect(f.calls.size).toBe(0);
       expect(f.hangups).toEqual([issued.call_id]);
       expect((await f.post(`/v1/realtime/sessions/${issued.lease_id}/renew`, { project_id: PROJECT, device_id: DEVICE })).status).toBe(410);
-    } finally { await f.close(); }
+    } finally { f.releaseHangupAcknowledgement(); await f.close(); }
   }
 });
 
