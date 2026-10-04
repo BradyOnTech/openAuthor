@@ -1,0 +1,40 @@
+{
+  "source_base": "838d1b83e94dd5b452dc94a5113fbb05b38cf88d",
+  "classification": "Test synchronization and guard strengthening; no reproduced original unit-test cause or production bug claimed.",
+  "original_hosted_failure": {
+    "run_id": 37184144078,
+    "commit": "82d264b7d2eff9329e4269d1629f332e80235cc8",
+    "assertion": "save resolver remained undefined at AppV2.workflow.test.tsx:823",
+    "independent_local_original_full_suite": {
+      "passed": 710,
+      "failed": 0,
+      "files": 92
+    }
+  },
+  "mutation_control": {
+    "change": "Temporarily omit only the real flushProjectSceneSaves barrier from CanonMemoryEditor.load.",
+    "failed": 1,
+    "assertion": "diagnose calls expected 0 while native save pending; received 1",
+    "production_restored_byte_for_byte": true
+  },
+  "focused_final": {
+    "passed": 1,
+    "skipped": 55,
+    "failed": 0
+  },
+  "full_desktop_final": {
+    "passed": 715,
+    "failed": 0,
+    "files": 93,
+    "duration_seconds": 26.33
+  },
+  "retained_contract": [
+    "active editable scene",
+    "observable unsaved scene tab",
+    "pending native save",
+    "active Canon workspace",
+    "diagnostics waits for save",
+    "exact Unicode evidence selection",
+    "saved final prose"
+  ]
+}
