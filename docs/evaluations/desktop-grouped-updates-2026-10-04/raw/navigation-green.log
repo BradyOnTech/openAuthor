@@ -1,0 +1,16 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/components/sidebar/ManuscriptExplorer.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:2:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /private/tmp/openauthor-desktop-grouped-updates/desktop
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  03:06:18
+   Duration  1.16s (environment 61%, tests 27%, import 8%, transform 4%)
+

@@ -1,0 +1,27 @@
+
+> openauthor-desktop@0.1.0 build
+> tsc && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 296 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                               0.49 kB │ gzip:   0.30 kB
+dist/assets/index-BpalYbVl.css               72.73 kB │ gzip:  13.01 kB
+dist/assets/core-0_kFspMt.js                  0.19 kB │ gzip:   0.14 kB
+dist/assets/rolldown-runtime-B0Z9INg1.js      0.90 kB │ gzip:   0.51 kB
+dist/assets/event-HqMHEY-w.js                 1.09 kB │ gzip:   0.57 kB
+dist/assets/desktopEnrollment-Ad34_RtK.js     4.19 kB │ gzip:   1.67 kB
+dist/assets/dist-BNVpmEmC.js                219.90 kB │ gzip:  56.26 kB
+dist/assets/libsodium-wrappers-sNZQidc0.js  432.43 kB │ gzip: 152.78 kB
+dist/assets/index-tjYexhij.js               952.61 kB │ gzip: 260.80 kB
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0m../contracts/src/index.ts is dynamically imported by src/mobileSync/supabaseTransport.ts but also statically imported by src/mobileSync/projectKeyVerifier.ts, src/mobileSync/snapshotRecovery.ts, src/mobileSync/supabaseTransport.ts, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 708ms

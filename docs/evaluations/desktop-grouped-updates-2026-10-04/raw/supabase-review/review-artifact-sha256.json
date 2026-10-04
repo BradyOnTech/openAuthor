@@ -1,0 +1,19 @@
+{
+  "supabase-sdk-review.md": "bf614a2ac8e51272dfe3a65e6e2fbe7f850b8b7a2ded333dcd193c8fa81f9e54",
+  "review-verification.json": "326568e793df38d77885405c3cdb071b81e292ba4c236ec41a34d95f6ce3e72c",
+  "primary-source-sha256.json": "89dc615394722f05356fbb1448eb39e812b93b39d068a0a4a9f8b1ffacc3f326",
+  "protocol.test.ts": "4843395bbb96373e63fc07a4f18d98a134fb525dfacf4848660462f2305970f8",
+  "protocol-old-sdk.test.ts": "7152725dbe6322c9daac0ee2db9f3a84f2e60cbad582354e61815f5e70a6fb4a",
+  "vitest.config.ts": "c7587e77b330e89db493a6e33b0a99b002042a2f446049362a57e20f1097a3a4",
+  "vitest-old.config.mjs": "14d259ab01e927c6cf13d7eca7e36793a2f064786204f96f59eb97834f489884",
+  "cloud-unit.txt": "dfff099e7c67f4d879ab8050719309812fe61c4ef303b6ec25754cc782c470ae",
+  "protocol-sdk.txt": "398a80634beabc76bcaa22cb14038e69d59c0c618035716c12a60d8587fecf19",
+  "protocol-old-sdk.txt": "8b761198a9c0adf64eca580fb5a6390634969ff7cfca508183bb87a1ebc650af",
+  "protocol-fixture-empty-body-failed.txt": "569f5b45f69ad6cb8f952f2759a68329467479c550b670e84aebcaa7a51a3d04",
+  "account.supabase.test.ts": "403790fddc49aa3a92153acfcc26f051863cfb3098c8254c0bd3ed83c81bb7d4",
+  "vitest-candidate.config.mjs": "85ebb21c0063cf5ec62bd336bac91fc50395815bae53ae367ea72e835c4632f8",
+  "protocol-candidate.txt": "5b2541dac73fd40454a35bbf8205b7849356695ee0d6e109b3f2de118309241a",
+  "retained-account.supabase.test.ts": "8d3bbdbb83138dbaf41ed3b54f9a227035a516b657801e662967957d7f7088d2",
+  "vitest-retained-old.config.mjs": "aa7678dca370ec87ac12c94d36c26be0cddb3e4c12f39ef767d18259fa626e35",
+  "retained-sdk-old.txt": "3c2fda25bf58fa7ea4d0cda090fa6048cd03cdbf94e2a5c692350af98ac270c2"
+}

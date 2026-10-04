@@ -1,0 +1,8 @@
+Checking desktop prerequisites for openAuthor...
+python3: OK (/opt/homebrew/bin/python3)
+node: OK (~/.nvm/versions/node/v22.17.0/bin/node)
+npm: OK (~/.nvm/versions/node/v22.17.0/bin/npm)
+cargo: OK (/opt/homebrew/opt/rustup/bin/cargo)
+Node.js shared-contract compatibility: OK
+python openauthor import: OK
+Desktop prerequisite check passed.

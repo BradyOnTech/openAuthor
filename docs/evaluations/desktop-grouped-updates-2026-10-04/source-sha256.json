@@ -1,0 +1,22 @@
+{
+  ".nvmrc": "f14b4987904bcb5814e4459a057ed4d20f58a633152288a761214dcd28780b56",
+  "README.md": "1a1354d4c4da5e04b36a4a085295aade5a2a172d03e068c27707b37b86d13b15",
+  "contracts/package-lock.json": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279",
+  "desktop/README.md": "0fe0e720aa0ab8a1d77ea64f7d6411e565cfdb1dabdd1fbb4e947a193fefb0d6",
+  "desktop/package-lock.json": "ba1f91353c08c9af7f7b0c53ed529026a373884b9cef7fe5eed9ac1f9306d8c6",
+  "desktop/package.json": "56792bb6fe99d6e5e9da488d6d81d1734d1058801f0b1c5a85745f9f849199b0",
+  "desktop/src-tauri/tauri.conf.json": "36926fae6122b63d43d9d6fb40a30cea4e0cdd3fea3679a3e97f19795e5c9751",
+  "desktop/src/cloud/account.supabase.test.ts": "8d3bbdbb83138dbaf41ed3b54f9a227035a516b657801e662967957d7f7088d2",
+  "desktop/src/cloud/account.ts": "8c046445adaae2bcd547debb41223069ca5cde91d2dd4bb2638f142f1882c8f1",
+  "desktop/src/cloud/secretStore.ts": "c8461c1e46fa8d2d32830124e0d7ae63dec18c7adf9ab6b7ffec16c717b204e5",
+  "desktop/src/components/sidebar/ManuscriptExplorer.test.tsx": "c763038c43ecd0429e13101051037357eef1fdcc464ab6319221d59476cf98fb",
+  "desktop/src/components/sidebar/ManuscriptExplorer.tsx": "b3800c0f53fc9ef54d7f83d04a240cfbdcdd87781a4c5f777282ec48de4caf9e",
+  "desktop/vite.config.ts": "43b24f70bc0a62f059a08f7a738e0e4265bdde22ca3aae649c605fbf17c1fab2",
+  "desktop/vitest.config.ts": "64bc2751dd53eb8dda0410642167d7b782a5247b58fd5837df977da25bd4cf98",
+  "docs/desktop-runbook.md": "d6c04231939caf76322cd43bacf9be21dd89a82ee031df97d991e2bbfb268a3a",
+  "e2e/README.md": "c3372aa95f65664d067134c5a546fab952793356813417d7f6f881ebdd6ba8cc",
+  "e2e/package-lock.json": "7921f34eeee36e82d1e7b4737b1afd1dd7514fda3fa7d6bcd998ed84eb326358",
+  "e2e/package.json": "42b1d093ea9bfa8b605c15c5ee4d71509f6753167548eb0beddd467cc9f92d74",
+  "e2e/tests/desktop-controls.e2e.ts": "8a833742c5cec2fe89c01327f5a2eee246bab4e2aa74226d2e523c14f7a7d7d4",
+  "scripts/desktop_prereq_check.sh": "cd3cfa883c62f111c31bc441aea0d23db68a3aee98eae177343e96ce12cb1f98"
+}

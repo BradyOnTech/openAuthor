@@ -1,0 +1,30 @@
+
+ RUN  v5.0.3 /private/tmp/openauthor-desktop-grouped-updates/desktop
+
+ ❯ src/cloud/account.supabase.test.ts (5 tests | 1 failed) 30ms
+   ✓ actual SDK: password sign-in verifies ES256 identity, refresh keeps identity, local sign-out clears storage 24ms
+   × actual SDK: a lost refresh race returns and verifies the winning stored token for the next RPC 2ms
+   ✓ actual SDK: clearing storage during a refresh fails closed without resurrecting the losing session 1ms
+   ✓ actual SDK: a signed token for another device is refused by the wrapper 1ms
+   ✓ actual SDK: an invalid ES256 signature is refused by getClaims and the wrapper 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/cloud/account.supabase.test.ts > actual SDK: a lost refresh race returns and verifies the winning stored token for the next RPC
+Error: Your companion session could not be restored. Please sign in again.
+ ❯ Object.session src/cloud/account.ts:43:31
+     41|     async session(expected) {
+     42|       const result = await client.auth.getSession();
+     43|       if (result.error) throw new Error("Your companion session could …
+       |                               ^
+     44|       const session = result.data.session;
+     45|       if (!session) { verifiedIdentity = null; return null; }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  03:15:09
+   Duration  161ms (transform 35%, import 33%, tests 31%, worker 2%)
+

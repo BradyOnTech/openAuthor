@@ -1,0 +1,8 @@
+{
+  "bot_head": "5ec241173744c6a7fa0b68dd772cd8093c73f5ce",
+  "all_package_entries_unchanged_except_root_engines": true,
+  "package_entries": 170,
+  "libc_fields_preserved": 10,
+  "native_platform_metadata_preserved": true,
+  "final_npm_ci_lock_unchanged": true
+}

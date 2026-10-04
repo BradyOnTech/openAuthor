@@ -1,0 +1,38 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:2:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /private/tmp/openauthor-desktop-grouped-updates/desktop
+
+ ❯ src/components/sidebar/ManuscriptExplorer.test.tsx (6 tests | 5 failed) 368ms
+   ❯ chapter-aware manuscript navigation (6)
+     × follows Plan order, retains unassigned scenes, marks the open scene and opens saved prose 174ms
+     × collapses chapters and finds scenes by POV or chapter, revealing hidden matches 77ms
+     × keeps every scene accessible during a Plan failure and can retry 25ms
+     × retains scenes missing from an older Plan response without duplicating assigned scenes 33ms
+     × refreshes chapter membership after leaving the Plan tab 45ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/sidebar/ManuscriptExplorer.test.tsx > chapter-aware manuscript navigation > follows Plan order, retains unassigned scenes, marks the open scene and opens saved prose
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/ DRA$/`
+
+[Repeated rendered DOM omitted from this excerpt.]
+     28| describe("chapter-aware manuscript navigation", () => {
+ ❯ src/components/sidebar/ManuscriptExplorer.test.tsx:91:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed | 92 passed (93)
+      Tests  5 failed | 710 passed (715)
+   Start at  03:02:39
+   Duration  28.01s (tests 58%, environment 29%, import 7%, transform 6%)
+
+    Isolate  93 workers spawned · ~387ms startup each (spawn + environment, per file)
+             at least ~4.76s faster with isolate: false — reuses workers across files instead of one per file
+
