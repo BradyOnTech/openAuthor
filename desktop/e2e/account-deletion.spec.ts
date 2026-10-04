@@ -5,8 +5,7 @@ import { test, expect, type Page } from "@playwright/test";
 const fixture = `<!doctype html><html><head><meta charset="utf-8"><style>
 body{margin:0;background:#17191d;color:#e8e9ec;font:14px system-ui}button,input,select{font:inherit}button{padding:8px;margin:3px}input,select{padding:7px;max-width:100%;box-sizing:border-box}#root{max-width:720px;margin:20px auto;padding:20px;border:1px solid #454850}:root{--text-secondary:#c7c9d0;--text-xs:12px;--text-sm:14px}code{font-size:12px}summary{cursor:pointer;padding:8px}
 </style></head><body><div id="root"></div><script type="module">
-import React from '/node_modules/.vite/deps/react.js';
-import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
+import {React,ReactDOM} from '/e2e/fixtures/react-entry.ts';
 import RefreshRuntime from '/@react-refresh';
 import {createCompanionAccount} from '/src/cloud/account.ts?fixture-original';
 RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;

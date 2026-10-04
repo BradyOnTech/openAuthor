@@ -6,9 +6,8 @@ import { test, expect } from "@playwright/test";
 const fixture = `<!doctype html><html><head><meta charset="utf-8"><style>
 body{margin:0;background:#17191d;color:#e8e9ec;font:14px system-ui}button,input,select{font:inherit}button{padding:8px;margin:3px}input,select{padding:7px}#root{max-width:740px;margin:20px auto;padding:20px;border:1px solid #454850}:root{--text-primary:#e8e9ec;--text-secondary:#c7c9d0;--text-tertiary:#b7bbc4;--text-xs:12px;--text-sm:14px;--space-3:12px;--space-4:16px;--border:#454850;--radius-md:6px}
 </style></head><body><div id="root"></div><script type="module">
-import React from '/node_modules/.vite/deps/react.js';
-import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
-import sodium from '/node_modules/.vite/deps/libsodium-wrappers.js';
+import {React,ReactDOM} from '/e2e/fixtures/react-entry.ts';
+import sodium from '/e2e/fixtures/sodium-entry.ts';
 import RefreshRuntime from '/@react-refresh';
 import {recoverySnapshotFixture,recoveryManifestRow,recoveryFixtureKey,recoveryFixtureProject} from '/src/mobileSync/recoverySnapshot.fixture.ts';
 import {importMobileRecoveryKey} from '/src/mobileSync/projectKeyProvisioning.ts';
@@ -79,7 +78,7 @@ async function openFixture(page: import("@playwright/test").Page) {
 async function differentRecoveryKey(page: import("@playwright/test").Page): Promise<string> {
   return page.evaluate(async () => {
     const {createMobileProjectKeyProvisioningService}=await import('/src/mobileSync/projectKeyProvisioning.ts');
-    const {default:sodium}=await import('/node_modules/.vite/deps/libsodium-wrappers.js');await sodium.ready;
+    const {default:sodium}=await import('/e2e/fixtures/sodium-entry.ts');await sodium.ready;
     const pair=sodium.crypto_box_keypair();
     return (await createMobileProjectKeyProvisioningService({transport:{listProjectDevices:async()=>[{deviceId:'synthetic',keyId:'synthetic-key',keyAlgorithm:'x25519-v1',publicKey:sodium.to_base64(pair.publicKey,sodium.base64_variants.URLSAFE_NO_PADDING),projectEnrolledAt:'now',projectRevokedAt:null}],rotateProjectKeyWithEnvelopes:async()=>({keyVersion:3})}}).provisionProjectKey({projectId:'10000000-0000-4000-8000-000000000002',expectedPreviousVersion:2,reasonCode:'synthetic'})).recoveryKey;
   });
