@@ -156,6 +156,7 @@ js-audit:
 	@npm audit --prefix contracts --audit-level=low
 	@npm audit --prefix desktop --audit-level=low
 	@npm audit --prefix gateway --audit-level=low
+	@npm run security:forks --prefix mobile
 	@npm run security:forge --prefix mobile
 	@npm run security:braces --prefix mobile
 	@npm audit --prefix mobile --audit-level=low
