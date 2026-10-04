@@ -1,0 +1,9 @@
+{
+  "gateway/test/supabaseRateLimiter.test.ts": "bda658ca0186521e6666a64b5106bf249c30b814bedd52afc41ee5535ee63a18",
+  "gateway/src/supabaseRateLimiter.ts": "b406900ce09f7fb2b3fb26a78ea6885fdbf84956da9d4bf86a29052dd191cc18",
+  "gateway/src/types.ts": "d77624b98f9fb0c6f04d3fbfc32e32346413637d93c3cb8d0a837b73cc329c14",
+  "gateway/package.json": "750d910eb34a1436bb60da120074def6faa01159d9efb3305b5dd657a723c72a",
+  "gateway/package-lock.json": "0466f4cf6c305df9c403a52443b52cba4c27762dab5501ec019c9f3b779e196d",
+  "scripts/verify_shared_gateway_limiter.py": "93e35f75d790529b81f88c83371f387a3a7e88e6df6d98f274aec32800afa9c9",
+  "e2e/tests/backend-database.e2e.ts": "c77a4481a691636cd0359042d65369c8ae5778cf102e4288c70081760c95de09"
+}

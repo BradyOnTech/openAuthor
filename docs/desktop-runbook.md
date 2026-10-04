@@ -19,7 +19,7 @@
 Operator machine requirements:
 
 - Python 3.11+ with editable core install (`pip install -e .`)
-- Node.js 22.6+ (use the repository's `.nvmrc` to select Node 22)
+- Node.js 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+ (use the repository's `.nvmrc` to select Node 22)
 - Rust stable toolchain (`cargo`, `rustc`)
 - macOS build dependencies required by Tauri/WebKit
 

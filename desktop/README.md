@@ -30,7 +30,7 @@ active UI, end-to-end verification, and release readiness.
 
 ## Prerequisites
 
-- Node.js 22.6+ and npm (`.nvmrc` selects Node 22)
+- Node.js 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+, and npm (`.nvmrc` selects Node 22)
 - Rust toolchain (`cargo`, `rustc`)
 
 Install Rust (if missing):

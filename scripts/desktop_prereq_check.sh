@@ -17,15 +17,15 @@ check_cmd() {
 
 echo "Checking desktop prerequisites for openAuthor..."
 check_cmd python3 "Install Python 3.11+ and ensure 'python3' is on PATH."
-check_cmd node "Install Node.js 22.6+ (the .nvmrc selects Node 22)."
+check_cmd node "Install Node.js 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+ (.nvmrc selects Node 22)."
 check_cmd npm "Install npm (bundled with Node.js)."
 check_cmd cargo "Install Rust toolchain via rustup."
 
 if command -v node >/dev/null 2>&1; then
-  if node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && minor >= 6) ? 0 : 1)'; then
-    echo "Node.js shared-contract compatibility: OK"
+  if node -e 'const [major, minor, patch] = process.versions.node.split(".").map(Number); process.exit((major === 22 && (minor > 22 || (minor === 22 && patch >= 2))) || (major === 24 && minor >= 15) || major >= 26 ? 0 : 1)'; then
+    echo "Node.js desktop compatibility: OK ($(node --version))"
   else
-    echo "Node.js shared-contract compatibility: FAILED (Node.js 22.6+ required)"
+    echo "Node.js desktop compatibility: FAILED ($(node --version); requires 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+)"
     failures=1
   fi
 fi

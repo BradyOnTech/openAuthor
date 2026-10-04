@@ -1,0 +1,19 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:2:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /private/tmp/openauthor-desktop-grouped-updates/desktop
+
+
+ Test Files  94 passed (94)
+      Tests  720 passed (720)
+   Start at  03:14:28
+   Duration  27.76s (tests 59%, environment 29%, import 6%, transform 5%)
+
+    Isolate  94 workers spawned · ~369ms startup each (spawn + environment, per file)
+             at least ~4.59s faster with isolate: false — reuses workers across files instead of one per file
+

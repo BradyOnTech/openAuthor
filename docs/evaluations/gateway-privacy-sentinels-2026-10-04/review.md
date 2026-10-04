@@ -1,0 +1,11 @@
+# Gateway privacy test correction
+
+The frozen `4e11ff2` Chromium aggregate failed its database case while the other case groups passed. The focused three-test command reproduced the same line 64 assertion failure in 3/3 runs. `JSON.stringify(error, Object.getOwnPropertyNames(error)).includes("private")` matched `/private/tmp` in the fresh generic Error stack. A probe through the unchanged limiter confirmed that its only own properties were stack and message; the response/transport text, bearer and API-key fixtures were absent. This is a privacy-test correction, not a production error-redaction fix.
+
+The test now gives response bodies, transport errors and unexpected row data distinct exact synthetic markers, and checks those markers plus the full bearer/API-key fixtures. Recursive Error own-property serialization retains stacks and nested error causes. The generic message, all 11 missing/malformed/oversized response cases, mismatch refusal, shared retry timing and exact one-contact guard remain unchanged. There are no timeout, retry, skip or production changes.
+
+Before repository edits, an isolated copy of the candidate passed all 3 tests in 3/3 runs under Node 24.19.0. Deliberately attaching the caught transport Error as the generic error's cause failed the same privacy assertion in 3/3 runs. Restoring the copied production source yielded 3/3 passing tests. The exact candidate and mutation patches, production/source hashes and raw logs are included; the repository never received the production mutation.
+
+Final repository validation passed the focused 3/3 test file and the complete real PostgreSQL 17.11 SQL/concurrency/HTTP pipeline, gateway typecheck, 100/100 tests with zero skips/cancellations and production build. The disposable database uses a temporary Unix socket and does not contact hosted services. The initial restricted-sandbox attempt stopped at PostgreSQL shared-memory initialization before tests; the successful run used authorized sandbox escalation.
+
+The verified source commit is recorded in `verification.json`; compressed logs retain their exact original bytes, with compressed and uncompressed hash inventories. The old frozen packet remains untouched. Complete 79 Chromium plus 79 WebKit and hosted checks on the subsequent frozen head are separate acceptance work and are not certified here.

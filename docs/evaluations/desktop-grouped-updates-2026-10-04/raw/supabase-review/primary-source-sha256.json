@@ -1,0 +1,66 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/auth-js/CHANGELOG.md",
+    "sha256": "6e42f94123c70f8e621d51353dd74c6d6467e02182d5e40237c7159e619ba8d9"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/auth-js/src/GoTrueClient.ts",
+    "sha256": "b673c2a3900877241f96860d602173f7459b4250f95cca44174c6245fd07805c"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/functions-js/CHANGELOG.md",
+    "sha256": "d6605a7b14a7cc3bfb55f6d1c02e5e1d5a9e68e3632f5a411ef42aa56a3c4945"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/postgrest-js/CHANGELOG.md",
+    "sha256": "115b0281e229ea88a3eaa96973f090910fd62dd009e97ee88115166419c8aba0"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/realtime-js/CHANGELOG.md",
+    "sha256": "bb6d08cbb2e2e305ae8e332a64fdc9ef859614fa8efa640c6425bd61013986ea"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/storage-js/CHANGELOG.md",
+    "sha256": "bf1741783669f2d10b0ad4a154ac4dc2c8e79b9c877f0ec5b7cf7d2de2740638"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/supabase-js/CHANGELOG.md",
+    "sha256": "7f6f438410a330e3d447317dd420e7668ee8e2bea29cf024d6ce96a579a04669"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.112.4/packages/core/supabase-js/src/SupabaseClient.ts",
+    "sha256": "d1cee3e7206eca3443c03e9ce868b24c3d3e0e15a2f96683b8ebf173dda941f1"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/auth-js/CHANGELOG.md",
+    "sha256": "8593192d9abf65fa4ddcbc4b42a095d77da48def5495fc59c21d7f87c4e1177b"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/auth-js/src/GoTrueClient.ts",
+    "sha256": "7552500e375665e28acf23fb552ccbf1ef11379afab15859b2f670f1ae9aee9f"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/functions-js/CHANGELOG.md",
+    "sha256": "4fb37e7a9322f7d7ee25c97fa88c8a58e3c08476bc57ca6a5356abd1b91365fb"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/postgrest-js/CHANGELOG.md",
+    "sha256": "5f658fb1bb2841dde0ecde0c88eacd5c02d83c193eb5834cf0044b4121db07e7"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/realtime-js/CHANGELOG.md",
+    "sha256": "1e242d1330773ef1d8f5b1221f790ad4447a4a36b0c9e2d005a375cc7028fce1"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/storage-js/CHANGELOG.md",
+    "sha256": "ed45f32f66b8f16dc1d9d0adf7e8c5003951920280ba9fe1ceafc9d41eb3d30a"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/supabase-js/CHANGELOG.md",
+    "sha256": "637f6452b8a2b383b7c6c4338b8bc665258d56e9dd342ecefe68263a5727358a"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/supabase/supabase-js/v2.117.2/packages/core/supabase-js/src/SupabaseClient.ts",
+    "sha256": "eb923579957052a1160cda34a65ff67496d46abf37ae022cdd331f8d6d8bd800"
+  }
+]

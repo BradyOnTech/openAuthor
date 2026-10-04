@@ -1,0 +1,4 @@
+
+> openauthor-end-to-end@0.1.0 typecheck
+> tsc --noEmit
+

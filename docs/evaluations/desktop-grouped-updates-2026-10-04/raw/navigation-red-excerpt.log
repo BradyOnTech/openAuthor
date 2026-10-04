@@ -1,0 +1,88 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/components/sidebar/ManuscriptExplorer.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:2:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /private/tmp/openauthor-desktop-grouped-updates/desktop
+
+ ❯ src/components/sidebar/ManuscriptExplorer.test.tsx (6 tests | 5 failed) 229ms
+   ❯ chapter-aware manuscript navigation (6)
+     × follows Plan order, retains unassigned scenes, marks the open scene and opens saved prose 116ms
+     × collapses chapters and finds scenes by POV or chapter, revealing hidden matches 48ms
+     × keeps every scene accessible during a Plan failure and can retry 14ms
+     × retains scenes missing from an older Plan response without duplicating assigned scenes 18ms
+     × refreshes chapter membership after leaving the Plan tab 22ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/sidebar/ManuscriptExplorer.test.tsx > chapter-aware manuscript navigation > follows Plan order, retains unassigned scenes, marks the open scene and opens saved prose
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/ DRA$/`
+
+Here are the accessible roles:
+
+  region:
+
+  Name "The Choice":
+  [36m<section[39m
+    [33maria-label[39m=[32m"The Choice"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "The Lost Hour":
+  [36m<h3[39m
+    [33mclass[39m=[32m"manuscript-navigation__act"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "The Choice2 scenes · 200 words":
+  [36m<button[39m
+    [33maria-controls[39m=[32m"manuscript-group-chapter-1"[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33mclass[39m=[32m"manuscript-navigation__chapter"[39m
+  [36m/>[39m
+
+  Name "The DoorDRA":
+  [36m<button[39m
+    [33maria-current[39m=[32m"page"[39m
+    [33mclass[39m=[32m"tree-item tree-item--selected"[39m
+    [33mtitle[39m=[32m"scene-2 — Ivo"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The MapDRA":
+  [36m<button[39m
+    [33mclass[39m=[32m"tree-item"[39m
+    [33mtitle[39m=[32m"scene-1 — Mara"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------region:
+
+  Name "The Cost":
+  [36m<section[39m
+    [33maria-label[39m=[32m"The Cost"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+[Long rendered DOM omitted from this excerpt; the focused verdict follows.]
+     27|
+     28| describe("chapter-aware manuscript navigation", () => {
+ ❯ src/components/sidebar/ManuscriptExplorer.test.tsx:91:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  03:04:01
+   Duration  683ms (environment 43%, tests 37%, import 15%, transform 6%)
+

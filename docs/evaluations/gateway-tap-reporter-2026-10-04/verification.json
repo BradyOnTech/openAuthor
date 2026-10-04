@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-04",
+  "baseline_commit": "679481a091043536f6360334a1bead20b47a40a8",
+  "verified_source_commit": "b14775eab1e5416046bde5745cac0f7694c40491",
+  "diagnosis": "Node 23 changed the default non-TTY reporter from TAP to spec. Node 24 gateway tests passed but the unchanged database wrapper required TAP summary lines.",
+  "primary_sources": [
+    "https://nodejs.org/docs/latest-v24.x/api/test.html#test-reporters",
+    "https://nodejs.org/download/release/v22.17.0/docs/api/test.html#test-reporters"
+  ],
+  "source_change": "Only add --test-reporter=tap to gateway/package.json scripts.test.",
+  "production_files_changed": [],
+  "dependency_lock_changed": false,
+  "node_differential": [
+    {
+      "node": "22.17.0",
+      "reporter": "default",
+      "exit": 0,
+      "tap_fail_zero": true,
+      "tap_skipped_zero": true,
+      "spec_fail_zero": false
+    },
+    {
+      "node": "22.17.0",
+      "reporter": "tap",
+      "exit": 0,
+      "tap_fail_zero": true,
+      "tap_skipped_zero": true,
+      "spec_fail_zero": false
+    },
+    {
+      "node": "24.19.0",
+      "reporter": "default",
+      "exit": 0,
+      "tap_fail_zero": false,
+      "tap_skipped_zero": false,
+      "spec_fail_zero": true
+    },
+    {
+      "node": "24.19.0",
+      "reporter": "tap",
+      "exit": 0,
+      "tap_fail_zero": true,
+      "tap_skipped_zero": true,
+      "spec_fail_zero": false
+    }
+  ],
+  "original_database_wrapper": {
+    "status": "failed",
+    "summary": {
+      "discovered": 1,
+      "selected": 1,
+      "executed": 1,
+      "passed": 0,
+      "failed": 1,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "inner_gateway_passed": 100,
+    "inner_gateway_failed": 0,
+    "inner_gateway_skipped": 0,
+    "inner_format": "spec"
+  },
+  "final_database_wrapper": {
+    "command": "PATH=<bundled Node24.19 bin>:$PATH OPENAUTHOR_TEST_PG_BIN=/opt/homebrew/opt/postgresql@17/bin npm test --prefix e2e -- database",
+    "node": "24.19.0",
+    "target": "database",
+    "test_selector": "tests/backend-database.e2e.ts",
+    "summary": {
+      "discovered": 1,
+      "selected": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "attempts": 1,
+    "duration_ms": 30998,
+    "exit_code": 0,
+    "runner_receipt_status": "passed",
+    "strict_report_guard_verified": true,
+    "inner_gateway_passed": 100,
+    "inner_gateway_failed": 0,
+    "inner_gateway_skipped": 0,
+    "typecheck": "passed",
+    "build": "passed",
+    "sql_and_concurrency_checks": "passed",
+    "inner_format": "TAP"
+  },
+  "unchanged": [
+    "existing gateway test files and100-case selection",
+    "--experimental-strip-types",
+    "--test-concurrency=1",
+    "database E2E assertions",
+    "timeouts",
+    "retries",
+    "skips",
+    "report verification gates",
+    "all source/dependency/build inputs except test command flag"
+  ],
+  "limits": [
+    "Node 22.17 was used only for the gateway reporter differential, not complete upgraded desktop-toolchain acceptance.",
+    "This packet certifies the single existing database wrapper and its real PostgreSQL subprocess, not the subsequent full 79 Chromium +79 WebKit aggregates.",
+    "Prior sealed evidence packets remain unchanged."
+  ]
+}

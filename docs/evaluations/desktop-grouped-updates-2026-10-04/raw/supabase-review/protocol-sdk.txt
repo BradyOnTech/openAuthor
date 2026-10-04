@@ -1,0 +1,13 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (openauthor-supabase-upgrade-review/vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /private/tmp/openauthor-supabase-upgrade-review
+
+ ✓ protocol.test.ts (5 tests) 29ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  03:05:56
+   Duration  160ms (import 34%, transform 33%, tests 30%, worker 2%)
+

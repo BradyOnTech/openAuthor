@@ -40,16 +40,23 @@ test("returns shared retry timing and refuses a mismatched verified device befor
 });
 
 test("fails closed for missing migration, transport loss, malformed/oversized decisions without leaking bodies or tokens", async () => {
+  const privateSentinels = {
+    body: "synthetic-rate-limit-body-sentinel-7c34f2",
+    transport: "synthetic-rate-limit-transport-sentinel-53ef9b",
+    extraRow: "synthetic-rate-limit-extra-row-sentinel-0b8fdc",
+    bearer: request.principal.bearerToken,
+    apiKey: "fiction-publishable",
+  };
   const cases: Array<() => Promise<Response>> = [
-    async () => new Response("private database error", { status: 404 }),
-    async () => { throw new Error("private transport error"); },
+    async () => new Response(privateSentinels.body, { status: 404 }),
+    async () => { throw new Error(privateSentinels.transport); },
     async () => Response.json(true),
     async () => Response.json({ allowed: "true" }),
     async () => Response.json({ allowed: false, retry_after_seconds: 0 }),
     async () => Response.json({ allowed: false, retry_after_seconds: 1.5 }),
     async () => Response.json({ allowed: true, retry_after_seconds: 1 }),
     async () => Response.json({ allowed: false, retry_after_seconds: 61 }),
-    async () => Response.json({ allowed: true, extra: "private" }),
+    async () => Response.json({ allowed: true, extra: privateSentinels.extraRow }),
     async () => new Response("x".repeat(2_000)),
     async () => new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode("x".repeat(2_000))); controller.close(); } })),
   ];
@@ -61,7 +68,12 @@ test("fails closed for missing migration, transport loss, malformed/oversized de
     });
     await assert.rejects(limiter.consume("opaque", 0, request), error => {
       assert.equal((error as Error).message, "Shared session rate enforcement is unavailable.");
-      assert.equal(JSON.stringify(error, Object.getOwnPropertyNames(error as object)).includes("private"), false);
+      const serialized = JSON.stringify(error, (_key, value: unknown) => value instanceof Error
+        ? Object.fromEntries(Object.getOwnPropertyNames(value).map(name => [name, (value as unknown as Record<string, unknown>)[name]]))
+        : value);
+      for (const sentinel of Object.values(privateSentinels)) {
+        assert.equal(serialized.includes(sentinel), false, "backend details and credentials must remain private, including error causes and stacks");
+      }
       return true;
     });
     assert.equal(contacts, 1, "an uncertain commit must not trigger automatic retries");

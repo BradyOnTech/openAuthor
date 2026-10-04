@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-04",
+  "base_commit": "30ab86d0207cfc3d1e3fc4e91268e8081cbdc1b9",
+  "pull_request": {
+    "number": 23,
+    "url": "https://github.com/BradyOnTech/openAuthor/pull/23",
+    "head_sha": "5ec241173744c6a7fa0b68dd772cd8093c73f5ce",
+    "original_head_is_ancestor": true
+  },
+  "verified_source_commit": "ee6958cd717467e1085222e4bbd7cfb92ad27624",
+  "compatibility_commit": "1e7c41d9440b5c75450a85815766260d3d2762bd",
+  "node": "24.19.0",
+  "npm": "10.9.2",
+  "required_node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+  "locked_versions": {
+    "@supabase/supabase-js": "2.117.2",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "30.1.1",
+    "vite": "8.3.1",
+    "vitest": "5.0.3",
+    "typescript": "7.0.2"
+  },
+  "validation": {
+    "initial_units": {
+      "passed": 710,
+      "failed": 5,
+      "total": 715
+    },
+    "focused_navigation_red": {
+      "passed": 1,
+      "failed": 5
+    },
+    "focused_navigation_green": {
+      "passed": 6,
+      "failed": 0,
+      "assertions_unchanged": true
+    },
+    "desktop_units_final": {
+      "files": 94,
+      "passed": 720,
+      "failed": 0,
+      "skipped": 0
+    },
+    "retained_actual_sdk_tests": {
+      "passed": 5,
+      "failed": 0,
+      "sdk": "2.117.2",
+      "normal_suite_inclusion": true
+    },
+    "typescript_vite_build": "passed",
+    "resolved_build_target": [
+      "es2020",
+      "edge88",
+      "firefox78",
+      "chrome87",
+      "safari14"
+    ],
+    "resolved_css_target": [
+      "es2020",
+      "edge88",
+      "firefox78",
+      "chrome87",
+      "safari14"
+    ],
+    "npm_ci_all_five_packages": "passed",
+    "npm_peers": "passed",
+    "npm_audit_vulnerabilities": 0,
+    "portable_native_lock_metadata": "preserved",
+    "e2e_typecheck": "passed",
+    "repository_integrity_and_placeholder_audit": "passed",
+    "prereq_node_22_17": "rejected",
+    "prereq_node_24_19": "passed",
+    "browser_accessibility_probe": [
+      "Chromium",
+      "WebKit"
+    ],
+    "retained_actual_sdk_old_differential": {
+      "sdk": "2.112.4",
+      "passed": 4,
+      "failed": 1,
+      "expected_failure": "winning stored refresh token and subsequent RPC bearer",
+      "exact_final_retained_source": true,
+      "source_sha256": "8d3bbdbb83138dbaf41ed3b54f9a227035a516b657801e662967957d7f7088d2",
+      "external_resolver_only": true,
+      "artifact": "raw/supabase-review/retained-sdk-old.txt"
+    }
+  },
+  "actual_sdk_probe_boundary": {
+    "actual_sdk": true,
+    "actual_account_wrapper": true,
+    "signed_es256_jwks": true,
+    "hashed_async_storage": true,
+    "synthetic_http_protocol": true,
+    "memory_secret_store": true,
+    "held_concurrent_refresh_response": true
+  },
+  "independent_reviews": {
+    "toolchain_and_source": "merge_ci_e2e",
+    "cloud_protocol_and_source": "merge_mobile_security",
+    "findings": [],
+    "reviewed_source_commit": "ee6958cd717467e1085222e4bbd7cfb92ad27624"
+  },
+  "unchanged": [
+    "existing unit assertions",
+    "SDK browser assertions",
+    "retries",
+    "timeouts",
+    "aggregate report guards",
+    "Rust/Cargo graph",
+    "macOS minimumSystemVersion 12.0"
+  ],
+  "not_verified_by_this_packet": [
+    "complete browser aggregates (root follows on frozen HEAD)",
+    "fresh native package (root follows on frozen HEAD)",
+    "native Intel package for this upgraded frontend",
+    "macOS 12 execution",
+    "live Supabase deployment",
+    "native Keychain round trip",
+    "cross-window BroadcastChannel acceptance",
+    "signing and notarization",
+    "new-head hosted CI (GitHub billing block)"
+  ],
+  "release_certified": false,
+  "commands": [
+    "npm ci --prefix contracts; npm ci --prefix desktop; npm ci --prefix gateway; npm ci --prefix mobile; npm ci --prefix e2e",
+    "npm test --prefix desktop -- src/components/sidebar/ManuscriptExplorer.test.tsx",
+    "npm test --prefix desktop -- src/cloud/account.supabase.test.ts",
+    "npm test --prefix desktop",
+    "npm run build --prefix desktop",
+    "npm audit --prefix desktop --audit-level=low --json",
+    "npm ls --prefix desktop --all --json",
+    "npm run typecheck --prefix e2e",
+    "make desktop-prereq",
+    "make check"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "raw/baseline-1.log.gz": "57bfe0d880a85d4b5542e92ad1b9ee306404965dfa76b1adca5f0b2173449f29",
+  "raw/baseline-2.log.gz": "71601ba20f01a38123ef58a3061ed939efeec07fb03b4235129b60a1616a73b5",
+  "raw/baseline-3.log.gz": "a82d099a2f1198a26d78bff534c8d2a6f07a81aec0f0feeea52189494df3178e",
+  "raw/candidate-green-1.log.gz": "989ef74773c2dde3c3ec1149efcbe9ca74a4f034390b896edaa76452dfecfb64",
+  "raw/candidate-green-2.log.gz": "d78bb51ad44c1ade1cc746cc77cdc4b7bad76e89a584241f260b366e414f57f0",
+  "raw/candidate-green-3.log.gz": "81a85d9bacf24824a1ccda918bdf4cfaf861060d126388a4a2ffc1586cc60a94",
+  "raw/cause-red-1.log.gz": "e9dc5c08f94550f1bab347d8197d0a17ed088c50d84b66d60d74e8c1f0345dd7",
+  "raw/cause-red-2.log.gz": "1a468752114b4fd21cdf46046979436c7e5c78cc69bcf54761ca13b33f1c1c09",
+  "raw/cause-red-3.log.gz": "e6ee8c1c200f9987a2fffd3c4b0a19a6aa52f96aefe6accb576fdf6781f86187",
+  "raw/candidate-restored-green.log.gz": "6e38d30ea2196069af25d9743ffe919cfaaf9ddaca022864273501005d7f8256",
+  "raw/error-own-properties.log.gz": "c2a2da3c569efedb4f204b2e5532a502efa81312c1f8d24d661cf4eba517ced1",
+  "raw/focused-final.log.gz": "14ba858150da95a7ddfe53b92253b4c344191880f78e09f299c80978d39a6b1c",
+  "raw/gateway-postgres-final.log.gz": "0bbc90f45b6e6602e2a3d2936b178df101ca1f8465c1f5ba25510df2e94e7d11",
+  "raw/original-database-report.json.gz": "5786d90426ede210f8b90d03f8307b152fd3c69d834246c34709e0e1abad6695",
+  "raw/candidate-test.patch.gz": "83f938c3c30cbde49dafeed1b1315cff195f8b90c27c43c94fc4882b2522f059",
+  "raw/secret-cause-mutation.patch.gz": "b361c69bf1286dd354adda49bc3f72c950b6f2102b2344201f1cf5656bb3d7c2"
+}

@@ -1,0 +1,12 @@
+Running repository checks...
+README.md: OK
+docs/brief.md: OK
+docs/plan.md: OK
+docs/desktop-architecture.md: OK
+docs/desktop-runbook.md: OK
+docs/capabilities.md: OK
+docs/product-development-plan.md: OK
+openauthor CLI: OK
+desktop shell: OK
+Capability registry: OK (28 tracked, 24 visible, 20 e2e verified, 0 release-ready)
+Scanning for placeholder/stub markers...

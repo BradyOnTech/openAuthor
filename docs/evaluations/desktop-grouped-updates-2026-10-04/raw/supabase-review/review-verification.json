@@ -1,0 +1,99 @@
+{
+  "reviewed_dependency_commit": "5ec241173744c6a7fa0b68dd772cd8093c73f5ce",
+  "source_review_findings": [],
+  "node": "24.19.0",
+  "vitest": "5.0.3",
+  "sdk_new": "2.117.2",
+  "sdk_old": "2.112.4",
+  "targeted_units": {
+    "files": 5,
+    "passed": 96,
+    "failed": 0,
+    "command": "~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/vitest/vitest.mjs run src/cloud/account.test.ts src/cloud/accountDeletion.test.ts src/cloud/desktopEnrollment.test.ts src/mobileSync/hostedRecovery.test.ts src/mobileSync/projectKeyVerifierTransport.test.ts",
+    "cwd": "/private/tmp/openauthor-desktop-grouped-updates/desktop"
+  },
+  "sdk_new_protocol": {
+    "passed": 5,
+    "failed": 0,
+    "duration_ms": 160,
+    "command": "~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/openauthor-desktop-grouped-updates/desktop/node_modules/vitest/vitest.mjs run --config /private/tmp/openauthor-supabase-upgrade-review/vitest.config.ts"
+  },
+  "sdk_old_protocol": {
+    "passed": 4,
+    "failed": 1,
+    "expected_failure": "lost refresh race returns the winning stored token",
+    "duration_ms": 335,
+    "command": "~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/openauthor-desktop-grouped-updates/desktop/node_modules/vitest/vitest.mjs run --config /private/tmp/openauthor-supabase-upgrade-review/vitest-old.config.mjs"
+  },
+  "probe_boundary": {
+    "actual_installed_sdk": true,
+    "actual_account_wrapper": true,
+    "actual_auth_storage_hashing": true,
+    "signed_es256_jwt_jwks": true,
+    "synthetic_fetch_protocol": true,
+    "held_refresh_response": true,
+    "memory_secret_store": true,
+    "live_supabase": false,
+    "native_keychain": false,
+    "cross_window_broadcast_channel": false
+  },
+  "diagnostic_fixture_failure": "The first protocol attempt parsed the empty logout POST as JSON and failed sign-out. The fixture was corrected to parse only nonempty bodies; its failed log is diagnostic only, not an SDK or application regression.",
+  "source_sha256": {
+    "desktop/src/cloud/account.ts": "8c046445adaae2bcd547debb41223069ca5cde91d2dd4bb2638f142f1882c8f1",
+    "desktop/src/cloud/secretStore.ts": "c8461c1e46fa8d2d32830124e0d7ae63dec18c7adf9ab6b7ffec16c717b204e5",
+    "desktop/src/cloud/account.test.ts": "0f3cce94d879e37f5e7ba1f091bd17045f341b13695c5442a311b6e881778e00",
+    "desktop/src/cloud/accountDeletion.test.ts": "a30ce041d137f31153057256c83db209c96feae6cce16b5bd590d1883d4728e3",
+    "desktop/src/cloud/desktopEnrollment.test.ts": "9758d1e1cc03427e8e08dce6c899069458ef8d88346862cea6791ad5f47b452b",
+    "desktop/src/mobileSync/hostedRecovery.test.ts": "25eb042efbe14b7e33c5c689add6ff198e8c4ce8ece63a908cf39efdfa5ef083",
+    "desktop/src/mobileSync/projectKeyVerifierTransport.test.ts": "df19b83439a322a3cece4b0da52a0b7f548b9040e8bf84ece603c47544d4c9d9"
+  },
+  "installed_source_matches_official_tag": {
+    "auth-js/GoTrueClient.ts": true,
+    "supabase-js/SupabaseClient.ts": true
+  },
+  "candidate_protocol": {
+    "file": "account.supabase.test.ts",
+    "passed": 5,
+    "failed": 0,
+    "duration_ms": 170,
+    "environment": "node",
+    "normal_relative_and_package_imports": true,
+    "cleanup": "Release gate, await tracked in-flight account operations (rejection handlers attached), then dispose client. No global stubs."
+  },
+  "retained_test_old_protocol": {
+    "immutable_test_commit": "ee6958cd717467e1085222e4bbd7cfb92ad27624",
+    "source_repo_path": "desktop/src/cloud/account.supabase.test.ts",
+    "source_sha256": "8d3bbdbb83138dbaf41ed3b54f9a227035a516b657801e662967957d7f7088d2",
+    "sdk_override": "@supabase/supabase-js \u2192 existing installed2.112.4, temporary external resolver only",
+    "passed": 4,
+    "failed": 1,
+    "expected_failure": "lost refresh race returns and verifies the winning stored token",
+    "duration_ms": 161,
+    "actual_es256": "global WebCrypto ECDSA/P-256 + SHA-256, no Node crypto import",
+    "config": "vitest-retained-old.config.mjs",
+    "log": "retained-sdk-old.txt",
+    "source_modified_during_probe": false
+  },
+  "resolved_sdk_packages": {
+    "old_supabase-js": {
+      "version": "2.112.4",
+      "esm_entry": "dist/index.mjs",
+      "esm_entry_sha256": "b6b0ae51206bf331cb951eee6c04c2aa455893b77649fb474f115de76b6fe6a9"
+    },
+    "old_auth-js": {
+      "version": "2.112.4",
+      "esm_entry": "dist/module/index.js",
+      "esm_entry_sha256": "9be5694df0e46b33d4f3b7bb8bad0ecef05ce343a5734376d6b4c93a8233eba7"
+    },
+    "new_supabase-js": {
+      "version": "2.117.2",
+      "esm_entry": "dist/index.mjs",
+      "esm_entry_sha256": "5823022d2178d65d22c3bb5c1c237d867797743c42a23042d9ef371ae4f02645"
+    },
+    "new_auth-js": {
+      "version": "2.117.2",
+      "esm_entry": "dist/module/index.js",
+      "esm_entry_sha256": "9be5694df0e46b33d4f3b7bb8bad0ecef05ce343a5734376d6b4c93a8233eba7"
+    }
+  }
+}

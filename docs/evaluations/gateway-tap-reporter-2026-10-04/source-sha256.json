@@ -1,0 +1,11 @@
+{
+  "gateway/package.json": "a44a90e3285c12f85d0c9b261eb1884675213af24d3c52bdef03a4d3fce8d63d",
+  "gateway/package-lock.json": "0466f4cf6c305df9c403a52443b52cba4c27762dab5501ec019c9f3b779e196d",
+  "gateway/test/supabaseRateLimiter.test.ts": "bda658ca0186521e6666a64b5106bf249c30b814bedd52afc41ee5535ee63a18",
+  "gateway/src/supabaseRateLimiter.ts": "b406900ce09f7fb2b3fb26a78ea6885fdbf84956da9d4bf86a29052dd191cc18",
+  "e2e/e2e.config.ts": "757af897f7ff02de096748e08adac4936973a018b3356c8db5c0e7242ee86223",
+  "e2e/tests/backend-database.e2e.ts": "c77a4481a691636cd0359042d65369c8ae5778cf102e4288c70081760c95de09",
+  "e2e/scripts/run.mjs": "9ed2cc9d48e2b32df33734cda58372d0dc30b3356dc16c9e98de91710b98afcc",
+  "e2e/scripts/reports.mjs": "afbe4b6ae750543e91612a56ae831fce09808c341cc42e001e753cb86ac6bb12",
+  "scripts/verify_shared_gateway_limiter.py": "93e35f75d790529b81f88c83371f387a3a7e88e6df6d98f274aec32800afa9c9"
+}
