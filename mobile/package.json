@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "postinstall": "node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply",
+    "postinstall": "node scripts/verify-security-forks.mjs && node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply",
     "security:forge": "node scripts/forge-backport.mjs check",
     "preweb": "node scripts/forge-backport.mjs check && node scripts/braces-backport.mjs check",
     "web": "expo start --web",
@@ -31,7 +31,8 @@
     "check": "npm run typecheck && npm test",
     "predoctor": "node scripts/forge-backport.mjs check && node scripts/braces-backport.mjs check",
     "doctor": "expo-doctor",
-    "security:braces": "node scripts/braces-backport.mjs check"
+    "security:braces": "node scripts/braces-backport.mjs check",
+    "security:forks": "node scripts/verify-security-forks.mjs"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "15.0.2",
@@ -53,7 +54,9 @@
     "react-native-libsodium": "1.7.0",
     "react-native-url-polyfill": "4.0.0",
     "react-native-web": "^0.21.2",
-    "react-native-webrtc": "124.0.8"
+    "react-native-webrtc": "124.0.8",
+    "braces": "file:./security/distributions/openauthor-braces-3.0.3-openauthor.1.tgz",
+    "node-forge": "file:./security/distributions/openauthor-node-forge-1.4.0-openauthor.1.tgz"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -66,7 +69,9 @@
   "overrides": {
     "xcode": {
       "uuid": "11.1.1"
-    }
+    },
+    "braces": "$braces",
+    "node-forge": "$node-forge"
   },
   "expo": {
     "doctor": {

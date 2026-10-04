@@ -1,0 +1,2 @@
+@openauthor/braces: exact modified sources and archive verified
+@openauthor/node-forge: exact modified sources and archive verified

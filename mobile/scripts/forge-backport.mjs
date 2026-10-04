@@ -1,4 +1,4 @@
-// Byte-bound local Expo mitigation; version-based npm audit remains unchanged.
+// Verify the maintained Node-only Forge fork and its actual Expo callers.
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, existsSync, fsyncSync, lstatSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -60,7 +60,7 @@ function forgeCopies(projectRoot) {
       const metadata = join(path, "package.json");
       let name;
       if (existsSync(metadata)) name = JSON.parse(readFileSync(metadata, "utf8")).name;
-      if (name === "node-forge" || folderName === "node-forge") found.push(path);
+      if (["node-forge", manifest.forge.name].includes(name) || folderName === "node-forge") found.push(path);
       scan(join(path, "node_modules"), depth + 1);
     };
     for (const entry of readdirSync(nodeModules, { withFileTypes: true })) {
@@ -81,7 +81,7 @@ function forgeCopies(projectRoot) {
 function inspect(projectRoot) {
   const root = realpathSync(projectRoot);
   const lock = JSON.parse(readFileSync(regularFile(root, "package-lock.json"), "utf8"));
-  const lockedCopies = Object.entries(lock.packages ?? {}).filter(([name, value]) => name.endsWith("/node-forge") || value.name === "node-forge");
+  const lockedCopies = Object.entries(lock.packages ?? {}).filter(([name, value]) => name.endsWith("/node-forge") || ["node-forge", manifest.forge.name].includes(value.name));
   if (lockedCopies.length !== 1 || lockedCopies[0][0] !== manifest.forge.path) fail("unknown locked Forge copy");
   for (const [name, expected] of Object.entries(manifest.lock_packages)) {
     if (JSON.stringify(lock.packages?.[name]) !== JSON.stringify(expected)) fail(`locked dependency changed: ${name}`);
@@ -96,7 +96,8 @@ function inspect(projectRoot) {
   if (![patch.original_sha256, patch.patched_sha256].includes(rsaHash)) fail("unknown RSA source bytes");
   const expected = { ...manifest.forge.files, [patch.path]: rsaHash };
   exactFiles(actual, expected);
-  if (JSON.parse(readFileSync(join(forgeRoot, "package.json"), "utf8")).version !== manifest.forge.version) fail("unexpected Forge version");
+  const metadata = JSON.parse(readFileSync(join(forgeRoot, "package.json"), "utf8"));
+  if (metadata.name !== manifest.forge.name || metadata.version !== manifest.forge.version) fail("unexpected Forge identity");
   const expoMetadata = regularFile(root, manifest.expo_package_json.path);
   if (hash(readFileSync(expoMetadata)) !== manifest.expo_package_json.sha256) fail("Expo package changed");
   const expoEntrypoint = regularFile(root, manifest.expo_entrypoint.path);
@@ -152,11 +153,12 @@ export function maintainForgeBackport(projectRoot = mobile, mode = "check") {
     advisory: manifest.advisory,
     forge_version: manifest.forge.version,
     rsa_sha256: checked.rsaHash,
-    status: "pinned_local_node_backport_verified",
+    status: "pinned_repository_node_fork_verified",
     applied,
     callers: checked.resolutions,
-    unmodified_distribution_files: manifest.forge.unmodified_distribution_files,
-    dependency_audit_gate: "open",
+    omitted_distribution_files: manifest.forge.omitted_distribution_files,
+    upstream_advisory_gate: "open",
+    dependency_audit_gate: "separate_raw_audit_required",
     scope: manifest.scope,
   };
 }

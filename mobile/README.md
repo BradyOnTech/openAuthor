@@ -232,9 +232,19 @@ override when an upstream Xcode dependency supplies a patched version itself.
 
 ### Current export security gate
 
-With npm lifecycle scripts enabled, `npm ci` applies the repository's byte-bound
-local Forge and Braces backports. Run `npm run security:forge` and
-`npm run security:braces` to verify both. Supported npm Expo commands refuse
+The mobile lockfile installs `@openauthor/braces@3.0.3-openauthor.1` and
+`@openauthor/node-forge@1.4.0-openauthor.1` as regular package files under the
+upstream import names. These are modified repository distributions, with exact
+upstream archive provenance, preserved licenses and offline reproducible
+tarballs under `security/`. Root file dependencies and `$braces`/`$node-forge`
+overrides make every transitive caller resolve these distributions. The rest of
+the pinned dependency graph is unchanged. Neither advisory has an upstream
+patched release as of October 4, 2026.
+
+With npm lifecycle scripts enabled, `npm ci` verifies the fork archives and
+applies the repository's byte-bound embedded Braces repairs. Run
+`npm run security:forks`, `npm run security:forge` and
+`npm run security:braces` to verify delivery and installed bytes. Supported npm Expo commands refuse
 unpatched or unexpected verifier, parser, caller, dependency-lock or package-copy
 bytes. Dependency updates require review of `security/forge-backport-1.4.0.json`
 and `security/braces-backport-3.0.3.json`; the guards never accept new bytes
@@ -245,13 +255,14 @@ The pinned Node/lib PKCS#1 v1.5 verifier requires complete, canonical DER
 DigestInfo values and empty NULL parameter content. Valid SHA algorithm
 identifiers with absent or NULL parameters remain supported. Older BER-only
 DigestInfo encodings are refused; PSS and NONE verification remain separate.
-The patch retains Forge's package version and does not patch browser
-distributions or global/cloud EAS tooling. This mitigation does not clear
-either Forge or Braces release/audit gate, or certify signed native artifacts.
+The Forge distribution omits the six old minified browser bundles/maps and the
+obsolete Flash binary. Its Node/CommonJS implementation contains the reviewed
+fix. Global/cloud EAS tooling, signing activation, browser signing and signed
+native artifacts require separate review and acceptance.
 Direct Expo commands and disabled npm lifecycle scripts require separate
 verification.
 
-The Braces mitigation covers the standalone `braces@3.0.3` package and the seven
+The Braces mitigation covers the modified standalone fork and the seven
 Braces modules embedded in `resolve-workspace-root@2.0.1` and
 `expo-doctor@1.20.4`. Readable CommonJS sources, original compatibility material,
 whole package inventories, exact embedded module entries and surrounding bundle
@@ -279,9 +290,9 @@ remain supported. Queue flattening and append use iterative traversal. The
 transforms and combinatorial expansion output are outside this bounded stack
 mitigation. Current ordinary Metro and workspace matching uses Picomatch;
 that reachability does not remove the requirement to repair all supplied Braces
-copies. Package versions stay unchanged and the raw
-[Braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) gate remains
-open. This local mitigation does not certify browser distributions, global/cloud
+copies. The upstream
+[Braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) remains
+open. This repository distribution does not certify global/cloud
 EAS tooling, actual devices or signed native artifacts. Direct Expo/Doctor
 commands and disabled lifecycle scripts require explicit guard checks.
 
@@ -291,9 +302,9 @@ dotenv/config-plugin configuration offline. Use `npm run build:export --
 --platform all --output-dir .expo/release-inspection` for a guarded all-platform
 Metro export.
 
-The installed Expo signing tooling still reaches node-forge's affected verifier
-under [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv).
-Until that gate is reviewed and resolved, the guard refuses configuration of
+The installed Expo signing tooling resolves the reviewed Forge fork. The
+upstream [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
+remains open. Signing activation is a separate gate: the guard refuses configuration of
 `updates.codeSigningCertificate`, `updates.codeSigningMetadata` or an EAS project
 ID, including values supplied by dynamic config and plugins. The EAS ID also
 enables Expo-root development-signing branches, so this check intentionally
@@ -305,8 +316,21 @@ without network access, then inspects source maps for every exported Metro
 bundle and requested platform. Forge, the certificate helper or Expo signing
 modules make the export fail. A successful export records bundle/map hashes and
 module counts in `security-build.json`; maps are removed before PWA asset
-caching. This contains the currently unused tooling path. `npm audit` still
-reports the advisory and remains a mandatory failing CI gate. Direct Expo
+caching. This contains the currently unused tooling path. Raw `npm audit`
+remains mandatory at the same threshold. The scoped fork identities have no
+upstream advisory records, so a clean registry audit cannot establish their
+safety. Archive integrity, whole installed package inventories, original and
+fork alias/copy detection, caller resolution and the adversarial tests remain
+independent mandatory gates. Neither guard claims to have run the raw audit.
+
+Run `python3 scripts/package-security-forks.py check` from `mobile/` to reproduce
+and byte-compare both distributions offline against their pinned upstream
+archives and maintained patches. The upstream tarballs are diagnostic/source
+material and are never installed. See
+[`security/forks.json`](security/forks.json),
+[`security/braces-fork.md`](security/braces-fork.md) and
+[`security/forge-fork.md`](security/forge-fork.md). Replace these forks when a
+reviewed upstream release passes the same regressions. Direct Expo
 commands bypass this wrapper; native signing, EAS services and store artifacts
 require their separate release checks. See the
 [export-containment verification](../docs/evaluations/mobile-build-security-2026-10-02/README.md).

@@ -62,8 +62,8 @@ describe("three-copy Braces delivery guard", () => {
     const changed = targets.filter(target => !target.original.equals(target.patched)).map(target => target.path).sort();
     expect(result.applied).toEqual(changed);
     expect(result.targets).toEqual(Object.fromEntries(manifest.patches.map(item => [item.path, item.patched_sha256])));
-    expect(result.package_versions).toEqual({ braces: "3.0.3", "resolve-workspace-root": "2.0.1", "expo-doctor": "1.20.4" });
-    expect(result.dependency_audit_gate).toBe("open");
+    expect(result.package_versions).toEqual({ braces: "3.0.3-openauthor.1", "resolve-workspace-root": "2.0.1", "expo-doctor": "1.20.4" });
+    expect(result.dependency_audit_gate).toBe("separate_raw_audit_required");
     expect(maintainBracesBackport(root, "apply").applied).toEqual([]);
     expect(maintainBracesBackport(root, "check").targets).toEqual(result.targets);
   }));
@@ -84,7 +84,7 @@ describe("three-copy Braces delivery guard", () => {
     writeFileSync(temporary, "private partial temporary data");
     maintainBracesBackport(root, "apply");
     expect(readFileSync(temporary, "utf8")).toBe("private partial temporary data");
-    expect(maintainBracesBackport(root).dependency_audit_gate).toBe("open");
+    expect(maintainBracesBackport(root).dependency_audit_gate).toBe("separate_raw_audit_required");
   }));
 
   it("refuses an unknown target in a mixed state before changing any remaining original", () => fixture((root, targets) => {
@@ -141,14 +141,19 @@ describe("three-copy Braces delivery guard", () => {
       lock => { lock.packages["node_modules/braces"].version = "private-drift"; },
       lock => { lock.packages["node_modules/fill-range"].integrity = "private-drift"; },
       lock => { lock.packages["node_modules/private-alias"] = { name: "braces", version: "3.0.3" }; },
+      lock => { lock.packages["node_modules/private-alias"] = { name: "@openauthor/braces", version: "3.0.3-openauthor.1" }; },
       lock => { lock.packages["node_modules/parent/node_modules/resolve-workspace-root"] = { version: "2.0.1" }; },
     ]) fixture(root => { changeLock(root, edit); refusedUnchanged(root, /locked dependency changed|unknown locked package copy/); });
   });
 
   it.each(["braces", "resolve-workspace-root", "expo-doctor"])("refuses a nested or aliased %s copy before replacement", name => {
-    for (const destination of ["node_modules/private-alias", "node_modules/private-parent/node_modules/" + name]) fixture(root => {
+    for (const identity of new Set([name, manifest.packages.find(item => item.name === name).installed_name ?? name])) for (const destination of ["node_modules/private-alias", "node_modules/private-parent/node_modules/" + name]) fixture(root => {
       mkdirSync(dirname(join(root, destination)), { recursive: true });
       cpSync(join(root, "node_modules", name), join(root, destination), { recursive: true });
+      const metadataFile = join(root, destination, "package.json");
+      const metadata = JSON.parse(readFileSync(metadataFile));
+      metadata.name = identity;
+      writeFileSync(metadataFile, JSON.stringify(metadata));
       refusedUnchanged(root, "unknown installed package copy");
     });
   });
@@ -183,14 +188,14 @@ describe("three-copy Braces delivery guard", () => {
         expect(reconstructed.split(item.original_entry)).toHaveLength(2);
         reconstructed = reconstructed.replace(item.original_entry, () => entry);
       }
-      expect(Buffer.from(reconstructed)).toEqual(target.patched);
+      expect(target.patched.equals(Buffer.from(reconstructed))).toBe(true);
       expect(hash(reconstructed)).toBe(patch.patched_sha256);
     }
   }));
 
   it("checks both maintained backports before each supported tooling command", () => {
     const scripts = JSON.parse(readFileSync(join(mobile, "package.json"), "utf8")).scripts;
-    expect(scripts.postinstall).toBe("node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply");
+    expect(scripts.postinstall).toBe("node scripts/verify-security-forks.mjs && node scripts/forge-backport.mjs apply && node scripts/braces-backport.mjs apply");
     expect(scripts["security:braces"]).toBe("node scripts/braces-backport.mjs check");
     for (const command of ["start", "web", "android", "ios", "prebuild", "doctor", "build:web", "build:export", "build:security", "build:test-hosted"]) {
       expect(scripts["pre" + command], command).toBe("node scripts/forge-backport.mjs check && node scripts/braces-backport.mjs check");

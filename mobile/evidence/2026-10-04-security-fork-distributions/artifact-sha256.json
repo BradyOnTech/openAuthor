@@ -1,0 +1,17 @@
+{
+  "README.md": "7cf6edf22fc54f7a0c77321108220c12e02e3115d0415c224e2de1b02b720734",
+  "all-platform-export.txt": "3135decb8c9e21b86f81909d48ef96b98450119ade87218922746ffbff885a9f",
+  "all-platform-security-build.json": "c4f98013459706104ea177924775fe314cca0e7f82ce94fefde92f70b18f7477",
+  "audit-after.json": "84a6508bbcfff9e3f9de18a4005ae234c6892f46cfdaa3c5cdb87eae942f3b4e",
+  "audit-before.json": "7dbac8c1050ee73f65538425b8d7a1431a4e74b08a59e61c28f2a786709271e2",
+  "braces-upstream-receipt.json": "024f48834b5b25b54ad069884790f81f3a9c632ce29d9f7c50e9cdb0cd2827b2",
+  "forge-upstream-receipt.json": "f8aeeb77984e1775ff882119ae120bd42d02eb64cf782f90a2475a1fe70422c6",
+  "preflight.txt": "b1d7331d05c32581f286db90b4f57d77fed41caa91bd86b9ea2872a234aaa9ec",
+  "reproduce-python311.txt": "9726e050bfe47c5755a086c26a6d68d52d74ad947aee3516033832ca7de53351",
+  "reproduce.txt": "9726e050bfe47c5755a086c26a6d68d52d74ad947aee3516033832ca7de53351",
+  "tests.txt.gz": "3aec5d2419b9dda0bb7708efab05a84316c820970990f435edf0f4f1bf1a8e9e",
+  "typecheck.txt.gz": "d5e596b2b59d21ab9c2bc95a65c4975eedfabd809e8c45130b54718e7137b177",
+  "verification.json": "3f0814c739c1d2638c36ac9a0efdb48a94580c6d877c5ea0ca3b2e3ac015222a",
+  "web-export.txt": "3d767ba0fdef8055d07e540b600c18e66435fda136d1ee4162aba942e23be866",
+  "web-security-build.json": "d27e305a2a982c532fb55e9b1710c2862dee9241fe2ffcb47e535f596525c6ba"
+}

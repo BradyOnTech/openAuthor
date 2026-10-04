@@ -1,4 +1,4 @@
-// Contain unpatched tooling modules in exports; dependency remediation remains open.
+// Contain tooling modules in exports and retain separate signing/native gates.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
@@ -61,7 +61,7 @@ export function inspectProject(projectRoot = mobile) {
   try {
     const { installed } = resolveProject(projectRoot);
     if (probe.attempts() !== 0) fail("Network access refused during signing inspection");
-    return { advisory, advisories, dependency_audit_gate: "open", installed };
+    return { advisory, advisories, upstream_advisory_gate: "open", dependency_audit_gate: "separate_raw_audit_required", installed };
   } finally { probe.restore(); }
 }
 
@@ -75,7 +75,7 @@ export async function preflight(projectRoot = mobile) {
       assert.equal(await signing.getCodeSigningInfoAsync(exp, header), null);
     }
     assert.equal(probe.attempts(), 0);
-    return { advisory, advisories, dependency_audit_gate: "open", installed, signing_header_checks: 3, network_attempts: 0 };
+    return { advisory, advisories, upstream_advisory_gate: "open", dependency_audit_gate: "separate_raw_audit_required", installed, signing_header_checks: 3, network_attempts: 0 };
   } finally { probe.restore(); }
 }
 
@@ -174,11 +174,11 @@ async function main() {
   });
   if (result.error || result.status !== 0) fail("Guarded export failed");
   const output = resolve(mobile, options.output);
-  const report = { ...config, scope: "Metro export module containment; dependency remediation, exposed developer tooling, signing and native acceptance unverified", ...inspectExport(output, options.platforms) };
+  const report = { ...config, scope: "Metro export module containment with repository maintained forks; raw audit is separate, upstream advisories, signing and native acceptance remain open", ...inspectExport(output, options.platforms) };
   writeFileSync(join(output, "security-build.json"), JSON.stringify(report, null, 2) + "\n");
   // Inspect maps before removing them from public app-shell assets.
   for (const bundle of report.bundles) unlinkSync(join(output, bundle.file) + ".map");
-  console.log(`Mobile export containment passed (${report.map_count} maps); dependency remediation remains open for ${advisories.join(", ")}.`);
+  console.log(`Mobile export containment passed (${report.map_count} maps); repository fork guards verified, raw audit is separate and upstream advisories remain open for ${advisories.join(", ")}.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

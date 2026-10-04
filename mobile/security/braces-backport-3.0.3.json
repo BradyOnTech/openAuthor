@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "advisory": "GHSA-vfj7-8cjw-p6xm",
-  "scope": "Maintained local three-copy bounded-depth Braces backport; raw advisory, broader expansion resources, browser/global/cloud/native release acceptance remain open",
+  "scope": "Repository maintained bounded-depth Braces fork and byte-bound backports for both embedded copies. Raw npm audit and source regression guards are independent gates. Upstream advisory, broader expansion resources, global/cloud/native release acceptance remain open.",
   "upstream_version": "3.0.3",
   "references": [
     "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
@@ -51,20 +51,22 @@
   "packages": [
     {
       "name": "braces",
-      "version": "3.0.3",
+      "version": "3.0.3-openauthor.1",
       "path": "node_modules/braces",
       "files": {
         "LICENSE": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
-        "README.md": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
-        "index.js": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
-        "lib/compile.js": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+        "lib/compile.js": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
         "lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
-        "lib/expand.js": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
-        "lib/parse.js": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
-        "lib/stringify.js": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
-        "lib/utils.js": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
-        "package.json": "56f08b888a4f30dc7cf8a7dbb36ffe92b737912ba36abe9d069d32167c957ac7"
-      }
+        "lib/expand.js": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+        "index.js": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+        "lib/parse.js": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+        "lib/stringify.js": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+        "lib/utils.js": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+        "package.json": "6a080976834d3c2d5a0b306c4e7e099ecb2bfd5f12aa2df1aa015d1b0fac69af",
+        "README.md": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
+        "SECURITY-FORK.md": "c1937854afeec65227e55b5584ce62a332ff518a6290258d25bbd148ab86aff3"
+      },
+      "installed_name": "@openauthor/braces"
     },
     {
       "name": "resolve-workspace-root",
@@ -316,9 +318,10 @@
   ],
   "lock_packages": {
     "node_modules/braces": {
-      "version": "3.0.3",
-      "resolved": "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz",
-      "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+      "name": "@openauthor/braces",
+      "version": "3.0.3-openauthor.1",
+      "resolved": "file:security/distributions/openauthor-braces-3.0.3-openauthor.1.tgz",
+      "integrity": "sha512-8m/bN/V1I0JzZDRGclj6ec6bIlIGEEDt748Q+fgPJoSKJgh30TR9gLjJM+kNaYEgU/UObKc+0Fq6F8SLO6dA9g==",
       "license": "MIT",
       "dependencies": {
         "fill-range": "^7.1.1"
