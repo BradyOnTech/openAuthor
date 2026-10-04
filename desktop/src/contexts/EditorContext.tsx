@@ -42,8 +42,7 @@ export function useEditor(): EditorState {
 }
 
 export function EditorProvider({ children, projectRoot = "", scope = "main" }: { children: ReactNode; projectRoot?: string; scope?: string }) {
-  const [tabs, setTabs] = useState<EditorTab[]>([]);
-  const [activeTabId, setActiveTabId] = useState("");
+  const [{ tabs, activeTabId }, setTabState] = useState<{ tabs: EditorTab[]; activeTabId: string }>({ tabs: [], activeTabId: "" });
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("none");
   const [secondaryActiveTabId, setSecondaryActiveTabId] = useState("");
   const navigationRevision = useRef(0);
@@ -58,8 +57,7 @@ export function EditorProvider({ children, projectRoot = "", scope = "main" }: {
     void restoreBookmarks(projectRoot, saved).then(restored => {
       if (!current) return;
       if (revision === navigationRevision.current) {
-        setTabs(restored);
-        setActiveTabId(restored.some(row => row.id === saved.activeTabId) ? saved.activeTabId : restored[0]?.id || "");
+        setTabState({ tabs: restored, activeTabId: restored.some(row => row.id === saved.activeTabId) ? saved.activeTabId : restored[0]?.id || "" });
         setSplitDirection(saved.splitDirection);
         setSecondaryActiveTabId(restored.some(row => row.id === saved.secondaryActiveTabId) ? saved.secondaryActiveTabId : "");
       }
@@ -78,38 +76,34 @@ export function EditorProvider({ children, projectRoot = "", scope = "main" }: {
 
   const openTab = useCallback((tab: EditorTab) => {
     ++navigationRevision.current;
-    setTabs((prev) => {
-      const exists = prev.find((t) => t.id === tab.id);
-      if (exists) {
-        return prev.map((t) => (t.id === tab.id ? { ...t, ...tab } : t));
-      }
-      return [...prev, tab];
-    });
-    setActiveTabId(tab.id);
+    setTabState((prev) => ({
+      tabs: prev.tabs.some((t) => t.id === tab.id)
+        ? prev.tabs.map((t) => (t.id === tab.id ? { ...t, ...tab } : t))
+        : [...prev.tabs, tab],
+      activeTabId: tab.id,
+    }));
   }, []);
 
   const closeTab = useCallback((id: string) => {
     ++navigationRevision.current;
-    setTabs((prev) => {
-      const idx = prev.findIndex((t) => t.id === id);
-      const next = prev.filter((t) => t.id !== id);
-      if (id === activeTabId && next.length > 0) {
-        const newIdx = Math.min(idx, next.length - 1);
-        setActiveTabId(next[newIdx].id);
-      } else if (next.length === 0) {
-        setActiveTabId("");
-      }
-      return next;
+    setTabState((prev) => {
+      const idx = prev.tabs.findIndex((t) => t.id === id);
+      const next = prev.tabs.filter((t) => t.id !== id);
+      return {
+        tabs: next,
+        activeTabId: next.length === 0 ? ""
+          : id === prev.activeTabId ? next[Math.min(idx, next.length - 1)].id : prev.activeTabId,
+      };
     });
-  }, [activeTabId]);
+  }, []);
 
   const setActiveTab = useCallback((id: string) => {
     ++navigationRevision.current;
-    setActiveTabId(id);
+    setTabState((prev) => ({ ...prev, activeTabId: id }));
   }, []);
 
   const updateTab = useCallback((id: string, updates: Partial<EditorTab>) => {
-    setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    setTabState((prev) => ({ ...prev, tabs: prev.tabs.map((t) => (t.id === id ? { ...t, ...updates } : t)) }));
   }, []);
 
   const setSecondaryActiveTab = useCallback((id: string) => {
