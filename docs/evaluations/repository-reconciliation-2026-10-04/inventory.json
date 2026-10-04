@@ -1,0 +1,1538 @@
+{
+  "observed_at_utc": "2026-10-04T05:56:59.702743+00:00",
+  "repository": "BradyOnTech/openAuthor",
+  "implementation_head": "28e3a0954daf4b3b467659f46a817deae4fd7d90",
+  "origin_main": "2b343703f43beb866b3234dac336a4e49f76fa1f",
+  "implementation_commits_ahead": 43,
+  "implementation_commits_behind": 0,
+  "local_main_aligned_with_origin_main": true,
+  "former_local_main": "1b3dd81",
+  "former_local_main_preserved_on_published_branch": true,
+  "active_worktrees": 1,
+  "historical_main_review_worktree": "archived",
+  "author_artifacts_sha256": {
+    ".openauthor/project.json": "a6917fd95ec8d7a2d23a0e5255a77b42e2629e35dfe74f7149af171f60d5fcae",
+    ".openauthor/product_events.jsonl": "ff1a7d7864ef2d369e8b2a4377d5934f5787694de1485370d35f048b91a7fe9b",
+    ".openauthor/product_signals.json": "b2fab254d7c657909936d72a7d13d30d9f9b6dfa3030a222942fd45b5be74a07",
+    "codex/suggestions.json": "a676e20c4ce4377fad061f3fa397bb4896d38d119f1bb93beb96d1a5c4047598"
+  },
+  "author_content_cumulative_diff_empty": true,
+  "dependency_pr_snapshot": [
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/github_actions/actions/upload-artifact-7",
+      "headRefOid": "d2c070aa87e26047df748987af762e8ea7a4acff",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 7,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:47:47Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474104209/job/109103372482",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:42:45Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:47:31Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474098238/job/109103352851",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:42:44Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:47:41Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474104064/job/109103371653",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:42:45Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:49:00Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474104064/job/109103372070",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:42:40Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump actions/upload-artifact from 4 to 7",
+      "updatedAt": "2026-09-28T19:42:34Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/7"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/github_actions/actions/checkout-7",
+      "headRefOid": "a73514b3d1b29425664afd818d96db8b39af079e",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 8,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:21Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474104629/job/109103373970",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:42:38Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:09Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474114981/job/109103409029",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:42:44Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:00:14Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474114786/job/109103407459",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:54:15Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:09:19Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474114981/job/109103408691",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T20:02:39Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump actions/checkout from 4 to 7",
+      "updatedAt": "2026-09-28T19:42:38Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/8"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/github_actions/actions/setup-node-7",
+      "headRefOid": "c8f052c263a1feb13a0f29b3b6a494319460f798",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 9,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:54:06Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474125146/job/109103443562",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:49:09Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:53:11Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474118407/job/109103420265",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:47:46Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:52:40Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474125102/job/109103443264",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:47:54Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:00:14Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474125102/job/109103443474",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:49:39Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump actions/setup-node from 4 to 7",
+      "updatedAt": "2026-09-28T19:42:45Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/9"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/github_actions/actions/setup-python-7",
+      "headRefOid": "02351de3e6dc9d72d09ee5c49ca6acd9210ca272",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 10,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:16Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474134716/job/109103476306",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:42:54Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:06:30Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474140987/job/109103497104",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T20:03:40Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        }
+      ],
+      "title": "Bump actions/setup-python from 5 to 7",
+      "updatedAt": "2026-09-28T19:42:54Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/10"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/cargo/desktop/src-tauri/tauri-2.10.3",
+      "headRefOid": "cf28ec7f249e2fc511c9703a34cce392e836bf12",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 11,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:32Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474145390/job/109103511710",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:00Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:58Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474139667/job/109103492398",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:42:57Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:00Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474145405/job/109103512468",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T20:10:14Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:18:55Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474145405/job/109103512699",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T20:10:10Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump tauri from 2.10.2 to 2.10.3 in /desktop/src-tauri",
+      "updatedAt": "2026-09-28T19:42:56Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/11"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/cargo/desktop/src-tauri/rfd-0.17.2",
+      "headRefOid": "7f85d3e1eaf7f0bbcf33b0cbf9c3f4623c85977b",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 12,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:57Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474152231/job/109103536274",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:04Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:26Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474146249/job/109103514600",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:00Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:10:08Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474152189/job/109103535746",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T20:06:25Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:53Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474152189/job/109103535952",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:43:04Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump rfd from 0.15.4 to 0.17.2 in /desktop/src-tauri",
+      "updatedAt": "2026-09-28T19:43:00Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/12"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/cargo/desktop/src-tauri/serde_json-1.0.151",
+      "headRefOid": "c765f9e9109c881ef4edb6b8ae3fd12194ca55ce",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 13,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:30Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474156740/job/109103551404",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:06Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:07Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474150372/job/109103530430",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:03Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:10:25Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474157029/job/109103553276",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T20:05:42Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:20:12Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474157029/job/109103553029",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T20:06:33Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump serde_json from 1.0.149 to 1.0.151 in /desktop/src-tauri",
+      "updatedAt": "2026-09-28T19:43:02Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/13"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/cargo/desktop/src-tauri/tauri-build-2.6.3",
+      "headRefOid": "c095c83f735923d1582ad08337c5f41a7de9d951",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 14,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:10:08Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474172752/job/109103607635",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T20:04:28Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:06:16Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474165744/job/109103582342",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T20:00:22Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:49:37Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474172738/job/109103607408",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:45:23Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:02:37Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474172738/job/109103607957",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:52:43Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump tauri-build from 2.5.5 to 2.6.3 in /desktop/src-tauri",
+      "updatedAt": "2026-09-28T19:43:10Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/14"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/cargo/desktop/src-tauri/serde-1.0.229",
+      "headRefOid": "7ce655e0e9d0c1200a4f23ee1b88002203fae1fd",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 15,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:39Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474183674/job/109103658533",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:43:22Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:05:34Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474183620/job/109103645238",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:59:54Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:19:15Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474180100/job/109103633590",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T20:10:35Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:04:14Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474183674/job/109103658210",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:47:38Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump serde from 1.0.228 to 1.0.229 in /desktop/src-tauri",
+      "updatedAt": "2026-09-28T19:43:17Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/15"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/npm_and_yarn/desktop/desktop-compatible-955e432184",
+      "headRefOid": "c02fce0b9102d1ee773ad5092337f12b1ba2ee94",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 16,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:37Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474202222/job/109103710259",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:31Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:26Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474194357/job/109103687143",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:27Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:54:13Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474202156/job/109103709659",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:53:18Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:03:35Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474202156/job/109103709494",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T20:00:17Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump the desktop-compatible group in /desktop with 4 updates",
+      "updatedAt": "2026-09-28T19:43:26Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/16"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/npm_and_yarn/desktop/vitest-5.0.2",
+      "headRefOid": "3dd3eab40019cfa6d8e325672e108656d7af5926",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 17,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:20Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474231043/job/109103810214",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:47Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:46Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474231349/job/109103811519",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:43:47Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:59:46Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474225876/job/109103792379",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:54:46Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:19:17Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474231349/job/109103811229",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T20:09:21Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump vitest from 4.1.11 to 5.0.2 in /desktop",
+      "updatedAt": "2026-09-28T19:43:43Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/17"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/npm_and_yarn/desktop/multi-7f19880bf6",
+      "headRefOid": "8d4e4211d92f73bb37ef704f0819824d917aff37",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 18,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:39Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474233439/job/109103818508",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:48Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T19:54:36Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474227036/job/109103796530",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:54:21Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:12Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474233577/job/109103819563",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:43:48Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:29Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474233577/job/109103819302",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:43:48Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump react and @types/react in /desktop",
+      "updatedAt": "2026-09-28T19:43:44Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/18"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/npm_and_yarn/desktop/multi-de36fa8f59",
+      "headRefOid": "dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 19,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:17Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474254897/job/109103891396",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:59Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:48Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474247644/job/109103866766",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:43:56Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:22Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474254882/job/109103891311",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:43:59Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:41Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474254882/job/109103891876",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:43:59Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump react-dom and @types/react-dom in /desktop",
+      "updatedAt": "2026-09-28T19:43:56Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/19"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "dependabot/npm_and_yarn/desktop/typescript-7.0.2",
+      "headRefOid": "8f302bf79fc010a28de7d18b8b8cae4eff78ee3c",
+      "isDraft": false,
+      "mergeStateStatus": "UNKNOWN",
+      "mergeable": "UNKNOWN",
+      "number": 20,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:13:27Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474273551/job/109103952094",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:44:09Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:15:04Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474265581/job/109103925224",
+          "name": "full-gates",
+          "startedAt": "2026-09-28T19:44:05Z",
+          "status": "COMPLETED",
+          "workflowName": "ci"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:34Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474273586/job/109103951841",
+          "name": "Unsigned package recovery (arm64)",
+          "startedAt": "2026-09-28T19:44:09Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-28T20:14:10Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474273586/job/109103952045",
+          "name": "Unsigned package recovery (x86_64)",
+          "startedAt": "2026-09-28T19:44:09Z",
+          "status": "COMPLETED",
+          "workflowName": "package-macos"
+        }
+      ],
+      "title": "Bump typescript from 5.9.3 to 7.0.2 in /desktop",
+      "updatedAt": "2026-09-28T19:44:04Z",
+      "url": "https://github.com/BradyOnTech/openAuthor/pull/20"
+    }
+  ],
+  "failed_dependency_checks": [
+    {
+      "pr": 20,
+      "job": 109103952094,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8f302bf79fc010a28de7d18b8b8cae4eff78ee3c/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474273551/job/109103952094",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 20,
+      "job": 109103925224,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8f302bf79fc010a28de7d18b8b8cae4eff78ee3c/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103925224",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 20,
+      "job": 109103951841,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8f302bf79fc010a28de7d18b8b8cae4eff78ee3c/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103951841",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 20,
+      "job": 109103952045,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8f302bf79fc010a28de7d18b8b8cae4eff78ee3c/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103952045",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 19,
+      "job": 109103891396,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474254897/job/109103891396",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 19,
+      "job": 109103866766,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103866766",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 19,
+      "job": 109103891311,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103891311",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 19,
+      "job": 109103891876,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/dc03f1bc0cb030cadf73cf13f8aa30ec35b1d7ab/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103891876",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 18,
+      "job": 109103818508,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8d4e4211d92f73bb37ef704f0819824d917aff37/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474233439/job/109103818508",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 18,
+      "job": 109103796530,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8d4e4211d92f73bb37ef704f0819824d917aff37/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8d4e4211d92f73bb37ef704f0819824d917aff37/.github",
+          "start_line": 50,
+          "start_column": null,
+          "end_line": 50,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 1.",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103796530",
+      "finding": "npm_react_type_peer_conflict"
+    },
+    {
+      "pr": 18,
+      "job": 109103819563,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8d4e4211d92f73bb37ef704f0819824d917aff37/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103819563",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 18,
+      "job": 109103819302,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/8d4e4211d92f73bb37ef704f0819824d917aff37/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103819302",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 17,
+      "job": 109103810214,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/3dd3eab40019cfa6d8e325672e108656d7af5926/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474231043/job/109103810214",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 17,
+      "job": 109103811519,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/3dd3eab40019cfa6d8e325672e108656d7af5926/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103811519",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 16,
+      "job": 109103710259,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474202222/job/109103710259",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 16,
+      "job": 109103687143,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103687143",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 16,
+      "job": 109103709659,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 21,
+          "start_column": null,
+          "end_line": 21,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 1.",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103709659",
+      "finding": "tauri_javascript_rust_minor_version_mismatch"
+    },
+    {
+      "pr": 16,
+      "job": 109103709494,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c02fce0b9102d1ee773ad5092337f12b1ba2ee94/.github",
+          "start_line": 21,
+          "start_column": null,
+          "end_line": 21,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 1.",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103709494",
+      "finding": "tauri_javascript_rust_minor_version_mismatch"
+    },
+    {
+      "pr": 15,
+      "job": 109103658533,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/7ce655e0e9d0c1200a4f23ee1b88002203fae1fd/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474183674/job/109103658533",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 13,
+      "job": 109103551404,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c765f9e9109c881ef4edb6b8ae3fd12194ca55ce/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474156740/job/109103551404",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 13,
+      "job": 109103530430,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/c765f9e9109c881ef4edb6b8ae3fd12194ca55ce/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103530430",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 12,
+      "job": 109103536274,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/7f85d3e1eaf7f0bbcf33b0cbf9c3f4623c85977b/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474152231/job/109103536274",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 12,
+      "job": 109103514600,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/7f85d3e1eaf7f0bbcf33b0cbf9c3f4623c85977b/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103514600",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 12,
+      "job": 109103535952,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/7f85d3e1eaf7f0bbcf33b0cbf9c3f4623c85977b/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103535952",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 11,
+      "job": 109103511710,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474145390/job/109103511710",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 11,
+      "job": 109103492398,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103492398",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 11,
+      "job": 109103512468,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 701,
+          "start_column": null,
+          "end_line": 701,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 1.",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103512468",
+      "finding": "tauri_runtime_trait_compile_failure"
+    },
+    {
+      "pr": 11,
+      "job": 109103512699,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/cf28ec7f249e2fc511c9703a34cce392e836bf12/.github",
+          "start_line": 703,
+          "start_column": null,
+          "end_line": 703,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 1.",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103512699",
+      "finding": "tauri_runtime_trait_compile_failure"
+    },
+    {
+      "pr": 10,
+      "job": 109103476306,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/02351de3e6dc9d72d09ee5c49ca6acd9210ca272/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474134716/job/109103476306",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 8,
+      "job": 109103373970,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/a73514b3d1b29425664afd818d96db8b39af079e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/actions/runs/36474104629/job/109103373970",
+      "finding": "job_not_started_billing_or_spending_limit"
+    },
+    {
+      "pr": 8,
+      "job": 109103409029,
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/BradyOnTech/openAuthor/blob/a73514b3d1b29425664afd818d96db8b39af079e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+          "raw_details": ""
+        }
+      ],
+      "url": "https://github.com/BradyOnTech/openAuthor/checks?check_run_id=109103409029",
+      "finding": "job_not_started_billing_or_spending_limit"
+    }
+  ],
+  "dependency_check_counts": {
+    "passed": 23,
+    "failed": 31,
+    "billing_not_started": 26,
+    "executed_failed": 5
+  },
+  "integration_pr_snapshot": {
+    "baseRefOid": "2b343703f43beb866b3234dac336a4e49f76fa1f",
+    "headRefOid": "28e3a0954daf4b3b467659f46a817deae4fd7d90",
+    "isDraft": true,
+    "mergeStateStatus": "UNSTABLE",
+    "mergeable": "MERGEABLE",
+    "number": 22,
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180954010/job/111373256080",
+        "name": "public-workflows",
+        "startedAt": "2026-10-04T05:48:51Z",
+        "status": "IN_PROGRESS",
+        "workflowName": "public-workflow-e2e"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T05:49:42Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180953977/job/111373256131",
+        "name": "shared-gateway-quota",
+        "startedAt": "2026-10-04T05:48:51Z",
+        "status": "COMPLETED",
+        "workflowName": "ci"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T05:48:02Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180874452/job/111373017885",
+        "name": "shared-gateway-quota",
+        "startedAt": "2026-10-04T05:47:07Z",
+        "status": "COMPLETED",
+        "workflowName": "ci"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T05:51:11Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180953971/job/111373255901",
+        "name": "Unsigned package recovery (arm64)",
+        "startedAt": "2026-10-04T05:48:51Z",
+        "status": "COMPLETED",
+        "workflowName": "package-macos"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180953971/job/111373255991",
+        "name": "Unsigned package recovery (x86_64)",
+        "startedAt": "2026-10-04T05:48:49Z",
+        "status": "IN_PROGRESS",
+        "workflowName": "package-macos"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T05:49:32Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180953977/job/111373256020",
+        "name": "full-gates",
+        "startedAt": "2026-10-04T05:48:51Z",
+        "status": "COMPLETED",
+        "workflowName": "ci"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T05:47:43Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180874452/job/111373017822",
+        "name": "full-gates",
+        "startedAt": "2026-10-04T05:47:06Z",
+        "status": "COMPLETED",
+        "workflowName": "ci"
+      }
+    ],
+    "url": "https://github.com/BradyOnTech/openAuthor/pull/22"
+  },
+  "first_push_full_gate_failure": {
+    "job_url": "https://github.com/BradyOnTech/openAuthor/actions/runs/37180874452/job/111373017822",
+    "step": "make js-audit",
+    "workspace": "mobile",
+    "high_entries": 17,
+    "underlying_advisories": [
+      "GHSA-vfj7-8cjw-p6xm",
+      "GHSA-86w9-cpqp-85rv"
+    ],
+    "raw_audit_gate_preserved": true
+  }
+}
