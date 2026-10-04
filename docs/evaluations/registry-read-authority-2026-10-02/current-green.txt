@@ -1,0 +1,79 @@
+{"applied_migration": "20260225180000_project_registry_rbac.sql", "sha256": "627380c6fb8c8996955323695b861d8359ce3fb1ffe640899c9ac68efd94e8c0"}
+NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+{"applied_migration": "20260225182000_workspace_bootstrap.sql", "sha256": "95d6cf564a26e82461ac5dabdd7f1f7ad6572bd02dee7dddeb701240bfcdff4b"}
+{"applied_migration": "20260830190000_mobile_encrypted_sync.sql", "sha256": "666b04535c1f5d4f3a4d2dcba543ecb3dcf06dd012e2d6770f5f05a6a2f7a8ea"}
+NOTICE:  extension "pgcrypto" already exists, skipping
+{"applied_migration": "20260830193000_mobile_encrypted_sync_storage.sql", "sha256": "9b57d4a10bbb6797c27b17b15eb719ca3bc7df2138c99bbdf3d115ce552b7072"}
+NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+{"applied_migration": "20260907120000_mobile_browser_platform.sql", "sha256": "baba959e09af44d374a5b38a39bdb8a3487b28ef7e17ccc35ad001cdfa315515"}
+{"applied_migration": "20261002120000_mobile_realtime_shared_rate_limit.sql", "sha256": "677f347c71ad77e0a1e32b23a1e3f47c0083eec2b722f158c1ea8582483b4a68"}
+{"applied_migration": "20261002140000_mobile_active_authority.sql", "sha256": "bdcdd4cc589ea08439db36e150f455bccc79e8199c08c76f3c2d2bb21ee096a4"}
+{"applied_migration": "20261002150000_mobile_recovery_snapshot.sql", "sha256": "750542e8029154a2a0a5f6222e041dd6f97de9c32f1d1b1a3b67188e57ff3a95"}
+{"applied_migration": "20261002160000_mobile_project_deletion.sql", "sha256": "f3e5824f6367d17551c5c8a36ff683937bca1c2622353f53ef1dddf2533d4f9c"}
+{"applied_migration": "20261002170000_registry_bootstrap.sql", "sha256": "287291e0f210d6b79f940f45518b47bf5b5a9b558876e82c997889e3b7e3ef1f"}
+{"applied_migration": "20261002180000_mobile_account_deletion.sql", "sha256": "c2f9aec8949a118d2bd36f4284960868e2e8c2a3ea77c68c03902fee30e5f346"}
+{"applied_migration": "20261002190000_mobile_voice_control.sql", "sha256": "aa952faa42b194da8b46e5174204e58d8a20534b86ca1608a7b00f23640d7a0a"}
+{"applied_migration": "20261002200000_registry_read_authority.sql", "sha256": "e73acd7792c16ded59887c886e4f0ded8dd71382fc0d45b27db74d498c4ddcd0"}
+{"executed_sql_sha256": "dadec6e8db6d5469192ad58593ac6bd335f855b7d7b340ccfe248121a90d9e0b"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{"sub":"f1000000-0000-4000-8000-000000000001","session_id":"f9000000-0000-4000-8000-000000000004"}
+
+{"sub":"f1000000-0000-4000-8000-000000000001","session_id":"malformed"}
+
+
+
+
+(f4000000-0000-4000-8000-000000000001,f1000000-0000-4000-8000-000000000001,f9000000-0000-4000-8000-000000000001,desktop,"Registry authority device",f5000000-0000-4000-8000-000000000001,"2026-10-02 19:38:52.772113+00",,)
+{"phase": "deleting", "job_id": "7e79fc7d-c584-42ac-b19a-20c7d46d7993", "blockers": ["Independent account cleanup verification and guarded Auth finalization pending"], "projects": [{"name": "Shared book", "phase": "retained", "action": "retain", "outbox": "preserve", "blockers": [], "project_id": "f3000000-0000-4000-8000-000000000001", "needs_rotation": false, "project_job_id": null, "previous_key_version": 0}], "workspaces": [{"action": "leave", "workspace_id": "f2000000-0000-4000-8000-000000000001"}], "requested_at": "2026-10-02T19:38:52.802909+00:00", "inventory_sha256": "3a8c431e10b9f16b2aed9a389216071d28fbbdfe8594b03dbbdad9e993666ff1"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{}
+
+
+
+
+{"controls": ["owner reads only its workspace", "owner reads shared membership without recursion", "owner reads only its book", "owner reads only its activity", "owner reads only its own state", "own live membership predicate", "foreign workspace predicate reveals no other-author membership", "no arbitrary-user predicate signature", "editor reads only its workspace", "editor reads shared membership without recursion", "editor reads only its book", "editor reads only its activity", "editor reads only its own state", "viewer reads only its workspace", "viewer reads shared membership without recursion", "viewer reads only its book", "viewer reads only its activity", "viewer reads only its own state", "viewer can modify own state", "viewer cannot modify another author state", "own user is insufficient to create foreign workspace state", "viewer can delete and recreate own state", "state identity cannot be reassigned", "read repair grants no membership writes", "viewer read access never promotes write authority", "read repair preserves viewer role", "ended Auth session hides workspaces", "ended Auth session hides memberships", "ended Auth session hides books", "ended Auth session hides activity", "ended Auth session hides own state", "ended session cannot update own state", "ended session cannot delete own state", "ended session cannot insert or upsert own state", "another author Auth session hides workspaces", "another author Auth session hides memberships", "another author Auth session hides books", "another author Auth session hides activity", "another author Auth session hides own state", "malformed Auth session hides workspaces", "malformed Auth session hides memberships", "malformed Auth session hides books", "malformed Auth session hides activity", "malformed Auth session hides own state", "expired Auth session hides workspaces", "expired Auth session hides memberships", "expired Auth session hides books", "expired Auth session hides activity", "expired Auth session hides own state", "frozen account with live Auth session hides workspaces", "frozen account with live Auth session hides memberships", "frozen account with live Auth session hides books", "frozen account with live Auth session hides activity", "frozen account with live Auth session hides own state", "owned deletion progress remains readable after registry access freezes", "frozen account cannot update own state", "frozen account cannot delete own state", "frozen account cannot upsert own state", "remaining viewer after another account freezes reads only its workspace", "remaining viewer after another account freezes reads shared membership without recursion", "remaining viewer after another account freezes reads only its book", "remaining viewer after another account freezes reads only its activity", "remaining viewer after another account freezes reads only its own state", "removed workspace membership hides workspaces", "removed workspace membership hides memberships", "removed workspace membership hides books", "removed workspace membership hides activity", "removed workspace membership hides own state", "removed membership cannot upsert old own state", "removed membership stays removed", "read repair preserves editor role", "read repair preserves owner role", "anonymous role cannot execute predicate", "service role receives no predicate grant", "anonymous role hides workspaces", "anonymous role hides memberships", "anonymous role hides books", "anonymous role hides activity", "anonymous role hides own state", "anonymous cannot call private membership predicate", "anonymous role with live-author claims hides workspaces", "anonymous role with live-author claims hides memberships", "anonymous role with live-author claims hides books", "anonymous role with live-author claims hides activity", "anonymous role with live-author claims hides own state"], "assertions": 85}
+{"captured_inputs": "docs/evaluations/registry-read-authority-2026-10-02/current-sql-inputs.tar.gz", "sha256": "7bee4694316a055ff08854a2c266f5b87f9b0c1cca780010ac9cf295c3993f3d"}
+Registry read-authority controls passed.

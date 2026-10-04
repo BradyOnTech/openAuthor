@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-03T13:39:32.577626+00:00",
+  "source_commit": "ba245b1d75c4a6ca1bf402080f6646ce9f4aa6b3",
+  "historical_cardinality_source_commit": "82e5b3672d09b0850feb6b1a5cac8964100f75a6",
+  "phases": {
+    "initial_cardinality": {
+      "focused_tests": 48,
+      "full_mobile_tests": 277,
+      "mobile_files": 35,
+      "rsa_postimage_sha256": "16eefbcc077f2e91ea017fa87d0186c747f0d439df2765b5d59b4c0ba67a9068",
+      "scope": "Historical byte-bound local extra AlgorithmIdentifier-child mitigation; NULL content and canonical encoding not yet validated. Original manifest scope/README clarified after initial full run; final focused48 and independent final seven-file review retained; final README wrapping changed after focused capture."
+    },
+    "canonical_regression_red": {
+      "failed": 3,
+      "prior_cases_passed": 23,
+      "exit_code": 1,
+      "control_rsa_postimage_sha256": "16eefbcc077f2e91ea017fa87d0186c747f0d439df2765b5d59b4c0ba67a9068",
+      "scope": "New isolated local malformed NULL, noncanonical length and OID regression controls against historical cardinality postimage; no exploit or forgery claim."
+    },
+    "canonical_green": {
+      "focused_tests": 52,
+      "focused_files": 2,
+      "full_mobile_tests": 281,
+      "mobile_files": 35,
+      "failed": 0,
+      "skipped": 0,
+      "typecheck": "passed",
+      "guard_check": "passed",
+      "offline_preflight": "passed",
+      "normal_platform_exports": [
+        "web",
+        "ios",
+        "android"
+      ],
+      "pre_execution_source_inputs": 100,
+      "source_inputs_match_commit": true,
+      "rsa_postimage_sha256": "3dde91b05b403e062e0c7c8e97e63e79337c651db59f18fa7c836d18b15697d5",
+      "scope": "Pinned local supported-hash default PKCS#1 v1.5 DigestInfo validation: complete children, empty NULL, canonical DER lengths and OID bytes; SHA absent/NULL supported, older BER-only forms refused."
+    }
+  },
+  "reviews": {
+    "initial_standards_open": 0,
+    "initial_spec_open": 0,
+    "canonical_standards_open": 0,
+    "canonical_spec_open": 0,
+    "execution": "Independent static source/retained-receipt review; crypto fixtures/tests executed by root only."
+  },
+  "export_evidence": {
+    "normal_export_runs": 2,
+    "maps_inspected_per_phase": 3,
+    "platforms": [
+      "web",
+      "ios",
+      "android"
+    ],
+    "raw_bundle_bytes_retained": true,
+    "source_maps_archived": false,
+    "map_inspection_replay": false,
+    "scope": "Normal guard inspected Metro maps then removed them; original reports retain map hashes. Web/Hermes artifact bytes match report bundle hashes; maps unavailable for independent reinspection."
+  },
+  "guard_scope": "Known reviewed package/caller/lock byte inventories; atomic local node_modules replacement/reinspection and npm lifecycle/direct guarded export checks. No fresh npm ci or npm audit was performed in these receipts; disabled lifecycle scripts/direct Expo commands need separate verification.",
+  "compatibility": "Whole-byte equality remains required with unsupported diagnostic parseAll=false; unsafe padding diagnostic options, PSS/NONE/custom schemes and all other ASN.1 library behavior are outside new claims.",
+  "author_preservation": "Root green receipt records four unchanged existing author artifact hashes; raw author data is not included.",
+  "keys_and_environment": "Synthetic test keys generated in memory and not persisted; no ambient environment dump copied.",
+  "provider_calls": 0,
+  "deployed_mutations": 0,
+  "signing_or_system_changes": 0,
+  "fresh_install_tested": false,
+  "fresh_dependency_audit_run": false,
+  "raw_dependency_audit_gate": "open",
+  "braces_gate": "open",
+  "browser_distribution_remediated": false,
+  "global_or_cloud_eas_remediated": false,
+  "native_artifact_certified": false,
+  "actual_devices_tested": false,
+  "release_certified": false,
+  "author_quality_claimed": false,
+  "all_six_priorities": "in_progress",
+  "primary_reference": "https://www.rfc-editor.org/rfc/rfc8017#section-9.2",
+  "canonical_apply_receipt_scope": "Canonical green capture starts after local application; no separate canonical apply-invocation receipt retained. Historical apply receipt and canonical check/preflight/export postimage readbacks are retained; no missing invocation reconstructed."
+}

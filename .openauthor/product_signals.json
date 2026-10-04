@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "local_signals_enabled": true,
+  "external_telemetry_enabled": false,
+  "retention_days": 365
+}

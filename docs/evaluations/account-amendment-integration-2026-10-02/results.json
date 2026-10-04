@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-02T20:48:06.024598+00:00",
+  "implementation_commit": "9d31cf8647d3afd996c3f8ddb8c0df99022f1ed4",
+  "baseline_commit": "118641f6d651144740ce52a6fa8f0befbea92ff7",
+  "desktop": {
+    "tests": 626,
+    "files": 88,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "focused_account_controls": 66
+  },
+  "browser": {
+    "chromium": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "webkit": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "journeys_per_engine": {
+      "original_account": 3,
+      "new_amendment_account": 3,
+      "existing_key_recovery": 3
+    },
+    "scope": "Production rendered panel/client, enrollment and encryption; synthetic SDK, native vault and RPC boundaries. Apply replies match the bare SQL receipt contract. Current browser execution does not exercise deployed RPC/Auth services.",
+    "laptop_viewport": [
+      1024,
+      768
+    ],
+    "visual_inspection": "Current WebKit screenshot: reviewed/effective/current workspace IDs, owner and rotation prerequisites, exact deletion receipt, per-row selections and final confirmation legible and reachable without horizontal overflow."
+  },
+  "database": {
+    "platform": "Disposable fsynced Unix-socket PostgreSQL 17.11",
+    "migrations": 14,
+    "migration_through": "20261002210000_mobile_account_deletion_amendments.sql",
+    "sql_suites": [
+      "mobile_encrypted_sync_rls",
+      "mobile_active_authority",
+      "mobile_recovery_snapshot",
+      "mobile_project_deletion",
+      "registry_bootstrap",
+      "mobile_account_deletion",
+      "mobile_voice_control",
+      "registry_read_authority",
+      "mobile_account_deletion_amendments"
+    ],
+    "concurrency_and_isolation_controls": 24,
+    "control_lanes": {
+      "project": 8,
+      "bootstrap": 4,
+      "account": 4,
+      "amendment": 8
+    },
+    "amendment_queued_lock_controls": 7,
+    "amendment_repeatable_read_refusals": 1,
+    "focused_amendment_sql_assertions": 45,
+    "focused_account_regression_assertions": 39,
+    "focused_voice_regression_assertions": 38
+  },
+  "gateway": {
+    "tests": 94,
+    "passed": 94,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "build": "passed",
+    "actual_pg_http_process_voice_cases": 6
+  },
+  "captured_source_files": 83,
+  "source_manifest": "source-sha256.json",
+  "source_archive": "tested-source.tar.gz",
+  "captured_inputs_unchanged_after_final_runs": true,
+  "captured_inputs_match_implementation_commit": true,
+  "archive_scope": "83 selected affected source, SQL, harness, test, spec and dependency inputs. This is not a complete desktop application/dependency archive; reproduce the full suites from the implementation commit.",
+  "review": {
+    "standards_open": 0,
+    "spec_initial": 2,
+    "spec_fixed": 2,
+    "spec_open": 0,
+    "prior_red": "Seven regression failures proved malformed PostgREST errors and the account-only pending client loss. Final complete desktop and browser runs include the repairs.",
+    "evidence_and_documentation_audit": {
+      "material_findings_open": 0,
+      "integration_hash_comparisons": 195,
+      "earlier_backend_and_dependency_packet_hash_comparisons": 76,
+      "scope": "Read-only retained artifact/raw/decompressed log, archive, source and commit comparisons; log count checks and shared ledger/runbook consistency. Historical checkpoints preserved exactly; all six priorities remain in progress. No tests/network/edits by reviewer.",
+      "limit": "Public npm package archives were not retained in the separate dependency recheck packet; their download-time integrity/archive hashes are recorded collection observations and cannot be recomputed offline."
+    }
+  },
+  "prior_red_results": {
+    "client-interface-red.txt.gz": "12 new missing-interface failures with 13 prior passing controls before client implementation; not current acceptance.",
+    "spec-regressions-red.txt.gz": "7 regression failures and 28 passing controls before malformed-error and account-only client retention repairs; not current acceptance."
+  },
+  "raw_logs": {
+    "desktop-green.txt.gz": {
+      "original_sha256": "461ef0745a4b70442ffaa9e6e1dfec61d605386804e6742b74b09ee2f5b3907f",
+      "original_bytes": 286
+    },
+    "desktop-build-green.txt.gz": {
+      "original_sha256": "4f1fab9da3656794a7873199b284d2bebb2072f2a472f85f12827a21c4c59935",
+      "original_bytes": 1565
+    },
+    "chromium-green.txt.gz": {
+      "original_sha256": "988c016e2333bac77df7967786c0594c6922b57a225ddd3a4dfef4dcf82f090e",
+      "original_bytes": 1972
+    },
+    "webkit-green.txt.gz": {
+      "original_sha256": "bfa816fdcaf7ae8b4a79c25b0cf59c90213d66aeadf522b83d6018d7ff48a4b3",
+      "original_bytes": 1958
+    },
+    "combined-green.txt.gz": {
+      "original_sha256": "3872fd2e58a9c1af797c98f4381853aae680bed4c8cf0e266308103654fa0a55",
+      "original_bytes": 30951
+    },
+    "client-interface-red.txt.gz": {
+      "original_sha256": "37f7fd1082af63b68921d7860d4184535ae4db1a1d7648faeb0f94e34fad7dd1",
+      "original_bytes": 7448
+    },
+    "spec-regressions-red.txt.gz": {
+      "original_sha256": "d31794a345ca51689d0b716307e4b3033f7f6dde0db37db1d692f2c63ee14a69",
+      "original_bytes": 28307
+    }
+  },
+  "commands": {
+    "desktop_test": "npm test (desktop/)",
+    "desktop_build": "npm run build (desktop/)",
+    "browser": "Playwright account-deletion.spec.ts and companion-key-recovery.spec.ts, separately using actual Chromium and WebKit engines; one worker.",
+    "combined": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin"
+  },
+  "repo_checks": "make check and staged git diff --check passed before implementation commit.",
+  "new_provider_calls": 0,
+  "deployed_mutations": 0,
+  "limits": [
+    "No current-source native GUI/Keychain/signing, deployed Storage/Auth/provider, physical phone or author acceptance. Prior native app remains separately scoped to 0cd77bd.",
+    "Unknown project absence requires permanent independently attested deletion evidence; metadata absence cannot certify backing purge.",
+    "No-snapshot key recovery and unknown provider allocation remain unresolved. Complete controller/state/provider-control network outage expiry and final provider media/billing behavior are unestablished.",
+    "Mobile dependency advisory remains open; the separate current recheck does not patch or certify configured signing."
+  ],
+  "evidence_sha256": {
+    "chromium-green.txt.gz": "d3741edd75893fed87ff7df6f410182728ea4794a8fee342b5f45f3640cd62f5",
+    "client-interface-red.txt.gz": "e6cf66543f8f8adf3a79c4b352d641d51a594ce911727e450e17c7f256514783",
+    "combined-green.txt.gz": "0b3195c52134a34ff87c91b94b465b47c3a433f92e27dce4977050aed14dd908",
+    "desktop-build-green.txt.gz": "ac927a19710a65fd64d8f593e99c7eb21735e96e6f1b07edf453bac1f322c965",
+    "desktop-green.txt.gz": "006f23e0c59dbb4fa0b048dd339170e6667f4b3d14ee0c573e084de81377a574",
+    "reviewed-corrections-laptop-webkit.png": "626816e2780b2fd9c647e3dcc1800f91d785858ac96ee41b9c3a1a47b2ecc174",
+    "source-sha256.json": "6a6d4060ccd748d0421c23a8749a520e527b8919f701ab4c509e476d157992bf",
+    "spec-regressions-red.txt.gz": "cac8109b5f913377af32368071bb4a4dc1306f84b006c3d3fac8b3fe1c9aa71b",
+    "tested-source.tar.gz": "9f1494ff01d47436f7946a5f2adca34cd21dc13a3b10e2de75b740024b49a516",
+    "webkit-green.txt.gz": "8cf072a377ffb3e0cc24d61972016c3ebcf05276454037d2ceacac961efdfff4"
+  }
+}

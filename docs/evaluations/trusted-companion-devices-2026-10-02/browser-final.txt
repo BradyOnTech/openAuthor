@@ -1,0 +1,12 @@
+[WebServer] (node:14331) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:14333) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/companion-trusted-devices.spec.ts:59:1 › reviews trusted device revocation and guarded rotation without leaking pending outcomes across books
+  1 passed (2.8s)

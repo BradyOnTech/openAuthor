@@ -66,6 +66,7 @@ def evaluate(corpus_path: Path = DEFAULT_CORPUS) -> dict[str, Any]:
     })
   task_count = len(results)
   return {
+    "assessment_scope": "Deterministic pattern regression, not literary quality or semantic canon validation.",
     "evidence_kind": "synthetic_local_adapter_regression",
     "limitations": "Tiny deterministic pattern tests do not measure author voice, manuscript quality, or live providers.",
     "corpus": str(corpus_path),

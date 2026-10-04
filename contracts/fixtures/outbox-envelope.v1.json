@@ -1,0 +1,19 @@
+{
+  "schema": "openauthor.mobile.outbox-envelope",
+  "schema_version": 1,
+  "project_id": "project_glass_harbor",
+  "device_id": "device_mara_phone",
+  "operation_id": "operation_mara_note_0042",
+  "base_revision": "rev_7e3c1a",
+  "kind": "capture_note",
+  "created_at": "2026-08-30T15:05:00.000Z",
+  "payload": {
+    "algorithm": "aes-256-gcm-v1",
+    "project_key_version": 4,
+    "nonce": "AQEBAQEBAQEBAQEB",
+    "aad_version": 1,
+    "ciphertext": "AQEBAQEBAQEBAQEBAgICAgICAgICAgICAgICAgI=",
+    "ciphertext_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "ciphertext_byte_length": 40
+  }
+}

@@ -1,0 +1,51 @@
+test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) ...
+  test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile=None) ... ERROR
+  test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile=[]) ... ERROR
+  test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile='bad') ... ERROR
+
+======================================================================
+ERROR: test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 98, in test_non_object_save_cannot_replace_an_existing_unverified_profile
+    save_style_profile(self.paths, profile=invalid, expected_version=profile["version"], expected_scope=self.suggestion["scope"])
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 171, in save_style_profile
+    and profile.get("exemplar_scene_ids", []) == current["exemplar_scene_ids"]
+        ^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+
+======================================================================
+ERROR: test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 98, in test_non_object_save_cannot_replace_an_existing_unverified_profile
+    save_style_profile(self.paths, profile=invalid, expected_version=profile["version"], expected_scope=self.suggestion["scope"])
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 171, in save_style_profile
+    and profile.get("exemplar_scene_ids", []) == current["exemplar_scene_ids"]
+        ^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+======================================================================
+ERROR: test_non_object_save_cannot_replace_an_existing_unverified_profile (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_non_object_save_cannot_replace_an_existing_unverified_profile) (profile='bad')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 98, in test_non_object_save_cannot_replace_an_existing_unverified_profile
+    save_style_profile(self.paths, profile=invalid, expected_version=profile["version"], expected_scope=self.suggestion["scope"])
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Developer/openAuthor/openauthor/project_locks.py", line 116, in locked
+    return operation(*args, **kwargs)
+  File "~/Developer/openAuthor/openauthor/style_profile.py", line 171, in save_style_profile
+    and profile.get("exemplar_scene_ids", []) == current["exemplar_scene_ids"]
+        ^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (errors=3)

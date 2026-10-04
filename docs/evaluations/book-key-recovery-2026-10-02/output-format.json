@@ -1,0 +1,41 @@
+{
+  "format": "Only trailing whitespace and surplus EOF lines normalized; exact original captured bytes retained in gzip archives.",
+  "outputs": {
+    "docs/evaluations/book-key-recovery-2026-10-02/absent-envelope-recovery-red.txt": {
+      "captured_raw_sha256": "b1c4c8bd782d86fb30797b04e67fb4f301e13baf905985a3043ea737df798549",
+      "normalized_sha256": "bf5f7dfe446845c3849363ef3d55793a095a893c6f0b2b76a63509f6d1204414",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/absent-envelope-recovery-red.txt.raw.gz",
+      "raw_archive_sha256": "58a619845790cc98d23a69d55b2e07b83261b841617d7abac495e50410ed71c1"
+    },
+    "docs/evaluations/book-key-recovery-2026-10-02/browser.txt": {
+      "captured_raw_sha256": "47fbbb1fde23de437b3b0c9432e22978d935c88a2ac0e627fb574f0b5897a0f3",
+      "normalized_sha256": "47fbbb1fde23de437b3b0c9432e22978d935c88a2ac0e627fb574f0b5897a0f3",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/browser.txt.raw.gz",
+      "raw_archive_sha256": "6ee8607fd9f84c6821a56ab3cbfae2b7f335e5cc71cdba8f4910a0b84db5653e"
+    },
+    "docs/evaluations/book-key-recovery-2026-10-02/desktop-build.txt": {
+      "captured_raw_sha256": "513c629653bc0108421cf26cb6e0e213611ea69344e41cadfc96b88fcbb94a12",
+      "normalized_sha256": "e27da03075d4b53ad9eb84d8ae18833321e45978ad7d8f78d62e0edfda92c53d",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/desktop-build.txt.raw.gz",
+      "raw_archive_sha256": "706e212ae408efca52069042c67e307b0898812e2b35984080e75bfde407c1df"
+    },
+    "docs/evaluations/book-key-recovery-2026-10-02/desktop-focused.txt": {
+      "captured_raw_sha256": "62b34b870b1960616c53ab351f3857f3518a90100cc2a43e90cc35c65f7b2bd2",
+      "normalized_sha256": "f61eb064e707024edf0238dab0de93047bbbeac4f77b12a0e02375070f1131ec",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/desktop-focused.txt.raw.gz",
+      "raw_archive_sha256": "a5e0ff78231814c308ad987c7d757da035e874c96ad465ff82905fe93f63a548"
+    },
+    "docs/evaluations/book-key-recovery-2026-10-02/desktop-full.txt": {
+      "captured_raw_sha256": "482cdf1b5c047d174d7b5e740d7ca354ba5c26761a0c5d2ac4417090bea5d769",
+      "normalized_sha256": "752b33dc7261632a24065456e1150b8ea113dde97c71659f9f40d64c83990a35",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/desktop-full.txt.raw.gz",
+      "raw_archive_sha256": "8ee55710d9b17167611110479563521500c6ab23497c150c17675deca6adcbd5"
+    },
+    "docs/evaluations/book-key-recovery-2026-10-02/recovery-envelope-wire-red.txt": {
+      "captured_raw_sha256": "055be195b9e07099398838246ff585888bc0a861c790dd7de4d3bb5e598f48f5",
+      "normalized_sha256": "42f54155ed1925ecbe04992caedeaf49cc9225c1ba86b73e978526ac12bd7d01",
+      "raw_archive": "docs/evaluations/book-key-recovery-2026-10-02/recovery-envelope-wire-red.txt.raw.gz",
+      "raw_archive_sha256": "1309227987dde94583e0426a026476805a27283b193200daa31460b98dffbd2b"
+    }
+  }
+}

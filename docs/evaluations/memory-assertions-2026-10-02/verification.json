@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-02",
+  "scope": "Local derived Memory statement suggestions; conditional, speculative, quoted and reported controls",
+  "status": "focused verification passed; broader Memory accuracy remains incomplete",
+  "checks": [
+    {
+      "command": "python3 -m unittest tests.test_memory_assertions tests.test_story_memory_module tests.test_memory_review tests.test_memory_scan -v",
+      "result": "49 passed",
+      "log": "focused-tests-final.txt"
+    },
+    {
+      "command": "PYTHONPATH=. python3 docs/evaluations/memory-assertions-2026-10-02/evaluate.py",
+      "result": {
+        "cases": 31,
+        "matched_cases": 31,
+        "extra_statements": 0,
+        "missed_statements": 0,
+        "invalid_evidence": 0
+      },
+      "evidence": "results.json"
+    },
+    {
+      "check": "Original name corpus",
+      "result": {
+        "expected_entities": 27,
+        "matched_entities": 25,
+        "extra_entities": 0,
+        "missed_entities": 2,
+        "type_errors": 2
+      }
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "provider_calls": 0,
+  "author_data_modified": false,
+  "limits": [
+    "Authored controls are not an independent accuracy benchmark.",
+    "Uncased-name omissions and person/place type errors remain.",
+    "Real-author review burden and multilingual semantic accuracy are not measured.",
+    "No broad test suites or packaged-app claims in this focused pass."
+  ],
+  "source_sha256": {
+    "openauthor/story_memory.py": "a804b050e1d23383a8ef0ec0d33eb3d8773f5f1aa799fe5ed23b43b2abd8aa5a",
+    "tests/test_memory_assertions.py": "99fe118eeabcdd436bb9422a0c7c6c3afae9d5dfd1c45cd5b4712d45ca528cc4",
+    "docs/evaluations/memory-assertions-2026-10-02/cases.json": "43c2ddca1817e935461309607c9d713a87d863b0f472854dcf1efab284534747",
+    "docs/evaluations/memory-assertions-2026-10-02/evaluate.py": "6f66f9b9747a98e247943288740221d4dfb983125ce32c9d03f36da809201c94"
+  },
+  "root_review": {
+    "reproduced": "escaped nested double quotes exposed an inner reported trust claim",
+    "red": "escaped-quote-red.json",
+    "repair": "Odd preceding backslash counts keep nested escaped delimiters inside the enclosing quote; one/three-backslash cases preserve the separate direct fact."
+  },
+  "independent_spec_review": {
+    "reproduced": "Present-tense reported suffixes still created explicit claims",
+    "examples": [
+      "Elin is a spy, Leah says.",
+      "Elin trusts Tomas, Leah believes.",
+      "Elin owns the red key, the witness reports."
+    ],
+    "repair": "One shared supported reporting-marker vocabulary is applied to prefixes and comma suffixes.",
+    "remaining_actionable_findings": 0
+  }
+}

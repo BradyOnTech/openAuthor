@@ -1,0 +1,162 @@
+{
+  "accepted_validity_validation_shared": true,
+  "all_six_priorities": "in_progress",
+  "author_files_unchanged": true,
+  "baseline": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "broader_inputs": 538,
+  "browser_cases": 4,
+  "browser_failed": 0,
+  "browser_flaky": 0,
+  "browser_scope": "Existing real-core offline Canon correction and Memory review regression journeys, one each perChromium/WebKit. Browserhost transport shim uses disposablebooks; not nativepersistent sidecar/physicalauthor acceptance.",
+  "browser_skipped": 0,
+  "dependency_advisories": [
+    "GHSA-86w9-cpqp-85rv",
+    "GHSA-vfj7-8cjw-p6xm"
+  ],
+  "dependency_audit_gate": "open",
+  "dependency_defect_isolated_probes": 12,
+  "dependency_remediation_claimed": false,
+  "deployed_mutations": 0,
+  "desktop_and_production_inputs_unchanged_across_snapshots": true,
+  "desktop_files": 92,
+  "desktop_tests": 710,
+  "evaluation_fixture_scope": "Only three evaluator/fixture files adjusted after initial core refusal. Valid accepted scene1->2 boundaries are created before a real Plan reorder2,1; impossible_validity remains measured. Seven seeded and16 unseeded synthetic cases retain original limits.",
+  "focused_checks": {
+    "core_tests_after_fixture_adjustment": 29,
+    "core_tests_before_fixture_adjustment": 26,
+    "desktop_broader_focused_files": 5,
+    "desktop_broader_focused_tests": 82,
+    "desktop_new_test_cases": 12,
+    "mobile_export_guard_tests": 25,
+    "scope": "Focused suite totals overlap; do not sum them. Agent handoff logs retained. Empty typecheck logs alone are not treated as an exit-code receipt."
+  },
+  "guarded_desktop_storyline_protection": true,
+  "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "independent_review": {
+    "initial_reviewed_files": 10,
+    "reviewed_hashes_match_snapshot": true,
+    "reviewed_source_files": 13,
+    "spec_open": 0,
+    "standards_hard_open": 0,
+    "standards_optional_open": 0,
+    "supplemental_reviewed_files": 3
+  },
+  "initial_broader_inputs": 537,
+  "initial_capture_timing_evidence": "Initial capture order is root-recorded: the preserved initial manifest has no timestamp. The final manifest records its capture timestamp before the retained browser start. File hashes and prior reviews independently correlate the tested states; no initial capture timestamp is invented.",
+  "inputs_match_committed_source": true,
+  "inputs_match_current_source": true,
+  "legacy_timestamp_only_storyline_protection": false,
+  "mobile_normal_export": {
+    "exit_code": 0,
+    "frozen_inputs": 93,
+    "hashes_unchanged": true,
+    "installed_files": 26518,
+    "maps_inspected": 3,
+    "platforms": [
+      "web",
+      "ios",
+      "android"
+    ]
+  },
+  "mobile_secondary_observational_export": {
+    "does_not_replace_normal_export": true,
+    "exit_code": 0,
+    "identical_artifacts_claimed": false,
+    "maps_inspected": 3,
+    "retained_raw_maps": 3
+  },
+  "native_evidence_in_packet": false,
+  "new_provider_calls": 0,
+  "python_tests_discovered": 583,
+  "python_tests_executed": 582,
+  "python_tests_skipped": 1,
+  "release_certified": false,
+  "root_checks": {
+    "browser": {
+      "cases": 4,
+      "command": [
+        "./node_modules/.bin/playwright",
+        "test",
+        "--config",
+        "/private/tmp/openauthor-canon-build-acceptance-05ysp_jq/playwright.config.ts",
+        "e2e/canon-correction-recovery.spec.ts",
+        "e2e/memory-review-workspace.spec.ts"
+      ],
+      "completed_at": "2026-10-03T04:31:09.178295+00:00",
+      "cwd": "~/Developer/openAuthor/desktop",
+      "exit_code": 0,
+      "log": "root-checks/browser.txt.gz",
+      "scope": "Existing real-core offline Canon correction and Memory review regression journeys, one each perChromium/WebKit. Browserhost transport shim uses disposablebooks; not nativepersistent sidecar/physicalauthor acceptance.",
+      "started_at": "2026-10-03T04:30:14.157452+00:00",
+      "status": "passed",
+      "unique_journeys_per_engine": 2
+    },
+    "build": {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "~/Developer/openAuthor/desktop",
+      "exit_code": 0,
+      "log": "root-checks/build.txt.gz",
+      "log_sha256": "6b387b9594f7cea9bcf2728889f3cb7943c57eab3eb89d1535d5fc43deec3ecb",
+      "scope": "TypeScript + Vite build; unchanged production/desktop inputs between initial537 and final538 snapshots.",
+      "status": "passed",
+      "terminal_session_id": 73583
+    },
+    "core": {
+      "command": [
+        "make",
+        "test"
+      ],
+      "cwd": "~/Developer/openAuthor",
+      "exit_code": 0,
+      "log": "root-checks/core-final.txt.gz",
+      "log_sha256": "53d2445f2839cb71a420eae2d5f4e7627c3a7f6d6e923a03bafcd5efaae5d552",
+      "skip_reason": "Existing Codex runtime contract requires OPENAUTHOR_CODEX_CONTRACT_BIN; not configured; no provider invoked.",
+      "skipped": 1,
+      "status": "passed",
+      "terminal_session_id": 90552,
+      "tests": 583
+    },
+    "desktop": {
+      "command": [
+        "npm",
+        "run",
+        "test"
+      ],
+      "cwd": "~/Developer/openAuthor/desktop",
+      "exit_code": 0,
+      "files": 92,
+      "log": "root-checks/desktop.txt.gz",
+      "log_sha256": "a34201de917d70f7b3e6eed0f110dd39214f27cc66b4ea7d9ae6111102a5f42f",
+      "status": "passed",
+      "terminal_session_id": 98815,
+      "tests": 710
+    }
+  },
+  "root_intermediate_failures": {
+    "initial_sandbox_core": {
+      "errors": 7,
+      "exit_code": 2,
+      "log": "root-checks/core-sandbox-attempt.txt.gz",
+      "scope": "6local loopbackbind errors plus1 evaluationfixture refusal; original retained",
+      "skipped": 1,
+      "tests": 583
+    },
+    "intermediate_approved_core": {
+      "errors": 1,
+      "exit_code": 2,
+      "log": "root-checks/core-approved.txt.gz",
+      "scope": "Local socket restrictions resolved; prior invalidcreationfixture refused; original retained",
+      "skipped": 1,
+      "tests": 583
+    }
+  },
+  "selected_inputs": 13,
+  "source_capture_scope": "Final538 inputs captured before final rootcore and browser verification after fixture-only correction. Prior desktop/build executed on unchanged desktop and production files from initial537 snapshot. Both snapshots retained.",
+  "source_state": "committed_repairs",
+  "typecheck_build": "passed",
+  "unique_browser_journeys_per_engine": 2
+}

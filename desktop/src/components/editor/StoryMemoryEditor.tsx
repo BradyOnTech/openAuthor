@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   addCodexRelationship,
   deleteCodexRelationship,
@@ -10,6 +10,7 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { CodexEntity, CodexRelationship } from "../../types";
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { DraftStatus } from "../shared/DraftStatus";
+import { memoryDetailHelp, memoryDetailInputText, memoryDetailValueError, parseMemoryDetailInput, prepareMemoryDetails, type MemoryDetailDraft } from "../../memoryDetailValues";
 
 const EMPTY_FORM = { targetId: "", relation: "", relationNotes: "", relationFrom: "", relationTo: "", detailKey: "", detailType: "text" as NonNullable<CodexEntity["details"]>[number]["type"], detailValue: "" };
 function validForm(value: unknown): value is typeof EMPTY_FORM {
@@ -31,6 +32,9 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
   const setRelationFrom = changeForm("relationFrom"), setRelationTo = changeForm("relationTo");
   const setDetailKey = changeForm("detailKey"), setDetailType = changeForm("detailType"), setDetailValue = changeForm("detailValue");
   const [busy, setBusy] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const detailHelpId = useId();
+  const references = { entities: [...codexEntities.filter(row => row.id !== entity.id), entity], scenes };
 
   useEffect(() => {
     recovery.session.acceptSaved(normalize(entity));
@@ -51,6 +55,7 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
   async function save() {
     const submitted = draft;
     setBusy(true);
+    setDetailError("");
     try {
       const updated = await updateCodexEntity(projectRoot, entity.id, {
         type: draft.type,
@@ -59,7 +64,7 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
         category: draft.category,
         aliases: draft.aliases.map(value => value.trim()).filter(Boolean),
         tags: draft.tags.map(value => value.trim()).filter(Boolean),
-        details: draft.details,
+        details: prepareMemoryDetails(draft.details, entity.details ?? [], references),
         notes: draft.notes,
         aiVisibility: draft.ai_visibility,
         scope: draft.scope,
@@ -70,7 +75,9 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
       setError("");
       setMessage("Story Memory entry saved.");
     } catch (error) {
-      setError(`Failed to save Story Memory: ${error instanceof Error ? error.message : String(error)}`);
+      const message = `Failed to save Story Memory: ${error instanceof Error ? error.message : String(error)}`;
+      setDetailError(message);
+      setError(message);
     } finally {
       setBusy(false);
     }
@@ -78,9 +85,24 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
 
   function addDetail() {
     if (!detailKey.trim()) return;
-    setDraft({ ...draft, details: [...draft.details, { key: detailKey.trim(), type: detailType, value: detailValue, ai_visibility: "include" }] });
-    setDetailKey("");
-    setDetailValue("");
+    try {
+      if (draft.details.some(row => row.key.trim().toLowerCase() === detailKey.trim().toLowerCase())) {
+        throw new Error("This detail key already exists. Edit the existing detail or choose another name.");
+      }
+      const value = parseMemoryDetailInput(detailType, detailValue, references);
+      setDraft({ ...draft, details: [...draft.details, { key: detailKey.trim(), type: detailType, value, ai_visibility: "include" }] });
+      setDetailKey("");
+      setDetailValue("");
+      setDetailError("");
+    } catch (error) {
+      setDetailError(`Detail '${detailKey.trim()}': ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  function detailValueError(detail: MemoryDetailDraft) {
+    if (detail.valueInput === undefined) return memoryDetailValueError(detail.type, detail.value, references);
+    try { parseMemoryDetailInput(detail.type, detail.valueInput, references); return null; }
+    catch (error) { return error instanceof Error ? error.message : String(error); }
   }
 
   async function createRelationship() {
@@ -134,23 +156,29 @@ export function StoryMemoryEditor({ entity }: { entity: CodexEntity }) {
 
         <section style={{ ...panelStyle, marginTop: "var(--space-4)" }}>
           <h2 style={sectionTitle}>Typed details</h2>
+          {detailError && <p role="alert" style={{ color: "var(--danger-text)" }}>{detailError}</p>}
           {draft.details.map((detail, index) => (
             <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 110px 2fr auto", gap: 8, marginBottom: 16, alignItems: "center" }}>
               <input className="input" aria-label={`Detail ${index + 1} key`} value={detail.key} onChange={(event) => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, key: event.target.value } : row) })} />
               <span className="badge badge--info">{detail.type}</span>
-              <input className="input" aria-label={`Detail ${detail.key} value`} value={String(detail.value ?? "")} onChange={(event) => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, value: event.target.value } : row) })} />
+              <input className="input" aria-label={`Detail ${detail.key} value`} aria-describedby={`${detailHelpId}-${index}`} aria-invalid={!!detailValueError(detail)} list={detail.type === "entity" ? `${detailHelpId}-entities` : detail.type === "scene" ? `${detailHelpId}-scenes` : undefined} value={memoryDetailInputText(detail)} onChange={(event) => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, valueInput: event.target.value } : row) })} />
               <button className="btn btn--sm" style={{ minHeight: 40, minWidth: 40 }} aria-label={`Remove ${detail.key}`} onClick={() => setDraft({ ...draft, details: draft.details.filter((_, rowIndex) => rowIndex !== index) })}>×</button>
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Assistant access for {detail.key}<select className="select" style={{ minHeight: 40 }} value={detail.ai_visibility} onChange={event => setDraft({ ...draft, details: draft.details.map((row, rowIndex) => rowIndex === index ? { ...row, ai_visibility: event.target.value as "include" | "ask" | "exclude" } : row) })}>
                 <option value="include">Use automatically when this entry is included</option><option value="ask">Ask before using this detail</option><option value="exclude">Keep this detail out of AI context</option>
               </select></label>
+              <p id={`${detailHelpId}-${index}`} style={{ gridColumn: "1 / -1", margin: 0, color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>{memoryDetailHelp[detail.type]}</p>
+              {detailValueError(detail) && <p role="alert" style={{ gridColumn: "1 / -1", margin: 0, color: "var(--danger-text)" }}>{detail.valueInput === undefined ? `This saved value needs review: ${detailValueError(detail)} It is preserved until you edit it.` : `Detail '${detail.key}': ${detailValueError(detail)}`}</p>}
             </div>
           ))}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 2fr auto", gap: 8 }}>
             <input className="input" placeholder="Detail name" value={detailKey} onChange={(event) => setDetailKey(event.target.value)} />
-            <select className="select" value={detailType} onChange={(event) => setDetailType(event.target.value as typeof detailType)}>{["text", "number", "boolean", "date", "scene", "entity", "list"].map((type) => <option key={type}>{type}</option>)}</select>
-            <input className="input" placeholder="Value" value={detailValue} onChange={(event) => setDetailValue(event.target.value)} />
+            <select className="select" aria-label="New detail type" value={detailType} onChange={(event) => setDetailType(event.target.value as typeof detailType)}>{["text", "number", "boolean", "date", "scene", "entity", "list"].map((type) => <option key={type}>{type}</option>)}</select>
+            <input className="input" aria-label="New detail value" aria-describedby={`${detailHelpId}-new`} placeholder="Value" list={detailType === "entity" ? `${detailHelpId}-entities` : detailType === "scene" ? `${detailHelpId}-scenes` : undefined} value={detailValue} onChange={(event) => setDetailValue(event.target.value)} />
             <button className="btn" disabled={!detailKey.trim()} onClick={addDetail}>Add</button>
           </div>
+          <p id={`${detailHelpId}-new`} style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>{memoryDetailHelp[detailType]}</p>
+          <datalist id={`${detailHelpId}-entities`}>{references.entities.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</datalist>
+          <datalist id={`${detailHelpId}-scenes`}>{scenes.map(row => <option key={row.id} value={row.id}>{row.title}</option>)}</datalist>
         </section>
 
         <section style={{ ...panelStyle, marginTop: "var(--space-4)" }}>
@@ -193,7 +221,7 @@ function normalize(entity: CodexEntity) {
     category: entity.category ?? "",
     aliases: entity.aliases ?? [],
     tags: entity.tags ?? [],
-    details: entity.details ?? [],
+    details: (entity.details ?? []).map(row => ({ ...row } as MemoryDetailDraft)),
     notes: entity.notes ?? "",
     ai_visibility: entity.ai_visibility ?? "include" as const,
     scope: entity.scope ?? "project" as const,
@@ -205,7 +233,7 @@ function validDraft(value: unknown): value is ReturnType<typeof normalize> {
   const row = value as ReturnType<typeof normalize>;
   return [row.type, row.name, row.description, row.category, row.notes, row.ai_visibility, row.scope].every(item => typeof item === "string")
     && [row.aliases, row.tags].every(items => Array.isArray(items) && items.every(item => typeof item === "string"))
-    && Array.isArray(row.details) && row.details.every(detail => detail && typeof detail.key === "string" && typeof detail.type === "string" && typeof detail.ai_visibility === "string");
+    && Array.isArray(row.details) && row.details.every(detail => detail && typeof detail.key === "string" && typeof detail.type === "string" && typeof detail.ai_visibility === "string" && (detail.valueInput === undefined || typeof detail.valueInput === "string"));
 }
 
 const panelStyle = { padding: "var(--space-4)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--bg-surface)" } as const;

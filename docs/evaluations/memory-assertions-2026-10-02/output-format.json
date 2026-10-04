@@ -1,0 +1,37 @@
+{
+  "identity-regression-red.txt": {
+    "raw_archive": "identity-regression-red.txt.raw.gz",
+    "raw_sha256": "70b73d236f711e37c222c86d958d1f5e95ace263b085b38c7fb047e3a75c66bd",
+    "archive_sha256": "7effa11bdf15a6db8dd1267cecefbf4d0bbb3347ab0312bfcd7ed5121cc10ef4",
+    "display_sha256": "70b73d236f711e37c222c86d958d1f5e95ace263b085b38c7fb047e3a75c66bd",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "evaluation-final.txt": {
+    "raw_archive": "evaluation-final.txt.raw.gz",
+    "raw_sha256": "43448ddb080cec35dc59c700b9a751019812ff8be23ef65f8eda0231ca563388",
+    "archive_sha256": "0027f0253111d909d4918414fc1c8c1e314a2ce92c3f690109a0cf0b59e6fab3",
+    "display_sha256": "43448ddb080cec35dc59c700b9a751019812ff8be23ef65f8eda0231ca563388",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "red-results.txt": {
+    "raw_archive": "red-results.txt.raw.gz",
+    "raw_sha256": "2cae3d3b372711b7c3fa099ae9362f523d9ff20307318b2af2070c4a527589eb",
+    "archive_sha256": "f0c982e5556a3b3ea173b85bd40c35ece4f1fdef346f3e96cd01ac729d6a1f44",
+    "display_sha256": "9764fba0e52fa416a0591e935c647f1ceff24d3bb693af6dedcb8c851fce594c",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "focused-tests-final.txt": {
+    "raw_archive": "focused-tests-final.txt.raw.gz",
+    "raw_sha256": "228a9c085bf3d446f4bcd9fba42d98848b11d532217d8f6680360725f563ef79",
+    "archive_sha256": "47f0a894c94e3dfc1d102af8c399cde8f96617c2ae4806fc863936966fd1de2f",
+    "display_sha256": "228a9c085bf3d446f4bcd9fba42d98848b11d532217d8f6680360725f563ef79",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  },
+  "focused-tests.txt": {
+    "raw_archive": "focused-tests.txt.raw.gz",
+    "raw_sha256": "8b901fbd3fc43985a1f1e64c5b77fa25ba20865454079f72e509307641f5174e",
+    "archive_sha256": "f1b65d346caf5f0de59c2b40804687650cfd982a763a473f52f36b7cbebd7ec6",
+    "display_sha256": "8b901fbd3fc43985a1f1e64c5b77fa25ba20865454079f72e509307641f5174e",
+    "normalization": "Trailing line whitespace and final blank lines only; raw original retained."
+  }
+}

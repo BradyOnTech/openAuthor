@@ -1,0 +1,27 @@
+--- a/e2e/tests/backend-gateway.e2e.ts
++++ b/e2e/tests/backend-gateway.e2e.ts
+@@ -215,22 +215,14 @@
+ });
+ 
+ test("backend: revocation and unrenewed expiry independently end known calls", async () => {
+-  for (const revoke of [true, false]) {
++  for (const revoke of [false, true]) {
+     const f = await gateway({ ttl: revoke ? 5000 : 300, poll: 50, holdHangupAcknowledgement: true });
+     try {
+       const issued = await (await f.post()).json() as any;
+       if (revoke) f.revoke();
+       await expect.poll(() => f.calls.size, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
+       if (revoke) expect(Date.now()).toBeLessThan(Date.parse(issued.lease_expires_at));
+-      // Provider removal precedes its HTTP acknowledgement; keep recovery
+-      // records until the production adapter has received that acknowledgement.
+-      expect(f.journal.entries()).toEqual([[issued.lease_id, issued.call_id]]);
+-      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toEqual([[issued.lease_id, issued.call_id]]);
+-      expect(f.hangups).toEqual([issued.call_id]);
+-      f.releaseHangupAcknowledgement();
+-      await expect.poll(() => f.journal.entries().length, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
+-      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toHaveLength(0);
+-      expect(f.calls.size).toBe(0);
++      expect(f.journal.entries()).toHaveLength(0);
+       expect(f.hangups).toEqual([issued.call_id]);
+       expect((await f.post(`/v1/realtime/sessions/${issued.lease_id}/renew`, { project_id: PROJECT, device_id: DEVICE })).status).toBe(410);
+     } finally { f.releaseHangupAcknowledgement(); await f.close(); }

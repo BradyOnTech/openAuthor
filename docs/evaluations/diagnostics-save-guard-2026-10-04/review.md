@@ -1,0 +1,9 @@
+# Diagnostics save guard verification — 2026-10-04
+
+The existing rendered workflow test now installs its deferred native-save gate before editing. It proves that the textarea is the attached, current editable scene, the tab exposes unsaved writing, and Canon is active. It observes one pending save and the unchanged backend body, requires zero diagnostics calls until that save completes, and preserves the exact Unicode evidence-selection and final saved-prose assertions. The timeout and production save barrier are unchanged.
+
+The original hosted PR failure on `82d264b` left the save resolver undefined. Its precise cause was not reproduced: the unchanged targeted test, all 56 workflow tests, and all 710 original desktop tests passed locally; the same commit’s push CI also passed all 710 desktop tests. This packet records test synchronization and stronger guard checks, not a claimed production fix for that intermittent failure.
+
+Removing only the real `flushProjectSceneSaves` call from `CanonMemoryEditor.load` made the final test fail at the diagnostics barrier assertion: expected zero calls while the native save was pending, received one. The production file was restored byte-for-byte before final verification. Against source base `838d1b83e94dd5b452dc94a5113fbb05b38cf88d` plus this test change, the focused test passed, then all 715 desktop tests passed across 93 files in 26.33 seconds.
+
+Commands: `npm test --prefix desktop -- src/AppV2.workflow.test.tsx -t 'saves pending prose before diagnostics and opens the exact evidence passage'` and `npm test --prefix desktop`. Machine-readable results are in `verification.json`; compressed raw outputs and SHA-256 bindings accompany this review. Hosted CI and both complete SDK browser aggregates remain the parent integration’s acceptance gates.

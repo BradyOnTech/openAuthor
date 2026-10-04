@@ -1,0 +1,88 @@
+{
+  "implementation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+  "scope": "Final current-source rendered desktop suite, production build and11 unique real-core offline journeys per browser; provider keys absent, local registry/provider. Native/physical/deployed/signed/author acceptance separate.",
+  "desktop_tests": 677,
+  "desktop_files": 90,
+  "typecheck_build": "passed",
+  "unique_browser_journeys": {
+    "chromium": 11,
+    "webkit": 11
+  },
+  "browser_failed": 0,
+  "browser_skipped": 0,
+  "selected_inputs": 8,
+  "broader_inputs": 354,
+  "input_hashes_unchanged": true,
+  "logs": {
+    "desktop.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-desktop.txt",
+      "raw_bytes": 286,
+      "raw_sha256": "690beb5b198904e328cc5bf2ad17b8f5a0b6dec4b94efc07fb05a62d1dcf525a"
+    },
+    "build.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-build.txt",
+      "raw_bytes": 1726,
+      "raw_sha256": "d5f0a7af84f543403a260e41e11a9e6dce4a07c798abae5d465ca5f7df45074a"
+    },
+    "chrome.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome.txt",
+      "raw_bytes": 2091,
+      "raw_sha256": "40e09ef37ce5502e31a787e33e8ecdfc11eb3d2ee1c0ad5a41f324a6cf190ae2"
+    },
+    "webkit.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-webkit.txt",
+      "raw_bytes": 2066,
+      "raw_sha256": "10f51bcedec0ea94919f0f4ac70d144446488b43475fb12260bfd8770a1a0022"
+    },
+    "pre-legacy-txt-desktop.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-pre-legacy-review-desktop.txt",
+      "raw_bytes": 286,
+      "raw_sha256": "30e9ee78e81e75f0bfc307f7d5858ba4427e2fdefc439da636685f5e8dcc3809",
+      "scope": "Earlier676/90 or build/Chrome11 checkpoint before final legacy selection guard; no exact earlier source archive claimed."
+    },
+    "pre-legacy-txt-build.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-pre-legacy-review-build.txt",
+      "raw_bytes": 1726,
+      "raw_sha256": "a962a526e475976355b7e0f60bd174db3e6d002243c81d1dece2bab49e94d815",
+      "scope": "Earlier676/90 or build/Chrome11 checkpoint before final legacy selection guard; no exact earlier source archive claimed."
+    },
+    "pre-legacy-txt-chrome.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-pre-legacy-review-chrome.txt",
+      "raw_bytes": 2087,
+      "raw_sha256": "985ef4c183d71dec9556af02c5977fb2b00e1bf1cf32d556ecb879abfe46db4a",
+      "scope": "Earlier676/90 or build/Chrome11 checkpoint before final legacy selection guard; no exact earlier source archive claimed."
+    },
+    "pre-legacy-json-source.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-pre-legacy-review-source.json",
+      "raw_bytes": 41637,
+      "raw_sha256": "709e892d952a952dfe74534a5afba804b3356d3a70ede92f0526f516b8866bc0",
+      "scope": "Earlier676/90 or build/Chrome11 checkpoint before final legacy selection guard; no exact earlier source archive claimed."
+    },
+    "chrome-sandbox-attempt.txt.gz": {
+      "original_path": "/private/tmp/openauthor-navigation-controls-final-chrome-sandbox-attempt.txt",
+      "raw_bytes": 639,
+      "raw_sha256": "0b4825ef07eb3c6efc9647788e0e8f86a32e282708c03378633c7c38aa3e7a69",
+      "scope": "Sandbox localhost bind refusal before browser journeys; not a product failure."
+    }
+  },
+  "review": {
+    "standards_hard_open": 0,
+    "standards_optional_low": 1,
+    "spec_open": 0,
+    "spec_repairs": [
+      "Missing initial ID identity inference",
+      "Restarted legacy migration under newer explicit attachment intent"
+    ],
+    "optional": "Possible duplicated scaffold/archive/folder init-attach lifecycle; deferred maintenance."
+  },
+  "new_live_provider_calls": 0,
+  "release_certified": false,
+  "all_six_priorities": "in_progress",
+  "independent_evidence_review": {
+    "navigation_open": 0,
+    "contrast_open": 0,
+    "native_open": 0,
+    "readiness_open": 0,
+    "native_scope": "Nineteen separately sealed files; manually transcribed current GUI observations, not raw screenshots/AX certificate."
+  }
+}

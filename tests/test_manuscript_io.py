@@ -13,11 +13,33 @@ from openauthor.manuscript_io import (
   preview_manuscript_import,
 )
 from openauthor.project import OpenAuthorError, initialize_project
-from openauthor.planning import get_plan
 from openauthor.scenes import add_scene, list_scene_details
+from openauthor.planning import add_act, add_chapter, assign_scene, get_plan
 
 
 class ManuscriptIOTests(unittest.TestCase):
+  def test_exports_follow_planned_reading_order_and_append_unassigned_scenes(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      paths = initialize_project(root / "project", name="Reordered Novel")
+      for title in ["Written First", "Written Second", "Unassigned"]:
+        add_scene(paths, title=title, body=f"Prose for {title}.")
+      act = add_act(paths, title="Act One")
+      chapter = add_chapter(paths, act_id=act["id"], title="Opening")
+      assign_scene(paths, scene_id="scene-0002", chapter_id=chapter["id"])
+      assign_scene(paths, scene_id="scene-0001", chapter_id=chapter["id"])
+      before = {path.name: path.read_bytes() for path in paths.scenes_dir.glob("*.md")}
+      for format, target in [("docx", root / "book.docx"), ("markdown", root / "markdown")]:
+        with self.subTest(format=format):
+          export_manuscript(paths, target, format=format)
+          if format == "docx":
+            preview = preview_manuscript_import(target)
+            self.assertEqual([scene["title"] for scene in preview["scenes"]], ["Written Second", "Written First", "Unassigned"])
+          else:
+            files = sorted(target.glob("*.md"))
+            for path, title in zip(files, ["Written Second", "Written First", "Unassigned"]):
+              self.assertIn(f"Prose for {title}.", path.read_text())
+      self.assertEqual({path.name: path.read_bytes() for path in paths.scenes_dir.glob("*.md")}, before)
   def test_import_rejects_invalid_corrections_and_manifest_paths_before_writing(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)

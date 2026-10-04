@@ -1,0 +1,13 @@
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  Supabase Storage schema is unavailable; bucket and storage.objects policies were not installed. Run supabase db reset in the Supabase stack to verify them.
+psql:~/Developer/openAuthor/supabase/tests/mobile_encrypted_sync_rls.sql:902: NOTICE:  Skipping Storage bucket/policy assertions outside the Supabase Storage stack
+Existing encrypted-sync authorization SQL suite passed.
+Live Auth-session, workspace, project and key authority SQL checks passed.

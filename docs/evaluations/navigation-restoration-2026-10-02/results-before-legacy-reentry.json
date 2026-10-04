@@ -1,0 +1,47 @@
+{
+  "evidence_kind": "synthetic_rendered_restart_navigation_delayed_initialization_and_folder_selection_fences",
+  "head": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+  "source_sha256": {
+    "desktop/src/AppV2.tsx": "91eeaaef57237c02985a2c165a49abea111777ecf17490e8b4c41eb531c15f62",
+    "desktop/src/components/workbench/Workbench.tsx": "bf70b823de7633dbd4082e8febab4b93e4f395b5dccaac722fdf6712890a1dc4",
+    "desktop/src/contexts/WorkspaceContext.tsx": "6ff8058fe9d22ccf1c4766bbec7b91a84f683a0aa606e178fa861fce8c972adc",
+    "desktop/src/AppV2.workflow.test.tsx": "5c91512ee67c3fc47d844cea49c737ce52e399cdc4669d83f564b74974ff2588",
+    "desktop/e2e/session-continuity.spec.ts": "4f26b911df0b1c0732992f5201608f12b1a32f6ee824c81f3e198602661dc23e"
+  },
+  "verification": [
+    {
+      "command": "npx vitest run src/AppV2.workflow.test.tsx src/tabRecovery.test.ts src/hooks/useWorkspaceNavigation.test.tsx src/contexts/WorkspaceContext.test.ts",
+      "passed": 63,
+      "files": 4,
+      "app_workflow_tests": 55,
+      "tab_recovery_tests": 6,
+      "navigation_race_tests": 1,
+      "workspace_context_tests": 1
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    }
+  ],
+  "provider_calls": 0,
+  "network_calls": 0,
+  "author_data_untouched": true,
+  "gui_used": false,
+  "temporary_probe_removed": true,
+  "initial_identity_evidence": "cached ID or unique valid exact-root binding; no inference from missing/ambiguous/mismatched bindings",
+  "controls": [
+    "delayed route restore",
+    "delayed workspace-user-state restore",
+    "different-book route",
+    "explicit Projects choice during delayed restore",
+    "new-book defaults",
+    "Search alongside Plan and independent panels",
+    "existing-folder attachment wins over delayed startup user state",
+    "existing-folder attachment wins over delayed outer workspace list",
+    "existing folder reuses exactly one canonical registry record",
+    "late attach/scaffold/archive/folder completion refuses newer explicit Projects choice",
+    "late legacy-folder migration refuses newer explicit Projects choice"
+  ],
+  "browser_source_included_but_run_owned_by_parent": true,
+  "same_manual_selection_revision_carried_across_initialization": true
+}

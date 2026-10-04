@@ -1,0 +1,18 @@
+test_old_source_only_profile_can_switch_reference_modes_without_losing_provenance (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_old_source_only_profile_can_switch_reference_modes_without_losing_provenance) ... FAIL
+
+======================================================================
+FAIL: test_old_source_only_profile_can_switch_reference_modes_without_losing_provenance (tests.test_style_profile_source_metadata.StyleProfileSourceMetadataTests.test_old_source_only_profile_can_switch_reference_modes_without_losing_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_style_profile_source_metadata.py", line 146, in test_old_source_only_profile_can_switch_reference_modes_without_losing_provenance
+    self.assertEqual(current["freshness"], "stale")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'unknown' != 'stale'
+- unknown
++ stale
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=1)

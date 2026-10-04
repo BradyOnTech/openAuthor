@@ -1,0 +1,33 @@
+
+> openauthor-mobile@0.1.0 build:web
+> node scripts/build-security.mjs export --platform web && node scripts/build-pwa.mjs
+
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:38252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 5628ms index.ts (399 modules)
+
+› web bundles (2):
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js (1.4MB)
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js.map (4.6MB)
+
+› Files (2):
+index.html (1.2KB)
+metadata.json (49B)
+
+Exported: dist
+Mobile build containment passed (1 maps); GHSA-86w9-cpqp-85rv dependency audit remains open.
+PWA shell built: 5 public assets. Project/API data is not service-worker cached.

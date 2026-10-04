@@ -1,0 +1,42 @@
+
+> openauthor-mobile@0.1.0 build:export
+> node scripts/build-security.mjs export --platform all --output-dir /private/tmp/openauthor-forge-guard-export-final-2026-10-02
+
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:31859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 24229ms index.ts (399 modules)
+iOS Bundled 32514ms index.ts (879 modules)
+Android Bundled 39719ms index.ts (877 modules)
+
+› web bundles (2):
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js (1.4MB)
+_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js.map (4.6MB)
+
+› ios bundles (2):
+_expo/static/js/ios/index-224cb3a6972e579bc85647b823ef02c7.hbc (2.5MB)
+_expo/static/js/ios/index-224cb3a6972e579bc85647b823ef02c7.hbc.map (6.2MB)
+
+› android bundles (2):
+_expo/static/js/android/index-f54a2d33bb6a6cb1b04e8aa87ba5b895.hbc (2.5MB)
+_expo/static/js/android/index-f54a2d33bb6a6cb1b04e8aa87ba5b895.hbc.map (6.2MB)
+
+› Files (2):
+index.html (1.2KB)
+metadata.json (244B)
+
+Exported: /private/tmp/openauthor-forge-guard-export-final-2026-10-02
+Mobile build containment passed (3 maps); GHSA-86w9-cpqp-85rv dependency audit remains open.

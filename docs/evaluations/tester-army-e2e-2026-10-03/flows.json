@@ -1,0 +1,713 @@
+[
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 61,
+    "title": "backend: reviewed import refuses changed source and exports saved chapter prose",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 85,
+    "title": "backend: stale editor save preserves newer prose and its recoverable conflict",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 101,
+    "title": "backend: individual budget limits clear while unrelated limits remain enforced",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 124,
+    "title": "backend: malformed stored budget values fail safely without rewriting the policy",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 160,
+    "title": "backend: local proposal delivery is replay safe, reviewed before apply and undoable",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 179,
+    "title": "backend: named versions restore selected prose and portable backups recover a separate book",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 198,
+    "title": "backend: Storyline edits remain isolated and integrate through a reviewed Change Set",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 216,
+    "title": "backend: reviewed local chat context and retried delivery produce one durable exchange",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 232,
+    "title": "backend: persistent sidecar rejects invalid message limits and remains responsive",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-core.e2e.ts",
+    "line": 256,
+    "title": "backend: mobile snapshot and outbox replay preserve proposal review as the mutation boundary",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-gateway.e2e.ts",
+    "line": 150,
+    "title": "backend: gateway health, origins and signed device authority reject invalid clients before allocation",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-gateway.e2e.ts",
+    "line": 178,
+    "title": "backend: signed session creation clamps policy, durably registers, renews only its owner and acknowledges stop",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-gateway.e2e.ts",
+    "line": 213,
+    "title": "backend: revocation and unrenewed expiry independently end known calls",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-gateway.e2e.ts",
+    "line": 228,
+    "title": "backend: issuance quota limits retries without consuming another slot for renewal or stop",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "backend",
+    "file": "e2e/tests/backend-gateway.e2e.ts",
+    "line": 243,
+    "title": "backend: upstream failure hides private bodies and malformed answers tear down the registered call",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-authoring.e2e.ts",
+    "line": 5,
+    "title": "desktop writes and plans a book, reviews a revision, undoes it and refuses a stale save",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-chat-module-recovery.e2e.ts",
+    "line": 5,
+    "title": "desktop preserves an unsent question after an Assistant module outage and requires fresh review to recover",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-chat-promotions.e2e.ts",
+    "line": 5,
+    "title": "desktop promotes permission-reviewed Assistant replies into notes, reviewed Memory, a Storyline, Writing Voice and a Change Set",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-controls.e2e.ts",
+    "line": 15,
+    "title": "desktop keyboard budget controls clear one limit, enforce generation and account for usage",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-controls.e2e.ts",
+    "line": 100,
+    "title": "desktop saves a custom Editorial Pass, controls Style Profile sources and chooses a reviewed creative direction",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-interchange.e2e.ts",
+    "line": 9,
+    "title": "desktop previews and imports markdown, reads exact prose and exports Markdown in the same order",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-interchange.e2e.ts",
+    "line": 9,
+    "title": "desktop previews and imports text, reads exact prose and exports Markdown in the same order",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-interchange.e2e.ts",
+    "line": 9,
+    "title": "desktop previews and imports docx, reads exact prose and exports Markdown in the same order",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-interchange.e2e.ts",
+    "line": 9,
+    "title": "desktop previews and imports scrivener, reads exact prose and exports Markdown in the same order",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-merge.e2e.ts",
+    "line": 5,
+    "title": "desktop branches a Storyline, reviews a conflict and merges the approved reconciliation",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-product-signals.e2e.ts",
+    "line": 7,
+    "title": "desktop records a private golden loop, pauses collection and keeps saved signals content-free",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop",
+    "file": "e2e/tests/desktop-recovery.e2e.ts",
+    "line": 7,
+    "title": "desktop repairs missing workspace storage and restores a verified backup without overwriting another book",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 12,
+    "title": "mobile reader searches prose, handles no results and preserves its scene across tabs",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 42,
+    "title": "mobile captures every review kind and retains saved items after ordinary sign-out",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 80,
+    "title": "mobile protects an unfinished capture when leaving a book or signing out",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 108,
+    "title": "mobile preview refuses voice, upload and recovery without contacting hosting",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 144,
+    "title": "mobile device removal requires confirmation and clears its sample review queue",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile",
+    "file": "e2e/tests/mobile-companion.e2e.ts",
+    "line": 175,
+    "title": "mobile preview clearly resets sample captures after a cold reload",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "database",
+    "file": "e2e/tests/backend-database.e2e.ts",
+    "line": 11,
+    "title": "database authorization, key recovery, deletion, voice leases and shared quota survive concurrency",
+    "runner": "tester-army/e2e",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 93,
+    "title": "reviews exact scope at laptop size and resolves a lost request through owned status after device revocation",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 137,
+    "title": "sign-out redacts reviewed history and ignores a late begin reply",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 150,
+    "title": "connects and reviews an account with no hosted books through durable account-only enrollment",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 173,
+    "title": "reviews changed retained scope after device revocation and confirms a lost correction only by exact receipt",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 202,
+    "title": "requires a fresh scope review after explicit stale refusal and redacts a late correction on sign-out",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/account-deletion.spec.ts",
+    "line": 219,
+    "title": "preserves an account-only enrolled client through reviewed deletion and lost amendment receipt recovery",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/authoring.spec.ts",
+    "line": 15,
+    "title": "writes, focuses, reviews an AI revision, undoes it, and reopens the saved manuscript",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/book-journey.spec.ts",
+    "line": 11,
+    "title": "imports a book, plans chapters, saves Memory, discusses a scene, and exports readable prose",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/canon-correction-recovery.spec.ts",
+    "line": 4,
+    "title": "recovers Canon assertion corrections after navigation and restart without silently replacing a stale fact",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/caret-keyboard.spec.ts",
+    "line": 5,
+    "title": "keyboard focus resumes a saved caret after restart while pointer placement remains authoritative",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/change-set-navigation.spec.ts",
+    "line": 4,
+    "title": "keeps document tabs usable while preparing a Change Set",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/chat-delivery-recovery.spec.ts",
+    "line": 6,
+    "title": "re-reviews stale pending Memory context with fresh permission and a durable question",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/chat-delivery-recovery.spec.ts",
+    "line": 127,
+    "title": "recovers a completed reply after transport loss without re-sending changed context",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-key-recovery.spec.ts",
+    "line": 88,
+    "title": "restores an absent envelope via authenticated snapshot proof and exact lost-reply reconciliation before explicit publication",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-key-recovery.spec.ts",
+    "line": 128,
+    "title": "same-account sign-in during pending proof fences the old session and restores deliberate reconnect",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-key-recovery.spec.ts",
+    "line": 150,
+    "title": "an indeterminate installation stays locked until deliberate reconnect independently unseals its committed envelope",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-key-recovery.spec.ts",
+    "line": 170,
+    "title": "authenticates an immutable key verifier before any snapshot, refuses another valid key and confirms a lost self-envelope reply",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-key-recovery.spec.ts",
+    "line": 199,
+    "title": "keeps no-snapshot verifier recovery locked when a new same-account session arrives during proof",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/companion-trusted-devices.spec.ts",
+    "line": 60,
+    "title": "reviews trusted device revocation and guarded rotation without leaking pending outcomes across books",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/context-budget.spec.ts",
+    "line": 6,
+    "title": "keeps an oversized chapter question and retries with complete scene context",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/coordinated-undo-guard.spec.ts",
+    "line": 4,
+    "title": "coordinated undo refuses newer writing without changing another scene",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/daily-review-polish.spec.ts",
+    "line": 4,
+    "title": "keeps saved planning compact, recovers edits, and exposes passage actions beside long context",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/editor-accessibility.spec.ts",
+    "line": 59,
+    "title": "dark writing controls expose keyboard focus and readable text",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/editor-accessibility.spec.ts",
+    "line": 59,
+    "title": "light writing controls expose keyboard focus and readable text",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/editorial-workspace.spec.ts",
+    "line": 4,
+    "title": "restores tabs and caret and reviews current evidence in a wide workspace",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/keyboard-review-workspace.spec.ts",
+    "line": 24,
+    "title": "Command Palette announces selection, contains focus and resumes exact prose",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/keyboard-review-workspace.spec.ts",
+    "line": 98,
+    "title": "Plan keyboard positions persist within chapters, across chapters and in the inbox",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/long-book-journey.spec.ts",
+    "line": 7,
+    "title": "reviews distant evidence and keeps coordinated revisions usable in a book-sized project",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/memory-permission.spec.ts",
+    "line": 6,
+    "title": "asks for Memory once, retains a cancelled question, and honors a later exclusion",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/memory-review-workspace.spec.ts",
+    "line": 4,
+    "title": "scans cold Memory, reviews evidence, corrects a type, refuses stale decisions, and reopens review history",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/memory-semantic-scan.spec.ts",
+    "line": 11,
+    "title": "reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/session-continuity.spec.ts",
+    "line": 5,
+    "title": "restores the selected activity beside recovered document tabs with a cached project ID",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/session-continuity.spec.ts",
+    "line": 5,
+    "title": "restores the selected activity beside recovered document tabs without a cached project ID",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/session-continuity.spec.ts",
+    "line": 50,
+    "title": "recovers Plan text, reading position and an unfinished voice assessment after reload",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/storyline-journey.spec.ts",
+    "line": 7,
+    "title": "a clean open scene follows the active Storyline before the author resumes writing",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/storyline-journey.spec.ts",
+    "line": 33,
+    "title": "explores an alternate ending, keeps chapter context, and integrates only the selected scene",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/tab-keyboard.spec.ts",
+    "line": 4,
+    "title": "keyboard tabs preserve writing, defer activation and retain focus after closing",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "desktop/test:e2e",
+    "file": "desktop/e2e/writing-voice.spec.ts",
+    "line": 4,
+    "title": "approves an original Writing Voice, compares baselines and supplies the profile to copilot",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e",
+    "file": "mobile/e2e/companion.spec.ts",
+    "line": 4,
+    "title": "keeps an unfinished capture when checking the manuscript",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e",
+    "file": "mobile/e2e/companion.spec.ts",
+    "line": 23,
+    "title": "returns to the same scene after capturing an idea",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e",
+    "file": "mobile/e2e/companion.spec.ts",
+    "line": 50,
+    "title": "warns before leaving a book or signing out with an unfinished capture",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e",
+    "file": "mobile/e2e/companion.spec.ts",
+    "line": 77,
+    "title": "phone companion reads a scene, keeps preview honest, and reopens its shell offline",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e:hosted",
+    "file": "mobile/e2e/hosted-companion.spec.ts",
+    "line": 19,
+    "title": "a new phone retries enrollment, unlocks a desktop book and returns encrypted capture for review",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e:hosted",
+    "file": "mobile/e2e/hosted-companion.spec.ts",
+    "line": 590,
+    "title": "an enrolled phone verifies its selected book before any snapshot exists",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  },
+  {
+    "group": "mobile/test:e2e:hosted",
+    "file": "mobile/e2e/hosted-companion.spec.ts",
+    "line": 722,
+    "title": "finishing the project list does not move a downloaded-library press onto sign-out",
+    "runner": "Playwright",
+    "chromium": "passed",
+    "webkit": "passed"
+  }
+]

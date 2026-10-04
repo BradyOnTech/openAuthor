@@ -1,0 +1,30 @@
+{
+  "implementation_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "baseline": "432a30ba91c27787a62700819aee2c6c92bfcd22",
+  "date": "2026-10-02",
+  "desktop_tests": 699,
+  "desktop_files": 91,
+  "typecheck_build": "passed",
+  "unique_browser_journeys_per_engine": 13,
+  "browser_cases": 26,
+  "browser_failed": 0,
+  "browser_skipped": 0,
+  "browser_flaky": 0,
+  "selected_inputs": 6,
+  "broader_inputs": 356,
+  "inputs_match_committed_source": true,
+  "source_capture_scope": "Production/rendered hashes match independent reviews made before desktop/build execution. The broader source snapshot was captured just after final browser launch and stayed unchanged through completion. Only the new E2E file changed after desktop/build; it was rerun in the final browser batch.",
+  "independent_review": {
+    "standards_hard_open": 0,
+    "standards_optional_low": 1,
+    "spec_open": 0
+  },
+  "author_artifacts_unchanged": true,
+  "new_provider_calls": 0,
+  "deployed_mutations": 0,
+  "native_acceptance": "Separate native subtree records a523 normal/QA builds, packaged-engine probes and unsigned synthetic GUI3scene apply/byte-exact undo/backup/restore/post-operation restart. Real GUI mid-write, VoiceOver and signed clean-machine acceptance remain open.",
+  "release_certified": false,
+  "all_six_priorities": "in_progress",
+  "intermediate_scope": "Earlier 26-case browser batch used selectOption for native position choice and keyboard Move activation; retained as intermediate. Final 26-case batch uses true keyboard typeahead, including C before A/B, cross-chapter and inbox positions.",
+  "setup_scope": "Original popup-arrow failures reproduced on bare native selects in both engines and are automation/platform evidence, not product repair evidence. Initial palette baseline replay JSX setup failure is retained separately."
+}

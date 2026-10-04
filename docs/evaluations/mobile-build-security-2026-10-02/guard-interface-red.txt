@@ -1,0 +1,28 @@
+
+> openauthor-mobile@0.1.0 test
+> vitest run --run test/buildSecurity.test.mjs
+
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+ ❯ test/buildSecurity.test.mjs (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/buildSecurity.test.mjs [ test/buildSecurity.test.mjs ]
+Error: Cannot find module '../scripts/build-security.mjs' imported from ~/Developer/openAuthor/mobile/test/buildSecurity.test.mjs
+ ❯ test/buildSecurity.test.mjs:6:1
+      4| import { spawnSync } from "node:child_process";
+      5| import { describe, expect, it } from "vitest";
+      6| import { inspectExport, inspectProject, parseExportArguments } from ".…
+       | ^
+      7|
+      8| const mobile = resolve(import.meta.dirname, "..");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  12:51:41
+   Duration  105ms (transform 13ms, setup 0ms, import 0ms, tests 0ms, environment 0ms)

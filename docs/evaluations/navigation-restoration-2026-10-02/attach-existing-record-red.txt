@@ -1,0 +1,33 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (54 tests | 1 failed | 53 skipped) 396ms
+     × keeps existing-folder attachment intent ahead of delayed startup workspace state selection 395ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > keeps existing-folder attachment intent ahead of delayed startup workspace state selection
+AssertionError: expected [ { …(10) }, { …(10) } ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/AppV2.workflow.test.tsx:1527:67
+    1525|       expect(JSON.parse(localStorage.getItem("openauthor.activeProject…
+    1526|       const records = await factory("local").listProjects(workspaceId,…
+    1527|       expect(records.filter(project => project.id === target.id)).toHa…
+       |                                                                   ^
+    1528|     } finally {
+    1529|       releaseRegistry();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 53 skipped (54)
+   Start at  21:15:50
+   Duration  1.87s (transform 763ms, setup 0ms, import 1.07s, tests 396ms, environment 328ms)
+

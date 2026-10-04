@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T16:39:21.797489+00:00",
+  "status": "local_engineering_verified_deployment_acceptance_open",
+  "assessment": "assistant_assessment_not_author_or_device_acceptance",
+  "git_head": "2a4f0157116569d86ad1cc8093000e9074e2942e",
+  "source_state": "Gateway implementation and evidence are uncommitted at recording; required SQL is committed at git_head. No commits by this lane.",
+  "scope": "Synthetic local HTTP/control fixtures, actual disposable PostgreSQL and actual SIGKILL; no live provider calls, deployed resources, private author data, or real secrets.",
+  "live_provider_calls": 0,
+  "runtime": {
+    "node": "v22.17.0",
+    "npm": "10.9.2",
+    "python": "Python 3.13.2",
+    "postgres": "postgres (PostgreSQL) 17.11 (Homebrew)"
+  },
+  "final_verification": {
+    "command": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+    "log": "postgres-gateway-checks.txt",
+    "exit_code": 0,
+    "gateway_tests": {
+      "discovered": 50,
+      "passed": 50,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_encrypted_sync_sql_suite": "passed",
+    "live_auth_workspace_project_key_sql_suite": "passed",
+    "lease_manager_controls": 14,
+    "actual_sigkill_before_sdp_delivery": "passed",
+    "shared_quota_real_postgres_http_adapter": "passed",
+    "environment_not_verified": [
+      "deployed GoTrue",
+      "deployed PostgREST",
+      "deployed Storage",
+      "OpenAI production calls",
+      "physical phone media",
+      "sticky routing and persistent-volume operation"
+    ]
+  },
+  "independent_review": {
+    "reviewer": "mobile_restart_retention",
+    "scope": "Read-only final managed callback ownership and raw-creation settlement delta",
+    "material_findings": [],
+    "command": "node --experimental-strip-types --test test/sessionLeases.test.ts test/openAIRealtimeUpstream.test.ts",
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "evidence_owner": "mobile/evidence/2026-10-02-continuous-voice",
+    "log": "mobile/evidence/2026-10-02-continuous-voice/gateway-final-independent.log",
+    "log_sha256": "b3e32ac49186a77b8567c65961218cdc23e37c7e909d1905b091b4a33533f8ad"
+  },
+  "regression_history": {
+    "managed-cleanup-red.txt": "Final public-path regression before sole-manager cleanup repair; retained competing cleanup caused success acknowledgement loss and permanent unknown state.",
+    "late-creation-red.txt": "Isolated source variant with pending creation retention guard removed; showed new issuance escaping ending-lease gate.",
+    "postgres-gateway-timing-red.txt": "Routine 80 ms HTTP fixture deadline failed under concurrent cold startup; widened routine deadlines while preserving explicit 80 ms late-response tests.",
+    "gateway-checks.txt": "Earlier intermediate checkpoint, superseded by final postgres-gateway-checks.txt.",
+    "lease-manager-checks.txt": "14 controls passed before test-only routine timeout widening; final source tested in the 50-test PostgreSQL-backed check."
+  },
+  "wire": {
+    "issue": "POST /v1/realtime/sessions -> 201 {sdp,call_id,lease_id,expires_at,lease_expires_at,renew_after_ms,request_id}",
+    "renew": "POST /v1/realtime/sessions/{lease_id}/renew with {project_id,device_id} and current same-signed-session bearer",
+    "stop": "POST /v1/realtime/sessions/{lease_id}/stop with owned scope and current bearer -> {stopped:true} after upstream acknowledgement",
+    "defaults": {
+      "lease_ms": 30000,
+      "hard_duration_ms": 600000,
+      "authority_poll_ms": 5000,
+      "control_timeout_ms": 5000,
+      "renew_hint_max_ms": 10000,
+      "max_calls_per_process": 500
+    }
+  },
+  "remaining_limits": [
+    "Per-replica private persistent journal and sticky routing are required; shared active leases are not implemented.",
+    "Process/host outages pause timers until known-call restart cleanup; strict outage deadlines require an independently live watchdog.",
+    "Provider creation before a known Location can leave an unmappable allocation after response loss/crash, without SDP delivery.",
+    "The journal does not bind an API project/key; changed credentials/project can leave unknown startup cleanup.",
+    "Non-success hangup including 404 remains unknown; operator review is required rather than discarding the journal.",
+    "OpenAI 200 acknowledges teardown initiation, not final media, usage or billing.",
+    "Immutable client session-policy and monetary spend enforcement are not established by this lease.",
+    "Deployment/physical-device/provider controls acceptance is not established by local fixtures."
+  ],
+  "primary_sources": [
+    "https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/hangup",
+    "https://developers.openai.com/api/docs/guides/voice-sip?voice-api=realtime",
+    "https://developers.openai.com/api/docs/guides/voice-server-controls?voice-api=realtime"
+  ],
+  "source_sha256": {
+    "gateway/src/callJournal.ts": "3735d1075cd65e62ce43f737c0fefc68fc8d82851cb494b90c39555f0d33a201",
+    "gateway/src/config.ts": "237bd0e26ebf659785a6dd672688ba44fde2e2435bc027290bb04fb921c0be31",
+    "gateway/src/fakeRealtimeUpstream.ts": "f0748f669a84a9e12ead0ffa128263f88c0d5999413db53d16ecb9b33cf4705b",
+    "gateway/src/index.ts": "c43a4aee4a15cb8551196ac2da7d92db5f3e559c489025b316c38ace88dfbe0c",
+    "gateway/src/main.ts": "cd9674a0b17dbf8b2f34e2b67d53e73b9db22a14d04dcabb36c9a9bf123db211",
+    "gateway/src/mobilePolicy.ts": "562a4a492fd48460e7141d46ab74edad2fd3e0cb77edffd36015e8cbfb5e3487",
+    "gateway/src/openAIRealtimeUpstream.ts": "04641d294a897c1a750a07d5c56dc90f17a3e814d3205a5bf339cba10d72384d",
+    "gateway/src/production.ts": "2ca02e8c0cf993d39a397bd5559b81135ee835b28df6c942c2cad966fcfc4db9",
+    "gateway/src/rateLimiter.ts": "e8402a0dac50c0643bfe15b6dcb9e1f2cc25004e67fb059a34b2a68203ca7f18",
+    "gateway/src/sessionGateway.ts": "e74f24fea8ae1df38b026f2d80e24f3cdf3eb51cbd389ee9b1433c32d04d9399",
+    "gateway/src/sessionLeases.ts": "0fb1c60b07e6323239721c36153a612767084644f248b122d36c3e84e27a7a0c",
+    "gateway/src/supabaseAdapters.ts": "d06a03550f8e4551a7022fc6ec49ed7da89ee7a8c3390024a0301d8eb6e44f3f",
+    "gateway/src/supabaseRateLimiter.ts": "b406900ce09f7fb2b3fb26a78ea6885fdbf84956da9d4bf86a29052dd191cc18",
+    "gateway/src/types.ts": "d77624b98f9fb0c6f04d3fbfc32e32346413637d93c3cb8d0a837b73cc329c14",
+    "gateway/test/config.test.ts": "2c939e9ac14a528a9a739f710c83e8b17768810d3f0c2eccef3d0a3e9764f8d9",
+    "gateway/test/mobilePolicy.test.ts": "805ce383d83340853eb178a885ba28ea031028f7e543ecfcf3e9eb236f5395f2",
+    "gateway/test/openAIRealtimeUpstream.test.ts": "c1df025976475607868f5680d722c567d29e6e243d276abeafec6b403d440c4d",
+    "gateway/test/production.test.ts": "a8c96829a7d9a93eba0e4846007883246fdbafd1ffde40d857bead337f4926b1",
+    "gateway/test/rateLimiter.test.ts": "9fbbeec3012f94e10e92170adb1dc9e330a106a3e228703db9278c6834bb6245",
+    "gateway/test/sessionGateway.test.ts": "0e6b4b4a923c4b6ecf857b1c60c741a37377883c31eef35593d6bb56f8afe974",
+    "gateway/test/sessionLeases.test.ts": "5d3ec70d013d4585e3fc86413f906e7aa7747e20bb1a02b1984571b78ae26703",
+    "gateway/test/sharedRateLimit.postgres.test.ts": "4247f1bced729e2abc39070283d98f41464286f28b045a591b61a386e94716ce",
+    "gateway/test/supabaseAdapters.test.ts": "9242f0445f2cca7def5d3fbf2fa479b7f4f799f3313211133565e55475698e8d",
+    "gateway/test/supabaseRateLimiter.test.ts": "bf379e2944134bf0949b153318ab81d838fba7f9f92a1be7d4195b1ed29969ef",
+    "gateway/config.example.env": "ed3e69b93d7b59f3229e314012b652164026a179b0eb2650c0572fee7af388fb",
+    "gateway/README.md": "a403fa6c7bea84e7580f49e86c8318ce3ef85703c84e3b130c1b797f7ad68245",
+    "gateway/package.json": "899eed9d8434f01da8fc0325de8d87a8dd5b3c8508f21d05e4a8afcc14de1cfe",
+    "gateway/package-lock.json": "0466f4cf6c305df9c403a52443b52cba4c27762dab5501ec019c9f3b779e196d",
+    "gateway/tsconfig.json": "8c196b761119d5d3f09180ec6a6d27a02094ba31543d101297e3fc84bb3c65e5",
+    "gateway/tsconfig.build.json": "ecf119325f517b0f5e6bf50c7d288d91afca39ab06cf311587975af59f284e70",
+    "scripts/verify_shared_gateway_limiter.py": "3cb0f98ca16c7ca286480a6afc72f9a1220c79e239eec3fbd7f5f0d99b467880",
+    "supabase/migrations/20260830190000_mobile_encrypted_sync.sql": "666b04535c1f5d4f3a4d2dcba543ecb3dcf06dd012e2d6770f5f05a6a2f7a8ea",
+    "supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql": "9b57d4a10bbb6797c27b17b15eb719ca3bc7df2138c99bbdf3d115ce552b7072",
+    "supabase/migrations/20261002120000_mobile_realtime_shared_rate_limit.sql": "677f347c71ad77e0a1e32b23a1e3f47c0083eec2b722f158c1ea8582483b4a68",
+    "supabase/migrations/20261002140000_mobile_active_authority.sql": "bdcdd4cc589ea08439db36e150f455bccc79e8199c08c76f3c2d2bb21ee096a4",
+    "supabase/tests/mobile_active_authority.sql": "eb6df85906d6dd1bb3118617f9ac4db653c2a64c6eda480b2702ca374f0bb948"
+  },
+  "evidence_sha256": {
+    "gateway-checks.txt": "8f76d8714aef085ce2b48eb3375cf6f93b191057302ca947c887b0b5365a5611",
+    "late-creation-red.txt": "3ed5edd9ccbacad022a63b9c1b7c3636d15c7eb23fc6fafbac1b49b0ae4f4897",
+    "lease-manager-checks.txt": "d9a21689132236756807d79a1cf321f323b724c9b400c21a30764ab38bbcc196",
+    "managed-cleanup-red.txt": "69446f02ab5b7beb01eacc8d5d4ef73d17b7acb18f4cae67794f82c0ce30d25a",
+    "postgres-gateway-checks.txt": "15eedf92eadd4b8ab9dfb6da2c890b3c94b28cf874df0cd4effac2aa671d9422",
+    "postgres-gateway-timing-red.txt": "e72d2c2aed787fc09fbbd1f77123153c98e374a0e5fc81020b776c91bc172a34"
+  },
+  "output_format": {
+    "text": "Captured text normalized only for trailing whitespace and EOF; original bytes retained in gzip archives",
+    "original_outputs": {
+      "gateway-checks.txt": {
+        "archive": "gateway-checks.txt.raw.gz",
+        "captured_sha256": "41107ac70ae03cb3a95fd60c3a30f5a90c18253b5fbed438b1555e81ab45e58f",
+        "archive_sha256": "edc941c8d294fa372886b070c5ea5b27ad732f5576130e48f0e72a06e4ac2a05"
+      },
+      "late-creation-red.txt": {
+        "archive": "late-creation-red.txt.raw.gz",
+        "captured_sha256": "81dd490f92542a78704b53ddb954903e31dc310d4907302b5e6ac6c2802ba3cb",
+        "archive_sha256": "181502e4a82329086172884fe1fabaf66161e79c8cb325fa0c01ffead4c3a26e"
+      },
+      "postgres-gateway-checks.txt": {
+        "archive": "postgres-gateway-checks.txt.raw.gz",
+        "captured_sha256": "d9a656fb41015a47aeb569f2fd5d94dbe725bba8efda3e4ddb00c511cfdd4c0a",
+        "archive_sha256": "c96fc998beffb8f83ec3bed92166f56eaa546263452b15e900ffdd4aff4923c5"
+      }
+    }
+  }
+}

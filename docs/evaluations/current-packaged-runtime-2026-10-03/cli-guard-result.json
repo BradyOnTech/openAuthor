@@ -1,0 +1,90 @@
+{
+  "fixture": "/private/tmp/openauthor-current-packaged-core-368mvc0y/guarded-storyline-cli-book",
+  "installed_core": "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/python/lib/python3.11/site-packages/openauthor",
+  "python": "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/python/bin/python3",
+  "updated_at_same_across_storylines": true,
+  "edit_version_differs_across_storylines": true,
+  "actual_cli_refusals": [
+    {
+      "label": "old-storyline-accepted",
+      "command": [
+        "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/python/bin/python3",
+        "-I",
+        "-B",
+        "-m",
+        "openauthor",
+        "memory",
+        "fact-review",
+        "--id",
+        "fact-29e3b507fc58",
+        "--disposition",
+        "accepted",
+        "--expected-version",
+        "807fc920adecb66471fb7b93294f447ec91dea655e419e54fef6b00d4e70e35a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/openauthor-current-packaged-core-368mvc0y/guarded-storyline-cli-book",
+      "exit_code": 2,
+      "original_version_sent": "807fc920adecb66471fb7b93294f447ec91dea655e419e54fef6b00d4e70e35a",
+      "memory_sha256_before_and_after": "6639938ccb9aad9196066d958e55ebbf975ae314870637eaba7682da2543f43d",
+      "refusal_verified": "Storyline changed",
+      "memory_byte_exact": true
+    },
+    {
+      "label": "old-storyline-rejected",
+      "command": [
+        "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/python/bin/python3",
+        "-I",
+        "-B",
+        "-m",
+        "openauthor",
+        "memory",
+        "fact-review",
+        "--id",
+        "fact-29e3b507fc58",
+        "--disposition",
+        "rejected",
+        "--expected-version",
+        "807fc920adecb66471fb7b93294f447ec91dea655e419e54fef6b00d4e70e35a",
+        "--json"
+      ],
+      "cwd": "/private/tmp/openauthor-current-packaged-core-368mvc0y/guarded-storyline-cli-book",
+      "exit_code": 2,
+      "original_version_sent": "807fc920adecb66471fb7b93294f447ec91dea655e419e54fef6b00d4e70e35a",
+      "memory_sha256_before_and_after": "6639938ccb9aad9196066d958e55ebbf975ae314870637eaba7682da2543f43d",
+      "refusal_verified": "Storyline changed",
+      "memory_byte_exact": true
+    },
+    {
+      "label": "inverted-validity-restore",
+      "command": [
+        "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app/Contents/Resources/resources/runtime/python/bin/python3",
+        "-I",
+        "-B",
+        "-m",
+        "openauthor",
+        "memory",
+        "fact-review",
+        "--id",
+        "fact-29e3b507fc58",
+        "--disposition",
+        "accepted",
+        "--expected-version",
+        "3bbdad61999c5a9b30c9cc18bab6aca8d0a4fccbb8d68ab65dcdb636127d656d",
+        "--json",
+        "--evidence-json",
+        "[{\"scene_id\": \"scene-0001\", \"excerpt\": \"Neri set a blue token beside the loom.\", \"start\": 0, \"end\": 38}]"
+      ],
+      "cwd": "/private/tmp/openauthor-current-packaged-core-368mvc0y/guarded-storyline-cli-book",
+      "exit_code": 2,
+      "original_version_sent": "3bbdad61999c5a9b30c9cc18bab6aca8d0a4fccbb8d68ab65dcdb636127d656d",
+      "memory_sha256_before_and_after": "6c7ee26cf0650fb9f6925750714da4371df2787c5b48b9bbfb5b45a3f938cd5e",
+      "refusal_verified": "before it begins",
+      "memory_byte_exact": true
+    }
+  ],
+  "prose_unchanged": true,
+  "legacy_timestamp_scope_protection_claimed": false,
+  "author_quality_claimed": false,
+  "provider_calls": 0
+}

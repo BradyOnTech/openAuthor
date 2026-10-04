@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/mobile-snapshot-manifest/v1",
+  "title": "openAuthor Mobile Snapshot Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "project_id", "revision", "content_sha256", "byte_length"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.snapshot.manifest"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "content_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/rawSha256"},
+    "byte_length": {"type": "integer", "minimum": 1, "maximum": 1073741824}
+  }
+}

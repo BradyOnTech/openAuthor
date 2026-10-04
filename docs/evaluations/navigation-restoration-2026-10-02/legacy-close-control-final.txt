@@ -1,0 +1,9 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 54 skipped (55)
+   Start at  21:17:49
+   Duration  1.93s (transform 748ms, setup 0ms, import 1.07s, tests 410ms, environment 344ms)
+

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/tool-outcome/v1",
+  "title": "openAuthor Tool Outcome v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "outcome_id", "call_id", "turn_id", "project_id", "project_revision", "status", "completed_at"],
+  "properties": {
+    "schema": {"const": "openauthor.assistant.tool-outcome"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "outcome_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "call_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "turn_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "status": {"enum": ["succeeded", "failed", "denied", "cancelled"]},
+    "completed_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "result": {"type": "object", "maxProperties": 256},
+    "result_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "side_effect_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+        "message": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "retryable": {"type": "boolean"}
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "status": {"const": "succeeded"},
+        "result": {},
+        "result_sha256": {}
+      },
+      "required": ["result", "result_sha256"],
+      "not": {"properties": {"error": {}}, "required": ["error"]}
+    },
+    {
+      "properties": {
+        "status": {"enum": ["failed", "denied", "cancelled"]},
+        "error": {}
+      },
+      "required": ["error"],
+      "not": {
+        "anyOf": [
+          {"properties": {"result": {}}, "required": ["result"]},
+          {"properties": {"result_sha256": {}}, "required": ["result_sha256"]}
+        ]
+      }
+    }
+  ]
+}

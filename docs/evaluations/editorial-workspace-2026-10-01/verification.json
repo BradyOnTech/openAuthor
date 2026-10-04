@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-01",
+  "branch": "codex/editorial-review-workspace",
+  "integrated_origin_main": "2b343703f43beb866b3234dac336a4e49f76fa1f",
+  "local_work_checkpoint": "917894468d9138c1afd6ddb562ec465d30196190",
+  "evidence_kind": "local_source_tests_and_offline_disposable_book_journeys",
+  "external_model_calls": 0,
+  "checks": [
+    {
+      "name": "Python suite",
+      "command": "make test",
+      "status": "passed",
+      "passed": 454,
+      "skipped": 1,
+      "skip_reason": "Local Codex runtime contract requires an explicitly configured binary."
+    },
+    {
+      "name": "Desktop suite",
+      "command": "npm run test --prefix desktop -- --run",
+      "status": "passed",
+      "passed": 337,
+      "test_files": 67
+    },
+    {
+      "name": "Native bridge",
+      "command": "cargo test --manifest-path desktop/src-tauri/Cargo.toml",
+      "status": "passed",
+      "passed": 10,
+      "ignored": 1,
+      "ignore_reason": "Real macOS Keychain round trip is explicitly opt-in."
+    },
+    {
+      "name": "Shared contracts, gateway, and mobile",
+      "command": "make test-contracts test-gateway test-mobile",
+      "status": "passed",
+      "contracts_passed": 19,
+      "gateway_passed": 28,
+      "mobile_passed": 96,
+      "type_checks": "passed"
+    },
+    {
+      "name": "Production frontend build",
+      "command": "npm run build --prefix desktop",
+      "status": "passed",
+      "advisory": "Existing large Vite output chunk advisory."
+    },
+    {
+      "name": "Repository checks",
+      "command": "make check",
+      "status": "passed"
+    },
+    {
+      "name": "Editorial and author workflow evaluations",
+      "command": "make test-canon-eval test-editorial-eval test-writing-quality test-author-workflow",
+      "status": "passed",
+      "provider": "offline",
+      "literary_quality": "unassessed"
+    },
+    {
+      "name": "Original product challenge cases",
+      "source": "docs/product-review-challenges.json",
+      "results": "challenges.json",
+      "status": "passed",
+      "cases": 8,
+      "unexpected_findings": 0,
+      "missed_expected_findings": 0,
+      "limitation": "Recorded synthetic cases are not an independent accuracy benchmark."
+    },
+    {
+      "name": "Browser authoring journeys",
+      "command": "OPENAUTHOR_BROWSER_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:e2e --prefix desktop -- e2e/authoring.spec.ts e2e/context-budget.spec.ts e2e/editorial-workspace.spec.ts e2e/storyline-journey.spec.ts",
+      "status": "passed",
+      "unique_journeys_passed": 5,
+      "provider": "offline",
+      "core": "real Python engine with disposable projects",
+      "verification_sequence": "Four journeys passed in the combined run. A stale assertion expecting an undone badge was changed to assert the restored manuscript text. Both Storyline journeys then passed on the final rerun; product code was unchanged between these runs.",
+      "journeys": [
+        "Write, review, apply, undo, and reopen saved manuscript",
+        "Preserve oversized chapter question and retry with scoped context",
+        "Restore tabs and caret, relocate after external edit, jump to exact evidence, and verify wide/narrow layout",
+        "Open scene follows the active Storyline before writing resumes",
+        "Compare alternate ending, retain chapter context, integrate selected scene, and undo to exact original prose"
+      ]
+    }
+  ],
+  "remaining_evaluation": [
+    "Broader literary judgment on a connected, author-reviewed chapter",
+    "False-positive and review-burden assessment for broader suggestion and Memory extraction",
+    "Fresh packaged GUI restart, signed distribution, and physical-device release acceptance"
+  ]
+}

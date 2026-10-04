@@ -1,0 +1,15 @@
+Command: npx vitest run src/components/editor/VoicePreservation.test.tsx src/components/editor/WritingVoiceEditor.test.tsx src/components/editor/VoiceAssessment.test.tsx
+Working directory: desktop
+Exit code: 0
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ Test Files  3 passed (3)
+      Tests  28 passed (28)
+   Start at  13:13:32
+   Duration  1.88s (transform 542ms, setup 0ms, import 1.07s, tests 1.70s, environment 1.48s)
+
+Command: npx tsc --noEmit
+Working directory: desktop
+Exit code: 0
+Output: empty

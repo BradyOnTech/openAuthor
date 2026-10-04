@@ -10,6 +10,7 @@ from typing import Any
 
 from .codex import export_codex_json, replace_runtime_codex_from_snapshot
 from .project import OpenAuthorError, ProjectPaths
+from .project_locks import serialized_project_access
 
 BOOKSTATE_PATHSPEC = [
   "manuscript/scenes",
@@ -85,6 +86,7 @@ def ensure_git_repo(paths: ProjectPaths) -> None:
     raise OpenAuthorError("Project is not a git repository.")
 
 
+@serialized_project_access
 def initialize_git(paths: ProjectPaths) -> None:
   result = run_git(paths, ["rev-parse", "--show-toplevel"], check=False)
   if result.returncode == 0 and Path(result.stdout.strip()).resolve() == paths.root.resolve():
@@ -94,6 +96,7 @@ def initialize_git(paths: ProjectPaths) -> None:
     raise OpenAuthorError("Unable to initialize git repository.")
 
 
+@serialized_project_access
 def create_snapshot(paths: ProjectPaths, message: str) -> str:
   ensure_git_repo(paths)
   export_codex_json(paths)
@@ -235,6 +238,7 @@ def list_branches(paths: ProjectPaths) -> list[dict[str, Any]]:
   return items
 
 
+@serialized_project_access
 def create_branch(
   paths: ProjectPaths,
   *,
@@ -262,6 +266,7 @@ def create_branch(
   }
 
 
+@serialized_project_access
 def switch_branch(paths: ProjectPaths, *, name: str) -> dict[str, Any]:
   ensure_git_repo(paths)
   branch_name = _require_branch_name(name)
@@ -518,6 +523,7 @@ def merge_revision_pair(paths: ProjectPaths, *, base: str, head: str) -> dict[st
   }
 
 
+@serialized_project_access
 def merge_branches(
   paths: ProjectPaths,
   *,

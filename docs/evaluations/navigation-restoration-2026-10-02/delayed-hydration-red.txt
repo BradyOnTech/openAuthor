@@ -1,0 +1,241 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (44 tests | 3 failed | 41 skipped) 1953ms
+     × retains the same book's activity and panels through delayed route restoration without a cached project ID 405ms
+     × retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID 278ms
+     × uses project defaults for an initial route to a genuinely different bound book 1270ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/AppV2.workflow.test.tsx:1373:110
+    1371|       await screen.findByRole("tab", { name: "Plan" });
+    1372|       expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("a…
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+       |                                                                                                              ^
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected null not to be null
+ ❯ src/AppV2.workflow.test.tsx:1374:71
+    1372|       expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("a…
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+       |                                                                       ^
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+    1376|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected null not to be null
+ ❯ src/AppV2.workflow.test.tsx:1375:85
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+       |                                                                                     ^
+    1376|     } finally {
+    1377|       release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > uses project defaults for an initial route to a genuinely different bound book
+AssertionError: expected 'proj-ab0a8891-b9d2-4c81-9186-711a633c…' to be 'proj-ecc7bb37-05dd-42ba-98e8-05e04af5…' // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"workbench-frame"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Getting started"[39m
+          [33mclass[39m=[32m"first-run-guide"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"first-run-guide__heading"[39m
+          [36m>[39m
+            [36m<div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-weight: 650; color: var(--text-primary);"[39m
+              [36m>[39m
+                [0mGetting started[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-xs); color: var(--text-tertiary);"[39m
+              [36m>[39m
+                [0m1[0m
+                [0m/3 complete[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Hide first-run guide"[39m
+              [33mclass[39m=[32m"btn btn--ghost btn--sm"[39m
+            [36m>[39m
+              [0m×[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"display: grid; grid-template-columns: 20px 1fr; gap: var(--space-2);"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mstyle[39m=[32m"color: var(--text-ghost);"[39m
+            [36m>[39m
+              [0m○[0m
+            [36m</span>[39m
+            [36m<div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-sm); font-weight: 600; color: var(--text-primary);"[39m
+              [36m>[39m
+                [0mTry a safe revision[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"font-size: var(--text-xs); line-height: var(--leading-relaxed); color: var(--text-secondary); margin-top: 2px;"[39m
+              [36m>[39m
+                [0mOpen Changes and ask for one small, reviewable improvement.[0m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"btn btn--ghost btn--sm"[39m
+                [33mstyle[39m=[32m"margin-top: var(--space-1);"[39m
+              [36m>[39m
+                [0mOpen Changes[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"workbench workbench--no-secondary workbench--no-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"activity-bar"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Manuscript (Cmd+Shift+E)"[39m
+              [33maria-pressed[39m=[32m"true"[39m
+              [33mclass[39m=[32m"activity-bar__item activity-bar__item--active"[39m
+              [33mtitle[39m=[32m"Manuscript (Cmd+Shift+E)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 2h10a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M7 6h6M7 9h6M7 12h4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Plan (Cmd+Shift+P)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"activity-bar__item"[39m
+              [33mtitle[39m=[32m"Plan (Cmd+Shift+P)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"3"[39m
+                [36m/>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"11"[39m
+                  [33my[39m=[32m"3"[39m
+                [36m/>[39m
+                [36m<rect[39m
+                  [33mheight[39m=[32m"5"[39m
+                  [33mrx[39m=[32m"1"[39m
+                  [33mwidth[39m=[32m"6"[39m
+                  [33mx[39m=[32m"3"[39m
+                  [33my[39m=[32m"12"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 14.5h5M14.5 12v5"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Story Memory (Cmd+Shift+X)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"activity-bar__item"[39m
+              [33mtitle[39m=[32m"Story Memory (Cmd+Shift+X)"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.5"[39m
+                [33mviewBox[39m=[32m"0 0 20 20"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 3h11a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V3z"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 7h14M8 3v4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Storylines (Cmd+Shift+L)"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=...
+
+Expected: "proj-ecc7bb37-05dd-42ba-98e8-05e04af5543a"
+Received: "proj-ab0a8891-b9d2-4c81-9186-711a633cd04a"
+
+ ❯ src/AppV2.workflow.test.tsx:1395:106
+    1393|     window.history.replaceState({}, "", `/w/personal-workspace/p/${dif…
+    1394|     render(<AppV2 />);
+    1395|     await waitFor(() => expect(JSON.parse(localStorage.getItem("openau…
+       |                                                                                                          ^
+    1396|     await screen.findByRole("button", { name: "Manuscript (Cmd+Shift+E…
+    1397|     expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId…
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 41 skipped (44)
+   Start at  20:50:26
+   Duration  3.35s (transform 734ms, setup 0ms, import 1.02s, tests 1.95s, environment 300ms)
+

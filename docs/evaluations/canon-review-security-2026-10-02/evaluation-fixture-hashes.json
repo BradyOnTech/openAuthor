@@ -1,0 +1,17 @@
+{
+  "baseline": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "owned_fixture_only_files": {
+    "scripts/evaluate_canon_diagnostics.py": {
+      "baseline_sha256": "8eb8d5c07f11d4bcfcbe5d82f923b2c922e60c7a4ff89b210765299657745bb0",
+      "current_sha256": "b623175a15e2fc1e9ecbc0f179578364d0510df2441883159b8c6da36c3edd96"
+    },
+    "tests/fixtures/canon_evaluation.json": {
+      "baseline_sha256": "b2a7ba5560ef3eda8799e7e31d655b4708fd7f3f7b48ddbb99191db9fe9ec6b9",
+      "current_sha256": "09c44b1cf0256cf4a7596f9d5a99c86a372c3153895cff03e7ac7c0306e1b9d0"
+    },
+    "tests/test_canon_evaluation.py": {
+      "baseline_sha256": "861c8c63724b7a7a7d7a83efe06b2eb5abd32ed0ebb01c0aa796ceb28ab4193d",
+      "current_sha256": "38147af5d23da545d603ba953eeb5b2ef31472714dbe20238f6ae44be62e0f9b"
+    }
+  }
+}

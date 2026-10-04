@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-02",
+  "source_commit": "d5aea8a311dc729c6c9d9147d29f2d1476e6d442",
+  "source_checkout_clean": true,
+  "checks": {
+    "default_python": {
+      "discovered": 548,
+      "passed": 547,
+      "optional_skip": 1
+    },
+    "actual_packaged_python": {
+      "discovered": 548,
+      "passed": 548,
+      "skipped": 0
+    },
+    "desktop": {
+      "tests": 465,
+      "files": 79,
+      "typecheck_build": "passed"
+    },
+    "browser": {
+      "journeys": 19,
+      "runtime": "Chromium; real Python core",
+      "scope": "Before transport-only publication repair; subsequent affected transport tests and full desktop suite passed"
+    },
+    "shared_gateway": {
+      "tests": 33,
+      "skipped": 0,
+      "database": "Disposable PostgreSQL 17.11",
+      "typecheck_build_rls": "passed"
+    },
+    "packaged_sigkill_stages": 5,
+    "native_gui": "Bounded read-only preview and retained documents/drafts passed"
+  },
+  "evidence_sha256": {
+    "core-default-final.txt": "515b1e2eac403f0e494e8a1dfa58c6d782b7aa103babc2e8989bd69a13dbf15e",
+    "packaged-core-final.txt": "0133cc719b6cce2a49b378c003c7d1abb454a715176e0191ca159df21052db0e",
+    "desktop-final.txt": "2a36fab16318a2b8113352f30b1b9677bcca77e2c23fd4872460bd68a67db551",
+    "desktop-final-build.txt": "af24c47273805e5abb34b89857fb7d003aed5c48a978a66e6bdd4ddc43e33db2",
+    "browser-final.txt": "2b56b392db7c46910d5d50a848de7ed8429f585e21e3aa2c5d2292d41c01f9fa",
+    "repo-final-check.txt": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+    "native-final-build.txt": "621266e9092948acb70b1422f836b1126d858bc1f4b93379f8e87c3975e17dc7",
+    "native-bundle-final-check.txt": "5f5989084ba14bbc7f4d6d507306121f8d240aaf2ae6f45a7c37af9d0c64f7b6",
+    "native-bundle.json": "700e4b23aeffad26abc86cb24e95f70f4b05f1e3396e4fb96feebb36089935be",
+    "native-gui-memory-preview.json": "644a92ae7a8a2cd4d5b0e47fed9e043553a77676fd92a6ba5d15fd9e57ef9d65"
+  },
+  "release_certified": false,
+  "remaining_ledger": "requirements.json"
+}

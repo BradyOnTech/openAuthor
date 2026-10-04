@@ -1,0 +1,26 @@
+{
+  "schema": "openauthor.voice.session",
+  "schema_version": 1,
+  "session_id": "voice_mara_0042",
+  "project_id": "project_glass_harbor",
+  "project_revision": "rev_7e3c1a",
+  "device_id": "device_mara_phone",
+  "channel": "mobile_voice",
+  "state": "ended",
+  "transport": "webrtc",
+  "model": "gpt-realtime",
+  "voice": "marin",
+  "context_pack": {
+    "schema": "openauthor.context-pack.reference",
+    "schema_version": 1,
+    "pack_id": "ctx_glass_harbor_0042",
+    "project_id": "project_glass_harbor",
+    "project_revision": "rev_7e3c1a",
+    "content_sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "audio_retention": "none",
+  "transcript_retention": "project_chat",
+  "started_at": "2026-08-30T15:04:05.000Z",
+  "ended_at": "2026-08-30T15:04:12.000Z",
+  "last_event_sequence": 18
+}

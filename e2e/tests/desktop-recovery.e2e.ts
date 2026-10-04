@@ -1,0 +1,61 @@
+import { test } from "@e2e-dev/web";
+import { expect } from "e2e";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { desktopBook } from "../support/desktopBook.ts";
+
+test("desktop repairs missing workspace storage and restores a verified backup without overwriting another book", { tags: ["desktop", "recovery", "backup", "startup-health", "hygiene"], timeout: 150_000 }, async ({ app, browser, screen }) => {
+  const book = await desktopBook(browser);
+  try {
+    await app.open("/");
+    await screen.getByRole("button", "New Project").tap();
+    await screen.getByRole("textbox", "Novel title").fill("The Lantern Cartographer");
+    await screen.getByRole("textbox", "Project folder").fill(book.projectRoot);
+    await screen.getByRole("button", "Create novel").tap();
+    await expect(screen.getByRole("button", "Add Scene")).toBeVisible();
+    await screen.getByRole("button", "Hide first-run guide").tap();
+    await book.json(["scene", "add", "--title", "Home", "--body", "Mara carried the brass map case home."]);
+    await book.json(["plan", "brief", "--synopsis", "The map returns home."]);
+    await rm(join(book.projectRoot, ".openauthor", "generations"), { recursive: true });
+    expect((await book.json(["check", "startup"])).ready).toBe(false);
+    await browser.reload();
+    await expect(screen.getByText("This project needs attention before safe revision")).toBeVisible();
+    await screen.getByRole("button", "Run Safe Repair").tap();
+    await expect(screen.getByText("Project health repaired and ready.")).toBeVisible();
+    expect((await book.json(["check", "startup"])).ready).toBe(true);
+    await screen.getByRole("button", /^Checks \(/).tap();
+    await screen.getByRole("button", "Run hygiene checks").tap();
+    await expect(screen.getByRole("button", /Scene summary is empty/)).toBeVisible();
+    await screen.getByRole("button", /Scene summary is empty/).tap();
+    await expect(screen.getByRole("textbox", "Scene prose")).toHaveValue("Mara carried the brass map case home.\n");
+
+    const archive = join(book.sandbox, "book.zip");
+    await screen.getByRole("button", /^Settings \(/).tap();
+    await screen.getByRole("textbox", "Backup file").fill(archive);
+    await screen.getByRole("button", "Create verified backup").tap();
+    await expect(screen.getByRole("status").filter({ hasText: "Verified backup saved" })).toBeVisible();
+    expect((await readFile(archive)).length).toBeGreaterThan(1000);
+    const newer = "Mara followed a different map beyond the city.";
+    await book.json(["scene", "update", "--id", "scene-0001", "--body", newer]);
+    await screen.getByRole("button", "Projects").tap();
+    await screen.getByRole("button", "Restore backup").tap();
+    const recovery = screen.getByRole("region", "Backup recovery");
+    await recovery.getByRole("textbox", "Backup to restore").fill(archive);
+    const occupied = join(book.sandbox, "occupied");
+    await mkdir(occupied);
+    await writeFile(join(occupied, "keep.txt"), "Another folder's contents.");
+    await recovery.getByRole("textbox", "Recovery folder").fill(occupied);
+    await recovery.getByRole("button", "Verify and restore").tap();
+    await expect(screen.getByRole("alert")).toContainText(/empty|exists|overwrite/i);
+    expect(await readFile(join(occupied, "keep.txt"), "utf8")).toBe("Another folder's contents.");
+    const restoredRoot = join(book.sandbox, "restored");
+    await recovery.getByRole("textbox", "Recovery folder").fill(restoredRoot);
+    await recovery.getByRole("button", "Verify and restore").tap();
+    await expect(screen.getByRole("button", "Projects")).toBeVisible();
+    const restored = await book.json(["scene", "get", "--id", "scene-0001"], restoredRoot);
+    expect(restored.body.trimEnd()).toBe("Mara carried the brass map case home.");
+    expect((await book.json(["plan", "get"], restoredRoot)).brief.synopsis).toBe("The map returns home.");
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body.trimEnd()).toBe(newer);
+    expect(await book.errors()).toEqual([]);
+  } finally { await book.close(); }
+});

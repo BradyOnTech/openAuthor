@@ -1,0 +1,12 @@
+{
+  "supabase/migrations/20261002200000_registry_read_authority.sql": "e73acd7792c16ded59887c886e4f0ded8dd71382fc0d45b27db74d498c4ddcd0",
+  "supabase/tests/registry_read_authority.sql": "dadec6e8db6d5469192ad58593ac6bd335f855b7d7b340ccfe248121a90d9e0b",
+  "docs/evaluations/registry-read-authority-2026-10-02/evaluate.py": "547cd0b55c5ecb95feab0cfa2e87385fba405e136683c1facf64c210f2c00c5e",
+  "docs/evaluations/registry-read-authority-2026-10-02/README.md": "2d6317952f5ac722bcd82ddd89fe585f751197e4a6db32dc587821ce80e8500c",
+  "docs/evaluations/registry-read-authority-2026-10-02/baseline-red.txt": "53712887c65aac4bad8668738e9bf6dbf19de43d410f06255b977bbf95bf7c66",
+  "docs/evaluations/registry-read-authority-2026-10-02/current-green.txt": "efbac459d7d7265a2d2036e79ef60609fb9b32aadadf5757701008ca41358fe3",
+  "docs/evaluations/registry-read-authority-2026-10-02/results.json": "e78ea636481b031b96af53c8d076aa953147f6a577da6e37eb2b5a81de53ced1",
+  "docs/evaluations/registry-read-authority-2026-10-02/baseline-sql-inputs.tar.gz": "2e5795e040109d2edcd64bbc75104472c9975d6fd57a5f2218d84921bec378ce",
+  "docs/evaluations/registry-read-authority-2026-10-02/current-sql-inputs.tar.gz": "7bee4694316a055ff08854a2c266f5b87f9b0c1cca780010ac9cf295c3993f3d",
+  "docs/evaluations/registry-read-authority-2026-10-02/source-and-evidence.tar.gz": "54bb0bdee57d32d9fb594546c490d17dd916650229404cecb0d785226bd1bd70"
+}

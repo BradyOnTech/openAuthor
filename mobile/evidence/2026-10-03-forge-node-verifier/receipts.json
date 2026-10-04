@@ -1,0 +1,515 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-03T13:39:32.577626+00:00",
+  "archives": {
+    "initial-node-backport.tar.gz": {
+      "file_count": 48,
+      "archive_sha256": "375efd625d8548b352f410b62d3e63c3ecbb584fa7c111d7b85174c7f3338ec5",
+      "members": {
+        "after-inputs.json": {
+          "sha256": "5f4e221b1cb76d185bc3f254399787e61be5d4299d6292031606e69a7a0681b0",
+          "bytes": 11077,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/after-inputs.json"
+        },
+        "apply-invocation.json": {
+          "sha256": "13775db2d29e4ef4aee4c6dcc2ff899451ffd181ff2e21c04593e5f6b2bb3c3e",
+          "bytes": 421,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/apply-invocation.json"
+        },
+        "apply.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/apply.stderr.txt"
+        },
+        "apply.stdout.txt": {
+          "sha256": "1ef7bd637a3bf2a0068a0e1d9941fe32fa3c7c523d48d50248e9f8cbd92bf4a9",
+          "bytes": 838,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/apply.stdout.txt"
+        },
+        "before.json": {
+          "sha256": "7d8a6f2d310684a7ddc24001f5159748c39cd7668dda4e58631e5e833a689f86",
+          "bytes": 11961,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/before.json"
+        },
+        "check-invocation.json": {
+          "sha256": "331322c33d1b8028ddb95603917f4bfd144c5c038194bdaf9b10f758576edb8b",
+          "bytes": 421,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/check-invocation.json"
+        },
+        "check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/check.stderr.txt"
+        },
+        "check.stdout.txt": {
+          "sha256": "6ad7256b461bcfe72ff797ab925a73e29d19f0b264ac932b96f330573a856866",
+          "bytes": 839,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/check.stdout.txt"
+        },
+        "commit-source.py": {
+          "sha256": "dd83c8969c9777e84147e17dce185f85dcf9401d50a0067d3f5246876121ae02",
+          "bytes": 1709,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/commit-source.py"
+        },
+        "export-invocation.json": {
+          "sha256": "797f2eb4fec1b8aefbffb7521b3782e5b9985fe3147054fc11ebaa4fe2c88c5b",
+          "bytes": 530,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export-invocation.json"
+        },
+        "export.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export.stderr.txt"
+        },
+        "export.stdout.txt": {
+          "sha256": "49c8d3ab5c7791fa7305d40ac1c7ba1f47a866bcf08a19d3e2fcb06bfc44ab87",
+          "bytes": 2044,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export.stdout.txt"
+        },
+        "export/_expo/static/js/android/index-8b90511b204c51dfd3e697bb38c6d7e7.hbc": {
+          "sha256": "692a62384ce0d87577cd6511a1496fd278aec3db97470d904ace48ca120ad93f",
+          "bytes": 2510520,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/_expo/static/js/android/index-8b90511b204c51dfd3e697bb38c6d7e7.hbc"
+        },
+        "export/_expo/static/js/ios/index-6ee83ebed9a32ee5b2a927a0daece206.hbc": {
+          "sha256": "fc53e8f2784102102925144411b7ec0c780865ce4ccad76746af9b5870e1268d",
+          "bytes": 2506096,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/_expo/static/js/ios/index-6ee83ebed9a32ee5b2a927a0daece206.hbc"
+        },
+        "export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js": {
+          "sha256": "d1053ec38ee6ec13cf0c47cd39c52b95f149dcf4fd9cabca5e39785b44e2dfc6",
+          "bytes": 1406758,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js"
+        },
+        "export/icon.png": {
+          "sha256": "c037af31e4ff314c2880a54ba48b83111ac29025c6294c178ca794df025647ba",
+          "bytes": 2415,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/icon.png"
+        },
+        "export/index.html": {
+          "sha256": "0aff3ce7e2844a85f67834f3608f3737ba5b482569b04bf5a1d98df2fca09549",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/index.html"
+        },
+        "export/manifest.webmanifest": {
+          "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8",
+          "bytes": 394,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/manifest.webmanifest"
+        },
+        "export/metadata.json": {
+          "sha256": "4f0a1efdd88f9025056cb064faa7d2dcdbf5bde177d0dbad22773bba3389c2be",
+          "bytes": 244,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/metadata.json"
+        },
+        "export/security-build.json": {
+          "sha256": "8704ed5d87ab147dbdf6da196bd5eb4c733ffe1d434dc6e572302f33c5b65a1f",
+          "bytes": 2603,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/export/security-build.json"
+        },
+        "final-check-invocation.json": {
+          "sha256": "a958a61c4acb0eb15e6cfa50f544620f36d37c16834aeacfda730adfe75a9ba6",
+          "bytes": 421,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-check-invocation.json"
+        },
+        "final-check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-check.stderr.txt"
+        },
+        "final-check.stdout.txt": {
+          "sha256": "7d963d4b08e9830770313b5ee2c1073bc202bec4ac1adf485a04b964a57d3f13",
+          "bytes": 938,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-check.stdout.txt"
+        },
+        "final-focused-invocation.json": {
+          "sha256": "8bf18eff83b95f3b744f594fbca6f4b487b2b5d3a36cae46654f11784f3213ef",
+          "bytes": 495,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-focused-invocation.json"
+        },
+        "final-focused.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-focused.stderr.txt"
+        },
+        "final-focused.stdout.txt": {
+          "sha256": "35f82cb4fdb8287df1d5bbd9145474dcc821c1a386735cb0ef22003e3ab18754",
+          "bytes": 1154,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-focused.stdout.txt"
+        },
+        "final-inputs.json": {
+          "sha256": "e909d097de0f538789bf487aa640934706cb4dcf8fea1d487d7aa5926d749c93",
+          "bytes": 11256,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-inputs.json"
+        },
+        "final-seven.json": {
+          "sha256": "c7feb33b20d5385d1a71fded4b35bac8638fbf89670216c98ec02dc9cbc2efb1",
+          "bytes": 1543,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/final-seven.json"
+        },
+        "focused-invocation.json": {
+          "sha256": "5e1b3cd8ec7679fa2637099070eecad225de3a1faf5780468dbe9b373ca3cbdf",
+          "bytes": 495,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/focused-invocation.json"
+        },
+        "focused.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/focused.stderr.txt"
+        },
+        "focused.stdout.txt": {
+          "sha256": "0c915ea523537fbdc67021e109144db281d4c569164088ba6a3bbaa08b0f42d9",
+          "bytes": 984,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/focused.stdout.txt"
+        },
+        "full-invocation.json": {
+          "sha256": "09a5eb1ffcf77d9dcf6d71258f0d7fdf7f1f4fb791fba6905ae488161af5d41d",
+          "bytes": 422,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/full-invocation.json"
+        },
+        "full.stderr.txt": {
+          "sha256": "959ab345ae2214ebdc8d2018b212c15e39f5b562a11781561c5aad16b15a74a2",
+          "bytes": 338,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/full.stderr.txt"
+        },
+        "full.stdout.txt": {
+          "sha256": "7f4c5983b9f3d6e5d5cff80a0339cee5662a51039f38d2e9c4c6bdf25103b2f1",
+          "bytes": 2726,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/full.stdout.txt"
+        },
+        "inputs-before.tar.gz": {
+          "sha256": "cedb869b78ec91b11d7c416812b6a5a013c9ddcb9d0d45e110d4851a9d9e6ad2",
+          "bytes": 240523,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/inputs-before.tar.gz"
+        },
+        "inputs-final.tar.gz": {
+          "sha256": "dcfd45424c6db924c6a3ff469af7d7ac87ac077a37630e0439cb70fee5fe7c0f",
+          "bytes": 247967,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/inputs-final.tar.gz"
+        },
+        "original-installed-rsa.js": {
+          "sha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+          "bytes": 60848,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/original-installed-rsa.js"
+        },
+        "preflight-invocation.json": {
+          "sha256": "52270b179ba3e90b1ca2633fe0dcd0b0ecdb50d03d1780916897049dd643bf9b",
+          "bytes": 429,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/preflight-invocation.json"
+        },
+        "preflight.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/preflight.stderr.txt"
+        },
+        "preflight.stdout.txt": {
+          "sha256": "d22202605770d6e22a7ac34209f8c3e24576eb49a7c97e307572fe2363adbf78",
+          "bytes": 1182,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/preflight.stdout.txt"
+        },
+        "run-export.py": {
+          "sha256": "6ae04c8e8ef9fb794d30a452bfb924dfd01cd284e02a897c19df4f79c1226e64",
+          "bytes": 2049,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/run-export.py"
+        },
+        "run-final.py": {
+          "sha256": "ce2a0da33816fa7fe53a1b2fde8140e7d33e6e6136ea3838b08249e29c85c0e7",
+          "bytes": 1960,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/run-final.py"
+        },
+        "run.py": {
+          "sha256": "ac33c41310e27b67e542e2e1d5b71acb999a912d58b3fd222b006feaa404bd08",
+          "bytes": 1933,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/run.py"
+        },
+        "source-commit-paths.json": {
+          "sha256": "713e1ea7c56808e629ef5b59f6f0177085da70bba749e43b0a462f242882e550",
+          "bytes": 245,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/source-commit-paths.json"
+        },
+        "source-commit.json": {
+          "sha256": "1e5cc285c374d380de3660a9578577f2dba0a99054ab4e7058f44c4b5a7bb5cc",
+          "bytes": 1101,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/source-commit.json"
+        },
+        "typecheck-invocation.json": {
+          "sha256": "f4fca74ba31d3588e412ced2d4cc101f66c866ab42fe2b59910d4fa850c1f0c5",
+          "bytes": 433,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/typecheck-invocation.json"
+        },
+        "typecheck.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/typecheck.stderr.txt"
+        },
+        "typecheck.stdout.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-root-no2y8yn4/typecheck.stdout.txt"
+        }
+      }
+    },
+    "canonical-node-verifier.tar.gz": {
+      "file_count": 41,
+      "archive_sha256": "696266cad0522c1e4ad4000a102a55d9d2eeb31ce641ab151b8727596b6eea3d",
+      "members": {
+        "commit-source.py": {
+          "sha256": "dc82361172b9e176791e8a51993e9d56ca4b790150aa614ea5655a6a9a98c042",
+          "bytes": 1747,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/commit-source.py"
+        },
+        "export/_expo/static/js/android/index-8292893dac05d3f01c6cd9dd8d85b7e6.hbc": {
+          "sha256": "5a4b713980cb0fac883f553e54e5937b957ec2109086697e284ea6db74130d6c",
+          "bytes": 2510508,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/_expo/static/js/android/index-8292893dac05d3f01c6cd9dd8d85b7e6.hbc"
+        },
+        "export/_expo/static/js/ios/index-7f054a3296efaf5eadd2d6f6d0fa721b.hbc": {
+          "sha256": "a1b9e214610519c7da31e9ac11682ab05e7a6cd28ec3d0498c3b416626cc0c3a",
+          "bytes": 2506080,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/_expo/static/js/ios/index-7f054a3296efaf5eadd2d6f6d0fa721b.hbc"
+        },
+        "export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js": {
+          "sha256": "d1053ec38ee6ec13cf0c47cd39c52b95f149dcf4fd9cabca5e39785b44e2dfc6",
+          "bytes": 1406758,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/_expo/static/js/web/index-ac7202c4e10c5061837f653e6e81f6fd.js"
+        },
+        "export/icon.png": {
+          "sha256": "c037af31e4ff314c2880a54ba48b83111ac29025c6294c178ca794df025647ba",
+          "bytes": 2415,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/icon.png"
+        },
+        "export/index.html": {
+          "sha256": "0aff3ce7e2844a85f67834f3608f3737ba5b482569b04bf5a1d98df2fca09549",
+          "bytes": 1231,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/index.html"
+        },
+        "export/manifest.webmanifest": {
+          "sha256": "f68d8925ef8265aa2a3e11d907164c4213a9f9e6b90896f684afa521c55d43e8",
+          "bytes": 394,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/manifest.webmanifest"
+        },
+        "export/metadata.json": {
+          "sha256": "4beeccaf56168ea46edd6457a46b13cbe9f7b493b6ef724eb1f15a15af847b59",
+          "bytes": 244,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/metadata.json"
+        },
+        "export/security-build.json": {
+          "sha256": "6726d4b96da9c1ed01a8ac031b7208ba768c3d9e0faa9a3499416a7a4166b97b",
+          "bytes": 2666,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/export/security-build.json"
+        },
+        "focused-invocation.json": {
+          "sha256": "4fbf86571079a24b9b09182c5551762fca9d22c52538e9641dfc6849a12c2113",
+          "bytes": 460,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/focused-invocation.json"
+        },
+        "focused.stderr.txt": {
+          "sha256": "872b4f4a3c573909e82569b39f5ebca38b0ed60ee4df29a690a28aa42f912682",
+          "bytes": 2195,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/focused.stderr.txt"
+        },
+        "focused.stdout.txt": {
+          "sha256": "6b99fa5497ebd2ecfc8a422287326e8e42901f1870ab05599fb6e737afe993c7",
+          "bytes": 2353,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/focused.stdout.txt"
+        },
+        "green-check-invocation.json": {
+          "sha256": "1b214ff56ef48debd3466bcd65d36bb836d3dfb4a23fd7bd97e0a014cf302763",
+          "bytes": 421,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-check-invocation.json"
+        },
+        "green-check.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-check.stderr.txt"
+        },
+        "green-check.stdout.txt": {
+          "sha256": "dfc820f2812a993537cdef42f466cb2ef30ba7a92b3d562b8cdd27a6428d52ec",
+          "bytes": 902,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-check.stdout.txt"
+        },
+        "green-export-invocation.json": {
+          "sha256": "da6e6f1b38d4c1200376107dd7b75e9333543f41fe81fd59c7bdd899424cd398",
+          "bytes": 532,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-export-invocation.json"
+        },
+        "green-export.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-export.stderr.txt"
+        },
+        "green-export.stdout.txt": {
+          "sha256": "d7b4bdd9b34250029eb611f0c4341afdb57b63fb3ec1b4a6e4d7fe08fa18ca08",
+          "bytes": 2046,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-export.stdout.txt"
+        },
+        "green-focused-invocation.json": {
+          "sha256": "c748ad601abf27a0f8373ce729d187335e4941f71fcc9ed126c35a6c1dcf2602",
+          "bytes": 495,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-focused-invocation.json"
+        },
+        "green-focused.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-focused.stderr.txt"
+        },
+        "green-focused.stdout.txt": {
+          "sha256": "4868898c7cefe05e59d8f435eab2cba337b5a0452b4d9edf84b7c4cc4ab23394",
+          "bytes": 1086,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-focused.stdout.txt"
+        },
+        "green-full-invocation.json": {
+          "sha256": "e6d31df1c79525bba3f9594db3691f1f9e7d052d16b02511bd23d586be67b1e5",
+          "bytes": 422,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-full-invocation.json"
+        },
+        "green-full.stderr.txt": {
+          "sha256": "d2993484a592ea9767755305f9e54ccbdfa9af074fb98f29acd50b5ce03d2543",
+          "bytes": 338,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-full.stderr.txt"
+        },
+        "green-full.stdout.txt": {
+          "sha256": "9757c7cf9f5c9bc1829e522c24097595446f11c7b0da573d1918a346c406df9a",
+          "bytes": 2728,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-full.stdout.txt"
+        },
+        "green-inputs.json": {
+          "sha256": "f90809816d1d43551a265edee82b9a7cf6d3aa6b4e1677c61150980684dbabb3",
+          "bytes": 11286,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-inputs.json"
+        },
+        "green-inputs.tar.gz": {
+          "sha256": "863ca626e2f2e1886ae4494080ace524c1d2ebbf6a0c01fedab839d9f6b6dc88",
+          "bytes": 248539,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-inputs.tar.gz"
+        },
+        "green-preflight-invocation.json": {
+          "sha256": "0a97065d27a80c288ccaba173b5c65fa24557d44b220870b32346df3f972e444",
+          "bytes": 429,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-preflight-invocation.json"
+        },
+        "green-preflight.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-preflight.stderr.txt"
+        },
+        "green-preflight.stdout.txt": {
+          "sha256": "2ff62a10acc21e0083f35193f48bbad129dba15a1dd263a2a2e2f1c2014e7d20",
+          "bytes": 1245,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-preflight.stdout.txt"
+        },
+        "green-results.json": {
+          "sha256": "baf9ba0da4143e6cf598b3326603eb2172394b59eb24e07669f8429fbb876ebd",
+          "bytes": 1562,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-results.json"
+        },
+        "green-review-hashes.json": {
+          "sha256": "76c8aba213485136fe49a6a4045451ddf9a24a91ecd658f9b3106eb8669979c7",
+          "bytes": 841,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-review-hashes.json"
+        },
+        "green-typecheck-invocation.json": {
+          "sha256": "53576146cdb81514e7000ee7bfe863af695939accf3182f17235464a5d91ee10",
+          "bytes": 433,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-typecheck-invocation.json"
+        },
+        "green-typecheck.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-typecheck.stderr.txt"
+        },
+        "green-typecheck.stdout.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/green-typecheck.stdout.txt"
+        },
+        "red-inputs.json": {
+          "sha256": "b49b499c42dac9e23b5697f8fc277435e1fcbd2514d1b129fae5b46dcf9a6502",
+          "bytes": 1033,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/red-inputs.json"
+        },
+        "red-inputs.tar.gz": {
+          "sha256": "0c0addc51e497fc5607cba5992537a09eba8c182474becfbd0ef4d596ab3e1a6",
+          "bytes": 110698,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/red-inputs.tar.gz"
+        },
+        "run-export.py": {
+          "sha256": "234bd45e78110f07f495178fefcb92bc4e383f93f0c38aea19092c011a282dad",
+          "bytes": 2076,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/run-export.py"
+        },
+        "run-green.py": {
+          "sha256": "d707870c98b5b77a27502a5fe57f33629f300d2053c1017f74289d73b75ab3ce",
+          "bytes": 1960,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/run-green.py"
+        },
+        "run.py": {
+          "sha256": "bb7d4c39b4f6a8c70890fd8c900a0d3f287c74d4fa957405311a5bb3e960143d",
+          "bytes": 1903,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/run.py"
+        },
+        "source-commit-paths.json": {
+          "sha256": "6c8581675d0b4e220f9fabfa30b113b7897ee8bfa9d877411f5955168715e303",
+          "bytes": 112,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/source-commit-paths.json"
+        },
+        "source-commit.json": {
+          "sha256": "a44c9ee8c0806fc89f93c7ecba06c825092bebea4070c3ef11a8499dbdf59d0d",
+          "bytes": 578,
+          "original_path": "/private/tmp/openauthor-forge-strict-q1f62y70/source-commit.json"
+        }
+      }
+    },
+    "source-reviews.tar.gz": {
+      "file_count": 9,
+      "archive_sha256": "09077ce4ca82579299e2466e395b9dfa6e5962d24e981b6e565ef1126ece94cf",
+      "members": {
+        "canonical/spec/findings.json": {
+          "sha256": "3d6747c816b8f3cbd6246926b605ce3eaacb5bde172274dcc1300b8d9203c343",
+          "bytes": 7044,
+          "original_path": "/private/tmp/openauthor-forge-strict-spec-review-5yhg5dc8/findings.json"
+        },
+        "canonical/spec/review.md": {
+          "sha256": "5bb26f6c489d37397acede8cf4fefaf19d47b966cd204b714165ce69cac67207",
+          "bytes": 2064,
+          "original_path": "/private/tmp/openauthor-forge-strict-spec-review-5yhg5dc8/review.md"
+        },
+        "canonical/spec/reviewed-sha256.json": {
+          "sha256": "5d35c7ff3baf14d715bfc1e2e5633cb811b56b2d475f3f3b2be5536af0ebfc81",
+          "bytes": 316,
+          "original_path": "/private/tmp/openauthor-forge-strict-spec-review-5yhg5dc8/reviewed-sha256.json"
+        },
+        "canonical/standards/findings.json": {
+          "sha256": "c0d38922e7818557db1000aaf2d62bb871bd78253cde3d65b7bb068fdf80f82b",
+          "bytes": 1553,
+          "original_path": "/private/tmp/openauthor-forge-strict-standards-review-e08kvfd5/findings.json"
+        },
+        "canonical/standards/review.md": {
+          "sha256": "154849880641ad6d04781f7db1919fd881d7ea432bd78767263abcabc50ae794",
+          "bytes": 2591,
+          "original_path": "/private/tmp/openauthor-forge-strict-standards-review-e08kvfd5/review.md"
+        },
+        "initial/spec/findings.json": {
+          "sha256": "be2939f7270b320b655db6ec62d76aad66b0bb62df39562005e5dc41c7c8c427",
+          "bytes": 3404,
+          "original_path": "/private/tmp/openauthor-forge-final-spec-review-te2bmhw_/findings.json"
+        },
+        "initial/spec/review.md": {
+          "sha256": "a1519c80e64f3a2ba585b78911f7630ee109fe4292d100470d0c3dcb0641b774",
+          "bytes": 1452,
+          "original_path": "/private/tmp/openauthor-forge-final-spec-review-te2bmhw_/review.md"
+        },
+        "initial/standards/findings.json": {
+          "sha256": "bf3b7720907f271ac24d084e20023a99d0d17dedd60b96fd3b130cbb89640633",
+          "bytes": 1201,
+          "original_path": "/private/tmp/openauthor-forge-final-standards-review-5pm73so9/findings.json"
+        },
+        "initial/standards/review.md": {
+          "sha256": "6538cf26eeac3758bb758a65632cdc851eedf86e06348c09430d975aa96a0a38",
+          "bytes": 1931,
+          "original_path": "/private/tmp/openauthor-forge-final-standards-review-5pm73so9/review.md"
+        }
+      }
+    }
+  },
+  "capture_scope": "Lossless original phase receipts/logs/helpers/input archives and normal exported artifact bytes; no ambient environment, persisted private signing keys, source-map replay or test rerun."
+}

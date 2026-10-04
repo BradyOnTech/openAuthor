@@ -1,0 +1,19 @@
+{
+  "advisory_gate": "open",
+  "supported_released_remedy_found": false,
+  "installed_rsa_source": "mobile/node_modules/node-forge/lib/rsa.js",
+  "installed_rsa_sha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+  "installed_rsa_matches_latest_public_release": true,
+  "latest_parent_comparison_to_prior_inspected_archives": {
+    "@expo/cli": {
+      "latest_version_unchanged": true,
+      "public_archive_sha256_matches_prior": true
+    },
+    "@expo/code-signing-certificates": {
+      "latest_version_unchanged": true,
+      "public_archive_sha256_matches_prior": true
+    }
+  },
+  "reason": "The current public registry latest Forge release is affected and has no first patched version in the official advisory. The upstream repair is open and unmerged. The newest official Expo certificate helper still delegates certificate/RSA/CSR verification to Forge and depends on ^1.4.0; the newest CLI still depends on Forge and that helper. The integrity-verified helper/CLI archives are unchanged from the prior inspected sources.",
+  "next_acceptance": "Adopt a supported patched release or independently reviewed replacement, re-audit the installed tree, and test the actual configured signing pipeline and signed/native artifacts. Current export containment remains a separate bounded check, not dependency remediation."
+}

@@ -1,0 +1,29 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/mobileSync/hostedCoordinator.test.ts (8 tests | 1 failed | 7 skipped) 7ms
+     × rejects a checksum-valid recovery key from another book without replacing its verified envelope key 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mobileSync/hostedCoordinator.test.ts > HostedMobileSyncCoordinator > rejects a checksum-valid recovery key from another book without replacing its verified envelope key
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/mobileSync/hostedCoordinator.test.ts:39:110
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 skipped (8)
+   Start at  11:42:25
+   Duration  195ms (transform 99ms, setup 0ms, import 115ms, tests 7ms, environment 0ms)

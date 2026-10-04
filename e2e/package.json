@@ -1,0 +1,32 @@
+{
+  "name": "openauthor-end-to-end",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "node scripts/run.mjs",
+    "test:desktop": "node scripts/run.mjs desktop",
+    "test:mobile": "node scripts/run.mjs mobile",
+    "test:backend": "node scripts/run.mjs backend",
+    "test:database": "node scripts/run.mjs database",
+    "test:all": "node scripts/run.mjs --all",
+    "test:webkit": "node scripts/run.mjs --webkit",
+    "test:native": "node scripts/run-native.mjs",
+    "list:native": "node scripts/run-native.mjs --list",
+    "typecheck": "tsc --noEmit",
+    "test:reporting": "node --test test/reporting.test.mjs",
+    "install:browsers": "playwright install chromium webkit"
+  },
+  "devDependencies": {
+    "@e2e-dev/mobile": "0.9.1",
+    "@e2e-dev/web": "0.11.2",
+    "@types/node": "22.20.1",
+    "ai": "7.0.107",
+    "e2e": "0.16.0",
+    "playwright": "1.63.0",
+    "typescript": "6.0.3"
+  }
+}

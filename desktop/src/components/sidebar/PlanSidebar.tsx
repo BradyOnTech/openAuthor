@@ -21,6 +21,9 @@ export function PlanSidebar() {
         <button className="btn btn--primary" style={{ width: "100%", marginTop: "var(--space-4)" }} onClick={() => openTab({ id: "plan", kind: "plan", label: "Plan" })}>
           Open Story Board
         </button>
+        <button className="btn" style={{ width: "100%", marginTop: "var(--space-2)" }} disabled={scenes.length === 0} onClick={() => openTab({ id: "reader", kind: "reader", label: "Read manuscript" })}>
+          Read manuscript
+        </button>
       </div>
     </>
   );

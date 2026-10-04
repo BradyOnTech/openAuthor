@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/device-enrollment/v1",
+  "title": "openAuthor Device Enrollment v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "enrollment_id", "subject_id", "project_id", "device_id", "device_name", "platform", "app_install_id", "public_key", "status", "enrolled_at"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.device-enrollment"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "enrollment_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "subject_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "device_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "device_name": {"type": "string", "minLength": 1, "maxLength": 128},
+    "platform": {"enum": ["ios", "android", "web"]},
+    "app_install_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "public_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "format", "key_id", "value", "byte_length", "fingerprint_sha256"],
+      "properties": {
+        "algorithm": {"const": "x25519-v1"},
+        "format": {"const": "raw"},
+        "key_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+        "value": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/base64url"},
+        "byte_length": {"const": 32},
+        "fingerprint_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"}
+      }
+    },
+    "status": {"enum": ["active", "revoked", "expired"]},
+    "enrolled_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "expires_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "revoked_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"}
+  }
+}

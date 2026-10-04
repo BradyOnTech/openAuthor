@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T14:16:52.424851+00:00",
+  "scope": "Synthetic temporary books; no provider calls; no user book data",
+  "results": [
+    {
+      "format": "markdown",
+      "public_cli_export_preview_import": "passed",
+      "scene_count": 1,
+      "act_count": 3,
+      "chapter_count": 4,
+      "outline": [
+        {
+          "title": "Unstarted  —  待写",
+          "chapters": []
+        },
+        {
+          "title": "Journey",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_titles": []
+            },
+            {
+              "title": "Arrival",
+              "scene_titles": [
+                "The gate"
+              ]
+            },
+            {
+              "title": "Later  plans",
+              "scene_titles": []
+            }
+          ]
+        },
+        {
+          "title": "Closing",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_titles": []
+            }
+          ]
+        }
+      ],
+      "preview_outline": [
+        {
+          "title": "Unstarted  —  待写",
+          "chapters": []
+        },
+        {
+          "title": "Journey",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_positions": []
+            },
+            {
+              "title": "Arrival",
+              "scene_positions": [
+                1
+              ]
+            },
+            {
+              "title": "Later  plans",
+              "scene_positions": []
+            }
+          ]
+        },
+        {
+          "title": "Closing",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_positions": []
+            }
+          ]
+        }
+      ],
+      "source_fingerprint": "7de25d7e24d4d2426a2b0455b0e2ab4d1b067c36dfdc647dd75be731540412ab",
+      "prose_sha256_before": "de4fa0fe2e6fcfdeb07c8dfd1d539d04079756ed721e5735e910651a182b8653",
+      "prose_sha256_after": "de4fa0fe2e6fcfdeb07c8dfd1d539d04079756ed721e5735e910651a182b8653",
+      "original_scene_files_unchanged": true,
+      "preserves": [
+        "Scene prose and metadata",
+        "Part/chapter/scene reading hierarchy, including empty parts and chapters, via openauthor-manuscript.json"
+      ],
+      "losses": [
+        "Project brief, beats, planning notes, scene timeline/labels, Story Memory and Canon, AI chats, Change Sets, Versions and Storylines are not included. Use a full backup to preserve the project.",
+        "Scene IDs and timestamps are regenerated on manuscript re-import.",
+        "Part and chapter synopses are not included; only their titles and reading hierarchy are exported.",
+        "Keep openauthor-manuscript.json with all scene files. Importing individual files without it cannot recover empty parts and chapters or their parentage."
+      ]
+    },
+    {
+      "format": "docx",
+      "public_cli_export_preview_import": "passed",
+      "scene_count": 1,
+      "act_count": 3,
+      "chapter_count": 4,
+      "outline": [
+        {
+          "title": "Unstarted  —  待写",
+          "chapters": []
+        },
+        {
+          "title": "Journey",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_titles": []
+            },
+            {
+              "title": "Arrival",
+              "scene_titles": [
+                "The gate"
+              ]
+            },
+            {
+              "title": "Later  plans",
+              "scene_titles": []
+            }
+          ]
+        },
+        {
+          "title": "Closing",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_titles": []
+            }
+          ]
+        }
+      ],
+      "preview_outline": [
+        {
+          "title": "Unstarted  —  待写",
+          "chapters": []
+        },
+        {
+          "title": "Journey",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_positions": []
+            },
+            {
+              "title": "Arrival",
+              "scene_positions": [
+                1
+              ]
+            },
+            {
+              "title": "Later  plans",
+              "scene_positions": []
+            }
+          ]
+        },
+        {
+          "title": "Closing",
+          "chapters": [
+            {
+              "title": "Unwritten",
+              "scene_positions": []
+            }
+          ]
+        }
+      ],
+      "source_fingerprint": "909935cf86301f8e3730505f20c056671709527822d967f59eff0165fe4da324",
+      "prose_sha256_before": "de4fa0fe2e6fcfdeb07c8dfd1d539d04079756ed721e5735e910651a182b8653",
+      "prose_sha256_after": "de4fa0fe2e6fcfdeb07c8dfd1d539d04079756ed721e5735e910651a182b8653",
+      "original_scene_files_unchanged": true,
+      "preserves": [
+        "Scene prose and part/chapter/scene roles, including empty parts and chapters, while openAuthor paragraph styles are retained."
+      ],
+      "losses": [
+        "Project brief, beats, planning notes, scene timeline/labels, Story Memory and Canon, AI chats, Change Sets, Versions and Storylines are not included. Use a full backup to preserve the project.",
+        "Scene IDs and timestamps are regenerated on manuscript re-import.",
+        "Part and chapter synopses are not included; only their titles and reading hierarchy are exported.",
+        "Scene metadata other than title is not represented in DOCX.",
+        "Markdown formatting syntax is exported as literal text, not typeset formatting.",
+        "Other editors can remove section styles. Without them, heading roles are inferred and empty headings may be omitted; review and correct the import preview. Files/Single strategy flattens hierarchy into prose.",
+        "Comments, tracked changes, and source typography are not available in the scene model."
+      ]
+    }
+  ],
+  "source_sha256": {
+    "openauthor/import_structure.py": "b46cf624f6ba2d772fedfad1bc1c5be5f9152d6ce585fb4ce49776eb8897277e",
+    "openauthor/manuscript_io.py": "16a39d75d94c81fe2a338847b7a5cf09e3f5709a9be471508f0f6ef5a273f91a",
+    "tests/test_outline_roundtrip.py": "06d12c92e42d677ca1af004f7cd2e241ff1331bd6bd1797bd8b15baaa6160028",
+    "tests/test_manuscript_io.py": "33deb8390fa923595de28ad2943fbf2be54e9492772c24dbbfce6932dc802403",
+    "desktop/src/components/welcome/ImportStructureReview.tsx": "bb359055bade780eb59d412dfa292d4e90f6d16e259822d567c62a766c8e801e",
+    "desktop/src/components/welcome/ImportStructureReview.test.tsx": "78b5062f0318f5801dca9fc1d3473336f96e8005f7074a859012c4d19ddfce23",
+    "desktop/src/api.ts": "96d09d7c531b539d2461cb3029622e04c9be4986411db14ef5ff6cb6cb9077a7"
+  },
+  "limits": [
+    "No Word/LibreOffice editing round trip or packaged native file-dialog acceptance was performed.",
+    "Explicit roles survive only while the Markdown manifest or DOCX paragraph styles remain available.",
+    "Deeper outline nesting, project planning details and full-book history require a full backup."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scope": "Agent direct raw freeze after root completed GUI undo retry; no normal core call; not GUI replay",
+  "captured_at": "2026-10-03T04:29:25.151893+00:00",
+  "book": "/private/tmp/openauthor-native-midwrite-sleAGq/book",
+  "journal_absent": true,
+  "head": "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a",
+  "whole_file_sha256": {
+    ".openauthor/project.json": "31ce6265b5abc54dd92d78d6fea4159d9a88c2967168ea19b8ca0f9dc72bf79d",
+    ".openauthor/revisions/HEAD": "858039cb72210264c7dd3b20dc1adbd95ba929961598ceb3ad182389c9df6e66",
+    ".openauthor/workspace/proposals/proposal-289bdde2305f.json": "89565a8c70eb5469358a9d5e3506b88c62299fecaa3424237a7412e87779a6f2",
+    ".openauthor/workspace/proposals/proposal-79f654ab9001.json": "fb8f8a316837818ad36a8c03ab41ca8a6b5517b309d2e9dadc3dd5830e41c8fd",
+    ".openauthor/workspace/proposals/proposal-a679e40226f7.json": "668a163b227c79b1412aff7e24d2e139281044051c9b50b1dcd066d69071e50d",
+    "manuscript/scenes/0001-mid-write-scene-1.md": "59190315a5bc8e1f995d9b4a6a7915ab3d74dbdeba8698ca98d58b696149a1a1",
+    "manuscript/scenes/0002-mid-write-scene-2.md": "24c019688c81db9ccbba383e3fb6d885d432316175d58a91444fb9581f4ceb82",
+    "manuscript/scenes/0003-mid-write-scene-3.md": "e9fb19b68422a445237e154d85d4a3c1048309e1425981af5cad77765302fabc"
+  },
+  "reachable_revision_record_sha256": {
+    "c20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a": "c8366094456fdb090740579b5e2ac4e1de547605751a8b111b54c9b29542b7cf",
+    "b8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a": "1a1f9845fab242a977ef32d338db442cea843003208d689b956c1cb213e39f3a",
+    "ac3d3853acbd8b1a3fd11c7fc14d8b419414b9b92f3f0f4a60802e317c8e57d9": "a02116f1b675f7e82db70268f01fb35e2866952bc953d38b160087fb02aed8d8",
+    "0073d669e916f57d0a86cd895745a8f6f58b1eb0e40deb4c8006753df97189be": "efd28b31aa30b5254590117ca0e373e31615fdc2ba3524e3668621dd7f539866",
+    "da1181cbc8540ead2c59ad6d78fe35d8b109a06d5a742a0027ce1d1d351850dc": "132adeb321a83b4ea6fb1a48077003c8c6d1b01aef12d469882bb06136d72cef",
+    "f21ad0c791629bdc9752024118cb19cf9c7c42597059d454a3e0eca0cfb0eaa7": "0a7bc570ff5be715d808d268e18c3e770b2c6867cab60ba44c668235e9dd6c83",
+    "579708933b9d859bc04021aa4ad8f06fe2acdbca3795af27146282f7c7629565": "b17491daa23293bb295c4c1438adee194f6b7924862fa5bddb882fc485d361ca"
+  },
+  "eight_files_stable_during_capture": true,
+  "all_three_original_whole_scene_files_match_preparation": true
+}

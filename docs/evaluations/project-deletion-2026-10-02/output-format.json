@@ -1,0 +1,41 @@
+{
+  "format": "Only trailing whitespace and surplus EOF lines normalized; exact original captured bytes retained in gzip archives.",
+  "outputs": {
+    "docs/evaluations/project-deletion-2026-10-02/gateway-worker-checks.txt": {
+      "captured_raw_sha256": "902e38c9920d4ea34abf4447f4441a33504eab40546d4dbc9362dc53db862638",
+      "normalized_sha256": "905e70ad36a7a08147217536fc209a8ec352d0c97114d18edaec65e6547a4bf7",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/gateway-worker-checks.txt.raw.gz",
+      "raw_archive_sha256": "1ff5ba9ed5fbbb05d9c7d2d9a8da3bd6a97313dbbd0867ac99bb83407dee9353"
+    },
+    "docs/evaluations/project-deletion-2026-10-02/initial-pg-fixture-red.txt": {
+      "captured_raw_sha256": "00f31249b7e4f07aff9243cb17ac3fdbcbcdb5b3a904758cc5a83a44585efd95",
+      "normalized_sha256": "07cb137d5f269ab26901c714c7d8b835999f03a34e9494cb7e16bc45ccdae863",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/initial-pg-fixture-red.txt.raw.gz",
+      "raw_archive_sha256": "3990c954b4ad2adb11057a758a908bbfda896eb60edf2e3c7dcd644f37efc1d0"
+    },
+    "docs/evaluations/project-deletion-2026-10-02/worker-http-green.txt": {
+      "captured_raw_sha256": "323e6d23ed27c64452b138076286c18d2381ca8c7316fe02aa01106d936f822c",
+      "normalized_sha256": "323e6d23ed27c64452b138076286c18d2381ca8c7316fe02aa01106d936f822c",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/worker-http-green.txt.raw.gz",
+      "raw_archive_sha256": "981bedb6d66a9aa5375c75f656cfa8bf014f53256d71cce47c65375ec74783c5"
+    },
+    "docs/evaluations/project-deletion-2026-10-02/worker-interface-red.txt": {
+      "captured_raw_sha256": "05d3a88224e916dd318ce0c23b5100898eadb950bed0f7e3005b19b7620c979a",
+      "normalized_sha256": "05d3a88224e916dd318ce0c23b5100898eadb950bed0f7e3005b19b7620c979a",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/worker-interface-red.txt.raw.gz",
+      "raw_archive_sha256": "f2891a55a70e3c2b80527099202ce9ddcac055ddf7e644e12a5edf792c155343"
+    },
+    "docs/evaluations/project-deletion-2026-10-02/postgres-gateway-final.txt": {
+      "captured_raw_sha256": "255de49e5c7e3e9f7fad0bb783a34984b46b91cc33f8de800a2fa3d503feb557",
+      "normalized_sha256": "0df7ab7a16828f6587329d9f186c2a3501977e085ff6e44320a4289718078774",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/postgres-gateway-final.txt.raw.gz",
+      "raw_archive_sha256": "e1ae651aa91704397a75664ebfd14c8af9835fd205079e823af65ec89459d4d2"
+    },
+    "docs/evaluations/project-deletion-2026-10-02/concurrency-upgrade-red-green.txt": {
+      "captured_raw_sha256": "868c89f68c11bbfd13c6a529f56485e86809f4c1d682be11e4ba4d624bfd7ee2",
+      "normalized_sha256": "868c89f68c11bbfd13c6a529f56485e86809f4c1d682be11e4ba4d624bfd7ee2",
+      "raw_archive": "docs/evaluations/project-deletion-2026-10-02/concurrency-upgrade-red-green.txt.raw.gz",
+      "raw_archive_sha256": "79386d0657be9fec1e38cf654af97a0a10074f1f1cc834b6552703efe5390f53"
+    }
+  }
+}

@@ -1,11 +1,26 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-20",
+  "updated_at": "2026-10-03",
   "status_definitions": {
-    "core": ["implemented", "partial", "not_started"],
-    "active_ui": ["implemented", "partial", "hidden", "not_applicable"],
-    "end_to_end": ["verified", "missing"],
-    "release": ["ready", "not_ready"]
+    "core": [
+      "implemented",
+      "partial",
+      "not_started"
+    ],
+    "active_ui": [
+      "implemented",
+      "partial",
+      "hidden",
+      "not_applicable"
+    ],
+    "end_to_end": [
+      "verified",
+      "missing"
+    ],
+    "release": [
+      "ready",
+      "not_ready"
+    ]
   },
   "capabilities": [
     {
@@ -22,6 +37,7 @@
         "desktop/src/components/onboarding/FirstRunGuide.tsx",
         "desktop/src/contexts/WorkspaceContext.tsx",
         "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/authoring.spec.ts",
         "desktop/src-tauri/src/lib.rs"
       ]
     },
@@ -36,8 +52,35 @@
       "evidence": [
         "openauthor/scenes.py",
         "desktop/src/components/editor/SceneEditor.tsx",
+        "desktop/src/components/editor/SceneEditor.test.tsx",
+        "desktop/src/components/editor/SceneDocument.tsx",
+        "desktop/src/components/editor/SceneDocument.test.tsx",
+        "desktop/src/recoveryJournal.test.ts",
         "desktop/src/AppV2.workflow.test.tsx",
-        "desktop/src-tauri/src/lib.rs"
+        "desktop/e2e/authoring.spec.ts",
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/src/components/editor/SceneEditor.location.test.tsx",
+        "desktop/e2e/caret-keyboard.spec.ts",
+        "docs/evaluations/caret-focus-2026-10-02/verification.json"
+      ]
+    },
+    {
+      "id": "manuscript_reading",
+      "name": "Read-only manuscript and chapter reading in Plan order",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "verified",
+      "release": "not_ready",
+      "scope_note": "Chapter reading retains unassigned scenes, bounds long-chapter rendering, waits for pending saves, and opens fresh scene state for editing. Reading and export share Plan ordering. Reading position is retained per book/Storyline using a scene anchor; later navigation wins over delayed first-scene loading. Browser/real-Python evidence is not packaged or full-novel usability certification.",
+      "evidence": [
+        "openauthor/planning.py",
+        "tests/test_planning_module.py",
+        "desktop/src/components/editor/ManuscriptReader.tsx",
+        "desktop/src/components/editor/ManuscriptReader.test.tsx",
+        "desktop/src/readingPosition.test.ts",
+        "desktop/e2e/session-continuity.spec.ts",
+        "desktop/e2e/book-journey.spec.ts"
       ]
     },
     {
@@ -48,14 +91,21 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Dragging previews affected chapters, crossed scenes, act-boundary risk, and neighboring story-time markers before the move is committed.",
+      "scope_note": "The active Plan workspace stores synopsis, genre, themes, style guide, outline, acts, chapters, scene placement, beats, story-time positions, labels, and a Character Arc overview in versioned project files. Unfinished form text is retained locally per book/Storyline, and guarded brief/metadata saves refuse stale values. Dragging previews structural impact. The manuscript sidebar follows Plan order with collapsible chapters, counts, current-scene highlighting and title/chapter/POV filtering; unassigned scenes remain reachable.",
       "evidence": [
         "openauthor/planning.py",
         "tests/test_planning_module.py",
         "desktop/src/components/sidebar/PlanSidebar.tsx",
+        "desktop/src/components/sidebar/ManuscriptExplorer.tsx",
+        "desktop/src/components/sidebar/ManuscriptExplorer.test.tsx",
         "desktop/src/components/editor/PlanEditor.tsx",
+        "desktop/src/components/editor/PlanEditor.test.tsx",
+        "tests/test_session_continuity.py",
+        "docs/session-continuity.md",
         "desktop/src/AppV2.workflow.test.tsx",
-        "desktop/src-tauri/src/lib.rs"
+        "desktop/src-tauri/src/lib.rs",
+        "desktop/e2e/daily-review-polish.spec.ts",
+        "docs/evaluations/daily-review-2026-10-02/verification.json"
       ]
     },
     {
@@ -76,6 +126,7 @@
         "desktop/src/components/editor/ProposalReview.tsx",
         "desktop/src/components/editor/RevisionReview.tsx",
         "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/authoring.spec.ts",
         "desktop/src-tauri/src/lib.rs"
       ],
       "scope_note": "The verified loop creates concrete Change Sets, supports include/exclude, direct edit, regeneration, and author-comment revision per deterministic hunk, enforces protected text, previews Story Memory impact, creates coordinated multi-scene AI groups, applies those groups atomically, records content-addressed Revisions, compares history, selectively restores, and undoes. Packaged GUI automation remains open."
@@ -86,16 +137,29 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
       "evidence": [
         "openauthor/chat.py",
         "openauthor/server.py",
+        "openauthor/assistant/context.py",
+        "tests/test_assistant_context.py",
+        "openauthor/memory_context.py",
+        "tests/test_ai_context_privacy.py",
+        "openauthor/review_context.py",
+        "tests/test_review_context.py",
+        "desktop/src/components/secondary/ReviewContextReceipt.tsx",
         "desktop/src/components/secondary/ChatPanel.tsx",
+        "desktop/src/hooks/useMemoryConsent.tsx",
         "openauthor/planning.py",
-        "openauthor/story_memory.py"
+        "openauthor/story_memory.py",
+        "desktop/e2e/book-journey.spec.ts",
+        "desktop/e2e/storyline-journey.spec.ts",
+        "desktop/e2e/memory-permission.spec.ts",
+        "e2e/tests/desktop-chat-promotions.e2e.ts",
+        "desktop/e2e/chat-delivery-recovery.spec.ts"
       ],
-      "scope_note": "Assistant conversations have explicit Book, Scene, Chapter, Character, and Storyline scopes with bounded context. Replies can become Change Sets, review-first Story Memory suggestions, visible project or scene notes, or non-destructive Storyline experiments. The packaged Book-scope and promotion paths passed manual product validation; automated rendered promotion coverage remains open."
+      "scope_note": "Assistant conversations expose Book, Scene, Chapter, Character, and Storyline scopes. Browser/real-Python journeys verify scoped discussion, regeneration, note promotion, one-request Memory permission and context receipts. Shared editorial context supplies Plan order, relevant accepted canon with evidence/knowledge limits, and active Storyline intent to chat, desktop voice preparation and whole-scene generation/drafting. Memory projection does not redact previous transcripts or retract active-session data. Whole-payload budgeting, mobile editorial parity, packaged streaming and novel-scale model quality remain gates. The tester-army browser journey verifies every exposed promotion menu path with explicit Memory acceptance and Writing Voice approval, private-note exclusion, literal saved content and reload."
     },
     {
       "id": "chatgpt_subscription_provider",
@@ -142,12 +206,13 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
       "evidence": [
         "openauthor/search.py",
         "tests/test_search_module.py",
-        "desktop/src/components/sidebar/ProjectSearch.tsx"
+        "desktop/src/components/sidebar/ProjectSearch.tsx",
+        "desktop/e2e/book-journey.spec.ts"
       ]
     },
     {
@@ -156,16 +221,17 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Built-in and custom Passes are portable, the Change Set composer can apply them, and an author-facing builder captures goal, instruction, and readable evaluation criteria. The committed seven-genre, seven-Pass regression corpus measures 1.0 targeted issue reduction with zero protected-term or introduced-name canon errors.",
+      "scope_note": "Built-in and custom Passes are portable, the Change Set composer can apply them, and an author-facing builder captures goal, instruction, and readable evaluation criteria. The committed seven-genre, seven-Pass regression corpus measures 1.0 targeted issue reduction with zero protected-term or introduced-name canon errors. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "openauthor/editorial.py",
         "tests/test_editorial_module.py",
         "tests/test_editorial_evaluation.py",
         "tests/fixtures/editorial_evaluation.json",
         "scripts/evaluate_editorial_passes.py",
-        "desktop/src/components/editor/GenerateProposal.tsx"
+        "desktop/src/components/editor/GenerateProposal.tsx",
+        "e2e/tests/desktop-controls.e2e.ts"
       ]
     },
     {
@@ -174,12 +240,13 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "This is manuscript hygiene, not the evidence-backed Story Memory diagnostics planned for Phase E.",
+      "scope_note": "Deterministic manuscript hygiene findings open their affected scenes. Browser/real-Python coverage exercises the empty-summary finding; evidence-backed Story Memory diagnostics have separate Canon coverage.",
       "evidence": [
         "openauthor/checks.py",
-        "desktop/src/components/sidebar/CheckResults.tsx"
+        "desktop/src/components/sidebar/CheckResults.tsx",
+        "e2e/tests/desktop-recovery.e2e.ts"
       ]
     },
     {
@@ -199,7 +266,11 @@
         "tests/fixtures/canon_evaluation.json",
         "scripts/evaluate_canon_diagnostics.py",
         "desktop/src/components/editor/CanonMemoryEditor.tsx",
-        "desktop/src/components/editor/ProposalReview.tsx"
+        "desktop/src/components/editor/ProposalReview.tsx",
+        "desktop/src/components/editor/MemorySuggestionReview.tsx",
+        "desktop/src/components/editor/MemorySuggestionReview.test.tsx",
+        "desktop/e2e/memory-review-workspace.spec.ts",
+        "docs/evaluations/memory-review-2026-10-02/verification.json"
       ]
     },
     {
@@ -208,12 +279,13 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "The active UI exposes guided merge primitives; the author-facing Storylines product is planned for Phase F.",
+      "scope_note": "The Merge tool provides branch creation and keyboard switching, compatibility checking, conflict refusal, context-reviewed reconciliation and deliberate merge. Browser/real-Python coverage verifies divergent scene edits and preservation of both reviewed sides with the local provider. Named Storyline experiments are tracked separately by storylines_product.",
       "evidence": [
         "openauthor/git_ops.py",
-        "desktop/src/components/panel/MergePanel.tsx"
+        "desktop/src/components/panel/MergePanel.tsx",
+        "e2e/tests/desktop-merge.e2e.ts"
       ]
     },
     {
@@ -224,14 +296,15 @@
       "active_ui": "implemented",
       "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Storylines support experiment briefs, lifecycle actions, branch-backed isolation, coordinated multi-scene AI Change Sets, semantic arc/fact/setup/question deltas, pre/post impact summaries, and selective integration as atomically applied coordinated Change Sets.",
+      "scope_note": "Storylines support experiment briefs, lifecycle actions, branch-backed isolation, coordinated multi-scene AI Change Sets, semantic deltas, impact summaries and selective integration. The browser/real-Python alternate-ending journey verifies clean-tab switching, two changed scenes, selecting one for primary integration, preserving the unselected scene and undo. Unsaved-navigation and forced-crash guarantees remain release gates.",
       "evidence": [
         "openauthor/storylines.py",
         "openauthor/git_ops.py",
         "tests/test_storylines_module.py",
         "desktop/src/components/sidebar/StorylineSidebar.tsx",
         "desktop/src/components/editor/StorylineEditor.tsx",
-        "desktop/src/AppV2.workflow.test.tsx"
+        "desktop/src/AppV2.workflow.test.tsx",
+        "desktop/e2e/storyline-journey.spec.ts"
       ]
     },
     {
@@ -240,14 +313,15 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Authors explicitly select exemplar scenes; the resulting descriptive metrics guide generation without imitating an external author.",
+      "scope_note": "Authors explicitly select exemplar scenes; the resulting descriptive metrics guide generation without imitating an external author. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "openauthor/style_profile.py",
         "openauthor/ai.py",
         "tests/test_style_profile_module.py",
-        "desktop/src/components/editor/GenerateProposal.tsx"
+        "desktop/src/components/editor/GenerateProposal.tsx",
+        "e2e/tests/desktop-controls.e2e.ts"
       ]
     },
     {
@@ -256,13 +330,14 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Alternatives compare editorial intent, hunk scope, word delta, voice shape, Story Memory impact, and Canon risk before the author chooses a direction.",
+      "scope_note": "Alternatives compare editorial intent, hunk scope, word delta, voice shape, Story Memory impact, and Canon risk before the author chooses a direction. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "desktop/src/components/editor/GenerateProposal.tsx",
         "desktop/src/components/editor/AlternativeComparison.tsx",
-        "openauthor/proposals.py"
+        "openauthor/proposals.py",
+        "e2e/tests/desktop-controls.e2e.ts"
       ]
     },
     {
@@ -271,13 +346,14 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Revision comparison summarizes changed scenes and word deltas, linked intent and accepted hunks, Story Memory changes, and remaining diagnostics or unresolved setups.",
+      "scope_note": "Revision comparison summarizes changed scenes and word deltas, linked intent and accepted hunks, Story Memory changes, and remaining diagnostics or unresolved setups. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "openauthor/revisions.py",
         "tests/test_revisions_module.py",
-        "desktop/src/components/editor/RevisionReview.tsx"
+        "desktop/src/components/editor/RevisionReview.tsx",
+        "e2e/tests/desktop-authoring.e2e.ts"
       ]
     },
     {
@@ -286,12 +362,15 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
       "evidence": [
         "openauthor/budget.py",
-        "desktop/src/components/panel/BudgetPanel.tsx"
-      ]
+        "desktop/src/components/panel/BudgetPanel.tsx",
+        "e2e/tests/desktop-controls.e2e.ts",
+        "e2e/tests/backend-core.e2e.ts"
+      ],
+      "scope_note": "Browser/real-Python coverage verifies individual limit clearing, numeric validation, reset, denied generation without charge or manuscript changes, successful retry accounting and refreshed usage totals while preserving unsaved limit drafts. Core workflows also reject nonfinite, subprecision and malformed policy files without generation or manuscript changes; explicit reset repairs a malformed file. This does not certify live-provider billing."
     },
     {
       "id": "generation_run_history_basic",
@@ -301,10 +380,11 @@
       "active_ui": "partial",
       "end_to_end": "missing",
       "release": "not_ready",
-      "scope_note": "The active V2 surface is a read-only history table; comparison, rerun, pinning, export, and hardening controls are not presented as shipped.",
+      "scope_note": "The active V2 surface is a read-only history table; comparison, rerun, pinning, export, and hardening controls are not presented as shipped. A tester-army browser journey renders actual local generation records; this evidence does not broaden the partial UI scope.",
       "evidence": [
         "openauthor/generations.py",
-        "desktop/src/components/panel/RunsPanel.tsx"
+        "desktop/src/components/panel/RunsPanel.tsx",
+        "e2e/tests/desktop-controls.e2e.ts"
       ]
     },
     {
@@ -329,13 +409,14 @@
       "active_ui": "partial",
       "end_to_end": "missing",
       "release": "not_ready",
-      "scope_note": "New-project import includes structure preview, Scrivener Draft binder ordering with RTF extraction, compile exclusions, and export loss reports; packaged native automation and richer formatting fidelity remain open.",
+      "scope_note": "Import includes structure preview, Scrivener Draft ordering and compile exclusions. Browser/real-Python journeys now cover simple prose in all four import formats, exact Markdown roundtrip, and Word export in Plan order. Packaged dialogs and richer formatting fidelity remain open; active UI retains its partial status.",
       "evidence": [
         "openauthor/manuscript_io.py",
         "tests/test_manuscript_io.py",
         "desktop/src/components/welcome/WelcomeScreen.tsx",
         "desktop/src/components/editor/SettingsEditor.tsx",
-        "desktop/src/AppV2.workflow.test.tsx"
+        "desktop/src/AppV2.workflow.test.tsx",
+        "e2e/tests/desktop-interchange.e2e.ts"
       ]
     },
     {
@@ -344,15 +425,20 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Unsaved scene title/body drafts are journaled locally and prompt Restore or Discard on reopen; a forced process-termination native drill is still required.",
+      "scope_note": "Unsent drafts use independent editor-owned browser slots, sequence-specific retirement and a multiple-draft chooser; legacy entries remain readable. Guarded Restore is browser-tested, but native termination, eviction and a full disk archive remain gates. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "openauthor/project.py",
         "openauthor/scenes.py",
         "desktop/src/recoveryJournal.ts",
         "desktop/src/recoveryJournal.test.ts",
-        "desktop/src/components/editor/SceneEditor.tsx"
+        "desktop/src/components/editor/SceneEditor.tsx",
+        "openauthor/book_transactions.py",
+        "tests/test_book_transactions.py",
+        "scripts/verify_packaged_recovery.py",
+        "docs/manuscript-transactions.md",
+        "e2e/tests/desktop-authoring.e2e.ts"
       ]
     },
     {
@@ -361,16 +447,17 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "Project load checks directories, write access, revision storage, scene integrity, Codex storage, disk space, and the Python runtime. Blocking failures expose a safe repair action; clean-machine packaged-app automation remains open.",
+      "scope_note": "Project load checks directories, write access, revision storage, scene integrity, Codex storage, disk space, and the Python runtime. Blocking failures expose a safe repair action; clean-machine packaged-app automation remains open. Source-level tester-army browser journeys use disposable books, real Python and the local provider; native and live-provider acceptance remain separate.",
       "evidence": [
         "openauthor/hardening.py",
         "openauthor/cli.py",
         "tests/test_hardening_module.py",
         "desktop/src/api.ts",
         "desktop/src/contexts/WorkspaceContext.tsx",
-        "desktop/src/components/workbench/Workbench.tsx"
+        "desktop/src/components/workbench/Workbench.tsx",
+        "e2e/tests/desktop-recovery.e2e.ts"
       ]
     },
     {
@@ -379,14 +466,15 @@
       "visible": true,
       "core": "implemented",
       "active_ui": "implemented",
-      "end_to_end": "missing",
+      "end_to_end": "verified",
       "release": "not_ready",
-      "scope_note": "A strict allowlist records only content-free scalar events inside the local project. The Settings dashboard shows golden-loop milestones, active days, review decisions, apply/undo depth, retention controls, and an on-device collection toggle. No external telemetry transport exists.",
+      "scope_note": "A strict allowlist records content-free scalar events inside the local project. Rendered coverage verifies golden-loop milestones, active days, review decisions, apply/undo counts, paused recording, collection persistence and exact stored event privacy. Settings displays retention information; changing retention and deleting signals remain CLI-only. No external telemetry transport exists.",
       "evidence": [
         "openauthor/product_signals.py",
         "tests/test_product_signals.py",
         "desktop/src/components/editor/SettingsEditor.tsx",
-        "desktop/src/api.ts"
+        "desktop/src/api.ts",
+        "e2e/tests/desktop-product-signals.e2e.ts"
       ]
     },
     {
@@ -420,7 +508,9 @@
         "scripts/verify_macos_bundle.sh",
         "desktop/src-tauri/src/lib.rs",
         "desktop/src-tauri/tauri.conf.json",
-        ".github/workflows/release-macos.yml"
+        ".github/workflows/release-macos.yml",
+        "scripts/verify_packaged_sources.py",
+        "docs/evaluations/project-completion-2026-10-02/native-bundle.json"
       ]
     },
     {

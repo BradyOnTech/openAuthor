@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-02",
+  "environment": "Playwright Chromium headless shell 1217; Vite desktop UI with real Python core in disposable local project; deterministic local provider.",
+  "changed_source": [
+    "desktop/src/components/secondary/ChatContextReview.tsx",
+    "desktop/src/components/secondary/ChatPanel.tsx"
+  ],
+  "focused_validation": {
+    "typescript": "passed",
+    "tests": 42,
+    "test_files": [
+      "desktop/src/ChatContextReview.test.tsx",
+      "desktop/src/ChatPanel.recovery.test.tsx",
+      "desktop/src/AppV2.workflow.test.tsx"
+    ]
+  },
+  "browser": {
+    "test": "desktop/e2e/memory-permission.spec.ts",
+    "result": "passed",
+    "seconds": 7.5,
+    "log": "/private/tmp/openauthor-long-memory-browser-2026-10-02.log"
+  },
+  "verified": [
+    "Selected ask-first entity exposes permission control before the first preview; no preview is created before the grant in the transport-level regression.",
+    "No chat messages are persisted before explicit Send reviewed context, including after granting permission.",
+    "Approved context pack includes the selected public entity description and excludes its private author notes; private notes remain saved locally.",
+    "Regeneration retains original character scope, requires a fresh unchecked grant, and preserves a different unfinished composer question on cancellation or success.",
+    "Selected excluded entity offers no grant and disables reviewed send while preserving the question on return.",
+    "Permission metadata or context preview failures disable sending; reviewed send carries the current context fingerprint.",
+    "Existing pending delivery recovery regression remains green."
+  ],
+  "screenshots": [
+    "memory-permission.png",
+    "memory-permission-reviewed.png",
+    "memory-regeneration-fresh-permission.png",
+    "memory-permission-excluded.png"
+  ],
+  "limitations": [
+    "Browser journey uses a local deterministic provider; no external provider data transmission was exercised.",
+    "Pack assertions inspect provider_context entity IDs and projected content plus the privacy receipt; legacy memory_access.approved_ids does not enumerate granular memory_approvals.",
+    "These screenshots do not establish native packaged-app lifecycle behavior or broad extraction/editorial quality."
+  ],
+  "screenshots_captured_in": "Full desktop rerun: /private/tmp/openauthor-desktop-browser-reviewed-2026-10-02.log",
+  "visual_inspection": {
+    "result": "inspected",
+    "viewport": "1400x900",
+    "observations": [
+      "Permission metadata, unchecked/checked grants, exclusion reason and disabled send are legible; approved preview remains scrollable."
+    ]
+  }
+}

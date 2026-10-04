@@ -1,0 +1,9 @@
+{
+  "ci-failure.json": "ca0bd35a6658540fbf8e336334cea931b6e9a7bd5c3e1f80f4f52831926a4e93",
+  "ci-failure.png": "c73bec007b104c472a1183c3d991eb585608e65adb66f06c0a52ddc5b826dd8a",
+  "ci-red.txt.gz": "6478801348b1d85424ef19af5d4f4fb9838099f965bd7bd92cccdae77a418f02",
+  "cold-green.txt.gz": "7ee878cb5cf20c9f8335bf5b7757e041ecf1ffa486d953f85034419f8edee16d",
+  "review.md": "aab1ffdad6ef17e492b1eaa1cf2e2743979723c741a735bee0a8dab79ff6621e",
+  "source-sha256.json": "917ebace31575e3598f26bfa993e2cde1e47f2fa02c9bb8eff262eeab4e40e04",
+  "verification.json": "7909a651afc84b36c7dc961c30bd89757af8954d0557b4bf07b972eb5c07d22c"
+}

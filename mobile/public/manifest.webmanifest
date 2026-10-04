@@ -1,0 +1,12 @@
+{
+  "id": "/",
+  "name": "openAuthor Companion",
+  "short_name": "openAuthor",
+  "description": "Read your novel, talk with Copilot, and capture ideas for desktop review.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0c0d12",
+  "theme_color": "#0c0d12",
+  "icons": [{ "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}

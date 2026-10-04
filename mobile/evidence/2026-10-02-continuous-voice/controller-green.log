@@ -1,0 +1,12 @@
+
+> openauthor-mobile@0.1.0 test
+> vitest run test/voiceController.test.ts
+
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  11:05:45
+   Duration  128ms (transform 39ms, setup 0ms, import 49ms, tests 7ms, environment 0ms)

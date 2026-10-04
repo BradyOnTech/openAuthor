@@ -1,0 +1,12 @@
+{
+  "native_app_quit_via_cua": true,
+  "finder_qa_window_closed_original_developer_window_restored": true,
+  "exact_qa_processes_remaining_before_cleanup": [],
+  "owned_serve_sidecars_terminated": 0,
+  "author_hashes": {
+    ".openauthor/project.json": "a6917fd95ec8d7a2d23a0e5255a77b42e2629e35dfe74f7149af171f60d5fcae",
+    ".openauthor/product_events.jsonl": "ff1a7d7864ef2d369e8b2a4377d5934f5787694de1485370d35f048b91a7fe9b",
+    ".openauthor/product_signals.json": "b2fab254d7c657909936d72a7d13d30d9f9b6dfa3030a222942fd45b5be74a07",
+    "codex/suggestions.json": "a676e20c4ce4377fad061f3fa397bb4896d38d119f1bb93beb96d1a5c4047598"
+  }
+}

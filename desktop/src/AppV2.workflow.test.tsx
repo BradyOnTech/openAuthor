@@ -1,16 +1,26 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { invoke as mockedInvoke } from "@tauri-apps/api/core";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppV2 } from "./AppV2";
+import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
+import * as projectRegistry from "./projectRegistry";
+import { setProjectBinding } from "./projectBindings";
 
 const harness = vi.hoisted(() => ({
   initialized: false,
+  bookScope: "a".repeat(64),
   projectId: "proj-golden-loop",
   projectRoot: "/tmp/openauthor-golden-loop",
   scenes: [] as Array<Record<string, unknown>>,
+  sceneListWait: null as Promise<void> | null,
+  pickedFolder: null as string | null,
+  projectInspectGate: null as null | ((root: string) => Promise<{ project_id: string; name: string }>),
+  projectInitGate: null as null | (() => Promise<void>),
+  undoBatchError: "",
+  undoBatchWait: null as Promise<void> | null,
   proposals: [] as Array<Record<string, unknown>>,
   runs: [] as Array<Record<string, unknown>>,
   entities: [] as Array<Record<string, unknown>>,
@@ -33,6 +43,7 @@ const harness = vi.hoisted(() => ({
   currentBranch: "main",
   calls: [] as string[][],
   saveGate: null as null | (() => Promise<void>),
+  sceneSaveConflict: false,
   sceneListGate: null as null | ((root: string, rows: Array<Record<string, unknown>>) => Promise<Array<Record<string, unknown>>>),
   briefGate: null as null | (() => Promise<void>),
   briefWriteBranches: [] as string[],
@@ -52,6 +63,19 @@ function response(payload: unknown, status = 0) {
   };
 }
 
+function editableScene(scene: Record<string, unknown> | undefined) {
+  if (!scene) return scene;
+  // This rendered contract fixture supplies version shape only. Real digest
+  // and Storyline comparisons run in the Python/native/browser tests.
+  return { ...scene, edit_version: {
+    schema_version: 1,
+    scene_id: scene.id,
+    workspace: harness.bookScope,
+    storyline: harness.currentBranch,
+    fields: Object.fromEntries(["title", "body", "summary", "pov", "status"].map((field) => [field, "b".repeat(64)])),
+  } };
+}
+
 function argument(args: string[], name: string): string {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] ?? "" : "";
@@ -63,6 +87,7 @@ function hasArgument(args: string[], name: string): boolean {
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command: string, payload: { projectRoot?: string; args?: string[] }) => {
+    if (command === "pick_folder") return harness.pickedFolder;
     if (command === "project_status") {
       return {
         found: harness.initialized,
@@ -82,6 +107,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     const action = args[1];
 
     if (root === "init") {
+      if (harness.projectInitGate) await harness.projectInitGate();
       harness.initialized = true;
       harness.projectRoot = args[1];
       harness.projectId = argument(args, "--project-id") || harness.projectId;
@@ -96,6 +122,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ project_id: harness.projectId, name: "Golden Novel" });
     }
     if (root === "project" && action === "inspect") {
+      if (harness.projectInspectGate) return response(await harness.projectInspectGate(payload.projectRoot || ""));
       return response({ project_id: harness.projectId, name: "Golden Novel" });
     }
     if (root === "backup") {
@@ -137,6 +164,7 @@ vi.mock("@tauri-apps/api/core", () => ({
       return response({ scene_count: harness.scenes.length, target: argument(args, "--target"), losses: ["Story Memory and history are not included; use a full backup."], report_path: "/tmp/export.report.json" });
     }
     if (root === "scene" && action === "list") {
+      if (harness.sceneListWait) await harness.sceneListWait;
       const rows = harness.scenes.map(({ body, ...scene }) => ({ ...scene, word_count: String(body ?? "").trim() ? String(body).trim().split(/\s+/).length : 0 }));
       return response(harness.sceneListGate ? await harness.sceneListGate(payload.projectRoot || "", rows) : rows);
     }
@@ -157,22 +185,30 @@ vi.mock("@tauri-apps/api/core", () => ({
       };
       harness.scenes.push(created);
       harness.plan.unassigned_scene_ids.push(sceneId);
-      return response(created);
+      return response(editableScene(created));
     }
     if (root === "scene" && action === "get") {
-      return response(harness.scenes.find((scene) => scene.id === argument(args, "--id")));
+      return response(editableScene(harness.scenes.find((scene) => scene.id === argument(args, "--id"))));
     }
     if (root === "scene" && action === "update") {
       harness.saveRoots.push(payload.projectRoot || "");
       const scene = harness.scenes.find((item) => item.id === argument(args, "--id"));
       if (!scene) return response("Unknown scene", 1);
+      if (!hasArgument(args, "--expected-version")) throw new Error("Rendered editor omitted its loaded scene version.");
       if (harness.saveGate) await harness.saveGate();
+      if (harness.sceneSaveConflict) return response({ error: {
+        code: "scene_edit_conflict",
+        reason: "scene_changed",
+        current: editableScene(scene),
+        conflicting_fields: ["body"],
+        recovery_path: "",
+      } }, 3);
       if (hasArgument(args, "--title")) scene.title = argument(args, "--title");
       if (hasArgument(args, "--summary")) scene.summary = argument(args, "--summary");
       if (hasArgument(args, "--pov")) scene.pov = argument(args, "--pov");
       if (hasArgument(args, "--status")) scene.status = argument(args, "--status");
       if (hasArgument(args, "--body")) scene.body = argument(args, "--body");
-      return response(scene);
+      return response(editableScene(scene));
     }
     if (root === "codex" && action === "list") return response(harness.entities);
     if (root === "codex" && action === "add") {
@@ -210,7 +246,9 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "review") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
       if (!suggestion) return response("Unknown suggestion", 1);
+      if (!suggestion.review_version || argument(args, "--expected-version") !== suggestion.review_version) return response("Memory suggestion changed; review the current evidence", 1);
       suggestion.status = argument(args, "--disposition");
+      suggestion.review_version = `${suggestion.review_version}:decided`;
       if (suggestion.status === "accepted" && suggestion.kind === "relationship_create") {
         const existing = harness.relationships.find((row) => row.source_entity_id === suggestion.source_entity_id && row.target_entity_id === suggestion.target_entity_id && row.relation === suggestion.relation);
         if (!existing) {
@@ -235,9 +273,12 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "correct") {
       const suggestion = harness.suggestions.find((row) => row.id === argument(args, "--id"));
       if (!suggestion) return response("Unknown suggestion", 1);
+      if (!suggestion.review_version || argument(args, "--expected-version") !== suggestion.review_version) return response("Memory suggestion changed; review the current evidence", 1);
       suggestion.name = argument(args, "--name") || suggestion.name;
       suggestion.description = argument(args, "--description") || suggestion.description;
+      if (hasArgument(args, "--entity-type")) suggestion.entity_type = argument(args, "--entity-type");
       suggestion.author_corrected = true;
+      suggestion.review_version = `${suggestion.review_version}:corrected`;
       return response(suggestion);
     }
     if (root === "memory" && action === "fact-list") return response(harness.facts);
@@ -252,9 +293,11 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (root === "memory" && action === "fact-review") {
       const fact = harness.facts.find(row => row.id === argument(args, "--id"));
       if (!fact) return response("Unknown fact", 1);
+      if (argument(args, "--expected-version") !== fact.edit_version) return response("Canon Fact or Storyline changed", 1);
       fact.status = argument(args, "--disposition");
       if (argument(args, "--evidence-json")) fact.evidence = JSON.parse(argument(args, "--evidence-json"));
       fact.updated_at = "2026-09-30T20:00:00Z";
+      fact.edit_version = `${fact.edit_version}:reviewed`;
       return response(fact);
     }
     if (root === "check" && action === "startup") {
@@ -364,6 +407,34 @@ vi.mock("@tauri-apps/api/core", () => ({
         provenance: { provider: "local", model: "local-deterministic", generation_id: "gen-draft", citations: [] },
       };
       return response(proposal);
+    }
+    if (root === "proposal" && action === "apply-batch") {
+      const ids = args.flatMap((value, index) => value === "--id" ? [args[index + 1]] : []);
+      const proposals = harness.proposals.filter((row) => ids.includes(String(row.id)));
+      for (const proposal of proposals) {
+        const scene = harness.scenes.find((row) => row.id === proposal.scene_id)!;
+        proposal.original_body = scene.body;
+        scene.body = proposal.proposed_body;
+        proposal.status = "applied";
+        proposal.applied_changes = true;
+        proposal.pre_apply_snapshot = "group-before";
+        proposal.applied_revision = "group-after";
+        proposal.coordinated_undo_available = true;
+      }
+      return response({ change_group_id: proposals[0]?.change_group_id, applied_revision: "group-after", proposal_ids: ids, scene_ids: proposals.map((row) => row.scene_id), proposals });
+    }
+    if (root === "proposal" && action === "undo-batch") {
+      if (harness.undoBatchWait) await harness.undoBatchWait;
+      if (harness.undoBatchError) return response(harness.undoBatchError, 1);
+      const proposals = harness.proposals.filter((row) => row.applied_revision === argument(args, "--revision"));
+      const scenes = proposals.map((proposal) => {
+        const scene = harness.scenes.find((row) => row.id === proposal.scene_id)!;
+        scene.body = proposal.original_body;
+        proposal.undone_at = "2026-09-11T12:03:00Z";
+        proposal.undo_revision = "group-undo";
+        return editableScene(scene);
+      });
+      return response({ change_group_id: proposals[0]?.change_group_id, applied_revision: "group-after", undo_revision: "group-undo", proposal_ids: proposals.map((row) => row.id), scene_ids: proposals.map((row) => row.scene_id), proposals, scenes, warnings: [] });
     }
     if (root === "proposal" && action === "apply") {
       const proposal = harness.proposals.find((item) => item.id === argument(args, "--id"));
@@ -570,6 +641,29 @@ vi.mock("@tauri-apps/api/core", () => ({
   }),
 }));
 
+type FolderSelectionMethod = "attach" | "scaffold" | "archive" | "folder";
+
+// Exercise the public selection methods used by folder/import callers, including
+// a newer explicit close while their file initialization or inspection awaits.
+function FolderSelectionControls({ method, onFinished }: { method: FolderSelectionMethod; onFinished: (result: boolean) => void }) {
+  const workspace = useWorkspace();
+  const start = () => {
+    const root = "/tmp/openauthor-delayed-folder-selection";
+    const result = method === "attach" ? workspace.attachProjectRoot(root)
+      : method === "scaffold" ? workspace.createLocalProjectScaffold(root, "Delayed Book")
+      : method === "archive" ? workspace.importProjectArchive("/tmp/synthetic-novel.zip", root, "Delayed Book")
+      : workspace.importProjectFolder("/tmp/synthetic-novel-source", root, "Delayed Book");
+    void result.then(onFinished);
+  };
+  return <>
+    <output aria-label="Current workspace">{workspace.activeWorkspaceId}</output>
+    <output aria-label="Selected project">{workspace.activeProjectId}</output>
+    <output aria-label="Selected folder">{workspace.projectRoot}</output>
+    <button onClick={start}>Start folder selection</button>
+    <button onClick={workspace.closeProject}>Return to Projects</button>
+  </>;
+}
+
 describe("active V2 author workflow", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
@@ -581,9 +675,16 @@ describe("active V2 author workflow", () => {
       configurable: true,
     });
     harness.initialized = false;
+    harness.pickedFolder = null;
+    harness.projectInspectGate = null;
+    harness.projectInitGate = null;
+    harness.bookScope = crypto.randomUUID().replace(/-/g, "").repeat(2);
     harness.projectId = "proj-golden-loop";
-    harness.projectRoot = "/tmp/openauthor-golden-loop";
+    harness.projectRoot = `/tmp/openauthor-golden-loop-${crypto.randomUUID()}`;
     harness.scenes.length = 0;
+  harness.sceneListWait = null;
+  harness.undoBatchError = "";
+  harness.undoBatchWait = null;
     harness.exportedBodies = [];
     harness.proposals.length = 0;
     harness.runs.length = 0;
@@ -609,6 +710,7 @@ describe("active V2 author workflow", () => {
     harness.failDraftOnce = false;
     harness.failHunkOnce = false;
     harness.saveGate = null;
+    harness.sceneSaveConflict = false;
     harness.briefGate = null;
     harness.sceneListGate = null;
     harness.briefWriteBranches.length = 0;
@@ -648,7 +750,7 @@ describe("active V2 author workflow", () => {
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
     expect((screen.getByLabelText("Protect exactly (optional)") as HTMLTextAreaElement).value).toBe("The blue gate");
     cleanup(); render(<AppV2 />);
-    await screen.findByText("Continue Save Safety");
+    await screen.findByRole("tab", { name: "Generate" });
     await user.click(screen.getByTitle(/Changes \(/));
     await user.click(screen.getByTitle("Create a reviewable Change Set"));
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
@@ -712,14 +814,23 @@ describe("active V2 author workflow", () => {
     const { user, body } = await openWritingScene();
     const excerpt = "Mara's left hand had four fingers.";
     const prose = `🌙 A quiet room. ${excerpt}`;
-    fireEvent.change(body, { target: { value: prose } });
-    harness.diagnostics.push({ id: "trait-warning", code: "prose_trait_mismatch", severity: "warning", title: "Possible physical-detail mismatch", message: "Review the character's left hand.", fact_ids: [], scene_ids: ["scene-0001"], evidence: [{ scene_id: "scene-0001", excerpt, start: [...prose.slice(0, prose.indexOf(excerpt))].length, end: [...prose].length }] });
+    expect(body.isConnected).toBe(true);
+    expect(body.readOnly).toBe(false);
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(body);
     let finish!: () => void;
-    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
+    const pendingSave = new Promise<void>(resolve => { finish = resolve; });
+    const saveGate = vi.fn(() => pendingSave);
+    harness.saveGate = saveGate;
+    fireEvent.change(body, { target: { value: prose } });
+    expect(screen.getByRole("tab", { name: "Opening, unsaved changes" }).getAttribute("aria-selected")).toBe("true");
+    harness.diagnostics.push({ id: "trait-warning", code: "prose_trait_mismatch", severity: "warning", title: "Possible physical-detail mismatch", message: "Review the character's left hand.", fact_ids: [], scene_ids: ["scene-0001"], evidence: [{ scene_id: "scene-0001", excerpt, start: [...prose.slice(0, prose.indexOf(excerpt))].length, end: [...prose].length }] });
     await user.click(screen.getByTitle(/Story Memory \(/));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
-    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(screen.getByRole("tab", { name: "Story Memory" }).getAttribute("aria-selected")).toBe("true");
+    await waitFor(() => expect(saveGate).toHaveBeenCalledOnce());
+    expect(harness.scenes[0]?.body).toBe("");
     expect(harness.calls.filter(args => args[0] === "memory" && args[1] === "diagnose")).toHaveLength(0);
+    expect(within(screen.getByRole("tabpanel", { name: "Story Memory" })).getByRole("status").textContent).toBe("Checking continuity…");
     harness.saveGate = null;
     await act(async () => finish());
     expect(await screen.findByText(excerpt)).toBeTruthy();
@@ -743,19 +854,20 @@ describe("active V2 author workflow", () => {
 
   it("recovers an unfinished Canon evidence correction and can retire a fact without deleting it", async () => {
     const { user } = await openWritingScene();
-    harness.facts.push({ id: "fact-gate", subject_entity_id: "", predicate: "color", value: "blue", status: "accepted", updated_at: "2026-09-30T19:00:00Z", evidence: [{ scene_id: "scene-0001", excerpt: "The gate is blue.", start: 0, end: 17 }], validity: {} });
+    harness.facts.push({ id: "fact-gate", edit_version: "loaded-canon-version", subject_entity_id: "", predicate: "color", value: "blue", status: "accepted", updated_at: "2026-09-30T19:00:00Z", evidence: [{ scene_id: "scene-0001", excerpt: "The gate is blue.", start: 0, end: 17 }], validity: {} });
     await user.click(screen.getByTitle(/Story Memory \(/));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
+    await user.click(screen.getByText("Add or update story records"));
     await user.click(await screen.findByText("Review evidence for color: blue"));
     fireEvent.change(screen.getByRole("textbox", { name: "Supporting passage for color: blue" }), { target: { value: "The gate gleams blue." } });
-    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Close Story Memory" }));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     await user.click(await screen.findByText("Review evidence for color: blue"));
     expect((screen.getByRole("textbox", { name: "Supporting passage for color: blue" }) as HTMLTextAreaElement).value).toBe("The gate gleams blue.");
     await user.click(screen.getByRole("button", { name: "Save verified evidence" }));
     await waitFor(() => expect((harness.facts[0].evidence as Array<{ excerpt: string }>)[0].excerpt).toBe("The gate gleams blue."));
     const request = harness.calls.find(args => args[0] === "memory" && args[1] === "fact-review")!;
-    expect(argument(request, "--expected-updated-at")).toBe("2026-09-30T19:00:00Z");
+    expect(argument(request, "--expected-version")).toBe("loaded-canon-version");
     await user.click(screen.getByRole("button", { name: "Retire fact" }));
     await waitFor(() => expect(harness.facts[0].status).toBe("rejected"));
     expect(harness.facts).toHaveLength(1);
@@ -773,7 +885,7 @@ describe("active V2 author workflow", () => {
     fireEvent.change(screen.getByPlaceholderText("Narrative promise or planted detail"), { target: { value: "The hidden key" } });
     fireEvent.change(screen.getByPlaceholderText("What should remain unresolved?"), { target: { value: "Who locked the gate?" } });
     await user.selectOptions(screen.getByLabelText("Arc state type"), "planned");
-    await user.click(screen.getByRole("button", { name: "Close Canon & Continuity" }));
+    await user.click(screen.getByRole("button", { name: "Close Story Memory" }));
     await user.click(screen.getByRole("button", { name: "Canon & Continuity" }));
     expect((await screen.findByLabelText("Fact predicate") as HTMLInputElement).value).toBe("color");
     expect((screen.getByLabelText("Fact value") as HTMLInputElement).value).toBe("blue");
@@ -795,7 +907,7 @@ describe("active V2 author workflow", () => {
   it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {
     const { user, body } = await openWritingScene();
     fireEvent.change(body, { target: { value: "Mara waits. Mara returns." } });
-    harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", evidence: [
+    harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", review_version: "mara-scan-v1", evidence: [
       { scene_id: "scene-0001", excerpt: "Mara waits.", start: 0, end: 11 },
       { scene_id: "scene-0001", excerpt: "Mara returns.", start: 12, end: 25 },
     ] });
@@ -1083,6 +1195,78 @@ describe("active V2 author workflow", () => {
     expect(screen.getByRole("button", { name: /Strengthen the turning point \u2014 undone/ })).toBeTruthy();
   });
 
+  it("keeps the same unsaved draft and editor when entering and leaving focus mode", async () => {
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Focus Novel");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await user.type(await screen.findByPlaceholderText("New scene title..."), "The Letter");
+    await user.click(screen.getByRole("button", { name: "Add Scene" }));
+    const editor = await screen.findByRole("textbox", { name: "Scene prose" });
+    fireEvent.change(editor, { target: { value: "Mara has not sent this letter." } });
+    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+
+    expect(screen.getAllByPlaceholderText("Begin writing...")).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
+    expect((editor as HTMLTextAreaElement).value).toBe("Mara has not sent this letter.");
+    expect(screen.getByRole("button", { name: "Exit focus mode" })).toBeTruthy();
+    (editor as HTMLTextAreaElement).focus();
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Exit focus mode" }));
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(editor);
+    fireEvent.change(editor, { target: { value: "Mara has not sent this letter. She burns it instead." } });
+    (editor as HTMLTextAreaElement).setSelectionRange(5, 5);
+    fireEvent.select(editor);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Exit focus mode" }));
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("button", { name: "Exit focus mode" })).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
+    expect(document.activeElement).toBe(editor);
+    await user.keyboard("quietly ");
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara quietly has not sent this letter. She burns it instead."));
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it.each(["entry", "Escape", "Exit click"])("focus mode preserves the live prose caret during a visible scene conflict on %s", async (path) => {
+    const { user, body } = await openWritingScene();
+    harness.scenes[0].body = "Mara sends the saved letter.";
+    harness.sceneSaveConflict = true;
+    fireEvent.change(body, { target: { value: "Mara keeps the letter." } });
+    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await screen.findByRole("region", { name: "Scene conflict review" });
+    const comparison = screen.getByRole("textbox", { name: "Saved prose" }) as HTMLTextAreaElement;
+    expect(comparison.value).toBe("Mara sends the saved letter.");
+
+    body.focus();
+    body.setSelectionRange(4, 4);
+    fireEvent.select(body);
+    if (path === "entry") screen.getByRole("tab", { name: /^Opening/ }).focus();
+    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+    const exit = screen.getByRole("button", { name: "Exit focus mode" });
+    if (path !== "entry") {
+      await user.tab();
+      expect(document.activeElement).toBe(exit);
+      if (path === "Escape") await user.keyboard("{Escape}");
+      else await user.click(exit);
+      expect(screen.queryByRole("button", { name: "Exit focus mode" })).toBeNull();
+    }
+
+    expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(body);
+    expect(document.activeElement).toBe(body);
+    await user.keyboard(" still");
+    expect(body.value).toBe("Mara still keeps the letter.");
+    expect(comparison.value).toBe("Mara sends the saved letter.");
+    expect(harness.scenes[0].body).toBe("Mara sends the saved letter.");
+    expect(screen.getByRole("region", { name: "Scene conflict review" })).toBeTruthy();
+  });
+
   it("starts a blank novel in a focused workspace with the assistant opt-in", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -1161,6 +1345,318 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByDisplayValue("Mara crosses before the signal changes.")).toBeTruthy();
   });
 
+  it("restores the selected Plan document with its Plan activity rail after restarting the shell", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("plan");
+
+    cleanup();
+    render(<AppV2 />);
+    await screen.findByText("Project Brief");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("true");
+    expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("retains explicitly selected Search and independent panels beside the Plan document on restart", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    fireEvent.keyDown(window, { key: "j", metaKey: true });
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
+
+    cleanup();
+    render(<AppV2 />);
+    await screen.findByRole("tab", { name: "Plan" });
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search manuscript...")).toBeTruthy();
+  });
+
+  it.each(["route", "workspace user state"])("retains the same book's activity and panels through delayed %s restoration without a cached project ID", async (source) => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    fireEvent.keyDown(window, { key: "j", metaKey: true });
+    const retainedRoot = JSON.parse(localStorage.getItem("openauthor.activeProjectRoot") || "null");
+    expect(retainedRoot).toBe(harness.projectRoot);
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    if (source === "workspace user state") window.history.replaceState({}, "", "/");
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = 0;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { ++requested; await gate; return read(id); };
+      return client;
+    });
+    try {
+      render(<AppV2 />);
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("search");
+      await act(async () => { release(); });
+      await screen.findByRole("tab", { name: "Plan" });
+      expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
+      expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
+      expect.soft(screen.queryByRole("button", { name: "Chat" })).not.toBeNull();
+      expect.soft(screen.queryByText("Runs", { selector: ".panel-area__tab" })).not.toBeNull();
+    } finally {
+      release();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it("uses project defaults for an initial route to a genuinely different bound book", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    const workspaceId = JSON.parse(localStorage.getItem("openauthor.activeWorkspaceId") || "null");
+    const different = await projectRegistry.createProjectRegistryClient("local").createProject({ workspaceId, name: "Different Book", kind: "book" });
+    setProjectBinding(different.id, "/tmp/openauthor-different-bound-book");
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    window.history.replaceState({}, "", `/w/personal-workspace/p/${different.id}`);
+    render(<AppV2 />);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(different.id));
+    await screen.findByRole("button", { name: "Manuscript (Cmd+Shift+E)" });
+    expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(different.id);
+    expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
+  });
+
+  it("keeps an explicit return to Projects while delayed automatic restoration completes", async () => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    cleanup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = 0;
+    let finished = 0;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { ++requested; await gate; const result = await read(id); ++finished; return result; };
+      return client;
+    });
+    try {
+      render(<AppV2 />);
+      await screen.findByRole("tab", { name: "Plan" });
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      await user.click(screen.getByRole("button", { name: "Projects" }));
+      await screen.findByText("Choose a project to begin writing.");
+      await act(async () => { release(); await gate; });
+      await waitFor(() => expect(finished).toBe(requested));
+      expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe("");
+      expect(screen.getByText("Choose a project to begin writing.")).toBeTruthy();
+      expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
+    } finally {
+      release();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each(["workspace state", "workspace list", "legacy restart"])("keeps existing-folder attachment intent ahead of delayed startup %s selection", async delayedSource => {
+    const { user } = await openWritingScene();
+    const workspaceId = JSON.parse(localStorage.getItem("openauthor.activeWorkspaceId") || "null");
+    const targetRoot = "/tmp/openauthor-existing-folder-selected";
+    const target = await projectRegistry.createProjectRegistryClient("local").createProject({ workspaceId, name: "Attached Book", kind: "book" });
+    const legacyRoot = harness.projectRoot;
+    const legacyId = harness.projectId;
+    cleanup();
+    if (delayedSource === "legacy restart") localStorage.setItem("openauthor.projectRoot", legacyRoot);
+    localStorage.removeItem("openauthor.activeProjectId");
+    let releaseRegistry!: () => void;
+    let releaseInspect!: () => void;
+    let releaseLegacy!: () => void;
+    const registryGate = new Promise<void>(resolve => { releaseRegistry = resolve; });
+    const inspectGate = new Promise<void>(resolve => { releaseInspect = resolve; });
+    const legacyGate = new Promise<void>(resolve => { releaseLegacy = resolve; });
+    let legacyAttempts = 0;
+    let requested = 0;
+    let finished = 0;
+    let inspecting = false;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      if (delayedSource === "workspace list") {
+        const list = client.listWorkspaces.bind(client);
+        client.listWorkspaces = async () => {
+          const result = await list();
+          await registryGate;
+          return result;
+        };
+      }
+      client.getWorkspaceUserState = async id => {
+        const result = await read(id);
+        ++requested;
+        await registryGate;
+        ++finished;
+        return result;
+      };
+      return client;
+    });
+    harness.pickedFolder = targetRoot;
+    harness.projectInspectGate = async root => {
+      if (delayedSource === "legacy restart" && root === legacyRoot) {
+        ++legacyAttempts;
+        if (legacyAttempts === 1) await legacyGate;
+        return { project_id: legacyId, name: "Legacy Book" };
+      }
+      if (root !== targetRoot) throw new Error("Unexpected inspected folder in attachment regression.");
+      inspecting = true;
+      await inspectGate;
+      return { project_id: target.id, name: target.name };
+    };
+    try {
+      render(<AppV2 />);
+      await screen.findByText("Choose a project to begin writing.");
+      await waitFor(() => expect(requested).toBeGreaterThan(0));
+      if (delayedSource === "legacy restart") await waitFor(() => expect(legacyAttempts).toBe(1));
+      await user.click(screen.getByRole("button", { name: "Open Project" }));
+      await waitFor(() => expect(inspecting).toBe(true));
+      await act(async () => { releaseRegistry(); await registryGate; });
+      await waitFor(() => expect(finished).toBe(requested));
+      const selectedId = JSON.parse(localStorage.getItem("openauthor.activeProjectId") || '\"\"');
+      if (delayedSource === "legacy restart") {
+        expect({ selectedId, legacyAttempts }).toEqual({ selectedId: "", legacyAttempts: 1 });
+      } else {
+        expect(selectedId).toBe("");
+      }
+      expect(screen.getByText("Choose a project to begin writing.")).toBeTruthy();
+      await act(async () => { releaseInspect(); await inspectGate; });
+      await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(target.id));
+      await screen.findByRole("button", { name: "Manuscript (Cmd+Shift+E)" });
+      expect(JSON.parse(localStorage.getItem("openauthor.activeProjectRoot") || "null")).toBe(targetRoot);
+      const records = await factory("local").listProjects(workspaceId, { includeArchived: true });
+      expect(records.filter(project => project.id === target.id)).toHaveLength(1);
+    } finally {
+      releaseRegistry();
+      releaseInspect();
+      releaseLegacy();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each<FolderSelectionMethod>(["attach", "scaffold", "archive", "folder"])("does not adopt a delayed %s folder after a newer explicit close", async method => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let requested = false;
+    const finished = vi.fn();
+    render(<WorkspaceProvider registryMode="local"><FolderSelectionControls method={method} onFinished={finished} /></WorkspaceProvider>);
+    await waitFor(() => expect(screen.getByLabelText("Current workspace").textContent).not.toBe(""));
+    harness.initialized = true;
+    if (method === "attach") {
+      harness.projectInspectGate = async () => {
+        requested = true;
+        await gate;
+        return { project_id: "proj-late-folder", name: "Delayed Book" };
+      };
+    } else {
+      harness.projectInitGate = async () => { requested = true; await gate; };
+    }
+    try {
+      await user.click(screen.getByRole("button", { name: "Start folder selection" }));
+      await waitFor(() => expect(requested).toBe(true));
+      await user.click(screen.getByRole("button", { name: "Return to Projects" }));
+      await act(async () => { release(); await gate; });
+      await waitFor(() => expect(finished).toHaveBeenCalledWith(false));
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      expect(screen.getByLabelText("Selected folder").textContent).toBe("");
+      expect(harness.calls.some(args => args[0] === "project" && args[1] === "ensure-id")).toBe(false);
+    } finally {
+      release();
+    }
+  });
+
+  it("does not adopt a delayed legacy-folder migration after a newer explicit close", async () => {
+    const { user } = await openWritingScene();
+    const legacyRoot = harness.projectRoot;
+    const legacyId = harness.projectId;
+    cleanup();
+    localStorage.removeItem("openauthor.activeProjectId");
+    localStorage.setItem("openauthor.projectRoot", legacyRoot);
+    let releaseRegistry!: () => void;
+    let releaseInspect!: () => void;
+    const registryGate = new Promise<void>(resolve => { releaseRegistry = resolve; });
+    const inspectGate = new Promise<void>(resolve => { releaseInspect = resolve; });
+    let inspecting = false;
+    const factory = projectRegistry.createProjectRegistryClient;
+    const delayedRegistry = vi.spyOn(projectRegistry, "createProjectRegistryClient").mockImplementation(mode => {
+      const client = factory(mode);
+      const read = client.getWorkspaceUserState.bind(client);
+      client.getWorkspaceUserState = async id => { await registryGate; return read(id); };
+      return client;
+    });
+    harness.projectInspectGate = async root => {
+      if (root !== legacyRoot) throw new Error("Unexpected inspected legacy folder.");
+      inspecting = true;
+      await inspectGate;
+      return { project_id: legacyId, name: "Legacy Book" };
+    };
+    try {
+      render(<WorkspaceProvider registryMode="local"><FolderSelectionControls method="attach" onFinished={() => {}} /></WorkspaceProvider>);
+      await waitFor(() => expect(inspecting).toBe(true));
+      await user.click(screen.getByRole("button", { name: "Return to Projects" }));
+      await act(async () => { releaseInspect(); await inspectGate; });
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      expect(screen.getByLabelText("Selected folder").textContent).toBe("");
+      await act(async () => { releaseRegistry(); await registryGate; });
+      expect(screen.getByLabelText("Selected project").textContent).toBe("");
+      const workspaceId = screen.getByLabelText("Current workspace").textContent || "";
+      const records = await factory("local").listProjects(workspaceId, { includeArchived: true });
+      expect(records.filter(project => project.id === legacyId)).toHaveLength(1);
+    } finally {
+      releaseRegistry();
+      releaseInspect();
+      delayedRegistry.mockRestore();
+    }
+  });
+
+  it.each(["mismatched key", "ambiguous", "absent"])("does not infer prior book activity from %s initial bindings", async (invalid) => {
+    const { user } = await openWritingScene();
+    await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));
+    await screen.findByText("Project Brief");
+    await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
+    await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
+    const id = JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null");
+    const bindings = JSON.parse(localStorage.getItem("openauthor.projectBindings") || "{}");
+    cleanup();
+    if (invalid === "mismatched key") bindings[id].projectId = "proj-not-the-map-key";
+    else if (invalid === "ambiguous") bindings["proj-second-owner"] = { ...bindings[id], projectId: "proj-second-owner" };
+    else delete bindings[id];
+    localStorage.setItem("openauthor.projectBindings", JSON.stringify(bindings));
+    localStorage.removeItem("openauthor.activeProjectId");
+    render(<AppV2 />);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(id));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openauthor.v2.activeView") || "null")).toBe("manuscript"));
+    expect(JSON.parse(localStorage.getItem("openauthor.v2.secondarySidebarOpen") || "null")).toBe(false);
+  });
+
   it("resets editor tabs and panels when a different novel is created", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -1186,6 +1682,8 @@ describe("active V2 author workflow", () => {
     expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
     expect(screen.queryByText("Project Brief")).toBeNull();
     expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("previews manuscript structure before importing a new project", async () => {
@@ -1218,6 +1716,42 @@ describe("active V2 author workflow", () => {
     expect(argument(imported, "--expected-fingerprint")).toBe(argument(imported, "--corrections"));
   });
 
+  it("can compose a coordinated revision when scenes arrive after opening Changes", async () => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    harness.sceneListWait = new Promise<void>((resolve) => { release = resolve; });
+    harness.scenes.push(...["The Hidden Key", "The Seventh Bell"].map((title, index) => ({
+      id: `scene-000${index + 1}`, title, body: "Mara began to trace the route.",
+      summary: "", pov: "Mara", status: "draft", word_count: 7,
+      path: `manuscript/scenes/000${index + 1}-scene.md`,
+    })));
+    try {
+      render(<AppV2 />);
+      await screen.findByText("Choose a project to begin writing.");
+      await user.click(screen.getByRole("button", { name: "New Project" }));
+      await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Delayed book");
+      await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+      await user.click(screen.getByRole("button", { name: "Create novel" }));
+      await user.click(await screen.findByTitle(/Changes \(/));
+      await user.click(screen.getByTitle("Create a reviewable Change Set"));
+      await user.type(screen.getByPlaceholderText(/Tighten the pacing/), "Tighten the prose.");
+      release();
+      await screen.findByRole("option", { name: "The Hidden Key" });
+      await waitFor(() => expect((screen.getByRole("combobox", { name: "Scene" }) as HTMLSelectElement).value).toBe("scene-0001"));
+      await user.click(screen.getByRole("checkbox", { name: "Coordinate this revision across multiple scenes" }));
+      await user.click(screen.getByRole("checkbox", { name: "The Seventh Bell" }));
+      const create = screen.getByRole("button", { name: "Create 2 Coordinated Change Sets" }) as HTMLButtonElement;
+      expect(create.disabled).toBe(false);
+      await user.click(create);
+      await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
+      await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
+      await waitFor(() => expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "draft")).toHaveLength(1));
+      await user.click(await screen.findByRole("button", { name: "Generate reviewed edit plan" }));
+      await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
+      await waitFor(() => expect(harness.proposals.map((row) => row.scene_id)).toEqual(["scene-0001", "scene-0002"]));
+    } finally { release(); }
+  });
+
   it("creates coordinated AI Change Sets for a multi-scene experiment", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -1247,6 +1781,30 @@ describe("active V2 author workflow", () => {
     await waitFor(() => expect(harness.proposals).toHaveLength(2));
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
+    await user.click(screen.getByTitle("proposal-golden-2 — pending"));
+    expect(screen.getByText("scene-0002", { selector: ".review-card__meta span" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Apply together" }));
+    expect(await screen.findByRole("button", { name: "Undo change" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Apply 1 change" })).toBeNull();
+    harness.undoBatchError = "Undo stopped to protect newer work; no scenes were restored.";
+    await user.click(screen.getByRole("button", { name: "Undo 2 scenes together" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("protect newer work");
+    expect(harness.proposals.every((row) => !row.undone_at)).toBe(true);
+    harness.undoBatchError = "";
+    let release = () => {};
+    harness.undoBatchWait = new Promise<void>((resolve) => { release = resolve; });
+    try {
+      await user.click(screen.getByRole("button", { name: "Undo 2 scenes together" }));
+      expect((screen.getByRole("button", { name: "Restoring…" }) as HTMLButtonElement).disabled).toBe(true);
+    } finally { release(); }
+    expect(await screen.findByText("2 scenes restored together in one Undo Revision.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Undo change" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Undo 2 scenes together" })).toBeNull();
+    expect(harness.proposals.every((row) => row.undo_revision === "group-undo")).toBe(true);
+    expect(harness.calls.filter((args) => args[0] === "proposal" && args[1] === "undo-batch")).toEqual([
+      ["proposal", "undo-batch", "--revision", "group-after", "--json"],
+      ["proposal", "undo-batch", "--revision", "group-after", "--json"],
+    ]);
   });
 
   it("waits for a pending Plan save before entering another Storyline", async () => {
@@ -1329,7 +1887,7 @@ describe("active V2 author workflow", () => {
 
     await user.selectOptions(screen.getByLabelText("Move The Arrival to"), "chapter-golden");
     expect(await screen.findByText("Move The Arrival from Unassigned to False Morning.")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Move" }));
+    await user.click(screen.getByRole("button", { name: "Move The Arrival" }));
     await waitFor(() => expect(harness.plan.unassigned_scene_ids).not.toContain("scene-0001"));
     expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "scene-assign")).toBe(true);
 
@@ -1442,7 +2000,7 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("the brass key")).toBeTruthy();
   });
 
-  it("corrects and bulk-decides review-first Story Memory suggestions", async () => {
+  it("corrects and individually decides source-backed Memory suggestions in the main workspace", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
     await screen.findByText("Choose a project to begin writing.");
@@ -1452,21 +2010,39 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Create novel" }));
     await screen.findByText("No scenes yet.");
     harness.suggestions.push(
-      { id: "suggestion-1", kind: "entity_create", entity_type: "item", name: "Silver Bell", description: "A bell in the archive.", confidence: 0.9, reason: "Repeated noun", status: "pending", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "The bell rang.", start: 0, end: 13 }] },
-      { id: "suggestion-2", kind: "entity_create", entity_type: "character", name: "Mara", description: "Archive keeper.", confidence: 0.88, reason: "Repeated name", status: "pending", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "Mara listened.", start: 0, end: 14 }] },
+      { id: "suggestion-1", kind: "entity_create", entity_type: "item", name: "Silver Bell", description: "A bell in the archive.", confidence: 0.9, reason: "Repeated noun", status: "pending", review_version: "bell-v1", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "The bell rang.", start: 0, end: 13 }] },
+      { id: "suggestion-2", kind: "entity_create", entity_type: "character", name: "Mara", description: "Archive keeper.", confidence: 0.88, reason: "Repeated name", status: "pending", review_version: "mara-v1", evidence: [{ scene_id: "scene-0001", path: "", excerpt: "Mara listened.", start: 0, end: 14 }] },
     );
 
     await user.click(screen.getByTitle(/Story Memory \(/));
-    expect(await screen.findByText("Silver Bell")).toBeTruthy();
-    await user.click(screen.getAllByRole("button", { name: "Correct" })[0]);
-    const name = screen.getByLabelText("Corrected name for Silver Bell");
+    await user.click(screen.getByRole("button", { name: "Review Memory suggestions" }));
+    const inbox = within(await screen.findByRole("region", { name: "Memory suggestion review" }));
+    await inbox.findByRole("heading", { name: "Silver Bell" });
+    expect(inbox.getByText("The bell rang.")).toBeTruthy();
+    await user.click(inbox.getByRole("button", { name: "Correct" }));
+    const name = inbox.getByLabelText("Corrected suggestion name");
     await user.clear(name);
     await user.type(name, "Brass Bell");
-    await user.click(screen.getByRole("button", { name: "Save correction" }));
-    expect(await screen.findByText("Brass Bell")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Accept all" }));
-    await waitFor(() => expect(harness.suggestions.every((row) => row.status === "accepted")).toBe(true));
-    expect(harness.calls.some((args) => args[0] === "memory" && args[1] === "correct")).toBe(true);
+    await user.click(inbox.getByRole("button", { name: "Save correction" }));
+    await inbox.findByRole("heading", { name: "Brass Bell" });
+    expect(harness.suggestions[0].status).toBe("pending");
+    const correction = harness.calls.find(args => args[0] === "memory" && args[1] === "correct")!;
+    expect(argument(correction, "--expected-version")).toBe("bell-v1");
+    await user.click(inbox.getByRole("button", { name: "Accept" }));
+    await inbox.findByRole("heading", { name: "Mara" });
+    expect(inbox.getByText("Mara listened.")).toBeTruthy();
+    expect(harness.suggestions[0].status).toBe("accepted");
+    expect(harness.suggestions[1].status).toBe("pending");
+    await user.click(inbox.getByRole("button", { name: "Later" }));
+    await inbox.findByText(/No suggestions need review/);
+    expect(harness.suggestions[1].status).toBe("deferred");
+    const decisions = harness.calls.filter(args => args[0] === "memory" && args[1] === "review");
+    expect(decisions.map(args => [argument(args, "--id"), argument(args, "--expected-version")])).toEqual([["suggestion-1", "bell-v1:corrected"], ["suggestion-2", "mara-v1"]]);
+    await user.selectOptions(inbox.getByLabelText("Filter Memory suggestions"), "accepted");
+    await inbox.findByRole("heading", { name: "Brass Bell" });
+    expect(inbox.getByRole("button", { name: "Accept" }).hasAttribute("disabled")).toBe(true);
+    await user.selectOptions(inbox.getByLabelText("Filter Memory suggestions"), "deferred");
+    expect(await inbox.findByRole("heading", { name: "Mara" })).toBeTruthy();
   });
 
   it("keeps prose-found relationships review-first before adding them to the Connection Map", async () => {
@@ -1482,6 +2058,7 @@ describe("active V2 author workflow", () => {
       confidence: 0.82,
       reason: "Explicit named relationship in manuscript prose",
       status: "pending",
+      review_version: "relationship-v1",
       source_entity_id: "entity-mara",
       source_name: "Mara",
       target_entity_id: "entity-soren",
@@ -1509,6 +2086,8 @@ describe("active V2 author workflow", () => {
 
     await user.click(screen.getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(harness.relationships).toHaveLength(1));
+    const decision = harness.calls.find(args => args[0] === "memory" && args[1] === "review")!;
+    expect(argument(decision, "--expected-version")).toBe("relationship-v1");
     await waitFor(() => expect(screen.getByLabelText("Connection map summary").textContent).toContain("1 accepted connections"));
     expect(await screen.findByText("→ distrusts →")).toBeTruthy();
   });

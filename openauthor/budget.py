@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,12 @@ DEFAULT_GENERATION_BUDGET_POLICY: dict[str, Any] = {
     "weekly_estimated_cost_usd": None,
   },
 }
+
+BUDGET_LIMIT_FIELDS = tuple(
+  field
+  for section in ("per_run", "rolling")
+  for field in DEFAULT_GENERATION_BUDGET_POLICY[section]
+)
 
 
 class BudgetPolicyError(OpenAuthorError):
@@ -57,6 +64,8 @@ def _as_positive_int_or_none(value: Any) -> int | None:
       raise OpenAuthorError("Budget token limits must be >= 1.")
     return value
   if isinstance(value, float):
+    if not math.isfinite(value) or not value.is_integer():
+      raise OpenAuthorError("Budget token limits must be finite integers.")
     normalized = int(value)
     if normalized < 1:
       raise OpenAuthorError("Budget token limits must be >= 1.")
@@ -81,7 +90,10 @@ def _as_positive_float_or_none(value: Any) -> float | None:
   if isinstance(value, bool):
     raise OpenAuthorError("Budget values cannot be boolean.")
   if isinstance(value, (int, float)):
-    normalized = float(value)
+    try:
+      normalized = float(value)
+    except OverflowError as error:
+      raise OpenAuthorError("Budget cost limits must be finite.") from error
   elif isinstance(value, str):
     text = value.strip()
     if text == "":
@@ -92,19 +104,23 @@ def _as_positive_float_or_none(value: Any) -> float | None:
       raise OpenAuthorError(f"Invalid decimal budget value '{value}'.") from error
   else:
     raise OpenAuthorError(f"Invalid cost budget value type '{type(value).__name__}'.")
-  if normalized <= 0:
-    raise OpenAuthorError("Budget cost limits must be > 0.")
-  return round(normalized, 8)
+  if not math.isfinite(normalized) or normalized <= 0:
+    raise OpenAuthorError("Budget cost limits must be finite and > 0.")
+  rounded = round(normalized, 8)
+  if rounded <= 0:
+    raise OpenAuthorError("Budget cost limits must be at least 0.00000001 USD.")
+  return rounded
 
 
-def _normalize_policy(raw: dict[str, Any] | None) -> dict[str, Any]:
-  payload = raw if isinstance(raw, dict) else {}
-  per_run = payload.get("per_run", {})
-  rolling = payload.get("rolling", {})
+def _normalize_policy(raw: dict[str, Any]) -> dict[str, Any]:
+  if not isinstance(raw, dict):
+    raise OpenAuthorError("Budget policy must be an object.")
+  per_run = raw.get("per_run", {})
+  rolling = raw.get("rolling", {})
   if not isinstance(per_run, dict):
-    per_run = {}
+    raise OpenAuthorError("Budget per_run limits must be an object.")
   if not isinstance(rolling, dict):
-    rolling = {}
+    raise OpenAuthorError("Budget rolling limits must be an object.")
   return {
     "schema_version": 1,
     "enforcement": "fail_closed",
@@ -139,7 +155,7 @@ def load_generation_budget_policy(paths: ProjectPaths) -> dict[str, Any]:
     return default_generation_budget_policy()
   try:
     payload = json.loads(file_path.read_text(encoding="utf-8"))
-  except json.JSONDecodeError as error:
+  except (ValueError, RecursionError) as error:
     raise OpenAuthorError(f"Invalid generation budget policy JSON: {file_path}") from error
   return _normalize_policy(payload)
 
@@ -166,6 +182,7 @@ def update_generation_budget_policy(
   daily_estimated_cost_usd: float | None = None,
   weekly_tokens: int | None = None,
   weekly_estimated_cost_usd: float | None = None,
+  clear_limits: list[str] | tuple[str, ...] = (),
 ) -> dict[str, Any]:
   policy = load_generation_budget_policy(paths)
   has_updates = any(
@@ -181,7 +198,22 @@ def update_generation_budget_policy(
       weekly_estimated_cost_usd,
     )
   )
-  if not has_updates:
+  for field in clear_limits:
+    if field not in BUDGET_LIMIT_FIELDS:
+      raise OpenAuthorError(f"Unknown budget limit '{field}'.")
+  supplied = {
+    "max_input_tokens": max_input_tokens,
+    "max_output_tokens": max_output_tokens,
+    "max_total_tokens": max_total_tokens,
+    "max_estimated_cost_usd": max_estimated_cost_usd,
+    "daily_tokens": daily_tokens,
+    "daily_estimated_cost_usd": daily_estimated_cost_usd,
+    "weekly_tokens": weekly_tokens,
+    "weekly_estimated_cost_usd": weekly_estimated_cost_usd,
+  }
+  if any(supplied[field] is not None for field in clear_limits):
+    raise OpenAuthorError("Cannot set and clear the same budget limit.")
+  if not has_updates and not clear_limits:
     raise OpenAuthorError("No budget updates provided.")
 
   if max_input_tokens is not None:
@@ -206,6 +238,10 @@ def update_generation_budget_policy(
     policy["rolling"]["weekly_estimated_cost_usd"] = _as_positive_float_or_none(
       weekly_estimated_cost_usd
     )
+
+  for field in clear_limits:
+    section = "per_run" if field in policy["per_run"] else "rolling"
+    policy[section][field] = None
 
   return save_generation_budget_policy(paths, policy)
 

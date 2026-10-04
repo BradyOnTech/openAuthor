@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "failed_cases": [],
+  "generations": [
+    {
+      "run_id": "gen-9ed5d1f8daf2",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12432,
+      "output_tokens": 681,
+      "latency_ms": 16629,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-da139dac8237",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12435,
+      "output_tokens": 673,
+      "latency_ms": 16275,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-2c7766289bf2",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "input_tokens": 12435,
+      "output_tokens": 652,
+      "latency_ms": 18610,
+      "provider_attempts": 1,
+      "error_category": ""
+    }
+  ],
+  "strict_review": false,
+  "provider": "openai-codex",
+  "requested_model": "gpt-5.6-luna",
+  "case_ids": [
+    "dialogue-withheld-knowledge"
+  ],
+  "seed": 41,
+  "corpus_sha256": "cba260ffcc68b0bb05c9a6c343dcffd9fc7fbb911f71665e5d503c781dbccba4",
+  "implementation_sha256": "f4e596c0b4be9610354146a4d9dbd4bf2c31e5cdd7852fcf580f7c68ff5f8bbb",
+  "generation_calls": 3,
+  "candidate_count": 3,
+  "changed_candidates": 3,
+  "quality_verdict": "Not assessed. Human comparison required.",
+  "criteria": {
+    "voice_fit": "Does the prose serve the selected Writing Voice without becoming mechanical?",
+    "readability": "Is the action and meaning clear, with purposeful rhythm?",
+    "emotional_effect": "Is the intended feeling earned through this scene?",
+    "character_distinction": "Does dialogue and perception belong to this character?",
+    "consistency": "Are facts, POV, tense, knowledge and protected details preserved?"
+  },
+  "cases": [
+    {
+      "id": "dialogue-withheld-knowledge",
+      "title": "The spare key",
+      "mode": "dialogue",
+      "pov": "Ivo",
+      "source": "Mara set a cup in front of Ivo. It was the one with the chipped blue rim, which meant she expected him to stay. He kept his coat on.\n\n\"Did you open the storehouse?\" she asked.\n\n\"I opened a great many things yesterday. A drawer. An unfortunate letter.\"\n\nShe turned the cup until the chip faced him.\n\nIvo had hidden the spare key inside the bellows before dawn. She had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to remember whether the bellows had been hanging straight.\n\n\"The storehouse,\" she said.\n\n\"No.\"\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where the key was. He wished she would ask almost anything except whether he had seen her brother.\n\n\"Then somebody used yours.\"\n\nHe lifted the cup with his left hand. The tea touched the sore place behind his teeth. He put it down without drinking.\n\n\"You could change the lock.\"\n\n\"I could.\"\n\nShe took off her own coat and hung it beside the door. Ivo looked at the empty peg beside it. He had come to return a favor and leave. Now she was taking bread from the tin, cutting two uneven slices as if the question had been settled.",
+      "instruction": "Sharpen subtext and distinguish the speakers without adding a confession, accusation or revelation. Keep the close-third Ivo viewpoint and past tense.",
+      "facts": [
+        "Ivo hid the spare key in the bellows before dawn.",
+        "Ivo did not open the storehouse; he gave the other key to Mara's brother.",
+        "Ivo is unsure what Mara knows. Her private knowledge is not established.",
+        "The conversation ends without confession or discovery of the spare key."
+      ],
+      "quality_questions": [
+        "Can the speakers be distinguished without adding ornate dialogue tags?",
+        "Do the cup and bread carry pressure rather than become explained symbols?",
+        "Is Ivo's uncertainty maintained without narrating Mara's thoughts?",
+        "Does humor function as evasion rather than an interchangeable quip?"
+      ],
+      "protected_phrases": [
+        "I could."
+      ],
+      "markers": [
+        "Ivo",
+        "Mara",
+        "bellows",
+        "brother"
+      ],
+      "calibration_error": "Saying Mara knows the key is in the bellows violates viewpoint and invents knowledge, although all lexical markers still pass.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "Mara set a cup in front of Ivo. The one with the chipped blue rim. She expected him to stay. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup so the chip faced him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to remember whether the bellows had been hanging straight.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where it was. He wished she would ask almost anything except whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe lifted the cup with his left hand. Tea touched the sore place behind his teeth. He set it down without drinking.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her coat and hung it beside the door. Ivo looked at the empty peg beside it. He had come to return a favor and leave. Now she was taking bread from the tin and cutting two uneven slices, as if the question had already been settled.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-2c7766289bf2",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose uses direct, concrete action and lets setup carry future weight without broad exposition.",
+              "excerpt": "Before dawn, Ivo had hidden the spare key inside the bellows."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The spatial sequence is clear, and the short exchanges create controlled pauses around the unanswered question.",
+              "excerpt": "She removed her coat and hung it beside the door."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Pressure builds through Ivo\u2019s avoidance and Mara\u2019s ordinary preparations, ending on an unsettled domestic gesture rather than a resolution.",
+              "excerpt": "Now she was taking bread from the tin and cutting two uneven slices, as if the question had already been settled."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo deflects with dry, indirect humor while Mara remains concise and persistent.",
+              "excerpt": "\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The close-third past-tense viewpoint is maintained. Ivo\u2019s uncertainty about Mara\u2019s knowledge remains unresolved; no private knowledge, confession, accusation, discovery of the spare key, or revelation is added.",
+              "excerpt": "Unless she had come back. He tried to remember whether the bellows had been hanging straight."
+            }
+          ]
+        },
+        {
+          "label": "B",
+          "text": "Mara set a cup before Ivo\u2014the chipped blue rim turned toward him. That was the cup for people who were expected to stay. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup until the chip faced him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He could not remember whether the bellows had been hanging straight.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where it was. He wished she would ask almost anything but whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe lifted the cup in his left hand. Tea touched the sore place behind his teeth. He set it down without drinking.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her coat and hung it beside the door. Ivo looked at the empty peg beside it. He had come to return a favor and leave. Now she took bread from the tin and cut two uneven slices, as if his staying had already been decided and required no agreement from him.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-9ed5d1f8daf2",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "Sensory details carry the tension without overloading the passage with figurative language, as in \u201cTea touched the sore place behind his teeth.\u201d",
+              "excerpt": "Tea touched the sore place behind his teeth."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The repeated clarification of the storehouse question keeps the exchange legible while the measured actions slow the scene deliberately.",
+              "excerpt": "\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d"
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Ivo\u2019s unease emerges through withheld answers and bodily avoidance rather than explanation.",
+              "excerpt": "He wished she would ask almost anything but whether he had seen her brother."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Ivo deflects with dry, indirect humor, while Mara uses brief repetitions and practical actions to hold the conversation in place.",
+              "excerpt": "\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves the close-third Ivo viewpoint, past tense, the hidden spare key, the key given to Mara\u2019s brother, and Ivo\u2019s uncertainty about what Mara knows. No confession, accusation, discovery, or revelation is added.",
+              "excerpt": "Before dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back."
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "text": "Mara set the chipped blue-rimmed cup in front of Ivo. The cup meant stay. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup until the chip faced him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay. The workshop window had been dark. Unless she had come back. He tried to see the bellows hanging straight. Couldn\u2019t.\n\n\u201cThe storehouse.\u201d\n\n\u201cNo.\u201d\n\nThat was true. He had given the other key to her brother. He wanted her to ask where it was. He wanted her to ask anything but whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe lifted the cup with his left hand. Tea touched the sore place behind his teeth. He set it down.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her coat and hung it beside the door.\n\nIvo looked at the empty peg beside it. He had come to return a favor and leave. Now she was taking bread from the tin, cutting two uneven slices. No question. No permission. As if the matter had already been decided.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-da139dac8237",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          },
+          "warnings": [
+            "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+          ],
+          "observations": [
+            {
+              "criterion": "voice_fit",
+              "observation": "The prose uses pressure, concrete gestures, and varied sentence length without forcing melodrama; the emotional strain sits in the objects and choices.",
+              "excerpt": "The cup meant stay. He kept his coat on."
+            },
+            {
+              "criterion": "readability",
+              "observation": "The exchange remains easy to follow, while fragments tighten the moment around Ivo\u2019s uncertainty.",
+              "excerpt": "The workshop window had been dark. Unless she had come back. He tried to see the bellows hanging straight. Couldn\u2019t."
+            },
+            {
+              "criterion": "emotional_effect",
+              "observation": "Ivo\u2019s fear is earned through what he avoids and what Mara does without explaining herself.",
+              "excerpt": "He wanted her to ask where it was. He wanted her to ask anything but whether he had seen her brother."
+            },
+            {
+              "criterion": "character_distinction",
+              "observation": "Mara speaks in clipped, narrowing corrections; Ivo answers with evasive wit before retreating into blunt truth.",
+              "excerpt": "\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d"
+            },
+            {
+              "criterion": "consistency",
+              "observation": "The rewrite preserves close-third Ivo, past tense, the hidden spare key, the key given to Mara\u2019s brother, Ivo\u2019s uncertainty about Mara\u2019s knowledge, and the unresolved ending. Mara\u2019s private knowledge remains unestablished.",
+              "excerpt": "That was true. He had given the other key to her brother."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

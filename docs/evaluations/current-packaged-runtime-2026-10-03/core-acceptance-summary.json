@@ -1,0 +1,41 @@
+{
+  "completed_at": "2026-10-03T05:06:20.264073+00:00",
+  "evidence_root": "/private/tmp/openauthor-current-packaged-core-368mvc0y",
+  "normal_app": "/private/tmp/openauthor-current-native-36a4058-pd_q29st/normal-36a4058.app",
+  "source_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "reviewed_head": "df780fb943026b0667cf18f1b34cf93ac4e2fb1c",
+  "tests": {
+    "run": 583,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "codex_local_wire_contract_enabled": true
+  },
+  "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+  "imported_core_module_count": 63,
+  "original_test_input_count": 119,
+  "normal_bundle_unchanged_file_count": 2205,
+  "actual_cli_storyline_probe": "passed; accept/reject refused the original loaded version after a real Storyline switch, and inverted validity acceptance was refused; all failed reviews preserve Memory bytes and prose",
+  "nonfatal_stderr": [
+    "Synthetic Writing Voice fixture review diagnostics",
+    "Two default-template warnings from original tests invoking packaged git init directly; Git build intentionally contains an empty template directory, which resource packaging omits. All Git/Storyline assertions pass."
+  ],
+  "provider_scope": "Local fixture HTTP endpoint only; no external writing provider calls",
+  "gui_scope": "None; root independently uses separate QA flavor",
+  "release_certified": false,
+  "legacy_timestamp_scope_protection_claimed": false,
+  "all_test_handles_terminal": true,
+  "exec_handles": [
+    {
+      "session_id": 16878,
+      "exit_code": 0
+    },
+    {
+      "command": "storyline-cli",
+      "exit_code": 0,
+      "no_running_handle": true
+    }
+  ],
+  "author_artifacts_unchanged": true,
+  "source_test_document_author_edits": false
+}

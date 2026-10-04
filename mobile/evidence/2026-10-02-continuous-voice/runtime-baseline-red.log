@@ -1,0 +1,184 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.expo/voice-policy-baseline.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts (16 tests | 12 failed) 1467ms
+     × closes active media synchronously on offline sign-out without gateway requests or deleting work 16ms
+     × fences pending microphone permission on project 68ms
+     × fences pending microphone permission on background 53ms
+     × rejects a negotiated answer completing after the opened project changed 53ms
+     × closes on renewed userId authority change and ignores old provider events 1ms
+     × closes on renewed deviceId authority change and ignores old provider events 1ms
+     × closes on renewed keyId authority change and ignores old provider events 1ms
+     × closes on configuration change before sending new text 1ms
+     × replaces a pending call without letting its late permission overlap a new call 54ms
+     × closes media after local access is locked in another window 51ms
+     × reopening a snapshot retires an active call and a deliberate new call uses refreshed context 1ms
+     × author End makes one owned stop request while media closes immediately 1003ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes active media synchronously on offline sign-out without gateway requests or deleting work
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:111:35
+    109|     state.fetch.mockClear(); state.offline = true;
+    110|     const exiting = value.signOut();
+    111|     expect(state.tracks[0]!.stop).toHaveBeenCalledOnce();
+       |                                   ^
+    112|     expect(() => voice.sendText("Late input")).toThrow(); await exitin…
+    113|     expect(state.fetch).not.toHaveBeenCalled(); expect(state.signOut).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > fences pending microphone permission on project
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > fences pending microphone permission on background
+AssertionError: promise resolved "{ mute: [Function mute], …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "interrupt": [Function interrupt],
++   "mute": [Function mute],
++   "sendText": [Function sendText],
++   "stop": [Function stop],
+  }
+
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:118:103
+    116|     const { value } = await runtime(); let grant!: (value: MediaStream…
+    117|     state.permission = () => new Promise(resolve => { grant = resolve;…
+    118|     const starting = value.startVoice({ projectId: "p1", onEvent }); c…
+       |                                                                                                       ^
+    119|     await vi.waitFor(() => expect(grant).toBeTypeOf("function"));
+    120|     if (action === "signout") await value.signOut();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > rejects a negotiated answer completing after the opened project changed
+AssertionError: promise resolved "{ mute: [Function mute], …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "interrupt": [Function interrupt],
++   "mute": [Function mute],
++   "sendText": [Function sendText],
++   "stop": [Function stop],
+  }
+
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:138:103
+    136|     const { value } = await runtime(); let reply!: (value: Response) =…
+    137|     state.issue = () => new Promise(resolve => { reply = resolve; });
+    138|     const starting = value.startVoice({ projectId: "p1", onEvent }); c…
+       |                                                                                                       ^
+    139|     await vi.waitFor(() => expect(reply).toBeTypeOf("function"));
+    140|     await value.openProject("p2"); reply(issued()); await rejected;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes on renewed userId authority change and ignores old provider events
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes on renewed deviceId authority change and ignores old provider events
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes on renewed keyId authority change and ignores old provider events
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:148:35
+    146|     const sent = state.channels[0]!.send.mock.calls.length; state[fiel…
+    147|     await vi.advanceTimersByTimeAsync(10_000);
+    148|     expect(state.tracks[0]!.stop).toHaveBeenCalledOnce();
+       |                                   ^
+    149|     state.channels[0]!.receive?.({ data: JSON.stringify({ type: "respo…
+    150|     expect(state.queue).not.toHaveBeenCalled(); expect(state.channels[…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes on configuration change before sending new text
+AssertionError: expected [Function] to throw an error
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:156:52
+    154|     const { value, settings } = await runtime(); const voice = await v…
+    155|     settings.gatewayUrl = "https://other.example.test";
+    156|     expect(() => voice.sendText("Wrong endpoint")).toThrow(); expect(s…
+       |                                                    ^
+    157|     expect(onEvent).toHaveBeenCalledWith(expect.objectContaining({ typ…
+    158|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > replaces a pending call without letting its late permission overlap a new call
+AssertionError: promise resolved "{ mute: [Function mute], …(3) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "interrupt": [Function interrupt],
++   "mute": [Function mute],
++   "sendText": [Function sendText],
++   "stop": [Function stop],
+  }
+
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:162:97
+    160|     const { value } = await runtime(); let grant!: (value: MediaStream…
+    161|     state.permission = () => new Promise(resolve => { grant = resolve;…
+    162|     const first = value.startVoice({ projectId: "p1", onEvent }); cons…
+       |                                                                                                 ^
+    163|     await vi.waitFor(() => expect(grant).toBeTypeOf("function"));
+    164|     state.permission = null; const second = await value.startVoice({ p…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > closes media after local access is locked in another window
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:175:35
+    173|     for (const listener of state.accessListeners) listener();
+    174|     await vi.waitFor(() => expect(locked).toHaveBeenCalledOnce());
+    175|     expect(state.tracks[0]!.stop).toHaveBeenCalledOnce(); unsubscribe(…
+       |                                   ^
+    176|   });
+    177|   it("refuses oversized selected context before opening media and perm…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > reopening a snapshot retires an active call and a deliberate new call uses refreshed context
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:187:66
+    185|     const { value } = await runtime(); const first = await value.start…
+    186|     state.snapshot!.scenes[0]!.body = "The published scene was refresh…
+    187|     await value.openProject("p1"); expect(state.tracks[0]!.stop).toHav…
+       |                                                                  ^
+    188|     expect(() => first.sendText("Old context")).toThrow();
+    189|     const next = await value.startVoice({ projectId: "p1", currentScen…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts > HostedRuntime voice access lifetime > author End makes one owned stop request while media closes immediately
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ .expo/voice-policy-baseline/hostedVoiceLifetime.test.ts:195:109
+    193|     const { value } = await runtime(); const voice = await value.start…
+    194|     voice.stop(); expect(state.tracks[0]!.stop).toHaveBeenCalledOnce();
+    195|     await vi.waitFor(() => expect(state.fetch.mock.calls.filter(call =…
+       |                                                                                                             ^
+    196|     voice.stop(); expect(state.tracks[0]!.stop).toHaveBeenCalledOnce();
+    197|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 4 passed (16)
+   Start at  11:29:02
+   Duration  1.65s (transform 84ms, setup 0ms, import 107ms, tests 1.47s, environment 0ms)

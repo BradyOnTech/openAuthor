@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/encrypted-snapshot-blob-metadata/v1",
+  "title": "openAuthor Encrypted Snapshot Blob Metadata v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "snapshot_id", "project_id", "project_revision", "object_bucket", "object_key", "content_type", "encryption", "ciphertext_sha256", "ciphertext_byte_length"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.snapshot.blob"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "snapshot_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "object_bucket": {"const": "mobile-encrypted-sync"},
+    "object_key": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/relativeObjectKey"},
+    "content_type": {"const": "text/plain;charset=utf-8"},
+    "encryption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "project_key_version", "aad_version"],
+      "properties": {
+        "algorithm": {"const": "aes-256-gcm-v1"},
+        "project_key_version": {"type": "integer", "minimum": 1},
+        "aad_version": {"const": 1}
+      }
+    },
+    "ciphertext_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/rawSha256"},
+    "ciphertext_byte_length": {"type": "integer", "minimum": 40, "maximum": 67108864}
+  }
+}

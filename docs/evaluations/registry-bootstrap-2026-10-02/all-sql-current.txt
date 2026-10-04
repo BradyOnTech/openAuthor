@@ -1,0 +1,51 @@
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+Existing encrypted-sync authorization SQL suite passed.
+Live Auth-session, workspace, project and key authority SQL checks passed.
+mobile_recovery_snapshot.sql: real PostgreSQL checks passed.
+mobile_project_deletion.sql: real PostgreSQL checks passed.
+registry_bootstrap.sql: real PostgreSQL checks passed.
+PASS pre-freeze read committed uploader refused with SQLSTATE 42501
+PASS pre-freeze repeatable read uploader refused with SQLSTATE 25000
+PASS freeze waits for real in-flight shared write and includes its commit
+PASS queued owner deletion revalidates revoked owner after lock wait
+PASS queued owner deletion revalidates revoked Auth session after lock wait
+PASS queued recovery refuses changed project-version before envelope commit
+PASS queued recovery refuses changed device-key before envelope commit
+PASS two public preflight/rotation transactions serialize without lock-upgrade deadlock
+8/8 real PostgreSQL concurrency controls passed; no Storage backend purge claim.
+{
+  "scope": "Actual PostgreSQL transactions, no deployment",
+  "controls": [
+    {
+      "control": "same-account serialization",
+      "result": "passed",
+      "actual_lock_wait": true
+    },
+    {
+      "control": "different-account isolation",
+      "result": "passed",
+      "actual_lock_wait": false
+    },
+    {
+      "control": "Auth session removed during bootstrap lock wait",
+      "result": "passed",
+      "actual_lock_wait": true
+    },
+    {
+      "control": "stale snapshot isolation refused",
+      "result": "passed"
+    }
+  ]
+}

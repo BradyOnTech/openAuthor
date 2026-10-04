@@ -1,0 +1,7 @@
+{
+  "pid": 73961,
+  "command": "/private/tmp/openauthor-navigation-native-ae3eb2e/acceptance-ae3eb2e.app/Contents/MacOS/openauthor-desktop",
+  "signal": "SIGKILL",
+  "sent_at_utc": "2026-10-03T02:37:59.066876+00:00",
+  "precondition": "Current full-path CUA binding observed Search on, Plan selected, two tabs, Synopsis Unfinished navigation: keep the ferry unresolved. and new-act A navigation restart act; no book save/apply/generation action."
+}

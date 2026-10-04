@@ -1,0 +1,9 @@
+**Supplemental Standards: 0 hard violations; 0 actionable optional heuristics.**
+
+Reviewed the three fixture/evaluator changes against baseline `4a1805d589da22232c8ec50458b05de1b939de6a`, `CLAUDE.md`, the manuscript transaction contract, and all 12 Fowler heuristics.
+
+The impossible-timeline fixture still creates its accepted fact through `add_canon_fact`, with exact manuscript evidence and initially valid scene-0001 → scene-0002 boundaries. It then requests scene-0002 → scene-0001 reading order. The evaluator requires every saved scene exactly once and uses the real, project-locked `assign_scene` operation: [evaluate_canon_diagnostics.py](~/Developer/openAuthor/scripts/evaluate_canon_diagnostics.py:59). That operation removes each scene from its existing placement and appends it to the Plan inbox; iterating the complete permutation produces the requested order. Normal scene listing reads that saved Plan order, which Canon diagnostics use to identify the inverted validity range.
+
+The updated test asserts both the retained expected diagnostic and the exact actual result, so removing or bypassing the impossible-validity case cannot silently preserve the aggregate threshold: [test_canon_evaluation.py](~/Developer/openAuthor/tests/test_canon_evaluation.py:25). Other corpus cases and the synthetic-evidence limitations remain intact. No direct Memory-file mutation, fabricated legacy record, or seed omission replaces the real setup.
+
+Imports remain standard-library or repository modules; no Python runtime dependency is introduced. Tool-enforced formatting and placeholder rules were excluded from manual findings. This was read-only inspection, with no tests, providers, UI, source edits, or commits. The prior ten-file review archive remains untouched.

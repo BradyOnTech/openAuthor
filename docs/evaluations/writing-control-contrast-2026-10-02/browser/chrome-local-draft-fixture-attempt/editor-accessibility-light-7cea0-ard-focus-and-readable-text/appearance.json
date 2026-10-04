@@ -1,0 +1,263 @@
+{
+  "primary button": {
+    "color": "rgb(255, 255, 255)",
+    "backgrounds": [
+      [
+        156,
+        102,
+        14
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 4.860578195571781,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 4.860578195571781,
+    "focusVisible": false
+  },
+  "hovered primary button": {
+    "color": "rgb(255, 255, 255)",
+    "backgrounds": [
+      [
+        144,
+        96,
+        14
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.432887169095995,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.432887169095995,
+    "focusVisible": false
+  },
+  "new scene placeholder": {
+    "color": "rgb(98, 93, 88)",
+    "backgrounds": [
+      [
+        234,
+        231,
+        225
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.274689790472263,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.274689790472263,
+    "focusVisible": false
+  },
+  "title keyboard focus": {
+    "color": "rgb(26, 24, 21)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 17.715470529998143,
+    "outlineStyle": "solid",
+    "outlineWidth": 2,
+    "outlineContrast": 5.807688999006388,
+    "focusVisible": true
+  },
+  "title placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.764144284177048,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.764144284177048,
+    "focusVisible": true
+  },
+  "prose keyboard focus": {
+    "color": "rgb(26, 24, 21)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 17.715470529998143,
+    "outlineStyle": "solid",
+    "outlineWidth": 2,
+    "outlineContrast": 5.807688999006388,
+    "focusVisible": true
+  },
+  "prose placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.764144284177048,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.764144284177048,
+    "focusVisible": true
+  },
+  "unsaved status": {
+    "color": "rgb(138, 92, 10)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.807688999006388,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.807688999006388,
+    "focusVisible": false
+  },
+  "command palette placeholder": {
+    "color": "rgb(98, 93, 88)",
+    "backgrounds": [
+      [
+        255,
+        255,
+        255
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 6.50962859361298,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 6.50962859361298,
+    "focusVisible": true
+  },
+  "enabled AI button": {
+    "color": "rgb(255, 255, 255)",
+    "backgrounds": [
+      [
+        42,
+        112,
+        112
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.753287964843865,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.753287964843865,
+    "focusVisible": false
+  },
+  "hovered enabled AI button": {
+    "color": "rgb(255, 255, 255)",
+    "backgrounds": [
+      [
+        58,
+        128,
+        128
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 4.585874489106563,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 4.585874489106563,
+    "focusVisible": false
+  },
+  "unfocused focus-mode Exit": {
+    "color": "rgb(106, 101, 96)",
+    "backgrounds": [
+      [
+        253,
+        252,
+        250
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.621719496712627,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.621719496712627,
+    "focusVisible": false
+  },
+  "Plan metadata": {
+    "color": "rgb(98, 93, 88)",
+    "backgrounds": [
+      [
+        232,
+        228,
+        222
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.140531976246024,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.140531976246024,
+    "focusVisible": false
+  },
+  "Plan synopsis placeholder": {
+    "color": "rgb(98, 93, 88)",
+    "backgrounds": [
+      [
+        234,
+        231,
+        225
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.274689790472263,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.274689790472263,
+    "focusVisible": false
+  },
+  "Inspector heading": {
+    "color": "rgb(98, 93, 88)",
+    "backgrounds": [
+      [
+        245,
+        242,
+        236
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 5.825985389580873,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.825985389580873,
+    "focusVisible": false
+  },
+  "selected Connection Map filter gradient bound": {
+    "color": "rgb(26, 24, 21)",
+    "backgrounds": [
+      [
+        209.80800000000002,
+        214.4512,
+        209.15200000000002
+      ],
+      [
+        216.8,
+        218.72000000000003,
+        213.20000000000002
+      ]
+    ],
+    "opacity": "1",
+    "contrast": 12.081326263898479,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 12.081326263898479,
+    "focusVisible": false
+  }
+}

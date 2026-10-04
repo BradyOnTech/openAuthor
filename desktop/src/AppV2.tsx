@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef } from "react";
+import { RegistryAuthGate } from "./cloud/RegistryAuthGate";
 import { UIProvider, useUI } from "./contexts/UIContext";
 import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { EditorProvider } from "./contexts/EditorContext";
 import { Workbench } from "./components/workbench/Workbench";
 import { CommandPalette } from "./components/overlay/CommandPalette";
-import { ZenMode } from "./components/overlay/ZenMode";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
+import { loadProjectBindings } from "./projectBindings";
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
   const { theme } = useUI();
@@ -15,74 +16,6 @@ function ThemeInitializer({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   return <>{children}</>;
-}
-
-function requiresRegistryAuth(): boolean {
-  const meta = import.meta as unknown as {
-    env?: Record<string, string | undefined>;
-  };
-  return Boolean(meta.env?.VITE_SUPABASE_URL && meta.env?.VITE_SUPABASE_ANON_KEY);
-}
-
-function RegistryAuthGate({ children }: { children: React.ReactNode }) {
-  const [tokenInput, setTokenInput] = useState("");
-  const [hasToken, setHasToken] = useState(false);
-  const enabled = useMemo(() => requiresRegistryAuth(), []);
-
-  useEffect(() => {
-    if (!enabled || typeof window === "undefined") {
-      setHasToken(true);
-      return;
-    }
-    const token = window.localStorage.getItem("openauthor.supabaseAccessToken");
-    setHasToken(Boolean(token && token.trim()));
-  }, [enabled]);
-
-  if (!enabled || hasToken) {
-    return <>{children}</>;
-  }
-
-  return (
-    <div style={{
-      minHeight: "100vh",
-      display: "grid",
-      placeItems: "center",
-      background: "var(--bg-canvas)",
-      padding: "var(--space-8)",
-    }}>
-      <div style={{
-        width: "100%",
-        maxWidth: 540,
-        border: "1px solid var(--border-strong)",
-        borderRadius: "var(--radius-lg)",
-        background: "var(--bg-elevated)",
-        padding: "var(--space-6)",
-        display: "grid",
-        gap: "var(--space-4)",
-      }}>
-        <h1 style={{ margin: 0, fontSize: "var(--text-2xl)" }}>Sign In Required</h1>
-        <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-          This build is configured for Supabase-backed project registry. Paste a valid access token to continue.
-        </p>
-        <input
-          className="input input--mono"
-          value={tokenInput}
-          onChange={(event) => setTokenInput(event.target.value)}
-          placeholder="Supabase access token"
-        />
-        <button
-          className="button button--primary"
-          onClick={() => {
-            if (typeof window === "undefined") return;
-            window.localStorage.setItem("openauthor.supabaseAccessToken", tokenInput.trim());
-            setHasToken(tokenInput.trim() !== "");
-          }}
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
@@ -207,26 +140,48 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
 }
 
 function ProjectScopedEditor({ children }: { children: React.ReactNode }) {
-  const { activeProjectId } = useWorkspace();
-  return <EditorProvider key={activeProjectId || "welcome"}>{children}</EditorProvider>;
+  const { activeProjectId, projectRoot, branches } = useWorkspace();
+  const { setActiveView, setSidebarOpen, setSecondarySidebarOpen, setPanelOpen } = useUI();
+  // The ID cache may be absent while the registry/route restores the last book.
+  // Its retained initial root is evidence only when one valid binding owns it.
+  const boundIds = activeProjectId || !projectRoot ? [] : Object.entries(loadProjectBindings())
+    .filter(([id, binding]) => binding.projectId === id && binding.localPath === projectRoot).map(([id]) => id);
+  const previousProjectId = useRef(activeProjectId || (boundIds.length === 1 ? boundIds[0] : ""));
+  const resolvingInitialProject = useRef(!activeProjectId && boundIds.length === 1);
+  useEffect(() => {
+    if (resolvingInitialProject.current && !activeProjectId) return;
+    resolvingInitialProject.current = false;
+    const changed = previousProjectId.current !== activeProjectId;
+    previousProjectId.current = activeProjectId;
+    if (!changed || !activeProjectId) return;
+    // This wrapper survives the keyed editor. Reset for a different project,
+    // while restart keeps the author's independent document and tool choices.
+    setActiveView("manuscript");
+    setSidebarOpen(true);
+    setSecondarySidebarOpen(false);
+    setPanelOpen(false);
+  }, [activeProjectId, setActiveView, setPanelOpen, setSecondarySidebarOpen, setSidebarOpen]);
+  const scope = branches.find(row => row.current)?.name || "main";
+  return <EditorProvider key={activeProjectId || "welcome"} projectRoot={projectRoot} scope={scope}>{children}</EditorProvider>;
 }
 
 export function AppV2() {
   return (
     <RegistryAuthGate>
+      {(registryMode) => (
       <UIProvider>
         <ThemeInitializer>
-          <WorkspaceProvider>
+          <WorkspaceProvider registryMode={registryMode}>
             <ProjectScopedEditor>
               <KeyboardShortcuts>
                 <Workbench />
                 <CommandPalette />
-                <ZenMode />
               </KeyboardShortcuts>
             </ProjectScopedEditor>
           </WorkspaceProvider>
         </ThemeInitializer>
       </UIProvider>
+      )}
     </RegistryAuthGate>
   );
 }

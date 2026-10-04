@@ -1,0 +1,23 @@
+{
+  "schema": "openauthor.context-pack.projection",
+  "schema_version": 1,
+  "pack_id": "ctx_glass_harbor_0042",
+  "project_id": "project_glass_harbor",
+  "project_revision": "rev_7e3c1a",
+  "thread_id": "thread_mara_harbor",
+  "channel": "mobile_voice",
+  "scope": "scene",
+  "created_at": "2026-08-30T15:04:05.000Z",
+  "items": [
+    {
+      "reference": "scene:scene-0042",
+      "kind": "scene",
+      "title": "The Glass Harbor",
+      "content": "Mara hears the drowned bell beneath the ice.",
+      "content_sha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "source_revision": "rev_7e3c1a",
+      "authority": 100
+    }
+  ],
+  "warnings": []
+}

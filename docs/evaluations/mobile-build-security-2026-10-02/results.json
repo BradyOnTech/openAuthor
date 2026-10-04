@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T18:05:52.851413+00:00",
+  "status": "current_export_containment_verified_advisory_and_signed_release_open",
+  "assessment": "assistant_engineering_assessment_not_native_or_deployed_acceptance",
+  "git_head": "230222fc69d49f7b0668b6bd6d164feec64b9595",
+  "source_state": "Current working tree; no commits by this lane",
+  "scope": "Installed Expo production config and synthetic plugin/dotenv/source-map regression fixtures; offline actual web/iOS/Android Metro exports, plus real web and hosted-test/PWA build commands",
+  "live_provider_calls": 0,
+  "deployed_operations": 0,
+  "real_signing_credentials_used": false,
+  "dependency_changes": false,
+  "lock_identity_check": "Manifest dependency and devDependency maps equal lock root; lock unchanged from earlier Forge reachability evidence",
+  "advisory": {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+    "affected": "<=1.4.0",
+    "patched_version_when_checked": null,
+    "upstream_repair": "https://github.com/digitalbazaar/forge/pull/1152",
+    "upstream_repair_state_when_checked": "open",
+    "current_npm_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 5,
+      "critical": 0,
+      "total": 5
+    },
+    "audits_suppressed": false
+  },
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0"
+  },
+  "verification": {
+    "mobile_check": {
+      "command": "npm run check --prefix mobile",
+      "exit_code": 0,
+      "typecheck": "passed",
+      "test_files": 30,
+      "tests": 181,
+      "failed": 0,
+      "focused_security_controls": 14,
+      "log": "mobile-final.txt"
+    },
+    "all_platform_export": {
+      "command": "npm run build:export --prefix mobile -- --platform all --output-dir /private/tmp/openauthor-forge-guard-export-final-2026-10-02",
+      "exit_code": 0,
+      "report": "all-platform-build.json",
+      "map_count": 3,
+      "source_counts": {
+        "android": 848,
+        "ios": 850,
+        "web": 404
+      },
+      "log": "all-platform-export.txt"
+    },
+    "existing_web_build": {
+      "command": "npm run build:web --prefix mobile",
+      "exit_code": 0,
+      "report": "web-build.json",
+      "log": "web-export.txt"
+    },
+    "existing_hosted_test_build": {
+      "command": "npm run build:test-hosted --prefix mobile",
+      "exit_code": 0,
+      "report": "hosted-test-build.json",
+      "log": "hosted-test-export.txt"
+    },
+    "public_asset_check": "Both actual web output directories have no .map files; PWA service-worker asset inventories contain neither .map files nor security-build.json",
+    "installed_signing_branch_checks": 3,
+    "direct_tcp_or_fetch_attempts": 0,
+    "guard_red": {
+      "log": "guard-interface-red.txt",
+      "meaning": "Missing containment interface; not a cryptographic exploit reproduction"
+    },
+    "observed_metro_format_red": {
+      "log": "first-export-format-red.txt",
+      "regression_log": "metro-format-red.txt",
+      "meaning": "Guard initially rejected actual Metro NUL-prefixed virtual web source; specific failing regression preceded correction"
+    },
+    "git_diff_check": "Passed after root normalized display-log EOF in the documentation checkpoint; raw archives unchanged."
+  },
+  "policy": {
+    "entrypoints": [
+      "build:web",
+      "build:test-hosted",
+      "build:export",
+      "build:security",
+      "CI current configuration check"
+    ],
+    "blocked_while_gate_open": [
+      "updates.codeSigningCertificate presence",
+      "updates.codeSigningMetadata presence",
+      "extra.eas.projectId presence"
+    ],
+    "affected_module_patterns": [
+      "node-forge",
+      "@expo/code-signing-certificates",
+      "@expo/cli src/utils/codesigning",
+      "@expo/cli src/run/ios/codeSigning"
+    ],
+    "harmless_cli_loader_allowed": true,
+    "maps_removed_after_inspection_before_pwa_caching": true,
+    "build_reports_preserved_by_existing_ci_artifact_step": true,
+    "signing_configuration_or_crypto_rewritten": false,
+    "dependency_audit_gate": "open"
+  },
+  "limits": [
+    "Installed Forge verifier remains vulnerable; guard contains the current unused export/signing-tool path, not signature forgery itself.",
+    "Direct Expo invocations bypass this wrapper.",
+    "Source-map checks cover these Metro bundles, not native OS crypto, embedded native libraries, EAS servers or future configured update pipelines.",
+    "No signed store binary, signing key rotation or physical-device acceptance was exercised.",
+    "A supported patch or independently reviewed replacement and actual configured signing-path/artifact acceptance remain required."
+  ],
+  "upstream_inspection": "upstream-packages.json",
+  "fresh_audit": "npm-audit.json",
+  "source_sha256": {
+    "mobile/scripts/build-security.mjs": "4760488b9e03241c3a14ed51f823d98c1fad18d450c7ccaa02ec6632e557e3fc",
+    "mobile/scripts/build-hosted-test.mjs": "db4b8566d2c573a8a70d5b4bc8d5c3c341309cea3481cbca37073c20fa4ee582",
+    "mobile/test/buildSecurity.test.mjs": "160c20f28da156d9fca5a4adef3a494ac1acfd1107427e9c1482df18054a7c83",
+    "mobile/package.json": "63f9c9b11eaa2eb5cbe6ca3ec7cef4fe42c71b7c99f92af41cac4432005cdd3f",
+    "mobile/package-lock.json": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968",
+    "mobile/app.json": "6b4595e91d9785ec19455d039d668c62f03fb9c7327f5d1ff6c2a812cba63a5f",
+    "mobile/eas.json": "6d46bcbded5224fabd27cb6c5b8e98a44189277bbfa41bbaa0d2dcb44af46b48",
+    "mobile/README.md": "bd4ea93ca7f462d17a860c8942d00112028333327ed1b051ac6cfb967cf974df",
+    ".github/workflows/ci.yml": "be1e44256bcb3b25b06d0667f16b5bb50cba7ec4eb5e688ffd5f4e712057d6e4",
+    "mobile/node_modules/node-forge/lib/rsa.js": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+    "mobile/node_modules/node-forge/lib/x509.js": "cce5b00838c8c08486964c1f62cb8ae3491365509b26a27cfe1917f73dee3be9",
+    "mobile/node_modules/@expo/code-signing-certificates/build/main.js": "3670cfbd69934b475257649886517d0314890ca4139708d2c812efaab04bc6d1",
+    "mobile/node_modules/expo/node_modules/@expo/cli/build/src/utils/codesigning.js": "935fadac6f1dc56bc088acb04416d1fc83bd70505f368b87dd210d0aa4617de2",
+    "mobile/node_modules/@expo/env/build/index.js": "ef2879daa5cb4d801c71e23a114a5c0f789b9bcfe52966979f6db832d55e1baa",
+    "mobile/node_modules/@expo/config/build/Config.js": "cf6ce6da50cd131b5df308b0658cbfa66958f70a4a94f578b3d65dc8d8c28049"
+  },
+  "evidence_preservation": "Each original log is retained as exact decompressed .raw.gz bytes; .txt normalizes trailing horizontal whitespace/CR and final blank lines only. No secrets or private author data in fixtures.",
+  "evidence_sha256": {
+    "README.md": "75f6c44ce0eef5f057f404b322e823c86e514be5b319d5d8c6f7f10abb0700d5",
+    "all-platform-build.json": "71cf8959357975cef7b490b062d6a6dbdca2e48c9f0faba18627ce2e397b5c7b",
+    "all-platform-export.raw.gz": "663346895678b4ae38d761181a25d900b3efb5c238b298f8b2c75704cbea157d",
+    "all-platform-export.txt": "222c552a8268cddc9c4cd2641f88353340bc9cc08985ff2339e2c33a9dca9fae",
+    "first-export-format-red.raw.gz": "5d86a791055851d4d4da84da0a38784ff16ff701591c6a6ebd43c44742bb3776",
+    "first-export-format-red.txt": "df7f3b0f1a6aee7f6c604e45cfbc1f754355c7b04450cf19b0bb66b48426d04b",
+    "guard-interface-red.raw.gz": "f834f680be12c215cc654066ade38cd0b064c1642f59548d23ec3e53ed91b672",
+    "guard-interface-red.txt": "b5d928b7855e26bbfe237cab0b7eb67f42d73678e96499303f6c285a1d2e0537",
+    "hosted-test-build.json": "ac94280f781e037b09c090cbe2c9c617187cf7b8bcce761433ed8fa7e4a45923",
+    "hosted-test-export.raw.gz": "c6aaf72aa52863b5927d16a71b4358ac8eaabc424322c9090a7caebda9fca552",
+    "hosted-test-export.txt": "eef98a525ff4d60bc02e8f0fbdf835c8412e35824e02fb505412155f3fb45a1e",
+    "metro-format-red.raw.gz": "86b6a433a120d2a05d26129d9319b42ee4099c8ab5d544cc6778400174ce4624",
+    "metro-format-red.txt": "292dde05d24da460a2e79ff8f057a814c33188c6b046202f48943a6c0632b72f",
+    "mobile-final.raw.gz": "b6a2b018c7ced23f104f87953cc7c8bc54557d96819a9a94c88cf1b6d168c7ff",
+    "mobile-final.txt": "9336982668ce7afdbf09f53a92b2fcca77b3651747cd5b796630af0e7beb8565",
+    "npm-audit.json": "c5ed6b267cc61fa2ec196b090fccc5448d3d28d66ff8cfe73ce55a693d1d33e0",
+    "upstream-packages.json": "ee297082eac3df74edf9b77da8d0b3691981b11339347407801e2e1d4c0275bd",
+    "web-build.json": "6813f6240c4c675309c535b7e96f1fbaf276b2628fe22026e66d80f42db51d07",
+    "web-export.raw.gz": "0e0e1bb9550825c6f41b083a4cceef0dc9527d22cc19c827d0649e9415958cf7",
+    "web-export.txt": "b14646b0909f1a7c4423f03a660a2c16fff8c4a5803c6209ac8845c91e38f0a4"
+  }
+}

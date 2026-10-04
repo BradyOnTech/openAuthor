@@ -123,7 +123,9 @@ export function ConnectionGraphEditor() {
   async function decideSuggestion(id: string, disposition: "accepted" | "rejected" | "deferred") {
     setBusy(true);
     try {
-      await reviewStoryMemorySuggestion(projectRoot, id, disposition);
+      const version = suggestions.find(row => row.id === id)?.review_version;
+      if (!version) throw new Error("Refresh the Connection Map before reviewing this suggestion; its review version is unavailable.");
+      await reviewStoryMemorySuggestion(projectRoot, id, disposition, version);
       await Promise.all([refreshConnections(), refreshCodex()]);
       setError("");
       setMessage(disposition === "accepted" ? "Connection accepted into Story Memory." : `Connection ${disposition}.`);
@@ -251,7 +253,7 @@ export function ConnectionGraphEditor() {
                 <strong>{suggestion.source_name}</strong><span>{suggestion.relation}</span><strong>{suggestion.target_name}</strong>
               </div>
               <blockquote>“{suggestion.evidence[0]?.excerpt}”</blockquote>
-              <div className="connection-suggestion__evidence">{sceneTitle(suggestion.evidence[0]?.scene_id)} · {Math.round(suggestion.confidence * 100)}% confidence</div>
+              <div className="connection-suggestion__evidence">{sceneTitle(suggestion.evidence[0]?.scene_id)} · Heuristic suggestion; review the evidence</div>
               <div className="connection-suggestion__actions">
                 <button className="btn btn--primary btn--sm" disabled={busy} onClick={() => void decideSuggestion(suggestion.id, "accepted")}>Accept</button>
                 <button className="btn btn--sm" disabled={busy} onClick={() => void decideSuggestion(suggestion.id, "deferred")}>Later</button>

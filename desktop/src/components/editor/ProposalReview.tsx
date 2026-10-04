@@ -5,8 +5,11 @@ import { useEditor } from "../../contexts/EditorContext";
 import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
+import { defaultProvider } from "../../providerSelection";
 import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
 import { RevisionContextReview } from "./RevisionContextReview";
+import { EditorialFindings } from "./EditorialFindings";
+import { PassageComparison } from "../shared/PassageComparison";
 
 type Props = {
   proposal: ProposalRecord;
@@ -17,6 +20,7 @@ export function ProposalReview({ proposal: initial }: Props) {
     useWorkspace();
   const { openTab, updateTab } = useEditor();
   const [proposal, setProposal] = useState(initial);
+  useEffect(() => setProposal(initial), [initial]);
   const [busy, setBusy] = useState("");
   const [selectionVerified, setSelectionVerified] = useState(!initial.selection);
   const [selectionRefresh, setSelectionRefresh] = useState(0);
@@ -49,10 +53,7 @@ export function ProposalReview({ proposal: initial }: Props) {
 
   const draftProvider: ProposalProvider =
     (proposal.generation?.provider as ProposalProvider | undefined) ??
-    (Object.entries(runtimeConfig?.providers ?? {}).find(
-      ([name, config]) => name !== "local" && config.credential_present
-    )?.[0] as ProposalProvider | undefined) ??
-    "local";
+    defaultProvider(runtimeConfig).id;
 
   function syncTab(updated: ProposalRecord) {
     setProposal(updated);
@@ -90,14 +91,14 @@ export function ProposalReview({ proposal: initial }: Props) {
     try {
       const apply = async () => {
         const updated = await applyProposal(projectRoot, proposal.id, "", needsForce);
-        if (proposal.selection) {
+        if (updated.applied_changes) {
           const scene = await getScene(projectRoot, proposal.scene_id);
           sceneSaveSession(projectRoot, scene).acceptScene(scene);
           updateTab(`scene:${scene.id}`, { data: scene, label: scene.title, modified: false });
         }
         return updated;
       };
-      const updated = proposal.selection ? await withProjectBookChange(projectRoot, apply) : await apply();
+      const updated = await withProjectBookChange(projectRoot, apply);
       syncTab(updated);
       setMessage(
         updated.applied_changes
@@ -206,7 +207,7 @@ export function ProposalReview({ proposal: initial }: Props) {
         sceneSaveSession(projectRoot, scene).acceptScene(scene);
         return { updated, scene };
       };
-      const { updated, scene } = proposal.selection ? await withProjectBookChange(projectRoot, undo) : await undo();
+      const { updated, scene } = await withProjectBookChange(projectRoot, undo);
       syncTab(updated);
       openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene });
       setMessage("Change undone — the scene was restored and a new revision recorded.");
@@ -233,13 +234,15 @@ export function ProposalReview({ proposal: initial }: Props) {
   const changeSet = proposal.change_set;
   const acceptedCount = changeSet?.hunks.filter((hunk) => hunk.decision === "accepted").length ?? 0;
   const displayStatus = proposal.undone_at ? "undone" : proposal.status;
+  const statusLabel = proposal.status === "pending" && proposal.selection
+    ? proposal.selection.action === "critique" ? "Feedback ready" : "Replacement awaiting review" : displayStatus;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
         <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
         <div className="review-card__meta">
-          <span className={`badge badge--${displayStatus}`}>{displayStatus}</span>
+          <span className={`badge badge--${displayStatus}`}>{statusLabel}</span>
           {proposal.stale && proposal.status === "pending" && (
             <span className="badge badge--warning" title="The scene changed after this proposal was written">
               scene changed
@@ -309,7 +312,7 @@ export function ProposalReview({ proposal: initial }: Props) {
               </div>
             ))}
             {changeSet.hunks.map((hunk) => (
-              <div key={hunk.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden", opacity: hunk.decision === "rejected" ? 0.7 : 1 }}>
+              <div key={hunk.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-2)", padding: "var(--space-2)", background: "var(--bg-elevated)" }}>
                   <div>
                     <span className="badge">{hunk.kind}</span>
@@ -331,11 +334,11 @@ export function ProposalReview({ proposal: initial }: Props) {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border-subtle)" }}>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--danger) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
-                    <div style={{ color: "var(--danger)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
+                    <div style={{ color: "var(--danger-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
                     {hunk.before_text || "∅"}
                   </div>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--success) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
-                    <div style={{ color: "var(--success)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
+                    <div style={{ color: "var(--success-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
                     {hunk.after_text || "∅"}
                   </div>
                 </div>
@@ -372,10 +375,10 @@ export function ProposalReview({ proposal: initial }: Props) {
       {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
         <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
         <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
-        <div className="selection-review__comparison">
-          <div><strong>Before</strong><blockquote>{proposal.selection.before}</blockquote></div>
-          <div><strong>{proposal.selection.action === "critique" ? "Feedback" : "After"}</strong><blockquote>{proposal.selection.feedback || proposal.selection.after}</blockquote></div>
-        </div>
+        {proposal.selection.action === "critique" ? proposal.selection.review
+          ? <EditorialFindings review={proposal.selection.review} feedback={proposal.selection.feedback} stale={Boolean(proposal.stale)} />
+          : <div className="selection-review__comparison"><div><strong>Selected passage</strong><blockquote>{proposal.selection.before}</blockquote></div><div><strong>Feedback · quotations not verified</strong><blockquote>{proposal.selection.feedback}</blockquote></div></div>
+          : <PassageComparison before={proposal.selection.before} after={proposal.selection.after} />}
         {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
         {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
         <button className="btn" style={{ minHeight: 40 }} disabled={Boolean(busy)} onClick={() => setSelectionRefresh(value => value + 1)}>Refresh selection status</button>

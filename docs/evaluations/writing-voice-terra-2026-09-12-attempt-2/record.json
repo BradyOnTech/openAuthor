@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "status": "partial",
+  "failed_cases": [
+    {
+      "id": "action-interrupted-choice",
+      "title": "The brake",
+      "error": "The provider's prose assessment quoted text absent from its candidate."
+    },
+    {
+      "id": "dialogue-withheld-knowledge",
+      "title": "The spare key",
+      "error": "The provider's prose assessment quoted text absent from its candidate."
+    },
+    {
+      "id": "introspection-restrained-control",
+      "title": "The second place",
+      "error": "The provider's prose assessment quoted text absent from its candidate."
+    }
+  ],
+  "generations": [
+    {
+      "run_id": "gen-2e3a97370f0c",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14150,
+      "output_tokens": 557,
+      "latency_ms": 13273,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-02cebfd7c318",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14170,
+      "output_tokens": 585,
+      "latency_ms": 13817,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-f786771056c2",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 10404,
+      "output_tokens": 764,
+      "latency_ms": 16422,
+      "provider_attempts": 1,
+      "error_category": ""
+    }
+  ],
+  "provider": "openai-codex",
+  "requested_model": "gpt-5.6-terra",
+  "seed": 41,
+  "corpus_sha256": "cba260ffcc68b0bb05c9a6c343dcffd9fc7fbb911f71665e5d503c781dbccba4",
+  "implementation_sha256": "3e5948218674e5dbf106cf8f6a86a85aef97c9ac4bda5ea7e9e2f5a67bccd1ea",
+  "generation_calls": 3,
+  "candidate_count": 0,
+  "changed_candidates": 0,
+  "quality_verdict": "Not assessed. Human comparison required; local baselines are not creative generation.",
+  "criteria": {
+    "voice_fit": "Does the prose serve the selected Writing Voice without becoming mechanical?",
+    "readability": "Is the action and meaning clear, with purposeful rhythm?",
+    "emotional_effect": "Is the intended feeling earned through this scene?",
+    "character_distinction": "Does dialogue and perception belong to this character?",
+    "consistency": "Are facts, POV, tense, knowledge and protected details preserved?"
+  },
+  "cases": []
+}

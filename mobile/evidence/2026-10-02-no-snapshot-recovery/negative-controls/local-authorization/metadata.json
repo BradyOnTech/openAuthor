@@ -1,0 +1,9 @@
+{
+  "kind": "explicit-local-authorization post-write fence disabled negative control",
+  "note": "Retrospective controlled mutation of captured current sources; not an original historical red run. Native post-OS-write current check and browser post-transaction current check/rollback are deliberately omitted; pre-write fences, encrypted storage and proof remain unchanged. Tests select only the two exact access-write windows.",
+  "directory": "/private/tmp/openauthor-mobile-authorization-negative-5w46td28/mobile",
+  "mutated_source_sha256": {
+    "src/adapters/expoSecrets.ts": "6ca8aae2eed60b10c46dced97fb437a3088968785717d1c12287ec431e8b945e",
+    "src/adapters/browserStorage.ts": "a76162ff39cbb9dc08c9eebdb83d77df3ac402398fd8981a783513d6b07f09d2"
+  }
+}

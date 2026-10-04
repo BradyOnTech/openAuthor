@@ -1,0 +1,60 @@
+{
+  "checked_at": "2026-10-02T17:44:24.809032+00:00",
+  "inspection": "Official public registry and integrity-verified archives inspected in temporary directory, not installed or executed",
+  "packages": {
+    "@expo/code-signing-certificates": {
+      "version": "0.0.7",
+      "registry_url": "https://registry.npmjs.org/@expo%2Fcode-signing-certificates/latest",
+      "git_head": "82466a5bc6226a2a2da6a04bfbc904b21d83054a",
+      "signing_dependencies": {
+        "node-forge": "^1.4.0"
+      },
+      "archive": "https://registry.npmjs.org/@expo/code-signing-certificates/-/code-signing-certificates-0.0.7.tgz",
+      "integrity": "sha512-zP0tnfqrFFRL8INtOaQ6XwEYfdIpIH9vrEo7y0bHQGQa50z4/QWXE5CI4nRUHxqFW4MVWOwXFg1hom1aAZHNkQ==",
+      "integrity_verified": true,
+      "archive_sha256": "91a222e59e712ed091769860092a710a7df62e69fbf8e9b3c45b26ff3e30f246",
+      "inspected_files_sha256": {
+        "expo-code-signing-certificates-package-package.json": "8236a9ccb865ef04646dbf9c1cb89f13885eb76522609217dcb2e3b382fdd72e",
+        "expo-code-signing-certificates-package-build-main.js": "677bb9dab63300b52ead2263e54f1ffbbd292faaa1d7f166d0535a49eec54a74"
+      }
+    },
+    "@expo/cli": {
+      "version": "57.0.27",
+      "registry_url": "https://registry.npmjs.org/@expo%2Fcli/latest",
+      "git_head": "9349d1457178dd9cccb8bdd3aed47473c49134e1",
+      "signing_dependencies": {
+        "node-forge": "^1.3.3",
+        "@expo/code-signing-certificates": "^0.0.6"
+      },
+      "archive": "https://registry.npmjs.org/@expo/cli/-/cli-57.0.27.tgz",
+      "integrity": "sha512-Jauk4chxmpVG5ElrMLTCwjFP20jbYU7PB4l3LYV8j+4e/3HU5jdl7qTQ4eVy1AaDUE9Ia2NCQ5A9kar2V1gaLg==",
+      "integrity_verified": true,
+      "archive_sha256": "7af6768df41f493197b99026f39563d2cb63791624556f222b4e78379e8ca6bf",
+      "inspected_files_sha256": {
+        "expo-cli-package-build-src-utils-codesigning.js": "935fadac6f1dc56bc088acb04416d1fc83bd70505f368b87dd210d0aa4617de2",
+        "expo-cli-package-package.json": "7bd3bcad749f8d349a98e97161b3b84702387b32e4d26f4e3902e635f4212575"
+      }
+    },
+    "node-forge": {
+      "version": "1.4.0",
+      "registry_url": "https://registry.npmjs.org/node-forge/latest",
+      "archive": "https://registry.npmjs.org/node-forge/-/node-forge-1.4.0.tgz",
+      "integrity": "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
+      "archive_downloaded": false
+    },
+    "expo": {
+      "version": "57.0.26",
+      "registry_url": "https://registry.npmjs.org/expo/latest",
+      "cli_dependency": "^57.0.27",
+      "archive_downloaded": false
+    }
+  },
+  "advisory": {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "affected": "<=1.4.0",
+    "patched_version": null,
+    "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+    "proposed_patch": "https://github.com/digitalbazaar/forge/pull/1152",
+    "proposed_patch_state_when_checked": "open"
+  }
+}

@@ -1,0 +1,37 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (56 tests | 1 failed | 55 skipped) 362ms
+     × keeps existing-folder attachment intent ahead of delayed startup legacy restart selection 361ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > keeps existing-folder attachment intent ahead of delayed startup legacy restart selection
+AssertionError: expected { …(2) } to deeply equal { selectedId: '', legacyAttempts: 1 }
+
+- Expected
++ Received
+
+  {
+-   "legacyAttempts": 1,
+-   "selectedId": "",
++   "legacyAttempts": 2,
++   "selectedId": "proj-cc162994-e7bd-41ac-81aa-cf0dee76a6bc",
+  }
+
+ ❯ src/AppV2.workflow.test.tsx:1534:48
+    1532|       const selectedId = JSON.parse(localStorage.getItem("openauthor.a…
+    1533|       if (delayedSource === "legacy restart") {
+    1534|         expect({ selectedId, legacyAttempts }).toEqual({ selectedId: "…
+       |                                                ^
+    1535|       } else {
+    1536|         expect(selectedId).toBe("");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 55 skipped (56)
+   Start at  21:21:03
+   Duration  2.05s (transform 887ms, setup 0ms, import 1.21s, tests 362ms, environment 401ms)
+

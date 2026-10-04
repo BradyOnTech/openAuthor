@@ -1,0 +1,29 @@
+{
+  "all_six_priorities": "in_progress",
+  "baseline": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "final_source_inputs": 538,
+  "fixture_adjustment": "Create valid accepted scene1->2 Canon, then ordinary Plan moves yield2,1 reading order; corpus still expects exactlyone impossible_validity. All seven seeded and16 unseeded cases remain, with synthetic metrics limits.",
+  "implementation_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "implemented": [
+    "Guarded desktop Canon review sends original fact/Storyline version; core compares it under the shared project lock before mutation.",
+    "Accepted fact creation, correction and evidence review share current-passage and reading-order validity validation.",
+    "Delayed review responses preserve newer correction drafts and authoritative facts; retirement retains unfinished evidence drafts; suggested facts show pending author review.",
+    "Mobile export guard rejects direct Braces/Micromatch and their embedded workspace/doctor containers, nested map sections and sourceRoot paths; existing signing exclusions remain."
+  ],
+  "independent_reviewed_files": 13,
+  "initial_capture_timing_evidence": "Initial capture order is root-recorded: the preserved initial manifest has no timestamp. The final manifest records its capture timestamp before the retained browser start. File hashes and prior reviews independently correlate the tested states; no initial capture timestamp is invented.",
+  "initial_source_inputs": 537,
+  "mobile_evidence": "Immutable 102-file handoff archived; its primary-source responses, installed callers,12 isolated stack-exhaustion probes and25 focused export tests retain their own source hashes. Normal first export is accepted separately from the observer-only second export with three captured maps.",
+  "native_evidence_in_packet": false,
+  "original_probe_scope": "Original legacy timestamp-only probe mutates another Storyline with an unchanged timestamp. That protocol remains compatible and does not gain Storyline protection. The current desktop sends original expected_version; its separate guarded green probe refuses accepted/rejected stale scope and inverted validity, preserving memory/prose. Baseline accepted invalid-range behavior is repaired by shared acceptance validation, including the legacy review path.",
+  "red_scope": "Original probe failures retained; first rendered-red.txt is setup failure. core-regression-red.txt has two expected_version API errors and one invalid-range assertion failure; add-range-red.txt adds the creation-path refusal case. Rendered regressions fail twice before repair. Mobile baseline guard has 11 failures/14 controls in25 tests.",
+  "release_certified": false,
+  "remaining": [
+    "Author editorial and Memory workload assessment on fresh prose.",
+    "Real native VoiceOver, scaling and sustained author sessions.",
+    "Current-source signed GUI interruption/recovery, interrupted backup restore, clean-machine install and upgrade. Separate unsigned a523097 apply/undo interruption passes in the native packet.",
+    "Physical iPhone/Android and approved deployment authorization, audio, encrypted recovery and deletion drills.",
+    "Supported or independently reviewed remediation for both Forge and Braces; stronger app-export containment does not clear dependency gates or certify network-exposed development tooling."
+  ],
+  "root_verification": "Initial537 snapshot precedes original core/desktop/build. Full desktop710/92 and TS/Vite pass on that state; desktop/production inputs remain identical in final538. Original core attempts retain socket restrictions plus the intended new validity refusal, then one evaluator-fixture refusal after approved sockets. Three fixture/evaluator files were independently reviewed and corrected without weakening production guards. Final538 capture precedes finalcore583/one existing Codex contract skip and four real-core offline browser regressions. Exact raw receipts/logs retained; no native or author acceptance claimed."
+}

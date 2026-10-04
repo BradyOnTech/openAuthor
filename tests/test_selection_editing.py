@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import hashlib
 import json
 import io
 import os
@@ -88,14 +89,14 @@ class SelectionEditingTests(unittest.TestCase):
     preview = preview_selection(self.paths, **args)
     proposal = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"])
     log = json.loads((self.paths.root / proposal["generation"]["log_path"]).read_text())
-    self.assertEqual(log["user_prompt"], preview["user_prompt"])
-    self.assertEqual(log["system_prompt"], preview["system_prompt"])
+    self.assertEqual(log["user_prompt_sha256"], hashlib.sha256(preview["user_prompt"].encode()).hexdigest())
+    self.assertEqual(log["system_prompt_sha256"], hashlib.sha256(preview["system_prompt"].encode()).hexdigest())
     self.assertEqual(log["kind"], "selection")
     for allowed in ("ASK_CHARACTER", "ASK_PAST"):
-      self.assertIn(allowed, log["user_prompt"])
+      self.assertIn(allowed, preview["user_prompt"])
       self.assertNotIn(allowed, preview_selection(self.paths, **self.args)["user_prompt"])
     for forbidden in ("PRIVATE_NOTE", "NEVER_SHARE"):
-      self.assertNotIn(forbidden, log["user_prompt"])
+      self.assertNotIn(forbidden, preview["user_prompt"])
     update_entity(self.paths, entity_id=entity, description="UPDATED_CHARACTER")
     with patch("urllib.request.urlopen") as transport:
       with self.assertRaisesRegex(OpenAuthorError, "context changed"):
@@ -151,7 +152,7 @@ class SelectionEditingTests(unittest.TestCase):
     self.assertIn("Later writing.", get_scene(self.paths, "scene-0001")["body"])
     self.assertEqual(list(self.paths.proposals_dir.glob("*.json")), [])
     log = json.loads(next(self.paths.generations_dir.glob("*.json")).read_text())
-    self.assertEqual(log["response_text"], "Mara counted lights.")
+    self.assertEqual(log["response_sha256"], hashlib.sha256(b"Mara counted lights.").hexdigest())
 
   def test_invalid_and_oversized_ranges_never_start_a_provider_request(self):
     invalid = [

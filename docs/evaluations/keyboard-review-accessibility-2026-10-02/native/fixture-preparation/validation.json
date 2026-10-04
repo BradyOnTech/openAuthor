@@ -1,0 +1,38 @@
+{
+  "previous_sealed_files_verified": 28,
+  "codex_home_empty": true,
+  "all_scene_files_unchanged": true,
+  "raw_proposals_verified": [
+    {
+      "scene_id": "scene-0001",
+      "proposal_id": "proposal-9f2042600b36",
+      "generation_provider": "local",
+      "draft_provider": "local",
+      "status": "pending",
+      "change_group_id": "native-recovery-drill",
+      "proposed_body": "The signal drifted.\n",
+      "accepted_hunk_count": 1
+    },
+    {
+      "scene_id": "scene-0002",
+      "proposal_id": "proposal-c4236380a8e0",
+      "generation_provider": "local",
+      "draft_provider": "local",
+      "status": "pending",
+      "change_group_id": "native-recovery-drill",
+      "proposed_body": "Mara paced beside the gate.\n",
+      "accepted_hunk_count": 1
+    },
+    {
+      "scene_id": "scene-0003",
+      "proposal_id": "proposal-67c5883b1d6d",
+      "generation_provider": "local",
+      "draft_provider": "local",
+      "status": "pending",
+      "change_group_id": "native-recovery-drill",
+      "proposed_body": "Ivo waited beside the narrow door.\n",
+      "accepted_hunk_count": 1
+    }
+  ],
+  "note": "Earlier validator checked source == local; source is lifecycle label ai_generate. Provider evidence correctly comes from generation.provider and draft.provider."
+}

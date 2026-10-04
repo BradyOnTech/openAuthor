@@ -1,0 +1,50 @@
+
+> openauthor-desktop@0.1.0 tauri:build
+> tauri build --bundles app
+
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build && ../scripts/verify_bundled_runtime.sh`
+
+> openauthor-desktop@0.1.0 build
+> tsc && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 378 modules transformed.
+rendering chunks...
+[plugin vite:reporter]
+(!) ~/Developer/openAuthor/contracts/src/index.ts is dynamically imported by ~/Developer/openAuthor/desktop/src/mobileSync/supabaseTransport.ts, ~/Developer/openAuthor/desktop/src/mobileSync/supabaseTransport.ts but also statically imported by ~/Developer/openAuthor/desktop/src/mobileSync/snapshotRecovery.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                               0.40 kB │ gzip:   0.27 kB
+dist/assets/index-B-CEm6m5.css               73.07 kB │ gzip:  12.98 kB
+dist/assets/core-BEOw45JP.js                  0.20 kB │ gzip:   0.15 kB
+dist/assets/event-VZ6uyeOz.js                 1.07 kB │ gzip:   0.58 kB
+dist/assets/desktopEnrollment-DLsFYiiL.js     4.18 kB │ gzip:   1.69 kB
+dist/assets/index--onc1xDT.js               221.56 kB │ gzip:  58.07 kB
+dist/assets/libsodium-wrappers-KK78raE8.js  434.03 kB │ gzip: 151.68 kB
+dist/assets/index-ffrGBpjN.js               833.56 kB │ gzip: 237.93 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.28s
+{"schema_version": 1, "bundled_core_source": "exact_match", "core_source_sha256": "671420d5d65908b138f523716518b842d755671ed009c221943be8ce978d9440", "architecture": "arm64", "python": "3.11.15", "source_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8", "workflow_run_id": "", "signed_bundle_required": false, "verification_kind": "packaged_engine; no clean-machine GUI or accessibility certificate", "release_certified": false, "manual_gates": {"clean_machine_install": "not_observed", "packaged_gui_author_workflow": "not_observed", "signed_gui_forced_termination": "not_observed", "upgrade_from_released_version": "not_observed", "voiceover_keyboard_contrast": "not_observed"}, "source_checkout_clean": true}
+{"packaged_recovery": "passed", "forced_termination": [{"stage": "scene", "result": "exact_original_restored"}, {"stage": "head", "result": "exact_original_restored"}, {"stage": "proposal", "result": "exact_original_restored"}, {"stage": "before_commit", "result": "exact_original_restored"}, {"stage": "committed", "result": "preserved_commit"}], "system_tools_on_path": false, "architecture": "arm64", "python": "3.11.15", "gui_acceptance": "not_observed"}
+Bundled runtime: OK (3.11.15 arm64)
+Bundled Codex runtime: OK (codex-cli 0.144.6)
+warning: stripping debug info with `rust-objcopy` failed: signal: 6 (SIGABRT)
+  |
+  = note: dyld[86013]: Library not loaded: @rpath/libLLVM.dylib
+            Referenced from: <AC0D75A8-23BF-301F-B7CE-3E5CC0C1BC06> ~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/rust-objcopy
+            Reason: tried: '~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/../lib/libLLVM.dylib' (no such file), '~/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/../lib/libLLVM.dylib' (no such file), '~/Developer/openAuthor/desktop/src-tauri/target/release/deps/libLLVM.dylib' (no such file), '~/lib/libLLVM.dylib' (no such file), '/usr/local/lib/libLLVM.dylib' (no such file), '/usr/lib/libLLVM.dylib' (no such file, not in dyld cache)
+
+
+warning: `openauthor-desktop` (build script) generated 1 warning
+   Compiling openauthor-desktop v0.1.0 (~/Developer/openAuthor/desktop/src-tauri)
+    Finished `release` profile [optimized] target(s) in 21.95s
+       Built application at: ~/Developer/openAuthor/desktop/src-tauri/target/release/openauthor-desktop
+    Bundling openAuthor.app (~/Developer/openAuthor/desktop/src-tauri/target/release/bundle/macos/openAuthor.app)
+    Finished 1 bundle at:
+        ~/Developer/openAuthor/desktop/src-tauri/target/release/bundle/macos/openAuthor.app

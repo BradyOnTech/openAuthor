@@ -1,0 +1,37 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/components/editor/MemorySuggestionReview.test.tsx
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/MemorySuggestionReview.test.tsx (9 tests | 1 failed) 272ms
+   × requires an explicit type correction before accepting an uncertain AI entry 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/MemorySuggestionReview.test.tsx > requires an explicit type correction before accepting an uncertain AI entry
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/editor/MemorySuggestionReview.test.tsx:140:90
+    138|   render(<MemorySuggestionReview />);
+    139|   await screen.findByRole("article", { name: "Review Last Ferry" });
+    140|   expect((screen.getByRole("button", { name: "Accept" }) as HTMLButton…
+       |                                                                                          ^
+    141|   expect(screen.getByText(/type is uncertain/i)).toBeTruthy();
+    142|   fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  09:59:44
+   Duration  856ms (transform 79ms, setup 0ms, import 190ms, tests 272ms, environment 324ms)
+

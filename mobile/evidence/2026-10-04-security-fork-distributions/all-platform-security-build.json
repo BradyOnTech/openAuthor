@@ -1,0 +1,97 @@
+{
+  "advisory": "GHSA-86w9-cpqp-85rv",
+  "advisories": [
+    "GHSA-86w9-cpqp-85rv",
+    "GHSA-vfj7-8cjw-p6xm"
+  ],
+  "upstream_advisory_gate": "open",
+  "dependency_audit_gate": "separate_raw_audit_required",
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0-openauthor.1",
+    "braces": "3.0.3-openauthor.1",
+    "micromatch": "4.0.8"
+  },
+  "signing_header_checks": 3,
+  "network_attempts": 0,
+  "forge_backport": {
+    "advisory": "GHSA-86w9-cpqp-85rv",
+    "forge_version": "1.4.0-openauthor.1",
+    "rsa_sha256": "3dde91b05b403e062e0c7c8e97e63e79337c651db59f18fa7c836d18b15697d5",
+    "status": "pinned_repository_node_fork_verified",
+    "applied": false,
+    "callers": [
+      "node_modules/@expo/code-signing-certificates/build/main.js",
+      "node_modules/expo/node_modules/@expo/cli/build/src/utils/codesigning.js",
+      "node_modules/expo/node_modules/@expo/cli/build/src/run/ios/codeSigning/Security.js"
+    ],
+    "omitted_distribution_files": [
+      "dist/forge.all.min.js",
+      "dist/forge.all.min.js.map",
+      "dist/forge.min.js",
+      "dist/forge.min.js.map",
+      "dist/prime.worker.min.js",
+      "dist/prime.worker.min.js.map",
+      "flash/swf/SocketPool.swf"
+    ],
+    "upstream_advisory_gate": "open",
+    "dependency_audit_gate": "separate_raw_audit_required",
+    "scope": "Repository maintained Node-only Forge fork with canonical DER DigestInfo validation. Raw npm audit and source regression guards are independent gates. Upstream advisory, global/cloud EAS, signing activation, browser signing and native acceptance remain open."
+  },
+  "braces_backport": {
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "status": "pinned_repository_fork_and_embedded_backports_verified",
+    "applied": [],
+    "targets": {
+      "node_modules/braces/index.js": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+      "node_modules/braces/lib/compile.js": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+      "node_modules/braces/lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "node_modules/braces/lib/expand.js": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+      "node_modules/braces/lib/parse.js": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+      "node_modules/braces/lib/stringify.js": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+      "node_modules/braces/lib/utils.js": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+      "node_modules/resolve-workspace-root/build/index.js": "c92afd8c2444be75f1e03c006a612158c27a3253d64a320da90ef58029f3c12e",
+      "node_modules/expo-doctor/build/index.js": "a6c3a6458e2934e880d283629e42d2f9e13cda1dd3f8383cd3bff56a2b8bbe9f"
+    },
+    "package_versions": {
+      "braces": "3.0.3-openauthor.1",
+      "resolve-workspace-root": "2.0.1",
+      "expo-doctor": "1.20.4"
+    },
+    "upstream_advisory_gate": "open",
+    "dependency_audit_gate": "separate_raw_audit_required",
+    "scope": "Repository maintained bounded-depth Braces fork and byte-bound backports for both embedded copies. Raw npm audit and source regression guards are independent gates. Upstream advisory, broader expansion resources, global/cloud/native release acceptance remain open."
+  },
+  "scope": "Metro export module containment with repository maintained forks; raw audit is separate, upstream advisories, signing and native acceptance remain open",
+  "platforms": [
+    "web",
+    "ios",
+    "android"
+  ],
+  "map_count": 3,
+  "bundles": [
+    {
+      "file": "_expo/static/js/android/index-bfdb2eb28bdf16b6b9e53dc4a30684c5.hbc",
+      "platform": "android",
+      "source_count": 849,
+      "bundle_sha256": "f94dd09f3ff36c56f7aab69d44ecd8dfa4dfe29b011b2ddfb07d4cef36130fec",
+      "map_sha256": "3dba4b4b3244c44905e1068cda1ebff7955c7c24e028964e2cc406dc81b5635b"
+    },
+    {
+      "file": "_expo/static/js/ios/index-6797853dcada376ad14117a3620374a0.hbc",
+      "platform": "ios",
+      "source_count": 851,
+      "bundle_sha256": "831c3da5cf5332284de857c130ccd212c45d470e4c3409ce4d39dcf6c8ca147f",
+      "map_sha256": "033ebe8eb345935db4cb16c616f5789f8c19cce12c09e2fa949614e1078206e7"
+    },
+    {
+      "file": "_expo/static/js/web/index-5b98271436c3036d7f9ac43570890803.js",
+      "platform": "web",
+      "source_count": 406,
+      "bundle_sha256": "a624ffae967d25102296949b59d0a4be2f1b3e9add15a9bf2b52d5a96b9c0960",
+      "map_sha256": "34d515bd882730067f8c0893a5d6e63a0e50e27e879c09c48c2041c64b257b12"
+    }
+  ]
+}

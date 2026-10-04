@@ -1,0 +1,168 @@
+
+> openauthor-mobile@0.1.0 test
+> vitest run test/gatewaySession.test.ts
+
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+ ❯ test/gatewaySession.test.ts (9 tests | 7 failed) 21ms
+     × refuses missing lease before opening voice without policy 3ms
+     × refuses invalid lease before opening voice without policy 1ms
+     × refuses missing call before opening voice without policy 1ms
+     × refuses expired hard deadline before opening voice without policy 0ms
+     × refuses expired lease before opening voice without policy 0ms
+     × refuses invalid renewal interval before opening voice without policy 1ms
+     × refuses lease beyond hard deadline before opening voice without policy 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses missing lease before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "call",
++   "expiresAt": "2026-10-02T16:17:03.297Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses invalid lease before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "call",
++   "expiresAt": "2026-10-02T16:17:03.300Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses missing call before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "",
++   "expiresAt": "2026-10-02T16:17:03.301Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses expired hard deadline before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "call",
++   "expiresAt": "2020-01-01T00:00:00Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses expired lease before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "call",
++   "expiresAt": "2026-10-02T16:17:03.302Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses invalid renewal interval before opening voice without policy
+ FAIL  test/gatewaySession.test.ts > shared mobile voice negotiation > refuses lease beyond hard deadline before opening voice without policy
+AssertionError: promise resolved "{ answerSdp: 'answer', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "answerSdp": "answer",
++   "callId": "call",
++   "expiresAt": "2026-10-02T16:17:03.303Z",
+  }
+
+ ❯ test/gatewaySession.test.ts:31:37
+     29|     const negotiate = gatewayNegotiator({ gatewayUrl: "https://voice.e…
+     30|       accessToken: async () => "token", fetchImpl: async () => new Res…
+     31|     await expect(negotiate("offer")).rejects.toThrow(/policy|incomplet…
+       |                                     ^
+     32|   });
+     33|   it("rejects insecure endpoints and does not display raw backend fail…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 2 passed (9)
+   Start at  11:07:03
+   Duration  132ms (transform 16ms, setup 0ms, import 23ms, tests 21ms, environment 0ms)

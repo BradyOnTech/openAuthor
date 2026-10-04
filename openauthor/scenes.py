@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_text, next_scene_index, utc_now
+from .project_locks import serialized_project_access
 from .reading_order import ordered_scene_ids
 
 
@@ -97,6 +98,7 @@ def build_scene_markdown(
   )
 
 
+@serialized_project_access
 def add_scene(
   paths: ProjectPaths,
   *,
@@ -115,22 +117,22 @@ def add_scene(
     if any(paths.scenes_dir.glob(f"{index:04d}-*.md")):
       index += 1
       continue
+    from .book_transactions import write_transaction_text
+    content = build_scene_markdown(
+      scene_identifier=scene_id(index), title=title, summary=summary,
+      pov=pov, status=status, body=body,
+    )
+    if write_transaction_text(file_path, content, exclusive=True):
+      from .product_signals import record_product_event
+      record_product_event(paths, "scene_created", word_count=len(body.split()))
+      return file_path
     try:
       fd = os.open(file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
       index += 1
       continue
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
-      handle.write(
-        build_scene_markdown(
-          scene_identifier=scene_id(index),
-          title=title,
-          summary=summary,
-          pov=pov,
-          status=status,
-          body=body,
-        )
-      )
+      handle.write(content)
     from .product_signals import record_product_event
     record_product_event(paths, "scene_created", word_count=len(body.split()))
     return file_path
@@ -176,6 +178,7 @@ def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
   }
 
 
+@serialized_project_access
 def list_scene_details(paths: ProjectPaths) -> list[dict[str, str]]:
   rows = [
     _scene_detail(paths, scene_file)
@@ -195,6 +198,7 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
   return rows
 
 
+@serialized_project_access
 def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
     front_matter = parse_front_matter(scene_file)
@@ -203,14 +207,18 @@ def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
   raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
 
 
-def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, str]:
+@serialized_project_access
+def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, Any]:
+  from .scene_edits import scene_edit_version
+
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
     detail = _scene_detail(paths, scene_file)
     if detail["id"] == scene_identifier:
-      return detail
+      return {**detail, "edit_version": scene_edit_version(paths, detail)}
   raise OpenAuthorError(f"Unknown scene id '{scene_identifier}'.")
 
 
+@serialized_project_access
 def update_scene(
   paths: ProjectPaths,
   *,

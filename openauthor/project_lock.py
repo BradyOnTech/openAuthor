@@ -5,6 +5,7 @@ import re
 from contextlib import contextmanager
 
 from .project import ProjectPaths
+from .project_locks import project_lock
 
 _guard = threading.Lock()
 _locks: dict[str, threading.RLock] = {}
@@ -14,6 +15,10 @@ _local = threading.local()
 @contextmanager
 def project_write_lock(paths: ProjectPaths, *, resource: str = "book-write"):
   """Serialize book edits across desktop command processes and sidecar threads."""
+  if resource == "book-write":
+    with project_lock(paths):
+      yield
+    return
   if not re.fullmatch(r"[a-zA-Z0-9_-]+", resource):
     raise ValueError("Invalid lock resource")
   key = str(paths.root.resolve()) + ":" + resource

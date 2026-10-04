@@ -9,6 +9,8 @@ from typing import Any
 
 from .codex import get_entity, list_entities
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
+from .project_locks import serialized_project_access
+from .scene_edits import workspace_edit_scope
 from .scenes import get_scene, list_scene_details, list_scenes
 from .story_observations import prose_trait_diagnostics
 
@@ -89,6 +91,7 @@ def _clean_evidence(paths: ProjectPaths, evidence: list[dict[str, Any]]) -> list
   return cleaned
 
 
+@serialized_project_access
 def add_canon_fact(
   paths: ProjectPaths,
   *,
@@ -145,19 +148,77 @@ def add_canon_fact(
     "created_at": now,
     "updated_at": now,
   }
+  if status == "accepted":
+    _validate_accepted_fact(paths, row)
   payload = _read_memory(paths)
   payload["facts"].append(row)
   _write_memory(paths, payload)
   return row
 
 
-def list_canon_facts(paths: ProjectPaths, *, status: str | None = None) -> list[dict[str, Any]]:
+def _fact_edit_version(paths: ProjectPaths, fact: dict[str, Any]) -> str:
+  source = json.dumps([workspace_edit_scope(paths)[0], fact], sort_keys=True, ensure_ascii=False)
+  return hashlib.sha256(source.encode("utf-8")).hexdigest()
+
+
+def _validate_accepted_fact(paths: ProjectPaths, fact: dict[str, Any]) -> None:
+  positions = _scene_positions(paths)
+  if any(boundary and boundary not in positions for boundary in fact["validity"].values()):
+    raise OpenAuthorError("A validity scene is unavailable. Choose a current scene.")
+  if _validity_range(fact, positions)[0] > _validity_range(fact, positions)[1]:
+    raise OpenAuthorError("The fact cannot stop being true before it begins.")
+  for evidence in fact["evidence"]:
+    body = get_scene(paths, evidence["scene_id"])["body"]
+    if not evidence["excerpt"].strip() or evidence["excerpt"] not in body:
+      raise OpenAuthorError("A supporting passage is missing from the current scene. Correct the excerpt before accepting this fact.")
+
+
+@serialized_project_access
+def list_canon_facts(paths: ProjectPaths, *, status: str | None = None, for_editing: bool = False) -> list[dict[str, Any]]:
   rows = _read_memory(paths)["facts"]
   if status:
     rows = [row for row in rows if row.get("status") == status]
-  return rows
+  return [{**row, "edit_version": _fact_edit_version(paths, row)} for row in rows] if for_editing else rows
 
 
+@serialized_project_access
+def update_canon_fact(paths: ProjectPaths, fact_id: str, *, expected_version: str, changes: dict[str, Any]) -> dict[str, Any]:
+  memory = _read_memory(paths)
+  current = next((row for row in memory["facts"] if row["id"] == fact_id), None)
+  if current is None:
+    raise OpenAuthorError("This Canon Fact is no longer available. Reload Canon & Continuity.")
+  if not expected_version or expected_version != _fact_edit_version(paths, current):
+    raise OpenAuthorError("This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.")
+  allowed = {"predicate", "value", "status", "validity", "evidence"}
+  if not isinstance(changes, dict) or not changes or set(changes) - allowed:
+    raise OpenAuthorError("Supply only editable Canon Fact fields.")
+  updated = {**current, **changes}
+  for field in ("predicate", "value"):
+    if not isinstance(updated[field], str) or not updated[field].strip():
+      raise OpenAuthorError("A Canon Fact needs a predicate and a value.")
+    updated[field] = updated[field].strip()
+  if not isinstance(updated["status"], str) or updated["status"] not in FACT_STATUSES:
+    raise OpenAuthorError("Invalid Canon Fact status.")
+  validity = updated["validity"]
+  if not isinstance(validity, dict) or set(validity) != {"from_scene_id", "to_scene_id"} or any(not isinstance(value, str) for value in validity.values()):
+    raise OpenAuthorError("A Canon Fact needs valid scene boundaries.")
+  if "evidence" in changes and changes["evidence"] != current["evidence"]:
+    evidence = changes["evidence"]
+    if not isinstance(evidence, list) or any(not isinstance(row, dict) or not isinstance(row.get("scene_id"), str) or not isinstance(row.get("excerpt"), str) for row in evidence):
+      raise OpenAuthorError("Canon evidence needs scene identifiers and exact excerpts.")
+    updated["evidence"] = _clean_evidence(paths, [{"scene_id": row["scene_id"], "excerpt": row["excerpt"]} for row in evidence])
+  # Retiring an obsolete fact must still work when its original source was
+  # removed. Accepting or correcting active canon requires current sources.
+  if updated["status"] == "accepted":
+    _validate_accepted_fact(paths, updated)
+  if updated != current:
+    updated["updated_at"] = utc_now()
+    memory["facts"] = [updated if row["id"] == fact_id else row for row in memory["facts"]]
+    _write_memory(paths, memory)
+  return {**updated, "edit_version": _fact_edit_version(paths, updated)}
+
+
+@serialized_project_access
 def review_canon_fact(
   paths: ProjectPaths,
   fact_id: str,
@@ -165,6 +226,7 @@ def review_canon_fact(
   disposition: str,
   evidence: list[dict[str, Any]] | None = None,
   expected_updated_at: str | None = None,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   if disposition not in {"accepted", "rejected"}:
     raise OpenAuthorError("A Canon Fact review must accept or retire the fact.")
@@ -172,16 +234,22 @@ def review_canon_fact(
   fact = next((row for row in memory["facts"] if row["id"] == fact_id), None)
   if fact is None:
     raise OpenAuthorError(f"Unknown Canon Fact '{fact_id}'.")
+  if expected_version is not None and (not expected_version or expected_version != _fact_edit_version(paths, fact)):
+    raise OpenAuthorError("This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.")
   if expected_updated_at is not None and fact["updated_at"] != expected_updated_at:
     raise OpenAuthorError("This Canon Fact changed since you opened it. Reload and review the current evidence before saving.")
+  updated = {**fact, "status": disposition}
   if evidence is not None or disposition == "accepted":
-    fact["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
-  fact["status"] = disposition
-  fact["updated_at"] = utc_now()
+    updated["evidence"] = _clean_evidence(paths, evidence if evidence is not None else fact["evidence"])
+  if disposition == "accepted":
+    _validate_accepted_fact(paths, updated)
+  updated["updated_at"] = utc_now()
+  memory["facts"] = [updated if row["id"] == fact_id else row for row in memory["facts"]]
   _write_memory(paths, memory)
-  return fact
+  return {**updated, "edit_version": _fact_edit_version(paths, updated)} if expected_version is not None else updated
 
 
+@serialized_project_access
 def add_setup(
   paths: ProjectPaths,
   *,
@@ -208,6 +276,7 @@ def add_setup(
   return row
 
 
+@serialized_project_access
 def resolve_setup(
   paths: ProjectPaths,
   setup_id: str,
@@ -226,10 +295,12 @@ def resolve_setup(
   return row
 
 
+@serialized_project_access
 def list_setups(paths: ProjectPaths) -> list[dict[str, Any]]:
   return _read_memory(paths)["setups"]
 
 
+@serialized_project_access
 def add_open_question(
   paths: ProjectPaths,
   *,
@@ -257,10 +328,12 @@ def add_open_question(
   return row
 
 
+@serialized_project_access
 def list_open_questions(paths: ProjectPaths) -> list[dict[str, Any]]:
   return _read_memory(paths)["questions"]
 
 
+@serialized_project_access
 def add_arc_state(
   paths: ProjectPaths,
   *,
@@ -297,6 +370,7 @@ def add_arc_state(
   return row
 
 
+@serialized_project_access
 def list_arc_states(paths: ProjectPaths, *, character_entity_id: str | None = None) -> list[dict[str, Any]]:
   rows = _read_memory(paths)["arcs"]
   if character_entity_id:
@@ -360,6 +434,7 @@ def _knowledge_mention(body: str, value: str, names: set[str]) -> re.Match[str] 
   return None
 
 
+@serialized_project_access
 def run_canon_diagnostics(
   paths: ProjectPaths,
   *,
@@ -526,6 +601,7 @@ def run_canon_diagnostics(
   }
 
 
+@serialized_project_access
 def disposition_diagnostic(
   paths: ProjectPaths,
   diagnostic_id: str,
@@ -548,6 +624,7 @@ def disposition_diagnostic(
   return row
 
 
+@serialized_project_access
 def assess_story_memory_impact(
   paths: ProjectPaths,
   *,

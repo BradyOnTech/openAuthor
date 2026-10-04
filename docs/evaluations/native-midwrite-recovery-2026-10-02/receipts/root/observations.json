@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-10-03T04:30:11.342598+00:00",
+  "observer": "root via cua_repl",
+  "method": "Manual transcription of inline CUA accessibility/screenshot observations; native AX/screenshot bytes are not archived in this packet. Raw process/journal/file correlation evidence is separately retained.",
+  "source_build_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "app_path": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app",
+  "fixture": "Native mid-write recovery acceptance, three manually prepared synthetic scenes,119180words; no provider calls",
+  "stages": [
+    {
+      "stage": "attach_and_review",
+      "gui_pid": 4261,
+      "observed": "Attached only private fixture through native folder picker, hid first-run guide, opened Changes by CmdShiftR and inspected three one-hunk proposals. Changes displayed three pending proposals and coordinated Apply together."
+    },
+    {
+      "stage": "interrupt_apply",
+      "gui_pid": 4261,
+      "observed": "Clicked Apply together with external exact-worker observer armed. Actual GUI worker5946 was left stopped with active uncommittedjournal and scene1changed/scenes2and3original. No core hook or normalcore read used to capture."
+    },
+    {
+      "stage": "apply_native_recovery",
+      "gui_pid": 6527,
+      "observed": "Trusted wrapper relaunched same verifiedQA. Native UI displayed threepending proposals, fouroriginal revisions, three retained proposal tabs with proposal1active and enabled ApplyTogether. Rawcheck before rootcore reads: journalretired and all eight baselinewholefiles exact."
+    },
+    {
+      "stage": "complete_apply",
+      "gui_pid": 6527,
+      "observed": "Clicked Apply together normally. UI displayed Appliedtogether3scenes, zeropending, sixrevisions, all3applied,119174words. Revisionb8f8a221b80e30fdb39132d69d77b146845a1b0be6a57400dfc085bc4b4e5b3a. Eightfileappliedbaseline frozen before undowatcher."
+    },
+    {
+      "stage": "interrupt_undo",
+      "gui_pid": 6527,
+      "observed": "Clicked Undo3scenestogether with exactworker observer armed. Nativebuttondisplayed disabledRestoring. GUIworker13910 stopped with activejournal and firstsceneoriginal/twoother scenesstillapplied."
+    },
+    {
+      "stage": "undo_native_recovery",
+      "gui_pid": 14147,
+      "observed": "Trusted wrapper relaunched same verifiedQA. UI displayed threeapplied proposals, sixrevisions, enabledUndo3together, proposal1tabactive,119174words. Rawchecks confirmed journalabsent and eightappliedbaselinefiles exact before successfulpackagedreadback. A firstreadback syntaxattempt missed--id and exited2 without coreexecution; retained separately."
+    },
+    {
+      "stage": "complete_undo_retry",
+      "gui_pid": 14147,
+      "observed": "Clicked Undo3together normally. UI displayed threeundone proposals, sevenrevisions, proposal1UNDONE,119180words; coordinatedUndo removed. SharedundoRevisionc20ec31bbba70984a3a005834b368d08594b8fc8b7201b7f4142117cffe79b0a. Rawexactwholefiles restore all3original scenes."
+    }
+  ],
+  "limits": [
+    "Unsigned isolated localQA at a523097, not current new Canon-source nativebundle",
+    "No interruptedrestore, signing, notarization, upgrade, clean-machine, physicalpowerloss, noncooperatingwriter or VoiceOver acceptance",
+    "ExternalSIGSTOP plus exactownedprocessSIGKILL models bounded processinterruption, not OS powerloss; no provider or deployed mutation"
+  ]
+}

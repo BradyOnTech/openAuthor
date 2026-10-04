@@ -1,0 +1,7 @@
+{
+  "desktop/e2e/account-deletion.spec.ts": "5de46a44702877776c1aca3a764e9ee8e3b816d075bcdea3dc51dee52ed30dc4",
+  "desktop/e2e/companion-key-recovery.spec.ts": "05216870797aab9f473204e4c0be7e136fa85c2478bdc6199fe1ccb67ee59c4d",
+  "desktop/e2e/companion-trusted-devices.spec.ts": "81ead9df47966e715f2aa76c31a6e1ba21dba636f67d0fa3e45bec35de4ccc0f",
+  "desktop/e2e/fixtures/react-entry.ts": "7c4668be0dd5fb76684f5c63b3192d19bcd4fbfff6b765471dee520e8ac5d2e3",
+  "desktop/e2e/fixtures/sodium-entry.ts": "09d8f2c00e91f443881de35144f1b5dee94cdccc39fc698c4ae96d9d8b01d967"
+}

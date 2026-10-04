@@ -1,0 +1,13 @@
+{
+  "README.md": "f1b1b709dd995cbbe98e97392e06695e15c07c27e431f50e8e6d608a5caee683",
+  "archive-replay.txt.raw.gz": "3862df943e473b63e6c0aba8ea849dd605483c4d360618b337401ef73669f2ba",
+  "baseline-final.txt.raw.gz": "0f518910bd61b332e582e034035fe361a53e0a253e545274b0550eae9063eacc",
+  "baseline-interface-red.txt.raw.gz": "af70d46b0edd914676e3e79cb23d2b90ac799b136265a1d3fd11e2d7165edaa4",
+  "design-review.md": "8be415d70fb989cb4a52c59a2e558bf1d96dc2a864662e0460971119b57ff067",
+  "evaluate.py": "97f17f8605b4d867353340226feff9a1b32bb80dbb6be09aa59d0d44638f67e3",
+  "first-green.txt.raw.gz": "d971c0227436491341e3da7818763288f25b27608c9e39f2093fd23df632adb7",
+  "postgres-final.txt.raw.gz": "52adc80904d92144e86560a37dee2a992d366639e53f006505394b78cd5bc6e8",
+  "results.json": "d07a582393cd771871eae40fa32f02ceea3bd96fe517cd4b71afa3d88f8f2dd7",
+  "source-sha256.json": "0d0afe5ef9769c497942dbfb3ececb41b741dd8cdef0231fd6910cc8f33fa35e",
+  "tested-source.tar.gz": "cd2ccf880645a54ce940d41e6cb2ad05bf6445cf79fdc28e02a036c2c6547818"
+}

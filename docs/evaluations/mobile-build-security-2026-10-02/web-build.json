@@ -1,0 +1,26 @@
+{
+  "advisory": "GHSA-86w9-cpqp-85rv",
+  "dependency_audit_gate": "open",
+  "installed": {
+    "expo": "57.0.18",
+    "@expo/cli": "57.0.20",
+    "@expo/code-signing-certificates": "0.0.6",
+    "node-forge": "1.4.0"
+  },
+  "signing_header_checks": 3,
+  "network_attempts": 0,
+  "scope": "Current Metro module/config containment; signed and native acceptance unverified",
+  "platforms": [
+    "web"
+  ],
+  "map_count": 1,
+  "bundles": [
+    {
+      "file": "_expo/static/js/web/index-8545b22d602950dae729f9b145a78726.js",
+      "platform": "web",
+      "source_count": 404,
+      "bundle_sha256": "cece65a7c2763d22e4da53cecccf80e64888eaa02995458273d5269948cfa808",
+      "map_sha256": "2da7a6b2a175f5cea1ee6c39517fb4fd88a708d24fa6f86f3f3fed701441bee9"
+    }
+  ]
+}

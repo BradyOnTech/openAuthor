@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/context-pack-projection/v1",
+  "title": "openAuthor Context Pack Projection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "pack_id", "project_id", "project_revision", "thread_id", "channel", "scope", "created_at", "items", "warnings"],
+  "properties": {
+    "schema": {"const": "openauthor.context-pack.projection"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "pack_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "thread_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "channel": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/channel"},
+    "scope": {"enum": ["adaptive", "project", "scene", "chapter", "character", "storyline"]},
+    "created_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "items": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reference", "kind", "title", "content", "content_sha256", "source_revision", "authority"],
+        "properties": {
+          "reference": {"type": "string", "pattern": "^[a-z0-9._:-]{1,256}$"},
+          "kind": {"enum": ["selection", "scene", "codex_entity", "retrieval", "continuity", "book_index"]},
+          "title": {"type": "string", "maxLength": 512},
+          "content": {"type": "string", "maxLength": 12000},
+          "content_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+          "source_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+          "authority": {"type": "integer", "minimum": 0, "maximum": 100},
+          "retrieval_score": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"type": "string", "maxLength": 512}
+    }
+  }
+}

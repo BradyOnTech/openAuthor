@@ -1,0 +1,35 @@
+Isolated current-source replay with only pending-creation retention guard removed; shared working source unchanged.
+TAP version 13
+# (node:9235) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+not ok 1 - delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+  ---
+  duration_ms: 332.081542
+  type: 'test'
+  location: '/private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-voice-late-red-8v1j0c24/test/sessionLeases.test.ts:209:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    3 !== 1
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-voice-late-red-8v1j0c24/test/sessionLeases.test.ts:217:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 442.820208

@@ -40,8 +40,9 @@
       ],
       "entities": [{"key": "pass", "type": "location", "name": "Mountain Pass"}],
       "facts": [
-        {"subject": "pass", "predicate": "state", "value": "closed", "scene": "scene-0001", "excerpt": "pass freezes", "valid_from": "scene-0002", "valid_to": "scene-0001", "knowledge": []}
+        {"subject": "pass", "predicate": "state", "value": "closed", "scene": "scene-0001", "excerpt": "pass freezes", "valid_from": "scene-0001", "valid_to": "scene-0002", "knowledge": []}
       ],
+      "reading_order": ["scene-0002", "scene-0001"],
       "expected": {"impossible_validity": 1}
     },
     {

@@ -1,0 +1,128 @@
+{
+  "primary button": {
+    "color": "rgb(17, 17, 20)",
+    "background": [
+      196,
+      132,
+      29
+    ],
+    "opacity": "1",
+    "contrast": 5.982685546023507,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.982685546023507,
+    "focusVisible": false
+  },
+  "hovered primary button": {
+    "color": "rgb(17, 17, 20)",
+    "background": [
+      212,
+      148,
+      45
+    ],
+    "opacity": "1",
+    "contrast": 7.246346861151614,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 7.246346861151614,
+    "focusVisible": false
+  },
+  "new scene placeholder": {
+    "color": "rgb(58, 56, 52)",
+    "background": [
+      20,
+      20,
+      23
+    ],
+    "opacity": "1",
+    "contrast": 1.571700956209494,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 1.571700956209494,
+    "focusVisible": false
+  },
+  "title keyboard focus": {
+    "color": "rgb(42, 37, 32)",
+    "background": [
+      250,
+      246,
+      240
+    ],
+    "opacity": "1",
+    "contrast": 14.09415872176488,
+    "outlineStyle": "solid",
+    "outlineWidth": 2,
+    "outlineContrast": 5.394336328342333,
+    "focusVisible": true
+  },
+  "title placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "background": [
+      250,
+      246,
+      240
+    ],
+    "opacity": "1",
+    "contrast": 5.353890836658566,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.353890836658566,
+    "focusVisible": true
+  },
+  "prose keyboard focus": {
+    "color": "rgb(26, 24, 21)",
+    "background": [
+      250,
+      246,
+      240
+    ],
+    "opacity": "1",
+    "contrast": 16.454601179573576,
+    "outlineStyle": "solid",
+    "outlineWidth": 2,
+    "outlineContrast": 5.394336328342333,
+    "focusVisible": true
+  },
+  "prose placeholder": {
+    "color": "rgb(106, 101, 96)",
+    "background": [
+      250,
+      246,
+      240
+    ],
+    "opacity": "1",
+    "contrast": 5.353890836658566,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.353890836658566,
+    "focusVisible": true
+  },
+  "unsaved status": {
+    "color": "rgb(138, 92, 10)",
+    "background": [
+      249.99996320000002,
+      246.00002759999998,
+      239.9998896
+    ],
+    "opacity": "1",
+    "contrast": 5.3943365180532,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 5.3943365180532,
+    "focusVisible": false
+  },
+  "command palette placeholder": {
+    "color": "rgb(58, 56, 52)",
+    "background": [
+      10,
+      10,
+      12
+    ],
+    "opacity": "1",
+    "contrast": 1,
+    "outlineStyle": "none",
+    "outlineWidth": 3,
+    "outlineContrast": 1,
+    "focusVisible": true
+  }
+}

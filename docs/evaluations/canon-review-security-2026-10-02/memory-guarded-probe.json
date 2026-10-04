@@ -1,0 +1,13 @@
+{
+  "fixture": "/private/tmp/openauthor-memory-gap-audit/guarded-book-d3frnwfk",
+  "protocol": "original expected_version, matching current desktop",
+  "refusals": {
+    "accepted": "This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.",
+    "rejected": "This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.",
+    "inverted_validity": "The fact cannot stop being true before it begins."
+  },
+  "failed_reviews_preserve_memory_bytes": true,
+  "prose_unchanged": true,
+  "legacy_timestamp_scope_protection_claimed": false,
+  "author_quality_claimed": false
+}

@@ -1,0 +1,43 @@
+{
+  "evidence_kind": "synthetic_desktop_preservation_and_context_boundary",
+  "capture_date": "2026-10-02",
+  "new_provider_calls": 0,
+  "author_data_untouched_by_this_lane": true,
+  "focused_tests": {
+    "command": "npx vitest run src/components/editor/VoicePreservation.test.tsx src/components/editor/WritingVoiceEditor.test.tsx src/components/editor/VoiceAssessment.test.tsx",
+    "passed": 28,
+    "new_preservation_context_tests": 14,
+    "existing_editor_assessment_tests": 14,
+    "exit_code": 0
+  },
+  "typecheck": {
+    "command": "npx tsc --noEmit",
+    "exit_code": 0
+  },
+  "source_sha256": {
+    "desktop/src/components/editor/VoicePreservation.tsx": "48b4a930c7f5d734f8fe7d648aedcacf33f931d1efd2698b17749bb4da154ab7",
+    "desktop/src/components/editor/VoicePreservation.test.tsx": "5d2933039fa40e8c0b753fc14cabf40f6a9533812e8fed8bc4b5371060083b75",
+    "desktop/src/components/editor/VoiceRefinement.tsx": "eeab1504bd05c752f524794a4b3c92a0dc71eba5ee97331fe5c76b499d6b5366",
+    "desktop/src/components/editor/WritingVoiceEditor.tsx": "9a071b5010a970262ca2f48200bb0373369d1f4365be499c8690afefe0721a8f",
+    "desktop/src/components/editor/WritingVoiceEditor.test.tsx": "f6439c7e70545b5608ee33b48b1aedaa8b2fd4bde4292cb7120af1fc41d2cb02",
+    "desktop/src/components/editor/VoiceAssessment.test.tsx": "e16de5a977265141e1271ae331d4bf35be99e8612062cfdb4e28f7fb5163e766",
+    "desktop/src/api.ts": "82698983a1a3f6d67f77aa97abc82c42c798ef1da175c8cfaad376556a26185c",
+    "desktop/e2e/writing-voice.spec.ts": "187f540ca193fd66979afa2e457d3c1115d3d9909bd8cbf5f5d102c7c26d4489"
+  },
+  "evidence_sha256": {
+    "desktop-review.md": "fd601bfd7ffd79fff8cb4819eef5dead7d141818dee7a1f2c963e0a40d81fa2d",
+    "desktop-focused.txt": "a0657bc264efec6b1d3072972dc04ce3285347b1bcf8e60f456fb167c1a7c51c"
+  },
+  "real_core_browser_journey": "passed_in_chromium_and_webkit; offline provider baseline, no literary acceptance",
+  "semantic_verification": "not_certified",
+  "human_author_acceptance": "not_observed",
+  "live_quality_after_fix": "not_observed",
+  "root_final_checks": {
+    "full_desktop_tests": 564,
+    "test_files": 86,
+    "chromium_real_core_journeys": 6,
+    "webkit_real_core_journeys": 6,
+    "evidence": "../tab-keyboard-2026-10-02/results.json",
+    "malformed_recovery_shape": "Array-valued kind and extra row fields refused; current full suite covers the additional controls."
+  }
+}

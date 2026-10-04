@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-02",
+  "baseline_commit": "84e9bf7",
+  "scope": "Synthetic local desktop recovery; SQL authorization evidence maintained separately; no deployed/native/cloud claim.",
+  "checks": {
+    "focused": {
+      "files": 9,
+      "passed": 140
+    },
+    "full_desktop": {
+      "files": 84,
+      "passed": 547
+    },
+    "typescript_build": "passed",
+    "browser": {
+      "passed": 3,
+      "seconds": 4.1,
+      "browser": "Chromium headless shell 1217 override; installed Playwright 1.63.0 expects 1243"
+    },
+    "whitespace": "passed",
+    "postgres_recovery_sql": {
+      "assertions": 13,
+      "result": "passed",
+      "evidence": "../project-deletion-2026-10-02/postgres-gateway-final.txt",
+      "scope": "Actual disposable PostgreSQL authorization/version/composite-wire, separate from synthetic browser boundaries"
+    }
+  },
+  "sha256": {
+    "desktop/src/cloud/desktopEnrollment.ts": "de58b93550c9a34e8f6f3e00fd8234a3548bf04956a18e4db2d68b70e0967c45",
+    "desktop/src/cloud/desktopEnrollment.test.ts": "9f52d4a781122df377f67974d4295b9c61d9940b2b05d5d9d33425a97eaa4512",
+    "desktop/src/components/panel/MobileInboxPanel.tsx": "200c02afdb48e87d6d78c84d26fa7e62b5eb73187779b086a98e8bec21fdc393",
+    "desktop/src/mobileSync/connectDesktop.ts": "21e1ecf6f9ccaf358ebd172225421f659c38fcec0868915d649b53e933d621c0",
+    "desktop/src/mobileSync/hostedCoordinator.ts": "f373884e141a2af1471b3f6e47b4ef479b3646a37a856c1f36246698e322cdb0",
+    "desktop/src/mobileSync/hostedCoordinator.test.ts": "9e774f849c5a265bb2e2f6fb83a88cacaa105a9d9462d43946f613e6c96159ca",
+    "desktop/src/mobileSync/projectKeyProvisioning.ts": "aedf08476d23eca004163e379c3c85800009b4fe55a933e4f26e5c9822b7e1b2",
+    "desktop/src/mobileSync/supabaseTransport.ts": "7a2c038801a8019e5557648b98f99c348bc6aaa1225168a9c8cc9b6f6060b348",
+    "desktop/src/mobileSync/snapshotRecovery.ts": "b015accff8a4ba728fa275296c4e690a89eea54b9dbc2a437de5bd547b04b465",
+    "desktop/src/mobileSync/snapshotRecovery.test.ts": "19fcbe8f2f68d9c5e0a041712bd73f394faa43b7deb886fc9a16d03b2a37dfc0",
+    "desktop/src/mobileSync/snapshotRecoveryTransport.test.ts": "7d289b3d110dbedbaa4451dfefaffba41dd5f964c08009eacd3f45b75bbe7f3b",
+    "desktop/src/mobileSync/hostedRecovery.test.ts": "081e376c2b41579a2f5e3acfdcda94f01d880b73c37ad9e9d33567da2d3fbab6",
+    "desktop/src/mobileSync/recoverySnapshot.fixture.ts": "d36e3b87eaa8da48e62828ef23701fbf046627e3f2f2de6479ce9bfc7605c992",
+    "desktop/e2e/companion-key-recovery.spec.ts": "60d15941b00dae3f5d5d6205d736f27f50bc5aee5c8f81ed0d3732630d7adc83",
+    "supabase/migrations/20261002150000_mobile_recovery_snapshot.sql": "750542e8029154a2a0a5f6222e041dd6f97de9c32f1d1b1a3b67188e57ff3a95",
+    "supabase/tests/mobile_recovery_snapshot.sql": "ce220602a52a30ccc39fe8d790984e939766aeebe834adb25e54d3bb6352f85c"
+  },
+  "evidence_sha256": {
+    "README.md": "7a1582d5c96dfc2ad4e2756db8830a056e7941a05cad4a8e35b17a91851fb494",
+    "absent-envelope-recovery-red.txt": "bf5f7dfe446845c3849363ef3d55793a095a893c6f0b2b76a63509f6d1204414",
+    "absent-envelope-recovery-red.txt.raw.gz": "58a619845790cc98d23a69d55b2e07b83261b841617d7abac495e50410ed71c1",
+    "authenticated-key-recovery-laptop.png": "f555719a0073104a00b3d0dc0fce45b8c56c947e6987facfca95422e328278d2",
+    "browser.txt": "47fbbb1fde23de437b3b0c9432e22978d935c88a2ac0e627fb574f0b5897a0f3",
+    "browser.txt.raw.gz": "6ee8607fd9f84c6821a56ab3cbfae2b7f335e5cc71cdba8f4910a0b84db5653e",
+    "desktop-build.txt": "e27da03075d4b53ad9eb84d8ae18833321e45978ad7d8f78d62e0edfda92c53d",
+    "desktop-build.txt.raw.gz": "706e212ae408efca52069042c67e307b0898812e2b35984080e75bfde407c1df",
+    "desktop-focused.txt": "f61eb064e707024edf0238dab0de93047bbbeac4f77b12a0e02375070f1131ec",
+    "desktop-focused.txt.raw.gz": "a5e0ff78231814c308ad987c7d757da035e874c96ad465ff82905fe93f63a548",
+    "desktop-full.txt": "752b33dc7261632a24065456e1150b8ea113dde97c71659f9f40d64c83990a35",
+    "desktop-full.txt.raw.gz": "8ee55710d9b17167611110479563521500c6ab23497c150c17675deca6adcbd5",
+    "output-format.json": "9ad1ca62b56c65f975c4cb8740bbe57edf8246fa66759415c3e34ea34263da10",
+    "recovery-envelope-wire-red.txt": "42f54155ed1925ecbe04992caedeaf49cc9225c1ba86b73e978526ac12bd7d01",
+    "recovery-envelope-wire-red.txt.raw.gz": "1309227987dde94583e0426a026476805a27283b193200daa31460b98dffbd2b"
+  },
+  "implementation_commit": "e80ff81"
+}

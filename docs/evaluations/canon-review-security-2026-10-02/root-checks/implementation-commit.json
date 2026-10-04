@@ -1,0 +1,21 @@
+{
+  "commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "committed_at_recording": "2026-10-03T04:33:08.677172+00:00",
+  "files": [
+    "openauthor/canon.py",
+    "openauthor/cli.py",
+    "tests/test_canon_evidence_review.py",
+    "desktop/src/api.ts",
+    "desktop/src/memoryApi.test.ts",
+    "desktop/src/AppV2.workflow.test.tsx",
+    "desktop/src/components/editor/CanonFactReview.tsx",
+    "desktop/src/components/editor/CanonFactReview.test.tsx",
+    "mobile/scripts/build-security.mjs",
+    "mobile/test/buildSecurity.test.mjs",
+    "scripts/evaluate_canon_diagnostics.py",
+    "tests/fixtures/canon_evaluation.json",
+    "tests/test_canon_evaluation.py"
+  ],
+  "source_inputs": 538,
+  "tested_source_sha256_unchanged": true
+}

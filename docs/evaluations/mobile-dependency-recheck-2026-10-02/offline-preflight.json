@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-10-02T20:12:29.161730+00:00",
+  "command": "node scripts/build-security.mjs preflight",
+  "exit_code": 0,
+  "report": {
+    "advisory": "GHSA-86w9-cpqp-85rv",
+    "dependency_audit_gate": "open",
+    "installed": {
+      "expo": "57.0.18",
+      "@expo/cli": "57.0.20",
+      "@expo/code-signing-certificates": "0.0.6",
+      "node-forge": "1.4.0"
+    },
+    "signing_header_checks": 3,
+    "network_attempts": 0
+  },
+  "source_sha256": "4760488b9e03241c3a14ed51f823d98c1fad18d450c7ccaa02ec6632e557e3fc"
+}

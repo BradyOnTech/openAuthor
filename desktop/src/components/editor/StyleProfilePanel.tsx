@@ -41,7 +41,7 @@ export function StyleProfilePanel({ projectRoot, scenes, disabled = false }: Pro
       const next = await withBookMetadataWrite(projectRoot, async () => {
         if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending prose before updating the Style Profile.");
         return action === "build" ? buildStyleProfile(projectRoot, selected, profile?.fingerprint ?? "")
-          : setStyleProfileReference(projectRoot, action, profile!.fingerprint);
+          : setStyleProfileReference(projectRoot, action, profile!.fingerprint || "");
       });
       ++view.request;
       if (view.alive) { setProfile(next); setSelected(next.exemplar_scene_ids); setChoosing(false); setError(""); }
@@ -66,7 +66,7 @@ export function StyleProfilePanel({ projectRoot, scenes, disabled = false }: Pro
     <p role="status" style={{ margin: 0 }}>{loading ? "Checking Style Profile sources…" : status}</p>
     {error && <p role="alert">{error}</p>}
     {profile && <>
-      {profile.changed_scene_ids.length > 0 && <p>Changed or unavailable: {profile.changed_scene_ids.map(title).join(", ")}.</p>}
+      {(profile.changed_scene_ids || []).length > 0 && <p>Changed or unavailable: {(profile.changed_scene_ids || []).map(title).join(", ")}.</p>}
       <p>Measurements describe selected exemplars; they are not writing targets or a voice-quality score.</p>
       {profile.measurement?.limitations.map(value => <small key={value}>{value}</small>)}
       <details><summary style={{ minHeight: 40, cursor: "pointer" }}>Inspect saved measurements and source versions</summary>

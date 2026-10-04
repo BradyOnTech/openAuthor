@@ -1,0 +1,66 @@
+name: public-workflow-e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-workflows:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            contracts/package-lock.json
+            desktop/package-lock.json
+            gateway/package-lock.json
+            mobile/package-lock.json
+            e2e/package-lock.json
+      - name: Install locked project and testing dependencies
+        run: make install-js
+      - name: Audit the test runner dependencies
+        run: npm audit --prefix e2e --audit-level=low
+      - name: Check web/native test types and strict report verification
+        run: npm run typecheck --prefix e2e && npm run test:reporting --prefix e2e
+      - name: Install matched Chromium and WebKit browsers
+        run: npm run install:browsers --prefix e2e
+      - name: Install disposable database test runtime
+        run: brew install postgresql@17
+      - name: Verify public workflows on Chromium
+        run: |
+          OPENAUTHOR_TEST_PG_BIN="$(brew --prefix postgresql@17)/bin" make test-e2e-all
+          node e2e/scripts/archive.mjs chromium
+      - name: Verify public workflows on WebKit
+        run: |
+          OPENAUTHOR_TEST_PG_BIN="$(brew --prefix postgresql@17)/bin" make test-e2e-webkit
+          node e2e/scripts/archive.mjs webkit
+      - name: Preserve reports, failures and security build receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: public-workflow-e2e-evidence
+          include-hidden-files: true
+          path: |
+            e2e/.e2e/
+            desktop/test-results/
+            mobile/test-results/
+            mobile/dist/security-build.json
+            mobile/.expo/hosted-e2e/security-build.json
+            !e2e/.e2e/**/.git/**
+            !desktop/test-results/**/.git/**
+            !mobile/test-results/**/.git/**
+            !**/.env
+            !**/.env.*
+          if-no-files-found: error

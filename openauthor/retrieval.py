@@ -7,6 +7,7 @@ import re
 from collections import Counter
 from typing import Any
 
+from .memory_context import list_assistant_memory
 from .ai_visibility import memory_for_ai
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .revisions import revision_head
@@ -62,6 +63,13 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
       }
     )
 
+  sources.extend(_collect_memory_sources(paths))
+  sources.sort(key=lambda row: row["source_id"])
+  return sources
+
+
+def _collect_memory_sources(paths: ProjectPaths) -> list[dict[str, str]]:
+  sources: list[dict[str, str]] = []
   for codex_row in memory_for_ai(paths):
     entity_id = codex_row.get("id", "").strip()
     if entity_id == "":
@@ -71,7 +79,9 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
     entity_description = codex_row.get("description", "").strip()
     entity_text = (
       f"Codex {entity_type} {entity_name}\n"
-      f"Description: {entity_description}"
+      f"Description: {entity_description}\n"
+      f"Aliases: {', '.join(codex_row.get('aliases', []))}\n"
+      f"Details: {json.dumps(codex_row.get('details', []), ensure_ascii=False, sort_keys=True)}"
     ).strip()
     sources.append(
       {
@@ -80,7 +90,7 @@ def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
         "source_ref": entity_id,
         "path": "codex/codex.sqlite3",
         "title": entity_name or entity_id,
-        "updated_at": codex_row.get("updated_at", ""),
+        "updated_at": "",
         "text": _normalize_space(entity_text),
       }
     )
@@ -221,6 +231,7 @@ def build_retrieval_index(
 
   index_payload = {
     "schema_version": RETRIEVAL_INDEX_SCHEMA_VERSION,
+    "memory_policy_version": 1,
     "tokenizer_version": TOKENIZER_VERSION,
     "created_at": utc_now(),
     "project_root": str(paths.root),
@@ -286,6 +297,8 @@ def get_retrieval_index_status(paths: ProjectPaths) -> dict[str, Any]:
     stale_reasons.append("git_head_changed")
   if stale_by_sources:
     stale_reasons.append("source_digest_changed")
+  if payload.get("memory_policy_version") != 1:
+    stale_reasons.append("memory_policy_changed")
 
   return {
     "present": True,
@@ -350,6 +363,13 @@ def query_retrieval_index(
     row.get("source_id", ""): row
     for row in payload.get("sources", [])
     if isinstance(row, dict)
+  }
+  # Privacy is checked against current Memory, not the index's old permissions.
+  # Legacy indexes without per-source digests cannot prove a Memory excerpt is
+  # still allowed; those entries become available again after an index rebuild.
+  allowed_memory_digests = {
+    row["source_id"]: hashlib.sha256(row["text"].encode("utf-8")).hexdigest()
+    for row in _collect_memory_sources(paths)
   }
   corpus_size = max(1, len(chunks))
   ranked: list[dict[str, Any]] = []

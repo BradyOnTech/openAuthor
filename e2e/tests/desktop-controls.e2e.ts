@@ -1,0 +1,168 @@
+import { test } from "@e2e-dev/web";
+import { expect } from "e2e";
+import type { Screen } from "e2e";
+import { desktopBook } from "../support/desktopBook.ts";
+
+async function createBook(screen: Screen, root: string) {
+  await screen.getByRole("button", "New Project").tap();
+  await screen.getByRole("textbox", "Novel title").fill("The Lantern Cartographer");
+  await screen.getByRole("textbox", "Project folder").fill(root);
+  await screen.getByRole("button", "Create novel").tap();
+  await expect(screen.getByRole("button", "Add Scene")).toBeVisible();
+  await screen.getByRole("button", "Hide first-run guide").tap();
+}
+
+test("desktop keyboard budget controls clear one limit, enforce generation and account for usage", { tags: ["desktop", "budget", "privacy", "keyboard"], timeout: 150_000 }, async ({ app, browser, screen }) => {
+  const book = await desktopBook(browser);
+  try {
+    await app.open("/");
+    await createBook(screen, book.projectRoot);
+    const original = "Mara unrolled the map beside the lamp.\n\nAt midnight, the line reached her own door.";
+    await book.json(["scene", "add", "--title", "The Moving Map", "--body", original]);
+    await browser.reload();
+    await browser.keyboard.press("Control+j");
+    const tools = screen.getByRole("tablist", "Project tools");
+    await tools.getByRole("tab", "Runs").focus();
+    await browser.keyboard.press("ArrowRight");
+    await expect(tools.getByRole("tab", "Merge")).toBeFocused();
+    await browser.keyboard.press("ArrowRight");
+    const budgetTab = tools.getByRole("tab", "Budget");
+    await expect(budgetTab).toBeFocused();
+    await browser.keyboard.press("Enter");
+    await expect(budgetTab).toHaveAttribute("aria-selected", "true");
+    const daily = screen.getByRole("textbox", "Daily tokens");
+    const weekly = screen.getByRole("textbox", "Weekly tokens");
+    await daily.fill("12000");
+    await weekly.fill("84000");
+    await screen.getByRole("button", "Save limits").tap();
+    await expect(screen.getByText("Budget limits updated.")).toBeVisible();
+    expect((await book.json(["generation", "budget"])).policy.rolling.daily_tokens).toBe(12000);
+    await daily.fill("");
+    await screen.getByRole("button", "Save limits").tap();
+    await expect(daily).toHaveValue("");
+    await expect.poll(async () => (await book.json(["generation", "budget"])).policy.rolling.daily_tokens).toBeNull();
+    const saved = await book.json(["generation", "budget"]);
+    expect(saved.policy.rolling.daily_tokens).toBeNull();
+    expect(saved.policy.rolling.weekly_tokens).toBe(84000);
+    await weekly.fill("1.5");
+    await screen.getByRole("button", "Save limits").tap();
+    await expect(screen.getByRole("alert")).toContainText("Weekly tokens must be a positive whole number");
+    expect((await book.json(["generation", "budget"])).policy.rolling.weekly_tokens).toBe(84000);
+    await weekly.fill("84000");
+    await screen.getByRole("button", "Clear all limits").tap();
+    await expect(screen.getByRole("button", "Clear all limits")).toBeEnabled();
+    await expect(weekly).toHaveValue("");
+    await screen.getByRole("textbox", "Per-run input tokens").fill("1");
+    await screen.getByRole("button", "Save limits").tap();
+    await expect.poll(async () => (await book.json(["generation", "budget"])).policy.per_run.max_input_tokens).toBe(1);
+    await screen.getByRole("button", /^Changes \(/).tap();
+    await screen.getByRole("button", "+ AI").tap();
+    await screen.getByRole("textbox", "What should change?").fill("Make the final paragraph more ominous while preserving every name and story event.");
+    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("button", "Create Change Set").tap();
+    await screen.getByRole("button", "Generate reviewed edit plan").tap();
+    await expect(screen.getByRole("region", "Generation recovery").getByRole("alert")).toContainText("blocked by budget policy");
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body.trimEnd()).toBe(original);
+    expect((await book.json(["generation", "list"])).filter((run: { error_category: string }) => run.error_category === "budget_policy_violation")).toHaveLength(1);
+    expect((await book.json(["generation", "budget"])).usage.lifetime).toMatchObject({ runs: 0, total_tokens: 0, estimated_cost_usd: 0 });
+    await tools.getByRole("tab", "Budget").tap();
+    await screen.getByRole("button", "Clear all limits").tap();
+    await expect(screen.getByRole("button", "Clear all limits")).toBeEnabled();
+    await expect(screen.getByRole("textbox", "Per-run input tokens")).toHaveValue("");
+    await screen.getByRole("button", "Retry generation").tap();
+    const allTimeUsage = screen.getByRole("tabpanel", "Budget").getByRole("row").filter({ has: screen.getByRole("cell", "All time") });
+    await expect(allTimeUsage.getByRole("cell", "1")).toBeVisible();
+    await weekly.fill("42000");
+    await screen.getByRole("button", "Generate reviewed scene").tap();
+    await expect(screen.getByRole("button", "Apply 1 change")).toBeVisible();
+    const charged = (await book.json(["generation", "list"])).filter((run: { status: string }) => run.status === "succeeded");
+    expect(charged).toHaveLength(2);
+    const tokens = charged.reduce((total: number, run: { input_tokens: number; output_tokens: number }) => total + run.input_tokens + run.output_tokens, 0);
+    expect(tokens).toBeGreaterThan(0);
+    expect((await book.json(["generation", "budget"])).usage.lifetime).toMatchObject({ runs: 2, total_tokens: tokens, estimated_cost_usd: 0 });
+    await expect(allTimeUsage.getByRole("cell")).toHaveText(["All time", "2", tokens.toLocaleString(), "$0.0000"]);
+    await expect(weekly).toHaveValue("42000");
+    expect((await book.json(["generation", "budget"])).policy.rolling.weekly_tokens).toBeNull();
+    await screen.getByRole("button", "Clear all limits").tap();
+    await expect(screen.getByRole("button", "Clear all limits")).toBeEnabled();
+    await expect(weekly).toHaveValue("");
+    await screen.getByRole("button", /^Settings \(/).tap();
+    await screen.getByRole("button", "Pause on-device signals").tap();
+    await expect(screen.getByRole("button", "Enable on-device signals")).toBeVisible();
+    await browser.reload();
+    await expect(screen.getByRole("button", "Enable on-device signals")).toBeVisible();
+    await screen.getByRole("button", "Enable on-device signals").tap();
+    await expect(screen.getByRole("button", "Pause on-device signals")).toBeVisible();
+    expect(await book.errors()).toEqual([]);
+  } finally { await book.close(); }
+});
+
+test("desktop saves a custom Editorial Pass, controls Style Profile sources and chooses a reviewed creative direction", { tags: ["desktop", "editorial", "style", "alternatives", "history"], timeout: 180_000 }, async ({ app, browser, screen }) => {
+  const book = await desktopBook(browser);
+  try {
+    await app.open("/");
+    await createBook(screen, book.projectRoot);
+    const original = "Mara unrolled the map beside the lamp. She locked the door and watched it move.\n\nAt midnight, the line reached her own door.";
+    await book.json(["scene", "add", "--title", "The Moving Map", "--body", original]);
+    await browser.reload();
+    await screen.getByRole("button", /^Changes \(/).tap();
+    await screen.getByRole("button", "+ AI").tap();
+    const passes = screen.getByRole("combobox", "Editorial Pass");
+    await expect(passes).toBeVisible();
+    await passes.selectOption({ value: "pass-tension" });
+    await expect(screen.getByRole("textbox", "What should change?")).toHaveValue(/Editorial Pass: Tension/);
+    await screen.getByRole("button", "Create custom Editorial Pass").tap();
+    await screen.getByRole("textbox", "Pass name").fill("Ominous final beat");
+    await screen.getByRole("textbox", "Pass goal").fill("Make the last image more ominous.");
+    await screen.getByRole("textbox", "Pass instruction").fill("Make the final paragraph more ominous while preserving every name and story event.");
+    await screen.getByRole("textbox", "Evaluation criteria").fill("The last image creates unease.\nAll story events remain intact.");
+    await screen.getByRole("button", "Save Editorial Pass").tap();
+    await expect(screen.getByText("Editorial Pass “Ominous final beat” saved.")).toBeVisible();
+    const custom = (await book.json(["pass", "list"])).find((row: { name: string }) => row.name === "Ominous final beat");
+    expect(custom.evaluation_criteria).toHaveLength(2);
+    await browser.reload();
+    await expect(passes).toHaveValue(custom.id);
+    await expect(screen.getByRole("textbox", "What should change?")).toHaveValue(/Editorial Pass: Ominous final beat/);
+
+    const profile = screen.getByRole("region", "Your Style Profile");
+    await profile.getByRole("button", "Choose Exemplars").tap();
+    await profile.getByRole("checkbox", "The Moving Map").check();
+    await profile.getByRole("button", "Build Style Profile").tap();
+    await expect(profile.getByRole("status")).toContainText("Current sources");
+    await book.json(["scene", "update", "--id", "scene-0001", "--body", original.replace("map beside", "map close beside")]);
+    await profile.getByRole("button", "Refresh profile").tap();
+    await expect(profile.getByRole("status")).toContainText("Changed sources");
+    await profile.getByRole("button", "Use saved metrics as frozen reference").tap();
+    await expect(profile.getByRole("status")).toContainText("Frozen reference");
+    await profile.getByRole("button", "Require current sources").tap();
+    await expect(profile.getByRole("status")).toContainText("Changed sources");
+    await profile.getByRole("button", "Rebuild from selected scenes").tap();
+    await expect(profile.getByRole("status")).toContainText("Current sources");
+
+    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("radio", "Compare 3 creative directions").check();
+    const unchanged = (await book.json(["scene", "get", "--id", "scene-0001"])).body;
+    await screen.getByRole("button", "Create 3 Alternatives").tap();
+    for (let direction = 0; direction < 3; direction += 1) {
+      await screen.getByRole("button", "Generate reviewed edit plan").tap();
+      await screen.getByRole("button", "Generate reviewed scene").tap();
+    }
+    await expect(screen.getByRole("heading", "Compare Directions")).toBeVisible();
+    const second = screen.getByRole("article").filter({ has: screen.getByRole("heading", "Direction 2") });
+    await second.getByRole("button", "Choose Direction").tap();
+    await expect(screen.getByRole("button", "Apply 1 change")).toBeVisible();
+    const proposals = await book.json(["proposal", "list"]);
+    expect(proposals.filter((row: { status: string }) => row.status === "rejected")).toHaveLength(2);
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body).toBe(unchanged);
+    await screen.getByRole("button", "Apply 1 change").tap();
+    await expect(screen.getByRole("button", "Undo change")).toBeVisible();
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body).toContain("found her own door");
+    await browser.keyboard.press("Control+j");
+    await screen.getByRole("tablist", "Project tools").getByRole("tab", "Runs").tap();
+    await expect(screen.getByRole("tabpanel", "Runs").getByRole("cell", "local")).toHaveCount(6);
+    await screen.getByRole("button", "Undo change").tap();
+    await expect(screen.getByRole("status").filter({ hasText: "Change undone" })).toBeVisible();
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body).toBe(unchanged);
+    expect(await book.errors()).toEqual([]);
+  } finally { await book.close(); }
+});

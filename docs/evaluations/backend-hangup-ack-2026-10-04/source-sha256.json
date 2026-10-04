@@ -1,0 +1,7 @@
+{
+  "e2e/tests/backend-gateway.e2e.ts": "9191ef0d4cfb69bcc6bebaf22d197570174d5e40ee6662fa74d077e1a36ffdca",
+  "gateway/src/sessionLeases.ts": "9a180729326197831b2b9fcbc83c2c4607d4ce527ec4909bfbfa1e20d3c3b736",
+  "gateway/src/callJournal.ts": "c3bb914421ed66529e9ac76be613aa00687331fac620eee61a92a74dc7755ba9",
+  "gateway/src/openAIRealtimeUpstream.ts": "0c3ed03c7995f1596159cd2295b4e34c5e7554e7f8fe4b9cdde8f3a20a8a52e8",
+  "e2e/e2e.config.ts": "757af897f7ff02de096748e08adac4936973a018b3356c8db5c0e7242ee86223"
+}

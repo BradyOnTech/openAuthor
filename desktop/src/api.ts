@@ -40,6 +40,10 @@ import type {
   StartupHealthReport,
   WorkspaceAuditReport
 } from "./types";
+import type { AssistantTurnRecord } from "./types";
+import type { AssistantEventEnvelope } from "./assistantEvents";
+import type { SceneEditVersion } from "./types";
+import { SceneEditConflictError, type SceneConflict } from "./sceneConflicts";
 import { withBookMetadataWrite } from "./bookOperationBarrier";
 
 const ALLOWED = new Set([
@@ -135,6 +139,8 @@ export type ManuscriptImportPreview = {
   strategy: "auto" | "files" | "headings" | "single";
   scene_count: number;
   chapter_count: number;
+  act_count?: number;
+  outline?: Array<{ title: string; chapters: Array<{ title: string; scene_positions: number[] }> }>;
   fingerprint: string;
   word_count: number;
   warnings: string[];
@@ -199,6 +205,10 @@ export async function exportManuscript(
   return decodeJson(result);
 }
 
+export async function getManuscriptReading(projectRoot: string): Promise<import("./types").ManuscriptReading> {
+  return decodeJson(await runCoreCommand(projectRoot, ["manuscript", "read", "--json"]));
+}
+
 export async function runCoreCommand(
   projectRoot: string,
   args: string[]
@@ -208,9 +218,10 @@ export async function runCoreCommand(
     style: ["get"],
     plan: ["get", "scene-preview"],
     codex: ["get", "list", "relationship-list"],
-    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose"],
+    memory: ["list", "fact-list", "setup-list", "question-list", "arc-list", "diagnose", "scan-preview"],
   };
   if ((reads[args[0]] && !reads[args[0]].includes(args[1])) || (args[0] === "scene" && args[1] === "add")) {
+    if (args[0] === "scene" && args[1] === "update") return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
     return withBookMetadataWrite(projectRoot, () => tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args }));
   }
   return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args });
@@ -326,41 +337,38 @@ export async function updateScene(
   projectRoot: string,
   sceneId: string,
   payload: {
-    title: string;
+    title?: string;
     summary?: string;
     pov?: string;
     status?: string;
-    body: string;
+    body?: string;
+    expectedVersion?: SceneEditVersion;
   }
 ): Promise<SceneDetail> {
-  const result = await runCoreCommand(projectRoot, [
-    "scene",
-    "update",
-    "--id",
-    sceneId,
-    "--title",
-    payload.title,
-    ...(payload.summary === undefined ? [] : ["--summary", payload.summary]),
-    ...(payload.pov === undefined ? [] : ["--pov", payload.pov]),
-    ...(payload.status === undefined ? [] : ["--status", payload.status]),
-    "--body",
-    payload.body,
-    "--json"
-  ]);
+  if (!payload.expectedVersion) throw new Error("This scene has no save version. Reopen it before saving; your draft has not been written.");
+  const args = ["scene", "update", "--id", sceneId];
+  args.push("--expected-version", JSON.stringify(payload.expectedVersion));
+  for (const key of ["title", "summary", "pov", "status", "body"] as const) {
+    const value = payload[key];
+    if (value !== undefined) args.push(`--${key}`, value);
+  }
+  args.push("--json");
+  const result = await runCoreCommand(projectRoot, args);
+  if (result.status === 3) {
+    const conflict = JSON.parse(result.stdout)?.error as SceneConflict;
+    if (conflict?.code === "scene_edit_conflict" && conflict.current?.edit_version) {
+      throw new SceneEditConflictError(conflict);
+    }
+  }
   return decodeJson<SceneDetail>(result);
 }
 
 export async function updateSceneMetadata(
   projectRoot: string,
   sceneId: string,
-  payload: { summary?: string; pov?: string; status?: string }
+  payload: { summary?: string; pov?: string; status?: string; expectedVersion?: SceneEditVersion }
 ): Promise<SceneDetail> {
-  const args = ["scene", "update", "--id", sceneId];
-  for (const [key, value] of Object.entries(payload)) {
-    if (value !== undefined) args.push(`--${key}`, value);
-  }
-  args.push("--json");
-  return decodeJson<SceneDetail>(await runCoreCommand(projectRoot, args));
+  return updateScene(projectRoot, sceneId, payload);
 }
 
 export async function getManuscriptPlan(projectRoot: string): Promise<ManuscriptPlan> {
@@ -370,7 +378,8 @@ export async function getManuscriptPlan(projectRoot: string): Promise<Manuscript
 
 export async function updateProjectBrief(
   projectRoot: string,
-  brief: ManuscriptPlan["brief"]
+  brief: ManuscriptPlan["brief"],
+  expectedVersion?: { workspace: string; value: ManuscriptPlan["brief"] }
 ): Promise<ManuscriptPlan> {
   const args = [
     "plan", "brief",
@@ -380,6 +389,8 @@ export async function updateProjectBrief(
     "--outline", brief.outline,
   ];
   for (const theme of brief.themes) args.push("--theme", theme);
+  if (!brief.themes.length) args.push("--clear-themes");
+  if (expectedVersion) args.push("--expected-version", JSON.stringify(expectedVersion));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ManuscriptPlan>(result);
@@ -388,10 +399,11 @@ export async function updateProjectBrief(
 export async function addPlanAct(
   projectRoot: string,
   title: string,
-  synopsis = ""
+  synopsis = "",
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["acts"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "act-add", "--title", title, "--synopsis", synopsis, "--json"
+    "plan", "act-add", "--title", title, "--synopsis", synopsis, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -400,10 +412,11 @@ export async function addPlanChapter(
   projectRoot: string,
   actId: string,
   title: string,
-  synopsis = ""
+  synopsis = "",
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["acts"][number]["chapters"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "chapter-add", "--act", actId, "--title", title, "--synopsis", synopsis, "--json"
+    "plan", "chapter-add", "--act", actId, "--title", title, "--synopsis", synopsis, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -412,9 +425,11 @@ export async function assignPlanScene(
   projectRoot: string,
   sceneId: string,
   chapterId: string | null,
-  beforeSceneId?: string
+  beforeSceneId?: string,
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan> {
   const args = ["plan", "scene-assign", "--scene", sceneId];
+  if (expectedWorkspace) args.push("--expected-workspace", expectedWorkspace);
   if (chapterId) args.push("--chapter", chapterId);
   if (beforeSceneId) args.push("--before", beforeSceneId);
   args.push("--json");
@@ -439,10 +454,13 @@ export async function previewPlanSceneMove(
 export async function updatePlanSceneMetadata(
   projectRoot: string,
   sceneId: string,
-  metadata: { timelinePosition: string; labels: string[] }
+  metadata: { timelinePosition: string; labels: string[] },
+  expectedVersion?: { workspace: string; value: ManuscriptPlan["scene_metadata"][string] }
 ): Promise<ManuscriptPlan["scene_metadata"][string]> {
   const args = ["plan", "scene-meta", "--scene", sceneId, "--timeline", metadata.timelinePosition];
   for (const label of metadata.labels) args.push("--label", label);
+  if (!metadata.labels.length) args.push("--clear-labels");
+  if (expectedVersion) args.push("--expected-version", JSON.stringify(expectedVersion));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson(result);
@@ -466,10 +484,11 @@ export async function updateLocalProductSignals(
 export async function addPlanBeat(
   projectRoot: string,
   sceneId: string,
-  summary: string
+  summary: string,
+  expectedWorkspace?: string
 ): Promise<ManuscriptPlan["beats"][number]> {
   const result = await runCoreCommand(projectRoot, [
-    "plan", "beat-add", "--scene", sceneId, "--summary", summary, "--json"
+    "plan", "beat-add", "--scene", sceneId, "--summary", summary, "--json", ...(expectedWorkspace ? ["--expected-workspace", expectedWorkspace] : [])
   ]);
   return decodeJson(result);
 }
@@ -614,6 +633,13 @@ export async function applyProposalBatch(projectRoot: string, proposalIds: strin
   if (force) args.push("--force");
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));
+}
+
+export async function undoProposalBatch(projectRoot: string, appliedRevision: string): Promise<{
+  change_group_id: string; applied_revision: string; undo_revision: string; restored_revision: string;
+  proposal_ids: string[]; scene_ids: string[]; proposals: ProposalRecord[]; scenes: SceneDetail[]; warnings: string[];
+}> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "undo-batch", "--revision", appliedRevision, "--json"]));
 }
 
 export async function undoProposal(
@@ -943,6 +969,7 @@ export type ChatSendPayload = {
   sceneIds?: string[];
   selectedText?: string;
   codexIds?: string[];
+  approvedCodexIds?: string[];
   memoryApprovals?: MemoryApproval[];
   storyApprovals?: string[];
   expectedContextFingerprint?: string;
@@ -957,6 +984,9 @@ export type ChatSendPayload = {
   agentAutoReadOnly?: boolean;
   agentConfirmWrites?: boolean;
   scope?: "project" | "scene" | "chapter" | "character" | "storyline";
+  turnId?: string;
+  channel?: "text" | "desktop_voice" | "mobile_voice";
+  replacementFromMessageId?: string;
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
@@ -983,10 +1013,13 @@ export async function previewProposalGeneration(projectRoot: string, input: Para
 }
 export type StoryContextChoice = { id: string; kind: "fact" | "relationship"; label: string; eligible: boolean; reason: string; approved: boolean; included: boolean };
 export type SelectionAction = "rewrite" | "shorten" | "expand" | "critique";
+export type EditorialReviewFocus = "general" | "continuity" | "character-knowledge" | "motivation" | "pacing" | "voice";
 export type SelectionInput = {
   scene_id: string; start: number; end: number; selected_text: string; action: SelectionAction;
   instruction: string; provider: ProposalProvider; model: string; memory_approvals: MemoryApproval[];
   story_approvals?: string[];
+  review_focus?: EditorialReviewFocus;
+  review_scope?: "passage" | "chapter";
 };
 export type SelectionPreview = {
   fingerprint: string; provider: string; model: string; system_prompt: string; user_prompt: string;
@@ -995,6 +1028,7 @@ export type SelectionPreview = {
   limits: { omitted_before_characters: number; omitted_after_characters: number; omitted_memory_ids: string[] };
   memory_choices: ChatContextPreview["memory_choices"];
   story_choices?: StoryContextChoice[];
+  review?: { focus: EditorialReviewFocus; scope: "passage" | "chapter"; scene_ids: string[] };
 };
 export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -1069,6 +1103,9 @@ export async function sendChatMessage(
     if (codexId.trim() !== "") {
       args.push("--codex-id", codexId.trim());
     }
+  }
+  for (const codexId of payload.approvedCodexIds ?? []) {
+    if (codexId.trim()) args.push("--allow-memory-once", codexId.trim());
   }
   if (typeof payload.includeCurrentScene === "boolean") {
     args.push("--include-current-scene", payload.includeCurrentScene ? "true" : "false");
@@ -1197,6 +1234,9 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     contextOverrides.scope = payload.scope;
   }
   return {
+    turn_id: payload.turnId,
+    channel: payload.channel ?? "text",
+    replace_from_message_id: payload.replacementFromMessageId ?? "",
     delivery_id: payload.deliveryId,
     thread_id: payload.threadId,
     message: payload.message,
@@ -1204,6 +1244,7 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
     scene_ids: (payload.sceneIds ?? []).filter((item) => item.trim() !== ""),
     selected_text: payload.selectedText ?? "",
     codex_ids: (payload.codexIds ?? []).filter((item) => item.trim() !== ""),
+    approved_codex_ids: (payload.approvedCodexIds ?? []).filter((item) => item.trim() !== ""),
     memory_approvals: payload.memoryApprovals ?? [],
     story_approvals: payload.storyApprovals ?? [],
     expected_context_fingerprint: payload.expectedContextFingerprint ?? "",
@@ -1211,34 +1252,366 @@ function chatSendParams(payload: ChatSendPayload): Record<string, unknown> {
   };
 }
 
+export type ChatDeliveryReconciliation = {
+  status: "completed" | "not_delivered" | "indeterminate" | "blocked";
+  can_review: boolean;
+  message: string;
+};
+
+// This operation only reconciles local receipts. It never starts a provider turn.
+export async function reconcileChatDelivery(projectRoot: string, payload: ChatSendPayload): Promise<ChatDeliveryReconciliation> {
+  const requestId = payload.replacementFromMessageId ? payload.turnId : payload.deliveryId;
+  if (!requestId) throw new Error("The saved request has no delivery identity. Keep a copy of the question before discarding it.");
+  try {
+    return await sidecarRequest<ChatDeliveryReconciliation>(projectRoot, nextSidecarRequestId(), "chat.delivery.reconcile", {
+      thread_id: payload.threadId, request_id: requestId, turn_id: payload.turnId ?? "",
+    }, 30_000);
+  } catch (error) {
+    if (error instanceof SidecarDomainError) throw error;
+    // Reconciliation is idempotent and provider-free on both transports.
+    const args = ["chat", "reconcile", "--thread", payload.threadId, "--request-id", requestId];
+    if (payload.turnId) args.push("--turn-id", payload.turnId);
+    return decodeJson<ChatDeliveryReconciliation>(await runCoreCommand(projectRoot, [...args, "--json"]));
+  }
+}
+
 export async function sendChatMessageStreamed(
   projectRoot: string,
   payload: ChatSendPayload,
   handlers: {
     onDelta: (text: string) => void;
-    onStart?: (requestId: string) => void;
+    onStart?: (requestId: string, turnId: string) => void;
+    onEvent?: (event: AssistantEventEnvelope) => void;
   }
 ): Promise<ChatSendResult> {
   const requestId = nextSidecarRequestId();
-  handlers.onStart?.(requestId);
+  const turnId = payload.turnId?.trim() || `turn-${crypto.randomUUID()}`;
+  handlers.onStart?.(requestId, turnId);
   const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<SidecarEventEnvelope>(SIDECAR_EVENT_CHANNEL, (event) => {
-    const frame = event.payload.frame;
     if (event.payload.projectRoot !== projectRoot) return;
-    if (frame.event !== "chat.delta" || !frame.payload) return;
-    if (frame.payload.request_id !== requestId) return;
-    handlers.onDelta(String(frame.payload.text ?? ""));
+    const frame = event.payload.frame;
+    if (!frame.payload) return;
+    if (frame.event === "assistant.event") {
+      const assistantEvent = frame.payload as unknown as AssistantEventEnvelope;
+      if (assistantEvent.turn_id === turnId) handlers.onEvent?.(assistantEvent);
+      return;
+    }
+    if (frame.event === "chat.delta" && frame.payload.request_id === requestId) {
+      handlers.onDelta(String(frame.payload.text ?? ""));
+    }
   });
   try {
     return await sidecarRequest<ChatSendResult>(
       projectRoot,
       requestId,
-      "chat.send",
-      chatSendParams(payload)
+      payload.replacementFromMessageId ? "chat.regenerate" : "chat.send",
+      chatSendParams({ ...payload, turnId })
     );
   } finally {
     unlisten();
   }
+}
+
+export async function getAssistantTurn(
+  projectRoot: string,
+  turnId: string
+): Promise<AssistantTurnRecord> {
+  return sidecarRequest<AssistantTurnRecord>(
+    projectRoot,
+    nextSidecarRequestId(),
+    "assistant.turn.get",
+    { turn_id: turnId },
+    10_000
+  );
+}
+
+export type MobileSnapshotManifest = {
+  schema: "openauthor.mobile.snapshot.manifest";
+  schema_version: 1;
+  project_id: string;
+  revision: string;
+  content_sha256: string;
+  byte_length: number;
+};
+
+export type PreparedMobileSnapshot = {
+  schema_version: 1;
+  media_type: "application/vnd.openauthor.mobile-snapshot+json";
+  manifest: MobileSnapshotManifest;
+  plaintext_base64: string;
+};
+
+export type MobileOutboxEnvelopeIdentity = {
+  projectId: string;
+  deviceId: string;
+  operationId: string;
+  baseRevision: string;
+  payloadDigest: string;
+};
+
+export type MobileOutboxImportResult = {
+  schema_version: 1;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  kind: string;
+  payload_digest: string;
+  base_revision: string;
+  imported_revision: string;
+  stale: boolean;
+  disposition: "imported" | "pending_review" | "conflict";
+  artifact_kind: string;
+  artifact_id: string;
+  imported_at: string;
+};
+
+export type MobileInboxItem = {
+  schema_version: 1;
+  id: string;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  base_revision: string;
+  imported_revision: string;
+  payload_digest: string;
+  kind: "capture_note" | "thread_turn";
+  title: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type MobileReviewDecision = {
+  schema_version: 1;
+  id: string;
+  project_id: string;
+  device_id: string;
+  operation_id: string;
+  base_revision: string;
+  imported_revision: string;
+  payload_digest: string;
+  kind: "review_decision";
+  status: "pending_desktop_review" | "conflict";
+  stale: boolean;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export interface MobileSidecarRequester {
+  <T>(
+    projectRoot: string,
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs: number
+  ): Promise<T>;
+}
+
+export function createMobileSidecarApi(request: MobileSidecarRequester) {
+  return {
+    prepareSnapshot(
+      projectRoot: string,
+      projectId: string
+    ): Promise<PreparedMobileSnapshot> {
+      return request<PreparedMobileSnapshot>(
+        projectRoot,
+        "mobile.snapshot.prepare",
+        { project_id: projectId },
+        30_000
+      );
+    },
+    importOutboxItem(
+      projectRoot: string,
+      input: {
+        envelope: MobileOutboxEnvelopeIdentity;
+        payload: Record<string, unknown>;
+      }
+    ): Promise<MobileOutboxImportResult> {
+      return request<MobileOutboxImportResult>(
+        projectRoot,
+        "mobile.outbox.import",
+        {
+          envelope: {
+            project_id: input.envelope.projectId,
+            device_id: input.envelope.deviceId,
+            operation_id: input.envelope.operationId,
+            base_revision: input.envelope.baseRevision,
+            payload_digest: input.envelope.payloadDigest,
+          },
+          payload: input.payload,
+        },
+        30_000
+      );
+    },
+    listInbox(projectRoot: string): Promise<MobileInboxItem[]> {
+      return request<MobileInboxItem[]>(
+        projectRoot,
+        "mobile.inbox.list",
+        {},
+        15_000
+      );
+    },
+    listReviews(projectRoot: string): Promise<MobileReviewDecision[]> {
+      return request<MobileReviewDecision[]>(
+        projectRoot,
+        "mobile.review.list",
+        {},
+        15_000
+      );
+    },
+  };
+}
+
+const mobileSidecarApi = createMobileSidecarApi(
+  <T>(
+    projectRoot: string,
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs: number
+  ) => sidecarRequest<T>(
+    projectRoot,
+    nextSidecarRequestId(),
+    method,
+    params,
+    timeoutMs
+  )
+);
+
+export async function prepareMobileSnapshot(
+  projectRoot: string,
+  projectId: string
+): Promise<PreparedMobileSnapshot> {
+  return mobileSidecarApi.prepareSnapshot(projectRoot, projectId);
+}
+
+export async function importMobileOutboxItem(
+  projectRoot: string,
+  input: {
+    envelope: MobileOutboxEnvelopeIdentity;
+    payload: Record<string, unknown>;
+  }
+): Promise<MobileOutboxImportResult> {
+  return mobileSidecarApi.importOutboxItem(projectRoot, input);
+}
+
+export async function listMobileInboxItems(
+  projectRoot: string
+): Promise<MobileInboxItem[]> {
+  return mobileSidecarApi.listInbox(projectRoot);
+}
+
+export async function listMobileReviewDecisions(
+  projectRoot: string
+): Promise<MobileReviewDecision[]> {
+  return mobileSidecarApi.listReviews(projectRoot);
+}
+
+export type VoiceContextPrepared = {
+  context_pack: Record<string, unknown> & { pack_id: string; channel: string };
+  instructions: string;
+  tools: Array<Record<string, unknown>>;
+  profile: Record<string, unknown>;
+};
+
+export async function prepareVoiceContext(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    utterance?: string;
+    currentSceneId?: string;
+    selectedText?: string;
+    sceneIds?: string[];
+    codexIds?: string[];
+  }
+): Promise<VoiceContextPrepared> {
+  return sidecarRequest<VoiceContextPrepared>(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.context.prepare",
+    {
+      thread_id: payload.threadId,
+      channel: "desktop_voice",
+      utterance: payload.utterance ?? "",
+      current_scene_id: payload.currentSceneId ?? "",
+      selected_text: payload.selectedText ?? "",
+      scene_ids: payload.sceneIds ?? [],
+      codex_ids: payload.codexIds ?? []
+    },
+    30_000
+  );
+}
+
+export async function negotiateVoiceSession(
+  projectRoot: string,
+  payload: { offerSdp: string; contextPackId: string; model?: string; voice?: string }
+): Promise<{ answer_sdp: string; context_pack_id: string; model: string; voice: string }> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.session.start",
+    {
+      offer_sdp: payload.offerSdp,
+      context_pack_id: payload.contextPackId,
+      model: payload.model ?? "",
+      voice: payload.voice ?? ""
+    },
+    45_000
+  );
+}
+
+export async function handleVoiceTool(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    callId: string;
+    name: string;
+    arguments: Record<string, unknown>;
+  }
+): Promise<Record<string, unknown>> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.tool.handle",
+    {
+      thread_id: payload.threadId,
+      channel: "desktop_voice",
+      call_id: payload.callId,
+      name: payload.name,
+      arguments: payload.arguments
+    },
+    30_000
+  );
+}
+
+export async function recordVoiceTurn(
+  projectRoot: string,
+  payload: {
+    threadId: string;
+    turnId: string;
+    voiceSessionId: string;
+    userTranscript: string;
+    assistantTranscript: string;
+    contextPackId: string;
+    providerEventId: string;
+    model: string;
+  }
+): Promise<{ turn: AssistantTurnRecord; messages: ChatMessageRecord[] }> {
+  return sidecarRequest(
+    projectRoot,
+    nextSidecarRequestId(),
+    "voice.turn.record",
+    {
+      thread_id: payload.threadId,
+      turn_id: payload.turnId,
+      voice_session_id: payload.voiceSessionId,
+      user_transcript: payload.userTranscript,
+      assistant_transcript: payload.assistantTranscript,
+      context_pack_id: payload.contextPackId,
+      provider_event_id: payload.providerEventId,
+      model: payload.model,
+      channel: "desktop_voice"
+    },
+    30_000
+  );
 }
 
 export async function interruptChatTurn(
@@ -1478,6 +1851,12 @@ export async function deleteCodexRelationship(projectRoot: string, relationshipI
 
 export type StoryMemorySuggestion = {
   id: string;
+  review_version?: string;
+  classification_uncertain?: boolean;
+  type_candidates?: CodexEntity["type"][];
+  type_confirmed?: boolean;
+  origin?: "ai_scan";
+  generation_id?: string;
   kind: "entity_create" | "canon_fact" | "memory_note" | "relationship_create";
   entity_type?: CodexEntity["type"];
   name: string;
@@ -1505,22 +1884,38 @@ export async function scanStoryMemory(projectRoot: string): Promise<{ scanned_sc
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan", "--json"]));
 }
 
+export type MemoryScanRequest = { scene_ids: string[]; provider: ProposalProvider; model: string };
+export type MemoryScanPreview = {
+  fingerprint: string; provider: ProposalProvider; model: string; scope: string;
+  scenes: Array<{ scene_id: string; title: string; body: string }>;
+  accepted_entities: Array<{ id: string; type: CodexEntity["type"]; name: string; aliases: string[] }>;
+  input_tokens_estimate: number; response_token_reserve: number; warnings: string[];
+};
+export type MemoryScanReport = { scanned_scenes: number; added: number; refreshed: number; pending: number;
+  suggestions: StoryMemorySuggestion[]; generation_id: string; warnings: string[] };
+export async function previewMemoryScan(projectRoot: string, request: MemoryScanRequest): Promise<MemoryScanPreview> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan-preview", "--request-json", JSON.stringify(request), "--json"]));
+}
+export async function generateMemoryScan(projectRoot: string, request: MemoryScanRequest, fingerprint: string): Promise<MemoryScanReport> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "scan-ai", "--request-json", JSON.stringify({ ...request, expected_fingerprint: fingerprint }), "--json"]));
+}
+
 export async function listStoryMemorySuggestions(projectRoot: string, status: StoryMemorySuggestion["status"] = "pending"): Promise<StoryMemorySuggestion[]> {
   return decodeJson(await runCoreCommand(projectRoot, ["memory", "list", "--status", status, "--json"]));
 }
 
-export async function reviewStoryMemorySuggestion(projectRoot: string, id: string, disposition: "accepted" | "rejected" | "deferred"): Promise<StoryMemorySuggestion> {
-  return decodeJson(await runCoreCommand(projectRoot, ["memory", "review", "--id", id, "--disposition", disposition, "--json"]));
+export async function reviewStoryMemorySuggestion(projectRoot: string, id: string, disposition: "accepted" | "rejected" | "deferred", expectedVersion?: string): Promise<StoryMemorySuggestion> {
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "review", "--id", id, "--disposition", disposition, ...(expectedVersion !== undefined ? ["--expected-version", expectedVersion] : []), "--json"]));
 }
 
 export async function correctStoryMemorySuggestion(
   projectRoot: string,
   id: string,
-  updates: { name?: string; description?: string; predicate?: string; value?: string }
+  updates: { name?: string; description?: string; predicate?: string; value?: string; entity_type?: CodexEntity["type"]; expected_version?: string }
 ): Promise<StoryMemorySuggestion> {
   const args = ["memory", "correct", "--id", id];
   for (const [key, value] of Object.entries(updates)) {
-    if (value !== undefined) args.push(`--${key}`, value);
+    if (value !== undefined) args.push(`--${key.replace(/_/g, "-")}`, value);
   }
   args.push("--json");
   return decodeJson(await runCoreCommand(projectRoot, args));
@@ -1569,7 +1964,14 @@ export async function addEditorialPass(projectRoot: string, payload: { name: str
 }
 
 export async function listCanonFacts(projectRoot: string): Promise<CanonFact[]> {
-  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-list", "--json"]));
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-list", "--for-editing", "--json"]));
+}
+
+export type CanonFactChanges = Pick<CanonFact, "predicate" | "value" | "status" | "validity" | "evidence">;
+
+export async function updateCanonFact(projectRoot: string, fact: CanonFact, changes: CanonFactChanges): Promise<CanonFact> {
+  if (!fact.edit_version) throw new Error("Reload Canon & Continuity before editing this fact.");
+  return decodeJson(await runCoreCommand(projectRoot, ["memory", "fact-update", "--id", fact.id, "--expected-version", fact.edit_version, "--changes-json", JSON.stringify(changes), "--json"]));
 }
 
 export async function addCanonFact(projectRoot: string, payload: {
@@ -1590,11 +1992,11 @@ export async function listNarrativeSetups(projectRoot: string): Promise<Narrativ
 }
 
 export async function reviewCanonFact(projectRoot: string, factId: string, payload: {
-  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedUpdatedAt?: string;
+  disposition: "accepted" | "rejected"; evidence?: CanonEvidence[]; expectedVersion: string;
 }): Promise<CanonFact> {
-  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--json"];
+  if (!payload.expectedVersion) throw new Error("Reload Canon & Continuity before reviewing this fact.");
+  const args = ["memory", "fact-review", "--id", factId, "--disposition", payload.disposition, "--expected-version", payload.expectedVersion, "--json"];
   if (payload.evidence) args.push("--evidence-json", JSON.stringify(payload.evidence));
-  if (payload.expectedUpdatedAt) args.push("--expected-updated-at", payload.expectedUpdatedAt);
   return decodeJson(await runCoreCommand(projectRoot, args));
 }
 
@@ -1715,18 +2117,57 @@ export async function duplicateStoryline(projectRoot: string, id: string, name: 
 
 export type StyleProfile = {
   schema_version: number;
+  name: string;
+  description: string;
+  traits: Record<string, string>;
+  avoid: string[];
+  version?: string;
   exemplar_scene_ids: string[];
+  exemplar_digests?: Record<string, string>;
+  observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }>;
   created_at: string;
-  reference_mode: "current" | "frozen";
-  freshness: "current" | "stale" | "unknown";
-  changed_scene_ids: string[];
-  usable_for_ai: boolean;
-  fingerprint: string;
+  reference_mode?: "current" | "frozen";
+  freshness?: "current" | "stale" | "unknown";
+  changed_scene_ids?: string[];
+  usable_for_ai?: boolean;
+  fingerprint?: string;
   source_digests?: Record<string, string>;
   measurement?: { method: string; word_metrics_available: boolean; limitations: string[] };
-  metrics: { character_count?: number; word_count: number | null; sentence_count: number | null; paragraph_count: number; average_sentence_words: number | null; average_paragraph_words: number | null; dialogue_word_ratio: number | null; semicolon_per_sentence: number | null; em_dash_per_sentence: number | null; signature_words: string[] };
+  metrics: Record<string, any>;
   guidance: string[];
 };
+
+export type WritingVoiceWorkspace = {
+  profile: StyleProfile | null; scope: string;
+  presets: Array<Pick<StyleProfile, "name" | "description" | "traits" | "guidance" | "avoid"> & { id: string }>;
+  dimensions: Record<string, { label: string; options: string[] }>;
+  criteria: Record<string, string>;
+  previews: VoicePreview[];
+};
+export type VoicePreservation = {
+  kind: "fact" | "knowledge" | "uncertainty" | "protected_text" | "end_beat";
+  text: string;
+};
+export type VoicePreview = {
+  id: string; scene_id: string; source_text: string; provider: string;
+  instruction?: string;
+  preservation?: VoicePreservation[];
+  preservation_schema_version?: 1;
+  preservation_fingerprint?: string;
+  refinement?: { preview_id: string; direction_id: string; candidate: string; feedback: string };
+  directions: Array<{
+    id: string; profile: StyleProfile; text: string; warnings: string[]; proposal_id?: string;
+    measures: { words: number; average_sentence_words: number; dialogue_passages: number };
+    observations: Array<{ criterion: string; observation: string; excerpt: string; source_excerpt?: string }>;
+    author_review: { ratings: Record<string, string>; notes: string };
+  }>;
+};
+export async function getWritingVoiceWorkspace(projectRoot: string): Promise<WritingVoiceWorkspace> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", "workspace", "--json"]));
+}
+export async function writingVoiceAction<T>(projectRoot: string, action: "save" | "suggest" | "preview" | "refine" | "review" | "stage", request: Record<string, unknown>): Promise<T> {
+  return decodeJson(await runCoreCommand(projectRoot, ["style", action, "--request-json", JSON.stringify(request), "--json"]));
+}
 
 export async function getStyleProfile(projectRoot: string): Promise<StyleProfile | null> {
   return decodeJson(await runCoreCommand(projectRoot, ["style", "get", "--json"]));
@@ -1906,17 +2347,26 @@ export async function getGenerationBudget(
 export async function updateGenerationBudget(
   projectRoot: string,
   payload: {
-    maxInputTokens?: number;
-    maxOutputTokens?: number;
-    maxTotalTokens?: number;
-    maxEstimatedCostUsd?: number;
-    dailyTokens?: number;
-    dailyEstimatedCostUsd?: number;
-    weeklyTokens?: number;
-    weeklyEstimatedCostUsd?: number;
+    maxInputTokens?: number | null;
+    maxOutputTokens?: number | null;
+    maxTotalTokens?: number | null;
+    maxEstimatedCostUsd?: number | null;
+    dailyTokens?: number | null;
+    dailyEstimatedCostUsd?: number | null;
+    weeklyTokens?: number | null;
+    weeklyEstimatedCostUsd?: number | null;
   }
 ): Promise<GenerationBudgetReport> {
   const args = ["generation", "budget"];
+  const fields = {
+    maxInputTokens: "max_input_tokens", maxOutputTokens: "max_output_tokens",
+    maxTotalTokens: "max_total_tokens", maxEstimatedCostUsd: "max_estimated_cost_usd",
+    dailyTokens: "daily_tokens", dailyEstimatedCostUsd: "daily_estimated_cost_usd",
+    weeklyTokens: "weekly_tokens", weeklyEstimatedCostUsd: "weekly_estimated_cost_usd",
+  } as const;
+  for (const key of Object.keys(fields) as Array<keyof typeof fields>) {
+    if (payload[key] === null) args.push("--clear-limit", fields[key]);
+  }
   if (typeof payload.maxInputTokens === "number") {
     args.push("--max-input-tokens", String(payload.maxInputTokens));
   }

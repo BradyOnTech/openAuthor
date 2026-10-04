@@ -1,0 +1,139 @@
+TAP version 13
+# (node:60915) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: waits for shared quota before issuing and fails closed on uncertain shared commits
+not ok 1 - waits for shared quota before issuing and fails closed on uncertain shared commits
+  ---
+  duration_ms: 15.838792
+  type: 'test'
+  location: '~/Developer/openAuthor/gateway/test/sessionGateway.test.ts:87:1'
+  failureType: 'unhandledRejection'
+  error: "Cannot read properties of undefined (reading 'principal')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Object.consume (file://~/Developer/openAuthor/gateway/test/sessionGateway.test.ts:93:28)
+    Server.<anonymous> (file://~/Developer/openAuthor/gateway/src/sessionGateway.ts:333:48)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+  ...
+# Subtest: rejects an internally inconsistent gateway policy at startup
+ok 2 - rejects an internally inconsistent gateway policy at startup
+  ---
+  duration_ms: 0.798208
+  type: 'test'
+  ...
+# Subtest: reports liveness without authentication or dependency access
+ok 3 - reports liveness without authentication or dependency access
+  ---
+  duration_ms: 6.311625
+  type: 'test'
+  ...
+# Subtest: rejects an unauthenticated session request before contacting OpenAI
+ok 4 - rejects an unauthenticated session request before contacting OpenAI
+  ---
+  duration_ms: 3.478833
+  type: 'test'
+  ...
+# Subtest: rejects a principal not authorized for the requested project and device
+ok 5 - rejects a principal not authorized for the requested project and device
+  ---
+  duration_ms: 2.452833
+  type: 'test'
+  ...
+# Subtest: rejects a request whose device differs from the verified JWT binding
+ok 6 - rejects a request whose device differs from the verified JWT binding
+  ---
+  duration_ms: 2.127334
+  type: 'test'
+  ...
+# Subtest: issues a mobile SDP answer with server-clamped Realtime policy
+ok 7 - issues a mobile SDP answer with server-clamped Realtime policy
+  ---
+  duration_ms: 3.378
+  type: 'test'
+  ...
+# Subtest: rate limits session issuance before contacting OpenAI
+ok 8 - rate limits session issuance before contacting OpenAI
+  ---
+  duration_ms: 1.758
+  type: 'test'
+  ...
+# Subtest: never leaks permanent credentials or raw upstream errors
+ok 9 - never leaks permanent credentials or raw upstream errors
+  ---
+  duration_ms: 2.013208
+  type: 'test'
+  ...
+# Subtest: rejects browser origins outside the allowlist before authentication
+ok 10 - rejects browser origins outside the allowlist before authentication
+  ---
+  duration_ms: 3.693875
+  type: 'test'
+  ...
+# Subtest: rejects oversized requests before authorization or upstream work
+ok 11 - rejects oversized requests before authorization or upstream work
+  ---
+  duration_ms: 3.365042
+  type: 'test'
+  ...
+# Subtest: rejects an SDP offer above the server-owned SDP limit
+ok 12 - rejects an SDP offer above the server-owned SDP limit
+  ---
+  duration_ms: 1.436417
+  type: 'test'
+  ...
+# Subtest: times out a stalled request body before authorization or upstream work
+ok 13 - times out a stalled request body before authorization or upstream work
+  ---
+  duration_ms: 31.461125
+  type: 'test'
+  ...
+# Subtest: contains audit-sink failures without failing or leaking a successful session
+ok 14 - contains audit-sink failures without failing or leaking a successful session
+  ---
+  duration_ms: 1.44825
+  type: 'test'
+  ...
+# Subtest: maps unexpected dependency failures to a structured content-free error
+ok 15 - maps unexpected dependency failures to a structured content-free error
+  ---
+  duration_ms: 1.361917
+  type: 'test'
+  ...
+# node:internal/modules/esm/resolve:275
+#     throw new ERR_MODULE_NOT_FOUND(
+#           ^
+# Error [ERR_MODULE_NOT_FOUND]: Cannot find module '~/Developer/openAuthor/gateway/src/supabaseRateLimiter.ts' imported from ~/Developer/openAuthor/gateway/test/supabaseRateLimiter.test.ts
+#     at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+#     at moduleResolve (node:internal/modules/esm/resolve:860:10)
+#     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+#     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+#     at \#cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+#     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+#     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+#     at ModuleJob._link (node:internal/modules/esm/module_job:175:49) {
+#   code: 'ERR_MODULE_NOT_FOUND',
+#   url: 'file://~/Developer/openAuthor/gateway/src/supabaseRateLimiter.ts'
+# }
+# Node.js v22.17.0
+# Subtest: test/supabaseRateLimiter.test.ts
+not ok 2 - test/supabaseRateLimiter.test.ts
+  ---
+  duration_ms: 77.789875
+  type: 'test'
+  location: '~/Developer/openAuthor/gateway/test/supabaseRateLimiter.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 14
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.748333

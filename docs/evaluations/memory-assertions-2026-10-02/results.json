@@ -1,0 +1,1719 @@
+{
+  "date": "2026-10-02",
+  "evidence_kind": "authored_synthetic_statement_cases",
+  "limits": "Fresh authored probes of local statement filtering, not a model quality benchmark or observed author workload.",
+  "baseline_commit": "230222fc69d49f7b0668b6bd6d164feec64b9595",
+  "corpus_sha256": "43c2ddca1817e935461309607c9d713a87d863b0f472854dcf1efab284534747",
+  "current_source_sha256": "a804b050e1d23383a8ef0ec0d33eb3d8773f5f1aa799fe5ed23b43b2abd8aa5a",
+  "baseline": {
+    "totals": {
+      "cases": 31,
+      "matched_cases": 7,
+      "extra_statements": 29,
+      "missed_statements": 1,
+      "invalid_evidence": 0
+    },
+    "cases": [
+      {
+        "id": "conditional-prefix",
+        "body": "If Elin owns the red key, the door will open.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key, the door will open"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key, the door will open"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "conditional-suffix",
+        "body": "Elin owns the red key if the rumour is true.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key if the rumour is true"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key if the rumour is true"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "speculation",
+        "body": "Perhaps Elin knows the safe number.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "the safe number"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "the safe number"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "imagined-description",
+        "body": "Tomas imagined that Elin was a spy.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "was",
+            "a spy"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "was",
+            "a spy"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "conditional-connection",
+        "body": "If Elin trusts Tomas, he will answer.",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "dreamed-connection",
+        "body": "Tomas dreamed that Elin protects Tomas.",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "reported-connection",
+        "body": "The witness said Elin trusts Tomas.",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "denied-description",
+        "body": "It was not true that Elin is a spy.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "question",
+        "body": "Elin trusts Tomas?",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "attributed-description",
+        "body": "Elin owns the key, according to the witness.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the key, according to the witness"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the key, according to the witness"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "reported-suffix",
+        "body": "Elin is a spy, Tomas claimed.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy, Tomas claimed"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy, Tomas claimed"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "quoted-value",
+        "body": "Elin is a “traitor” in the witness's words.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a “traitor” in the witness's words"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a “traitor” in the witness's words"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "quoted-modifier",
+        "body": "Elin \"never\" trusts Tomas.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "curly-double-dialogue",
+        "body": "“Elin owns Tomas's key and Elin trusts Tomas,” said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,” said the witness"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,” said the witness"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "straight-double-dialogue",
+        "body": "\"Elin owns Tomas's key and Elin trusts Tomas,\" said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,\" said the witness"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,\" said the witness"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "curly-single-dialogue",
+        "body": "‘Elin owns Tomas's key and Elin trusts Tomas,’ said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,’ said the witness"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,’ said the witness"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "straight-single-dialogue",
+        "body": "'Elin owns Tomas's key and Elin trusts Tomas,' said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,' said the witness"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas's key and Elin trusts Tomas,' said the witness"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "direct-and-negative-controls",
+        "body": "Elin owns the red key. Elin is not a spy. Elin does not trust Tomas. At the gate, Elin protects Tomas. Elin owns Tomas' coat.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "distrusts",
+            "Tomas"
+          ],
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "is",
+            "not a spy"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas' coat"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "distrusts",
+            "Tomas"
+          ],
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "is",
+            "not a spy"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas' coat"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "semicolon-control",
+        "body": "Perhaps the rain will stop; Elin owns the red key; Elin trusts Tomas.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key; Elin trusts Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key; Elin trusts Tomas"
+          ]
+        ],
+        "missed": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "invalid_evidence": []
+      },
+      {
+        "id": "belief-object-control",
+        "body": "Elin believes Tomas is a spy.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "believes",
+            "Tomas is a spy"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "believes",
+            "Tomas is a spy"
+          ],
+          [
+            "fact",
+            "Tomas",
+            "is",
+            "a spy"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Tomas",
+            "is",
+            "a spy"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "explicit-name-control",
+        "body": "Maybe owns the red key. Maybe trusts Elin.",
+        "expected": [
+          [
+            "connection",
+            "Maybe",
+            "trusts",
+            "Elin"
+          ],
+          [
+            "fact",
+            "Maybe",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Maybe",
+            "trusts",
+            "Elin"
+          ],
+          [
+            "fact",
+            "Maybe",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-target",
+        "body": "Elin trusts Maybe.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-possessive",
+        "body": "Elin owns Maybe’s coat.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-value",
+        "body": "Elin knows Hope’s number.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "Hope’s number"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "Hope’s number"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-alias-target",
+        "body": "Elin protects Perhaps.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Maybe"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Maybe"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "uncertainty-outside-identities",
+        "body": "Perhaps Elin trusts Maybe. Elin owns Maybe’s coat if the story is true.",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat if the story is true"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat if the story is true"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "indirect-complement",
+        "body": "Tomas pretended that Elin owns the red key. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "escaped-nested-dialogue",
+        "body": "\"The witness said \\\"Elin trusts Tomas\\\" yesterday,\" Leah said. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-said-attribution",
+        "body": "Elin is a spy, Leah says.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy, Leah says"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "is",
+            "a spy, Leah says"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-belief-attribution",
+        "body": "Elin trusts Tomas, Leah believes.",
+        "expected": [],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "extra": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-report-attribution",
+        "body": "Elin owns the red key, the witness reports.",
+        "expected": [],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key, the witness reports"
+          ]
+        ],
+        "extra": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key, the witness reports"
+          ]
+        ],
+        "missed": [],
+        "invalid_evidence": []
+      }
+    ]
+  },
+  "current": {
+    "totals": {
+      "cases": 31,
+      "matched_cases": 31,
+      "extra_statements": 0,
+      "missed_statements": 0,
+      "invalid_evidence": 0
+    },
+    "cases": [
+      {
+        "id": "conditional-prefix",
+        "body": "If Elin owns the red key, the door will open.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "conditional-suffix",
+        "body": "Elin owns the red key if the rumour is true.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "speculation",
+        "body": "Perhaps Elin knows the safe number.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "imagined-description",
+        "body": "Tomas imagined that Elin was a spy.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "conditional-connection",
+        "body": "If Elin trusts Tomas, he will answer.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "dreamed-connection",
+        "body": "Tomas dreamed that Elin protects Tomas.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "reported-connection",
+        "body": "The witness said Elin trusts Tomas.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "denied-description",
+        "body": "It was not true that Elin is a spy.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "question",
+        "body": "Elin trusts Tomas?",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "attributed-description",
+        "body": "Elin owns the key, according to the witness.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "reported-suffix",
+        "body": "Elin is a spy, Tomas claimed.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "quoted-value",
+        "body": "Elin is a “traitor” in the witness's words.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "quoted-modifier",
+        "body": "Elin \"never\" trusts Tomas.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "curly-double-dialogue",
+        "body": "“Elin owns Tomas's key and Elin trusts Tomas,” said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "straight-double-dialogue",
+        "body": "\"Elin owns Tomas's key and Elin trusts Tomas,\" said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "curly-single-dialogue",
+        "body": "‘Elin owns Tomas's key and Elin trusts Tomas,’ said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "straight-single-dialogue",
+        "body": "'Elin owns Tomas's key and Elin trusts Tomas,' said the witness. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "direct-and-negative-controls",
+        "body": "Elin owns the red key. Elin is not a spy. Elin does not trust Tomas. At the gate, Elin protects Tomas. Elin owns Tomas' coat.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "distrusts",
+            "Tomas"
+          ],
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "is",
+            "not a spy"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas' coat"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "distrusts",
+            "Tomas"
+          ],
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "is",
+            "not a spy"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Tomas' coat"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "semicolon-control",
+        "body": "Perhaps the rain will stop; Elin owns the red key; Elin trusts Tomas.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Tomas"
+          ],
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "belief-object-control",
+        "body": "Elin believes Tomas is a spy.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "believes",
+            "Tomas is a spy"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "believes",
+            "Tomas is a spy"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "explicit-name-control",
+        "body": "Maybe owns the red key. Maybe trusts Elin.",
+        "expected": [
+          [
+            "connection",
+            "Maybe",
+            "trusts",
+            "Elin"
+          ],
+          [
+            "fact",
+            "Maybe",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Maybe",
+            "trusts",
+            "Elin"
+          ],
+          [
+            "fact",
+            "Maybe",
+            "owns",
+            "the red key"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-target",
+        "body": "Elin trusts Maybe.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "trusts",
+            "Maybe"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-possessive",
+        "body": "Elin owns Maybe’s coat.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "Maybe’s coat"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-name-value",
+        "body": "Elin knows Hope’s number.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "Hope’s number"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "knows",
+            "Hope’s number"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "defined-alias-target",
+        "body": "Elin protects Perhaps.",
+        "expected": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Maybe"
+          ]
+        ],
+        "actual": [
+          [
+            "connection",
+            "Elin",
+            "protects",
+            "Maybe"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "uncertainty-outside-identities",
+        "body": "Perhaps Elin trusts Maybe. Elin owns Maybe’s coat if the story is true.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "indirect-complement",
+        "body": "Tomas pretended that Elin owns the red key. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "escaped-nested-dialogue",
+        "body": "\"The witness said \\\"Elin trusts Tomas\\\" yesterday,\" Leah said. Elin owns the blue ribbon.",
+        "expected": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "actual": [
+          [
+            "fact",
+            "Elin",
+            "owns",
+            "the blue ribbon"
+          ]
+        ],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-said-attribution",
+        "body": "Elin is a spy, Leah says.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-belief-attribution",
+        "body": "Elin trusts Tomas, Leah believes.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "present-tense-report-attribution",
+        "body": "Elin owns the red key, the witness reports.",
+        "expected": [],
+        "actual": [],
+        "extra": [],
+        "missed": [],
+        "invalid_evidence": []
+      }
+    ]
+  },
+  "existing_name_cases": {
+    "evidence_kind": "authored_synthetic_extraction_cases",
+    "limitation": "These cases measure recorded behavior, not independent accuracy on novels or real-author review burden.",
+    "totals": {
+      "expected_entities": 27,
+      "matched_entities": 25,
+      "extra_entities": 0,
+      "missed_entities": 2,
+      "type_errors": 2
+    },
+    "cases": [
+      {
+        "id": "temporal-openers",
+        "expected": {
+          "Mara": "character"
+        },
+        "actual": {
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "restrictive-modifiers",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Ivo": "character",
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "clausal-and-transition-openers",
+        "expected": {
+          "Noor": "character"
+        },
+        "actual": {
+          "Noor": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ordinary-word-names",
+        "expected": {
+          "Hope": "character",
+          "Grace": "character",
+          "May": "character"
+        },
+        "actual": {
+          "Grace": "character",
+          "Hope": "character",
+          "May": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "titles-and-diacritics",
+        "expected": {
+          "Dr. Élodie March": "character",
+          "Captain Lin": "character"
+        },
+        "actual": {
+          "Captain Lin": "character",
+          "Dr. Élodie March": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "names-matching-grammar-controls",
+        "expected": {
+          "After": "character",
+          "Before": "character",
+          "Once": "character",
+          "Still": "character",
+          "Only": "character",
+          "Even": "character"
+        },
+        "actual": {
+          "After": "character",
+          "Before": "character",
+          "Even": "character",
+          "Once": "character",
+          "Only": "character",
+          "Still": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ambiguous-capitalized-places",
+        "expected": {
+          "Last Ferry": "location",
+          "North Gate": "location"
+        },
+        "actual": {
+          "Last Ferry": "character",
+          "North Gate": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [
+          "Last Ferry",
+          "North Gate"
+        ],
+        "invalid_evidence": []
+      },
+      {
+        "id": "cyrillic-persons",
+        "expected": {
+          "Мария": "character",
+          "Иван": "character"
+        },
+        "actual": {
+          "Иван": "character",
+          "Мария": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "decomposed-spelling",
+        "expected": {
+          "Élodie": "character",
+          "René": "character"
+        },
+        "actual": {
+          "René": "character",
+          "Élodie": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "possessive-spelling",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Ivo": "character",
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "uncased-script-names",
+        "expected": {
+          "小林": "character",
+          "阿明": "character"
+        },
+        "actual": {},
+        "extra": [],
+        "missed": [
+          "小林",
+          "阿明"
+        ],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "spatial-and-named-controls",
+        "expected": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "actual": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      }
+    ],
+    "author_review_burden": "not observed",
+    "uncased_name_extraction": "not implemented by the capitalized-name heuristic"
+  },
+  "author_review_burden": "not observed",
+  "provider_calls": 0
+}

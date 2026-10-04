@@ -1,0 +1,83 @@
+import { test, expect } from "@playwright/test";
+import { localBook } from "./localBook";
+
+test("scans cold Memory, reviews evidence, corrects a type, refuses stale decisions, and reopens review history", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  const book = await localBook(page);
+  async function json(args: string[]) {
+    const result = await book.core(book.projectRoot, [...args, "--json"]);
+    expect(result.status, result.stderr).toBe(0);
+    return JSON.parse(result.stdout);
+  }
+  try {
+    await page.goto("/");
+    await page.getByRole("button", { name: "New Project", exact: true }).click();
+    await page.getByRole("textbox", { name: "Novel title" }).fill("The Harbor Notebook");
+    await page.getByRole("textbox", { name: "Project folder" }).fill(book.projectRoot);
+    await page.getByRole("button", { name: "Create novel" }).click();
+    await expect(page.getByRole("button", { name: "Add Scene", exact: true })).toBeVisible();
+    const body = "Mara met Ivo at Last Ferry. Ivo set down the rope. Mara watched Last Ferry until the fog cleared.\n\nAt Last Ferry, Mara counted the pilings while Ivo searched for the missing line.";
+    await json(["scene", "add", "--title", "The Crossing", "--body", body]);
+    await page.reload();
+    await page.getByRole("button", { name: "Hide first-run guide" }).click();
+    await page.getByRole("button", { name: "Story Memory (Cmd+Shift+X)" }).click();
+    await page.getByRole("button", { name: "Scan Manuscript for Memory", exact: true }).click();
+    const inbox = page.getByRole("region", { name: "Memory suggestion review" });
+    const list = inbox.getByRole("navigation", { name: "Suggestions to review" });
+    await list.getByRole("button", { name: /^Last Ferry / }).click();
+    const article = inbox.getByRole("article", { name: "Review Last Ferry" });
+    await expect(article.getByRole("button", { name: "Open evidence 1 in The Crossing" })).toBeVisible();
+    await expect(article.getByText("Proposed character entry", { exact: true })).toBeVisible();
+    expect((await json(["codex", "list"]))).toEqual([]);
+    await article.getByRole("button", { name: "Correct", exact: true }).click();
+    await article.getByRole("combobox", { name: "Corrected Memory entry type" }).selectOption("location");
+    await article.getByRole("textbox", { name: "Corrected suggestion detail" }).fill("The harbor's ferry landing, a place rather than a person.");
+    await page.reload();
+    await expect(inbox.getByRole("textbox", { name: "Corrected suggestion detail" })).toHaveValue("The harbor's ferry landing, a place rather than a person.");
+    await expect(inbox.getByRole("combobox", { name: "Corrected Memory entry type" })).toHaveValue("location");
+    await inbox.getByRole("button", { name: "Save correction", exact: true }).click();
+    await expect(article.getByText("Proposed location entry", { exact: true })).toBeVisible();
+    expect((await json(["codex", "list"]))).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("memory-evidence-review.png"), animations: "disabled" });
+    await page.setViewportSize({ width: 900, height: 800 });
+    await expect.poll(() => page.locator(".sidebar").evaluate(node => node.getBoundingClientRect().width)).toBe(0);
+    const bodyPane = article.getByRole("region", { name: "Suggestion and source passages" });
+    await bodyPane.evaluate(node => { node.scrollTop = node.scrollHeight; });
+    for (const name of ["Accept", "Correct", "Later", "Reject"]) await expect(article.getByRole("button", { name, exact: true })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("memory-evidence-review-narrow.png"), animations: "disabled" });
+
+    await json(["scene", "update", "--id", "scene-0001", "--body", "The mist lifted.\n\n" + body]);
+    await article.getByRole("button", { name: "Accept", exact: true }).click();
+    await expect(inbox.getByRole("alert")).toContainText("source or Storyline changed");
+    expect((await json(["codex", "list"]))).toEqual([]);
+    await inbox.getByRole("button", { name: "Scan manuscript", exact: true }).click();
+    await expect(article.getByText("Proposed location entry", { exact: true })).toBeVisible();
+    await article.getByRole("button", { name: "Accept", exact: true }).click();
+    await expect(article).toHaveCount(0);
+    const entries = await json(["codex", "list"]);
+    expect(entries.find((entry: { name: string }) => entry.name === "Last Ferry").type).toBe("location");
+    await list.getByRole("button", { name: /^Mara / }).click();
+    await inbox.getByRole("button", { name: "Later", exact: true }).click();
+    await list.getByRole("button", { name: /^Ivo / }).click();
+    await inbox.getByRole("button", { name: "Reject", exact: true }).click();
+    await expect(inbox.getByRole("article", { name: "Review Ivo" })).toHaveCount(0);
+    await page.reload();
+    await expect(inbox).toBeVisible();
+    await inbox.getByRole("combobox", { name: "Filter Memory suggestions" }).selectOption("accepted");
+    await expect(article).toBeVisible();
+    await expect(article.getByText("Proposed location entry", { exact: true })).toBeVisible();
+    await expect(article.getByRole("button", { name: "Accept", exact: true })).toBeDisabled();
+    await article.getByRole("button", { name: "Open evidence 1 in The Crossing" }).click();
+    const prose = page.getByRole("textbox", { name: "Scene prose" });
+    await expect(prose).toHaveValue("The mist lifted.\n\n" + body + "\n");
+    await expect.poll(() => prose.evaluate((node: HTMLTextAreaElement) => node.value.slice(node.selectionStart, node.selectionEnd))).toBe("Last Ferry");
+    await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
+    await expect(article).toBeVisible();
+    await inbox.getByRole("combobox", { name: "Filter Memory suggestions" }).selectOption("deferred");
+    await expect(inbox.getByRole("article", { name: "Review Mara" })).toBeVisible();
+    await inbox.getByRole("combobox", { name: "Filter Memory suggestions" }).selectOption("rejected");
+    await expect(inbox.getByRole("article", { name: "Review Ivo" })).toBeVisible();
+    expect(book.errors).toEqual([]);
+  } finally { await book.close(); }
+});

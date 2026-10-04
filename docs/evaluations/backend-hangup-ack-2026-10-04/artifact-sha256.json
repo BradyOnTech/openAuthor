@@ -1,0 +1,17 @@
+{
+  "backend-final-receipt.json.gz": "ae99433d01983607e687f93b780a1c08a28ccbc935aa3b3a3410e8f40fc85219",
+  "backend-final-report.json.gz": "42e2fcd7a49ea24794b810292c2631f6497a90604b7baf3b10041d005dca2082",
+  "backend-final.txt.gz": "8cc5c2114bec92e355d3b1c08d79924406241a9a86976db545e2598df09b1719",
+  "controlled-expiry-red-report.json.gz": "d220d3285c557c9f94d52b466447ee8f24dc1782d5669476f3fd341168299c4a",
+  "controlled-expiry-red.patch": "f8da7cf0eb1d290923cbe0cd6680a91cda9715accb469a3d655461e34926bb80",
+  "controlled-expiry-red.txt.gz": "a803961b4ecf5d404a634f47bb9b828678a8f891c77768463247611b2411ae6a",
+  "controlled-green-report.json.gz": "66755b841f2e872c96effaf284bd11afa81cde7f170fc45b41a4fea6b3d39095",
+  "controlled-green.txt.gz": "176e911d3cb32008dcf15bdfa07309655f543dd9fd78aaad5be7cf64b3cd6a53",
+  "controlled-revocation-red-report.json.gz": "627d42d00d27e4b2fe79ebb966a2a163febaacff986a701a57439976db3d8619",
+  "controlled-revocation-red.patch": "eb739a1cee7044b12e259d9f58604549fabbbc0a18097791c2f12f2d5d4efbf6",
+  "controlled-revocation-red.txt.gz": "17ce7e57a3804ca59ee46cca34a5ea7423be547652a878879dc1ec02f8ff9fff",
+  "original-root-red-report.json.gz": "199431eaa017b86988129bc26c1ab97cd279719fa699636d6cc1b0c5a8802554",
+  "review.md": "47573bc7faab3e95e0af75a2d93c8283659e6bc301e7504671ac2c2df2e96f1c",
+  "source-sha256.json": "391d84fd770bd39a4edb82a1b987ecaf6dd513fa042a009942ba8cfbb6f2aa92",
+  "verification.json": "258d87e73cc81d48e44b346241a8792606162658c491d87c4e66d30ab66393d1"
+}

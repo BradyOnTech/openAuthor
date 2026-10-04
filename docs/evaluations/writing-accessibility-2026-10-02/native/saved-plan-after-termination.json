@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "brief": {
+    "synopsis": "",
+    "genre": "",
+    "themes": [],
+    "style_guide": "",
+    "outline": ""
+  },
+  "acts": [],
+  "unassigned_scene_ids": [
+    "scene-0001"
+  ],
+  "beats": [],
+  "notes": [],
+  "scene_metadata": {},
+  "workspace": "b872847a62fd61e59f2038c33172c3df8f72ecc78f705e33e1c9c298b6db4a5f"
+}

@@ -1,0 +1,164 @@
+import { test } from "@e2e-dev/web";
+import { expect } from "e2e";
+import { desktopBook } from "../support/desktopBook.ts";
+
+test("desktop promotes permission-reviewed Assistant replies into notes, reviewed Memory, a Storyline, Writing Voice and a Change Set", { tags: ["desktop", "assistant", "promotions", "privacy"], timeout: 180_000 }, async ({ app, browser, screen }) => {
+  const book = await desktopBook(browser);
+  // Known offline replies are independent expectations for every saved artifact.
+  const projectReply = "I do not have a scene passage in this turn yet. Open a scene, choose Scene or Book scope, or mention one with `@` so I can make a story-specific recommendation instead of guessing.";
+  const sceneReply = "I grounded this in **The Winter Key** (Mara POV). Focus the next decision on a consequence already present in the scene, then preserve its named people, objects, and timeline facts in any Change Set.";
+  const prose = "Mara carried the winter key back to the harbor. The map showed a street that no longer existed.";
+  try {
+    await app.open("/");
+    await screen.getByRole("button", "New Project").tap();
+    await screen.getByRole("textbox", "Novel title").fill("The Lantern Cartographer");
+    await screen.getByRole("textbox", "Project folder").fill(book.projectRoot);
+    await screen.getByRole("button", "Create novel").tap();
+    await expect(screen.getByRole("button", "Add Scene")).toBeVisible();
+    await screen.getByRole("button", "Hide first-run guide").tap();
+    await book.json(["scene", "add", "--title", "The Winter Key", "--body", prose, "--pov", "Mara"]);
+    await browser.reload();
+
+    await screen.getByRole("button", /^Story Memory \(/).tap();
+    await screen.getByPlaceholder("Entity name...").fill("Mara");
+    await screen.getByRole("button", "Add Memory Entry").tap();
+    await screen.getByRole("button", "◆ Mara").tap();
+    await screen.getByRole("textbox", "Description").fill("PUBLIC-PROMOTION-FACT: Mara returns the winter key.");
+    await screen.getByRole("textbox", "Private author notes").fill("PRIVATE-PROMOTION-NOTE: an unshared author reflection.");
+    await screen.getByRole("combobox", "Assistant access").selectOption({ value: "ask" });
+    await screen.getByRole("button", "Save Memory").tap();
+    await expect(screen.getByText("Story Memory entry saved.")).toBeVisible();
+    const [mara] = await book.json(["codex", "list"]);
+
+    await screen.getByRole("button", "Assistant (Cmd+L)").tap();
+    await screen.getByRole("button", "+").tap();
+    await screen.getByRole("combobox", "Assistant conversation scope").selectOption({ value: "character" });
+    await screen.getByRole("combobox", "Assistant character scope").selectOption({ value: mara.id });
+    const [projectThread] = await book.json(["chat", "thread", "list"]);
+    expect(projectThread.provider).toBe("local");
+    const composer = screen.getByPlaceholder("Type a message... (@ to mention)");
+    await composer.fill("How can Mara's choice show responsibility?");
+    await screen.getByRole("button", "Send").tap();
+    const review = screen.getByRole("region", "Review AI context");
+    await expect(review.getByRole("checkbox", "Allow Mara for this turn")).not.toBeChecked();
+    await expect(review.getByRole("button", "Send reviewed context")).toBeDisabled();
+    expect(await book.json(["chat", "message", "list", "--thread", projectThread.id])).toEqual([]);
+    await review.getByRole("checkbox", "Allow Mara for this turn").check();
+    await expect(review.getByRole("button", "Send reviewed context")).toBeEnabled();
+    await review.getByText("Inspect exact initial prompts and history").tap();
+    await expect(review).toContainText("PUBLIC-PROMOTION-FACT");
+    await expect(review).not.toContainText("PRIVATE-PROMOTION-NOTE");
+    await review.getByRole("button", "Send reviewed context").tap();
+    await expect(screen.getByRole("button", "Save as…")).toBeVisible();
+    const messages = await book.json(["chat", "message", "list", "--thread", projectThread.id]);
+    expect(messages).toHaveLength(2);
+    const reply = messages.find((row: { role: string }) => row.role === "assistant");
+    expect(reply.content).toBe(projectReply);
+    expect(reply.context_used.codex_entity_ids).toEqual([mara.id]);
+    expect(reply.context_used.privacy.one_time_approval).toBe(true);
+    expect(reply.context_used.profile.scope).toBe("character");
+    expect((await book.json(["codex", "get", "--id", mara.id])).ai_visibility).toBe("ask");
+
+    await screen.getByRole("button", "Save as…").tap();
+    await screen.getByRole("group", "Save reply as").getByRole("button", "Project note").tap();
+    await expect(screen.getByText(/Saved as a project note\./)).toBeVisible();
+    let notes = (await book.json(["plan", "get"])).notes;
+    expect(notes).toHaveLength(1);
+    expect(notes[0].content).toBe(projectReply);
+    expect(notes[0].scene_id).toBe("");
+    expect(notes[0].source).toBe("assistant");
+
+    await screen.getByRole("button", "Save as…").tap();
+    await screen.getByRole("group", "Save reply as").getByRole("button", "Story Memory suggestion").tap();
+    await expect(screen.getByText(/Queued in Story Memory for review\./)).toBeVisible();
+    const suggestion = (await book.json(["memory", "list", "--status", "pending"])).find((row: { kind: string; description: string }) => row.kind === "memory_note" && row.description === projectReply);
+    expect(suggestion.kind).toBe("memory_note");
+    expect(suggestion.description).toBe(projectReply);
+    expect(suggestion.status).toBe("pending");
+    expect(suggestion.details).toEqual([{ key: "source", value: "assistant", type: "text" }]);
+    expect(await book.json(["codex", "list"])).toHaveLength(1);
+
+    await screen.getByRole("button", "Save as…").tap();
+    await screen.getByRole("group", "Save reply as").getByRole("button", "Storyline experiment").tap();
+    await expect(screen.getByText(/Created as a Storyline experiment\./)).toBeVisible();
+    const storylines = await book.json(["storyline", "list"]);
+    expect(storylines.storylines).toHaveLength(1);
+    expect(storylines.storylines[0].experiment_brief.hypothesis).toBe(projectReply);
+    expect(storylines.storylines[0].experiment_brief.intended_scope).toBe("Explore this Assistant direction");
+    expect(storylines.storylines[0].current).toBe(false);
+    expect(storylines.current_branch).toBe(storylines.primary_branch);
+
+    await screen.getByRole("button", "Save as…").tap();
+    await screen.getByRole("group", "Save reply as").getByRole("button", "Writing Voice brief").tap();
+    await expect(screen.getByRole("textbox", "Tell the copilot how this book should read")).toHaveValue(projectReply);
+    expect((await book.json(["style", "workspace"])).profile).toBeNull();
+    await screen.getByRole("combobox", "Writing provider").selectOption({ value: "local" });
+    await screen.getByRole("button", "Propose a voice profile").tap();
+    await expect(screen.getByRole("textbox", "Voice description")).toHaveValue(projectReply);
+    expect((await book.json(["style", "workspace"])).profile).toBeNull();
+    await screen.getByRole("textbox", "Profile name").fill("Assistant promotion voice");
+    await screen.getByRole("button", "Approve and save Writing Voice").tap();
+    await expect(screen.getByRole("status").filter({ hasText: "Writing Voice approved" })).toBeVisible();
+    const profile = (await book.json(["style", "workspace"])).profile;
+    expect(profile.name).toBe("Assistant promotion voice");
+    expect(profile.description).toBe(projectReply);
+
+    await screen.getByRole("button", /^Story Memory \(/).tap();
+    await screen.getByRole("button", "Review Memory suggestions").tap();
+    const inbox = screen.getByRole("region", "Memory suggestion review");
+    await inbox.getByRole("navigation", "Suggestions to review").getByRole("button", /^I do not have a scene passage/).tap();
+    await expect(inbox).toContainText(projectReply);
+    await inbox.getByRole("button", "Accept").tap();
+    await expect(screen.getByRole("status").filter({ hasText: "Suggestion accepted into Story Memory." })).toBeVisible();
+    const accepted = (await book.json(["memory", "list", "--status", "accepted"])).find((row: { id: string }) => row.id === suggestion.id);
+    expect(accepted.id).toBe(suggestion.id);
+    const acceptedMemory = await book.json(["codex", "get", "--id", accepted.created_entity_id]);
+    expect(acceptedMemory.type).toBe("lore");
+    expect(acceptedMemory.description).toBe(projectReply);
+
+    await screen.getByRole("button", /^Manuscript \(/).tap();
+    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Winter Key DRA/).tap();
+    await expect(screen.getByRole("textbox", "Scene prose")).toHaveValue(prose + "\n");
+    await screen.getByRole("button", "+").tap();
+    await expect(screen.getByText("Send a message to start the conversation.")).toBeVisible();
+    await screen.getByRole("combobox", "Assistant conversation scope").selectOption({ value: "scene" });
+    await composer.fill(`What consequence should Mara face next? @codex:${mara.id}`);
+    await screen.getByRole("button", "Send").tap();
+    await expect(review.getByRole("checkbox", "Allow Mara for this turn")).not.toBeChecked();
+    await expect(review.getByRole("button", "Send reviewed context")).toBeDisabled();
+    await review.getByRole("checkbox", "Allow Mara for this turn").check();
+    await expect(review).toContainText("The Winter Key");
+    await review.getByRole("button", "Send reviewed context").tap();
+    await expect(screen.getByRole("button", "Save as…")).toBeVisible();
+    const threads = await book.json(["chat", "thread", "list"]);
+    const sceneThread = threads.find((row: { id: string }) => row.id !== projectThread.id);
+    const sceneMessages = await book.json(["chat", "message", "list", "--thread", sceneThread.id]);
+    expect(sceneMessages.find((row: { role: string }) => row.role === "assistant").content).toBe(sceneReply);
+
+    await screen.getByRole("button", "Save as…").tap();
+    await screen.getByRole("group", "Save reply as").getByRole("button", "Scene note").tap();
+    await expect(screen.getByText(/Saved as a scene note\./)).toBeVisible();
+    notes = (await book.json(["plan", "get"])).notes;
+    expect(notes).toHaveLength(2);
+    expect(notes[1].scene_id).toBe("scene-0001");
+    expect(notes[1].content).toBe(sceneReply);
+    expect(notes[1].source).toBe("assistant");
+    await screen.getByRole("button", "→ Change Set").tap();
+    await expect(screen.getByRole("status").filter({ hasText: "Change Set queued for review." })).toBeVisible();
+    const [proposal] = await book.json(["proposal", "list"]);
+    expect(proposal.status).toBe("pending");
+    expect(proposal.scene_id).toBe("scene-0001");
+    expect(proposal.instruction).toBe(sceneReply);
+    expect((await book.json(["scene", "get", "--id", "scene-0001"])).body).toBe(prose + "\n");
+    expect((await book.json(["codex", "get", "--id", mara.id])).notes).toBe("PRIVATE-PROMOTION-NOTE: an unshared author reflection.");
+
+    await screen.getByRole("button", "View saved note").tap();
+    await expect(screen.getByRole("region", "Saved notes")).toContainText(sceneReply);
+    await browser.reload();
+    const savedNotes = screen.getByRole("region", "Saved notes");
+    await expect(savedNotes.getByRole("status")).toContainText("2 of 2 notes");
+    expect((await book.json(["style", "workspace"])).profile.description).toBe(projectReply);
+    expect((await book.json(["storyline", "list"])).storylines[0].experiment_brief.hypothesis).toBe(projectReply);
+    expect(await book.errors()).toEqual([]);
+  } finally { await book.close(); }
+});

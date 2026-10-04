@@ -1,0 +1,430 @@
+{
+  "date": "2026-10-02",
+  "corpus_sha256": "43eba930292d77167bcc058a929b2d2378849a3a05fe3162785d8be2e695b59b",
+  "baseline_commit": "f154d78",
+  "baseline": {
+    "evidence_kind": "authored_synthetic_extraction_cases",
+    "limitation": "These cases measure recorded behavior, not independent accuracy on novels or real-author review burden.",
+    "totals": {
+      "expected_entities": 27,
+      "matched_entities": 23,
+      "extra_entities": 6,
+      "missed_entities": 4,
+      "type_errors": 2
+    },
+    "cases": [
+      {
+        "id": "temporal-openers",
+        "expected": {
+          "Mara": "character"
+        },
+        "actual": {
+          "Mara": "character",
+          "After": "character",
+          "Before": "character"
+        },
+        "extra": [
+          "After",
+          "Before"
+        ],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "restrictive-modifiers",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Even Ivo": "character",
+          "Only Mara": "character"
+        },
+        "extra": [
+          "Even Ivo",
+          "Only Mara"
+        ],
+        "missed": [
+          "Ivo",
+          "Mara"
+        ],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "clausal-and-transition-openers",
+        "expected": {
+          "Noor": "character"
+        },
+        "actual": {
+          "Noor": "character",
+          "Once": "character",
+          "Still": "character"
+        },
+        "extra": [
+          "Once",
+          "Still"
+        ],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ordinary-word-names",
+        "expected": {
+          "Hope": "character",
+          "Grace": "character",
+          "May": "character"
+        },
+        "actual": {
+          "Grace": "character",
+          "Hope": "character",
+          "May": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "titles-and-diacritics",
+        "expected": {
+          "Dr. Élodie March": "character",
+          "Captain Lin": "character"
+        },
+        "actual": {
+          "Captain Lin": "character",
+          "Dr. Élodie March": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "names-matching-grammar-controls",
+        "expected": {
+          "After": "character",
+          "Before": "character",
+          "Once": "character",
+          "Still": "character",
+          "Only": "character",
+          "Even": "character"
+        },
+        "actual": {
+          "After": "character",
+          "Before": "character",
+          "Even": "character",
+          "Once": "character",
+          "Only": "character",
+          "Still": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ambiguous-capitalized-places",
+        "expected": {
+          "Last Ferry": "location",
+          "North Gate": "location"
+        },
+        "actual": {
+          "Last Ferry": "character",
+          "North Gate": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [
+          "Last Ferry",
+          "North Gate"
+        ],
+        "invalid_evidence": []
+      },
+      {
+        "id": "cyrillic-persons",
+        "expected": {
+          "Мария": "character",
+          "Иван": "character"
+        },
+        "actual": {
+          "Иван": "character",
+          "Мария": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "decomposed-spelling",
+        "expected": {
+          "Élodie": "character",
+          "René": "character"
+        },
+        "actual": {
+          "René": "character",
+          "Élodie": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "possessive-spelling",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Ivo": "character",
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "uncased-script-names",
+        "expected": {
+          "小林": "character",
+          "阿明": "character"
+        },
+        "actual": {},
+        "extra": [],
+        "missed": [
+          "小林",
+          "阿明"
+        ],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "spatial-and-named-controls",
+        "expected": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "actual": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      }
+    ],
+    "author_review_burden": "not observed",
+    "uncased_name_extraction": "not implemented by the capitalized-name heuristic"
+  },
+  "current": {
+    "evidence_kind": "authored_synthetic_extraction_cases",
+    "limitation": "These cases measure recorded behavior, not independent accuracy on novels or real-author review burden.",
+    "totals": {
+      "expected_entities": 27,
+      "matched_entities": 25,
+      "extra_entities": 0,
+      "missed_entities": 2,
+      "type_errors": 2
+    },
+    "cases": [
+      {
+        "id": "temporal-openers",
+        "expected": {
+          "Mara": "character"
+        },
+        "actual": {
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "restrictive-modifiers",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Ivo": "character",
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "clausal-and-transition-openers",
+        "expected": {
+          "Noor": "character"
+        },
+        "actual": {
+          "Noor": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ordinary-word-names",
+        "expected": {
+          "Hope": "character",
+          "Grace": "character",
+          "May": "character"
+        },
+        "actual": {
+          "Grace": "character",
+          "Hope": "character",
+          "May": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "titles-and-diacritics",
+        "expected": {
+          "Dr. Élodie March": "character",
+          "Captain Lin": "character"
+        },
+        "actual": {
+          "Captain Lin": "character",
+          "Dr. Élodie March": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "names-matching-grammar-controls",
+        "expected": {
+          "After": "character",
+          "Before": "character",
+          "Once": "character",
+          "Still": "character",
+          "Only": "character",
+          "Even": "character"
+        },
+        "actual": {
+          "After": "character",
+          "Before": "character",
+          "Even": "character",
+          "Once": "character",
+          "Only": "character",
+          "Still": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "ambiguous-capitalized-places",
+        "expected": {
+          "Last Ferry": "location",
+          "North Gate": "location"
+        },
+        "actual": {
+          "Last Ferry": "character",
+          "North Gate": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [
+          "Last Ferry",
+          "North Gate"
+        ],
+        "invalid_evidence": []
+      },
+      {
+        "id": "cyrillic-persons",
+        "expected": {
+          "Мария": "character",
+          "Иван": "character"
+        },
+        "actual": {
+          "Иван": "character",
+          "Мария": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "decomposed-spelling",
+        "expected": {
+          "Élodie": "character",
+          "René": "character"
+        },
+        "actual": {
+          "René": "character",
+          "Élodie": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "possessive-spelling",
+        "expected": {
+          "Mara": "character",
+          "Ivo": "character"
+        },
+        "actual": {
+          "Ivo": "character",
+          "Mara": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "uncased-script-names",
+        "expected": {
+          "小林": "character",
+          "阿明": "character"
+        },
+        "actual": {},
+        "extra": [],
+        "missed": [
+          "小林",
+          "阿明"
+        ],
+        "type_errors": [],
+        "invalid_evidence": []
+      },
+      {
+        "id": "spatial-and-named-controls",
+        "expected": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "actual": {
+          "Mara": "character",
+          "Beyond": "character"
+        },
+        "extra": [],
+        "missed": [],
+        "type_errors": [],
+        "invalid_evidence": []
+      }
+    ],
+    "author_review_burden": "not observed",
+    "uncased_name_extraction": "not implemented by the capitalized-name heuristic"
+  },
+  "current_source_sha256": "5aacafa2acb60f087a6bcf580e5dfa5f4df62e4e1b26f7766226fb99f195c331"
+}

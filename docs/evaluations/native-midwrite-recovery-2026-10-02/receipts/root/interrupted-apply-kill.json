@@ -1,0 +1,63 @@
+{
+  "scope": "Actual GUI apply-batch worker stopped after first scene replacement, then exact owned serve sidecars/app killed while it remained stopped; mutation worker killed last. Raw uncommitted journal unchanged before relaunch.",
+  "owner": {
+    "pid": 4261,
+    "ppid": 1,
+    "start": "Fri Oct 2 22:59:46 2026",
+    "state": "S",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/openauthor-desktop"
+    ]
+  },
+  "worker": {
+    "pid": 5946,
+    "ppid": 4261,
+    "start": "Fri Oct 2 23:07:15 2026",
+    "state": "T",
+    "executable": "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/Resources/resources/runtime/python/bin/python3",
+    "argv": [
+      "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+      "-m",
+      "openauthor",
+      "proposal",
+      "apply-batch",
+      "--id",
+      "proposal-289bdde2305f",
+      "--id",
+      "proposal-79f654ab9001",
+      "--id",
+      "proposal-a679e40226f7",
+      "--json"
+    ]
+  },
+  "owned_sidecars": [
+    {
+      "pid": 4282,
+      "ppid": 4261,
+      "argv": [
+        "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+        "-m",
+        "openauthor",
+        "serve"
+      ],
+      "start": "Fri Oct 2 22:59:49 2026"
+    },
+    {
+      "pid": 4772,
+      "ppid": 4261,
+      "argv": [
+        "/private/tmp/openauthor-keyboard-native-a523097/acceptance-a523097.app/Contents/MacOS/../Resources/resources/runtime/python/bin/python3",
+        "-m",
+        "openauthor",
+        "serve"
+      ],
+      "start": "Fri Oct 2 23:04:09 2026"
+    }
+  ],
+  "journal_sha256": "0e8d35c8484c31e2149ca05530772f999eb72286e5b9c3ca68acd6c7b8b25f35",
+  "changed_scene_ids": [
+    "scene-0001"
+  ],
+  "normal_core_calls_before_restart": 0
+}

@@ -1,0 +1,29 @@
+{
+  "evidence_kind": "synthetic_rendered_restart_navigation",
+  "head": "4a27acdac2ba2c6f87171c86dd9b3bab691f81f2",
+  "source_sha256": {
+    "desktop/src/AppV2.tsx": "0dcfb1f57f156634c302365c68b33f45f59d89b449569db2591f58f923c96e02",
+    "desktop/src/components/workbench/Workbench.tsx": "bf70b823de7633dbd4082e8febab4b93e4f395b5dccaac722fdf6712890a1dc4",
+    "desktop/src/AppV2.workflow.test.tsx": "6d428c638fba646ccd09169c587323e31d1e1c59a72d78dafefdc2f692bbbdf7"
+  },
+  "red_command": "npx vitest run src/AppV2.workflow.test.tsx -t 'restores the selected Plan document'",
+  "verification": [
+    {
+      "command": "npx vitest run src/AppV2.workflow.test.tsx src/tabRecovery.test.ts src/hooks/useWorkspaceNavigation.test.tsx",
+      "passed": 48,
+      "files": 3,
+      "app_workflow_tests": 41,
+      "tab_recovery_tests": 6,
+      "navigation_race_tests": 1
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "exit_code": 0
+    }
+  ],
+  "provider_calls": 0,
+  "network_calls": 0,
+  "author_data_untouched": true,
+  "gui_used": false,
+  "temporary_probe_removed": true
+}

@@ -1,0 +1,28 @@
+{
+  "source_commit": "5fe9d7cd292940e9335e12e6bc1a0234f31897b1",
+  "application_sha256": "b5870413e5cd0b829b407dc7934b0ba40dd76e891f50e3e308a89ae511470695",
+  "scope": "Actual rebuilt unsigned arm64 Tauri app, synthetic disposable Native recovery acceptance book, read-only reopening checks using native accessibility and screenshot controls",
+  "observed": {
+    "saved_scene": "Leah waited at the office. [setup verified] [restart verified] [focus verified] She kept the receipt folded.\n\nJonas moved the paperweight. Neither of them opened the ledger.\n",
+    "scene_title": "The Ferry Office",
+    "saved_word_count": 26,
+    "restored_tabs": [
+      "The Ferry Office",
+      "Plan"
+    ],
+    "recovered_synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "recovered_act_title": "A still unfinished act",
+    "guidance": "Recovered local Plan drafts. Nothing was saved to your book automatically.",
+    "brief_status": "Unsaved brief \u00b7 kept on this device",
+    "restored_active_tab": "Plan"
+  },
+  "new_prose_mutations": 0,
+  "new_provider_calls": 0,
+  "deployed_operations": 0,
+  "latest_missing_envelope_recovery_changes_included": true,
+  "limits": [
+    "Read-only observation; saved visible text and retained drafts, no new byte-level manuscript save or caret insertion claim",
+    "No live recovery/cloud Keychain, signing, clean-machine, upgrade, VoiceOver or physical-phone acceptance"
+  ],
+  "release_certified": false
+}

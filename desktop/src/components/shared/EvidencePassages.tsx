@@ -6,13 +6,21 @@ import type { CanonEvidence } from "../../types";
 
 export function EvidencePassages({ evidence }: { evidence: CanonEvidence[] }) {
   const { projectRoot, scenes, setError } = useWorkspace();
-  const { openTab } = useEditor();
+  const { openTab, tabs, updateTab, setActiveTab, beginNavigation } = useEditor();
   async function open(item: CanonEvidence) {
+    const tabId = `scene:${item.scene_id}`;
+    const focusPassage = item.source_field === "pov" ? undefined : { ...item };
+    if (tabs.some(tab => tab.id === tabId)) {
+      updateTab(tabId, { focusPassage });
+      setActiveTab(tabId);
+      return;
+    }
+    const isCurrent = beginNavigation();
     try {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before opening evidence.");
       const scene = await getScene(projectRoot, item.scene_id);
-      openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene, focusPassage: item.source_field === "pov" ? undefined : { ...item } });
-    } catch (error) { setError(`Could not open evidence: ${error instanceof Error ? error.message : String(error)}`); }
+      if (isCurrent()) openTab({ id: `scene:${scene.id}`, kind: "scene", label: scene.title || scene.id, data: scene, focusPassage });
+    } catch (error) { if (isCurrent()) setError(`Could not open evidence: ${error instanceof Error ? error.message : String(error)}`); }
   }
   return <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
     {evidence.map((item, index) => {

@@ -1,0 +1,81 @@
+test_local_send_requires_review_and_keeps_candidates_unconfirmed (tests.test_memory_scan_cli.MemoryScanCliTests.test_local_send_requires_review_and_keeps_candidates_unconfirmed) ... FAIL
+test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) ... 
+  test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='{bad') ... FAIL
+  test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='[]') ... FAIL
+  test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='null') ... FAIL
+test_preview_exports_the_exact_chosen_source_without_queuing_or_editing (tests.test_memory_scan_cli.MemoryScanCliTests.test_preview_exports_the_exact_chosen_source_without_queuing_or_editing) ... FAIL
+test_stale_source_refuses_the_reviewed_cli_send (tests.test_memory_scan_cli.MemoryScanCliTests.test_stale_source_refuses_the_reviewed_cli_send) ... FAIL
+
+======================================================================
+FAIL: test_local_send_requires_review_and_keeps_candidates_unconfirmed (tests.test_memory_scan_cli.MemoryScanCliTests.test_local_send_requires_review_and_keeps_candidates_unconfirmed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 49, in test_local_send_requires_review_and_keeps_candidates_unconfirmed
+    preview = self.preview()
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 34, in preview
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : usage: openauthor memory [-h]
+                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...
+openauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)
+
+
+======================================================================
+FAIL: test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='{bad')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 78, in test_malformed_json_and_non_object_requests_are_recoverable_cli_errors
+    self.assertRegex(result.stderr, "Memory scan request must be (valid JSON|an object)")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Regex didn't match: 'Memory scan request must be (valid JSON|an object)' not found in "usage: openauthor memory [-h]\n                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...\nopenauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)\n"
+
+======================================================================
+FAIL: test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='[]')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 78, in test_malformed_json_and_non_object_requests_are_recoverable_cli_errors
+    self.assertRegex(result.stderr, "Memory scan request must be (valid JSON|an object)")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Regex didn't match: 'Memory scan request must be (valid JSON|an object)' not found in "usage: openauthor memory [-h]\n                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...\nopenauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)\n"
+
+======================================================================
+FAIL: test_malformed_json_and_non_object_requests_are_recoverable_cli_errors (tests.test_memory_scan_cli.MemoryScanCliTests.test_malformed_json_and_non_object_requests_are_recoverable_cli_errors) (request='null')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 78, in test_malformed_json_and_non_object_requests_are_recoverable_cli_errors
+    self.assertRegex(result.stderr, "Memory scan request must be (valid JSON|an object)")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Regex didn't match: 'Memory scan request must be (valid JSON|an object)' not found in "usage: openauthor memory [-h]\n                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...\nopenauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)\n"
+
+======================================================================
+FAIL: test_preview_exports_the_exact_chosen_source_without_queuing_or_editing (tests.test_memory_scan_cli.MemoryScanCliTests.test_preview_exports_the_exact_chosen_source_without_queuing_or_editing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 39, in test_preview_exports_the_exact_chosen_source_without_queuing_or_editing
+    preview = self.preview()
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 34, in preview
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : usage: openauthor memory [-h]
+                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...
+openauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)
+
+
+======================================================================
+FAIL: test_stale_source_refuses_the_reviewed_cli_send (tests.test_memory_scan_cli.MemoryScanCliTests.test_stale_source_refuses_the_reviewed_cli_send)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 62, in test_stale_source_refuses_the_reviewed_cli_send
+    preview = self.preview()
+  File "~/Developer/openAuthor/tests/test_memory_scan_cli.py", line 34, in preview
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : usage: openauthor memory [-h]
+                         {scan,list,review,correct,suggest,fact-add,fact-list,fact-update,fact-review,arc-add,arc-list,setup-add,setup-payoff,setup-list,question-add,question-list,diagnose,dispose} ...
+openauthor memory: error: argument memory_command: invalid choice: 'scan-preview' (choose from scan, list, review, correct, suggest, fact-add, fact-list, fact-update, fact-review, arc-add, arc-list, setup-add, setup-payoff, setup-list, question-add, question-list, diagnose, dispose)
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.645s
+
+FAILED (failures=6)

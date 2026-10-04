@@ -1,0 +1,5 @@
+{
+  "scripts/evaluate_canon_diagnostics.py": "b623175a15e2fc1e9ecbc0f179578364d0510df2441883159b8c6da36c3edd96",
+  "tests/fixtures/canon_evaluation.json": "09c44b1cf0256cf4a7596f9d5a99c86a372c3153895cff03e7ac7c0306e1b9d0",
+  "tests/test_canon_evaluation.py": "38147af5d23da545d603ba953eeb5b2ef31472714dbe20238f6ae44be62e0f9b"
+}

@@ -1,0 +1,54 @@
+{
+  "source_commit": "a5230979315e3e0dd665c5cae5b9af44fa399f93",
+  "observation_method": "Root manual transcription of live cua_repl native AX and inline screenshots; independent packaged-core read-only validation after GUI operations settled.",
+  "native_screenshots_archived": false,
+  "qa_scope": "Unsigned isolated local-registry QA flavor; same packaged core as verified normal bundle. Deterministic three-scene private fixture; no provider or deployment calls.",
+  "fixture_preparation_commit": "ae3eb2e44b6075c13fe1aade046b63f2dc47d8b0",
+  "fixture_and_current_core_fingerprint_match": true,
+  "gui_actions": [
+    {
+      "action": "Review all three pending Change Sets",
+      "observed": "Original and proposed sentences matched retained fixture; local/heuristic-v1 provider."
+    },
+    {
+      "action": "Apply together",
+      "observed": "Applying then Applied together \u00b7 3 scenes, 0 pending, three applied queue entries and 6 revisions. One shared coordinated apply revision; all three saved bodies match drafts."
+    },
+    {
+      "action": "Undo 3 scenes together",
+      "observed": "Restoring then three undone queue entries, 20 words and 7 revisions. All three whole scene files match original bytes. Core status remains applied with undone_at and shared undo_revision."
+    },
+    {
+      "action": "Settings Create verified backup",
+      "observed": "Saving and verifying busy state, then controls re-enabled. The transient success notice was not retained; archive existence and current packaged-core verify independently establish verified 41 files."
+    },
+    {
+      "action": "Projects Restore backup / Verify and restore",
+      "observed": "Verifying and restoring busy state, then recovered book opened with 3 scenes/20 words. Changes loads all 3 undone proposals and 7 revision history. Original/recovered files byte-identical; revision history equal."
+    },
+    {
+      "action": "Open recovered proposal3; SIGKILL then trusted-wrapper relaunch",
+      "observed": "ExactPID98100 app and3 verified owned serve sidecars killed after operations completed, no mutation workers. New exact-path PID99716. Changes sidebar, selected proposal 3 tab,3 undone proposals and 7 revisions restored."
+    },
+    {
+      "action": "Open Scene3; Cmd+K; query Recovery scene; Down; Tab; Escape",
+      "observed": "Native AX named Command Palette, Search scenes, entities, commands combobox and Search results list; selected result changed scene 1 to scene 2; Escape returned focus to Scene prose. No prose was changed. This is a native smoke observation, not VoiceOver or exact-caret acceptance."
+    },
+    {
+      "action": "Cmd+Q and close own Finder QA window",
+      "observed": "Original Developer Finder window restored. Independent process check found zero exact QA app/sidecar processes. Four author artifact hashes unchanged."
+    }
+  ],
+  "gui_mid_transaction_interruption_observed": false,
+  "post_operation_restart_observed": true,
+  "voiceover_observed": false,
+  "long_session_observed": false,
+  "physical_devices_observed": false,
+  "signed_clean_machine_acceptance": false,
+  "release_certified": false,
+  "setup_corrections": [
+    "Undo validator first expected a nonexistent undone status; corrected to undone_at/undo_revision after verifying exact scene bytes.",
+    "Sandbox process read unavailable; escalation permitted bounded process verification. Zero-child guard halted without mutation before persistent serve sidecars were identified."
+  ],
+  "remaining": "Real GUI mid-write interruption; signed/notarized clean-machine round trip; VoiceOver/scaling/long sessions; author editorial and Memory assessment; physical device and approved deployment acceptance."
+}

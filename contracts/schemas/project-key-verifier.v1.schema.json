@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/project-key-verifier/v1",
+  "title": "openAuthor Project Key Recovery Verifier v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "project_id", "key_version", "algorithm", "aad_version", "nonce_hex", "ciphertext_hex", "ciphertext_sha256"],
+  "properties": {
+    "schema": {"const": "openauthor.mobile.project-key-verifier"},
+    "schema_version": {"const": 1},
+    "project_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "key_version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "algorithm": {"const": "aes-256-gcm-v1"},
+    "aad_version": {"const": 1},
+    "nonce_hex": {"type": "string", "pattern": "^[0-9a-f]{24}$"},
+    "ciphertext_hex": {"type": "string", "pattern": "^[0-9a-f]{114}$"},
+    "ciphertext_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/rawSha256"}
+  }
+}

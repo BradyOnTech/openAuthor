@@ -1,0 +1,310 @@
+test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) ...
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='If Elin owns the red key, the door will open.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin owns the red key if the rumour is true.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Perhaps Elin knows the safe number.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Tomas imagined that Elin was a spy.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='If Elin trusts Tomas, he will answer.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Tomas dreamed that Elin protects Tomas.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='The witness said Elin trusts Tomas.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='It was not true that Elin is a spy.') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin trusts Tomas?') ... FAIL
+  test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin owns the key, according to the witness.') ... FAIL
+test_direct_declarations_negative_values_and_explicit_distrust_remain_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_direct_declarations_negative_values_and_explicit_distrust_remain_reviewable) ... ok
+test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) ...
+  test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('“', '”')) ... FAIL
+  test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('"', '"')) ... FAIL
+  test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('‘', '’')) ... FAIL
+  test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=("'", "'")) ... FAIL
+test_rescan_retires_an_unreviewed_claim_but_preserves_an_author_accepted_fact (tests.test_memory_assertions.MemoryAssertionTests.test_rescan_retires_an_unreviewed_claim_but_preserves_an_author_accepted_fact) ... FAIL
+test_semicolon_keeps_a_direct_clause_separate_from_an_unrelated_guess (tests.test_memory_assertions.MemoryAssertionTests.test_semicolon_keeps_a_direct_clause_separate_from_an_unrelated_guess) ... FAIL
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='If Elin owns the red key, the door will open.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-2c4675d22e[769 chars]9c'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-2c4675d22e3d03c9', 'kind': 'canon_fact', 'subject_entity_id': 'entity-551d6057fb55', 'subject_name': 'Elin', 'name': 'Elin: owns the red key, the door will open', 'predicate': 'owns', 'value': 'the red key, the door will open', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin owns the red key, the door will open', 'start': 3, 'end': 44, 'source_sha256': '607378f582ce7efeb384ac042ebce59ed8d74fa4c1195fe0559695e65d3c5895'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.360275+00:00', 'updated_at': '2026-10-02T17:46:57.360277+00:00', 'review_version': '250541dec7fb52e384facfd937645ee2949813c46139e660912420754f680d9c'}
+
+Diff is 966 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin owns the red key if the rumour is true.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-a54137ee56[775 chars]df'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-a54137ee5623b701', 'kind': 'canon_fact', 'subject_entity_id': 'entity-030941ed2bde', 'subject_name': 'Elin', 'name': 'Elin: owns the red key if the rumour is true', 'predicate': 'owns', 'value': 'the red key if the rumour is true', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin owns the red key if the rumour is true', 'start': 0, 'end': 43, 'source_sha256': '2d6e4641c639a01ab6814fc7ef6a995994b8afb1bb4e0d0c57ad171684e1c149'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.372168+00:00', 'updated_at': '2026-10-02T17:46:57.372170+00:00', 'review_version': 'e703c76d8ce04cdf0548d591bad68a3c27adf9f8c8e75de54b8ee7a9440f40df'}
+
+Diff is 972 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Perhaps Elin knows the safe number.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-5a95d6775c[724 chars]d8'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-5a95d6775c1dde9b', 'kind': 'canon_fact', 'subject_entity_id': 'entity-34f88724891e', 'subject_name': 'Elin', 'name': 'Elin: knows the safe number', 'predicate': 'knows', 'value': 'the safe number', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin knows the safe number', 'start': 8, 'end': 34, 'source_sha256': 'd8b5d54084f730b839d024a4c303564ba494c5104da3845547437d9223baa7cd'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.383366+00:00', 'updated_at': '2026-10-02T17:46:57.383369+00:00', 'review_version': '5cdccb2789057e2f77eda633d2cb39ba078e93054310a3aba08acd93f8d4f3d8'}
+
+Diff is 921 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Tomas imagined that Elin was a spy.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-515ac039c6[689 chars]65'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-515ac039c624dcd8', 'kind': 'canon_fact', 'subject_entity_id': 'entity-f4f70543ba10', 'subject_name': 'Elin', 'name': 'Elin: was a spy', 'predicate': 'was', 'value': 'a spy', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin was a spy', 'start': 20, 'end': 34, 'source_sha256': '20602fbc4eac71c78366c19cfc115a0da9ee59a55ee2395b36ddf6967dc8f103'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.394545+00:00', 'updated_at': '2026-10-02T17:46:57.394546+00:00', 'review_version': 'c5e8888fbd0cdda295c6aa51fa6a33e48ec3b9247c863e9f16f75f5ba0cac665'}
+
+Diff is 886 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='If Elin trusts Tomas, he will answer.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-relationship-suggestion-fa[882 chars]5a'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-relationship-suggestion-fad8091e731b9545', 'kind': 'relationship_create', 'source_entity_id': 'entity-849e1ceea6ed', 'source_name': 'Elin', 'target_entity_id': 'entity-034be38e5780', 'target_name': 'Tomas', 'relation': 'trusts', 'name': 'Elin trusts Tomas', 'description': 'Explicit relationship statement found in manuscript prose.', 'confidence': 0.82, 'reason': 'Explicit named relationship in manuscript prose', 'valid_from_scene_id': 'scene-0001', 'valid_to_scene_id': '', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin trusts Tomas', 'start': 3, 'end': 20, 'source_sha256': 'd93db7e151e71de1588c7fda6658212a5c6e1bbe1bf81aa50542d83170ecf29d'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.406447+00:00', 'updated_at': '2026-10-02T17:46:57.406449+00:00', 'review_version': '80014c5b0336cd8bceee62b1c0adc03cbba78a7dd3819d9a9c1f9a2ab47c275a'}
+
+Diff is 1095 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Tomas dreamed that Elin protects Tomas.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-relationship-suggestion-30[889 chars]4d'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-relationship-suggestion-3058582f663685a2', 'kind': 'relationship_create', 'source_entity_id': 'entity-4dc8cc1c782a', 'source_name': 'Elin', 'target_entity_id': 'entity-bc63bf39e64d', 'target_name': 'Tomas', 'relation': 'protects', 'name': 'Elin protects Tomas', 'description': 'Explicit relationship statement found in manuscript prose.', 'confidence': 0.82, 'reason': 'Explicit named relationship in manuscript prose', 'valid_from_scene_id': 'scene-0001', 'valid_to_scene_id': '', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin protects Tomas', 'start': 19, 'end': 38, 'source_sha256': '6f87d330f1f2fb3068c9fc85a829e26119a7186e0a9e74e270fa06eaad083163'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.417389+00:00', 'updated_at': '2026-10-02T17:46:57.417392+00:00', 'review_version': '4fa4be73cf7d66c3740746c0b857ad75da320b7f2118dde459c538b98caa4f4d'}
+
+Diff is 1102 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='The witness said Elin trusts Tomas.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-relationship-suggestion-9a[883 chars]4e'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-relationship-suggestion-9a89f1a9c8624456', 'kind': 'relationship_create', 'source_entity_id': 'entity-b87d30250593', 'source_name': 'Elin', 'target_entity_id': 'entity-4050789a3ce2', 'target_name': 'Tomas', 'relation': 'trusts', 'name': 'Elin trusts Tomas', 'description': 'Explicit relationship statement found in manuscript prose.', 'confidence': 0.82, 'reason': 'Explicit named relationship in manuscript prose', 'valid_from_scene_id': 'scene-0001', 'valid_to_scene_id': '', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin trusts Tomas', 'start': 17, 'end': 34, 'source_sha256': 'e613af0ced59fa01ead8240732276319ef26754d36c6917f5500948e8c676a3f'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.428742+00:00', 'updated_at': '2026-10-02T17:46:57.428744+00:00', 'review_version': '074f0be33478a1825d3e08bf7baea150204b9184c7a7cde398df16e2f177d04e'}
+
+Diff is 1096 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='It was not true that Elin is a spy.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-e81c968f72[686 chars]bb'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-e81c968f728d78d2', 'kind': 'canon_fact', 'subject_entity_id': 'entity-394bdce68cef', 'subject_name': 'Elin', 'name': 'Elin: is a spy', 'predicate': 'is', 'value': 'a spy', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin is a spy', 'start': 21, 'end': 34, 'source_sha256': '6fd37a9d478a8ea27e27bb02c4294cc2a9fa9d9f3c3dd89945028238480383c3'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.440104+00:00', 'updated_at': '2026-10-02T17:46:57.440105+00:00', 'review_version': '021b14cddf5f0efe051f3f08066dd4890a8748beb3515317e7614ff3d7fa48bb'}
+
+Diff is 883 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin trusts Tomas?')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-relationship-suggestion-0e[882 chars]fd'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-relationship-suggestion-0e989d9ebeda893a', 'kind': 'relationship_create', 'source_entity_id': 'entity-280e2a86edb4', 'source_name': 'Elin', 'target_entity_id': 'entity-1a0402392990', 'target_name': 'Tomas', 'relation': 'trusts', 'name': 'Elin trusts Tomas', 'description': 'Explicit relationship statement found in manuscript prose.', 'confidence': 0.82, 'reason': 'Explicit named relationship in manuscript prose', 'valid_from_scene_id': 'scene-0001', 'valid_to_scene_id': '', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin trusts Tomas', 'start': 0, 'end': 17, 'source_sha256': 'e8a1c0c67005f9d07310f345f71e407ba4154f01d0c5dcd2786d240a1245f8ed'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.451280+00:00', 'updated_at': '2026-10-02T17:46:57.451283+00:00', 'review_version': '7a53025bd7522d8fd6746f25995d1a2d9db00aba96f843809c220b29bf7257fd'}
+
+Diff is 1095 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections (tests.test_memory_assertions.MemoryAssertionTests.test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections) (body='Elin owns the key, according to the witness.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 48, in test_conditional_speculative_and_reported_statements_do_not_become_explicit_facts_or_connections
+    self.assertEqual(rows, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: Lists differ: [{'id': 'memory-fact-suggestion-805d078ef3[775 chars]46'}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'id': 'memory-fact-suggestion-805d078ef3a22bbe', 'kind': 'canon_fact', 'subject_entity_id': 'entity-e675221f1571', 'subject_name': 'Elin', 'name': 'Elin: owns the key, according to the witness', 'predicate': 'owns', 'value': 'the key, according to the witness', 'confidence': 0.72, 'reason': 'Declarative statement mentioning an accepted Story Memory entry', 'evidence': [{'scene_id': 'scene-0001', 'path': 'manuscript/scenes/0001-evidence.md', 'excerpt': 'Elin owns the key, according to the witness', 'start': 0, 'end': 43, 'source_sha256': 'e0692e20dc75d71419caa49ef368a12acd363c9661e6731d2f324823629ce01d'}], 'status': 'pending', 'created_at': '2026-10-02T17:46:57.463490+00:00', 'updated_at': '2026-10-02T17:46:57.463491+00:00', 'review_version': 'fbb6131d5311f6f7b18a72b58d2b5d8b5d26c462e170d82cfee219568a949546'}
+
+Diff is 972 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('“', '”'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 55, in test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable
+    self.assertEqual([(row["kind"], row.get("value")) for row in rows], [("canon_fact", "the blue ribbon")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('relationship_create', None), ('canon_fact[89 chars]on')] != [('canon_fact', 'the blue ribbon')]
+
+First differing element 0:
+('relationship_create', None)
+('canon_fact', 'the blue ribbon')
+
+First list contains 2 additional elements.
+First extra element 1:
+('canon_fact', "Tomas's key and Elin trusts Tomas,” said the witness")
+
+- [('relationship_create', None),
+-  ('canon_fact', "Tomas's key and Elin trusts Tomas,” said the witness"),
+-  ('canon_fact', 'the blue ribbon')]
+? ^
+
++ [('canon_fact', 'the blue ribbon')]
+? ^
+
+
+======================================================================
+FAIL: test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('"', '"'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 55, in test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable
+    self.assertEqual([(row["kind"], row.get("value")) for row in rows], [("canon_fact", "the blue ribbon")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('relationship_create', None), ('canon_fact[90 chars]on')] != [('canon_fact', 'the blue ribbon')]
+
+First differing element 0:
+('relationship_create', None)
+('canon_fact', 'the blue ribbon')
+
+First list contains 2 additional elements.
+First extra element 1:
+('canon_fact', 'Tomas\'s key and Elin trusts Tomas," said the witness')
+
+- [('relationship_create', None),
+-  ('canon_fact', 'Tomas\'s key and Elin trusts Tomas," said the witness'),
+-  ('canon_fact', 'the blue ribbon')]
+? ^
+
++ [('canon_fact', 'the blue ribbon')]
+? ^
+
+
+======================================================================
+FAIL: test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=('‘', '’'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 55, in test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable
+    self.assertEqual([(row["kind"], row.get("value")) for row in rows], [("canon_fact", "the blue ribbon")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('relationship_create', None), ('canon_fact[89 chars]on')] != [('canon_fact', 'the blue ribbon')]
+
+First differing element 0:
+('relationship_create', None)
+('canon_fact', 'the blue ribbon')
+
+First list contains 2 additional elements.
+First extra element 1:
+('canon_fact', "Tomas's key and Elin trusts Tomas,’ said the witness")
+
+- [('relationship_create', None),
+-  ('canon_fact', "Tomas's key and Elin trusts Tomas,’ said the witness"),
+-  ('canon_fact', 'the blue ribbon')]
+? ^
+
++ [('canon_fact', 'the blue ribbon')]
+? ^
+
+
+======================================================================
+FAIL: test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable (tests.test_memory_assertions.MemoryAssertionTests.test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable) (quotes=("'", "'"))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 55, in test_quoted_claims_are_not_facts_but_narration_after_them_is_still_reviewable
+    self.assertEqual([(row["kind"], row.get("value")) for row in rows], [("canon_fact", "the blue ribbon")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('relationship_create', None), ('canon_fact[89 chars]on')] != [('canon_fact', 'the blue ribbon')]
+
+First differing element 0:
+('relationship_create', None)
+('canon_fact', 'the blue ribbon')
+
+First list contains 2 additional elements.
+First extra element 1:
+('canon_fact', "Tomas's key and Elin trusts Tomas,' said the witness")
+
+- [('relationship_create', None),
+-  ('canon_fact', "Tomas's key and Elin trusts Tomas,' said the witness"),
+-  ('canon_fact', 'the blue ribbon')]
+? ^
+
++ [('canon_fact', 'the blue ribbon')]
+? ^
+
+
+======================================================================
+FAIL: test_rescan_retires_an_unreviewed_claim_but_preserves_an_author_accepted_fact (tests.test_memory_assertions.MemoryAssertionTests.test_rescan_retires_an_unreviewed_claim_but_preserves_an_author_accepted_fact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 77, in test_rescan_retires_an_unreviewed_claim_but_preserves_an_author_accepted_fact
+    self.assertEqual([(row["predicate"], row["status"]) for row in rescanned if row["kind"] == "canon_fact"], [("owns", "accepted")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('owns', 'accepted'), ('owns', 'pending')] != [('owns', 'accepted')]
+
+First list contains 1 additional elements.
+First extra element 1:
+('owns', 'pending')
+
+- [('owns', 'accepted'), ('owns', 'pending')]
++ [('owns', 'accepted')]
+
+======================================================================
+FAIL: test_semicolon_keeps_a_direct_clause_separate_from_an_unrelated_guess (tests.test_memory_assertions.MemoryAssertionTests.test_semicolon_keeps_a_direct_clause_separate_from_an_unrelated_guess)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Developer/openAuthor/tests/test_memory_assertions.py", line 67, in test_semicolon_keeps_a_direct_clause_separate_from_an_unrelated_guess
+    self.assertEqual([(row["predicate"], row["value"]) for row in rows if row["kind"] == "canon_fact"], [("owns", "the red key")])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('owns', 'the red key; Elin trusts Tomas')] != [('owns', 'the red key')]
+
+First differing element 0:
+('owns', 'the red key; Elin trusts Tomas')
+('owns', 'the red key')
+
+- [('owns', 'the red key; Elin trusts Tomas')]
++ [('owns', 'the red key')]
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.230s
+
+FAILED (failures=16)

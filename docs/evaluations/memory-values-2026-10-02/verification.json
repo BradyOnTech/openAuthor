@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-02",
+  "status": "implemented_and_locally_verified",
+  "provider_calls": false,
+  "author_data_used": false,
+  "red_before_green": {
+    "invalid_values_and_legacy_repair": {
+      "tests": 3,
+      "failing_assertions": 47
+    },
+    "malformed_detail_collections": {
+      "tests": 1,
+      "failing_assertions": 5
+    },
+    "rendered_values_and_recovery": {
+      "tests": 16,
+      "failed": 16
+    },
+    "rendered_duplicate_keys": {
+      "tests": 1,
+      "failed": 1
+    },
+    "log": "red-results.txt"
+  },
+  "checks": [
+    {
+      "command": "PYTHONPATH=. python3 -m unittest tests.test_memory_detail_values tests.test_codex_module tests.test_memory_review tests.test_ai_context_privacy tests.test_codex_app_server_module -v",
+      "tests": 29,
+      "status": "passed",
+      "log": "core-tests.txt"
+    },
+    {
+      "command": "cd desktop && npm test -- src/StoryMemoryEditor.values.test.tsx src/StoryMemoryEditor.recovery.test.tsx src/memoryApi.test.ts",
+      "tests": 23,
+      "test_files": 3,
+      "status": "passed",
+      "log": "editor-tests.txt"
+    },
+    {
+      "command": "cd desktop && npm exec -- tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check -- openauthor/codex.py desktop/src/components/editor/StoryMemoryEditor.tsx desktop/src/memoryDetailValues.ts tests/test_memory_detail_values.py desktop/src/StoryMemoryEditor.values.test.tsx",
+      "status": "passed"
+    }
+  ],
+  "value_contract": {
+    "text": "JSON string",
+    "number": "finite JSON number; integral values within \u00b19007199254740991",
+    "boolean": "literal JSON boolean",
+    "date": "valid calendar date as YYYY-MM-DD, years 0001\u20139999",
+    "entity": "current-book existing Memory entry ID",
+    "scene": "current-book existing scene ID",
+    "list": "JSON array; nested values must be finite JSON values and object keys must be strings"
+  },
+  "legacy_limits": [
+    "Snapshot restore and reads do not reinterpret historical typed values; this change performs no migration.",
+    "An untouched value with the same key and type can accompany unrelated or privacy edits. New or explicitly edited values must validate.",
+    "Legacy unresolved references remain visible with repair guidance; saving untouched values does not repair references.",
+    "References are checked at mutation time in the current book under the shared project lock; later Storyline changes can leave historical references unresolved.",
+    "Rendered validation uses fixture host/CLI adapters; no physical/native walkthrough is claimed for this slice.",
+    "Existing guarded command transport and project serialization are preserved; broader external-edit concurrency remains a separate audit."
+  ],
+  "source_sha256": {
+    "openauthor/codex.py": "0c0514a83f1363e86527ee9acf149e32c7957a479c881b21d5fa3dafa0adfc05",
+    "desktop/src/components/editor/StoryMemoryEditor.tsx": "fe0851b90deab956775648cd7163ade80e256fd2ab7cd471d3ed1c94ce1ed471",
+    "desktop/src/memoryDetailValues.ts": "9f3b214f2f8ddf2730cd9a09db71a461a8b39850f4ffd0020d9325a288e15d8e",
+    "tests/test_memory_detail_values.py": "5e38e991ca544c582195f66b4e934f83c1e37afb46a9f70d73d51b3f4b3c5851",
+    "desktop/src/StoryMemoryEditor.values.test.tsx": "dfb911016437c973d19efcc5c955e621f85dd51d1125b6ef8d9bdf12920ecb6b"
+  }
+}

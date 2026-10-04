@@ -1,0 +1,12 @@
+2026-10-02 13:45:57.272 CDT [69684] FATAL:  could not create shared memory segment: Operation not permitted
+2026-10-02 13:45:57.272 CDT [69684] DETAIL:  Failed system call was shmget(key=45744610, size=56, 03600).
+child process exited with exit code 1
+initdb: removing data directory "/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-bootstrap-tcq9o0l8/data"
+Traceback (most recent call last):
+  File "/private/tmp/openauthor-bootstrap-eval.py", line 8, in <module>
+    subprocess.run([str(pg/'initdb'),'-D',str(data),'--auth=trust','--no-locale','-E','UTF8'],check=True,stdout=subprocess.DEVNULL)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 579, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/opt/homebrew/opt/postgresql@17/bin/initdb', '-D', '/var/folders/61/ssrj3xkj3850zx_3zd445vbr0000gn/T/openauthor-bootstrap-tcq9o0l8/data', '--auth=trust', '--no-locale', '-E', 'UTF8']' returned non-zero exit status 1.

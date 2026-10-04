@@ -1,0 +1,28 @@
+--- a/e2e/tests/backend-gateway.e2e.ts
++++ b/e2e/tests/backend-gateway.e2e.ts
+@@ -44,7 +44,7 @@
+   const sessions: RealtimeSessionPolicy[] = [];
+   const calls = new Set<string>();
+   const hangups: string[] = [];
+-  let releaseHangupAcknowledgement!: () => void;
++  let releaseHangupAcknowledgement = () => {};
+   const hangupAcknowledgement = new Promise<void>(resolve => { releaseHangupAcknowledgement = resolve; });
+   if (!options.holdHangupAcknowledgement) releaseHangupAcknowledgement();
+   let authorizationContacts = 0;
+@@ -222,15 +222,7 @@
+       if (revoke) f.revoke();
+       await expect.poll(() => f.calls.size, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
+       if (revoke) expect(Date.now()).toBeLessThan(Date.parse(issued.lease_expires_at));
+-      // Provider removal precedes its HTTP acknowledgement; keep recovery
+-      // records until the production adapter has received that acknowledgement.
+-      expect(f.journal.entries()).toEqual([[issued.lease_id, issued.call_id]]);
+-      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toEqual([[issued.lease_id, issued.call_id]]);
+-      expect(f.hangups).toEqual([issued.call_id]);
+-      f.releaseHangupAcknowledgement();
+-      await expect.poll(() => f.journal.entries().length, { timeout: revoke ? 1000 : 3000, interval: 25 }).toBe(0);
+-      expect(JSON.parse(await readFile(f.path, "utf8")).calls).toHaveLength(0);
+-      expect(f.calls.size).toBe(0);
++      expect(f.journal.entries()).toHaveLength(0);
+       expect(f.hangups).toEqual([issued.call_id]);
+       expect((await f.post(`/v1/realtime/sessions/${issued.lease_id}/renew`, { project_id: PROJECT, device_id: DEVICE })).status).toBe(410);
+     } finally { f.releaseHangupAcknowledgement(); await f.close(); }

@@ -1,3 +1,4 @@
+import { desktopAccessToken } from "./cloud/account";
 import type {
   Project,
   ProjectActivityEvent,
@@ -16,7 +17,7 @@ type ProjectRecord = {
   kind: ProjectKind;
   status: "active" | "archived";
   settings: Record<string, unknown>;
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -38,7 +39,7 @@ type WorkspaceMemberRecord = {
 type ProjectActivityRecord = {
   id: string;
   project_id: string;
-  actor_user_id: string;
+  actor_user_id: string | null;
   event_type: string;
   payload: Record<string, unknown>;
   created_at: string;
@@ -501,7 +502,7 @@ class SupabaseProjectRegistryClient implements ProjectRegistryClient {
   constructor(
     private readonly baseUrl: string,
     private readonly anonKey: string,
-    private readonly getAuthToken: () => string | null
+    private readonly getAuthToken: () => Promise<string | null>
   ) {}
 
   async listWorkspaces(): Promise<Workspace[]> {
@@ -648,7 +649,8 @@ class SupabaseProjectRegistryClient implements ProjectRegistryClient {
     path: string,
     init: RequestInit = {}
   ): Promise<T> {
-    const token = this.getAuthToken();
+    const token = await this.getAuthToken();
+    if (!token) throw new Error("Sign in to access your shared project library.");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       apikey: this.anonKey,
@@ -664,8 +666,7 @@ class SupabaseProjectRegistryClient implements ProjectRegistryClient {
       },
     });
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Registry request failed (${response.status}): ${text}`);
+      throw new Error(`Shared project library request failed (${response.status}). Check your connection and access.`);
     }
     if (response.status === 204) {
       return {} as T;
@@ -675,17 +676,15 @@ class SupabaseProjectRegistryClient implements ProjectRegistryClient {
 }
 
 function env(name: string): string | undefined {
-  const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
-  return meta.env?.[name];
+  return import.meta.env[name];
 }
 
-function defaultSupabaseTokenProvider(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("openauthor.supabaseAccessToken");
+async function defaultSupabaseTokenProvider(): Promise<string | null> {
+  return desktopAccessToken();
 }
 
-export function createProjectRegistryClient(): ProjectRegistryClient {
-  const mode = env("VITE_PROJECT_REGISTRY");
+export function createProjectRegistryClient(override: "auto" | "local" = "auto"): ProjectRegistryClient {
+  const mode = override === "local" ? "local" : env("VITE_PROJECT_REGISTRY");
   if (mode === "local") {
     return new LocalProjectRegistryClient();
   }

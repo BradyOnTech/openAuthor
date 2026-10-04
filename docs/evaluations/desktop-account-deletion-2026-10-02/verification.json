@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-10-02T19:42:14.390332+00:00",
+  "review_baseline": "3b88359",
+  "desktop": {
+    "tests": 590,
+    "files": 88,
+    "skipped": 0,
+    "typecheck_build": "passed",
+    "focused_scope_tests": 48
+  },
+  "browser": {
+    "chrome": {
+      "passed": 6,
+      "skipped": 0
+    },
+    "webkit": {
+      "passed": 6,
+      "skipped": 0
+    },
+    "viewport": [
+      1024,
+      768
+    ],
+    "account_journeys": 3,
+    "existing_key_recovery_journeys": 3
+  },
+  "boundaries": "Production UI/account/enrollment/RPC client; synthetic SDK identity, credential vault and backend replies. Separate real PostgreSQL authority evidence. No real account/provider/deployment mutation.",
+  "review": {
+    "standards": "Final corrected UI source review: zero open findings, including account-only enrollment and parent pending-request latch.",
+    "spec": "Final corrected UI review: zero open findings."
+  },
+  "native_current_source_acceptance": "not observed; existing unsigned native binary remains prior 0cd77bd checkpoint",
+  "source_sha256": {
+    "desktop/src/cloud/account.ts": "c49c8b83cd1c4c3109a49419e576a4d9de4b14541788d3a2f5fb9bcb0071577f",
+    "desktop/src/cloud/account.test.ts": "56f4a8341231cd7ac9aa0c9dc7df3c0a85df5096f2ba395c0d3e2bf7ff725992",
+    "desktop/src/cloud/desktopEnrollment.ts": "4ce5e2e5e105c3de32d2690e197e70e90de31148a2590a9cafe99c06ba995bda",
+    "desktop/src/cloud/desktopEnrollment.test.ts": "9758d1e1cc03427e8e08dce6c899069458ef8d88346862cea6791ad5f47b452b",
+    "desktop/src/cloud/accountDeletion.ts": "e373b0383993d8a01f7421803de463cb49c51cb6bea607b71cb3891339606538",
+    "desktop/src/cloud/accountDeletion.test.ts": "b9ca6e80db88ca1b3841790814963ff9d59f8770208da3fbf281abe8264761a4",
+    "desktop/src/components/panel/AccountDeletionPanel.tsx": "5175b9ab2a872b3157b09510a3013f3296034e6f35b8c2c0fb5610a76d87dc05",
+    "desktop/src/components/panel/AccountDeletionPanel.test.tsx": "3b1d5afe70563519cf96711d722b3ec24eb96c353dbd294500359f0ef8600fdf",
+    "desktop/src/components/panel/MobileInboxPanel.tsx": "92bc47a9015997cb363bf39633b5ea7609517fbbdef7ce25406e40a38aacc6b9",
+    "desktop/src/components/panel/MobileInboxPanel.test.tsx": "e2b881e2d14c536330a71dbb3ddf6c8d852d484d1d2a7f43868b15189728b7a8",
+    "desktop/src/projectRegistry.ts": "806c2420c788a48c567d34b1b2067725b5f469460c23acebbe789d245aecbd7e",
+    "desktop/src/types.ts": "fde78030aaa6bf0ba06fb2288a7b6f3600ffc24f2468a9f46d297e73b17c571f",
+    "desktop/e2e/account-deletion.spec.ts": "ac86e19f02a95727775460a1b9e233ba53b861bc576aef4ab05854aeee1d2383",
+    "desktop/e2e/companion-key-recovery.spec.ts": "a225f2d137e67b3bd04a1de0d87f7a6cd32b9ebbc432549ccc1bbab1bae20dd3"
+  },
+  "evidence_sha256": {
+    "README.md": "0f406b5f6b194e848cc3c591f2624eda7caa47f05115e2691393448a8c7c9189",
+    "chromium-green.txt.gz": "5ef439c4cb37a367d5aa193fc440545ef0d82ba5bd2e8a414e6db954e4b5d378",
+    "chromium-label-red.txt.gz": "aa71aaa5608a024506c5e09eaf515bfc25d4a21797b56a9e36209bffc69d5fec",
+    "build-green.txt.gz": "491a7a023c6769f0b067c0753a779219ecaeed99f942866fc2c08d4a5a5ad25b",
+    "webkit-green.txt.gz": "9e6d52907dbbb7c1d892e409684ce70f399919969f4cdc4b5f45cf48906233ae",
+    "unit-green.txt.gz": "d0c57691b71167c484dd56a22e4576ebe106dff02ac797940402ac2858b8606c",
+    "reviewed-account-deletion-laptop.png": "c5327e768fa8416e933aa7105993a06ec19a161b1d6a5616f84b37a5ecd9c1f5"
+  }
+}

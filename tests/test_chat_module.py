@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from openauthor.budget import update_generation_budget_policy
+from openauthor.assistant.turns import AssistantTurnStore
 from openauthor.chat import (
   _build_provider_history,
   create_chat_thread,
@@ -14,6 +17,7 @@ from openauthor.chat import (
   list_chat_messages,
   list_chat_threads,
   rename_chat_thread,
+  regenerate_chat_turn,
   send_chat_message,
   truncate_chat_messages,
   update_chat_thread,
@@ -39,6 +43,101 @@ def _completion(text: str, tool_calls: list | None = None) -> dict:
 
 
 class ChatModuleTests(unittest.TestCase):
+  def test_regeneration_is_idempotent_and_marks_original_turn_superseded(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Atomic Regeneration")
+      thread = create_chat_thread(paths, title="Regenerate", provider="local", mode="chat")
+      with patch("openauthor.chat.complete_chat", return_value=_completion("First answer.")):
+        original = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="Try an answer.",
+          turn_id="turn-original",
+        )
+
+      with patch("openauthor.chat.complete_chat", return_value=_completion("Second answer.")) as provider:
+        replacement = regenerate_chat_turn(
+          paths,
+          thread_id=thread["id"],
+          from_message_id=original["user_message"]["id"],
+          replacement_turn_id="turn-replacement",
+          message="Try an answer.",
+        )
+        retry = regenerate_chat_turn(
+          paths,
+          thread_id=thread["id"],
+          from_message_id=original["user_message"]["id"],
+          replacement_turn_id="turn-replacement",
+          message="Try an answer.",
+        )
+
+      self.assertEqual(provider.call_count, 1)
+      self.assertEqual(replacement["assistant_message"]["id"], retry["assistant_message"]["id"])
+      self.assertEqual(
+        [row["content"] for row in list_chat_messages(paths, thread_id=thread["id"])],
+        ["Try an answer.", "Second answer."],
+      )
+      original_turn = AssistantTurnStore(paths).get("turn-original")
+      self.assertEqual(original_turn.status, "superseded")
+      self.assertEqual(original_turn.superseded_by, "turn-replacement")
+
+  def test_send_and_truncate_same_thread_cannot_leave_orphan_assistant(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Serialized Chat Mutation")
+      thread = create_chat_thread(paths, title="Race", provider="local", mode="chat")
+      provider_entered = threading.Event()
+      release_provider = threading.Event()
+      truncate_finished = threading.Event()
+      send_errors: list[BaseException] = []
+      truncate_errors: list[BaseException] = []
+
+      def blocked_completion(*_args: object, **_kwargs: object) -> dict:
+        provider_entered.set()
+        release_provider.wait(timeout=2)
+        return _completion("Settled answer.")
+
+      def run_send() -> None:
+        try:
+          send_chat_message(
+            paths,
+            thread_id=thread["id"],
+            message="Hold this turn.",
+            turn_id="turn-race",
+          )
+        except BaseException as error:  # pragma: no cover - asserted below
+          send_errors.append(error)
+
+      def run_truncate(message_id: str) -> None:
+        try:
+          truncate_chat_messages(
+            paths,
+            thread_id=thread["id"],
+            from_message_id=message_id,
+          )
+        except BaseException as error:  # pragma: no cover - asserted below
+          truncate_errors.append(error)
+        finally:
+          truncate_finished.set()
+
+      send_chat_message(paths, thread_id=thread["id"], message="A prior turn.")
+      with patch("openauthor.chat.complete_chat", side_effect=blocked_completion):
+        send_worker = threading.Thread(target=run_send)
+        send_worker.start()
+        self.assertTrue(provider_entered.wait(timeout=1))
+        user_message = list_chat_messages(paths, thread_id=thread["id"])[0]
+        truncate_worker = threading.Thread(
+          target=run_truncate,
+          args=(str(user_message["id"]),),
+        )
+        truncate_worker.start()
+        time.sleep(0.03)
+        self.assertFalse(truncate_finished.is_set())
+        release_provider.set()
+        send_worker.join(timeout=2)
+        truncate_worker.join(timeout=2)
+
+      self.assertEqual(send_errors, [])
+      self.assertEqual(truncate_errors, [])
   def test_retry_after_transcript_write_failure_recovers_without_another_generation(self) -> None:
     with tempfile.TemporaryDirectory() as temporary:
       paths = initialize_project(Path(temporary), name="Delivery recovery")
@@ -189,10 +288,56 @@ class ChatModuleTests(unittest.TestCase):
       self.assertEqual(execute_pending_tool_call(
         paths, thread_id=thread["id"],
         assistant_message_id=write_result["assistant_message"]["id"], tool_index=0,
-      ), executed)
+      )["result"], executed["result"])
 
       messages = list_chat_messages(paths, thread_id=thread["id"])
       self.assertTrue(any(row["role"] == "tool" for row in messages))
+
+  def test_duplicate_tool_approval_executes_side_effect_once(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Idempotent Tool Approval")
+      thread = create_chat_thread(paths, title="Agent", provider="local", mode="agent")
+      queued = _completion(
+        "I prepared a proposal.",
+        [
+          {
+            "id": "call-idempotent",
+            "name": "proposal_add",
+            "args": {"title": "Try this", "rationale": "Safer revision"},
+          }
+        ],
+      )
+      with patch("openauthor.chat.complete_chat", return_value=queued):
+        turn = send_chat_message(
+          paths,
+          thread_id=thread["id"],
+          message="Prepare one proposal.",
+          turn_id="turn-tool-idempotent",
+        )
+
+      with patch(
+        "openauthor.chat._execute_tool",
+        return_value={"id": "proposal-one", "title": "Try this"},
+      ) as execute:
+        first = execute_pending_tool_call(
+          paths,
+          thread_id=thread["id"],
+          assistant_message_id=turn["assistant_message"]["id"],
+          tool_index=0,
+        )
+        retry = execute_pending_tool_call(
+          paths,
+          thread_id=thread["id"],
+          assistant_message_id=turn["assistant_message"]["id"],
+          tool_index=0,
+        )
+
+      self.assertEqual(execute.call_count, 1)
+      self.assertEqual(first["tool_message"]["id"], retry["tool_message"]["id"])
+      messages = list_chat_messages(paths, thread_id=thread["id"])
+      self.assertEqual([row["role"] for row in messages].count("tool"), 1)
+      assistant = next(row for row in messages if row["role"] == "assistant")
+      self.assertTrue(assistant["tool_calls"][0]["executed"])
 
   def test_chat_send_includes_explicit_scene_mentions_in_context(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -443,8 +588,7 @@ class ChatModuleTests(unittest.TestCase):
       self.assertEqual(len(result["tool_messages"]), 1)
       self.assertEqual(result["pending_tool_calls"], [])
       roles = [row["role"] for row in list_chat_messages(paths, thread_id=thread["id"])]
-      self.assertEqual(roles.count("assistant"), 2)
-      self.assertEqual(roles.count("tool"), 1)
+      self.assertEqual(roles, ["user", "assistant", "tool", "assistant"])
 
   def test_pending_write_execution_snapshots_and_turn_diff(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

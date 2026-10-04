@@ -1,0 +1,14 @@
+{
+  "schema": "openauthor.mobile.project-key-envelope",
+  "schema_version": 1,
+  "project_id": "project_glass_harbor",
+  "key_version": 4,
+  "recipient_device_id": "device_mara_phone",
+  "recipient_key_id": "key_mara_phone_2026_08",
+  "sender_device_id": "device_mara_desktop",
+  "algorithm": "x25519-xsalsa20-poly1305-sealedbox-v1",
+  "sealed_project_key": "oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE",
+  "sealed_project_key_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sealed_project_key_byte_length": 80,
+  "created_at": "2026-08-30T15:00:00.000Z"
+}

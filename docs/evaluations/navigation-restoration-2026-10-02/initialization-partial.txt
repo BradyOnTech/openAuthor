@@ -1,0 +1,77 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (45 tests | 3 failed | 41 skipped) 1304ms
+     × retains the same book's activity and panels through delayed route restoration without a cached project ID 434ms
+     × retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID 299ms
+     × keeps an explicit return to Projects while delayed automatic restoration completes 279ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/AppV2.workflow.test.tsx:1373:110
+    1371|       await screen.findByRole("tab", { name: "Plan" });
+    1372|       expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("a…
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+       |                                                                                                              ^
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected null not to be null
+ ❯ src/AppV2.workflow.test.tsx:1374:71
+    1372|       expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("a…
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+       |                                                                       ^
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+    1376|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed route restoration without a cached project ID
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > retains the same book's activity and panels through delayed workspace user state restoration without a cached project ID
+AssertionError: expected null not to be null
+ ❯ src/AppV2.workflow.test.tsx:1375:85
+    1373|       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shif…
+    1374|       expect.soft(screen.queryByRole("button", { name: "Chat" })).not.…
+    1375|       expect.soft(screen.queryByText("Runs", { selector: ".panel-area_…
+       |                                                                                     ^
+    1376|     } finally {
+    1377|       release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > keeps an explicit return to Projects while delayed automatic restoration completes
+AssertionError: expected 'proj-2f3aed00-5343-4ce0-99cb-4e5e453f…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ proj-2f3aed00-5343-4ce0-99cb-4e5e453f3f07
+
+ ❯ src/AppV2.workflow.test.tsx:1428:88
+    1426|       await act(async () => { release(); await gate; });
+    1427|       await waitFor(() => expect(finished).toBe(requested));
+    1428|       expect(JSON.parse(localStorage.getItem("openauthor.activeProject…
+       |                                                                                        ^
+    1429|       expect(screen.getByText("Choose a project to begin writing.")).t…
+    1430|       expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed | 41 skipped (45)
+   Start at  20:55:54
+   Duration  2.76s (transform 742ms, setup 0ms, import 1.04s, tests 1.30s, environment 344ms)
+

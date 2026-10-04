@@ -1,0 +1,12 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  81 passed (81)
+      Tests  487 passed (487)
+   Start at  11:36:04
+   Duration  20.02s (transform 3.72s, setup 0ms, import 11.26s, tests 37.36s, environment 19.32s)

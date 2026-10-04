@@ -1,0 +1,32 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (54 tests | 1 failed | 52 skipped) 607ms
+     × keeps existing-folder attachment intent ahead of delayed startup workspace list selection 246ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > keeps existing-folder attachment intent ahead of delayed startup workspace list selection
+AssertionError: expected 'proj-466c4839-c407-4583-a9e2-5a54232c…' to be '' // Object.is equality
+
+- Expected
++ Received
+
++ proj-466c4839-c407-4583-a9e2-5a54232cf9bd
+
+ ❯ src/AppV2.workflow.test.tsx:1520:88
+    1518|       await act(async () => { releaseRegistry(); await registryGate; }…
+    1519|       await waitFor(() => expect(finished).toBe(requested));
+    1520|       expect(JSON.parse(localStorage.getItem("openauthor.activeProject…
+       |                                                                                        ^
+    1521|       expect(screen.getByText("Choose a project to begin writing.")).t…
+    1522|       await act(async () => { releaseInspect(); await inspectGate; });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 52 skipped (54)
+   Start at  21:14:27
+   Duration  2.11s (transform 787ms, setup 0ms, import 1.10s, tests 607ms, environment 333ms)
+

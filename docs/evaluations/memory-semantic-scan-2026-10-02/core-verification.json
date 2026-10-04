@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-02",
+  "evidence_kind": "local_reviewed_workflow_and_provider_response_fixtures",
+  "live_provider_calls": 0,
+  "model_accuracy": "not measured; provider replies in regression tests are authored fixtures",
+  "automatic_local_heuristic": "existing 12-case limitations remain; optional interpretation does not replace the automatic local scan",
+  "verified": [
+    "Exact saved selected sources before optional inference",
+    "Included identity names/types/aliases only; descriptions/details/private notes omitted; Ask first and excluded identities omitted",
+    "Preflight and postflight scene/Memory/queue/Storyline checks",
+    "Provider network work permits a concurrent project writer",
+    "Invalid evidence, unsupported name/alias/type, unselected source, malformed or excessive collections withheld or refused without partial mutation",
+    "Unique exact quotation offsets corrected with disclosure; ambiguous quotations withheld",
+    "Unconfirmed classification ambiguity survives both AI and local rescans, with explicit type confirmation and no bulk-confirmation bypass",
+    "Author decisions and corrections preserved; no manuscript/canon mutation before explicit acceptance",
+    "Returned analyses retained locally after completed provider response, generation logs remain metadata-only",
+    "Recovery-copy storage failures refuse queue mutation and report completed usage without claiming a retained response"
+  ],
+  "checks": {
+    "public_memory_cli_review": 23,
+    "full_python": {
+      "discovered": 548,
+      "passed": 547,
+      "optional_skip": 1,
+      "evidence": "full-core-default.txt"
+    },
+    "focused_core_privacy_checkpoint": 72,
+    "focused_core_privacy_scope": "Earlier 72-test checkpoint; the subsequent storage-failure regression is included in final full discovery."
+  },
+  "source_sha256": {
+    "openauthor/memory_scan.py": "4ca58b033803b113053eb00bdf7ad83572f6ce619d2b87be1771b89e1c995935",
+    "openauthor/story_memory.py": "c04a3c94166d0f6f3a9ae7cd28eaebda8f9adf9525ac07cf2ab9b1bc167a3aa7",
+    "tests/test_memory_scan.py": "850852d67a21828f78bc247c642b45e08816499f714aa422d56fd854377ba59a",
+    "tests/test_memory_scan_cli.py": "bfc51d6bcdc098f11ac915eccc4e0574469751500f08f4f266af93ad583b38ab"
+  },
+  "remaining": [
+    "Real provider and author assessment of language/type accuracy and triage effort",
+    "Cancellation of an already submitted generic core command",
+    "Physical/native and signed release acceptance"
+  ]
+}

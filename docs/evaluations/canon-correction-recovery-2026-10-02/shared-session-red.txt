@@ -1,0 +1,101 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx (12 tests | 1 failed | 11 skipped) 75ms
+   × does not reuse unmounted stale props when a storage-failed session is reopened with a newer fact 74ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/CanonFactCard.recovery.test.tsx > does not reuse unmounted stale props when a storage-failed session is reopened with a newer fact
+TestingLibraryElementError: Unable to find a label with the text of: Value
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33maria-label[39m=[32m"Story: gate color"[39m
+      [33mstyle[39m=[32m"padding: var(--space-3); margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary);"[39m
+    [36m>[39m
+      [36m<strong>[39m
+        [0mStory[0m
+        [0m · [0m
+        [0mgate color[0m
+      [36m</strong>[39m
+      [36m<p[39m
+        [33mstyle[39m=[32m"color: var(--text-secondary); white-space: pre-wrap;"[39m
+      [36m>[39m
+        [0mamber[0m
+      [36m</p>[39m
+      [36m<p[39m
+        [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); line-height: 1.5;"[39m
+      [36m>[39m
+        [0mAccepted canon[0m
+        [0m · [0m
+        [0mbeginning[0m
+        [0m → [0m
+        [0mongoing[0m
+      [36m</p>[39m
+      [36m<details[39m
+        [33mopen[39m=[32m""[39m
+        [33mstyle[39m=[32m"margin-top: 8px;"[39m
+      [36m>[39m
+        [36m<summary>[39m
+          [0mReview evidence ([0m
+          [0m1[0m
+          [0m)[0m
+        [36m</summary>[39m
+        [36m<p[39m
+          [33mstyle[39m=[32m"color: var(--text-secondary); font-size: var(--text-xs); line-height: 1.5;"[39m
+        [36m>[39m
+          [0mThese are recorded passages. Open the scene to compare them with the current draft.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"continuity-evidence-grid"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mstyle[39m=[32m"margin-top: 10px;"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"btn btn--sm"[39m
+            [36m>[39m
+              [0mOpen scene: [0m
+              [0mGate[0m
+            [36m</button>[39m
+            [36m<blockquote[39m
+              [33mstyle[39m=[32m"margin: 8px 0px; padding-left: 12px; border-left: 2px solid var(--border); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-secondary);"[39m
+            [36m>[39m
+              [0mThe gate was blue.[0m
+            [36m</blockquote>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</details>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"btn btn--sm"[39m
+        [33mstyle[39m=[32m"margin-top: 10px;"[39m
+      [36m>[39m
+        [0mCorrect or withdraw fact[0m
+      [36m</button>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx:194:18
+    192|   render(<CanonFactCard {...props} fact={{ ...fact, value: "amber", ed…
+    193|   await act(async () => finish({ ...fact, value: "green", edit_version…
+    194|   expect((screen.getByLabelText("Value") as HTMLTextAreaElement).value…
+       |                  ^
+    195|   expect((screen.getByRole("button", { name: "Save fact correction" })…
+    196|   expect(screen.getByText("amber")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  10:22:20
+   Duration  675ms (transform 81ms, setup 0ms, import 190ms, tests 75ms, environment 334ms)
+

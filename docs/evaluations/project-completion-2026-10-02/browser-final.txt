@@ -1,0 +1,29 @@
+[WebServer] (node:80053) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 19 tests using 1 worker
+
+(node:80055) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/authoring.spec.ts:15:1 › writes, focuses, reviews an AI revision, undoes it, and reopens the saved manuscript (10.9s)
+  ✓   2 e2e/book-journey.spec.ts:11:1 › imports a book, plans chapters, saves Memory, discusses a scene, and exports readable prose (14.4s)
+  ✓   3 e2e/canon-correction-recovery.spec.ts:4:1 › recovers Canon assertion corrections after navigation and restart without silently replacing a stale fact (9.4s)
+  ✓   4 e2e/caret-keyboard.spec.ts:5:1 › keyboard focus resumes a saved caret after restart while pointer placement remains authoritative (3.9s)
+  ✓   5 e2e/change-set-navigation.spec.ts:4:1 › keeps document tabs usable while preparing a Change Set (2.3s)
+  ✓   6 e2e/chat-delivery-recovery.spec.ts:6:1 › re-reviews stale pending Memory context with fresh permission and a durable question (7.0s)
+  ✓   7 e2e/chat-delivery-recovery.spec.ts:123:1 › recovers a completed reply after transport loss without re-sending changed context (3.8s)
+  ✓   8 e2e/context-budget.spec.ts:6:1 › keeps an oversized chapter question and retries with complete scene context (5.9s)
+  ✓   9 e2e/coordinated-undo-guard.spec.ts:4:1 › coordinated undo refuses newer writing without changing another scene (3.3s)
+  ✓  10 e2e/daily-review-polish.spec.ts:4:1 › keeps saved planning compact, recovers edits, and exposes passage actions beside long context (4.8s)
+  ✓  11 e2e/editorial-workspace.spec.ts:4:1 › restores tabs and caret and reviews current evidence in a wide workspace (6.3s)
+Editorial workload: 36476 words, 64 scenes, 16 chapters; synthetic surrounding prose.
+  ✓  12 e2e/long-book-journey.spec.ts:7:1 › reviews distant evidence and keeps coordinated revisions usable in a book-sized project (32.3s)
+  ✓  13 e2e/memory-permission.spec.ts:6:1 › asks for Memory once, retains a cancelled question, and honors a later exclusion (6.7s)
+  ✓  14 e2e/memory-review-workspace.spec.ts:4:1 › scans cold Memory, reviews evidence, corrects a type, refuses stale decisions, and reopens review history (8.3s)
+  ✓  15 e2e/memory-semantic-scan.spec.ts:11:1 › reviews exact Memory scan sources on a laptop before queuing local suggestions, with stale and busy guards (6.4s)
+  ✓  16 e2e/session-continuity.spec.ts:4:1 › recovers Plan text, reading position and an unfinished voice assessment after reload (6.9s)
+  ✓  17 e2e/storyline-journey.spec.ts:7:1 › a clean open scene follows the active Storyline before the author resumes writing (3.2s)
+  ✓  18 e2e/storyline-journey.spec.ts:33:1 › explores an alternate ending, keeps chapter context, and integrates only the selected scene (13.3s)
+  ✓  19 e2e/writing-voice.spec.ts:4:1 › approves an original Writing Voice, compares baselines and supplies the profile to copilot (8.0s)
+
+  19 passed (2.6m)

@@ -1,0 +1,10 @@
+[
+  {
+    "url": "http://127.0.0.1:61433/node_modules/.vite/deps/@tauri-apps_api_event.js?v=468c039b",
+    "method": "GET",
+    "status": -1,
+    "failure_text": "The network connection was lost.",
+    "time_ms": 8.578000000001339,
+    "started_at": "2026-10-03T23:16:26.698Z"
+  }
+]

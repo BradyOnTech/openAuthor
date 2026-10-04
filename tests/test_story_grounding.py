@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -82,8 +83,8 @@ class StoryGroundingTests(unittest.TestCase):
     self.assertEqual(grounding["relationships"][0]["relation"], "sister of")
     proposal = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"])
     log = json.loads((self.paths.root / proposal["generation"]["log_path"]).read_text())
-    self.assertEqual(log["user_prompt"], preview["user_prompt"])
-    self.assertNotIn("PRIVATE_", log["user_prompt"])
+    self.assertEqual(log["user_prompt_sha256"], hashlib.sha256(preview["user_prompt"].encode()).hexdigest())
+    self.assertNotIn("PRIVATE_", preview["user_prompt"])
     self.assertEqual(preview_selection(self.paths, **self.args)["context"]["story_memory"]["facts"], [])
 
   def test_future_expired_and_invalid_ranges_are_not_current_truth(self):

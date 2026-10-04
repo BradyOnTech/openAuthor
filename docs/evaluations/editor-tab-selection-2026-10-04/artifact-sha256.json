@@ -1,0 +1,13 @@
+{
+  "failure-screen.txt": "4985fd2674a1888c570a71c134c4c531ed5573779a9263d9b03155642d8a8454",
+  "failure.png": "3853d2fd26a822059c8b7be598214eddf8d124f12b7a37ca99ebc566b5770094",
+  "raw/desktop-build.log.gz": "5151bd951e80b967d8b94313c5dc5c0693faa849827a4e0a263058edd75193f7",
+  "raw/desktop-unit-final.log.gz": "621d52be35897eb3599ed5c983bfac527eeeabf2fceed185b90ccddddf8d067b",
+  "raw/sdk-green-report.json.gz": "38f920b10fee05463ed305e9a23d9acb1c31e391559edd53962f70d770b87f62",
+  "raw/sdk-green.log.gz": "02a141753cfad97404266424bf7ab3078488159dab8d72412ef401272a4d182a",
+  "raw/sdk-red-report.json.gz": "3cf36b5cf85724b85760885e03d7472bdbb973e164af44e64a13a114670c9526",
+  "raw/sdk-red.log.gz": "b977c992f99cf89cf3cd61b5b72696b660244b4a32285b89d17dbbed06aef73c",
+  "raw/unit-red.log.gz": "3e781328d48048168abb52ed4bb0ceb96a0a9835d4099e6a6398dffdff100046",
+  "review.md": "907f5af6a6227266277b42d4971131c4dacc0fc2f86a300e467af0f3289853ba",
+  "verification.json": "e36596cec884e93e0bd3f5afe39f2a9053f24434c8ae454448a854f5aef53d77"
+}

@@ -1,0 +1,13 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/mobileSync/supabaseTransport.test.ts -t preserves committed snapshot ciphertext
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 42 skipped (43)
+   Start at  10:39:48
+   Duration  295ms (transform 117ms, setup 0ms, import 113ms, tests 112ms, environment 0ms)
+

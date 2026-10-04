@@ -99,6 +99,48 @@ class AIPrivacyTests(unittest.TestCase):
         send_chat_message(self.paths, **params, expected_context_fingerprint=preview["fingerprint"])
     completion.assert_not_called()
 
+  def test_legacy_codex_approval_is_one_turn_and_is_rechecked_before_send(self) -> None:
+    entity_id = add_entity(self.paths, kind="character", name="Mara", description="ASK_LEGACY_SENTINEL", ai_visibility="ask",
+      details=[{"key": "Past", "type": "text", "value": "ASK_PAST_SENTINEL", "ai_visibility": "ask"}])
+    thread = create_chat_thread(self.paths, title="Legacy permission", provider="local")
+    with patch("openauthor.chat.complete_chat", return_value={"text": "ASK_LEGACY_SENTINEL", "tool_calls": []}) as provider:
+      send_chat_message(self.paths, thread_id=thread["id"], message="Discuss Mara.", codex_ids=[entity_id], approved_codex_ids=[entity_id])
+    self.assertIn("ASK_PAST_SENTINEL", provider.call_args.kwargs["user_prompt"])
+    with patch("openauthor.chat.complete_chat", return_value={"text": "A fresh reply.", "tool_calls": []}) as provider:
+      send_chat_message(self.paths, thread_id=thread["id"], message="Continue.")
+    self.assertEqual(provider.call_args.kwargs["history"], [])
+    self.assertNotIn("ASK_LEGACY_SENTINEL", provider.call_args.kwargs["user_prompt"])
+
+  def test_chat_does_not_send_unapproved_or_out_of_range_canon_through_legacy_review(self) -> None:
+    from openauthor.canon import add_canon_fact
+    from openauthor.chat import preview_chat_context
+    entity_id = add_entity(self.paths, kind="character", name="Mara")
+    add_scene(self.paths, title="Later", body="Mara knew the unapproved secret.")
+    fact = add_canon_fact(self.paths, subject_entity_id=entity_id, predicate="secret", value="UNAPPROVED_CANON_SENTINEL",
+      valid_from_scene_id="scene-0002", evidence=[{"scene_id": "scene-0002", "excerpt": "Mara knew the unapproved secret."}])
+    thread = create_chat_thread(self.paths, title="Canon permission", provider="local")
+    preview = preview_chat_context(self.paths, thread_id=thread["id"], message="Discuss Mara.", current_scene_id="scene-0001")
+    self.assertFalse(next(row for row in preview["story_choices"] if row["id"] == fact["id"])["eligible"])
+    self.assertEqual(preview["context"]["accepted_canon"], [])
+    self.assertNotIn("UNAPPROVED_CANON_SENTINEL", preview["user_prompt"])
+
+  def test_chapter_grounding_rechecks_selected_scenes_while_another_scene_is_open(self) -> None:
+    from openauthor.canon import add_canon_fact
+    from openauthor.chat import preview_chat_context
+    entity_id = add_entity(self.paths, kind="character", name="Mara")
+    add_scene(self.paths, title="Later", body="Mara found the old route.")
+    fact = add_canon_fact(self.paths, subject_entity_id=entity_id, predicate="route", value="APPROVED_CHAPTER_ROUTE",
+      valid_from_scene_id="scene-0002", evidence=[{"scene_id": "scene-0002", "excerpt": "Mara found the old route."}])
+    thread = create_chat_thread(self.paths, title="Chapter grounding", provider="local")
+    args = dict(thread_id=thread["id"], message="Review this chapter.", current_scene_id="scene-0001", scene_ids=["scene-0002"],
+      context_overrides={"scope": "chapter", "retrieval_mode": "off"}, story_approvals=[fact["id"]])
+    preview = preview_chat_context(self.paths, **args)
+    self.assertEqual(preview["context_used"]["story_scene_ids"], ["scene-0002"])
+    self.assertTrue(next(row for row in preview["story_choices"] if row["id"] == fact["id"])["included"])
+    with patch("openauthor.chat.complete_chat", return_value={"text": "A chapter review.", "tool_calls": []}) as provider:
+      send_chat_message(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
+    self.assertIn("APPROVED_CHAPTER_ROUTE", provider.call_args.kwargs["user_prompt"])
+
   def test_excluded_fields_and_model_or_profile_grants_cannot_be_approved(self) -> None:
     from openauthor.chat import preview_chat_context
     from openauthor.project import OpenAuthorError

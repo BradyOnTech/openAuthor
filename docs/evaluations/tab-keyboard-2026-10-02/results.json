@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-02",
+  "baseline_commit": "230222fc69d49f7b0668b6bd6d164feec64b9595",
+  "scope": "Real EditorProvider controls, real-core offline browser workflows, and separately scoped actual unsigned Mac keyboard/reopen observations.",
+  "new_provider_calls": 0,
+  "author_data_modified": false,
+  "baseline_tests": {
+    "failed": 3,
+    "log": "baseline-tests.txt"
+  },
+  "current_keyboard_controls": {
+    "passed": 3,
+    "log": "focused-tests.txt"
+  },
+  "full_desktop": {
+    "passed": 564,
+    "files": 86,
+    "log": "desktop-suite-complete.txt"
+  },
+  "browsers": {
+    "chromium": {
+      "passed": 6,
+      "log": "chromium-journeys-final.txt"
+    },
+    "webkit": {
+      "passed": 6,
+      "log": "webkit-journeys-complete.txt"
+    }
+  },
+  "typecheck_build": "passed; current-source Tauri build recorded separately",
+  "manual_activation": "Left/Right wrap; Home/End focus extremes; Enter/Space activate; Tab offers focused close action then panel; leaving list restores entry at selected document",
+  "panel_semantics": "Every tab controls its own named panel; inactive panels are hidden and do not load their content",
+  "native_red": {
+    "source_commit": "5fe9d7c",
+    "observation": "Keyboard-focused Story Memory tab stayed selected/focused after Left; arrow navigation absent",
+    "voiceover_enabled": false
+  },
+  "independent_review": {
+    "standards_open": 0,
+    "spec_initial": 1,
+    "spec_fixed": 1,
+    "spec_open": 0
+  },
+  "source_sha256": {
+    "desktop/src/components/editor/TabBar.tsx": "752ee75bbe449859b05f02a4815f7a8ebe150915cfefc29a8b6bd5da6ce5a6fc",
+    "desktop/src/components/editor/EditorArea.tsx": "9f886017cc347214160c565fd0fb26bf3b9198c31d54fa396be9fd5b32f6fd86",
+    "desktop/src/design-system-v2.css": "d79cef868793e941057b84fdac03cf631d9a681574da691ee71458f2ae95c66c",
+    "desktop/src/components/editor/TabBar.keyboard.test.tsx": "7de83512bcc3ba135506c0061738f76da0de4971ad5b44ad670466275eb6397c",
+    "desktop/e2e/tab-keyboard.spec.ts": "4649f68c34d3c67056db3b0d634b09ea2545ece2e9c889eb1778828a996276f1"
+  },
+  "limitations": [
+    "Browser restart is document reload, not native process termination.",
+    "Native VoiceOver, long sessions, signed builds and clean-machine acceptance remain open.",
+    "Keyboard/tab close changes preserve existing manuscript-save semantics; this is not an independent crash-recovery certificate."
+  ],
+  "implementation_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+  "native_green": {
+    "source_commit": "0cd77bd9c64795bf65fbf31a5b02e0b9313238b8",
+    "evidence": "../project-completion-2026-10-02/native-gui-0cd77bd.json",
+    "keyboard_tab_navigation": "passed",
+    "retained_plan_and_scene": "observed",
+    "voiceover": "not_observed",
+    "signed_release": false
+  }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { resetGenerationBudget, updateGenerationBudget } from "../../api";
 import type { GenerationBudgetUsageWindow } from "../../types";
@@ -28,9 +28,14 @@ export function BudgetPanel() {
   const { projectRoot, budget, refreshBudget, setError, setMessage } = useWorkspace();
   const [draft, setDraft] = useState<Record<FieldKey, string>>({} as Record<FieldKey, string>);
   const [busy, setBusy] = useState(false);
+  const policyKey = useRef("");
 
   useEffect(() => {
     if (!budget) return;
+    const nextPolicyKey = JSON.stringify([projectRoot, budget.policy]);
+    // Usage updates must preserve the author's unsaved limit edits.
+    if (policyKey.current === nextPolicyKey) return;
+    policyKey.current = nextPolicyKey;
     setDraft({
       maxInputTokens: toInput(budget.policy.per_run.max_input_tokens),
       maxOutputTokens: toInput(budget.policy.per_run.max_output_tokens),
@@ -41,23 +46,23 @@ export function BudgetPanel() {
       weeklyTokens: toInput(budget.policy.rolling.weekly_tokens),
       weeklyEstimatedCostUsd: toInput(budget.policy.rolling.weekly_estimated_cost_usd),
     });
-  }, [budget]);
+  }, [budget, projectRoot]);
 
   async function handleSave() {
     setBusy(true);
     try {
-      const payload: Record<string, number> = {};
+      const payload: Record<string, number | null> = {};
       for (const field of FIELDS) {
         const raw = (draft[field.key] ?? "").trim();
-        if (raw === "") continue;
+        if (raw === "") { payload[field.key] = null; continue; }
         const value = Number(raw);
-        if (!Number.isFinite(value) || value < 0) {
-          setError(`Invalid value for ${field.label}: ${raw}`);
-          setBusy(false);
+        if (!Number.isFinite(value) || value <= 0 || (!field.cost && !Number.isInteger(value))) {
+          setError(`${field.label} must be a positive ${field.cost ? "number" : "whole number"}.`);
           return;
         }
         payload[field.key] = value;
       }
+      setError("");
       await updateGenerationBudget(projectRoot, payload);
       setMessage("Budget limits updated.");
       await refreshBudget();
@@ -71,7 +76,9 @@ export function BudgetPanel() {
   async function handleReset() {
     setBusy(true);
     try {
+      setError("");
       await resetGenerationBudget(projectRoot);
+      setDraft(Object.fromEntries(FIELDS.map(field => [field.key, ""])) as Record<FieldKey, string>);
       setMessage("Budget limits cleared.");
       await refreshBudget();
     } catch (e) {

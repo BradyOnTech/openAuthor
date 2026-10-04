@@ -1,0 +1,29 @@
+{
+  "fixture": "/private/tmp/openauthor-memory-gap-audit/book-7cb1p18n",
+  "source_commit": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "storyline_review": {
+    "loaded_scope": [
+      "8552e69956496e4805c5600f26de619b4e7a90489536227589dd1e3b301b03d7",
+      "master"
+    ],
+    "current_scope": [
+      "d95073af93d8b1972288dbe43a3e85fd5a6b5567545db98ff449a4c6ebbd62d8",
+      "storyline/cabinet-alternative-90935c"
+    ],
+    "current_branch": "storyline/cabinet-alternative-90935c",
+    "same_fact_timestamp_on_new_storyline": true,
+    "guarded_update_refused": "This Canon Fact or its Storyline changed since you opened it. Your edits were not saved. Reload and compare the saved fact before trying again.",
+    "legacy_review_status": "rejected",
+    "legacy_mutated_other_storyline": true
+  },
+  "invalid_validity_restore": {
+    "validity": {
+      "from_scene_id": "scene-0002",
+      "to_scene_id": "scene-0001"
+    },
+    "guarded_restore_refused": "The fact cannot stop being true before it begins.",
+    "legacy_restore_status": "accepted",
+    "source_excerpt_exact": true
+  },
+  "scene_bodies_unchanged": true
+}

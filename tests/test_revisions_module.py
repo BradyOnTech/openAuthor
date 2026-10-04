@@ -44,7 +44,7 @@ with checkpointed_edit(paths, 'Interrupted change'):
 """
       result = subprocess.run([sys.executable, "-c", script, tmp], capture_output=True, text=True)
       self.assertEqual(result.returncode, 71, result.stderr)
-      self.assertIn("Partial uncommitted", get_scene(paths, "scene-0001")["body"])
+      self.assertIn("Partial uncommitted", next(paths.scenes_dir.glob("*.md")).read_text())
       self.assertTrue(recover_interrupted_edit(paths))
       self.assertEqual(get_scene(paths, "scene-0001")["body"].strip(), "Last committed prose")
       self.assertFalse(recover_interrupted_edit(paths))

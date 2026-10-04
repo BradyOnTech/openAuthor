@@ -1,0 +1,176 @@
+/private/tmp/openauthor-memory-detail-core-red.log
+test_all_supported_values_round_trip_without_coercion_or_visibility_changes (tests.test_memory_detail_values.MemoryDetailValuesTests.test_all_supported_values_round_trip_without_coercion_or_visibility_changes) ... ok
+test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) ...
+test_legacy_values_survive_restore_unrelated_and_privacy_edits_without_coercion (tests.test_memory_detail_values.MemoryDetailValuesTests.test_legacy_values_survive_restore_unrelated_and_privacy_edits_without_coercion) ... FAIL
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value='31', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value='31', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=True, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=True, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=nan, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=nan, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=inf, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=inf, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=9007199254740993, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='number', value=9007199254740993, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value='true', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value='true', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value=1, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value=1, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value=None, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='boolean', value=None, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='2026-02-30', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='2026-02-30', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='2026-1-01', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='2026-1-01', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='tomorrow', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value='tomorrow', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value=20260101, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='date', value=20260101, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='text', value=31, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='text', value=31, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='text', value=None, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='text', value=None, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value='a,b', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value='a,b', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value={}, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value={}, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[nan], operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[nan], operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[(1, 2)], operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[(1, 2)], operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[{1: 'bad key'}], operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='list', value=[{1: 'bad key'}], operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='scene', value='scene-missing', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='scene', value='scene-missing', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='scene', value=None, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='scene', value=None, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='entity', value='entity-missing', operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='entity', value='entity-missing', operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='entity', value=31, operation='add')
+AssertionError: OpenAuthorError not raised
+FAIL: test_invalid_typed_values_fail_before_creation_or_update (tests.test_memory_detail_values.MemoryDetailValuesTests.test_invalid_typed_values_fail_before_creation_or_update) (kind='entity', value=31, operation='update')
+AssertionError: OpenAuthorError not raised
+FAIL: test_legacy_values_survive_restore_unrelated_and_privacy_edits_without_coercion (tests.test_memory_detail_values.MemoryDetailValuesTests.test_legacy_values_survive_restore_unrelated_and_privacy_edits_without_coercion)
+AssertionError: OpenAuthorError not raised
+Ran 3 tests in 0.133s
+FAILED (failures=47)
+
+/private/tmp/openauthor-memory-detail-ui-red.log
+   × retains an invalid number detail form () and explains the required value 195ms
+   × retains an invalid number detail form (NaN) and explains the required value 115ms
+   × retains an invalid number detail form (Infinity) and explains the required value 112ms
+   × retains an invalid number detail form (0x20) and explains the required value 110ms
+   × retains an invalid number detail form (9007199254740993) and explains the required value 106ms
+   × retains an invalid boolean detail form (yes) and explains the required value 107ms
+   × retains an invalid date detail form (2026-02-30) and explains the required value 108ms
+   × retains an invalid date detail form (2026-1-01) and explains the required value 105ms
+   × retains an invalid list detail form (key, coat) and explains the required value 108ms
+   × retains an invalid list detail form ({}) and explains the required value 107ms
+   × retains an invalid list detail form ([1e309]) and explains the required value 107ms
+   × retains an invalid scene detail form (scene-missing) and explains the required value 105ms
+   × retains an invalid entity detail form (entity-missing) and explains the required value 105ms
+   × saves explicit number, boolean, date, references and list input as native JSON values 399ms
+   × preserves legacy typed values during unrelated/privacy edits and requires explicit repair after editing 46ms
+   × displays JSON list values losslessly and recovers an edited value after backend failure 7ms
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid number detail form () and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid number detail form (NaN) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid number detail form (Infinity) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid number detail form (0x20) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid number detail form (9007199254740993) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid boolean detail form (yes) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid date detail form (2026-02-30) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid date detail form (2026-1-01) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid list detail form (key, coat) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid list detail form ({}) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid list detail form ([1e309]) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid scene detail form (scene-missing) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > retains an invalid entity detail form (entity-missing) and explains the required value
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > saves explicit number, boolean, date, references and list input as native JSON values
+AssertionError: expected [ '31', 'false', '2024-02-29', …(3) ] to deeply equal [ 31, false, '2024-02-29', …(3) ]
+ FAIL  src/StoryMemoryEditor.values.test.tsx > preserves legacy typed values during unrelated/privacy edits and requires explicit repair after editing
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/StoryMemoryEditor.values.test.tsx > displays JSON list values losslessly and recovers an edited value after backend failure
+AssertionError: expected 'key,[object Object]' to be '["key",{"color":"blue"}]' // Object.is equality
+Expected: "["key",{"color":"blue"}]"
+Received: "key,[object Object]"
+ Test Files  1 failed (1)
+      Tests  16 failed (16)
+
+/private/tmp/openauthor-memory-detail-shape-core-red.log
+test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) ...
+FAIL: test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) (values={'Age': 31})
+AssertionError: OpenAuthorError not raised
+FAIL: test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) (values=[31])
+AssertionError: OpenAuthorError not raised
+FAIL: test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) (values=[{'key': '', 'type': 'number', 'value': 31}])
+AssertionError: OpenAuthorError not raised
+FAIL: test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) (values=[{'key': 31, 'type': 'text', 'value': 'age'}])
+AssertionError: OpenAuthorError not raised
+FAIL: test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values (tests.test_memory_detail_values.MemoryDetailValuesTests.test_malformed_or_duplicate_detail_rows_cannot_silently_erase_values) (values=[{'key': 'Age', 'type': 'number', 'value': 31}, {'key': 'age', 'type': 'number', 'value': 'bad'}])
+AssertionError: OpenAuthorError not raised
+Ran 1 test in 0.037s
+FAILED (failures=5)
+
+/private/tmp/openauthor-memory-detail-shape-ui-red.log
+   × refuses duplicate new keys and keeps an existing detail whose key was accidentally cleared 228ms
+ FAIL  src/StoryMemoryEditor.values.test.tsx > refuses duplicate new keys and keeps an existing detail whose key was accidentally cleared
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 skipped (18)

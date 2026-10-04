@@ -11,14 +11,19 @@ import {
   runCanonDiagnostics,
   listCharacterArcStates,
   addCharacterArcState,
+  getScene,
 } from "../../api";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { useEditor } from "../../contexts/EditorContext";
+import type { CanonDiagnostic, CanonEvidence, CanonFact, CharacterArcState, NarrativeSetup, OpenQuestion, SceneSummary } from "../../types";
+import { ContinuityReview } from "./ContinuityReview";
+import { CanonFactCard } from "./CanonFactCard";
 import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import { EvidencePassages } from "../shared/EvidencePassages";
 import { CanonFactReview } from "./CanonFactReview";
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { DraftStatus } from "../shared/DraftStatus";
-import type { CanonDiagnostic, CanonFact, CharacterArcState, NarrativeSetup, OpenQuestion } from "../../types";
+
 
 function validForms(value: unknown): value is Record<string, string> {
   return !!value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every(item => typeof item === "string");
@@ -26,7 +31,8 @@ function validForms(value: unknown): value is Record<string, string> {
 
 export function CanonMemoryEditor() {
   const { projectRoot, branches, scenes, codexEntities, setError, setMessage } = useWorkspace();
-  const branch = branches.find(row => row.current)?.name || "main";
+  const { tabs, setActiveTab, beginNavigation, openTab, updateTab } = useEditor();
+  const branch = branches?.find(row => row.current)?.name || "main";
   const forms = useRecoverableDraft<Record<string, string>>(`openauthor.canonForms.v1:${JSON.stringify([projectRoot, branch])}`, {}, validForms);
   const changeForm = (key: string, value: string) => {
     const next = { ...forms.session.getSnapshot().value, [key]: value };
@@ -34,6 +40,7 @@ export function CanonMemoryEditor() {
     forms.session.edit(next);
   };
   const [facts, setFacts] = useState<CanonFact[]>([]);
+  const [factFilter, setFactFilter] = useState("accepted");
   const [setups, setSetups] = useState<NarrativeSetup[]>([]);
   const [questions, setQuestions] = useState<OpenQuestion[]>([]);
   const [diagnostics, setDiagnostics] = useState<CanonDiagnostic[]>([]);
@@ -55,20 +62,26 @@ export function CanonMemoryEditor() {
   const setArcType = (value: string) => changeForm("arcType", value);
   const [busy, setBusy] = useState(false);
   const mutationPending = useRef(false);
+  const loadSequence = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  useEffect(() => { void load(); }, [projectRoot, branch]);
+  useEffect(() => { void load(); return () => { ++loadSequence.current; }; }, [projectRoot, branch]);
 
   async function load() {
-    setBusy(true);
+    const sequence = ++loadSequence.current;
+    setLoading(true);
+    setLoadError("");
     try {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save your pending writing before running diagnostics.");
       const [nextFacts, nextSetups, nextQuestions, nextArcStates, report] = await Promise.all([
         listCanonFacts(projectRoot), listNarrativeSetups(projectRoot), listOpenQuestions(projectRoot), listCharacterArcStates(projectRoot), runCanonDiagnostics(projectRoot),
       ]);
+      if (sequence !== loadSequence.current) return;
       setFacts(nextFacts); setSetups(nextSetups); setQuestions(nextQuestions); setArcStates(nextArcStates); setDiagnostics(report.diagnostics);
     } catch (error) {
-      setError(`Failed to load Canon Memory: ${error instanceof Error ? error.message : String(error)}`);
-    } finally { setBusy(false); }
+      if (sequence === loadSequence.current) setLoadError(`Failed to load Canon Memory: ${error instanceof Error ? error.message : String(error)}`);
+    } finally { if (sequence === loadSequence.current) setLoading(false); }
   }
 
   async function mutate(action: () => Promise<unknown>, message: string, clearFields: string[] = []) {
@@ -92,18 +105,36 @@ export function CanonMemoryEditor() {
     finally { mutationPending.current = false; setBusy(false); }
   }
 
+  async function openScene(scene: SceneSummary, evidence?: CanonEvidence) {
+    const tabId = `scene:${scene.id}`;
+    if (tabs.some((tab) => tab.id === tabId)) { if (evidence) updateTab(tabId, { focusPassage: evidence }); setActiveTab(tabId); return; }
+    const isCurrent = beginNavigation();
+    try {
+      const detail = await getScene(projectRoot, scene.id);
+      if (isCurrent()) openTab({ id: tabId, kind: "scene", label: detail.title, data: detail, focusPassage: evidence });
+    } catch (error) {
+      if (isCurrent()) setError(`Failed to open evidence scene: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   const entityName = (id: string) => codexEntities.find((row) => row.id === id)?.name || "Story";
   return (
     <div className="canon-memory-editor" style={{ height: "100%", overflow: "auto", background: "var(--bg-deep)" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "var(--space-6)" }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "var(--space-6)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: "var(--space-5)" }}>
           <div><div style={eyebrow}>Evidence-backed story truth</div><h1 style={pageTitle}>Canon & Continuity</h1></div>
-          <button className="btn" style={{ minHeight: 40 }} disabled={busy} onClick={() => void load()}>{busy ? "Checking…" : "Run Diagnostics"}</button>
+          <button className="btn" disabled={busy || loading} onClick={() => void load()}>{loading ? "Checking…" : "Run Diagnostics"}</button>
         </div>
-        <p style={{ ...valueStyle, marginBottom: 16 }}>Local checks compare recorded Canon, knowledge, setups and arcs, plus explicit English descriptions of finger counts and eye/hair colors. Not a comprehensive plot, timeline, motivation or prose-quality analysis. Warnings need author review; an empty result is not proof of consistency.</p>
+        <p style={{ ...valueStyle, marginBottom: 16 }}>Local checks compare recorded Canon, knowledge, setups and arcs, plus a limited set of English and Spanish physical descriptions and explicit changes. Not a comprehensive plot, timeline, motivation or prose-quality analysis. Warnings need author review; an empty result is not proof of consistency.</p>
         <DraftStatus {...forms} onUseSaved={forms.session.useSaved} onKeepDraft={forms.session.keepDraft} />
         {forms.dirty && <button className="btn" style={{ minHeight: 40, marginBottom: 16 }} disabled={busy} onClick={forms.session.useSaved}>Clear unfinished forms</button>}
 
+        {loadError && <p role="alert">{loadError} Use Run Diagnostics to retry.</p>}
+
+          {loading && !diagnostics.length ? <p role="status">Checking continuity…</p> : !loadError && <ContinuityReview diagnostics={diagnostics} scenes={scenes} busy={busy || loading} onOpenEvidence={(scene, evidence) => void openScene(scene, evidence)} onOpenScene={(scene) => void openScene(scene)} onRevise={(diagnostic, targetId, instruction) => {
+            openTab({ id: `generate:continuity:${diagnostic.id}`, kind: "generate", label: "Revise continuity", data: { sceneId: targetId, instruction } });
+          }} onReview={(id, disposition, notes) => void mutate(() => disposeCanonDiagnostic(projectRoot, id, disposition, notes), "Continuity review saved.")} />}
+        <details className="canon-records" style={{ marginTop: 24 }}><summary>Add or update story records</summary>
         <section style={panelStyle}>
           <h2 style={sectionTitle}>Add Canon Fact</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: 8 }}>
@@ -123,8 +154,22 @@ export function CanonMemoryEditor() {
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
-          <section style={panelStyle}><h2 style={sectionTitle}>Canon Facts <span style={countStyle}>{facts.length}</span></h2>{facts.map((fact) => <article key={fact.id} style={rowStyle}><strong>{entityName(fact.subject_entity_id)} · {fact.predicate}</strong><div style={valueStyle}>{fact.value}</div><div style={metaStyle}>{fact.validity.from_scene_id || "beginning"} → {fact.validity.to_scene_id || "ongoing"} · {fact.evidence.length} source{fact.evidence.length === 1 ? "" : "s"} · {fact.status === "rejected" ? "retired" : fact.status}</div><CanonFactReview fact={fact} onUpdated={load} /></article>)}</section>
-          <section style={panelStyle}><h2 style={sectionTitle}>Continuity Diagnostics <span style={countStyle}>{diagnostics.length}</span></h2>{!busy && diagnostics.length === 0 && <p style={valueStyle}>No findings from these limited checks.</p>}{diagnostics.map((diagnostic) => <article key={diagnostic.id} style={{ ...rowStyle, borderLeft: `3px solid var(--${diagnostic.severity === "error" ? "danger" : diagnostic.severity === "warning" ? "warning" : "info"})` }}><strong>{diagnostic.title}</strong><div style={valueStyle}>{diagnostic.message}</div><div style={metaStyle}>{diagnostic.evidence.length} evidence passage{diagnostic.evidence.length === 1 ? "" : "s"}{diagnostic.disposition ? ` · ${diagnostic.disposition.disposition}` : ""}</div><EvidencePassages evidence={diagnostic.evidence} />{!diagnostic.disposition && <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>{(["intentional", "dismissed", "deferred"] as const).map((disposition) => <button key={disposition} className="btn btn--sm" style={{ minHeight: 40 }} disabled={busy} onClick={() => void mutate(() => disposeCanonDiagnostic(projectRoot, diagnostic.id, disposition), `Marked ${disposition}.`)}>{disposition}</button>)}</div>}</article>)}</section>
+          <section aria-label="Canon Facts" style={panelStyle}>
+            <h2 style={sectionTitle}>Canon Facts <span style={countStyle}>{facts.filter((fact) => fact.status === "accepted").length} accepted</span></h2>
+            <select className="select" aria-label="Filter Canon Facts" value={factFilter} onChange={(event) => setFactFilter(event.target.value)}>
+              <option value="accepted">Accepted canon</option><option value="suggested">Needs review</option><option value="rejected">Withdrawn</option><option value="all">All facts</option>
+            </select>
+            {!facts.some((fact) => factFilter === "all" || fact.status === factFilter) && <p style={metaStyle}>No facts in this view.</p>}
+            {facts.map((fact) => <div key={fact.id} hidden={factFilter !== "all" && fact.status !== factFilter}>
+              <CanonFactCard fact={fact} subjectName={entityName(fact.subject_entity_id)} scenes={scenes} projectRoot={projectRoot} branch={branches?.find(row => row.current)?.name ?? ""} disabled={busy || loading || Boolean(loadError)} onOpenScene={(scene) => void openScene(scene)} onSaved={(updated) => {
+                setFacts((rows) => rows.map((row) => row.id === updated.id ? updated : row));
+                setMessage(updated.status === "rejected" ? "Fact withdrawn. Its text and evidence are kept under Withdrawn." : "Canon Fact corrected.");
+                void load();
+              }} />
+              <CanonFactReview fact={fact} onUpdated={load} />
+            </div>)}
+          </section>
+
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
@@ -144,6 +189,7 @@ export function CanonMemoryEditor() {
           </div>
           {arcStates.map((state) => <article key={state.id} style={rowStyle}><strong>{entityName(state.character_entity_id)} · {state.dimension}</strong><div style={valueStyle}>{state.value}</div><div style={metaStyle}>{state.state_type} in {scenes.find((row) => row.id === state.scene_id)?.title ?? state.scene_id}</div></article>)}
         </section>
+        </details>
       </div>
     </div>
   );

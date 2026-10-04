@@ -1,0 +1,197 @@
+{
+  "status": "passed",
+  "scope": "complete local web/core/gateway/database flows; native execution excluded",
+  "base_commit": "ebb49a1f2e5be61e2c40af0e6ecd59676a6c3228",
+  "working_tree": "dirty; test and production sources frozen for both final aggregates",
+  "unique_flow_tests": 79,
+  "sdk_tests": 34,
+  "retained_playwright_tests": 45,
+  "browser_journeys": 63,
+  "engine_less_backend_database_tests": 16,
+  "runs": [
+    {
+      "browser": "chromium",
+      "passed": 79,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "receipt": "raw/chromium/verification.json",
+      "reports": [
+        {
+          "group": "backend",
+          "runner": "tester-army/e2e",
+          "run_id": "01a10424-bab7-755f-b472-fc3e3f015b09",
+          "passed": 15,
+          "report": "raw/chromium/backend/report.json.gz",
+          "uncompressed_sha256": "31cc7776c3a171db0fbe05f25c0d1b78252d161909a6dafb72a20067a4c452e0"
+        },
+        {
+          "group": "desktop",
+          "runner": "tester-army/e2e",
+          "run_id": "01a10424-f8ad-7d7d-a828-4d3460a3ad1c",
+          "passed": 12,
+          "report": "raw/chromium/desktop-chromium/report.json.gz",
+          "uncompressed_sha256": "2dbf6e2e44b7d4181d761a70b52bfb2f88cd53f904016adefa9732da3bcfca2d"
+        },
+        {
+          "group": "mobile",
+          "runner": "tester-army/e2e",
+          "run_id": "01a10426-9338-7e31-bc2b-df11a10afc00",
+          "passed": 6,
+          "report": "raw/chromium/mobile-chromium/report.json.gz",
+          "uncompressed_sha256": "7ebd2591a0d7e5a713d00f006ecca93f7b3d7db7853b78fb172cbad9b20d6a3c"
+        },
+        {
+          "group": "database",
+          "runner": "tester-army/e2e",
+          "run_id": "01a10426-b9e5-751a-9946-db2ff7b8acda",
+          "passed": 1,
+          "report": "raw/chromium/database/report.json.gz",
+          "uncompressed_sha256": "ed6f464cc36277f9f4acb4cf2eeeaf9cf45d5a89e72888ebe0acb378aac48c25"
+        },
+        {
+          "group": "desktop/test:e2e",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 38,
+          "report": "raw/chromium/playwright-desktop-chromium-test-e2e.json.gz",
+          "uncompressed_sha256": "426855f0edc5d9d09efe5c5712f2fe31cfd836f3447e538cc2c953bbb5f64081"
+        },
+        {
+          "group": "mobile/test:e2e",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 4,
+          "report": "raw/chromium/playwright-mobile-chromium-test-e2e.json.gz",
+          "uncompressed_sha256": "2a2b0642e724c5ef9d0dad6a9975f5e6a0837d26ace5389acf3d9da3285cbf76"
+        },
+        {
+          "group": "mobile/test:e2e:hosted",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 3,
+          "report": "raw/chromium/playwright-mobile-chromium-test-e2e-hosted.json.gz",
+          "uncompressed_sha256": "67457e15358be2a87eed368993782f118b2335181913f3ecccfb0351d8ec4399"
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "passed": 79,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "receipt": "raw/webkit/verification.json",
+      "reports": [
+        {
+          "group": "backend",
+          "runner": "tester-army/e2e",
+          "run_id": "01a1042b-298d-74b0-9120-f30aa4fe8650",
+          "passed": 15,
+          "report": "raw/webkit/backend/report.json.gz",
+          "uncompressed_sha256": "5954a46b9ae78b4b72b6e7f6ccd528de2d4c92c5a0f549cce3e004c7cdb110ee"
+        },
+        {
+          "group": "desktop",
+          "runner": "tester-army/e2e",
+          "run_id": "01a1042b-675a-7e01-b101-73e685ff46f1",
+          "passed": 12,
+          "report": "raw/webkit/desktop-webkit/report.json.gz",
+          "uncompressed_sha256": "0bfd9985620543c4d02c2bf6e049ab4e7fc405928eb022ddc7feb885af5a711f"
+        },
+        {
+          "group": "mobile",
+          "runner": "tester-army/e2e",
+          "run_id": "01a1042d-490e-7710-9711-9b8e86a9075b",
+          "passed": 6,
+          "report": "raw/webkit/mobile-webkit/report.json.gz",
+          "uncompressed_sha256": "6a8fd6d5c60a66b34e954c687f5bbab440a6a2590e08a175fb23740b0d99d088"
+        },
+        {
+          "group": "database",
+          "runner": "tester-army/e2e",
+          "run_id": "01a1042d-84ac-79a8-b14f-0ad51bf17679",
+          "passed": 1,
+          "report": "raw/webkit/database/report.json.gz",
+          "uncompressed_sha256": "cafc9249ac0d377f455a05ee7a8f30ba8d68ad039219edcbf285fb2bf114a5be"
+        },
+        {
+          "group": "desktop/test:e2e",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 38,
+          "report": "raw/webkit/playwright-desktop-webkit-test-e2e.json.gz",
+          "uncompressed_sha256": "94e64f5e580519be713f9162bb0ffc1e55cc4338898fdd49380c1ac23d3384e2"
+        },
+        {
+          "group": "mobile/test:e2e",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 4,
+          "report": "raw/webkit/playwright-mobile-webkit-test-e2e.json.gz",
+          "uncompressed_sha256": "0390376e3f34cf910fa255fc1f5f11ca50598ad03f483775744e17f117797b56"
+        },
+        {
+          "group": "mobile/test:e2e:hosted",
+          "runner": "Playwright",
+          "run_id": null,
+          "passed": 3,
+          "report": "raw/webkit/playwright-mobile-webkit-test-e2e-hosted.json.gz",
+          "uncompressed_sha256": "a1d6e27de06b3aa39f8451a0b2fafcbd22239415a4f64656ec59418274ea4a22"
+        }
+      ]
+    }
+  ],
+  "regressions": {
+    "core_python311": {
+      "total": 583,
+      "passed": 582,
+      "skipped_opt_in": 1
+    },
+    "codex_opt_in_local_contract": {
+      "passed": 1
+    },
+    "desktop_unit": {
+      "passed": 710,
+      "files": 92
+    },
+    "mobile_unit": {
+      "passed": 502,
+      "files": 37
+    },
+    "gateway_postgres_subtests_per_run": {
+      "passed": 100,
+      "skipped": 0
+    },
+    "report_guard_tests": {
+      "passed": 2
+    },
+    "sdk_types": "passed",
+    "desktop_build": "passed",
+    "mobile_preview_and_hosted_security_builds": "passed",
+    "runner_dependency_advisories": 0
+  },
+  "native": {
+    "ios_collected": 4,
+    "android_collected": 4,
+    "executed": 0,
+    "status": "not_verified",
+    "prerequisites": "built preview app plus dedicated simulator/device and native tooling"
+  },
+  "remaining_gates": [
+    "native/physical devices and audio",
+    "deployed Auth/Storage/gateway operations",
+    "signed clean-machine release",
+    "assistive technology acceptance",
+    "live-provider author evaluation"
+  ],
+  "historical_transport_failure": {
+    "cause": "unconfirmed local event-module connection loss before chat.send",
+    "reproduced": false,
+    "recovery_regression": "e2e/tests/desktop-chat-module-recovery.e2e.ts",
+    "automatic_retries": 0,
+    "happy_path_test_unchanged": true
+  }
+}

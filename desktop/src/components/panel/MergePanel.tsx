@@ -17,6 +17,7 @@ import type {
   MergeConflictScan,
   ProposalRecord,
 } from "../../types";
+import { defaultProvider } from "../../providerSelection";
 
 const sectionStyle: React.CSSProperties = {
   padding: "var(--space-4)",
@@ -34,6 +35,7 @@ export function MergePanel() {
     refreshScenes,
     refreshProposals,
     refreshCodex,
+    runtimeConfig,
     setError,
     setMessage,
   } = useWorkspace();
@@ -196,15 +198,18 @@ export function MergePanel() {
         <div style={{ fontWeight: 600 }}>Storylines</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
           {branches.map((b) => (
-            <span
+            <button
+              type="button"
               key={b.name}
               className={`badge${b.current ? " badge--applied" : ""}`}
-              style={{ cursor: b.current ? "default" : "pointer" }}
+              style={{ cursor: b.current ? "default" : "pointer", minHeight: 40, font: "inherit" }}
+              disabled={b.current || Boolean(busyAction)}
+              aria-label={b.current ? `${b.name} (current)` : `Switch to ${b.name}`}
               title={b.current ? "Current storyline" : `Switch to ${b.name}`}
               onClick={() => !b.current && handleSwitch(b.name)}
             >
               {b.current ? `${b.name} (current)` : b.name}
-            </span>
+            </button>
           ))}
           {branches.length === 0 && (
             <span style={{ color: "var(--text-tertiary)", fontSize: "var(--text-sm)" }}>
@@ -215,6 +220,7 @@ export function MergePanel() {
         <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <input
             className="input"
+            aria-label="New storyline name"
             placeholder="New storyline name (e.g. what-if-betrayal)"
             value={newBranchName}
             onChange={(e) => setNewBranchName(e.target.value)}
@@ -251,6 +257,7 @@ export function MergePanel() {
         <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
           <select
             className="input"
+            aria-label="Storyline to merge"
             value={effectiveHead}
             onChange={(e) => setHead(e.target.value)}
           >
@@ -264,7 +271,7 @@ export function MergePanel() {
               ))}
           </select>
           <span style={{ color: "var(--text-tertiary)" }}>into</span>
-          <select className="input" value={effectiveBase} onChange={(e) => setBase(e.target.value)}>
+          <select className="input" aria-label="Destination storyline" value={effectiveBase} onChange={(e) => setBase(e.target.value)}>
             {branches.map((b) => (
               <option key={b.name} value={b.name}>
                 {b.name}

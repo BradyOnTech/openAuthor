@@ -239,7 +239,7 @@ export function WelcomeScreen() {
       zIndex: 500,
     }}>
       {(error || message) && (
-        <div style={{
+        <div role={error ? "alert" : "status"} style={{
           position: "fixed",
           top: "var(--space-2)",
           left: "50%",
@@ -252,9 +252,12 @@ export function WelcomeScreen() {
           background: error ? "var(--danger-subtle)" : "var(--success-subtle)",
           border: `1px solid ${error ? "var(--danger-border)" : "var(--success-border)"}`,
           color: error ? "var(--danger-text)" : "var(--success-text)",
-          cursor: "pointer",
-        }} onClick={() => { setError(""); setMessage(""); }}>
-          {error || message}
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--space-3)",
+        }}>
+          <span tabIndex={0} aria-label="Notification details">{error || message}</span>
+          <button type="button" className="btn btn--ghost btn--sm" aria-label="Dismiss notification" onClick={() => { setError(""); setMessage(""); }}>×</button>
         </div>
       )}
 

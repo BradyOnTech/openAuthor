@@ -1,0 +1,46 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/AppV2.workflow.test.tsx (40 tests | 1 failed | 39 skipped) 414ms
+     × restores the selected Plan document with its Plan activity rail after restarting the shell 413ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > restores the selected Plan document with its Plan activity rail after restarting the shell
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/AppV2.workflow.test.tsx:1315:106
+    1313|     expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("ari…
+    1314|     expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    1315|     expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)…
+       |                                                                                                          ^
+    1316|     expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Sh…
+    1317|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/AppV2.workflow.test.tsx > active V2 author workflow > restores the selected Plan document with its Plan activity rail after restarting the shell
+AssertionError: expected 'true' to be 'false' // Object.is equality
+
+Expected: "false"
+Received: "true"
+
+ ❯ src/AppV2.workflow.test.tsx:1316:112
+    1314|     expect(screen.getByRole("tab", { name: /^Opening/ })).toBeTruthy();
+    1315|     expect.soft(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)…
+    1316|     expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Sh…
+       |                                                                                                                ^
+    1317|   });
+    1318|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 39 skipped (40)
+   Start at  20:34:14
+   Duration  2.02s (transform 899ms, setup 0ms, import 1.22s, tests 414ms, environment 311ms)
+

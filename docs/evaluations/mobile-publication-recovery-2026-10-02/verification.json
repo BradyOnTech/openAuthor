@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-02",
+  "evidence_kind": "public transport with deterministic injected HTTP/Storage commit boundary; no deployed API or provider",
+  "external_provider_calls": 0,
+  "author_data": false,
+  "read_only_sql_contract": {
+    "publication": "supabase/migrations/20260830190000_mobile_encrypted_sync.sql:1085\u20131107",
+    "readback": "supabase/migrations/20260830190000_mobile_encrypted_sync.sql:1111\u20131138",
+    "guarantee": "Immutable publication idempotency compares 14 fields. Readback is key-envelope-filtered and newest 100 only; absent is not proof of rollback."
+  },
+  "red_before_green": {
+    "minimized_public_path": {
+      "failed": 1,
+      "skipped_existing": 9,
+      "symptom": "Metadata committed, reply lost, subsequent DELETE set stored ciphertext to null."
+    },
+    "outcome_matrix": {
+      "failed": 26,
+      "passed": 8
+    }
+  },
+  "checks": [
+    {
+      "command": "cd desktop && npm test -- src/mobileSync/supabaseTransport.test.ts -t 'preserves committed snapshot ciphertext'",
+      "passed": 1,
+      "skipped_other_cases": 42
+    },
+    {
+      "command": "cd desktop && npm test -- src/mobileSync/supabaseTransport.test.ts src/mobileSync/mobileSync.test.ts src/mobileSync/hostedCoordinator.test.ts src/mobileSync/projectKeyProvisioning.test.ts",
+      "passed": 61,
+      "files": 4
+    },
+    {
+      "command": "cd desktop && npm exec -- tsc --noEmit",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check -- desktop/src/mobileSync/supabaseTransport.ts desktop/src/mobileSync/supabaseTransport.test.ts",
+      "exit_code": 0
+    }
+  ],
+  "verified": [
+    "Lost metadata reply never deletes successfully uploaded ciphertext",
+    "No publication retry or DELETE after publication errors, including 403",
+    "One current-token bounded readback can positively acknowledge an exact matching committed publication",
+    "All 14 immutable metadata/device fields must match successful body or positive readback",
+    "Lost successful body, invalid shape, duplicate readback identity, 500, network/unavailable readback remain safe",
+    "Negative readback does not enable deletion when another publisher commits later",
+    "Storage 409 only acknowledges existing exact publication through readback; mismatch/absent remains safe",
+    "Content-free failure distinguishes rejected request from unknown persisted state",
+    "Existing encryption/hash/nonce/bucket/path checks and upload x-upsert=false remain",
+    "No debug instrumentation remains",
+    "Exact object or strictly singleton composite row array acknowledges normal successful publication without extra readback; zero/multiple/null/nested arrays require reconciliation"
+  ],
+  "remaining": [
+    "Conservative orphan ciphertext retention until trusted lifecycle cleanup exists",
+    "No fresh Storage object download/hash verified by positive metadata readback",
+    "Actual target PostgREST/bucket/RLS acceptance is unobserved. Documented exact object and singleton-row array formats are covered locally; malformed shapes fail safely.",
+    "Complete orphan-inclusive cleanup lifecycle with deletion freeze/finalization",
+    "Continuous voice policy and trusted/lost-device UX unchanged"
+  ],
+  "source_sha256": {
+    "desktop/src/mobileSync/supabaseTransport.ts": "83d3a1da71b2617c8710252746705c3651fa4e03501a68f54f09d099ace5f0fe",
+    "desktop/src/mobileSync/supabaseTransport.test.ts": "1565a8ba07daa558b770eaf68250276bcbd920039b257e4cf8d9857d5ad7f510",
+    "supabase/migrations/20260830190000_mobile_encrypted_sync.sql": "666b04535c1f5d4f3a4d2dcba543ecb3dcf06dd012e2d6770f5f05a6a2f7a8ea"
+  },
+  "primary_reference": {
+    "url": "https://docs.postgrest.org/en/v16/references/api/resource_representation.html#singular-or-plural",
+    "reviewed": "2026-10-02",
+    "fact": "PostgREST defaults JSON resource results to arrays, even for one row; singular representation is requested separately."
+  }
+}

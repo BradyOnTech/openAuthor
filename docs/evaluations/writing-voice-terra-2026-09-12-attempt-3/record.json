@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "status": "partial",
+  "failed_cases": [
+    {
+      "id": "action-interrupted-choice",
+      "title": "The brake",
+      "error": "The provider's prose assessment quoted text absent from its candidate."
+    }
+  ],
+  "generations": [
+    {
+      "run_id": "gen-5d755349390c",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14147,
+      "output_tokens": 584,
+      "latency_ms": 13637,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-954bb8e3b7e7",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 10208,
+      "output_tokens": 599,
+      "latency_ms": 13607,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-a8424aa768f4",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14150,
+      "output_tokens": 626,
+      "latency_ms": 14295,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-05bc1075ba8b",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14167,
+      "output_tokens": 585,
+      "latency_ms": 13568,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-83ed2670d5e0",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 14170,
+      "output_tokens": 573,
+      "latency_ms": 13960,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-c4eeb23074fa",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 10436,
+      "output_tokens": 605,
+      "latency_ms": 13737,
+      "provider_attempts": 1,
+      "error_category": ""
+    },
+    {
+      "run_id": "gen-beb8dca9f99a",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 10404,
+      "output_tokens": 713,
+      "latency_ms": 15610,
+      "provider_attempts": 1,
+      "error_category": ""
+    }
+  ],
+  "provider": "openai-codex",
+  "requested_model": "gpt-5.6-terra",
+  "seed": 41,
+  "corpus_sha256": "cba260ffcc68b0bb05c9a6c343dcffd9fc7fbb911f71665e5d503c781dbccba4",
+  "implementation_sha256": "e051b781e6e2919022e09f77cf26cf7ea24873993d22158ddc7c8640791df503",
+  "generation_calls": 7,
+  "candidate_count": 6,
+  "changed_candidates": 6,
+  "quality_verdict": "Not assessed. Human comparison required; local baselines are not creative generation.",
+  "criteria": {
+    "voice_fit": "Does the prose serve the selected Writing Voice without becoming mechanical?",
+    "readability": "Is the action and meaning clear, with purposeful rhythm?",
+    "emotional_effect": "Is the intended feeling earned through this scene?",
+    "character_distinction": "Does dialogue and perception belong to this character?",
+    "consistency": "Are facts, POV, tense, knowledge and protected details preserved?"
+  },
+  "cases": [
+    {
+      "id": "dialogue-withheld-knowledge",
+      "title": "The spare key",
+      "mode": "dialogue",
+      "pov": "Ivo",
+      "source": "Mara set a cup in front of Ivo. It was the one with the chipped blue rim, which meant she expected him to stay. He kept his coat on.\n\n\"Did you open the storehouse?\" she asked.\n\n\"I opened a great many things yesterday. A drawer. An unfortunate letter.\"\n\nShe turned the cup until the chip faced him.\n\nIvo had hidden the spare key inside the bellows before dawn. She had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to remember whether the bellows had been hanging straight.\n\n\"The storehouse,\" she said.\n\n\"No.\"\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where the key was. He wished she would ask almost anything except whether he had seen her brother.\n\n\"Then somebody used yours.\"\n\nHe lifted the cup with his left hand. The tea touched the sore place behind his teeth. He put it down without drinking.\n\n\"You could change the lock.\"\n\n\"I could.\"\n\nShe took off her own coat and hung it beside the door. Ivo looked at the empty peg beside it. He had come to return a favor and leave. Now she was taking bread from the tin, cutting two uneven slices as if the question had been settled.",
+      "instruction": "Sharpen subtext and distinguish the speakers without adding a confession, accusation or revelation. Keep the close-third Ivo viewpoint and past tense.",
+      "facts": [
+        "Ivo hid the spare key in the bellows before dawn.",
+        "Ivo did not open the storehouse; he gave the other key to Mara's brother.",
+        "Ivo is unsure what Mara knows. Her private knowledge is not established.",
+        "The conversation ends without confession or discovery of the spare key."
+      ],
+      "quality_questions": [
+        "Can the speakers be distinguished without adding ornate dialogue tags?",
+        "Do the cup and bread carry pressure rather than become explained symbols?",
+        "Is Ivo's uncertainty maintained without narrating Mara's thoughts?",
+        "Does humor function as evasion rather than an interchangeable quip?"
+      ],
+      "protected_phrases": [
+        "I could."
+      ],
+      "markers": [
+        "Ivo",
+        "Mara",
+        "bellows",
+        "brother"
+      ],
+      "calibration_error": "Saying Mara knows the key is in the bellows violates viewpoint and invents knowledge, although all lexical markers still pass.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "Mara set a cup before Ivo: the one with the chipped blue rim. She expected him to stay.\n\nHe kept his coat on.\n\n\u201cDid you open the storehouse?\u201d she asked.\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup so the chip faced him.\n\nBefore dawn, Ivo had hidden the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to recall whether the bellows had hung straight when he left.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. He had given the other key to her brother. He wished she would ask where it was. He wished she would ask almost anything but whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe lifted the cup with his left hand. The tea found the sore place behind his teeth. He set it down without drinking.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nMara took off her coat and hung it beside the door. Ivo looked at the empty peg next to it. He had come to return a favor and leave. Now she took bread from the tin and cut two uneven slices, as if the matter had already been decided.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-c4eeb23074fa",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        },
+        {
+          "label": "B",
+          "text": "Mara set a cup before Ivo: the one with the chipped blue rim. She expected him to stay. He kept his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup until the chip faced him.\n\nBefore dawn, he had tucked the spare key inside the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to call up the bellows as he had left it\u2014whether it had hung straight, whether the leather mouth had gaped.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. The other key he had given to her brother. He wished she would ask where it had gone. He wished she would ask nearly anything but whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe lifted the cup with his left hand. The tea found the sore place behind his teeth. He set it down again, untouched.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her own coat and hung it beside the door. Ivo looked at the empty peg next to it. He had come to return a favor and leave. Now Mara was taking bread from the tin, cutting two uneven slices, as though the matter had settled itself around them.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-05bc1075ba8b",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        },
+        {
+          "label": "C",
+          "text": "Mara set a cup before Ivo: chipped blue rim. Stay, it said. He left his coat on.\n\n\u201cDid you open the storehouse?\u201d\n\n\u201cI opened a great many things yesterday. A drawer. An unfortunate letter.\u201d\n\nShe turned the cup until the chip faced him.\n\nBefore dawn, he had tucked the spare key into the bellows. Mara had seen him leave the quay, but the workshop window had been dark. Unless she had come back. He tried to picture the bellows as he\u2019d left it\u2014hanging straight, or nearly.\n\n\u201cThe storehouse,\u201d she said.\n\n\u201cNo.\u201d\n\nThat, at least, was true. The other key was with her brother. He wanted her to ask where it had gone. He wanted her to ask anything but whether he had seen her brother.\n\n\u201cThen somebody used yours.\u201d\n\nHe picked up the cup with his left hand. Tea found the sore place behind his teeth. He set it down untouched.\n\n\u201cYou could change the lock.\u201d\n\n\u201cI could.\u201d\n\nShe removed her own coat and hung it by the door. Ivo looked at the bare peg beside it. He had come to return a favor and leave. Now Mara took bread from the tin and cut two uneven slices, as though the matter had already decided itself.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-83ed2670d5e0",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "introspection-restrained-control",
+      "title": "The second place",
+      "mode": "introspection",
+      "pov": "Mara",
+      "source": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip, and she worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could put it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. She listened through the pause now.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb across it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covering it with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+      "instruction": "Explore the selected voice with restraint. This is a preservation control: keep strong passages if changing them would weaken the emotional turn. Do not resolve the disappearance or explain every gesture.",
+      "facts": [
+        "Mara's father has been missing for eleven days; his death is not established.",
+        "Market day was yesterday; the letter has not been sealed.",
+        "The bowl is marked but not cracked.",
+        "She crosses out the first line without replacing it; one bowl remains covered on the table."
+      ],
+      "quality_questions": [
+        "Does the shift from expectation toward uncertainty remain legible without naming a stage of grief?",
+        "Are the repeated washing and checking purposeful rather than removed as redundancy?",
+        "Does the final restraint survive the selected direction?",
+        "Is imagery grounded in Mara's immediate objects instead of generic darkness, storms or shattered hearts?"
+      ],
+      "protected_phrases": [
+        "Not a crack."
+      ],
+      "markers": [
+        "Mara",
+        "eleven",
+        "letter",
+        "bowl"
+      ],
+      "calibration_error": "A faster version is not automatically better. Declaring the father dead would invalidate the scene even if the prose were elegant.",
+      "candidates": [
+        {
+          "label": "A",
+          "text": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip. She worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could set it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. Now she listened through the pause.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb across it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covered with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+          "direction": "Kinetic, emotionally intense",
+          "generation_id": "gen-954bb8e3b7e7",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        },
+        {
+          "label": "B",
+          "text": "Mara washed the second bowl before she remembered there was no need. She had rinsed it already. A grain of rice held beneath the lip, and she worried it loose with her thumbnail.\n\nHer father had been missing for eleven days. Missing was the harbor office\u2019s word. It took up less room than the others. She could set it beside a date on a form and still leave space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell: one note, a pause, another. For years she had complained that her father came home between the notes, just when she was trying to count. Now she listened into the pause.\n\nThe bowl slipped. She caught it against the sink, leaving a white mark in the glaze. Not a crack. She passed her thumb over it twice.\n\nThe letter to his sister lay on the table, unsealed. Its first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. One went into the cupboard. The other she left on the table beneath a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+          "direction": "Quiet and atmospheric",
+          "generation_id": "gen-5d755349390c",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        },
+        {
+          "label": "C",
+          "text": "Mara washed the second bowl before she remembered there was no need. She had already rinsed it once. A grain of rice clung beneath the lip, and she worked at it with her thumbnail until it came free.\n\nHer father had been missing for eleven days. Missing was the word the harbor office used. It took up less room than the others. She could put it beside a date on a form and still have space for his height, the color of his coat, the scar she had never noticed until the clerk asked.\n\nOutside, someone tested the evening bell. One note, a pause, another. For years she had complained that her father came home between the notes, when she was trying to count. She listened through the pause now.\n\nThe bowl slipped. She caught it against the side of the sink, leaving a white mark on the glaze. Not a crack. She ran her thumb over it twice.\n\nOn the table lay the letter she had written to his sister. She had not sealed it. The first line said he would be back by market day. Market day had been yesterday.\n\nMara dried both bowls. She put one in the cupboard and left the other on the table, covered with a clean cloth. Then she crossed out the first line of the letter. She did not write another.",
+          "direction": "Clear, structured epic",
+          "generation_id": "gen-a8424aa768f4",
+          "checks": {
+            "unchanged_baseline": false,
+            "within_preview_limit": true,
+            "missing_protected_phrases": [],
+            "missing_lexical_markers": [],
+            "semantic_fidelity": "requires human review",
+            "literary_quality": "requires human review"
+          },
+          "author_review": {
+            "ratings": {},
+            "notes": ""
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-02",
+  "environment": "Playwright Chromium headless shell 1217; real Python core in disposable local project; deterministic local provider.",
+  "fixture": {
+    "title": "The Borrowed Coast",
+    "scene_count": 64,
+    "chapter_count": 16,
+    "word_count": 36476,
+    "surrounding_prose": "synthetic"
+  },
+  "browser": {
+    "test": "desktop/e2e/long-book-journey.spec.ts",
+    "result": "passed",
+    "seconds": 32.4,
+    "log": "/private/tmp/openauthor-long-memory-browser-2026-10-02.log"
+  },
+  "other_assigned_journeys": [
+    {
+      "test": "desktop/e2e/book-journey.spec.ts",
+      "result": "passed",
+      "seconds": 21.2,
+      "log": "/private/tmp/openauthor-chat-book-browser-2026-10-02.log"
+    },
+    {
+      "test": "desktop/e2e/change-set-navigation.spec.ts",
+      "result": "passed",
+      "seconds": 3.7,
+      "log": "/private/tmp/openauthor-chat-book-browser-2026-10-02.log"
+    }
+  ],
+  "verified": [
+    "Both coordinated scene tasks require separate reviewed edit-plan and scene-draft context confirmation; generating proposals does not alter scenes.",
+    "One member violating protected text blocks application of the entire group and leaves both originals unchanged.",
+    "Reviewed apply creates one shared Revision, and undo restores both original scenes in one shared Undo Revision while updating the open review.",
+    "Fresh retrieval finds three distant source scenes, reviewed Canon permission includes the opted-in deadline fact, and context stays within budget.",
+    "Continuity evidence quotation is visible before exact source navigation; original scene prose is loaded.",
+    "Author continuity decision and notes persist across reload; deferred revision prefill retains caution and author notes without generating a proposal.",
+    "Fact withdrawal removes the diagnostic without changing prose; invented supporting text is refused and correction draft remains with fact still rejected.",
+    "Exact current source quotation permits explicit reaccept; all 64 scenes match their originals after the complete journey."
+  ],
+  "screenshots": [
+    "coordinated-book-review.png",
+    "coordinated-book-undo.png",
+    "distant-evidence-in-chat.png",
+    "continuity-evidence-review.png",
+    "correctable-canon.png"
+  ],
+  "limitations": [
+    "One synthetic workload verifies mechanics, not editorial judgment across novels.",
+    "No external provider, packaged-native lifecycle, release signing or notarization was exercised."
+  ],
+  "screenshots_captured_in": "Full desktop rerun: /private/tmp/openauthor-desktop-browser-reviewed-2026-10-02.log",
+  "visual_inspection": {
+    "result": "inspected",
+    "viewport": "1400x900",
+    "observations": [
+      "Continuity evidence appears side by side in the selected finding; reviewed group apply/undo status and protected phrases are visible.",
+      "Canon overview screenshot records the corrected view; the second fact card is below the captured viewport."
+    ]
+  }
+}

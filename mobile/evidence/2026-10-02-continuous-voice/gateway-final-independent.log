@@ -1,0 +1,140 @@
+TAP version 13
+# (node:13108) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: posts multipart SDP and server session policy to the Realtime calls endpoint
+ok 1 - posts multipart SDP and server session policy to the Realtime calls endpoint
+  ---
+  duration_ms: 13.973958
+  type: 'test'
+  ...
+# Subtest: maps upstream failures to safe metadata without response bodies or API keys
+ok 2 - maps upstream failures to safe metadata without response bodies or API keys
+  ---
+  duration_ms: 0.863625
+  type: 'test'
+  ...
+# Subtest: cancels and rejects an oversized upstream SDP answer
+ok 3 - cancels and rejects an oversized upstream SDP answer
+  ---
+  duration_ms: 0.573292
+  type: 'test'
+  ...
+# Subtest: replaces network exceptions without leaking the API key or transport details
+ok 4 - replaces network exceptions without leaking the API key or transport details
+  ---
+  duration_ms: 0.244042
+  type: 'test'
+  ...
+# Subtest: hangs up a validated gateway-created call on the same trusted origin
+ok 5 - hangs up a validated gateway-created call on the same trusted origin
+  ---
+  duration_ms: 0.335583
+  type: 'test'
+  ...
+# Subtest: refuses unsafe or missing call Locations and terminates a known call after malformed SDP
+ok 6 - refuses unsafe or missing call Locations and terminates a known call after malformed SDP
+  ---
+  duration_ms: 1.573833
+  type: 'test'
+  ...
+# Subtest: never treats failed hangup as confirmed termination or follows a redirect
+ok 7 - never treats failed hangup as confirmed termination or follows a redirect
+  ---
+  duration_ms: 0.182458
+  type: 'test'
+  ...
+# (node:13109) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: durably registers before answer delivery and expires without any client renewal
+ok 8 - durably registers before answer delivery and expires without any client renewal
+  ---
+  duration_ms: 840.7135
+  type: 'test'
+  ...
+# Subtest: polling terminates revoked authority and bounds a blocked hosted authorization
+ok 9 - polling terminates revoked authority and bounds a blocked hosted authorization
+  ---
+  duration_ms: 642.687959
+  type: 'test'
+  ...
+# Subtest: same-session JWT refresh renews the short lease but cannot extend hard duration
+ok 10 - same-session JWT refresh renews the short lease but cannot extend hard duration
+  ---
+  duration_ms: 65.828459
+  type: 'test'
+  ...
+# Subtest: every allowed nondefault lease produces a mobile-compatible renewal hint
+ok 11 - every allowed nondefault lease produces a mobile-compatible renewal hint
+  ---
+  duration_ms: 40.647667
+  type: 'test'
+  ...
+# Subtest: expired verification and revocation during creation never deliver an unmonitored answer
+ok 12 - expired verification and revocation during creation never deliver an unmonitored answer
+  ---
+  duration_ms: 32.142584
+  type: 'test'
+  ...
+# Subtest: concurrent renewal results cannot overwrite a newer lease or resurrect after expiry
+ok 13 - concurrent renewal results cannot overwrite a newer lease or resurrect after expiry
+  ---
+  duration_ms: 538.581792
+  type: 'test'
+  ...
+# Subtest: JWT expiry and hard duration independently terminate despite attempted renewal
+ok 14 - JWT expiry and hard duration independently terminate despite attempted renewal
+  ---
+  duration_ms: 1150.52125
+  type: 'test'
+  ...
+# Subtest: late renewal cannot revive a stopped call or race its final acknowledgement
+ok 15 - late renewal cannot revive a stopped call or race its final acknowledgement
+  ---
+  duration_ms: 535.139083
+  type: 'test'
+  ...
+# Subtest: failed hangup remains durable, blocks new issuance and retries to confirmed teardown
+ok 16 - failed hangup remains durable, blocks new issuance and retries to confirmed teardown
+  ---
+  duration_ms: 66.392292
+  type: 'test'
+  ...
+# Subtest: delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+ok 17 - delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+  ---
+  duration_ms: 239.629958
+  type: 'test'
+  ...
+# Subtest: a managed late-call retry owns cleanup without an extra upstream hangup losing acknowledgement
+ok 18 - a managed late-call retry owns cleanup without an extra upstream hangup losing acknowledgement
+  ---
+  duration_ms: 234.963917
+  type: 'test'
+  ...
+# Subtest: exclusive journal ownership and failed startup cleanup cannot be bypassed
+ok 19 - exclusive journal ownership and failed startup cleanup cannot be bypassed
+  ---
+  duration_ms: 37.165041
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL retains the call and restart issues hangup before becoming ready
+ok 20 - actual SIGKILL retains the call and restart issues hangup before becoming ready
+  ---
+  duration_ms: 149.213916
+  type: 'test'
+  ...
+# Subtest: real HTTP issuance, owned renewal and stop use leases without spending another quota
+ok 21 - real HTTP issuance, owned renewal and stop use leases without spending another quota
+  ---
+  duration_ms: 30.304167
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4716.636708

@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-03T14:55:40.023585+00:00",
+  "source_commit": "98f4d4a67c32941b23beb5d7bcdaf1d6e901bfbe",
+  "base_commit": "1048aa4a3b3633150aaf220eaf3601475e9a2aac",
+  "source_scope": "Final113 pre-verification source capture and final17 independent hashes match the exact17 Braces source commit; separate Makefile marker-gate repair excluded.",
+  "phases": {
+    "initial_focused": {
+      "passed": 262,
+      "failed": 5,
+      "total": 267,
+      "exit_code": 1,
+      "scope": "Three real null-child controlled-validation failures plus two fixture issues: resolver LICENSE filename and JavaScript replacement-string substitution. Original failures preserved."
+    },
+    "intermediate_focused": {
+      "passed": 271,
+      "failed": 1,
+      "total": 272,
+      "exit_code": 1,
+      "scope": "Metro internal-package export restriction in the test import; library/guard pins already final. Corrected with exact installed absolute path."
+    },
+    "final_root": {
+      "focused_tests": 272,
+      "focused_files": 4,
+      "full_mobile_tests": 501,
+      "mobile_files": 37,
+      "failed": 0,
+      "skipped": 0,
+      "source_inputs": 113,
+      "selected_source_files": 17,
+      "typecheck": "passed",
+      "guard_check": "passed",
+      "forge_check": "passed",
+      "offline_preflight": "passed",
+      "normal_exports": [
+        "web",
+        "ios",
+        "android"
+      ]
+    },
+    "fresh_mobile_only": {
+      "install": "passed",
+      "install_packages": 561,
+      "lifecycle": "enabled: Forge apply then Braces apply",
+      "focused_tests": 272,
+      "focused_files": 4,
+      "failed": 0,
+      "skipped": 0,
+      "guard_checks": "passed",
+      "offline_preflight": "passed",
+      "typecheck": "failed",
+      "typecheck_exit_code": 2,
+      "typecheck_reason": "Sibling contracts package runtime source was staged, but its Ajv dependencies were not installed; TS2307 ajv/dist/2020.js. This fixture preparation gap is retained, not relabeled a passing clean build.",
+      "bootstrap_followup": "Completed as separate sibling contracts phase, retaining the original failed typecheck.",
+      "source_files": 143
+    },
+    "fresh_contracts_bootstrap": {
+      "contracts_install": "passed",
+      "contracts_lock_sha256": "d6735b93b790f471fc00c92afbe8ebd49d29166093e737ac7f9c30c38f195279",
+      "source_files": 144,
+      "typecheck": "passed",
+      "forge_apply": "idempotent applied:false",
+      "braces_apply": "idempotent applied:[]",
+      "normal_exports": [
+        "web",
+        "ios",
+        "android"
+      ],
+      "scope": "Actual sibling contracts npm ci after original mobile CI; subsequent mobile typecheck and idempotent guards plus all-platform export pass. This is the recorded bootstrap order, not a claim that make install-js ran or a fresh root-wide installation was executed."
+    }
+  },
+  "reviews": {
+    "standards_open": 0,
+    "spec_open": 0,
+    "standards_static_relationship_checks": 314,
+    "method": "Independent static source/archive review; no modules/probes/tests executed by reviewers.",
+    "reviewed_sources_match_final_capture": true
+  },
+  "installed_braces_target_sha256": {
+    "node_modules/braces/index.js": "b82b51b7c5443cd7409210ed8302bc62950806773fcc45becea4e5b8bcbb1054",
+    "node_modules/braces/lib/compile.js": "2f430fc0ebdbc84cec0359200c7e4b8f34c60d65adca8db9e55a0fc3e75489f4",
+    "node_modules/braces/lib/constants.js": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+    "node_modules/braces/lib/expand.js": "3da8d9f03935c033924f838d26fead4559b29de6ab6853400d6417cf448a20e5",
+    "node_modules/braces/lib/parse.js": "44cfe1fb6d65c5b6f955141033b3e27fbf27e711052b6f1ca28df59be6c66ceb",
+    "node_modules/braces/lib/stringify.js": "ffd77ad26d2f4cd9e145f587fb4943156c1b2161e30e45d8228cc2e29d219cba",
+    "node_modules/braces/lib/utils.js": "d724f2684b9008fc47abf1f800e16d74ddc4b96d0938d57467915e2e531b0f13",
+    "node_modules/resolve-workspace-root/build/index.js": "c92afd8c2444be75f1e03c006a612158c27a3253d64a320da90ef58029f3c12e",
+    "node_modules/expo-doctor/build/index.js": "a6c3a6458e2934e880d283629e42d2f9e13cda1dd3f8383cd3bff56a2b8bbe9f"
+  },
+  "forge_rsa_sha256": "3dde91b05b403e062e0c7c8e97e63e79337c651db59f18fa7c836d18b15697d5",
+  "defensive_scope": "Known local standalone Braces3.0.3 and seven modules in resolver2.0.1/Doctor1.20.4; bounded plain-data parser/AST stack paths, iterative queue flatten/append, hard10000-character ceiling and known-byte per-file recovery. Arbitrary getters/proxies/custom transforms/combinatorial output and other resource bounds are outside scope.",
+  "exports": {
+    "default_export": [
+      "web"
+    ],
+    "explicit_all_platform_export": [
+      "web",
+      "ios",
+      "android"
+    ],
+    "raw_artifacts_retained": true,
+    "maps_inspected": {
+      "default": 1,
+      "all_platform": 3,
+      "fresh_all_platform": 3
+    },
+    "maps_retained": false,
+    "source_map_replay": false,
+    "fresh_all_platform_export": [
+      "web",
+      "ios",
+      "android"
+    ],
+    "byte_identical_reproducibility_claimed": false
+  },
+  "provenance_limits": [
+    "Initial root apply receipt/log was overwritten by final apply under the same filename. Current retained apply receipt is final post-repair; first focused failures, first-candidate reset and initial sources preserve the earlier state without reconstructing its lost invocation.",
+    "Driver source is captured after later command additions; invocation receipts/logs bind each observed execution. Current helper source is not claimed identical to every historical invocation.",
+    "Prepared fresh run-plan/cache receipt labels say not executed; they are historical preparation facts superseded only by separate actual invocation receipts. Original metadata remains unchanged.",
+    "Private npm cache tarballs and the complete node_modules tree are omitted. Integrity records retain identities/hashes; this packet cannot independently rerun npm ci from retained bytes alone.",
+    "Original mobile-only failed typecheck is retained; separate exact sibling-lock bootstrap and retry/typecheck/idempotence/export receipts supersede only its preparation gap."
+  ],
+  "provider_calls": 0,
+  "deployed_mutations": 0,
+  "signing_or_system_changes": 0,
+  "fresh_dependency_audit_run": false,
+  "raw_dependency_audit_gate": "open",
+  "browser_global_cloud_remediated": false,
+  "native_artifact_certified": false,
+  "actual_devices_tested": false,
+  "release_certified": false,
+  "author_quality_claimed": false,
+  "all_six_priorities": "in_progress",
+  "primary_references": [
+    "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+    "https://github.com/micromatch/braces/pull/72/files"
+  ],
+  "completed_at": "2026-10-03T15:04:49.476708+00:00",
+  "public_dependency_fetches": 2,
+  "public_dependency_fetch_scope": "One exact mobile-lock brace-expansion5.0.12 and one exact contracts-lock fast-uri3.1.8 tarball; verified download receipts retained, tarballs/cache bytes omitted.",
+  "repository_marker_checks": {
+    "original_exit_code": 0,
+    "original_valid": false,
+    "original_reason": "rg was absent from private PATH; existing negated rg Makefile command returned success despite stderr. Never counted as a passing gate.",
+    "with_rg_exit_code": 0,
+    "with_rg_valid": true,
+    "scope": "Explicit corrected-PATH marker scan before separate Makefile repair. That repair is outside the17 Braces sources and not accepted by this packet."
+  },
+  "author_preservation": "Root post-validation and exact17 source commit receipts record four unchanged author artifact hashes; raw author data is not copied."
+}

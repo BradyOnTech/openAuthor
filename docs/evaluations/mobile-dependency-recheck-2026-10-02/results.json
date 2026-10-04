@@ -1,0 +1,38 @@
+{
+  "started_at": "2026-10-02T20:10:42.395207+00:00",
+  "finished_at": "2026-10-02T20:10:46.683164+00:00",
+  "baseline_commit": "118641f6d651144740ce52a6fa8f0befbea92ff7",
+  "input_sha256": {
+    "mobile/package.json": "63f9c9b11eaa2eb5cbe6ca3ec7cef4fe42c71b7c99f92af41cac4432005cdd3f",
+    "mobile/package-lock.json": "4b48f2bb2d1d49df09b77ffc77a2d093b4b7793c9cd33847a458fd399e202968",
+    "mobile/scripts/build-security.mjs": "4760488b9e03241c3a14ed51f823d98c1fad18d450c7ccaa02ec6632e557e3fc"
+  },
+  "input_hashes_unchanged": true,
+  "audit_command": "npm audit --json --registry=https://registry.npmjs.org --userconfig=<empty-file> --globalconfig=<different-empty-file> --cache=<disposable-directory>",
+  "audit_exit_code": 1,
+  "audit_vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 5,
+    "critical": 0,
+    "total": 5
+  },
+  "advisory": "GHSA-86w9-cpqp-85rv",
+  "sources": [
+    "https://api.github.com/advisories/GHSA-86w9-cpqp-85rv",
+    "https://api.github.com/repos/digitalbazaar/forge/pulls/1152",
+    "https://registry.npmjs.org/node-forge/latest",
+    "https://registry.npmjs.org/@expo%2Fcode-signing-certificates/latest",
+    "https://registry.npmjs.org/@expo%2Fcli/latest",
+    "https://registry.npmjs.org/expo/latest"
+  ],
+  "scope": "Public npm/GitHub metadata, integrity-verified public package source inspection, and read-only audit of the existing installed mobile tree. No dependency, cryptographic implementation, signing setting, deployment, account or provider operation was changed.",
+  "artifact_sha256": {
+    "installed-tree.json": "9b11464d3c39087052df794c9f952f354646adae8d464b47263f2e4a3e3c4c24",
+    "npm-audit.json": "c5ed6b267cc61fa2ec196b090fccc5448d3d28d66ff8cfe73ce55a693d1d33e0",
+    "upstream-packages.json": "46ee70a205d2a50a5510e77197276c8dee8b03634e34e0f7e7296e7f84b2b5d7",
+    "advisory.json": "73bcf25239a94b367493107ccc79e4181a4b41d6899a3d63035b69bdf9d72952",
+    "upstream-pull.json": "264810ed985560cbb8623eef17aabd278d1f969d89bf15088ea0c4e850f1f7da"
+  }
+}

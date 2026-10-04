@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-02",
+  "release_certified": false,
+  "checks": [
+    {
+      "check": "default_core",
+      "discovered": 530,
+      "passed": 529,
+      "skipped": 1,
+      "log_sha256": "c53bf31b30c01ef4954c43af26d3d0865dead43e703b9b0ba3c51548645f7760",
+      "development_log_path": "/private/tmp/openauthor-core-verified-new-gaps-2026-10-02.log"
+    },
+    {
+      "check": "actual_packaged_core",
+      "discovered": 530,
+      "passed": 530,
+      "skipped": 0,
+      "log_sha256": "5b0b58b0a52a0cf53fff683314a72df1bc1219d1be72fa89cb8fd84c73b3d20b",
+      "development_log_path": "/private/tmp/openauthor-packaged-core-new-gaps-2026-10-02.log"
+    },
+    {
+      "check": "desktop_unit",
+      "discovered": 406,
+      "passed": 406,
+      "skipped": 0,
+      "log_sha256": "85ec568ef9f4dde435e790c1e91fd82196ea6704f9c3df5a61fc99aa163b9784",
+      "development_log_path": "/private/tmp/openauthor-chat-isolation-full-final-2026-10-02.log"
+    },
+    {
+      "check": "desktop_full_browser",
+      "discovered": 17,
+      "passed": 17,
+      "skipped": 0,
+      "log_sha256": "44f2ad8c57eed22ba14f30d68542785901e54815db61455cb22022d627cbc1c3",
+      "development_log_path": "/private/tmp/openauthor-desktop-browser-final-new-gaps-2026-10-02.log"
+    }
+  ],
+  "other_evidence": [
+    "../caret-focus-2026-10-02/verification.json",
+    "../../../mobile/evidence/2026-10-02-reading-capture-recovery/verification.json",
+    "dependencies.json",
+    "native-gui.json",
+    "native-bundle.json",
+    "../connected-voice-2026-10-02/verification.json",
+    "../memory-values-2026-10-02/verification.json",
+    "../outline-roundtrip-2026-10-02/roundtrip.json",
+    "../chat-recovery-2026-10-02/verification.json",
+    "../voice-source-metadata-2026-10-02/verification.json",
+    "forge-reachability.json"
+  ],
+  "limits": [
+    "No author acceptance",
+    "No physical-phone execution",
+    "No signed/clean-machine distribution or upgrade",
+    "No full native accessibility certification"
+  ],
+  "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+  "native_bundle": {
+    "source_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+    "core_source_sha256": "72ebdffd1ef1a341d1bebcff6a8595078d3b765dca810828cf4e1d1235841a6f",
+    "application_sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52",
+    "recovery_stages": 5,
+    "verification": "passed exact-source, packaged recovery and pinned Codex runtime contract"
+  }
+}

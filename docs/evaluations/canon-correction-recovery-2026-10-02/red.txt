@@ -1,0 +1,50 @@
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx (2 tests | 2 failed) 78ms
+   × recovers an unfinished assertion correction after the editor is closed and recreated 68ms
+   × journals the original edit version and refuses a stale recovered correction until explicit review 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/editor/CanonFactCard.recovery.test.tsx > recovers an unfinished assertion correction after the editor is closed and recreated
+AssertionError: expected 'blue' to be 'green' // Object.is equality
+
+Expected: "green"
+Received: "blue"
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx:26:73
+     24|   const reopen = screen.queryByRole("button", { name: "Correct or with…
+     25|   if (reopen) fireEvent.click(reopen);
+     26|   expect((screen.getByLabelText("Value") as HTMLTextAreaElement).value…
+       |                                                                         ^
+     27| });
+     28|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/editor/CanonFactCard.recovery.test.tsx > journals the original edit version and refuses a stale recovered correction until explicit review
+AssertionError: expected undefined to be 'loaded-version' // Object.is equality
+
+- Expected:
+"loaded-version"
+
++ Received:
+undefined
+
+ ❯ src/components/editor/CanonFactCard.recovery.test.tsx:33:86
+     31|   fireEvent.click(screen.getByRole("button", { name: "Correct or withd…
+     32|   fireEvent.change(screen.getByLabelText("Value"), { target: { value: …
+     33|   expect(JSON.parse(window.localStorage.getItem(key()) || "null")?.bas…
+       |                                                                                      ^
+     34|   view.unmount();
+     35|   const current = { ...fact, value: "red", edit_version: "external-ver…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  09:50:39
+   Duration  663ms (transform 58ms, setup 0ms, import 162ms, tests 78ms, environment 333ms)
+

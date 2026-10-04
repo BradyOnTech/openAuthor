@@ -1,0 +1,82 @@
+{
+  "evidence_kind": "local_revalidation_of_retained_live_response",
+  "provider_call": false,
+  "original_results": "/private/tmp/openauthor-connected-editorial-live-reviewed-2026-10-02/results.json",
+  "original_raw_feedback_sha256": "d481bcf79a80d613f67b94a32c6fff0db45d6a28309d6aa147a1c908d2cb3fe3",
+  "original_review_findings": 0,
+  "original_review_warnings": [
+    "Finding 1 was withheld: a quote does not match the supplied source and offsets. Its original response remains available for inspection."
+  ],
+  "revalidated_review": {
+    "schema_version": 1,
+    "focus": "character-knowledge",
+    "scope": "chapter",
+    "kind": "editorial",
+    "summary": "The passage largely preserves the restrained style and deliberate uncertainty, but Leah’s unexplained certainty about the key creates a character-knowledge break.",
+    "strengths": [
+      "Leah’s literal questions and Jonas’s dry evasiveness remain clearly differentiated.",
+      "The receipt, ledger, and practical handling of wet objects carry tension without overexplaining emotion.",
+      "The ending preserves uncertainty about both the crossing and the unopened ledger."
+    ],
+    "limitations": [
+      "No approved canon or intended explanation for Leah’s knowledge is supplied. If her impossible knowledge is deliberately supernatural or otherwise established outside these scenes, that context could change the assessment.",
+      "Quoted passages were checked against the reviewed source. Interpretations and suggested corrections still require author judgment."
+    ],
+    "findings": [
+      {
+        "id": "finding-1",
+        "category": "character-knowledge",
+        "title": "Leah knows the key’s location without an available source",
+        "observation": "Scene 2 establishes that Jonas concealed the key only after Leah left, while scene 3 explicitly rules out her seeing the act, discussing it, or receiving a message. Her certainty therefore exceeds the knowledge available to her in the supplied chapter.",
+        "uncertainty": "This may be an intentional mystery, but the supplied material provides no perceptible clue, inference, or established ability that distinguishes deliberate uncanny knowledge from a continuity error.",
+        "suggestion": "Either provide the smallest observable basis for Leah’s inference or frame the location as an unexplained impression rather than confirmed knowledge. If the certainty is intentionally impossible, add a minimal cue that the rupture is deliberate without explaining it.",
+        "evidence": [
+          {
+            "scene_id": "scene-0002",
+            "start": 134,
+            "end": 238,
+            "excerpt": "He waited until her steps had passed the office window, then slid the key beneath the brass paperweight.",
+            "anchor_text": "He waited until her steps had passed the office window, then slid the key beneath the brass paperweight."
+          },
+          {
+            "scene_id": "scene-0003",
+            "start": 527,
+            "end": 707,
+            "excerpt": "She had not seen Jonas hide the copper key, had not spoken with him about it and had received no message. Nonetheless, she knew that the copper key was under the brass paperweight.",
+            "anchor_text": "She had not seen Jonas hide the copper key, had not spoken with him about it and had received no message. Nonetheless, she knew that the copper key was under the brass paperweight."
+          }
+        ]
+      }
+    ],
+    "warnings": [
+      "Finding 1, passage 2: provider offsets 526–706 were corrected to 527–707 in scene-0003 using its unique exact quote in the supplied reviewed source. The original response remains available for inspection."
+    ],
+    "sources": [
+      {
+        "scene_id": "scene-0001",
+        "title": "The closed office",
+        "start": 0,
+        "end": 2098
+      },
+      {
+        "scene_id": "scene-0002",
+        "title": "The paperweight",
+        "start": 0,
+        "end": 1719
+      },
+      {
+        "scene_id": "scene-0003",
+        "title": "The return",
+        "start": 0,
+        "end": 1916
+      }
+    ]
+  },
+  "literary_quality": "unassessed",
+  "author_review": "not_observed",
+  "source_sha256": {
+    "openauthor/editorial_review.py": "9f4f92b96e77ad8daa249b854dddf48b0655ba287fa29e4b7b2b813c57d4131b",
+    "tests/test_editorial_review.py": "d8ca401c9f9b1fd788b615f7489c00d42488b22bc21fe9a218d4eb9c26071e8c",
+    "tests/fixtures/editorial_offset_provider_response.txt": "d481bcf79a80d613f67b94a32c6fff0db45d6a28309d6aa147a1c908d2cb3fe3"
+  }
+}

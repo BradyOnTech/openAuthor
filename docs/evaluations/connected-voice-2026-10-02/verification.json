@@ -1,0 +1,70 @@
+{
+  "evidence_kind": "fresh_synthetic_connected_chapter",
+  "chapter_words": 949,
+  "selected_words": 146,
+  "provider_calls": 3,
+  "runs": [
+    {
+      "run_id": "gen-684914aa9d4f",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "requested_model": "codex-recommended",
+      "resolved_model": "gpt-5.6-sol",
+      "input_tokens": 3756,
+      "output_tokens": 682,
+      "latency_ms": 19495,
+      "provider_attempts": 1,
+      "estimated_cost_usd": 0.0
+    },
+    {
+      "run_id": "gen-4bc4303dddc5",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "requested_model": "codex-recommended",
+      "resolved_model": "gpt-5.6-sol",
+      "input_tokens": 3718,
+      "output_tokens": 1464,
+      "latency_ms": 40142,
+      "provider_attempts": 1,
+      "estimated_cost_usd": 0.0
+    },
+    {
+      "run_id": "gen-032a92c488be",
+      "status": "succeeded",
+      "provider": "openai-codex",
+      "requested_model": "codex-recommended",
+      "resolved_model": "gpt-5.6-sol",
+      "input_tokens": 4034,
+      "output_tokens": 611,
+      "latency_ms": 18751,
+      "provider_attempts": 1,
+      "estimated_cost_usd": 0.0
+    }
+  ],
+  "source_unchanged": true,
+  "human_author_review": "not_observed",
+  "profile_approval": "synthetic evaluator action; human author approval not observed",
+  "profile_version_defect": "Completed analysis saved as freshness unknown because source_digests retained empty normalized map. Freshly captured digest fields are now aligned; same completed response repaired locally. No repeated provider analysis.",
+  "regression": {
+    "command": "python3 -m unittest tests.test_writing_voice tests.test_selection_voice tests.test_style_profile_module -v",
+    "result": "42 passed",
+    "red_failures": 3
+  },
+  "assistant_assessment": {
+    "initial_alternatives": "require_revision",
+    "shared_failure": "Both introduce uncertainty about Ivo personally leaving, while only boat departure is uncertain in the chapter.",
+    "direction_2_failure": "Pinned but not broken introduces symbolic explanation contrary to the instruction.",
+    "retained_strengths": [
+      "Practical questions and dry qualification remain distinct.",
+      "The letter stays unopened and knowledge withheld.",
+      "The original reach, interruption and unresolved ending remain."
+    ],
+    "provider_self_review": "Exact citations verify; the consistency self-review overlooks the departure shift."
+  },
+  "refinement": {
+    "status": "not_run_approval_pending",
+    "reason": "Automatic approval review rejected fourth call beyond three-call authorization.",
+    "feedback": "refinement-feedback.txt"
+  },
+  "release_certified": false
+}

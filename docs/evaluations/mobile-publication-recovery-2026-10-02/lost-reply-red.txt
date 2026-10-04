@@ -1,0 +1,37 @@
+
+> openauthor-desktop@0.1.0 test
+> vitest run src/mobileSync/supabaseTransport.test.ts -t preserves committed snapshot ciphertext
+
+
+ RUN  v4.1.10 ~/Developer/openAuthor/desktop
+
+ ❯ src/mobileSync/supabaseTransport.test.ts (10 tests | 1 failed | 9 skipped) 118ms
+     × preserves committed snapshot ciphertext when the publication reply is lost 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mobileSync/supabaseTransport.test.ts > SupabaseMobileSyncTransport > preserves committed snapshot ciphertext when the publication reply is lost
+AssertionError: expected null to be 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobH…' // Object.is equality
+
+- Expected:
+"AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKA=="
+
++ Received:
+null
+
+ ❯ src/mobileSync/supabaseTransport.test.ts:454:30
+    452|     await transport.publishSnapshot(snapshot).catch(() => {});
+    453|     expect(published).toBe(true);
+    454|     expect(storedCiphertext).toBe(snapshot.ciphertext_base64);
+       |                              ^
+    455|     expect(fetchMock.mock.calls.filter(([, init]) => init?.method === …
+    456|     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  10:29:26
+   Duration  296ms (transform 110ms, setup 0ms, import 106ms, tests 118ms, environment 0ms)
+

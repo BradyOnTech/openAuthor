@@ -1,0 +1,471 @@
+waiting for server to start.... done
+server started
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:93: NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:102: NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:111: NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:120: NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:131: NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260225180000_project_registry_rbac.sql:135: NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830190000_mobile_encrypted_sync.sql:6: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+psql:~/Developer/openAuthor/supabase/migrations/20260830193000_mobile_encrypted_sync_storage.sql:99: NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+Existing encrypted-sync authorization SQL suite passed.
+Live Auth-session, workspace, project and key authority SQL checks passed.
+mobile_recovery_snapshot.sql: real PostgreSQL checks passed.
+mobile_project_deletion.sql: real PostgreSQL checks passed.
+PASS pre-freeze read committed uploader refused with SQLSTATE 42501
+PASS pre-freeze repeatable read uploader refused with SQLSTATE 25000
+PASS freeze waits for real in-flight shared write and includes its commit
+PASS queued owner deletion revalidates revoked owner after lock wait
+PASS queued owner deletion revalidates revoked Auth session after lock wait
+PASS queued recovery refuses changed project-version before envelope commit
+PASS queued recovery refuses changed device-key before envelope commit
+PASS two public preflight/rotation transactions serialize without lock-upgrade deadlock
+8/8 real PostgreSQL concurrency controls passed; no Storage backend purge claim.
+
+> openauthor-session-gateway@0.1.0 check
+> npm run typecheck && npm test && npm run build
+
+
+> openauthor-session-gateway@0.1.0 typecheck
+> tsc --noEmit
+
+
+> openauthor-session-gateway@0.1.0 test
+> node --experimental-strip-types --test --test-concurrency=1 test/*.test.ts
+
+TAP version 13
+# (node:19995) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: parses the minimal production environment with bounded server-owned defaults
+ok 1 - parses the minimal production environment with bounded server-owned defaults
+  ---
+  duration_ms: 1.407458
+  type: 'test'
+  ...
+# Subtest: fails closed for missing credentials and unsafe production configuration
+ok 2 - fails closed for missing credentials and unsafe production configuration
+  ---
+  duration_ms: 0.722084
+  type: 'test'
+  ...
+# Subtest: parses explicit safe policy and resource overrides
+ok 3 - parses explicit safe policy and resource overrides
+  ---
+  duration_ms: 0.130042
+  type: 'test'
+  ...
+# (node:19996) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: mobile Realtime tools match the device-local read/propose boundary
+ok 4 - mobile Realtime tools match the device-local read/propose boundary
+  ---
+  duration_ms: 0.581041
+  type: 'test'
+  ...
+# (node:19997) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: posts multipart SDP and server session policy to the Realtime calls endpoint
+ok 5 - posts multipart SDP and server session policy to the Realtime calls endpoint
+  ---
+  duration_ms: 11.406042
+  type: 'test'
+  ...
+# Subtest: maps upstream failures to safe metadata without response bodies or API keys
+ok 6 - maps upstream failures to safe metadata without response bodies or API keys
+  ---
+  duration_ms: 0.548459
+  type: 'test'
+  ...
+# Subtest: cancels and rejects an oversized upstream SDP answer
+ok 7 - cancels and rejects an oversized upstream SDP answer
+  ---
+  duration_ms: 0.482375
+  type: 'test'
+  ...
+# Subtest: replaces network exceptions without leaking the API key or transport details
+ok 8 - replaces network exceptions without leaking the API key or transport details
+  ---
+  duration_ms: 0.2115
+  type: 'test'
+  ...
+# Subtest: hangs up a validated gateway-created call on the same trusted origin
+ok 9 - hangs up a validated gateway-created call on the same trusted origin
+  ---
+  duration_ms: 0.29075
+  type: 'test'
+  ...
+# Subtest: refuses unsafe or missing call Locations and terminates a known call after malformed SDP
+ok 10 - refuses unsafe or missing call Locations and terminates a known call after malformed SDP
+  ---
+  duration_ms: 1.430125
+  type: 'test'
+  ...
+# Subtest: never treats failed hangup as confirmed termination or follows a redirect
+ok 11 - never treats failed hangup as confirmed termination or follows a redirect
+  ---
+  duration_ms: 0.159375
+  type: 'test'
+  ...
+# (node:19998) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: writes one content-free JSON line per audit event
+ok 12 - writes one content-free JSON line per audit event
+  ---
+  duration_ms: 0.678459
+  type: 'test'
+  ...
+# Subtest: starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
+ok 13 - starts the env-composed gateway and gracefully closes on SIGTERM or SIGINT
+  ---
+  duration_ms: 90.805
+  type: 'test'
+  ...
+# (node:19999) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real leased deletion RPCs reconcile orphan Storage metadata and stop at the independent verifier boundary
+ok 14 - real leased deletion RPCs reconcile orphan Storage metadata and stop at the independent verifier boundary
+  ---
+  duration_ms: 1046.811375
+  type: 'test'
+  ...
+# (node:20202) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: whole stable paginated subtree includes orphans, preserves adjacent books and stops before backing attestation
+ok 15 - whole stable paginated subtree includes orphans, preserves adjacent books and stops before backing attestation
+  ---
+  duration_ms: 138.742791
+  type: 'test'
+  ...
+# Subtest: unsafe, duplicate, foreign and malformed Storage lists never authorize a DELETE
+ok 16 - unsafe, duplicate, foreign and malformed Storage lists never authorize a DELETE
+  ---
+  duration_ms: 57.526334
+  type: 'test'
+  ...
+# Subtest: lost DELETE reply is reconciled by fresh listing and never blindly repeated
+ok 17 - lost DELETE reply is reconciled by fresh listing and never blindly repeated
+  ---
+  duration_ms: 48.948
+  type: 'test'
+  ...
+# Subtest: partial deletion retains immutable pending batch, reads it before retry and cannot mark completion
+ok 18 - partial deletion retains immutable pending batch, reads it before retry and cannot mark completion
+  ---
+  duration_ms: 89.856375
+  type: 'test'
+  ...
+# Subtest: unavailable readback retains pending intent and does not claim Storage empty
+ok 19 - unavailable readback retains pending intent and does not claim Storage empty
+  ---
+  duration_ms: 52.776292
+  type: 'test'
+  ...
+# Subtest: superseded lease after Storage response cannot acknowledge or advance the old job
+ok 20 - superseded lease after Storage response cannot acknowledge or advance the old job
+  ---
+  duration_ms: 61.489167
+  type: 'test'
+  ...
+# Subtest: failed durable acknowledgement resumes pending absent paths without another DELETE
+ok 21 - failed durable acknowledgement resumes pending absent paths without another DELETE
+  ---
+  duration_ms: 62.757166
+  type: 'test'
+  ...
+# Subtest: the trusted RPC adapter preserves exact lease/path arguments and cannot finalize
+ok 22 - the trusted RPC adapter preserves exact lease/path arguments and cannot finalize
+  ---
+  duration_ms: 91.5155
+  type: 'test'
+  ...
+# Subtest: negative Storage inventory cannot bypass the independent pending-path database check
+ok 23 - negative Storage inventory cannot bypass the independent pending-path database check
+  ---
+  duration_ms: 25.825875
+  type: 'test'
+  ...
+# Subtest: inventory bounds and malformed lease scope block before any destructive request
+ok 24 - inventory bounds and malformed lease scope block before any destructive request
+  ---
+  duration_ms: 23.38625
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL after durable prepare and after HTTP deletion resumes the same persisted batch
+ok 25 - actual SIGKILL after durable prepare and after HTTP deletion resumes the same persisted batch
+  ---
+  duration_ms: 398.847208
+  type: 'test'
+  ...
+# Subtest: HTTP timeouts and unsafe adapter configuration preserve the frozen job without leaking secrets
+ok 26 - HTTP timeouts and unsafe adapter configuration preserve the frozen job without leaking secrets
+  ---
+  duration_ms: 515.3585
+  type: 'test'
+  ...
+# Subtest: the actual isolated worker command drains confirmed batches and reports only metadata emptiness
+ok 27 - the actual isolated worker command drains confirmed batches and reports only metadata emptiness
+  ---
+  duration_ms: 199.401125
+  type: 'test'
+  ...
+# Subtest: the actual isolated command fails closed without printing configuration or private response text
+ok 28 - the actual isolated command fails closed without printing configuration or private response text
+  ---
+  duration_ms: 67.185334
+  type: 'test'
+  ...
+# Subtest: canonical SQL UUIDs beyond RFC versions 1–5 are accepted, while lease durations align with SQL
+ok 29 - canonical SQL UUIDs beyond RFC versions 1–5 are accepted, while lease durations align with SQL
+  ---
+  duration_ms: 9.028334
+  type: 'test'
+  ...
+# (node:20209) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: limits each opaque key and resets at the next window
+ok 30 - limits each opaque key and resets at the next window
+  ---
+  duration_ms: 0.632125
+  type: 'test'
+  ...
+# (node:20210) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: waits for shared quota before issuing and fails closed on uncertain shared commits
+ok 31 - waits for shared quota before issuing and fails closed on uncertain shared commits
+  ---
+  duration_ms: 47.701584
+  type: 'test'
+  ...
+# Subtest: rejects an internally inconsistent gateway policy at startup
+ok 32 - rejects an internally inconsistent gateway policy at startup
+  ---
+  duration_ms: 0.239458
+  type: 'test'
+  ...
+# Subtest: reports liveness without authentication or dependency access
+ok 33 - reports liveness without authentication or dependency access
+  ---
+  duration_ms: 2.615542
+  type: 'test'
+  ...
+# Subtest: rejects an unauthenticated session request before contacting OpenAI
+ok 34 - rejects an unauthenticated session request before contacting OpenAI
+  ---
+  duration_ms: 2.089084
+  type: 'test'
+  ...
+# Subtest: rejects a principal not authorized for the requested project and device
+ok 35 - rejects a principal not authorized for the requested project and device
+  ---
+  duration_ms: 2.975166
+  type: 'test'
+  ...
+# Subtest: rejects a request whose device differs from the verified JWT binding
+ok 36 - rejects a request whose device differs from the verified JWT binding
+  ---
+  duration_ms: 1.966459
+  type: 'test'
+  ...
+# Subtest: issues a mobile SDP answer with server-clamped Realtime policy
+ok 37 - issues a mobile SDP answer with server-clamped Realtime policy
+  ---
+  duration_ms: 2.05925
+  type: 'test'
+  ...
+# Subtest: rate limits session issuance before contacting OpenAI
+ok 38 - rate limits session issuance before contacting OpenAI
+  ---
+  duration_ms: 1.5285
+  type: 'test'
+  ...
+# Subtest: never leaks permanent credentials or raw upstream errors
+ok 39 - never leaks permanent credentials or raw upstream errors
+  ---
+  duration_ms: 4.877791
+  type: 'test'
+  ...
+# Subtest: rejects browser origins outside the allowlist before authentication
+ok 40 - rejects browser origins outside the allowlist before authentication
+  ---
+  duration_ms: 4.134041
+  type: 'test'
+  ...
+# Subtest: rejects oversized requests before authorization or upstream work
+ok 41 - rejects oversized requests before authorization or upstream work
+  ---
+  duration_ms: 1.333125
+  type: 'test'
+  ...
+# Subtest: rejects an SDP offer above the server-owned SDP limit
+ok 42 - rejects an SDP offer above the server-owned SDP limit
+  ---
+  duration_ms: 1.459916
+  type: 'test'
+  ...
+# Subtest: times out a stalled request body before authorization or upstream work
+ok 43 - times out a stalled request body before authorization or upstream work
+  ---
+  duration_ms: 29.365708
+  type: 'test'
+  ...
+# Subtest: contains audit-sink failures without failing or leaking a successful session
+ok 44 - contains audit-sink failures without failing or leaking a successful session
+  ---
+  duration_ms: 1.411417
+  type: 'test'
+  ...
+# Subtest: maps unexpected dependency failures to a structured content-free error
+ok 45 - maps unexpected dependency failures to a structured content-free error
+  ---
+  duration_ms: 1.202042
+  type: 'test'
+  ...
+# (node:20211) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: durably registers before answer delivery and expires without any client renewal
+ok 46 - durably registers before answer delivery and expires without any client renewal
+  ---
+  duration_ms: 839.749792
+  type: 'test'
+  ...
+# Subtest: polling terminates revoked authority and bounds a blocked hosted authorization
+ok 47 - polling terminates revoked authority and bounds a blocked hosted authorization
+  ---
+  duration_ms: 642.058708
+  type: 'test'
+  ...
+# Subtest: same-session JWT refresh renews the short lease but cannot extend hard duration
+ok 48 - same-session JWT refresh renews the short lease but cannot extend hard duration
+  ---
+  duration_ms: 66.71175
+  type: 'test'
+  ...
+# Subtest: every allowed nondefault lease produces a mobile-compatible renewal hint
+ok 49 - every allowed nondefault lease produces a mobile-compatible renewal hint
+  ---
+  duration_ms: 38.283667
+  type: 'test'
+  ...
+# Subtest: expired verification and revocation during creation never deliver an unmonitored answer
+ok 50 - expired verification and revocation during creation never deliver an unmonitored answer
+  ---
+  duration_ms: 28.015167
+  type: 'test'
+  ...
+# Subtest: concurrent renewal results cannot overwrite a newer lease or resurrect after expiry
+ok 51 - concurrent renewal results cannot overwrite a newer lease or resurrect after expiry
+  ---
+  duration_ms: 534.129084
+  type: 'test'
+  ...
+# Subtest: JWT expiry and hard duration independently terminate despite attempted renewal
+ok 52 - JWT expiry and hard duration independently terminate despite attempted renewal
+  ---
+  duration_ms: 1153.146084
+  type: 'test'
+  ...
+# Subtest: late renewal cannot revive a stopped call or race its final acknowledgement
+ok 53 - late renewal cannot revive a stopped call or race its final acknowledgement
+  ---
+  duration_ms: 530.1375
+  type: 'test'
+  ...
+# Subtest: failed hangup remains durable, blocks new issuance and retries to confirmed teardown
+ok 54 - failed hangup remains durable, blocks new issuance and retries to confirmed teardown
+  ---
+  duration_ms: 76.3205
+  type: 'test'
+  ...
+# Subtest: delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+ok 55 - delayed real HTTP creation headers and failed late hangup remain in the global issuance gate
+  ---
+  duration_ms: 238.62125
+  type: 'test'
+  ...
+# Subtest: a managed late-call retry owns cleanup without an extra upstream hangup losing acknowledgement
+ok 56 - a managed late-call retry owns cleanup without an extra upstream hangup losing acknowledgement
+  ---
+  duration_ms: 240.84525
+  type: 'test'
+  ...
+# Subtest: exclusive journal ownership and failed startup cleanup cannot be bypassed
+ok 57 - exclusive journal ownership and failed startup cleanup cannot be bypassed
+  ---
+  duration_ms: 38.333667
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL retains the call and restart issues hangup before becoming ready
+ok 58 - actual SIGKILL retains the call and restart issues hangup before becoming ready
+  ---
+  duration_ms: 170.854625
+  type: 'test'
+  ...
+# Subtest: real HTTP issuance, owned renewal and stop use leases without spending another quota
+ok 59 - real HTTP issuance, owned renewal and stop use leases without spending another quota
+  ---
+  duration_ms: 29.255459
+  type: 'test'
+  ...
+# (node:20216) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real SQL quota is shared atomically across gateway replicas/devices/books and survives database restart
+ok 60 - real SQL quota is shared atomically across gateway replicas/devices/books and survives database restart
+  ---
+  duration_ms: 800.406375
+  type: 'test'
+  ...
+# (node:20391) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: verifies a device-bound Supabase access token through JWKS
+ok 61 - verifies a device-bound Supabase access token through JWKS
+  ---
+  duration_ms: 66.202209
+  type: 'test'
+  ...
+# Subtest: fails closed before RPC for a different device and hides hosted failures
+ok 62 - fails closed before RPC for a different device and hides hosted failures
+  ---
+  duration_ms: 0.942333
+  type: 'test'
+  ...
+# Subtest: authorizes a JWT-bound device through the hosted Supabase RPC
+ok 63 - authorizes a JWT-bound device through the hosted Supabase RPC
+  ---
+  duration_ms: 0.433042
+  type: 'test'
+  ...
+# (node:20392) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: uses the verified device JWT and expected policy without client clocks or quota keys
+ok 64 - uses the verified device JWT and expected policy without client clocks or quota keys
+  ---
+  duration_ms: 11.323042
+  type: 'test'
+  ...
+# Subtest: returns shared retry timing and refuses a mismatched verified device before contact
+ok 65 - returns shared retry timing and refuses a mismatched verified device before contact
+  ---
+  duration_ms: 0.360833
+  type: 'test'
+  ...
+# Subtest: fails closed for missing migration, transport loss, malformed/oversized decisions without leaking bodies or tokens
+ok 66 - fails closed for missing migration, transport loss, malformed/oversized decisions without leaking bodies or tokens
+  ---
+  duration_ms: 2.819125
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9631.919209
+
+> openauthor-session-gateway@0.1.0 build
+> tsc -p tsconfig.build.json

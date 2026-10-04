@@ -1,0 +1,36 @@
+{
+  "baseline_commit": "4a1805d589da22232c8ec50458b05de1b939de6a",
+  "owned_files": {
+    "mobile/scripts/build-security.mjs": "175c5510595add3440ef71b3f284db442122352370a3f3170b13ab3beb286c74",
+    "mobile/test/buildSecurity.test.mjs": "79ceee1fa739dea02c1b883eeeb25ada68920a65672fdb5a210cd20cafae8d54"
+  },
+  "implemented": "App export boundary rejects Braces, Micromatch, resolve-workspace-root and expo-doctor source modules, including compiled embedded copies, nested source-map sections, Windows paths and sourceRoot resolution. It permits Picomatch, brace-expansion, the harmless CLI Metro loader and similarly named application sources. Reports list both advisory IDs and keep dependency_audit_gate open.",
+  "focused_verification": {
+    "red": {"tests": 25, "passed": 14, "failed": 11, "exit_code": 1, "record": "containment-red.json"},
+    "green": {"tests": 25, "passed": 25, "failed": 0, "exit_code": 0, "record": "containment-green.json"}
+  },
+  "normal_export": {"record": "export-acceptance.json", "report": "all-platform-build.json", "exit_code": 0, "platforms": ["web", "ios", "android"], "maps_inspected": 3, "input_files": 93, "installed_files": 26518, "input_and_installed_file_hashes_unchanged": true},
+  "secondary_observational_export": {"record": "observed-export-acceptance.json", "report": "observed-all-platform-build.json", "exit_code": 0, "platforms": ["web", "ios", "android"], "maps_inspected": 3, "maps_retained_before_real_unlink": 3, "observer": "retain-maps.cjs", "does_not_replace_normal_export": true, "claim_of_identical_artifacts_between_export_runs": false},
+  "installed_dependency_paths": [
+    "expo@57.0.18 -> @expo/cli@57.0.20 -> @expo/metro-file-map@57.0.2 -> micromatch@4.0.8 -> braces@3.0.3",
+    "expo@57.0.18 -> @expo/metro@56.0.2 -> metro-file-map@0.84.5 -> micromatch@4.0.8 -> braces@3.0.3 (same hoisted packages)"
+  ],
+  "inspected_caller_reachability": {
+    "metro_watchers": "Both installed includedByGlob functions call micromatch.some, which uses Picomatch directly. Sixteen synthetic package-caller probes invoke zero Braces methods even with deeply nested input paths and patterns; direct micromatch.parse/braces/braceExpand controls invoke the Braces sentinel.",
+    "pattern_origin": "Watcher patterns are constructed from package.json, health-check prefix and configured extensions; filesystem relativePath is the match subject. These are build/development file-map callers rather than manuscript-text processors.",
+    "embedded_copies": "Installed resolve-workspace-root/build/index.js and expo-doctor/build/index.js contain embedded Micromatch/Braces code. Read-only Babel AST analysis shows each internal Micromatch module has one caller: workspace patterns read from package.json or pnpm-workspace.yaml, passed to the main Micromatch matching function, which uses Picomatch. No separately declared embedded Braces version was established.",
+    "limits": "Inspected source/caller paths and synthetic package calls only. No full network-facing dev-server request analysis or blanket developer-tooling safety claim. Importing Micromatch does not establish invocation of Braces' recursive walkers. Future tool/config/caller changes require new analysis."
+  },
+  "dependency_defect_reproduction": {"record": "results.json", "node": "22.17.0", "cases": 12, "uncaught_stack_range_errors": 12, "methods": ["default", "compile", "expand"], "nesting_depths": [3500, 4000, 4400, 4900], "scope": "Isolated dependency subprocesses below 10000 input characters; not a demonstrated author-facing exploit"},
+  "official_upstream": {"record": "upstream.json", "braces_latest": "3.0.3", "micromatch_latest": "4.0.8", "braces_patched_release_listed": false, "repair_pr": "https://github.com/micromatch/braces/pull/72", "repair_pr_state": "open", "repair_pr_merged": false, "repair_pr_head": "d0d575e55e74a4e0218e5248fafb79efc3e54ebb"},
+  "remedy_assessment": "No supported released repair established. A future supported patched Braces/parent release is preferable. A maintained, independently reviewed replacement/fork must cover both brace and parenthesis depth plus direct AST compile/expand/stringify entry points, preserve normal API behavior, and undergo compatibility, audit and bundle/native checks. A global Micromatch-to-Picomatch override is not API-compatible by default; npm's major stack downgrades and deletion/audit suppression are not accepted remedies.",
+  "dependency_audit_gate": "open",
+  "advisories": ["GHSA-86w9-cpqp-85rv", "GHSA-vfj7-8cjw-p6xm"],
+  "audits_suppressed": false,
+  "dependency_changes": false,
+  "package_installs": 0,
+  "live_provider_calls": 0,
+  "deployed_operations": 0,
+  "signing_credentials_used": false,
+  "limits": "Export containment does not patch either advisory, clear mandatory dependency remediation, certify exposed developer tooling, or establish signed/native/distributed-runtime security. Normal and secondary observed exports are separately identified. Broader mobile tests and independent code review belong to the root agent."
+}

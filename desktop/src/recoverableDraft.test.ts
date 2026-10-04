@@ -54,6 +54,34 @@ describe("recoverable author drafts", () => {
     expect(create().getSnapshot().value.text).toBe("Newer after reopening");
   });
 
+  it("does not downgrade an authoritative refresh when a guarded older save completes", () => {
+    const draft = create();
+    const submitted = { text: "Submitted" };
+    const current = { text: "A later saved update" };
+    draft.edit(submitted);
+    draft.acceptSaved(current);
+    const acknowledged = draft.saved(submitted, submitted, initial);
+    expect(draft.getSnapshot().latest).toEqual(current);
+    expect(draft.getSnapshot().base).toEqual(initial);
+    expect(draft.getSnapshot().value).toEqual(submitted);
+    expect(acknowledged).toBe(false);
+    expect(create().getSnapshot().value).toEqual(submitted);
+  });
+
+  it("does not overwrite a newer journal baseline reviewed in a reopened editor", () => {
+    const previous = create();
+    const submitted = { text: "Submitted" };
+    previous.edit(submitted);
+    const reopened = create();
+    const current = { text: "A later saved update" };
+    reopened.acceptSaved(current);
+    reopened.keepDraft();
+    reopened.edit({ text: "A new correction" });
+    expect(previous.saved(submitted, submitted, initial)).toBe(false);
+    expect(create().getSnapshot().base).toEqual(current);
+    expect(create().getSnapshot().value.text).toBe("A new correction");
+  });
+
   it("amends the newest journal when an asynchronous form action finishes", () => {
     const previous = create();
     previous.edit({ text: "Submitted" });

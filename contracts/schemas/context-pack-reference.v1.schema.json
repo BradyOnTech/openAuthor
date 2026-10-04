@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/context-pack-reference/v1",
+  "title": "openAuthor Context Pack Reference v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "pack_id", "project_id", "project_revision", "content_sha256"],
+  "properties": {
+    "schema": {"const": "openauthor.context-pack.reference"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "pack_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "content_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"}
+  }
+}

@@ -1,0 +1,13 @@
+Independent evidence/readiness audit: 0 material open findings after root corrections.
+
+Reviewed five readiness documents, both finalized packets and their verifier implementations. Current 36a4058 verification is accurately scoped to 13 source/test files, 537 initial and 538 final captured inputs, 583 discovered core tests (582 passed, one existing opt-in Codex contract skipped), 710 desktop tests in 92 files, TypeScript/Vite, four browser cases (two per engine), 25 mobile export guard tests and separate normal/observed exports. Both dependency advisories remain open.
+
+Both packet verifiers passed independently after editing stopped: Canon 61 sealed evidence files, 538 committed/current source inputs, 24 original plus six supplemental Memory files and 102 mobile handoff files; native 27 sealed files, 242 retained members, 64 packaged core modules, two GUI captures, eight baseline files and seven reachable Revisions. These checks establish retained integrity/correlations, not replay.
+
+Additional independent inspection compared all 64 archived native modules directly with Git a523097 bytes, inspected active apply/undo journals and stopped-worker raw byte membership (one changed scene each, three and one participating journal files respectively), verified current author-artifact hashes against retained guards, and read raw root logs. Three raw observed maps contain 849 Android, 851 iOS and 406 web sources without guarded signing/pattern modules; hashes correlate to the separate observed export. Normal export artifacts are not conflated with observed artifacts.
+
+Previous history prefixes and exact prior latest snapshots remain intact. Current machine summary counts match current source; older binary, keyboard, mobile/cloud/contracts/Rust and bundled-Python fields carry historical scope. Initial capture order is root-recorded without an invented timestamp; final capture timestamp precedes the retained browser start. Author hash evidence proves limited net equality, not every intermediate write.
+
+All six priorities remain in progress. No current 36a4058 native bundle, signing/notarization, clean-machine/upgrade, VoiceOver, physical power-loss, interrupted restore, fresh author quality/review burden, physical-device or deployment acceptance is certified. Root's native AX/screenshots are explicitly manual transcriptions with no archived native image files.
+
+Audit was read-only except this private report/manifest. No source/document edits, commits, UI actions, provider/network calls or acceptance replay. The current documentation-review field remains truthfully pending until root records this delivered result; a subsequent one-field update requires a final hash/delta check.

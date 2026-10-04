@@ -35,6 +35,54 @@ After the owner confirms configuration, inspect names only, run the signed workf
 
 Fresh GitHub runners verify packaged code, not a person's installation experience. Clean-machine checks must still download the signed artifact normally, pass Gatekeeper without bypassing warnings, launch the GUI, exercise synthetic writing/apply/undo/backup/recovery, and record machine architecture, OS version, build SHA, and results. An upgrade from a published signed release cannot be claimed before one exists.
 
+**October 2 local and CI hardening**
+
+The local identity check found zero valid signing identities. A read-only
+repository-secret-name query using the existing repository-owner credential
+returned no Actions secrets; it did not switch accounts or retrieve secret
+values. Apple signing/notarization configuration is still an owner-supplied gate.
+
+Unsigned packaging now installs both shared contracts and desktop dependencies
+from their lockfiles and runs on both native architectures. Signed packaging
+runs repository, core, shared-contract, desktop and native checks before building.
+The bundle verifier checks exact installed Python source against the reviewed
+checkout, application identity/version, and the architecture of the application,
+Python, Codex and embedded Git. Signed verification additionally requires a
+Developer ID Application authority, hardened runtime, a valid stapled notarization
+ticket and Gatekeeper acceptance. These requirements are configured checks;
+they have not been passed with Apple credentials in this checkout.
+
+The packaged engine recovery probe runs with system tools absent from PATH.
+It now kills real packaged-Python child processes with SIGKILL after a first
+scene, Revision HEAD and proposal write, immediately before the commit marker,
+and after the marker. The first normal read must restore exact original bytes
+or preserve a completed commit; coordinated undo must then restore the originals.
+This does not exercise WebView storage, GUI focus, microphone permission,
+Keychain access under a Developer ID identity or physical power loss.
+
+CI retains a per-architecture evidence JSON with the core source digest, commit,
+checkout-clean status, runtime manifests, binary hashes and architecture checks.
+Distributable archive/DMG SHA-256 files accompany those reports. A local dirty
+checkout's digest identifies its actual core bytes; its commit alone does not
+identify the uncommitted source. The report always leaves release certification
+false and manual acceptance gates unobserved.
+
+Before certifying either architecture, record the downloaded artifact's checksum,
+OS/architecture, build identity and observed outcomes for:
+
+- Normal Gatekeeper installation and first launch without developer tools.
+- Import, reviewed revision, partial acceptance, exact undo, Storyline navigation,
+  export, portable backup and restore through the packaged GUI.
+- Forced termination with unfinished writing and pending multi-file Changes;
+  restart must recover or expose an explicit comparison without losing new work.
+- VoiceOver and keyboard traversal, meaningful control names, focus restoration,
+  light/dark contrast, text scaling and error/recovery states.
+- An upgrade preserving projects, credentials and drafts from a previously
+  released signed version, when such a version exists.
+
+Store this evidence beside the CI report. Green build evidence alone does not
+turn these manual entries into passed results.
+
 **Sources**
 
 - [Apple Developer ID certificates](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/)

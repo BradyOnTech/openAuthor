@@ -205,8 +205,8 @@ export function useWorkspace(): WorkspaceState {
   return ctx;
 }
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const registry = useMemo(() => createProjectRegistryClient(), []);
+export function WorkspaceProvider({ children, registryMode = "auto" }: { children: ReactNode; registryMode?: "auto" | "local" }) {
+  const registry = useMemo(() => createProjectRegistryClient(registryMode), [registryMode]);
   const routeSelectionRef = useRef(routeProjectSelection());
   const legacyMigratedRef = useRef(false);
 
@@ -264,13 +264,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   activeWorkspaceIdRef.current = activeWorkspaceId;
   activeProjectIdRef.current = activeProjectId;
   workspacesRef.current = workspaces;
+  const projectSelectionRevision = useRef(0);
+  const projectExplicitlyClosed = useRef(false);
+  const beginProjectSelection = useCallback((closed = false) => {
+    routeSelectionRef.current = null;
+    projectExplicitlyClosed.current = closed;
+    return ++projectSelectionRevision.current;
+  }, []);
 
   const setActiveWorkspaceId = useCallback((workspaceId: string) => {
+    beginProjectSelection();
+    activeWorkspaceIdRef.current = workspaceId;
+    activeProjectIdRef.current = "";
     setActiveWorkspaceIdRaw(workspaceId);
     setActiveProjectIdRaw("");
     setProjectRootRaw("");
     setProjectFound(null);
-  }, [setActiveWorkspaceIdRaw, setActiveProjectIdRaw, setProjectRootRaw]);
+  }, [beginProjectSelection, setActiveWorkspaceIdRaw, setActiveProjectIdRaw, setProjectRootRaw]);
 
   const refreshScenes = useCallback(async () => {
     if (!projectRoot || sceneReadTarget.current.projectRoot !== projectRoot) return;
@@ -415,7 +425,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [activeProjectId, registry]);
 
-  const refreshWorkspaceData = useCallback(async (workspaceId: string) => {
+  const publishAutomaticProjectId = useCallback((projectId: string) => {
+    // Parallel startup reads must observe a selected route before React renders.
+    activeProjectIdRef.current = projectId;
+    setActiveProjectIdRaw(projectId);
+  }, [setActiveProjectIdRaw]);
+
+  const refreshWorkspaceData = useCallback(async (workspaceId: string, options: {
+    selectionRevision?: number;
+    selectProject?: boolean;
+  } = {}) => {
+    const selectionRevision = options.selectionRevision ?? projectSelectionRevision.current;
     if (!workspaceId) {
       setProjects([]);
       setMembers([]);
@@ -429,12 +449,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       ]);
       setProjects(projectRows);
       setMembers(memberRows);
+      if (options.selectProject === false
+          || selectionRevision !== projectSelectionRevision.current
+          || projectExplicitlyClosed.current) return;
 
       const routeSelection = routeSelectionRef.current;
       if (routeSelection) {
         const targetWorkspace = workspacesRef.current.find((row) => row.slug === routeSelection.workspaceSlug);
         if (targetWorkspace?.id === workspaceId && projectRows.some((row) => row.id === routeSelection.projectId)) {
-          setActiveProjectIdRaw(routeSelection.projectId);
+          publishAutomaticProjectId(routeSelection.projectId);
           routeSelectionRef.current = null;
           return;
         }
@@ -445,17 +468,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (userState?.activeProjectId && projectRows.some((row) => row.id === userState.activeProjectId)) {
-        setActiveProjectIdRaw(userState.activeProjectId);
+        publishAutomaticProjectId(userState.activeProjectId);
         return;
       }
       const firstActive = projectRows.find((row) => row.status === "active");
-      setActiveProjectIdRaw(firstActive?.id ?? "");
+      publishAutomaticProjectId(firstActive?.id ?? "");
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return;
       setError(`Failed to load workspace projects: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [registry, setActiveProjectIdRaw]);
+  }, [publishAutomaticProjectId, registry]);
 
   const refreshRegistry = useCallback(async () => {
+    const selectionRevision = projectSelectionRevision.current;
     try {
       let workspaceRows = await registry.listWorkspaces();
       if (workspaceRows.length === 0) {
@@ -468,6 +493,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       setWorkspaces(workspaceRows);
       workspacesRef.current = workspaceRows;
+      if (selectionRevision !== projectSelectionRevision.current) return;
       if (!workspaceRows.length) {
         setActiveWorkspaceIdRaw("");
         setProjects([]);
@@ -486,16 +512,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (nextWorkspace.id !== currentWorkspaceId) {
         setActiveWorkspaceIdRaw(nextWorkspace.id);
       }
-      await refreshWorkspaceData(nextWorkspace.id);
+      await refreshWorkspaceData(nextWorkspace.id, { selectionRevision });
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return;
       setError(`Failed to load workspaces: ${e instanceof Error ? e.message : String(e)}`);
     }
   }, [refreshWorkspaceData, registry, setActiveWorkspaceIdRaw]);
 
   const openProject = useCallback(async (projectId: string) => {
     if (!activeWorkspaceId || !projectId) return;
+    const selectionRevision = beginProjectSelection();
     try {
       await registry.openProject(activeWorkspaceId, projectId);
+      if (selectionRevision !== projectSelectionRevision.current) return;
+      activeProjectIdRef.current = projectId;
       setActiveProjectIdRaw(projectId);
       const workspace = workspaces.find((row) => row.id === activeWorkspaceId);
       if (workspace && typeof window !== "undefined") {
@@ -504,11 +534,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       setMessage("Project opened.");
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return;
       setError(`Failed to open project: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [activeWorkspaceId, registry, setActiveProjectIdRaw, workspaces]);
+  }, [activeWorkspaceId, beginProjectSelection, registry, setActiveProjectIdRaw, workspaces]);
 
   const closeProject = useCallback(() => {
+    beginProjectSelection(true);
+    activeProjectIdRef.current = "";
     setActiveProjectIdRaw("");
     setProjectRootRaw("");
     setProjectFound(null);
@@ -532,7 +565,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         window.history.replaceState({}, "", `/w/${encodeURIComponent(workspace.slug)}`);
       }
     }
-  }, [activeWorkspaceId, setActiveProjectIdRaw, setProjectRootRaw, workspaces]);
+  }, [activeWorkspaceId, beginProjectSelection, setActiveProjectIdRaw, setProjectRootRaw, workspaces]);
 
   const createAndOpenProject = useCallback(async (params: {
     name: string;
@@ -559,6 +592,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError("Save location is required.");
       return false;
     }
+    const selectionRevision = beginProjectSelection();
     setBusy(true);
     try {
       const hasTauri = typeof window !== "undefined" &&
@@ -591,7 +625,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       });
       setProjectBinding(row.id, resolvedRoot);
       await registry.openProject(activeWorkspaceId, row.id);
-      await refreshWorkspaceData(activeWorkspaceId);
+      await refreshWorkspaceData(activeWorkspaceId, { selectionRevision, selectProject: false });
+      if (selectionRevision !== projectSelectionRevision.current) return false;
+      activeProjectIdRef.current = row.id;
       setActiveProjectIdRaw(row.id);
       setProjectRootRaw(resolvedRoot);
       setProjectFound(hasTauri);
@@ -604,14 +640,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         : `Project '${trimmedName}' created. Open in the desktop app to scaffold local files.`);
       return true;
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return false;
       setError(`Failed to create project: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     } finally {
       setBusy(false);
     }
-  }, [activeWorkspaceId, refreshWorkspaceData, registry, setActiveProjectIdRaw, setProjectRootRaw, workspaces]);
+  }, [activeWorkspaceId, beginProjectSelection, refreshWorkspaceData, registry, setActiveProjectIdRaw, setProjectRootRaw, workspaces]);
 
-  const attachProjectRoot = useCallback(async (root: string) => {
+  const attachProjectRoot = useCallback(async (root: string, initialSelectionRevision?: number) => {
     if (!activeWorkspaceId) {
       setError("Select a workspace before attaching a local folder.");
       return false;
@@ -621,39 +658,57 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError("Provide a local project path.");
       return false;
     }
+    // Scaffold/import callers retain the intent that preceded initialization.
+    const selectionRevision = initialSelectionRevision ?? beginProjectSelection();
+    const isCurrentSelection = () => selectionRevision === projectSelectionRevision.current;
+    if (!isCurrentSelection()) return false;
     setBusy(true);
     try {
       const status = await getProjectStatus(trimmed);
+      if (!isCurrentSelection()) return false;
       if (!status.found) {
         throw new Error(`No openAuthor project found at '${status.project_root || trimmed}'.`);
       }
       const identity = await projectInspect(status.project_root);
-      let resolvedProjectId = activeProjectId;
-      if (!resolvedProjectId || resolvedProjectId !== identity.project_id) {
-        const existing = projects.find((row) => row.id === identity.project_id);
+      if (!isCurrentSelection()) return false;
+      const resolvedProjectId = identity.project_id;
+      if (activeProjectId !== resolvedProjectId) {
+        let existing = projects.find((row) => row.id === resolvedProjectId);
+        if (!existing) {
+          // A startup read may still be pending; missing cached rows are not
+          // evidence that an existing folder needs a new registry record.
+          const currentProjects = await registry.listProjects(activeWorkspaceId, { includeArchived: true });
+          if (!isCurrentSelection()) return false;
+          existing = currentProjects.find((row) => row.id === resolvedProjectId);
+        }
         if (!existing) {
           await registry.createProject({
             workspaceId: activeWorkspaceId,
-            projectId: identity.project_id,
+            projectId: resolvedProjectId,
             name: identity.name || "Imported Project",
             kind: "book",
             settings: {
-              linked_project_id: identity.project_id,
+              linked_project_id: resolvedProjectId,
             },
           });
-          await refreshWorkspaceData(activeWorkspaceId);
+          if (!isCurrentSelection()) return false;
+          await refreshWorkspaceData(activeWorkspaceId, { selectionRevision, selectProject: false });
+          if (!isCurrentSelection()) return false;
         }
-        await registry.openProject(activeWorkspaceId, identity.project_id);
-        setActiveProjectIdRaw(identity.project_id);
-        resolvedProjectId = identity.project_id;
+        await registry.openProject(activeWorkspaceId, resolvedProjectId);
+        if (!isCurrentSelection()) return false;
       }
       await projectEnsureId(status.project_root, resolvedProjectId);
+      if (!isCurrentSelection()) return false;
       setProjectBinding(resolvedProjectId, status.project_root);
+      activeProjectIdRef.current = resolvedProjectId;
+      setActiveProjectIdRaw(resolvedProjectId);
       setProjectRootRaw(status.project_root);
       setProjectFound(true);
       setMessage("Project folder attached.");
       return true;
     } catch (e) {
+      if (!isCurrentSelection()) return false;
       setProjectFound(false);
       setError(`Project attach failed: ${e instanceof Error ? e.message : String(e)}`);
       return false;
@@ -663,6 +718,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [
     activeProjectId,
     activeWorkspaceId,
+    beginProjectSelection,
     projects,
     refreshWorkspaceData,
     registry,
@@ -688,6 +744,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError("Provide a destination folder path.");
       return false;
     }
+    const selectionRevision = beginProjectSelection();
     const desiredProjectId = projectId?.trim() || activeProjectId || undefined;
     setBusy(true);
     try {
@@ -695,19 +752,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         name,
         projectId: desiredProjectId,
       });
-      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot);
+      if (selectionRevision !== projectSelectionRevision.current) return false;
+      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot, selectionRevision);
       if (!attached) {
         return false;
       }
       setMessage("Local project scaffold created and attached.");
       return true;
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return false;
       setError(`Project scaffold failed: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     } finally {
       setBusy(false);
     }
-  }, [activeProjectId, activeWorkspaceId, attachProjectRoot]);
+  }, [activeProjectId, activeWorkspaceId, attachProjectRoot, beginProjectSelection]);
 
   const importProjectArchive = useCallback(async (
     archivePath: string,
@@ -729,6 +788,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError("Provide a destination folder path.");
       return false;
     }
+    const selectionRevision = beginProjectSelection();
     const desiredProjectId = projectId?.trim() || activeProjectId || undefined;
     setBusy(true);
     try {
@@ -737,19 +797,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         projectId: desiredProjectId,
         fromZip: trimmedArchive,
       });
-      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot);
+      if (selectionRevision !== projectSelectionRevision.current) return false;
+      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot, selectionRevision);
       if (!attached) {
         return false;
       }
       setMessage(summarizeImportMessage(initialized, "archive"));
       return true;
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return false;
       setError(`Project import failed: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     } finally {
       setBusy(false);
     }
-  }, [activeProjectId, activeWorkspaceId, attachProjectRoot]);
+  }, [activeProjectId, activeWorkspaceId, attachProjectRoot, beginProjectSelection]);
 
   const importProjectFolder = useCallback(async (
     sourcePath: string,
@@ -771,6 +833,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError("Provide a destination folder path.");
       return false;
     }
+    const selectionRevision = beginProjectSelection();
     const desiredProjectId = projectId?.trim() || activeProjectId || undefined;
     setBusy(true);
     try {
@@ -779,19 +842,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         projectId: desiredProjectId,
         fromFolder: trimmedSource,
       });
-      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot);
+      if (selectionRevision !== projectSelectionRevision.current) return false;
+      const attached = await attachProjectRoot(initialized.project_root || trimmedRoot, selectionRevision);
       if (!attached) {
         return false;
       }
       setMessage(summarizeImportMessage(initialized, "folder"));
       return true;
     } catch (e) {
+      if (selectionRevision !== projectSelectionRevision.current) return false;
       setError(`Project folder import failed: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     } finally {
       setBusy(false);
     }
-  }, [activeProjectId, activeWorkspaceId, attachProjectRoot]);
+  }, [activeProjectId, activeWorkspaceId, attachProjectRoot, beginProjectSelection]);
 
   const createProjectRecord = useCallback(async (name: string): Promise<Project | null> => {
     if (!activeWorkspaceId) {
@@ -916,6 +981,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (legacyMigratedRef.current) return;
+    // Legacy migration belongs to startup. A rerender must not let it claim
+    // the revision of a newer explicit attachment, import or selection.
+    if (projectSelectionRevision.current !== 0) {
+      legacyMigratedRef.current = true;
+      return;
+    }
     if (activeProjectId) {
       legacyMigratedRef.current = true;
       return;
@@ -927,7 +998,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       legacyMigratedRef.current = true;
       return;
     }
+    const selectionRevision = projectSelectionRevision.current;
     let cancelled = false;
+    const isCurrentSelection = () => !cancelled
+      && selectionRevision === projectSelectionRevision.current
+      && !projectExplicitlyClosed.current;
     (async () => {
       try {
         const status = await getProjectStatus(legacyRoot);
@@ -935,8 +1010,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           legacyMigratedRef.current = true;
           return;
         }
+        if (!isCurrentSelection()) return;
         const identity = await projectInspect(status.project_root);
-        if (cancelled) return;
+        if (!isCurrentSelection()) return;
 
         const projectByIdentity = projects.find((row) => row.id === identity.project_id);
         let resolvedProject = projectByIdentity;
@@ -951,7 +1027,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             },
           });
         }
-        if (cancelled) return;
+        if (!isCurrentSelection()) return;
         if (resolvedProject.id !== identity.project_id) {
           setError(
             "Legacy project id does not match registry id. " +
@@ -961,11 +1037,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           return;
         }
         setProjectBinding(resolvedProject.id, status.project_root);
-        setActiveProjectIdRaw(resolvedProject.id);
+        publishAutomaticProjectId(resolvedProject.id);
         setProjectRootRaw(status.project_root);
         setMessage("Migrated legacy project root to project binding.");
       } catch (e) {
-        if (!cancelled) {
+        if (isCurrentSelection()) {
           setError(`Legacy migration failed: ${e instanceof Error ? e.message : String(e)}`);
         }
       } finally {
@@ -980,7 +1056,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     activeWorkspaceId,
     projects,
     registry,
-    setActiveProjectIdRaw,
+    publishAutomaticProjectId,
     setProjectRootRaw,
   ]);
 

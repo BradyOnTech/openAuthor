@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "tested_parent_commit": "838d1b83e94dd5b452dc94a5113fbb05b38cf88d",
+  "working_tree_changes_tested": true,
+  "browser": "chromium",
+  "configuration": "desktop/playwright.config.ts unchanged",
+  "cold_dependency_cache": true,
+  "fresh_npm_ci": true,
+  "tests": {
+    "passed": 12,
+    "total": 12,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "duration_seconds": 9.1
+  },
+  "command": "npm run test:e2e --prefix desktop -- e2e/account-deletion.spec.ts e2e/companion-key-recovery.spec.ts e2e/companion-trusted-devices.spec.ts --retries=0 --reporter=line",
+  "scope": "Fixture module loading and unchanged hosted review/recovery journeys; full aggregates and CI are separate integration checks"
+}

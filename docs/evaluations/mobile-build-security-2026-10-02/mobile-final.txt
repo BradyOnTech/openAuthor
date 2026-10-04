@@ -1,0 +1,24 @@
+
+> openauthor-mobile@0.1.0 check
+> npm run typecheck && npm test
+
+
+> openauthor-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+
+> openauthor-mobile@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 ~/Developer/openAuthor/mobile
+
+(node:31766) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31790) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  30 passed (30)
+      Tests  181 passed (181)
+   Start at  12:59:39
+   Duration  2.29s (transform 1.71s, setup 0ms, import 4.36s, tests 2.82s, environment 3ms)

@@ -1,0 +1,66 @@
+{
+  "source_commit": "96bd04d5d6392bb3de7c8a817cc0ee20cc0c70ab",
+  "method": "Root computer-use observations; selected values transcribed from native AX and screenshots in this chat. Native screenshots/full AX trees are not archived in this packet.",
+  "application_identifier": "com.openauthor.acceptance.qa2d6a9172491741c192636a4a51a729e7",
+  "theme": "light",
+  "fresh_welcome_no_recent_books": true,
+  "title_and_prose_tab_focus_rings": "visually_observed",
+  "focus_mode_escape": {
+    "before": "Leah kept the ticket folded.",
+    "caret": 5,
+    "typed_after_escape_from_focused_exit": "still ",
+    "observed": "Leah still kept the ticket folded."
+  },
+  "after_sigkill": {
+    "document_tabs": [
+      "The Ferry Office",
+      "Plan"
+    ],
+    "selected_tab": "Plan",
+    "activity_rail": "Manuscript",
+    "synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "new_act_title": "A still unfinished act",
+    "recovery_notice": "Recovered local Plan drafts. Nothing was saved to your book automatically."
+  },
+  "restart_caret": {
+    "method": "Click scene tab, Tab/Shift-Tab through controls; no prose pointer or text-selection/caret placement after restart. One Tab overshoot to Projects was corrected with Shift-Tab before typing.",
+    "caret": 11,
+    "typed": "[restart] ",
+    "observed": "Leah still [restart] kept the ticket folded.\n"
+  },
+  "cleanup": {
+    "test_app_absent_from_final_inventory": true,
+    "canonical_app_remained_stopped": true,
+    "temporary_finder_window_closed_original_Developer_window_restored": true,
+    "existing_author_artifacts_equal": true
+  },
+  "tool_failures": [
+    {
+      "action": "optional cua.computer.launch_app",
+      "error": "is not a function"
+    },
+    {
+      "action": "getApp launcher",
+      "wall_time_seconds": 5036.0735,
+      "error": "Running application not found; later inventory proved isolated app running"
+    },
+    {
+      "action": "getApp Finder",
+      "wall_time_seconds": 4384.4052,
+      "result": "completed despite requested short timeout"
+    },
+    {
+      "action": "Finder paste",
+      "error": "Timed out waiting for application to read clipboard; fresh AX then setValue corrected path"
+    }
+  ],
+  "limits": [
+    "No native startup timing or long-session active author-use claim; observed delays are tool calls.",
+    "No dark-theme native, visible-conflict native, VoiceOver, text scaling, broad contrast or full review acceptance.",
+    "No signed GUI multi-scene crash/backup/upgrade, clean-machine, Intel or physical power-loss acceptance.",
+    "Local/empty-cloud build and explicit Codex false launcher; no native cloud/Keychain/provider acceptance.",
+    "Acceptance flavor differs from the separately verified canonical bundle.",
+    "Broad placeholder/ghost-text contrast remains outside sampled repairs."
+  ],
+  "release_certified": false
+}

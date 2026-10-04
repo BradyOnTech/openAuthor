@@ -1,0 +1,30 @@
+{"applied_migration": "20260225180000_project_registry_rbac.sql", "sha256": "627380c6fb8c8996955323695b861d8359ce3fb1ffe640899c9ac68efd94e8c0"}
+NOTICE:  policy "workspaces_member_select" for relation "public.workspaces" does not exist, skipping
+NOTICE:  policy "workspace_members_member_select" for relation "public.workspace_members" does not exist, skipping
+NOTICE:  policy "projects_member_select" for relation "public.projects" does not exist, skipping
+NOTICE:  policy "project_activity_member_select" for relation "public.project_activity" does not exist, skipping
+NOTICE:  policy "workspace_user_state_owner_select" for relation "public.workspace_user_state" does not exist, skipping
+NOTICE:  policy "workspace_user_state_owner_modify" for relation "public.workspace_user_state" does not exist, skipping
+{"applied_migration": "20260225182000_workspace_bootstrap.sql", "sha256": "95d6cf564a26e82461ac5dabdd7f1f7ad6572bd02dee7dddeb701240bfcdff4b"}
+{"applied_migration": "20260830190000_mobile_encrypted_sync.sql", "sha256": "666b04535c1f5d4f3a4d2dcba543ecb3dcf06dd012e2d6770f5f05a6a2f7a8ea"}
+NOTICE:  extension "pgcrypto" already exists, skipping
+{"applied_migration": "20260830193000_mobile_encrypted_sync_storage.sql", "sha256": "9b57d4a10bbb6797c27b17b15eb719ca3bc7df2138c99bbdf3d115ce552b7072"}
+NOTICE:  policy "mobile_encrypted_sync_viewer_select" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_editor_insert" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_editor_delete" for relation "storage.objects" does not exist, skipping
+NOTICE:  policy "mobile_encrypted_sync_update" for relation "storage.objects" does not exist, skipping
+{"applied_migration": "20260907120000_mobile_browser_platform.sql", "sha256": "baba959e09af44d374a5b38a39bdb8a3487b28ef7e17ccc35ad001cdfa315515"}
+{"applied_migration": "20261002120000_mobile_realtime_shared_rate_limit.sql", "sha256": "677f347c71ad77e0a1e32b23a1e3f47c0083eec2b722f158c1ea8582483b4a68"}
+{"applied_migration": "20261002140000_mobile_active_authority.sql", "sha256": "bdcdd4cc589ea08439db36e150f455bccc79e8199c08c76f3c2d2bb21ee096a4"}
+{"applied_migration": "20261002150000_mobile_recovery_snapshot.sql", "sha256": "750542e8029154a2a0a5f6222e041dd6f97de9c32f1d1b1a3b67188e57ff3a95"}
+{"applied_migration": "20261002160000_mobile_project_deletion.sql", "sha256": "f3e5824f6367d17551c5c8a36ff683937bca1c2622353f53ef1dddf2533d4f9c"}
+{"applied_migration": "20261002170000_registry_bootstrap.sql", "sha256": "287291e0f210d6b79f940f45518b47bf5b5a9b558876e82c997889e3b7e3ef1f"}
+{"applied_migration": "20261002180000_mobile_account_deletion.sql", "sha256": "c2f9aec8949a118d2bd36f4284960868e2e8c2a3ea77c68c03902fee30e5f346"}
+{"applied_migration": "20261002190000_mobile_voice_control.sql", "sha256": "aa952faa42b194da8b46e5174204e58d8a20534b86ca1608a7b00f23640d7a0a"}
+{"executed_sql_sha256": "f927ba814dea54477395ed115e6554a8a784663a888736cfc150e8d481b9beb1"}
+
+{"scope": "live owner registry reads", "activity": {"message": "infinite recursion detected in policy for relation \"workspace_members\"", "sqlstate": "42P17"}, "projects": {"message": "infinite recursion detected in policy for relation \"workspace_members\"", "sqlstate": "42P17"}, "own_state": {"rows": 1}, "workspaces": {"message": "infinite recursion detected in policy for relation \"workspace_members\"", "sqlstate": "42P17"}, "memberships": {"message": "infinite recursion detected in policy for relation \"workspace_members\"", "sqlstate": "42P17"}}
+
+{"scope": "ended owner Auth session", "own_state": {"rows": 1}}
+{"captured_inputs": "docs/evaluations/registry-read-authority-2026-10-02/baseline-sql-inputs.tar.gz", "sha256": "2e5795e040109d2edcd64bbc75104472c9975d6fd57a5f2218d84921bec378ce"}
+Registry baseline observations complete.

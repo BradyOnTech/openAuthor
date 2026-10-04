@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02",
+  "status": "implemented_locally_verified_deployment_acceptance_open",
+  "git_head_at_capture": "3b883595aa1a393dd62410c836f84983efc6130e",
+  "scope": "Independent known-call control, unchanged mobile receipt wire; private SQL roles, DB authority/CAS, durable worker journal and account-finalization guard/redacted positive receipts. No provider calls or deployed changes.",
+  "commands": [
+    {
+      "command": "python3 scripts/verify_voice_control.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+      "result": "pass",
+      "sql": "Actual full migration chain and supabase/tests/mobile_voice_control.sql passed",
+      "integrated_gateway_tests": {
+        "discovered": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0
+      },
+      "log": "real-postgres-final.txt"
+    },
+    {
+      "command": "cd gateway && node --experimental-strip-types --test test/sharedVoiceControl.test.ts",
+      "result": "pass",
+      "tests": {
+        "discovered": 12,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0
+      },
+      "log": "private-controls-final.txt"
+    },
+    {
+      "command": "cd gateway && npm run check",
+      "result": "pass",
+      "typecheck": "pass",
+      "build": "pass",
+      "tests": {
+        "discovered": 94,
+        "passed": 85,
+        "failed": 0,
+        "skipped": 9
+      },
+      "skip_reason": "Real-PG environment absent in standalone invocation;6 voice and3 other PG cases. Dedicated voice invocation has zero skips.",
+      "log": "gateway-check-final.txt"
+    },
+    {
+      "command": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+      "result": "pass",
+      "sql_suites": 8,
+      "actual_concurrency_controls": 16,
+      "gateway_tests": {
+        "discovered": 94,
+        "passed": 94,
+        "failed": 0,
+        "skipped": 0
+      },
+      "typecheck": "pass",
+      "build": "pass",
+      "source_stability": "Root captured matching SQL/gateway source/test hashes before and after this run",
+      "log": "combined-current-source-final.txt"
+    }
+  ],
+  "negative_proof": [
+    {
+      "log": "version7-journal-red.txt",
+      "description": "Actual SQL/RPC canonical v7 lease could not be durably registered by legacy journal validation; canonical validation fixed and focused green."
+    },
+    {
+      "log": "closed-old-generation-red.txt",
+      "description": "Five integrated cases passed; redacted closed crash-journal case failed with still-fresh former controller claim. Closed receipt now returns unchanged without claim takeover; unclosed foreign generation refusal preserved. Final6/6 green."
+    }
+  ],
+  "coverage": [
+    "Actual independent Node worker survives gateway SIGKILL and closes exact known call at lease expiry.",
+    "Worker SIGKILL/restart drains fsynced known journal with fresh claim generation.",
+    "Actual disposable PostgreSQL immediate-stop/restart: acknowledged private cache hangs up while DB unavailable, durable accepted receipt survives worker kill and later completes without another hangup.",
+    "Lost provider hangup reply followed by404 remains closing/unconfirmed, private state retained, fresh allocation refused.",
+    "Actual SQL scoped renewal CAS admits one concurrent winner, preserves hard deadline and rejects changed signed-session scope.",
+    "Heartbeat without independent durable observation withholds SDP answer.",
+    "Actual migration preflight rejects authenticated/anon/service_role incoming control-role membership and privileged/inheriting authenticator; valid PG17 grant is SET-only.",
+    "Actual uncommitted allocation holds account fence; racing Auth DELETE refuses and committed unresolved intent remains owned.",
+    "All5 unclosed phases block verified prepare, auth_ready, finalized and Auth DELETE; account status exposes provider_cleanup_pending.",
+    "Guarded Auth removal redacts closed scope; exact lease/call/binding/deadline receipts immediately retire gateway and controller crash journals, including former unexpired controller claim.",
+    "Bounded HTTP, redirect/body limits, credential-role/expiry, duplicate/mismatched identity, journal failure, v7 and strict redacted closed-shape controls."
+  ],
+  "fixture_limits": [
+    "Loopback HTTP is a strict whitelisted JSON-to-actual-PostgreSQL adapter, not deployed PostgREST signature/role verification.",
+    "OpenAI multipart create/Location/hangup shape is exercised against synthetic HTTP server, not actual provider media/usage/termination.",
+    "SIGKILL affects only owned synthetic child processes; PG shutdown affects only fsync-enabled disposable socket-only cluster.",
+    "Privileged fixture disposal removes only owned synthetic control records; production exposes no unknown-allocation bypass.",
+    "Credential binding/hash and project headers demonstrate local consistency, not actual provider-account ownership or permissions."
+  ],
+  "remaining_gates": [
+    "Deploy actual migration/private role grants and separately provision/verify narrowly signed trusted PostgREST credentials.",
+    "Run independently supervised controller in a separate failure domain with durable journals, measured load/expiry/failover bounds and sticky gateway renew/stop routing.",
+    "Accept actual provider hangup/media/usage behavior and credential rotation with authorized synthetic calls; no live inference made here.",
+    "Unknown pre-Location/durable-attachment allocation requires external operator reconciliation and blocks account finalization/new allocation. No documented recover-by-request-ID API was found.",
+    "Total controller/durable-state/provider-control-network outage prevents an unconditional strict shorter wall-clock expiry guarantee.",
+    "Hangup200 is teardown acceptance, not final billing, retained context or physical backing purge proof; closed opaque receipt retention still needs an administrator policy."
+  ],
+  "primary_sources": [
+    {
+      "url": "https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/create",
+      "claim": "Provider create schema, no inspected caller-supplied hard lifetime or documented request-ID-to-call recovery"
+    },
+    {
+      "url": "https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/hangup",
+      "claim": "Known Realtime WebRTC call hangup control"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/voice-server-controls?voice-api=realtime",
+      "claim": "Known-call sideband control, not an implicit socket-disconnect expiry guarantee"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/voice-sip?voice-api=realtime",
+      "claim": "Hangup200 starts teardown"
+    },
+    {
+      "url": "https://developers.openai.com/api/reference/resources/realtime/subresources/calls",
+      "claim": "Inspected call endpoints do not include recovering/listing allocation by request ID"
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/realtime-conversations",
+      "claim": "Provider60-minute session maximum does not establish application shorter deadline"
+    },
+    {
+      "url": "https://developers.openai.com/api/reference/resources/realtime/subresources/client_secrets/methods/create",
+      "claim": "Client-secret expiry governs session creation, not termination of an established session"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/17/sql-grant.html",
+      "claim": "PG16+ role membership INHERIT/SET/ADMIN grant options"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/17/role-membership.html",
+      "claim": "Role membership privilege behavior"
+    }
+  ],
+  "source_sha256": {
+    "gateway/src/sharedVoiceControl.ts": "2485982cf38f0c061152c293f7a0cfc6e7d359d5eee10a6b382264255534ace6",
+    "gateway/src/voiceControllerWorker.ts": "1d0b0a91f9dd85208e078abb7a455d0e8c92f25bbc89a68aae475b42f767bb9c",
+    "gateway/src/voiceControllerMain.ts": "3195e6832906a5eaafb4c9c1ebfa4b0f9767e0d02e8842823e85688819b62fd1",
+    "gateway/src/callJournal.ts": "c3bb914421ed66529e9ac76be613aa00687331fac620eee61a92a74dc7755ba9",
+    "gateway/src/sessionLeases.ts": "fb8724b1c034c1c6ed8d38e9168683f0cd133ac8c9fa32588917c4cc6468b68a",
+    "gateway/src/config.ts": "2df5c22a5334d35f48450a41217d4050b1d4785ffd58ba08c5a129fe7f49ad3e",
+    "gateway/src/production.ts": "fcee08c862646b954c78cd7b1d390de33afcff01f021e421825b22aba2d26ffd",
+    "gateway/src/openAIRealtimeUpstream.ts": "0c3ed03c7995f1596159cd2295b4e34c5e7554e7f8fe4b9cdde8f3a20a8a52e8",
+    "gateway/src/index.ts": "4eded15193b3d81ebd2ad809f92dc04d14491f903995d2a0a93288489c016de8",
+    "gateway/test/sharedVoiceControl.test.ts": "396007dd7e752251311a89655c35c89d4d9ec821d9a61c777c0c0f0528b283aa",
+    "gateway/test/voiceControl.postgres.test.ts": "f3e131bf1bd917d18875e5d84df7dbc1132801a1338be2240a63e6d1e1aa3390",
+    "gateway/test/config.test.ts": "44491f09a2226376178fff3a6f316e98f3aefca1288d85cd4ff30d2f98331419",
+    "gateway/test/production.test.ts": "a99da5dcc251d5a911bc75cbe02bf7c5dcf325eb11b6f5e29b265f94fd0cc7b6",
+    "gateway/test/sessionLeases.test.ts": "e2183a5b6f79d6b7a4309442995d4441c3077d48b25bdf6e940533fb4e99d809",
+    "scripts/verify_voice_control.py": "712ba5b4d0aac73ff606497b7c3d7dc0b3f1e182196911b3cc2b95ef2d8553cf",
+    "supabase/migrations/20261002190000_mobile_voice_control.sql": "229795f43decb0c9e607caab8e72cbdcb8dc01494d06c9867e311b209f6e0f95",
+    "supabase/tests/mobile_voice_control.sql": "4329208138b76ff1049a96243f708cc9cf8e6bec82f1db13195a687b8d88bdda",
+    "gateway/config.example.env": "7935228e9bc97255e5880a5b4ad670c42ba0da744eeb4199dc63d93b736f3570",
+    "gateway/controller.config.example.env": "7600497b7875ea22b04a775d2100959ebc8ce5a574fb82139354949fd135aad8",
+    "gateway/README.md": "04bcecb12c1e76ebcea9db71d3bf66781da2e59a23dcf9f5d9a1601fc885c8d0",
+    "docs/independent-voice-control.md": "55ac99d5bc6fda3b3eccb3baf6cbf66f3f249746d25576fc0f44f0a637a2f393"
+  },
+  "shared_fixture_and_migration_dependencies_sha256": {
+    "scripts/verify_shared_gateway_limiter.py": "0daf000958b6b3cc6d29aa71e4446e81f17d1c695a666860c41897ca5c602ba4",
+    "supabase/migrations/20261002170000_registry_bootstrap.sql": "287291e0f210d6b79f940f45518b47bf5b5a9b558876e82c997889e3b7e3ef1f",
+    "supabase/migrations/20261002180000_mobile_account_deletion.sql": "c2f9aec8949a118d2bd36f4284960868e2e8c2a3ea77c68c03902fee30e5f346",
+    "supabase/migrations/20261002200000_registry_read_authority.sql": "e73acd7792c16ded59887c886e4f0ded8dd71382fc0d45b27db74d498c4ddcd0"
+  },
+  "logs": {
+    "real-postgres-final": {
+      "original_path": "/private/tmp/openauthor-independent-voice-reviewed-final.txt",
+      "raw_sha256": "0ecf67ee3e21ae4be95e0d1178b7063f8c0f600b259eb2af90b6363b549b4e54",
+      "raw_gzip_sha256": "b0f9379518b98824fb5bc7aa2b354fdef4064daead7fca1b129aeecb25cc52ac",
+      "normalized_sha256": "0ecf67ee3e21ae4be95e0d1178b7063f8c0f600b259eb2af90b6363b549b4e54",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    },
+    "private-controls-final": {
+      "original_path": "/private/tmp/openauthor-voice-redaction-focused.txt",
+      "raw_sha256": "f9cca064b68a11eeaf614aff083f35a611e538d3faa66d028d864c73c43be9f7",
+      "raw_gzip_sha256": "9baf6a131d46919af96041b455c91b5d795da6b933b1996cfc29014cb465406b",
+      "normalized_sha256": "f9cca064b68a11eeaf614aff083f35a611e538d3faa66d028d864c73c43be9f7",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    },
+    "gateway-check-final": {
+      "original_path": "/private/tmp/openauthor-gateway-independent-account-final.txt",
+      "raw_sha256": "54928086144afbd4ea72a105d7f7f82a6c0070ddffffa4822a17edeea854ab70",
+      "raw_gzip_sha256": "43390b75eab5295d7b2450c27060bbe322654c1f542911f38a26ac8faf8e3915",
+      "normalized_sha256": "cde81839ab7a034e5922ecd4bdd984d772d0a747c39209a6f96e1bd6e8908b6b",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    },
+    "closed-old-generation-red": {
+      "original_path": "/private/tmp/openauthor-voice-closed-foreign-generation-red.txt",
+      "raw_sha256": "42f4e5b15243acf70b31762f16f3e89380f5cd56e0732bc6b3d95c8de9a3eab9",
+      "raw_gzip_sha256": "40cb164e69403a6e55d115566e48a6cb07365d2438d398d527a992ec988e0aa1",
+      "normalized_sha256": "42f4e5b15243acf70b31762f16f3e89380f5cd56e0732bc6b3d95c8de9a3eab9",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    },
+    "version7-journal-red": {
+      "original_path": "/private/tmp/openauthor-voice-v7-red.txt",
+      "raw_sha256": "c4807ab60b7361e741ee5e948662c8b54d7cc6a1cd7d5874314f77d34b23eeec",
+      "raw_gzip_sha256": "0d26983eb7b9b0133d7dc348434bc0afe138d1650123f291fe1d63a3abb74e30",
+      "normalized_sha256": "c4807ab60b7361e741ee5e948662c8b54d7cc6a1cd7d5874314f77d34b23eeec",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    },
+    "combined-current-source-final": {
+      "original_path": "/private/tmp/openauthor-cloud-lifecycle-current-source-final.txt",
+      "raw_sha256": "9b806a8fde351d3e2e7e6937a4e14c8907b0b9a1bdacbbdeb6309d01f692c257",
+      "raw_gzip_sha256": "e0e5a94dd0059a7097fe37cbc44e9b8bb6798cd372f5963cab3fc93d9fd34ee8",
+      "normalized_sha256": "c8e87760e94ac2d2870c56cb60bd1410cad2797745007c61ccad1a28b00ea1b3",
+      "normalization": "UTF-8 display removes trailing line whitespace and extra final blank lines; original bytes preserved in .raw.gz"
+    }
+  },
+  "evidence_documents_sha256": {
+    "README.md": "81286611f1b719ccf41575df0fcd58ada869a4db47a57d59e8660adc470f2a7f"
+  }
+}

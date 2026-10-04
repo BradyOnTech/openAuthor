@@ -1,0 +1,183 @@
+{
+  "seeded_canon": {
+    "evidence_kind": "synthetic_seeded_canon_regression",
+    "limitations": "Facts are supplied manually; this does not measure manuscript extraction or live-model quality.",
+    "corpus": "~/Developer/openAuthor/tests/fixtures/canon_evaluation.json",
+    "cases": [
+      {
+        "id": "conflict-and-knowledge",
+        "expected": {
+          "conflicting_facts": 1,
+          "pov_knowledge_leak": 1
+        },
+        "actual": {
+          "conflicting_facts": 1,
+          "pov_knowledge_leak": 1
+        }
+      },
+      {
+        "id": "clean-temporal-change",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "impossible-timeline-range",
+        "expected": {
+          "impossible_validity": 1
+        },
+        "actual": {
+          "impossible_validity": 1
+        }
+      },
+      {
+        "id": "unreliable-narrator-claims-are-not-canon",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "long-running-unresolved-setup",
+        "expected": {
+          "unresolved_setup": 1
+        },
+        "actual": {
+          "unresolved_setup": 1
+        }
+      },
+      {
+        "id": "intentional-mystery-and-series-fact",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "character-arc-state-conflict",
+        "expected": {
+          "arc_state_conflict": 1
+        },
+        "actual": {
+          "arc_state_conflict": 1
+        }
+      }
+    ],
+    "true_positive": 5,
+    "false_positive": 0,
+    "false_negative": 0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "unseeded_prose": {
+    "evidence_kind": "synthetic_unseeded_prose_regression",
+    "limitations": "Curated English pattern-regression cases, authored alongside the implementation. No Canon Facts are seeded. This is not an independent benchmark, broad language understanding test, or live-model quality measurement. Unsupported paraphrases, subtle coreference, causal explanations, and plot or motivation problems can still be missed.",
+    "corpus": "~/Developer/openAuthor/tests/fixtures/prose_continuity_evaluation.json",
+    "cases": [
+      {
+        "id": "explicit-finger-count",
+        "expected": {
+          "prose_trait_mismatch": 1
+        },
+        "actual": {
+          "prose_trait_mismatch": 1
+        }
+      },
+      {
+        "id": "unicode-name-and-short-alias",
+        "expected": {
+          "prose_trait_mismatch": 1
+        },
+        "actual": {
+          "prose_trait_mismatch": 1
+        }
+      },
+      {
+        "id": "hair-color",
+        "expected": {
+          "prose_trait_mismatch": 1
+        },
+        "actual": {
+          "prose_trait_mismatch": 1
+        }
+      },
+      {
+        "id": "same-sentence-owner",
+        "expected": {
+          "prose_trait_mismatch": 1
+        },
+        "actual": {
+          "prose_trait_mismatch": 1
+        }
+      },
+      {
+        "id": "nearby-pronoun-needs-review",
+        "expected": {
+          "prose_trait_mismatch": 1
+        },
+        "actual": {
+          "prose_trait_mismatch": 1
+        }
+      },
+      {
+        "id": "two-traits",
+        "expected": {
+          "prose_trait_mismatch": 2
+        },
+        "actual": {
+          "prose_trait_mismatch": 2
+        }
+      },
+      {
+        "id": "dialogue-is-not-truth",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "smart-quotes-is-not-truth",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "hypothetical",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "negation",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "dream",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "different-hands",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "different-people",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "numeric-equivalence",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "color-spelling-equivalence",
+        "expected": {},
+        "actual": {}
+      },
+      {
+        "id": "no-cross-paragraph-pronoun",
+        "expected": {},
+        "actual": {}
+      }
+    ],
+    "true_positive": 7,
+    "false_positive": 0,
+    "false_negative": 0,
+    "precision": 1.0,
+    "recall": 1.0
+  }
+}

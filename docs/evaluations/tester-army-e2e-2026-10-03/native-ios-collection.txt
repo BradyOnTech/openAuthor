@@ -1,0 +1,8 @@
+
+> openauthor-end-to-end@0.1.0 list:native
+> node scripts/run-native.mjs --list
+
+native-tests/mobile-companion.e2e.ts › native companion searches and reads scenes with selected context and voice disabled [mobile-native-ios]
+native-tests/mobile-companion.e2e.ts › native companion captures all four kinds for review without changing the manuscript [mobile-native-ios]
+native-tests/mobile-companion.e2e.ts › native companion protects an unfinished capture through the platform confirmation [mobile-native-ios]
+native-tests/mobile-companion.e2e.ts › native companion shows privacy controls, refuses preview upload and resets sample work on restart [mobile-native-ios]

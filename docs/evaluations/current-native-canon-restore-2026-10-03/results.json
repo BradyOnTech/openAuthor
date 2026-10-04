@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-10-03T12:58:59.624873+00:00",
+  "source_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+  "native_bundle": "Unsigned isolated arm64 QA, acceptance-36a4058.app",
+  "qa_executable_sha256": "195c81233806fda9fc3f68d6d162af3f7c294357e88f352200ef218ccf31946f",
+  "canon": {
+    "storyline_refusal": "passed; manually observed native error/draft retention and five raw files byte-exact to fresh post-open after-switch baseline",
+    "reviewed_evidence_correction": "passed; original Storyline restored, exact retained passage saved at offsets 19\u201363 (end exclusive); only accepted fact evidence+updated_at changed",
+    "suggested_inverted_validity_refusal": "passed; author-review label observed, acceptance refused, both facts and all five captured files unchanged",
+    "initial_plan_normalization": {
+      "changed_field": "unassigned_scene_ids",
+      "before": [],
+      "after": [
+        "scene-0001",
+        "scene-0002"
+      ],
+      "refusal_comparison_uses_fresh_normalized_baseline": true
+    },
+    "native_screenshot_archive": false,
+    "gui_replay": false,
+    "readback_interpreter_command_receipt": "not_retained; disclosed"
+  },
+  "restore": {
+    "cli_mechanics_trial": "passed; 44 complete/1 incomplete/357 missing archived files; exact owned worker killed, target absent, untouched backup retry exact",
+    "gui_partial_capture": {
+      "complete": 375,
+      "incomplete": 1,
+      "missing": 26,
+      "sealed_files": 377,
+      "worker_pid": 43443,
+      "qa_parent_pid": 41441,
+      "worker_state": "T",
+      "destination_published": false
+    },
+    "native_parent_crash": "SIGKILL of exact QA parent occurred; stopped worker disappeared before final signal lookup. ProcessLookupError was a harness outcome; no final worker signal or retained full trace claimed.",
+    "relaunch_attachment": "Root manual native Projects observation found only Canon fixture; partial recovery absent from registry.",
+    "gui_retry": "passed; actual native retry without observer opened recovered 64-scene book",
+    "verified_project_files": 401,
+    "revision_count": 129,
+    "git_branch_refs": 2,
+    "source_book_unchanged_files": 490,
+    "backup_sha256": "632a491b17db7de8ae5d2f7c51fd717b8c3950c495c5af184207dacda53534d5",
+    "published_raw_project_files_retained": 401,
+    "published_raw_git_ref_files_retained": 3,
+    "verification_runtime": "Normal 36a4058 packaged Python -I -B; verification only, not the GUI retry operation.",
+    "unpublished_private_staging_residue_retained": true,
+    "automatic_staging_cleanup_claimed": false
+  },
+  "preservation": {
+    "author_artifacts": 4,
+    "normal_bundle_immutable_files": 2205,
+    "qa_bundle_immutable_files": 2205,
+    "bundle_exclusion": "Original manifest excludes volatile __pycache__ only.",
+    "source_and_backup_unchanged": true,
+    "native_owned_processes_terminal": true,
+    "owned_finder_window_closed": "Root manual CUA observation; original Developer window restored."
+  },
+  "existing_engine_verification": {
+    "packet": "../current-packaged-runtime-2026-10-03",
+    "core_tests": 583,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "repeated_for_this_packet": false
+  },
+  "independent_receipt_reviews": "Two read-only audits found no material inconsistencies; originals retained in Canon archive.",
+  "provider_calls": 0,
+  "deployed_mutations": 0,
+  "system_or_account_changes": 0,
+  "author_quality_claimed": false,
+  "release_certified": false,
+  "all_six_priorities": "in_progress",
+  "remaining_scope": [
+    "Author-led fresh prose quality and review-time evidence",
+    "VoiceOver and physical accessibility",
+    "Real mobile devices and deployed lifecycle drills",
+    "Signed/notarized clean-machine and Intel install/upgrade acceptance",
+    "Physical power loss and storage/device failure",
+    "Remaining dependency gates"
+  ]
+}

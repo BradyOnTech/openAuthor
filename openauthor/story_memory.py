@@ -7,9 +7,11 @@ import unicodedata
 from collections import Counter, defaultdict
 from typing import Any
 
-from .codex import add_entity, add_relationship, list_entities, list_relationships, update_entity
+from .codex import ENTITY_TYPES, add_entity, add_relationship, list_entities, list_relationships, update_entity
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .scenes import get_scene, list_scene_details, list_scenes
+from .project_locks import serialized_project_access
+from .scene_edits import workspace_edit_scope
 
 SUGGESTION_SCHEMA_VERSION = 1
 SUGGESTION_STATUSES = {"pending", "accepted", "rejected", "deferred"}
@@ -24,8 +26,9 @@ NAME_TITLES = {
   "general", "inspector", "king", "lady", "lord", "prince", "princess",
   "professor", "queen", "sir",
 }
-SENTENCE_TRANSITIONS = {"meanwhile", "however", "nevertheless", "therefore", "afterward", "finally", "suddenly", "instead"}
+SENTENCE_TRANSITIONS = {"meanwhile", "however", "nevertheless", "therefore", "afterward", "finally", "suddenly", "instead", "still", "yet", "otherwise", "eventually"}
 SPATIAL_OPENERS = {"beyond", "beneath", "above", "across", "behind", "beside", "between", "inside", "outside", "through", "under"}
+CLAUSE_OPENERS = {"after", "before", "once", "while", "until", "although", "unless", "without", "since"}
 RELATION_PATTERNS = {
   "trusts": r"trusts?",
   "distrusts": r"(?:distrusts?|does\s+not\s+trust)",
@@ -41,6 +44,77 @@ RELATION_PATTERNS = {
   "is child of": r"(?:is|was)\s+(?:the\s+)?(?:son|daughter|child)\s+of",
 }
 SYMMETRIC_RELATIONS = {"is sibling of"}
+STATEMENT_BOUNDARIES = ".!?;\n。！？"
+UNCERTAINTY_MARKERS = r"if|unless|whether|perhaps|maybe|possibly|apparently|allegedly"
+REPORTING_MARKERS = (r"suppose[ds]?|imagin(?:e[ds]?|ing)|dream(?:s|ed|t)|said|says|"
+  r"claim(?:s|ed)|report(?:s|ed)|thought|thinks|believ(?:es?|ed)|wonder(?:s|ed)|hope(?:s|d)")
+NONASSERTIVE_PREFIX = re.compile(
+  rf"\b(?:{UNCERTAINTY_MARKERS}|{REPORTING_MARKERS})\b"
+  r"|\b(?:not\s+true|not\s+the\s+case|false)\s+that\b", re.IGNORECASE,
+)
+NONASSERTIVE_CLAUSE = re.compile(
+  rf"\b(?:{UNCERTAINTY_MARKERS})\b|\baccording\s+to\b|,[^,]*\b(?:{REPORTING_MARKERS})\b", re.IGNORECASE,
+)
+
+
+def _unquoted_prose(body: str) -> str:
+  """Exclude dialogue claims without shifting their original source offsets."""
+  result = list(body)
+  closing = ""
+  for index, char in enumerate(body):
+    apostrophe = (char in "'’" and index > 0 and index + 1 < len(body)
+      and body[index - 1].isalnum() and body[index + 1].isalnum())
+    if closing:
+      result[index] = "\n" if char == "\n" else " "
+      if char == closing and not apostrophe:
+        preceding = index - 1
+        while preceding >= 0 and body[preceding] == "\\":
+          preceding -= 1
+        if (index - 1 - preceding) % 2 == 0:
+          closing = ""
+    elif (char in {'"', "“", "‘", "'"} and not apostrophe
+          and (char != "'" or index == 0 or not body[index - 1].isalnum())):
+      closing = {"“": "”", "‘": "’"}.get(char, char)
+      result[index] = " "
+  return "".join(result)
+
+
+def _without_known_identities(prose: str, entities: list[dict[str, Any]]) -> str:
+  owners: dict[str, set[str]] = defaultdict(set)
+  labels: dict[str, str] = {}
+  for entity in entities:
+    for value in [entity["name"], *entity.get("aliases", [])]:
+      label = str(value).strip()
+      if label:
+        key = unicodedata.normalize("NFC", label).casefold()
+        owners[key].add(entity["id"])
+        labels[label] = key
+  unambiguous = [label for label, key in labels.items() if len(owners[key]) == 1]
+  if not unambiguous:
+    return prose
+  pattern = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(label) for label in sorted(unambiguous, key=len, reverse=True)) + r")(?!\w)", re.IGNORECASE)
+  result = list(prose)
+  for match in pattern.finditer(prose):
+    result[match.start():match.end()] = ["\n" if char == "\n" else " " for char in match.group(0)]
+  return "".join(result)
+
+
+def _asserted_statement(prose: str, identity_free: str, start: int, subject_end: int, end: int) -> bool:
+  # Local patterns identify direct statements, not the truth of speech, guesses
+  # or conditional clauses. Keep unrelated semicolon-separated prose available.
+  beginning = 1 + max(prose.rfind(char, 0, start) for char in STATEMENT_BOUNDARIES)
+  endings = [prose.find(char, end) for char in STATEMENT_BOUNDARIES]
+  ending = min([position for position in endings if position >= 0], default=len(prose))
+  if ending < len(prose) and prose[ending] in "?？":
+    return False
+  prefix = prose[beginning:start]
+  # An indirect complement is not a direct declaration, regardless of whether
+  # its reporting verb is in the small marker vocabulary. Keep preceding prose
+  # intact: a known person named Perhaps is not permission to ignore "Perhaps X".
+  if re.search(r"\bthat\s*$", prefix, re.IGNORECASE):
+    return False
+  return not (NONASSERTIVE_PREFIX.search(prefix)
+    or NONASSERTIVE_CLAUSE.search(prefix + identity_free[subject_end:ending]))
 
 
 def _proper_name_mentions(body: str):
@@ -83,7 +157,11 @@ def _proper_name_mentions(body: str):
     transition = first[0].casefold() in SENTENCE_TRANSITIONS and separator.lstrip().startswith(",")
     spatial = (first[0].casefold() in SPATIAL_OPENERS and following is not None
       and separator.isspace() and following[0].casefold() in {"the", "a", "an", "his", "her", "their", "our", "my", "this", "that"})
-    if transition or spatial:
+    clause = (first[0].casefold() in CLAUSE_OPENERS and following is not None and separator.isspace()
+      and following[0].casefold() in {"the", "a", "an", "his", "her", "their", "our", "my", "this", "that", "he", "she", "it", "they", "we", "dawn", "dusk", "noon", "midnight", "sunrise", "sunset"})
+    modifier = (first[0].casefold() in {"only", "even"} and following is not None
+      and separator.isspace() and capitalized(following[0]))
+    if transition or spatial or clause or modifier:
       index += 1
       continue
     end_index = index
@@ -189,8 +267,13 @@ def _relationship_candidates(
   candidates: dict[str, dict[str, Any]] = {}
   for scene in scenes:
     body = str(scene.get("body", ""))
+    prose = _unquoted_prose(body)
+    identity_free = _without_known_identities(prose, entities)
     for relation, pattern in compiled:
-      for match in pattern.finditer(body):
+      for match in pattern.finditer(prose):
+        if (body[match.start():match.end()] != match.group(0)
+            or not _asserted_statement(prose, identity_free, match.start(), match.end("source"), match.end())):
+          continue
         source = unambiguous.get(match.group("source").casefold())
         target = unambiguous.get(match.group("target").casefold())
         if source is None or target is None or source["id"] == target["id"]:
@@ -306,6 +389,34 @@ def _matching_entity(
   return matching[0] if matching else None
 
 
+def _review_version(paths: ProjectPaths, suggestion: dict[str, Any], cache: dict | None = None) -> str:
+  cache = cache if cache is not None else {}
+  sources = {}
+  for evidence in suggestion.get("evidence", []):
+    identifier = evidence.get("scene_id", "")
+    if not identifier:
+      continue
+    if identifier not in cache:
+      try:
+        scene = get_scene(paths, identifier)
+        cache[identifier] = {"body": scene["body"], "pov": scene.get("pov", "")}
+      except OpenAuthorError:
+        cache[identifier] = {"missing": True}
+    sources[identifier] = cache[identifier]
+  value = {"workspace": workspace_edit_scope(paths)[0], "suggestion": {key: value for key, value in suggestion.items() if key != "review_version"}, "sources": sources}
+  return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def _versioned_suggestion(paths: ProjectPaths, suggestion: dict[str, Any], cache: dict | None = None) -> dict[str, Any]:
+  return {**suggestion, "review_version": _review_version(paths, suggestion, cache)}
+
+
+def _check_review_version(paths: ProjectPaths, suggestion: dict[str, Any], expected_version: str | None) -> None:
+  if expected_version is not None and (not expected_version or _review_version(paths, suggestion) != expected_version):
+    raise OpenAuthorError("The suggestion, source or Storyline changed. Refresh and review the current evidence before deciding or correcting it.")
+
+
+@serialized_project_access
 def queue_memory_suggestion(
   paths: ProjectPaths,
   *,
@@ -324,7 +435,7 @@ def queue_memory_suggestion(
   store = _read_store(paths)
   existing = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if existing is not None:
-    return existing
+    return _versioned_suggestion(paths, existing)
   suggestion = {
     "id": suggestion_id,
     "kind": "memory_note",
@@ -341,9 +452,10 @@ def queue_memory_suggestion(
   }
   store["suggestions"].append(suggestion)
   atomic_write_json(_suggestions_path(paths), store)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)
 
 
+@serialized_project_access
 def list_memory_suggestions(
   paths: ProjectPaths,
   *,
@@ -354,9 +466,11 @@ def list_memory_suggestions(
   rows = _read_store(paths)["suggestions"]
   if status is not None:
     rows = [row for row in rows if row.get("status") == status]
-  return sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))
+  cache: dict = {}
+  return [_versioned_suggestion(paths, row, cache) for row in sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))]
 
 
+@serialized_project_access
 def extract_memory_suggestions(
   paths: ProjectPaths,
   *,
@@ -398,6 +512,8 @@ def extract_memory_suggestions(
         "end": 0,
       })
     body = str(scene.get("body", ""))
+    prose = _unquoted_prose(body)
+    identity_free = _without_known_identities(prose, entities)
     for name, mention_start, mention_end in _proper_name_mentions(body):
       if name in NAME_STOPWORDS or len(name) < 3:
         continue
@@ -430,12 +546,17 @@ def extract_memory_suggestions(
         if identity is None or identity["id"] != entity["id"]:
           continue
         pattern = re.compile(
-          rf"\b{re.escape(entity_name)}\s+(is|was|has|owns|knows|believes|lives\s+in)\s+([^.!?\n]{{2,120}})",
+          rf"\b{re.escape(entity_name)}\s+(is|was|has|owns|knows|believes|lives\s+in)\s+([^.!?;\n。！？]{{2,120}})",
           flags=re.IGNORECASE,
         )
-        for match in pattern.finditer(body):
+        for match in pattern.finditer(prose):
+          if (body[match.start():match.end()] != match.group(0)
+              or not _asserted_statement(prose, identity_free, match.start(), match.start() + len(entity_name), match.end())):
+            continue
           predicate = " ".join(match.group(1).lower().split())
           value = match.group(2).strip(" ,;:")
+          if not value:
+            continue
           suggestion_id = _fact_suggestion_id(entity["id"], predicate, value)
           fact_candidates[suggestion_id] = {
             "id": suggestion_id,
@@ -487,6 +608,7 @@ def extract_memory_suggestions(
         alias_suggestion
         and alias_suggestion.get("status") in {"pending", "deferred"}
         and not alias_suggestion.get("author_corrected")
+        and alias_suggestion.get("origin") != "ai_scan"
       ):
         previous.pop(alias_id)
   added = 0
@@ -504,6 +626,10 @@ def extract_memory_suggestions(
     suggestion_id = _suggestion_id(entity_type, name)
     candidate_ids.add(suggestion_id)
     current = previous.get(suggestion_id)
+    if current and current.get("origin") == "ai_scan":
+      # A local capitalization pass cannot reinterpret reviewed AI evidence or
+      # refresh its source stamp. Preserve it for a fresh, explicit AI review.
+      continue
     confidence = min(0.95, 0.45 + count * 0.08 + (0.15 if name in pov_names else 0))
     # Keep author-owned review metadata when prose evidence is refreshed. The
     # extraction pass is derived state: changing its timestamp alone must not
@@ -526,6 +652,7 @@ def extract_memory_suggestions(
     if current and current.get("author_corrected"):
       row["name"] = current.get("name", row["name"])
       row["description"] = current.get("description", row["description"])
+      row["entity_type"] = current.get("entity_type", row["entity_type"])
     row["updated_at"] = (
       current.get("updated_at", current.get("created_at", utc_now()))
       if current
@@ -587,10 +714,13 @@ def extract_memory_suggestions(
   scanned_scene_ids = {scene["id"] for scene in scene_details}
   for suggestion_id, row in list(previous.items()):
     if suggestion_id in candidate_ids:
+      if row.get("origin") == "ai_scan":
+        continue
       for item in row.get("evidence", []):
         item["source_sha256"] = _evidence_fingerprint(source_scenes[item["scene_id"]], item)
     elif (row.get("kind") in {"entity_create", "canon_fact", "relationship_create"}
           and row.get("status") in {"pending", "deferred"} and not row.get("author_corrected")
+          and row.get("origin") != "ai_scan"
           and row.get("evidence") and (row.get("kind") == "entity_create" or all(item.get("scene_id") in scanned_scene_ids for item in row["evidence"]))):
       # Identity is refreshed across the book. Facts and relationships are
       # retired only when wholly supported by the selected scenes. Decisions
@@ -607,11 +737,13 @@ def extract_memory_suggestions(
   }
 
 
+@serialized_project_access
 def review_memory_suggestion(
   paths: ProjectPaths,
   suggestion_id: str,
   *,
   disposition: str,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   if disposition not in SUGGESTION_STATUSES - {"pending"}:
     raise OpenAuthorError("Suggestion disposition must be accepted, rejected, or deferred.")
@@ -619,11 +751,14 @@ def review_memory_suggestion(
   suggestion = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if suggestion is None:
     raise OpenAuthorError(f"Unknown Story Memory suggestion '{suggestion_id}'.")
+  _check_review_version(paths, suggestion, expected_version)
   if suggestion.get("status") != "pending" and suggestion.get("status") != "deferred":
     raise OpenAuthorError("This Story Memory suggestion has already been decided.")
   created_entity_id = ""
   created_relationship_id = ""
   if disposition == "accepted":
+    if suggestion.get("classification_uncertain") and not suggestion.get("type_confirmed"):
+      raise OpenAuthorError("This entry's classification is uncertain. Correct and confirm its type before accepting it.")
     if suggestion.get("kind") in {"entity_create", "canon_fact", "relationship_create"}:
       for item in suggestion.get("evidence", []):
         current_scene = get_scene(paths, item["scene_id"])
@@ -669,6 +804,14 @@ def review_memory_suggestion(
       entities = list_entities(paths)
       existing = _matching_entity(entities, suggestion["name"], aliases)
       if existing:
+        # Entity creation carries an author-reviewable type. Generic Assistant
+        # notes can refer to any existing identity and retain their association.
+        if suggestion.get("kind") == "entity_create" and existing["type"] != suggestion["entity_type"]:
+          raise OpenAuthorError(
+            f"An existing {existing['type']} entry named '{existing['name']}' matches this "
+            f"{suggestion['entity_type']} suggestion. Resolve the identity or correct the "
+            "suggestion before accepting it; nothing was changed."
+          )
         merged_aliases = list(existing.get("aliases", []))
         known = {str(alias).casefold() for alias in merged_aliases}
         known.add(existing["name"].casefold())
@@ -698,7 +841,10 @@ def review_memory_suggestion(
     for other in store["suggestions"]:
       if other is suggestion or other.get("kind") not in {"entity_create", "memory_note"}:
         continue
-      if other.get("status") in {"pending", "deferred"} and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
+      compatible_type = other.get("kind") == "memory_note" or other.get("entity_type") == accepted_entity["type"]
+      if other.get("classification_uncertain") and not other.get("type_confirmed"):
+        compatible_type = False
+      if other.get("status") in {"pending", "deferred"} and compatible_type and _matching_entity([accepted_entity], str(other.get("name", "")), other.get("aliases", [])):
         other["status"] = "accepted"
         other["decided_at"] = suggestion["decided_at"]
         other["created_entity_id"] = created_entity_id
@@ -706,9 +852,10 @@ def review_memory_suggestion(
   atomic_write_json(_suggestions_path(paths), store)
   from .product_signals import record_product_event
   record_product_event(paths, "story_memory_suggestion_reviewed", disposition=disposition)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)
 
 
+@serialized_project_access
 def correct_memory_suggestion(
   paths: ProjectPaths,
   suggestion_id: str,
@@ -717,18 +864,24 @@ def correct_memory_suggestion(
   description: str | None = None,
   predicate: str | None = None,
   value: str | None = None,
+  entity_type: str | None = None,
+  expected_version: str | None = None,
 ) -> dict[str, Any]:
   store = _read_store(paths)
   suggestion = next((row for row in store["suggestions"] if row.get("id") == suggestion_id), None)
   if suggestion is None:
     raise OpenAuthorError(f"Unknown Story Memory suggestion '{suggestion_id}'.")
+  _check_review_version(paths, suggestion, expected_version)
   if suggestion.get("status") not in {"pending", "deferred"}:
     raise OpenAuthorError("Only pending or deferred Story Memory suggestions can be corrected.")
+  if entity_type is not None and (suggestion.get("kind") != "entity_create" or entity_type not in ENTITY_TYPES):
+    raise OpenAuthorError("Choose a supported entity type for an entity suggestion.")
   updates = {
     "name": name,
     "description": description,
     "predicate": predicate,
     "value": value,
+    "entity_type": entity_type,
   }
   changed = False
   for key, candidate in updates.items():
@@ -742,7 +895,9 @@ def correct_memory_suggestion(
   if not changed:
     raise OpenAuthorError("No Story Memory suggestion corrections provided.")
   suggestion["author_corrected"] = True
+  if entity_type is not None:
+    suggestion["type_confirmed"] = True
   suggestion["corrected_at"] = utc_now()
   suggestion["updated_at"] = utc_now()
   atomic_write_json(_suggestions_path(paths), store)
-  return suggestion
+  return _versioned_suggestion(paths, suggestion)

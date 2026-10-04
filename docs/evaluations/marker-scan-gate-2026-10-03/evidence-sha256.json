@@ -1,0 +1,10 @@
+{
+  "scope": "Packet integrity only, excludes this seal itself. Original archived receipt seals preserved.",
+  "files": {
+    "README.md": "0b5206caa559579f3a44a7ae80f6ee38c0587ada260f9a4bf1cefb2688382f10",
+    "results.json": "1a2a67695b2e9d9714200313822256115e30dc418e8230d71b5e1ba4cc14c036",
+    "receipts.tar.gz": "5e23ec08a5d3b92b5a6da75350d5c87bc7a3313851796074a062e80c412298ce",
+    "receipt-index.json": "f04e7401b958e4b9f27d40dac3e15f576c92cd358f4301a565e0f0ebf6bef52b",
+    "verify.py": "ca9fbea9fa0aa30797f456ed5064995261548ec0c425b7c748520ed6d686f099"
+  }
+}

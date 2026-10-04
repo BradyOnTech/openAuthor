@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openauthor.dev/contracts/assistant-turn/v1",
+  "title": "openAuthor Assistant Turn v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "turn_id", "thread_id", "project_id", "project_revision", "channel", "request_sha256", "status", "created_at", "message_ids", "tool_call_ids", "revision"],
+  "properties": {
+    "schema": {"const": "openauthor.assistant.turn"},
+    "schema_version": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/contractVersion"},
+    "turn_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "thread_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_id": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "project_revision": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "channel": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/channel"},
+    "request_sha256": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/sha256"},
+    "status": {"enum": ["accepted", "running", "completed", "failed", "interrupted", "superseded"]},
+    "created_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "started_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "completed_at": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/timestamp"},
+    "context_pack": {"$ref": "https://openauthor.dev/contracts/context-pack-reference/v1"},
+    "message_ids": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"}},
+    "tool_call_ids": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"}},
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+        "message": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "retryable": {"type": "boolean"}
+      }
+    },
+    "superseded_by": {"$ref": "https://openauthor.dev/contracts/common/v1#/$defs/identifier"},
+    "revision": {"type": "integer", "minimum": 1}
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "accepted_creation_validity": {
+    "from_scene_id": "scene-0001",
+    "to_scene_id": "scene-0002"
+  },
+  "reading_order_after_move": [
+    "scene-0002",
+    "scene-0001"
+  ],
+  "diagnostics_before": [],
+  "diagnostics_after": [
+    "impossible_validity"
+  ],
+  "canon_and_prose_unchanged": true
+}

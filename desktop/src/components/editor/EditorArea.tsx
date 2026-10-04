@@ -1,47 +1,58 @@
-import { useEditor } from "../../contexts/EditorContext";
-import { TabBar } from "./TabBar";
-import { SceneEditor } from "./SceneEditor";
+import { useId } from "react";
+import { useEditor, type RevisionDraft } from "../../contexts/EditorContext";
+import { useUI } from "../../contexts/UIContext";
+import { TabBar, editorTabId, editorPanelId } from "./TabBar";
+import { SceneDocument } from "./SceneDocument";
+import { ManuscriptReader } from "./ManuscriptReader";
 import { ProposalReview } from "./ProposalReview";
 import { SettingsEditor } from "./SettingsEditor";
 import { GenerateProposal } from "./GenerateProposal";
 import { RevisionReview } from "./RevisionReview";
 import { PlanEditor } from "./PlanEditor";
 import { StoryMemoryEditor } from "./StoryMemoryEditor";
-import { CanonMemoryEditor } from "./CanonMemoryEditor";
+import { MemoryWorkspace, type MemoryViewRequest } from "./MemoryWorkspace";
 import { ConnectionGraphEditor } from "./ConnectionGraphEditor";
 import { StorylineEditor } from "./StorylineEditor";
 import { AlternativeComparison } from "./AlternativeComparison";
+import { WritingVoiceEditor } from "./WritingVoiceEditor";
 import type { SceneDetail, ProposalRecord, CodexEntity, RevisionSummary } from "../../types";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
 
 export function EditorArea() {
+  const idPrefix = useId();
   const { tabs, activeTabId } = useEditor();
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
   return (
     <div className="editor-area">
-      <TabBar />
-      {activeTab ? (
-        <EditorContent tab={activeTab} />
-      ) : (
-        <EmptyState />
-      )}
+      <TabBar idPrefix={idPrefix} />
+      {tabs.map(tab => (
+        <div key={tab.id} className="editor-panel" id={editorPanelId(idPrefix, tab.id)} role="tabpanel" aria-labelledby={editorTabId(idPrefix, tab.id)} tabIndex={0} hidden={tab.id !== activeTabId}>
+          {tab.id === activeTabId && <EditorContent tab={tab} />}
+        </div>
+      ))}
+      {!activeTab && <EmptyState />}
     </div>
   );
 }
 
-function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; focusPassage?: import("../../types").CanonEvidence } }) {
+function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknown; modified?: boolean; focusPassage?: import("../../types").CanonEvidence } }) {
+  const { zenMode, setZenMode } = useUI();
   switch (tab.kind) {
+    case "writing-voice":
+      return <WritingVoiceEditor key={JSON.stringify(tab.data) || tab.id} initialBrief={(tab.data as { voiceBrief?: string } | undefined)?.voiceBrief} />;
+    case "reader":
+      return <ManuscriptReader />;
     case "scene": {
       const scene = tab.data as SceneDetail | undefined;
       if (!scene) return <EmptyState />;
-      return <SceneEditor key={tab.id} scene={scene} focusPassage={tab.focusPassage} />;
+      return <SceneDocument key={tab.id} tabId={tab.id} scene={scene} modified={tab.modified} focusPassage={tab.focusPassage} zenMode={zenMode} onExitZen={() => setZenMode(false)} />;
     }
     case "plan":
-      return <PlanEditor />;
+      return <PlanEditor focusNoteId={(tab.data as { noteId?: string } | undefined)?.noteId} />;
     case "memory":
-      return <CanonMemoryEditor />;
+      return <MemoryWorkspace request={tab.data as MemoryViewRequest | undefined} />;
     case "connections":
       return <ConnectionGraphEditor />;
     case "storylines":
@@ -49,7 +60,7 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     case "proposal": {
       const proposal = tab.data as ProposalRecord | undefined;
       if (!proposal) return <EmptyState />;
-      return <ProposalReview proposal={proposal} />;
+      return <ProposalReview key={tab.id} proposal={proposal} />;
     }
     case "alternatives": {
       const proposals = tab.data as ProposalRecord[] | undefined;
@@ -66,7 +77,8 @@ function EditorContent({ tab }: { tab: { id: string; kind: string; data?: unknow
     }
     case "generate": {
       const scene = tab.data as SceneDetail | undefined;
-      return <GenerateProposal key={tab.id} initialSceneId={scene?.id} />;
+      const draft = tab.data as RevisionDraft | undefined;
+      return <GenerateProposal key={tab.id} tabId={tab.id} initialSceneId={draft?.sceneId ?? scene?.id} initialInstruction={draft?.instruction} />;
     }
     case "settings":
       return <SettingsEditor />;
@@ -111,7 +123,7 @@ function EmptyState() {
           : "Open a scene and return to the sentence where you left off."}
       </div>
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
-        <button className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
+        <button data-editor-empty-action className="btn btn--primary" onClick={() => void navigateTo("manuscript").then(focusNewSceneTitle)}>{isBlank ? "Name your first scene" : "Open manuscript"}</button>
         <button className="btn" onClick={() => void navigateTo("plan")}>Plan the story</button>
       </div>
       <div style={{ display: "flex", gap: "var(--space-4)", color: "var(--text-tertiary)", fontSize: "var(--text-xs)", marginTop: "var(--space-3)" }}>

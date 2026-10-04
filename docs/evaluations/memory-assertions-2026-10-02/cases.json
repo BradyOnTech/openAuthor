@@ -1,0 +1,307 @@
+{
+  "evidence_kind": "authored_synthetic_statement_cases",
+  "baseline_commit": "230222fc69d49f7b0668b6bd6d164feec64b9595",
+  "limits": "Fresh authored probes of local statement filtering, not a model quality benchmark or observed author workload.",
+  "accepted_characters": [
+    "Elin",
+    "Tomas",
+    "Maybe",
+    "Hope"
+  ],
+  "cases": [
+    {
+      "id": "conditional-prefix",
+      "body": "If Elin owns the red key, the door will open.",
+      "expected": []
+    },
+    {
+      "id": "conditional-suffix",
+      "body": "Elin owns the red key if the rumour is true.",
+      "expected": []
+    },
+    {
+      "id": "speculation",
+      "body": "Perhaps Elin knows the safe number.",
+      "expected": []
+    },
+    {
+      "id": "imagined-description",
+      "body": "Tomas imagined that Elin was a spy.",
+      "expected": []
+    },
+    {
+      "id": "conditional-connection",
+      "body": "If Elin trusts Tomas, he will answer.",
+      "expected": []
+    },
+    {
+      "id": "dreamed-connection",
+      "body": "Tomas dreamed that Elin protects Tomas.",
+      "expected": []
+    },
+    {
+      "id": "reported-connection",
+      "body": "The witness said Elin trusts Tomas.",
+      "expected": []
+    },
+    {
+      "id": "denied-description",
+      "body": "It was not true that Elin is a spy.",
+      "expected": []
+    },
+    {
+      "id": "question",
+      "body": "Elin trusts Tomas?",
+      "expected": []
+    },
+    {
+      "id": "attributed-description",
+      "body": "Elin owns the key, according to the witness.",
+      "expected": []
+    },
+    {
+      "id": "reported-suffix",
+      "body": "Elin is a spy, Tomas claimed.",
+      "expected": []
+    },
+    {
+      "id": "quoted-value",
+      "body": "Elin is a “traitor” in the witness's words.",
+      "expected": []
+    },
+    {
+      "id": "quoted-modifier",
+      "body": "Elin \"never\" trusts Tomas.",
+      "expected": []
+    },
+    {
+      "id": "curly-double-dialogue",
+      "body": "“Elin owns Tomas's key and Elin trusts Tomas,” said the witness. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "straight-double-dialogue",
+      "body": "\"Elin owns Tomas's key and Elin trusts Tomas,\" said the witness. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "curly-single-dialogue",
+      "body": "‘Elin owns Tomas's key and Elin trusts Tomas,’ said the witness. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "straight-single-dialogue",
+      "body": "'Elin owns Tomas's key and Elin trusts Tomas,' said the witness. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "direct-and-negative-controls",
+      "body": "Elin owns the red key. Elin is not a spy. Elin does not trust Tomas. At the gate, Elin protects Tomas. Elin owns Tomas' coat.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the red key"
+        ],
+        [
+          "fact",
+          "Elin",
+          "is",
+          "not a spy"
+        ],
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "Tomas' coat"
+        ],
+        [
+          "connection",
+          "Elin",
+          "distrusts",
+          "Tomas"
+        ],
+        [
+          "connection",
+          "Elin",
+          "protects",
+          "Tomas"
+        ]
+      ]
+    },
+    {
+      "id": "semicolon-control",
+      "body": "Perhaps the rain will stop; Elin owns the red key; Elin trusts Tomas.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the red key"
+        ],
+        [
+          "connection",
+          "Elin",
+          "trusts",
+          "Tomas"
+        ]
+      ]
+    },
+    {
+      "id": "belief-object-control",
+      "body": "Elin believes Tomas is a spy.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "believes",
+          "Tomas is a spy"
+        ]
+      ]
+    },
+    {
+      "id": "explicit-name-control",
+      "body": "Maybe owns the red key. Maybe trusts Elin.",
+      "expected": [
+        [
+          "fact",
+          "Maybe",
+          "owns",
+          "the red key"
+        ],
+        [
+          "connection",
+          "Maybe",
+          "trusts",
+          "Elin"
+        ]
+      ]
+    },
+    {
+      "id": "defined-name-target",
+      "body": "Elin trusts Maybe.",
+      "expected": [
+        [
+          "connection",
+          "Elin",
+          "trusts",
+          "Maybe"
+        ]
+      ]
+    },
+    {
+      "id": "defined-name-possessive",
+      "body": "Elin owns Maybe’s coat.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "Maybe’s coat"
+        ]
+      ]
+    },
+    {
+      "id": "defined-name-value",
+      "body": "Elin knows Hope’s number.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "knows",
+          "Hope’s number"
+        ]
+      ]
+    },
+    {
+      "id": "defined-alias-target",
+      "body": "Elin protects Perhaps.",
+      "expected": [
+        [
+          "connection",
+          "Elin",
+          "protects",
+          "Maybe"
+        ]
+      ]
+    },
+    {
+      "id": "uncertainty-outside-identities",
+      "body": "Perhaps Elin trusts Maybe. Elin owns Maybe’s coat if the story is true.",
+      "expected": []
+    },
+    {
+      "id": "indirect-complement",
+      "body": "Tomas pretended that Elin owns the red key. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "escaped-nested-dialogue",
+      "body": "\"The witness said \\\"Elin trusts Tomas\\\" yesterday,\" Leah said. Elin owns the blue ribbon.",
+      "expected": [
+        [
+          "fact",
+          "Elin",
+          "owns",
+          "the blue ribbon"
+        ]
+      ]
+    },
+    {
+      "id": "present-tense-said-attribution",
+      "body": "Elin is a spy, Leah says.",
+      "expected": []
+    },
+    {
+      "id": "present-tense-belief-attribution",
+      "body": "Elin trusts Tomas, Leah believes.",
+      "expected": []
+    },
+    {
+      "id": "present-tense-report-attribution",
+      "body": "Elin owns the red key, the witness reports.",
+      "expected": []
+    }
+  ],
+  "accepted_aliases": {
+    "Maybe": [
+      "Perhaps"
+    ]
+  }
+}

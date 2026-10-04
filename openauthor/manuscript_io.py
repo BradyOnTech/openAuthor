@@ -12,14 +12,17 @@ from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, next_scene_index, utc_now
+from .project_locks import serialized_project_access
+from .planning import list_manuscript_scenes
 from .scenes import build_scene_markdown, list_scene_details, scene_filename, scene_id, split_scene_text
-from .import_structure import append_import_structure, correct_sections, infer_section_roles, resolve_sections, split_sections
+from .import_structure import ResolvedManuscript, append_import_structure, correct_sections, infer_section_roles, resolve_sections, split_sections
 
 SUPPORTED_IMPORT_SUFFIXES = {".md", ".markdown", ".txt", ".docx"}
 IMPORT_STRATEGIES = {"auto", "files", "headings", "single"}
 MANUSCRIPT_EXPORT_LOSSES = [
   "Project brief, beats, planning notes, scene timeline/labels, Story Memory and Canon, AI chats, Change Sets, Versions and Storylines are not included. Use a full backup to preserve the project.",
   "Scene IDs and timestamps are regenerated on manuscript re-import.",
+  "Part and chapter synopses are not included; only their titles and reading hierarchy are exported.",
 ]
 
 
@@ -180,8 +183,11 @@ def _scrivener_sections(source: Path) -> tuple[list[dict[str, Any]], list[str]]:
       body = ""
     children = item.find("Children")
     has_children = children is not None and len(children) > 0
-    nested_groups = has_children and any(child.find("Children/BinderItem") is not None for child in children)
-    role = "act" if nested_groups and level == 1 else "chapter" if has_children else "scene"
+    is_folder = item.get("Type", "").lower() == "folder"
+    nested_groups = has_children and any(child.get("Type", "").lower() == "folder" or child.find("Children/BinderItem") is not None for child in children)
+    role = "act" if nested_groups and level == 1 else "chapter" if has_children or is_folder else "scene"
+    if is_folder and not has_children:
+      warnings.append(f"Empty binder folder '{title}' is represented as a chapter. Correct its role to Part / Act in the preview if needed.")
     if level > 2 and has_children:
       warnings.append(f"Nested binder group '{title}' is represented as a chapter; deeper grouping is flattened.")
     sections.append({"title": title, "body": body, "source_path": str(content_file or project_file),
@@ -195,12 +201,10 @@ def _scrivener_sections(source: Path) -> tuple[list[dict[str, Any]], list[str]]:
   if children is not None:
     for child in children.findall("BinderItem"):
       visit(child)
-  if not any(section["body"] for section in sections):
-    raise OpenAuthorError("Scrivener Draft/Manuscript binder produced no scenes.")
   return sections, warnings
 
 
-def _docx_paragraphs(path: Path) -> list[tuple[str, int]]:
+def _docx_paragraphs(path: Path) -> list[tuple[str, int, str]]:
   try:
     with zipfile.ZipFile(path) as archive:
       document = archive.read("word/document.xml")
@@ -211,7 +215,7 @@ def _docx_paragraphs(path: Path) -> list[tuple[str, int]]:
   except ElementTree.ParseError as error:
     raise OpenAuthorError(f"DOCX document XML is invalid: {error}") from error
   namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-  paragraphs: list[tuple[str, int]] = []
+  paragraphs: list[tuple[str, int, str]] = []
   for paragraph in root.iter(f"{namespace}p"):
     pieces: list[str] = []
     for node in paragraph.iter():
@@ -224,24 +228,27 @@ def _docx_paragraphs(path: Path) -> list[tuple[str, int]]:
     value = "".join(pieces)
     style = paragraph.find(f"{namespace}pPr/{namespace}pStyle")
     style_name = style.get(f"{namespace}val", "") if style is not None else ""
+    role = {"OpenAuthorAct": "act", "OpenAuthorChapter": "chapter", "OpenAuthorScene": "scene"}.get(style_name, "")
     heading = re.fullmatch(r"heading\s*([1-9])", style_name, re.IGNORECASE)
     outline = paragraph.find(f"{namespace}pPr/{namespace}outlineLvl")
     outline_value = outline.get(f"{namespace}val", "") if outline is not None else ""
-    level = int(heading.group(1)) if heading else int(outline_value) + 1 if outline_value in {str(n) for n in range(9)} else 0
-    paragraphs.append((value, level if value.strip() else 0))
+    level = {"act": 1, "chapter": 2, "scene": 3}.get(role, 0) or (int(heading.group(1)) if heading else int(outline_value) + 1 if outline_value in {str(n) for n in range(9)} else 0)
+    paragraphs.append((value, level if value.strip() else 0, role))
   return paragraphs
 
 
 def _docx_sections(path: Path, fallback: str) -> list[dict[str, Any]]:
   sections: list[dict[str, Any]] = []
   current: dict[str, Any] = {"title": fallback, "body": "", "level": 0, "heading": ""}
-  for text, level in _docx_paragraphs(path):
+  for text, level, role in _docx_paragraphs(path):
     if level:
       if current["body"].strip() or current["heading"]:
         current["body"] = current["body"].strip()
         sections.append(current)
-      title = " ".join(text.split())
+      title = text.strip() if role else " ".join(text.split())
       current = {"title": title, "body": "", "level": level, "heading": f"{'#' * level} {title}"}
+      if role:
+        current.update(role=role, keep_empty=role == "scene")
     else:
       current["body"] += text + "\n"
   if current["body"].strip() or current["heading"]:
@@ -253,7 +260,7 @@ def _docx_sections(path: Path, fallback: str) -> list[dict[str, Any]]:
 
 def _read_document(path: Path) -> str:
   if path.suffix.lower() == ".docx":
-    return "\n".join(f"{'#' * level} {text}" if level else text for text, level in _docx_paragraphs(path)).strip()
+    return "\n".join(f"{'#' * level} {text}" if level else text for text, level, _ in _docx_paragraphs(path)).strip()
   try:
     return path.read_text(encoding="utf-8-sig")
   except UnicodeDecodeError as error:
@@ -351,10 +358,15 @@ def _import_sections(source: Path, strategy: str) -> tuple[list[dict[str, Any]],
     if file_path.suffix.lower() == ".docx":
       parts = _docx_sections(file_path, fallback)
       if resolved_strategy in {"files", "single"} and parts:
+        if len(parts) > 1 or parts[0]["role"] in {"act", "chapter"}:
+          warnings.append(f"{file_path.name}: {resolved_strategy.title()} strategy flattens the outline into one scene; empty parts and chapters are not retained as Plan containers. Choose Headings to retain and review boundaries.")
         first, *rest = parts
         body = "\n\n".join([first["body"], *("\n\n".join(value for value in (part["heading"], part["body"]) if value) for part in rest)]).strip()
         parts = [dict(first, body=body, role="scene", level=0)]
     elif resolved_strategy in {"files", "single"}:
+      boundaries = split_sections(text, fallback, markdown=is_markdown_structure)
+      if len(boundaries) > 1 or any(part["role"] in {"act", "chapter"} for part in boundaries):
+        warnings.append(f"{file_path.name}: {resolved_strategy.title()} strategy flattens the outline into one scene; empty parts and chapters are not retained as Plan containers. Choose Headings to retain and review boundaries.")
       title, body = _single_scene(text, fallback, markdown=is_markdown_structure)
       parts = [{"title": title, "body": body, "role": "scene", "level": 0, "heading": ""}]
     else:
@@ -367,23 +379,24 @@ def _import_sections(source: Path, strategy: str) -> tuple[list[dict[str, Any]],
   return sections, warnings
 
 
-def _import_scenes(source: Path, strategy: str, corrections: dict[str, Any] | None = None) -> tuple[list[dict[str, Any]], list[str], list[dict[str, Any]], str]:
+def _resolve_import(source: Path, strategy: str, corrections: dict[str, Any] | None = None) -> tuple[ResolvedManuscript, list[str], list[dict[str, Any]], str]:
   sections, warnings = _import_sections(source, strategy)
   for index, section in enumerate(sections, start=1):
     section["id"] = f"section-{index:04d}"
   correct_sections(sections, corrections)
   fingerprint = hashlib.sha256(json.dumps({"strategy": strategy, "sections": sections}, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
-  scenes = resolve_sections(sections, warnings)
-  if not scenes:
-    raise OpenAuthorError("Import produced no scenes.")
-  return scenes, warnings, sections, fingerprint
+  manuscript = resolve_sections(sections, warnings)
+  if not manuscript.outline:
+    raise OpenAuthorError("Import produced no scenes or outline containers.")
+  return manuscript, warnings, sections, fingerprint
 
 
 def preview_manuscript_import(source: Path, *, strategy: str = "auto", corrections: dict[str, Any] | None = None) -> dict[str, Any]:
-  scenes, warnings, sections, fingerprint = _import_scenes(source, strategy, corrections)
+  manuscript, warnings, sections, fingerprint = _resolve_import(source, strategy, corrections)
+  scenes = manuscript.scenes
   plan: dict[str, Any] = {"acts": [], "unassigned_scene_ids": []}
   preview_ids = [str(index) for index in range(len(scenes))]
-  append_import_structure(plan, scenes, preview_ids)
+  append_import_structure(plan, manuscript, preview_ids)
   locations = {identifier: {"act_title": act["title"], "chapter_title": chapter["title"]}
                for act in plan["acts"] for chapter in act["chapters"] for identifier in chapter["scene_ids"]}
   if plan["acts"] and any(not scene["chapter_key"] for scene in scenes):
@@ -392,10 +405,14 @@ def preview_manuscript_import(source: Path, *, strategy: str = "auto", correctio
     "source": str(source.expanduser().resolve()),
     "strategy": strategy,
     "scene_count": len(scenes),
+    "act_count": len(plan["acts"]),
     "chapter_count": sum(len(act["chapters"]) for act in plan["acts"]),
     "word_count": sum(len(scene["body"].split()) for scene in scenes),
     "warnings": warnings,
     "fingerprint": fingerprint,
+    "outline": [{"title": act["title"], "chapters": [
+      {"title": chapter["title"], "scene_positions": [int(value) + 1 for value in chapter["scene_ids"]]}
+      for chapter in act["chapters"]]} for act in plan["acts"]],
     "sections": [{key: value for key, value in section.items() if key not in {"body", "heading"}}
                  | {"word_count": len(section["body"].split()), "excerpt": section["body"][:240]}
                  for section in sections],
@@ -414,6 +431,7 @@ def preview_manuscript_import(source: Path, *, strategy: str = "auto", correctio
   }
 
 
+@serialized_project_access
 def import_manuscript(
   paths: ProjectPaths,
   source: Path,
@@ -422,18 +440,19 @@ def import_manuscript(
   corrections: dict[str, Any] | None = None,
   expected_fingerprint: str | None = None,
 ) -> dict[str, Any]:
-  scenes, warnings, _, fingerprint = _import_scenes(source, strategy, corrections)
+  manuscript, warnings, _, fingerprint = _resolve_import(source, strategy, corrections)
   if expected_fingerprint is not None and expected_fingerprint != fingerprint:
     raise OpenAuthorError("Import source or corrections changed. Refresh the preview before importing.")
   from .revisions import checkpointed_edit
   with checkpointed_edit(paths, f"Import {source.name}", kind="manuscript_import"):
-    return _commit_import(paths, source, strategy, scenes, warnings)
+    return _commit_import(paths, source, strategy, manuscript, warnings)
 
 
-def _commit_import(paths: ProjectPaths, source: Path, strategy: str, scenes: list[dict[str, Any]], warnings: list[str]) -> dict[str, Any]:
+def _commit_import(paths: ProjectPaths, source: Path, strategy: str, manuscript: ResolvedManuscript, warnings: list[str]) -> dict[str, Any]:
   from .planning import get_plan
   plan = get_plan(paths, persist=False)
-  if plan["unassigned_scene_ids"] and any(scene["chapter_key"] for scene in scenes):
+  scenes = manuscript.scenes
+  if plan["unassigned_scene_ids"] and any(item["role"] in {"act", "chapter"} or item["chapter_key"] for item in manuscript.outline):
     warnings.append("Existing unassigned scenes were grouped under 'Existing manuscript' to preserve their reading order before the import.")
   start_index = next_scene_index(paths)
   staged: list[tuple[Path, Path, str]] = []
@@ -464,9 +483,11 @@ def _commit_import(paths: ProjectPaths, source: Path, strategy: str, scenes: lis
     committed: list[Path] = []
     try:
       for staged_path, target, _ in staged:
-        os.replace(staged_path, target)
+        from .book_transactions import write_transaction_text
+        if not write_transaction_text(target, staged_path.read_text(encoding="utf-8"), exclusive=True):
+          os.replace(staged_path, target)
         committed.append(target)
-      append_import_structure(plan, scenes, [identifier for _, _, identifier in staged])
+      imported_acts = append_import_structure(plan, manuscript, [identifier for _, _, identifier in staged])
       atomic_write_json(paths.structure_file, plan)
     except OSError as error:
       for target in committed:
@@ -478,16 +499,16 @@ def _commit_import(paths: ProjectPaths, source: Path, strategy: str, scenes: lis
     "source": str(source.expanduser().resolve()),
     "strategy": strategy,
     "scene_count": len(staged),
+    "act_count": len(imported_acts),
+    "chapter_count": sum(len(act["chapters"]) for act in imported_acts),
     "scene_ids": [identifier for _, _, identifier in staged],
     "word_count": sum(len(scene["body"].split()) for scene in scenes),
     "warnings": warnings,
   }
   # Import never promotes inferred names to canon. It only prepares a review queue.
   from .story_memory import extract_memory_suggestions
-  report["story_memory_suggestions"] = extract_memory_suggestions(
-    paths,
-    scene_ids=report["scene_ids"],
-  )
+  if report["scene_ids"]:
+    report["story_memory_suggestions"] = extract_memory_suggestions(paths, scene_ids=report["scene_ids"])
   atomic_write_json(paths.project_dir / "last_import_report.json", report)
   from .product_signals import record_product_event
   record_product_event(
@@ -519,7 +540,7 @@ def _export_markdown(paths: ProjectPaths, target: Path) -> dict[str, Any]:
   target.mkdir(parents=True, exist_ok=True)
   if any(target.iterdir()):
     raise OpenAuthorError(f"Markdown export destination must be empty: {target}")
-  scenes = list_scene_details(paths)
+  scenes = list_manuscript_scenes(paths)
   files: list[str] = []
   names: dict[str, str] = {}
   for index, scene in enumerate(scenes, start=1):
@@ -534,11 +555,12 @@ def _export_markdown(paths: ProjectPaths, target: Path) -> dict[str, Any]:
       section["file"] = names[section.pop("scene_id")]
   atomic_write_json(target / "openauthor-manuscript.json", {"schema_version": 1, "sections": sections})
   files.append("openauthor-manuscript.json")
-  return {"format": "markdown", "target": str(target), "files": files, "preserves": ["Scene prose and metadata", "Part/chapter/scene reading hierarchy via openauthor-manuscript.json"], "losses": list(MANUSCRIPT_EXPORT_LOSSES)}
+  return {"format": "markdown", "target": str(target), "files": files, "preserves": ["Scene prose and metadata", "Part/chapter/scene reading hierarchy, including empty parts and chapters, via openauthor-manuscript.json"], "losses": [*MANUSCRIPT_EXPORT_LOSSES, "Keep openauthor-manuscript.json with all scene files. Importing individual files without it cannot recover empty parts and chapters or their parentage."]}
 
 
-def _paragraph_xml(text: str, *, heading: int = 0, page_break: bool = False) -> str:
-  properties = f'<w:pPr><w:pStyle w:val="Heading{heading}"/></w:pPr>' if heading else ""
+def _paragraph_xml(text: str, *, heading: int = 0, role: str = "", page_break: bool = False) -> str:
+  style = f"OpenAuthor{role.title()}" if role else f"Heading{heading}"
+  properties = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if heading else ""
   break_xml = "<w:r><w:br w:type=\"page\"/></w:r>" if page_break else ""
   return f"<w:p>{properties}{break_xml}<w:r><w:t xml:space=\"preserve\">{escape(text)}</w:t></w:r></w:p>"
 
@@ -554,7 +576,7 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
   structured = any(section["role"] != "scene" for section in sections)
   for section in sections:
     heading = {"act": 1, "chapter": 2, "scene": 3}[section["role"]] if structured else 1
-    paragraphs.append(_paragraph_xml(section["title"], heading=heading))
+    paragraphs.append(_paragraph_xml(section["title"], heading=heading, role=section["role"]))
     if section["role"] != "scene":
       continue
     scene = by_id[section["scene_id"]]
@@ -586,21 +608,24 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
     archive.writestr("word/document.xml", document)
     archive.writestr("word/_rels/document.xml.rels", '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')
     styles = ''.join(f'<w:style w:type="paragraph" w:styleId="Heading{level}"><w:name w:val="heading {level}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/><w:outlineLvl w:val="{level - 1}"/></w:pPr><w:rPr><w:b/><w:sz w:val="{size}"/></w:rPr></w:style>' for level, size in [(1, 36), (2, 30), (3, 26)])
+    styles += ''.join(f'<w:style w:type="paragraph" w:styleId="OpenAuthor{role}"><w:name w:val="openAuthor {role}"/><w:basedOn w:val="Heading{level}"/><w:next w:val="Normal"/><w:pPr><w:outlineLvl w:val="{level - 1}"/></w:pPr></w:style>' for role, level in [("Act", 1), ("Chapter", 2), ("Scene", 3 if structured else 1)])
     archive.writestr("word/styles.xml", f'<?xml version="1.0" encoding="UTF-8"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>{styles}</w:styles>')
   return {
     "format": "docx",
     "target": str(target),
     "files": [target.name],
+    "preserves": ["Scene prose and part/chapter/scene roles, including empty parts and chapters, while openAuthor paragraph styles are retained."],
     "losses": [
       *MANUSCRIPT_EXPORT_LOSSES,
       "Scene metadata other than title is not represented in DOCX.",
       "Markdown formatting syntax is exported as literal text, not typeset formatting.",
-      "Empty scenes are represented by headings and may not survive a DOCX re-import.",
+      "Other editors can remove section styles. Without them, heading roles are inferred and empty headings may be omitted; review and correct the import preview. Files/Single strategy flattens hierarchy into prose.",
       "Comments, tracked changes, and source typography are not available in the scene model.",
     ],
   }
 
 
+@serialized_project_access
 def export_manuscript(paths: ProjectPaths, target: Path, *, format: str) -> dict[str, Any]:
   normalized = format.strip().lower()
   resolved = target.expanduser().resolve()

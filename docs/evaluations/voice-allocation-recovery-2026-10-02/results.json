@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-02T21:10:03.650434+00:00",
+  "status": "implemented_locally_verified_deployment_and_unknown_provider_identity_gates_open",
+  "fixed_baseline": "2ed7f6da2497312d7a52f8734cff550a72dcf9e7",
+  "git_head_at_capture": "2ed7f6da2497312d7a52f8734cff550a72dcf9e7",
+  "implementation_at_capture": "Uncommitted gateway source and tests; no source commit is claimed by this packet.",
+  "source_inputs": 59,
+  "baseline_source_overrides": 2,
+  "source_stability": "All archived59 inputs unchanged before and after both replays and still match the current workspace.",
+  "final": {
+    "focused_controls": {
+      "discovered": 29,
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0
+    },
+    "actual_postgresql_voice_controls": {
+      "discovered": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "sql_suite": "supabase/tests/mobile_voice_control.sql with full14-migration chain",
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "baseline": {
+    "focused_controls": {
+      "discovered": 29,
+      "passed": 25,
+      "failed": 4,
+      "skipped": 0
+    },
+    "actual_postgresql_voice_controls": {
+      "discovered": 9,
+      "passed": 6,
+      "failed": 3,
+      "skipped": 0
+    },
+    "result": "Expected red controls only; evaluate.py returns success after verifying expected nonzero child exits."
+  },
+  "intermediate_failure": {
+    "focused_controls": {
+      "discovered": 29,
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0
+    },
+    "actual_postgresql_voice_controls": {
+      "discovered": 9,
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0
+    },
+    "scope": "Existing DB-outage case timed out waiting for subsequent new gateway issuance; all3 added cases passed. Receipt recovery precedes successor poll readiness; test now waits for that live successor TICK. Private refusal reason was not exposed, so the synchronization explanation is an inference."
+  },
+  "logs": {
+    "baseline-red": {
+      "original_path": "/private/tmp/openauthor-voice-allocation-baseline-final.txt",
+      "raw_sha256": "674d5fd599a7fe6a4e3d754e86b8d1d3fae200f0383b122e33e021b16db4b4ab",
+      "raw_gzip_sha256": "c17ce7b7c2f0cf22931bdbb07898425b597223ac36cb04782679da0e105b63b1",
+      "tap_summaries": [
+        {
+          "tests": 29,
+          "pass": 25,
+          "fail": 4,
+          "skipped": 0
+        },
+        {
+          "tests": 9,
+          "pass": 6,
+          "fail": 3,
+          "skipped": 0
+        }
+      ]
+    },
+    "final-green": {
+      "original_path": "/private/tmp/openauthor-voice-allocation-final.txt",
+      "raw_sha256": "2c0393525241c89505ec20567b0455ddaa3ad0c2f3ba71e4133c2db44639415e",
+      "raw_gzip_sha256": "277f120b2e0ba1b7f68f725885136fb4286257d61faec3c35de0c90a71b1d484",
+      "tap_summaries": [
+        {
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "skipped": 0
+        },
+        {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "readiness-order-failure": {
+      "original_path": "/private/tmp/openauthor-voice-allocation-archived-final.txt",
+      "raw_sha256": "2cb62ecec8cf9781a52f191c80af3c0c5a601b8ef316b6ba1d36a593ffef94da",
+      "raw_gzip_sha256": "1eef8bba2e61f62565186073e61e09abd61aba8e918b870a24a85c16c4fe2a99",
+      "tap_summaries": [
+        {
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "skipped": 0
+        },
+        {
+          "tests": 9,
+          "pass": 8,
+          "fail": 1,
+          "skipped": 0
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "node": "v22.17.0",
+    "python": "Python 3.13.2",
+    "postgres": "postgres (PostgreSQL) 17.11 (Homebrew)"
+  },
+  "covered_controls": [
+    "Actual synthetic HTTP Location headers flushed with SDP body withheld; private fsync proven before completed SDP answer.",
+    "Actual SIGKILL between journal fsync and SQL attachment; recovery from allocating and unknown with exact original provider ID, preserved identity/session/hard deadline, independent accepted receipt, no replacement call or resumed SDP.",
+    "Lost hangup acceptance reply remains closing/unconfirmed with journal retained and new issuance refused.",
+    "Provider allocation with no headers retains unknown row and exact persisted leaseUUID support correlation, no blind create retry or invented hangup.",
+    "Strict control-interface malformed/foreign/wrong-binding/different-ID/disallowed-null-phase/scope-attestation controls, including rejection of an active attachment response.",
+    "Existing independent-controller failure, DB outage, narrow-role grant, account fence and redacted positive closed-receipt controls."
+  ],
+  "remaining_boundaries": [
+    "Pre-Location, invalid Location and pre-durable-journal identity loss still require positive external operator/provider reconciliation.",
+    "No inspected documented request-ID-to-call lookup, Realtime create idempotency, call list/retrieve or WebRTC allocation webhook recovery. Request-ID support correlation is documented for supported endpoints, not explicit Realtime support retention/identity recovery.",
+    "Lost hangup acceptance before durable independent receipt remains unconfirmed; 404/timeouts are not proof.",
+    "Deployment credentials/signatures, independent failure-domain supervision and measured expiry/queue/provider/media/usage acceptance remain unobserved.",
+    "Total independently live controller/durable-state/control-network loss does not establish unconditional strict shorter expiry; account finalization remains guarded."
+  ],
+  "primary_sources": [
+    "https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/create",
+    "https://developers.openai.com/api/docs/guides/voice-server-controls?voice-api=realtime",
+    "https://developers.openai.com/api/reference/resources/realtime/subresources/calls",
+    "https://developers.openai.com/api/reference/overview#debugging-requests",
+    "https://developers.openai.com/api/reference/resources/realtime/subresources/calls/methods/hangup"
+  ],
+  "external_actions": "None: no authenticated provider calls, deployment, real credentials/accounts, external messages or installs."
+}

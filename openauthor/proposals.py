@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .book_transactions import recoverable_project_edit
+
 import hashlib
 import json
 import re
@@ -10,7 +12,8 @@ from pathlib import Path
 from .changes import build_change_set, edit_hunk_after_text, rebase_change_set, render_change_set, set_hunk_decision
 from .git_ops import current_branch, merge_revision_pair
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
-from .revisions import create_revision, read_file_at_revision, revision_head
+from .project_locks import serialized_project_access
+from .revisions import create_revision, get_revision, read_file_at_revision, revision_head
 from .scenes import get_scene, split_scene_text, update_scene
 
 STATUSES = {"pending", "applied", "rejected"}
@@ -20,6 +23,7 @@ def _proposal_file(paths: ProjectPaths, proposal_id: str) -> Path:
   return paths.proposals_dir / f"{proposal_id}.json"
 
 
+@serialized_project_access
 def create_proposal(
   paths: ProjectPaths,
   *,
@@ -85,6 +89,7 @@ def _read_proposal(proposal_file: Path) -> dict[str, Any]:
   return json.loads(proposal_file.read_text(encoding="utf-8"))
 
 
+@serialized_project_access
 def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, Any]:
   proposal_path = _proposal_file(paths, proposal_id)
   if not proposal_path.exists():
@@ -94,6 +99,7 @@ def get_proposal(paths: ProjectPaths, proposal_id: str) -> dict[str, Any]:
   return payload
 
 
+@serialized_project_access
 def list_proposals(
   paths: ProjectPaths,
   *,
@@ -118,6 +124,7 @@ def list_proposals(
   return rows
 
 
+@serialized_project_access
 def update_proposal_status(
   paths: ProjectPaths,
   *,
@@ -146,6 +153,7 @@ def update_proposal_status(
   return payload
 
 
+@serialized_project_access
 def set_proposal_draft(
   paths: ProjectPaths,
   *,
@@ -212,6 +220,7 @@ def set_proposal_draft(
   return payload
 
 
+@serialized_project_access
 def update_change_hunk(
   paths: ProjectPaths,
   *,
@@ -237,6 +246,7 @@ def update_change_hunk(
   return payload
 
 
+@serialized_project_access
 def edit_change_hunk(
   paths: ProjectPaths,
   *,
@@ -269,6 +279,7 @@ def edit_change_hunk(
   return payload
 
 
+@serialized_project_access
 def rebase_proposal_change_set(paths: ProjectPaths, *, proposal_id: str) -> dict[str, Any]:
   file_path = _proposal_file(paths, proposal_id)
   if not file_path.exists():
@@ -293,6 +304,8 @@ def rebase_proposal_change_set(paths: ProjectPaths, *, proposal_id: str) -> dict
   return payload
 
 
+@serialized_project_access
+@recoverable_project_edit
 def apply_proposal(
   paths: ProjectPaths,
   *,
@@ -438,6 +451,8 @@ def apply_proposal(
   return payload
 
 
+@serialized_project_access
+@recoverable_project_edit
 def apply_proposal_batch(
   paths: ProjectPaths,
   *,
@@ -504,12 +519,20 @@ def apply_proposal_batch(
     for row in prepared
   }
   group_id = next((str(row["payload"].get("change_group_id", "")) for row in prepared if row["payload"].get("change_group_id")), f"change-group-{uuid.uuid4().hex[:12]}")
+  group_metadata = {
+    "change_group_id": group_id,
+    "proposal_ids": normalized,
+    "scene_ids": sorted(scene_ids),
+    "undo_schema_version": 1,
+    "workspace": prepared[0]["scene"]["edit_version"]["workspace"],
+    "proposal_scenes": {row["id"]: {"id": row["scene_id"], "path": row["scene"]["path"]} for row in prepared},
+  }
   try:
     pre_apply_snapshot = create_revision(
       paths,
       f"Before coordinated Change Set {group_id}",
       kind="change_group_before",
-      metadata={"change_group_id": group_id, "proposal_ids": normalized, "scene_ids": sorted(scene_ids)},
+      metadata=group_metadata,
     )
   except (OpenAuthorError, OSError) as error:
     raise OpenAuthorError(f"Cannot apply safely because the pre-change revision failed: {error}") from error
@@ -521,7 +544,7 @@ def apply_proposal_batch(
       paths,
       f"Apply coordinated Change Set {group_id}",
       kind="change_group_apply",
-      metadata={"change_group_id": group_id, "proposal_ids": normalized, "scene_ids": sorted(scene_ids)},
+      metadata=group_metadata,
     )
     applied_at = utc_now()
     results: list[dict[str, Any]] = []
@@ -535,6 +558,7 @@ def apply_proposal_batch(
         "applied_changes": True,
         "pre_apply_snapshot": pre_apply_snapshot,
         "applied_revision": applied_revision,
+        "coordinated_undo_available": True,
         "scene_digest": _scene_digest(paths, row["scene_id"]),
         "accepted_hunk_ids": row["accepted_hunks"],
         "rejected_hunk_ids": row["rejected_hunks"],
@@ -576,6 +600,127 @@ def apply_proposal_batch(
   }
 
 
+@serialized_project_access
+@recoverable_project_edit
+def undo_proposal_batch(paths: ProjectPaths, *, applied_revision: str) -> dict[str, Any]:
+  """Restore an exact recorded group, or leave every member untouched.
+
+  Membership, original files and Storyline scope come from the applied Revision.
+  There is deliberately no force option or caller-selected subset. Old groups
+  without a recorded undo recipe retain the individual scene review workflow.
+  """
+  if not re.fullmatch(r"[a-f0-9]{64}", applied_revision):
+    raise OpenAuthorError("A valid applied Revision id is required for coordinated undo.")
+  applied = get_revision(paths, applied_revision)
+  metadata = applied.get("metadata", {})
+  if applied.get("kind") != "change_group_apply" or not isinstance(metadata, dict) or metadata.get("undo_schema_version") != 1:
+    raise OpenAuthorError("This Revision has no coordinated undo record. Review its scenes individually.")
+  ids = metadata.get("proposal_ids")
+  members = metadata.get("proposal_scenes")
+  if (
+    not isinstance(ids, list) or len(ids) < 2
+    or any(not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", value) for value in ids)
+    or len(set(ids)) != len(ids) or not isinstance(members, dict) or set(members) != set(ids)
+    or not isinstance(metadata.get("change_group_id"), str) or not metadata["change_group_id"].strip()
+    or not isinstance(metadata.get("workspace"), str) or not re.fullmatch(r"[a-f0-9]{64}", metadata["workspace"])
+    or not isinstance(metadata.get("scene_ids"), list)
+  ):
+    raise OpenAuthorError("The coordinated undo membership is incomplete. No scenes were restored.")
+  before_id = str(applied.get("parent", ""))
+  if not re.fullmatch(r"[a-f0-9]{64}", before_id):
+    raise OpenAuthorError("The coordinated pre-change Revision id is invalid.")
+  before = get_revision(paths, before_id)
+  if before.get("kind") != "change_group_before" or before.get("metadata") != metadata:
+    raise OpenAuthorError("The coordinated pre-change Revision does not match its applied group.")
+
+  original_head = revision_head(paths)
+  ancestor = original_head
+  visited: set[str] = set()
+  while ancestor and ancestor != applied_revision and ancestor not in visited:
+    visited.add(ancestor)
+    ancestor = str(get_revision(paths, ancestor).get("parent", ""))
+  if ancestor != applied_revision:
+    raise OpenAuthorError("This coordinated Revision is not in the current manuscript history.")
+
+  prepared: list[dict[str, Any]] = []
+  scene_ids: set[str] = set()
+  originals: dict[Path, str] = {}
+  for proposal_id in ids:
+    member = members[proposal_id]
+    if not isinstance(member, dict) or not isinstance(member.get("id"), str) or member["id"] in scene_ids:
+      raise OpenAuthorError("The coordinated undo scene membership is invalid.")
+    scene = get_scene(paths, member["id"])
+    if scene["path"] != member.get("path") or scene["edit_version"]["workspace"] != metadata.get("workspace"):
+      raise OpenAuthorError("Coordinated undo was stopped because the Storyline or scene location changed.")
+    scene_path = paths.root / scene["path"]
+    current = scene_path.read_text(encoding="utf-8")
+    if current != read_file_at_revision(paths, applied_revision, scene["path"]):
+      raise OpenAuthorError(f"Scene '{scene['title']}' has changed since this Revision. Undo was stopped to protect newer work; no scenes were restored.")
+    restored = read_file_at_revision(paths, before_id, scene["path"])
+    if split_scene_text(restored)[0].get("id") != scene["id"]:
+      raise OpenAuthorError("The coordinated undo snapshot targets a different scene.")
+    file_path = _proposal_file(paths, proposal_id)
+    try:
+      original_proposal = file_path.read_text(encoding="utf-8")
+      payload = json.loads(original_proposal)
+    except (OSError, ValueError) as error:
+      raise OpenAuthorError(f"Coordinated undo needs every proposal record, including '{proposal_id}'.") from error
+    if (
+      not isinstance(payload, dict) or payload.get("id") != proposal_id
+      or payload.get("status") != "applied" or not payload.get("applied_changes")
+      or payload.get("undone_at") or payload.get("applied_revision") != applied_revision
+      or payload.get("pre_apply_snapshot") != before_id or payload.get("scene_id") != scene["id"]
+    ):
+      raise OpenAuthorError(f"Proposal '{proposal_id}' was already undone or no longer matches this coordinated Revision. No scenes were restored.")
+    scene_ids.add(scene["id"])
+    originals[scene_path] = current
+    originals[file_path] = original_proposal
+    prepared.append({"file": file_path, "scene_path": scene_path, "scene_id": scene["id"], "restored": restored, "payload": payload})
+  if sorted(scene_ids) != metadata.get("scene_ids"):
+    raise OpenAuthorError("The coordinated undo scene list does not match the recorded group.")
+
+  originals[paths.revision_head_file] = paths.revision_head_file.read_text(encoding="utf-8")
+  try:
+    for row in prepared:
+      atomic_write_text(row["scene_path"], row["restored"])
+    undo_revision = create_revision(
+      paths, f"Undo coordinated Change Set {metadata['change_group_id']}", kind="change_group_undo",
+      metadata={**metadata, "applied_revision": applied_revision, "restored_revision": before_id},
+    )
+    undone_at = utc_now()
+    for row in prepared:
+      row["payload"].update({
+        "undone_at": undone_at, "updated_at": undone_at, "undo_revision": undo_revision,
+        "restored_revision": before_id, "scene_digest": _scene_digest(paths, row["scene_id"]),
+      })
+      atomic_write_json(row["file"], row["payload"])
+    scenes = [get_scene(paths, row["scene_id"]) for row in prepared]
+  except (OpenAuthorError, OSError, ValueError) as error:
+    rollback_errors = []
+    for path, content in originals.items():
+      try:
+        atomic_write_text(path, content)
+      except OSError as rollback_error:
+        rollback_errors.append(str(rollback_error))
+    if rollback_errors:
+      raise OpenAuthorError("Coordinated undo failed and rollback could not finish. Stop editing and recover from Revision history: " + "; ".join(rollback_errors)) from error
+    raise OpenAuthorError(f"Coordinated undo was rolled back: {error}") from error
+  warnings = []
+  try:
+    from .product_signals import record_product_event
+    record_product_event(paths, "change_set_undone")
+  except (OpenAuthorError, OSError) as error:
+    warnings.append(f"Undo succeeded, but its local activity signal could not be recorded: {error}")
+  return {
+    "change_group_id": metadata["change_group_id"], "applied_revision": applied_revision,
+    "undo_revision": undo_revision, "restored_revision": before_id,
+    "proposal_ids": ids, "scene_ids": sorted(scene_ids), "scenes": scenes,
+    "proposals": [{**row["payload"], "stale": False} for row in prepared], "warnings": warnings,
+  }
+
+
+@serialized_project_access
+@recoverable_project_edit
 def undo_proposal(
   paths: ProjectPaths,
   *,
@@ -688,6 +833,15 @@ def _proposal_is_stale(
 ) -> bool:
   if proposal.get("selection") and proposal["selection"].get("branch") != _capture_vcs_anchor(paths)[0]:
     return True
+  source_digests = (proposal.get("selection") or {}).get("review_source_digests")
+  if isinstance(source_digests, dict):
+    for source_id, expected_digest in source_digests.items():
+      try:
+        actual_digest = current_digests.get(source_id) if current_digests is not None else _scene_digest(paths, source_id)
+      except OpenAuthorError:
+        return True
+      if actual_digest != expected_digest:
+        return True
   if proposal.get("source") == "merge_resolution":
     metadata = proposal.get("merge") or {}
     try:

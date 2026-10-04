@@ -11,6 +11,7 @@ from openauthor.planning import (
   add_scene_note,
   assign_scene,
   get_plan,
+  get_manuscript_reading,
   preview_scene_move,
   update_brief,
   update_scene_metadata,
@@ -20,6 +21,21 @@ from openauthor.scenes import add_scene
 
 
 class PlanningModuleTests(unittest.TestCase):
+  def test_reading_copy_follows_chapters_and_keeps_unassigned_prose(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Reading Novel")
+      add_scene(paths, title="One", body="First written scene.")
+      add_scene(paths, title="Two", body="Second written scene.")
+      act = add_act(paths, title="Act One")
+      chapter = add_chapter(paths, act_id=act["id"], title="Read First")
+      assign_scene(paths, scene_id="scene-0002", chapter_id=chapter["id"])
+      before = {path.name: path.read_bytes() for path in paths.scenes_dir.glob("*.md")}
+      reading = get_manuscript_reading(paths)
+      self.assertEqual([section["title"] for section in reading["sections"]], ["Read First", "Unassigned scenes"])
+      self.assertEqual([scene["title"] for scene in reading["scenes"]], ["Two", "One"])
+      self.assertEqual(reading["word_count"], 6)
+      self.assertEqual({path.name: path.read_bytes() for path in paths.scenes_dir.glob("*.md")}, before)
+
   def test_project_brief_and_hierarchy_are_portable_and_ordered(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Planned Novel")

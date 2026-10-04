@@ -22,6 +22,9 @@ class CanonEvaluationTests(unittest.TestCase):
     self.assertGreaterEqual(report["precision"], 0.95, report)
     self.assertGreaterEqual(report["recall"], 0.95, report)
     self.assertEqual(report["evidence_kind"], "synthetic_seeded_canon_regression")
+    reordered = next(case for case in report["cases"] if case["id"] == "impossible-timeline-range")
+    self.assertEqual(reordered["expected"], {"impossible_validity": 1})
+    self.assertEqual(reordered["actual"], {"impossible_validity": 1})
 
   def test_empty_corpus_is_ungraded_not_perfect(self) -> None:
     with tempfile.TemporaryDirectory() as temporary:

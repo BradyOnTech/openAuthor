@@ -1,0 +1,24 @@
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+Web Bundled 658ms index.ts (223 modules)
+iOS Bundled 4832ms index.ts (777 modules)
+Android Bundled 8616ms index.ts (875 modules)
+
+› web bundles (2):
+_expo/static/js/web/index-551b7da24958566b86374098fd28bda1.js (1.4MB)
+_expo/static/js/web/index-551b7da24958566b86374098fd28bda1.js.map (4.6MB)
+
+› ios bundles (2):
+_expo/static/js/ios/index-b97287447d61bb034c098a9bf6dda954.hbc (2.5MB)
+_expo/static/js/ios/index-b97287447d61bb034c098a9bf6dda954.hbc.map (6.2MB)
+
+› android bundles (2):
+_expo/static/js/android/index-3183c6da3be0e245e1b28d3abd60187a.hbc (2.5MB)
+_expo/static/js/android/index-3183c6da3be0e245e1b28d3abd60187a.hbc.map (6.2MB)
+
+› Files (2):
+index.html (1.2KB)
+metadata.json (244B)
+
+Exported: /private/tmp/openauthor-forge-source-map-inspection

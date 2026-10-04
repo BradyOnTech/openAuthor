@@ -14,6 +14,13 @@ type Snapshot = {
 
 // Navigation may unmount an editor before its native save finishes. The queue
 // belongs to the project and scene, not to a particular React component.
+type MountedSave = { projectRoot: string; sceneId: string; scope: string; flush: () => Promise<boolean>; setReadOnly: (value: boolean) => void };
+const mountedSaves = new Map<string, MountedSave>();
+export function registerSceneSave(entry: MountedSave) {
+  const key = JSON.stringify([entry.projectRoot, entry.scope, entry.sceneId]);
+  mountedSaves.set(key, entry);
+  return () => { void entry.flush().then(saved => { if (saved && mountedSaves.get(key) === entry) mountedSaves.delete(key); }); };
+}
 const sessions = new Map<string, SceneSaveSession>();
 
 export class SceneSaveSession {
@@ -75,7 +82,7 @@ export class SceneSaveSession {
       try {
         while (this.dirty) {
           const { title, body } = this.state;
-          const updated = await updateScene(this.projectRoot, this.sceneId, { title, body });
+          const updated = await updateScene(this.projectRoot, this.sceneId, { title, body, expectedVersion: this.state.saved.edit_version });
           // Preserve the editor's newline convention after serialization.
           const saved = { ...updated, title, body };
           this.publish({ saved });
@@ -107,14 +114,15 @@ export function sceneSaveSession(projectRoot: string, scene: SceneDetail): Scene
 }
 
 export async function flushProjectSceneSaves(projectRoot: string): Promise<boolean> {
-  const results = await Promise.all([...sessions.values()]
+  const results = await Promise.all([...Array.from(mountedSaves.values()).filter(entry => entry.projectRoot === projectRoot).map(entry => entry.flush()), ...[...sessions.values()]
     .filter(session => session.projectRoot === projectRoot)
-    .map(session => session.flush()));
+    .map(session => session.flush())]);
   return results.every(Boolean);
 }
 
 export async function withProjectBookChange<T>(projectRoot: string, change: () => Promise<T>): Promise<T> {
   if (isProjectBookChanging(projectRoot)) throw new Error("Another book change is in progress.");
+  for (const entry of mountedSaves.values()) if (entry.projectRoot === projectRoot) entry.setReadOnly(true);
   for (const session of sessions.values()) if (session.projectRoot === projectRoot) session.setReadOnly(true);
   try {
     return await withBookVersionBarrier(projectRoot, async () => {
@@ -122,6 +130,7 @@ export async function withProjectBookChange<T>(projectRoot: string, change: () =
       return await change();
     });
   } finally {
+    for (const entry of mountedSaves.values()) if (entry.projectRoot === projectRoot) entry.setReadOnly(false);
     for (const session of sessions.values()) if (session.projectRoot === projectRoot) session.setReadOnly(false);
   }
 }

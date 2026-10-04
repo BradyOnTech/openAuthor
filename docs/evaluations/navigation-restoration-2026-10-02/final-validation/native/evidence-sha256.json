@@ -1,0 +1,21 @@
+{
+  "default-verification.txt.gz": "fe86b017e083bb50fa21fa7b9c5eaabdc271a7df2936cf96f02626f65f4ad91e",
+  "acceptance-flavor.json": "7319737c8a3217cbc80f017d05ac20a97538940bfe5472ac7f71414134769437",
+  "native-current-process-after.json": "0205ca039e96676936f63db87388ec2cf2fc7c4a8acbc4dacb48cd1031dd3187",
+  "author-artifact-hashes.json": "c608a72ab310169516cbba4662c7f8fe6af84f30dac04f7e2f3ec505cdc26aa7",
+  "saved-plan.json": "4ee959e7cb9f23f09ff37d1aee05a74d5e5f288ab40698408ab4985ddaeffa5e",
+  "native-current-binding-process.json": "271c6feab6c8bb4f5b0e50a03d134e2f5bdec0a20111a55072f60475e9df4905",
+  "saved-scene.json": "bf31dce70254126f066ed4558c14f071f3bb6694573aa5dfb06e21ce6c007818",
+  "default-build.txt.gz": "0860353f5049b6d940afa15f4d4ca2709f44a149ece16216b9cf6c8761784731",
+  "default-bundle-report.json": "61fce6dad3108e1bdaa9ab15f0f93fb12c8553d838ca1361af9f87ba0e439912",
+  "README.md": "5ce2f3921900c7a7f771ffee655b171f45c12f848247270535921d6ccda8651c",
+  "cleanup.json": "598af052eb0420dee14f29cd7a6867ecd0df043c48e6afcb612488f2d3e057ad",
+  "tauri.acceptance.json": "1227d508d9963324f573688687f47907785c77ea1f3b059408853ea6d7d9d788",
+  "acceptance-core-verification.json": "00b5292bcb3709ac02191ce6835f8f6cfc97327f45ed8ab44e94e69b064facb5",
+  "native-process-before.json": "32d05f43f46ef2a5c9bf76209993363cefa9564a3448355ac26cb6089b261ba0",
+  "observations.json": "76d19c7f4ddcf234cb4acfe8a8f4c3d40c9b21c5d570446b17871e456a874e1f",
+  "native-termination.json": "14da608426d647766516fec48d94e4d9a022d722e2edbc8bade368d0ccac0717",
+  "acceptance-launcher.sh": "97d47c411cd0da8cac86ad05a00ea9e653e252cd56302fba1d80075f8ffc7333",
+  "acceptance-build.txt.gz": "e951de5425ae932b950c90c70fc2ab2be0f5d10f15a15953bc5bf84e1b44d5c3",
+  "native-current-termination.json": "6768883f14c3cf996338f9a6a1d7f7b3974cef6ada682f2b47c5507be3830166"
+}

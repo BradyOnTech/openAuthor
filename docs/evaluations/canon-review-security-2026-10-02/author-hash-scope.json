@@ -1,0 +1,5 @@
+{
+  "before_source": "docs/evaluations/keyboard-review-accessibility-2026-10-02/author-hashes-before.json at preceding committed checkpoint",
+  "after_source": "Root read current four author artifact bytes after 36a4058 implementation and local tests.",
+  "scope": "Net equality of these four explicit author artifacts, not a claim about all author files or event history."
+}

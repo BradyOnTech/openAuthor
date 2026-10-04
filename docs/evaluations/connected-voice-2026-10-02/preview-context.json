@@ -1,0 +1,108 @@
+{
+  "source": "She laid the tide table beside the sealed letter. She felt nervous about what he might do next. She wanted to ask whether he would open the letter, but she did not want to sound as if she were asking him to.\n\n\"The red mark,\" she said. \"It's only a mooring?\"\n\n\"A proposed one. Even the pencil was careful.\"\n\nThe ruler lay across the lower edge of the sheet. Its end rested on the red line. A short length of black thread from Nessa's cuff was caught beneath it. She looked at the thread. Neither of them had opened the letter. Neither had said what it contained.\n\nIvo reached toward the envelope. Nessa put two fingers on its folded edge.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler stayed where he had laid it, with the black thread caught beneath its end.",
+  "instruction": "Make the tension in Nessa's hesitation more particular through her attention to the existing table, ruler, thread or sealed letter. Keep Nessa's practical questions and Ivo's dry qualification distinct. Preserve the proposed mooring, uncertain water level and departure, stopped clock, intact green seal and ignorance of the letter. Do not add a movement or open the letter. End with Ivo's hand resting and the thread under the ruler.",
+  "context": {
+    "narrative_frame": {
+      "order_basis": "Plan reading order; not necessarily in-world chronology",
+      "ordered_scene_ids": [
+        "scene-0001",
+        "scene-0002",
+        "scene-0003"
+      ],
+      "focus_scene_ids": [
+        "scene-0003"
+      ],
+      "chapters": [
+        {
+          "id": "chapter-014cf1d46c",
+          "title": "Before the second bell",
+          "synopsis": "",
+          "act_title": "The harbor",
+          "act_synopsis": "",
+          "scene_ids": [
+            "scene-0001",
+            "scene-0002",
+            "scene-0003"
+          ]
+        }
+      ],
+      "scene_positions": [
+        {
+          "scene_id": "scene-0003",
+          "title": "The ruler",
+          "narrative_position": 3,
+          "chapter_id": "chapter-014cf1d46c",
+          "chapter_title": "Before the second bell",
+          "act_title": "The harbor",
+          "timeline_position": ""
+        }
+      ]
+    },
+    "accepted_canon": [],
+    "active_storyline": {},
+    "review_warnings": [],
+    "project_brief": {
+      "synopsis": "",
+      "genre": "",
+      "themes": [],
+      "style_guide": "Close third person with concrete attention and restrained emotion. Nessa asks short practical questions; Ivo answers with dry qualification. Preserve uncertain water levels, withheld letter contents, the stopped clock, and the unfinished departure. Do not add symbolic explanation, staging, discoveries or resolution.",
+      "outline": ""
+    },
+    "scene": {
+      "id": "scene-0003",
+      "title": "The ruler",
+      "summary": "Nessa returns for the ruler. The letter is still sealed and neither person knows its contents. Ivo's hand stops on the table; the water, present time and departure remain unresolved.",
+      "pov": "Nessa",
+      "status": "draft"
+    },
+    "story_plan": {
+      "brief": {
+        "style_guide": "Close third person with concrete attention and restrained emotion. Nessa asks short practical questions; Ivo answers with dry qualification. Preserve uncertain water levels, withheld letter contents, the stopped clock, and the unfinished departure. Do not add symbolic explanation, staging, discoveries or resolution.",
+        "genre": "",
+        "synopsis": "",
+        "outline": "",
+        "themes": []
+      },
+      "structure": [
+        {
+          "id": "act-5f1b7e2e39",
+          "title": "The harbor",
+          "synopsis": "",
+          "chapters": [
+            {
+              "id": "chapter-014cf1d46c",
+              "title": "Before the second bell",
+              "synopsis": "",
+              "scene_ids": [
+                "scene-0001",
+                "scene-0002",
+                "scene-0003"
+              ]
+            }
+          ]
+        }
+      ],
+      "beats": [],
+      "limits": {
+        "text_character_budget": 24000,
+        "clipped_fields": [],
+        "omitted_chapters": 0,
+        "omitted_relevant_beats": 0,
+        "private_notes_included": false
+      }
+    },
+    "nearby_scenes": [],
+    "codex_entities": [],
+    "continuity_issues": [
+      {
+        "id": "scene-0003:pov-not-in-codex",
+        "severity": "warning",
+        "code": "pov_not_in_codex",
+        "title": "POV is not present in character codex",
+        "message": "Scene POV 'Nessa' has no matching character entity.",
+        "scene_id": "scene-0003",
+        "path": "manuscript/scenes/0003-the-ruler.md"
+      }
+    ]
+  }
+}

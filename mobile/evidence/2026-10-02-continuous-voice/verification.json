@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-02",
+  "scope": "continuous companion voice client and independent gateway review; local synthetic fixtures only",
+  "source_sha256": {
+    "mobile/App.tsx": "dd3aab66bfc49628be02e68853dca178ca56d1eeb48ad5055f079d77a85c69f4",
+    "mobile/src/app/hostedRuntime.ts": "addcf822c3a266695cb6c70491f86ae0a5c667afdbe243145d67d8c9bb8d38d7",
+    "mobile/src/adapters/gatewaySession.ts": "c6d102ef4d7315c81f82408422d7ec7d26469920431906d371bb72d0e812b43e",
+    "mobile/src/voice/voiceController.ts": "7917a646f6a73c112f3dd92fe11d09652f91525cfd3dcbd9a0254f52e1eebfcf",
+    "mobile/src/voice/realtimeTransport.ts": "ab4cbcf81fb5e82a0bc55009f6ffd4a081413a3c4099ed3f96d51b771700f793",
+    "mobile/src/voice/voiceLease.ts": "8cd60078c627caa01e0bd768136d67bd6d9192e93f160624054b68b68f11d6f4",
+    "mobile/src/voice/voicePolicySession.ts": "b64eadfa96177a865d80a425aa0f8554fe2d3c328975c3a3d70d010ea38e43e8",
+    "mobile/test/voiceController.test.ts": "848c14e047ef2542a5eae72b4f62737c1e851848d873b9238afb143e94ba9444",
+    "mobile/test/gatewaySession.test.ts": "7c1ba0a20e5d5a903708c1bec40fd29af369a49395fec2daa4b2cc878b5c5c57",
+    "mobile/test/voicePolicySession.test.ts": "5ab8dfd817069b65e664355fbd684bdae2fe84ae74fe43b917aee802feaf8025",
+    "mobile/test/hostedVoiceLifetime.test.ts": "2ccae785b2cb4875ab4736a56834536cbb123c056edd3c3fd204c568af2c6c21",
+    "mobile/e2e/voiceControls.ts": "bdc97cf5ec4f28b8310d9996b786398bf8281e3947f78ec1b195ecacaee4ec3f"
+  },
+  "gateway_read_only_sha256": {
+    "gateway/src/sessionLeases.ts": "0fb1c60b07e6323239721c36153a612767084644f248b122d36c3e84e27a7a0c",
+    "gateway/src/callJournal.ts": "3735d1075cd65e62ce43f737c0fefc68fc8d82851cb494b90c39555f0d33a201",
+    "gateway/src/openAIRealtimeUpstream.ts": "04641d294a897c1a750a07d5c56dc90f17a3e814d3205a5bf339cba10d72384d",
+    "gateway/src/sessionGateway.ts": "e74f24fea8ae1df38b026f2d80e24f3cdf3eb51cbd389ee9b1433c32d04d9399",
+    "gateway/src/production.ts": "2ca02e8c0cf993d39a397bd5559b81135ee835b28df6c942c2cad966fcfc4db9",
+    "gateway/src/supabaseAdapters.ts": "d06a03550f8e4551a7022fc6ec49ed7da89ee7a8c3390024a0301d8eb6e44f3f",
+    "gateway/test/sessionLeases.test.ts": "5d3ec70d013d4585e3fc86413f906e7aa7747e20bb1a02b1984571b78ae26703",
+    "gateway/test/openAIRealtimeUpstream.test.ts": "c1df025976475607868f5680d722c567d29e6e243d276abeafec6b403d440c4d"
+  },
+  "baseline": {
+    "commit": "2a4f0157116569d86ad1cc8093000e9074e2942e",
+    "path": "mobile/src/app/hostedRuntime.ts",
+    "sha256": "b4476565366ae5ac972e8f475502baf8a39db440598e2625ccace7fde5c20ec4",
+    "replay": "isolated saved HEAD runtime with final controller/transport/adapters; shared production files never swapped",
+    "failed": 12,
+    "passed_controls": 4
+  },
+  "red_before_green": [
+    {
+      "public_path": "MobileVoiceController",
+      "failed_before_fix": 3,
+      "passed_controls": 2,
+      "green": 5
+    },
+    {
+      "public_path": "gatewayNegotiator",
+      "failed_before_fix": 7,
+      "passed_controls": 2,
+      "green_after_fix": 9
+    },
+    {
+      "public_path": "actual App context action",
+      "failed_before_enable": 1,
+      "failure": "existing scene-scope action disabled during active voice; later green covers active and pending scene switch"
+    }
+  ],
+  "checks": [
+    {
+      "command": "cd mobile && npm run check",
+      "typecheck": "passed",
+      "tests": 167,
+      "files": 29,
+      "failed": 0
+    },
+    {
+      "command": "cd mobile && OPENAUTHOR_BROWSER_EXECUTABLE=<installed chromium_headless_shell-1217> npm run test:e2e:hosted",
+      "tests": 1,
+      "failed": 0,
+      "journey_seconds": 8.1,
+      "including_build_seconds": 15.7,
+      "port": 4176
+    },
+    {
+      "command": "cd mobile && npx expo export --clear --platform all --output-dir .expo/continuous-voice-export",
+      "platforms": [
+        "web",
+        "ios",
+        "android"
+      ],
+      "result": "passed; bundle export only"
+    },
+    {
+      "command": "cd gateway && node --experimental-strip-types --test test/sessionLeases.test.ts",
+      "tests": 13,
+      "failed": 0,
+      "kind": "independent read-only existing local HTTP/SIGKILL controls"
+    },
+    {
+      "command": "cd gateway && node --experimental-strip-types --test test/sessionLeases.test.ts test/openAIRealtimeUpstream.test.ts",
+      "tests": 21,
+      "lease_manager_tests": 14,
+      "upstream_tests": 7,
+      "failed": 0,
+      "kind": "final limited read-only managed-callback cleanup ownership checkpoint"
+    }
+  ],
+  "evidence_sha256": {
+    "controller-red.log": "2df8d858717d2ebd16bd47d37c63525e5a2f7e9ee84e8e61b8da009a8f417d4a",
+    "controller-green.log": "99749bbd7a116474d5764e4e75aa313f3760da644332fc749e5eea3a0a014003",
+    "wire-red.log": "956071710a4f109fb1709c6b5ca75b0142c4da48364bd3ec2065bda642ff880e",
+    "wire-green.log": "edcadd46ca2804c1c02fe9438fe25bf3f314e491cd78a44b175c96c445dffa26",
+    "runtime-baseline-red.log": "9bf91dd7115102278eb65646657bf3db5825bb18d6f5d397f578c67515c641a7",
+    "mobile-check.log": "8bad6ff03741d0fe2abff42c421fa7d307974adb95ffc1657ad57bbb1eb81a99",
+    "app-context-action-red.log": "1e96c691c959cfd99bfaec890460a42926c27e5005d40e9f786b4d21d3df18b6",
+    "hosted-browser-green.log": "3cd623ad47051f5157708cb5c62a9320de615f5ba7590c15ff13619e82c95305",
+    "gateway-independent.log": "a2df0cf60aaa66a244a137cc05a8a3134c7b4a2089f26eed1e46010304e6131e",
+    "all-platform-export.log": "e456b5077ed85f5ef5d02919300e5abb4cce6da856af885dab2643585f397049",
+    "voice-controls-simulated.png": "f008830ecf22ce63d3fffb0633c584d3d29780c37c72f580b9154a77e0dcabac",
+    "voice-policy-fail-closed.png": "11f0db94cfa6c0f87ea577e485f2093e095c791b1756f66e0d1ea6c49596ad74",
+    "baseline-hostedRuntime.ts.txt": "b4476565366ae5ac972e8f475502baf8a39db440598e2625ccace7fde5c20ec4",
+    "gateway-final-independent.log": "b3e32ac49186a77b8567c65961218cdc23e37c7e909d1905b091b4a33533f8ad"
+  },
+  "not_verified": [
+    "deployed Supabase/PostgREST and migrations",
+    "live OpenAI offer/owned hangup/final media or billing",
+    "physical iOS/Android microphones/background/revocation",
+    "strict upstream wall-clock enforcement during gateway process/host outage",
+    "provider create allocation before a known Location/call ID",
+    "immutable provider session configuration and monetary spend"
+  ],
+  "gateway_initial_checkpoint": {
+    "tests": 13,
+    "source_sha256": {
+      "gateway/src/sessionLeases.ts": "514dac1a0f40f4769eec195b9d8779b49c66ccc4a863e3110a52f89184ba2cb0",
+      "gateway/src/callJournal.ts": "3735d1075cd65e62ce43f737c0fefc68fc8d82851cb494b90c39555f0d33a201",
+      "gateway/src/openAIRealtimeUpstream.ts": "672edf478e00b601047df8d382d722c7440e9b4dd3914d529aa73265ccd98795",
+      "gateway/src/sessionGateway.ts": "e74f24fea8ae1df38b026f2d80e24f3cdf3eb51cbd389ee9b1433c32d04d9399",
+      "gateway/src/production.ts": "2ca02e8c0cf993d39a397bd5559b81135ee835b28df6c942c2cad966fcfc4db9",
+      "gateway/src/supabaseAdapters.ts": "d06a03550f8e4551a7022fc6ec49ed7da89ee7a8c3390024a0301d8eb6e44f3f",
+      "gateway/test/sessionLeases.test.ts": "9419cf8f831dac9fa6dc99ea133e79ffd5848d5e2a19cd5b0edd2ba2962cda83"
+    },
+    "log": "gateway-independent.log",
+    "status": "superseded by final managed-callback ownership review"
+  },
+  "gateway_final_review": {
+    "scope": "openAIRealtimeUpstream.ts callback cleanup catch; sessionLeases.ts raw creation settlement; refreshed manager controls",
+    "confirmed_material_findings": 0,
+    "mobile_source_and_tests_frozen": true,
+    "evidence": "gateway-final-review.md",
+    "fixture_timing": "Final affected21 rerun passed after test-only normal timeout widening; explicit late-header controls retain80ms manager/200ms headers"
+  },
+  "output_format": {
+    "text": "Captured text normalized only for trailing whitespace and EOF; exact original changed outputs retained in gzip archives",
+    "original_outputs": {
+      "controller-red.log": {
+        "archive": "controller-red.log.raw.gz",
+        "captured_sha256": "a6c508f602e1ddbd89b3c21cb853a75fbe114d0dda9d28ab9d6cc8766695c2a7",
+        "archive_sha256": "d66a12819221751839f7b56fbb2110f6a1fb5a1c64add67cf86ab490af9d1286"
+      },
+      "controller-green.log": {
+        "archive": "controller-green.log.raw.gz",
+        "captured_sha256": "15e1f374673ab8c7710fdce7149bb540cc338852bb2fee153728915fb6acb991",
+        "archive_sha256": "4059698f8ae6fe108f438235c00803582a748d1d1cd49fc002783ce28dcd176f"
+      },
+      "wire-red.log": {
+        "archive": "wire-red.log.raw.gz",
+        "captured_sha256": "c571f4cd23923be6b216695401c23d574475251f4c3faad311824d30e65e4d8f",
+        "archive_sha256": "71c3e827b4c92f3a50d9b931b94f6cc7306cb39329ec9f30c92042270509b732"
+      },
+      "wire-green.log": {
+        "archive": "wire-green.log.raw.gz",
+        "captured_sha256": "2c1166ab819be30a80525ed28f377219ebaf8528a09d02c5488f7a22a03e8471",
+        "archive_sha256": "8587a41c48960fe32f8c4a232801fa1e40ea5f6b03316d6dea21293c8001499d"
+      },
+      "runtime-baseline-red.log": {
+        "archive": "runtime-baseline-red.log.raw.gz",
+        "captured_sha256": "e9ae9b4c94965f25bf765eee11f87021e86cc699322bfe6cf9efd3f7f5c3e265",
+        "archive_sha256": "e90d67eb79631a2c69737b3e29ded021a9a76c8c82019a86879f4950ca87dbb0"
+      },
+      "mobile-check.log": {
+        "archive": "mobile-check.log.raw.gz",
+        "captured_sha256": "f0105355bbf3e05cbb83cb7f43bff3dd05cb656699ba4bed64d21cd3fa73315d",
+        "archive_sha256": "b9eb99e12c94c810748ac42dca9ec78688696d02759e571319cc35ff155eb777"
+      },
+      "app-context-action-red.log": {
+        "archive": "app-context-action-red.log.raw.gz",
+        "captured_sha256": "96800a8fe4d591eaa4c4bd06ead7df7e4c3a151865cb80f8a85b53db190c60e2",
+        "archive_sha256": "f07fd41d4c31394132efb30caa6e6435d482bd2f40f01eb6ab4340f8c72e0301"
+      }
+    }
+  }
+}

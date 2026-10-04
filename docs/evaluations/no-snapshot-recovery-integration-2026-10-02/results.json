@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-02T21:26:40.715776+00:00",
+  "baseline_commit": "2ed7f6da2497312d7a52f8734cff550a72dcf9e7",
+  "implementation_at_capture": "Uncommitted source; commit association added only after exact source comparison.",
+  "desktop": {
+    "tests": 657,
+    "files": 90,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "production_build": "passed"
+  },
+  "contracts": {
+    "tests": 22,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed"
+  },
+  "browser": {
+    "chromium": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "webkit": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "journeys_per_engine": {
+      "account_deletion": 6,
+      "legacy_key_recovery": 3,
+      "no_snapshot_key_recovery": 2
+    },
+    "scope": "Production rendered desktop panel/enrollment/encryption with synthetic SDK, native vault, RPC and Storage boundaries; no deployed service acceptance.",
+    "viewport": [
+      1024,
+      768
+    ],
+    "visual_inspection": "Actual WebKit screenshot shows readable recovery limits, key/version inputs, separate publication button, and no horizontal overflow."
+  },
+  "gateway": {
+    "tests": 100,
+    "passed": 100,
+    "skipped": 0,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "actual_pg_voice_cases": 9
+  },
+  "database": {
+    "platform": "Disposable fsynced Unix-socket PostgreSQL17.11",
+    "migrations": 15,
+    "migration_through": "20261002220000_mobile_project_key_verifiers.sql",
+    "sql_suites": 10,
+    "concurrency_and_isolation_controls": 37,
+    "control_lanes": {
+      "project": 8,
+      "bootstrap": 4,
+      "account": 4,
+      "amendment": 8,
+      "verifier": 13
+    },
+    "verifier_sql_assertions": 49,
+    "verifier_queued_lock_controls": 12,
+    "verifier_isolation_refusals": 1,
+    "deployed_services": "not_observed"
+  },
+  "source_inputs": 364,
+  "source_stability": "All364 captured desktop/contracts/gateway/backend inputs unchanged across final run. Mobile has a separately owned final packet.",
+  "source_archive_scope": "Selected frontend, contracts, gateway, SQL and verification inputs; no native/core source, installed dependencies or full clean-install certificate.",
+  "logs": {
+    "desktop-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-desktop-frozen.txt",
+      "raw_sha256": "081487dae6e1d4c153b51630926587dfe767e24504817c172d379f2d26ecde8a",
+      "raw_bytes": 286
+    },
+    "desktop-build-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-build-frozen.txt",
+      "raw_sha256": "eaffd455a2af60bd57569667eae2b1dd5989cf3ae2331da7c343a76ef3d0a433",
+      "raw_bytes": 1726
+    },
+    "contracts-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-contract-frozen.txt",
+      "raw_sha256": "3196fb1bf85774bad5f80d4939a2e7af572a1145165dd1c1fde95940b1112ec9",
+      "raw_bytes": 5339
+    },
+    "chromium-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-chromium-frozen.txt",
+      "raw_sha256": "2cf8fc908866db19a544db9a23ce5a99775b42afe21ce0ffbe4205218eab0730",
+      "raw_bytes": 2367
+    },
+    "webkit-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-webkit-final.txt",
+      "raw_sha256": "9d0fc54065ffd30883ea7697d0de9b544e372042bcc8ee82ed93667adfe831eb",
+      "raw_bytes": 2338
+    },
+    "combined-frozen.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-combined-final.txt",
+      "raw_sha256": "f64844b5b3d1954edaaaca8342302b7dd17abe5974e81455f34505a8c24c3686",
+      "raw_bytes": 42606
+    },
+    "repo-check.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-repo-check.txt",
+      "raw_sha256": "1bcb22acd1e8b569cd2aab3854ad7ce366e9afe50cbf4816e508f7d7b5724fd0",
+      "raw_bytes": 361
+    },
+    "browser-fixture-pause-failure.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-chromium-pre-final.txt",
+      "raw_sha256": "a4ded35aa81c9fc85c690168d9eefcde170e127806ab7fd0cbbb06e560bcce45",
+      "raw_bytes": 5398
+    },
+    "coordinator-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-coordinator-red.txt",
+      "raw_sha256": "203691a602e183fbb8aedeeb871bdff959270bb2744b6bd5c72da7098840c700",
+      "raw_bytes": 5529
+    },
+    "provision-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-provision-red.txt",
+      "raw_sha256": "94d9ca84da6d7c4285fe115a736e1100032c31e79eff2277dfbf67bf02211a8c",
+      "raw_bytes": 2147
+    },
+    "wire-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-wire-red.txt",
+      "raw_sha256": "25333a6c2239d4b7a64db619706f99096b3fa5d38bc1dea3d4632ed059c67a2f",
+      "raw_bytes": 7955
+    },
+    "contract-export-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-contract-red.txt",
+      "raw_sha256": "41b52783402ce6a9960b25d92ef0aa8db6a05d9d2e177a96100fd91d4df8b6f8",
+      "raw_bytes": 5705
+    },
+    "contract-digest-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-contract-digest-ref-red.txt",
+      "raw_sha256": "239b0ec9aace6d5f7e1dcc672416bad6a1862f4251f0f2f792b8380e6061026e",
+      "raw_bytes": 6154
+    },
+    "contract-prototype-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-contract-prototype-red.txt",
+      "raw_sha256": "4186420b3ab5f6aa0fc6520c399de32512f5949ef4a6ef6700bd037f5f2b5ee3",
+      "raw_bytes": 7336
+    },
+    "crypto-export-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-crypto-red.txt",
+      "raw_sha256": "3e3e70039f2f25b8f631e76cddf698710de3dba10b77035419ca562c25e7cd0a",
+      "raw_bytes": 1198
+    },
+    "crypto-fixture-development-red.raw.gz": {
+      "original_path": "/private/tmp/openauthor-key-verifier-crypto-frozen-fixture-red.txt",
+      "raw_sha256": "730491f580196647b83b8b19b0e24741e5a119ad1d31870a2552c1544a5f0f7c",
+      "raw_bytes": 6266
+    },
+    "desktop-test-typecheck-failure.raw.gz": {
+      "original_path": "/private/tmp/openauthor-no-snapshot-desktop-typecheck.txt",
+      "raw_sha256": "8056f5a1765e63f9301f19c322211811de6ae8b1834c7a1236500b3c5b305544",
+      "raw_bytes": 1197
+    }
+  },
+  "intermediate_failure": "Chrome development pass10/11: new null legacy verifier fixture prematurely cleared the pause intended for Storage proof. Fixture corrected; all original journeys retained and both final engines11/11. Separate development contract/test fixture/typecheck failures are retained; these logs predate final freeze and are not archived-source replay certificates.",
+  "external_actions": {
+    "new_provider_calls": 0,
+    "deployed_mutations": 0,
+    "author_files": "No writes or staging performed; existing author modifications retained."
+  },
+  "limits": [
+    "Legacy keys without envelope, snapshot or immutable verifier remain unprovable. Reviewed rotation restores future access only.",
+    "No unknown-ID provider discovery; before valid Location or durable journal remains unresolved, as do lost independent receipts and complete controller/state/control-network outages.",
+    "No current-source native GUI/Keychain, physical iOS/Android, deployed Auth/Storage/provider, signed or author acceptance.",
+    "Mandatory mobile Forge dependency audit remains open."
+  ],
+  "commands": {
+    "desktop": "npm test && npm run build (desktop/)",
+    "contracts": "npm run check (contracts/)",
+    "browser": "Installed Playwright CLI, account-deletion.spec.ts + companion-key-recovery.spec.ts, separate Chrome/WebKit, one worker.",
+    "combined": "python3 scripts/verify_shared_gateway_limiter.py --pg-bin /opt/homebrew/opt/postgresql@17/bin",
+    "repository": "make check; git diff --check"
+  },
+  "implementation_commit": "8aaf17de9fb0503e5fad6879b631561318798d0c",
+  "committed_input_matches": 364,
+  "independent_review": {
+    "standards_open": 0,
+    "spec_initial": 2,
+    "spec_fixed": 2,
+    "spec_open": 0,
+    "scope": "Provider Standards key/mobile lanes; root Standards gateway. Mobile owner Spec nonmobile; backend owner Spec mobile. All exclude their own authored lanes."
+  },
+  "mobile": {
+    "tests": 243,
+    "files": 34,
+    "typecheck": "passed",
+    "chromium_full_app_journeys": 2,
+    "webkit_selected_recovery_redaction_journeys": 1,
+    "input_hashes": 150,
+    "evidence_hashes": 42,
+    "evidence": "mobile/evidence/2026-10-02-no-snapshot-recovery/results.json",
+    "scope": "Actual installed Expo web crypto/SDK and encrypted IndexedDB app; native race controls use mocked SecureStore/SQLite. No physical iOS/Android or current native platform export acceptance."
+  },
+  "documentation_review": {
+    "initial": 4,
+    "fixed": 4,
+    "open": 0,
+    "scope": "Read-only independent current-count, historical-platform-scope and remaining-boundary review; no tests or source edits."
+  }
+}

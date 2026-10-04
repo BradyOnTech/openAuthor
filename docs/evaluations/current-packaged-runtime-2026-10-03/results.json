@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "source_commit": "36a40582bd4667440f5614c4f73141ea1bdaf51b",
+  "reviewed_head": "df780fb943026b0667cf18f1b34cf93ac4e2fb1c",
+  "core_source_sha256": "fa60a9dc36ab214668688177b3a93283008701ce38c9b7f6ae9a0146868a5f46",
+  "source_input_count": 506,
+  "original_test_input_count": 119,
+  "core_py_files": 64,
+  "imported_core_modules": 63,
+  "normal_bundle_files_sealed": 2205,
+  "qa_bundle_files_sealed": 2205,
+  "normal_build": "passed unsigned arm64 canonical identity",
+  "qa_build": "passed unsigned arm64 isolated alternate identity, local registry and empty Supabase",
+  "canonical_normal_verification": "passed: bundled freshness, five instrumented engine recovery stages, local Codex contract, identity and architecture",
+  "qa_core_verification": "passed; canonical application identity guard deliberately omitted for alternate flavor",
+  "full_bundled_core_tests": {
+    "run": 583,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "codex_local_wire_contract_enabled": true
+  },
+  "actual_packaged_cli_guards": "accept/reject with original edit_version refused after real Storyline switch; inverted-validity acceptance refused; failed commands leave Memory and prose unchanged",
+  "legacy_timestamp_only_storyline_protection": false,
+  "normal_bundle_bytes_unchanged_after_full_suite": true,
+  "author_artifacts_unchanged": true,
+  "provider_scope": "Local fixture HTTP endpoint only; no external writing provider calls",
+  "local_capability_inventory_scope": "Local read-only capability inventory; private evidence written only under its /private/tmp packet. No requirement 4/6 completion or release certification claim.",
+  "capture_timing": {
+    "source_archive_captured_at_utc": "2026-10-03T04:55:06.625195+00:00",
+    "runtime_refresh_started_at_utc": "2026-10-03T04:55:28.685371+00:00",
+    "normal_build_started_at_utc": "2026-10-03T04:58:07.429389+00:00",
+    "normal_build_finished_at_utc": "2026-10-03T04:58:42.481755+00:00",
+    "canonical_verification_finished_at_utc": "2026-10-03T04:59:30.355906+00:00",
+    "qa_build_started_at_utc": "2026-10-03T04:59:49.151794+00:00",
+    "qa_build_finished_at_utc": "2026-10-03T05:00:23.561560+00:00",
+    "normal_app_manifest_captured_at_utc": "2026-10-03T05:02:12.568624+00:00",
+    "qa_app_manifest_captured_at_utc": "2026-10-03T05:02:13.781268+00:00",
+    "test_input_snapshot_captured_at_utc": "2026-10-03T04:56:07.554618+00:00",
+    "full_core_started_at_utc": "2026-10-03T05:03:18.949265+00:00",
+    "full_core_finished_at_utc": "2026-10-03T05:03:55.262074+00:00",
+    "final_build_evidence_sealed_at_utc": "2026-10-03T05:03:47.395669+00:00",
+    "final_core_evidence_sealed_at_utc": "2026-10-03T05:06:54.413031+00:00",
+    "inventory_configuration_captured_at_utc": "2026-10-03T04:59:17.383915+00:00",
+    "inventory_configuration_capture_scope": "configuration bytes captured after system inventory commands; not an asserted pre-command source freeze"
+  },
+  "source_checkout_clean_scope": "Verifier predicate covers product-source paths through tracked-diff and untracked-file checks; it does not assert a wholly clean checkout. Four pre-existing dirty author artifacts are preserved.",
+  "build_launch_scope": "Build agent did not launch apps. This packet contains no native GUI observations; subsequent root GUI work is separate.",
+  "integrity_verifier_scope": "Checks retained receipt/archive integrity and cross-references. It does not rerun builds, test/recovery processes, device checks, signing or GUI acceptance; app binaries are absent. Optional --current also compares archived inputs and author hashes with the checkout.",
+  "independent_raw_sealed_file_counts": {
+    "build": 32,
+    "core": 26,
+    "inventory": 25
+  },
+  "nonfatal_diagnostics": [
+    "Existing missing-libLLVM rust-objcopy debug strip warning; builds succeeded.",
+    "Vite mixed-import and large-chunk warnings.",
+    "Two direct Git-init template warnings: intentionally empty source template directory omitted from resources; all Git assertions passed; no Git repair performed."
+  ],
+  "remaining": [
+    "Author editorial/Memory quality and connected-prose/provider assessment.",
+    "Native GUI, VoiceOver/scaling/long-session acceptance; root handles current GUI evidence separately.",
+    "Physical mobile, interrupted audio and deployed encrypted/security lifecycle acceptance.",
+    "Developer ID/notarization, clean Apple Silicon and Intel install/upgrade acceptance.",
+    "Unpatched node-forge and Braces dependency release gates; this packet performs no dependency audit or repair."
+  ],
+  "all_six_priorities": "in_progress",
+  "release_certified": false,
+  "native_gui_acceptance_in_packet": false,
+  "physical_device_acceptance_in_packet": false,
+  "signing_or_deployment_performed": false
+}

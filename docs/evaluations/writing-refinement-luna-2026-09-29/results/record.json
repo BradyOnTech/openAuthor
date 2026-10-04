@@ -1,0 +1,287 @@
+{
+  "source": "Noor laid the survey ribbon across the table. She felt very nervous. She wanted Soren to tell her the answer, but she did not want to ask him the question directly.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren put down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal was still whole. Noor had not opened it. Her sister had asked her to bring it to the meeting, and that was all she had asked.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. Outside, a handcart rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, so it told her nothing.\n\nHe reached for the permit. Noor put two fingers on the folded edge. She was worried he would read it aloud. She did not know what it said.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, with the red thread of the survey ribbon caught beneath one end.",
+  "facts": [
+    "The red mark is a proposed fence line, not a known water level.",
+    "The green seal is intact. Noor has not opened or read the permit.",
+    "Her sister requested delivery to the meeting and was expected by four; the current time is unknown.",
+    "The stopped clock reads twenty past two, not the present time.",
+    "Noor stops Soren reaching for the permit; he leaves his hand on the table without opening it."
+  ],
+  "evaluator_feedback": "Keep Soren's dry river joke and Noor's short practical questions distinct. Replace the opening explanation of nervousness with Noor's attention to the existing ribbon or sealed permit, without adding a new physical action or explaining what the objects symbolize. Do not resolve Noor's ignorance, the water level or the current time. End with the ruler and trapped red thread.",
+  "provider": "openai-codex",
+  "model": "gpt-5.6-luna",
+  "strict_review": false,
+  "quality_verdict": "Requires literary review; workflow success is not prose quality.",
+  "implementation_sha256": "2aea888c3950f1ebc5360285a72e900edfa76656099cd2ccbc6e75556d54df9d",
+  "preview": {
+    "schema_version": 1,
+    "id": "voice-preview-ffcaf68bcae8",
+    "scene_id": "scene-0001",
+    "scene_version": {
+      "schema_version": 1,
+      "workspace": "cf9cb4c54cc6d31fdb881c46c9aa9d99a5ba1d8b2982c8551f066014c1f257fe",
+      "storyline": "Local manuscript",
+      "scene_id": "scene-0001",
+      "fields": {
+        "title": "0195500eca0574e2f5f1a9b6dfcc5277c6a66cd8da64c4a47325226e54be59e5",
+        "body": "de4568451954b363bc4de8b3efeab80ad529e0bb322e1411a4b9d98fa3faa069",
+        "summary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "pov": "e87bb80fb88eb865d7f6a674d44f9b12feaaea5cc65eef17614277b97d6d0abb",
+        "status": "7743ce348d9284d677a185f33295b92266cc435a5b5f775029b300066d26693a"
+      }
+    },
+    "source_text": "Noor laid the survey ribbon across the table. She felt very nervous. She wanted Soren to tell her the answer, but she did not want to ask him the question directly.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren put down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal was still whole. Noor had not opened it. Her sister had asked her to bring it to the meeting, and that was all she had asked.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. Outside, a handcart rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, so it told her nothing.\n\nHe reached for the permit. Noor put two fingers on the folded edge. She was worried he would read it aloud. She did not know what it said.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, with the red thread of the survey ribbon caught beneath one end.",
+    "instruction": "Deepen the tension through subtext without extending the scene. Preserve: The red mark is a proposed fence line, not a known water level. The green seal is intact. Noor has not opened or read the permit. Her sister requested delivery to the meeting and was expected by four; the current time is unknown. The stopped clock reads twenty past two, not the present time. Noor stops Soren reaching for the permit; he leaves his hand on the table without opening it.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-luna",
+    "created_at": "2026-09-29T23:23:05.821312+00:00",
+    "directions": [
+      {
+        "id": "direction-1",
+        "profile": {
+          "schema_version": 2,
+          "name": "Clear, structured epic",
+          "description": "Accessible prose, legible action and earned setup/payoff.",
+          "traits": {
+            "prose": "direct",
+            "description": "balanced",
+            "emotion": "balanced",
+            "distance": "balanced",
+            "dialogue": "balanced",
+            "pacing": "varied",
+            "imagery": "concrete",
+            "humor": "dry"
+          },
+          "guidance": [
+            "Introduce worldbuilding through the scene's immediate needs.",
+            "Keep action spatially clear; preserve setup that earns later payoffs."
+          ],
+          "avoid": [
+            "Exposition that repeats what action already shows."
+          ],
+          "exemplar_scene_ids": [],
+          "exemplar_digests": {},
+          "observations": [],
+          "metrics": {},
+          "created_at": ""
+        },
+        "text": "Noor laid the survey ribbon across the table and kept her hands clear of it. She wanted Soren to give her the answer, but asking the question plainly would make it hers.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren set down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal remained whole. Noor had not opened it. Her sister had asked her to bring it to the meeting. Nothing more.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. The handcart outside rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, offering no help.\n\nSoren reached for the permit. Noor placed two fingers on its folded edge. She was not ready to hear it read aloud. She did not know what it said, and until it was opened, she could still pretend the delivery was the only thing she had agreed to.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, the red thread of the survey ribbon caught beneath one end.",
+        "observations": [
+          {
+            "criterion": "voice_fit",
+            "observation": "The prose stays direct and balanced while letting the tension gather through implication rather than explanation, especially in \"asking the question plainly would make it hers.\"",
+            "excerpt": "She wanted Soren to give her the answer, but asking the question plainly would make it hers."
+          },
+          {
+            "criterion": "readability",
+            "observation": "Spatial relationships and the sequence of interruption remain clear, with varied sentence length carrying the movement from inquiry to restraint.",
+            "excerpt": "Soren reached for the permit. Noor placed two fingers on its folded edge."
+          },
+          {
+            "criterion": "emotional_effect",
+            "observation": "Noor's anxiety becomes more immediate because the unopened permit represents a choice she is resisting, while the stopped clock preserves uncertainty about the meeting.",
+            "excerpt": "She did not know what it said, and until it was opened, she could still pretend the delivery was the only thing she had agreed to."
+          },
+          {
+            "criterion": "character_distinction",
+            "observation": "Noor's indirect question and almost-smile retain her guardedness; Soren's reply remains dry and literal, keeping their habits distinct.",
+            "excerpt": "\"I measured a line. The river wasn't available for comment.\""
+          },
+          {
+            "criterion": "consistency",
+            "observation": "The red mark is explicitly identified as a desired fence line, not a water level; the green seal remains intact; Noor has not read the permit; her sister's request and expected arrival remain unchanged; the clock is clearly not treated as the current time. Continuity remains uncertain only because the broader context provides no character-codex entry for Noor or scene summary.",
+            "excerpt": "His permit lay between them, folded in thirds. The green seal remained whole. Noor had not opened it."
+          }
+        ],
+        "warnings": [
+          "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+        ],
+        "generation_id": "gen-af808c8328c6",
+        "measures": {
+          "words": 213,
+          "average_sentence_words": 9.7,
+          "dialogue_passages": 6,
+          "paragraphs": 10
+        },
+        "author_review": {
+          "ratings": {},
+          "notes": ""
+        }
+      },
+      {
+        "id": "direction-2",
+        "profile": {
+          "schema_version": 2,
+          "name": "Quiet and atmospheric",
+          "description": "Sensory detail, implication and reflective pacing.",
+          "traits": {
+            "prose": "lyrical",
+            "description": "lush",
+            "emotion": "restrained",
+            "distance": "close",
+            "dialogue": "subtextual",
+            "pacing": "deliberate",
+            "imagery": "figurative",
+            "humor": "earnest"
+          },
+          "guidance": [
+            "Let concrete sensory details carry emotional meaning.",
+            "Leave room for implication without obscuring what happens."
+          ],
+          "avoid": [
+            "Stacked metaphors and decorative description without purpose."
+          ],
+          "exemplar_scene_ids": [],
+          "exemplar_digests": {},
+          "observations": [],
+          "metrics": {},
+          "created_at": ""
+        },
+        "text": "Noor laid the survey ribbon across the table. The strip trembled once beneath her fingers. She wanted Soren to tell her what the red mark meant, though asking him plainly would make the wanting visible.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren set down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal remained whole. Noor had not opened it. Her sister had asked her to bring it to the meeting, and nothing more. The paper seemed to hold its silence against the table.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nThe almost-smile reached Noor and stopped there. Outside, a handcart rattled over the loose drain cover, the sound catching and catching again. She turned toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two; its hands offered no help.\n\nSoren reached for the permit. Noor laid two fingers on its folded edge. She felt the thickness of the paper beneath them, the sealed part of it. She was worried he would read it aloud. She did not know what it said.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, with the red thread of the survey ribbon caught beneath one end.",
+        "observations": [],
+        "warnings": [
+          "Provider self-review is not independent validation. Check character voice and factual consistency yourself.",
+          "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+        ],
+        "generation_id": "gen-31bd448f624c",
+        "measures": {
+          "words": 234,
+          "average_sentence_words": 9.8,
+          "dialogue_passages": 6,
+          "paragraphs": 10
+        },
+        "author_review": {
+          "ratings": {},
+          "notes": ""
+        }
+      }
+    ]
+  },
+  "refined": {
+    "schema_version": 1,
+    "id": "voice-preview-1cfc54a81dec",
+    "scene_id": "scene-0001",
+    "scene_version": {
+      "schema_version": 1,
+      "workspace": "cf9cb4c54cc6d31fdb881c46c9aa9d99a5ba1d8b2982c8551f066014c1f257fe",
+      "storyline": "Local manuscript",
+      "scene_id": "scene-0001",
+      "fields": {
+        "title": "0195500eca0574e2f5f1a9b6dfcc5277c6a66cd8da64c4a47325226e54be59e5",
+        "body": "de4568451954b363bc4de8b3efeab80ad529e0bb322e1411a4b9d98fa3faa069",
+        "summary": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "pov": "e87bb80fb88eb865d7f6a674d44f9b12feaaea5cc65eef17614277b97d6d0abb",
+        "status": "7743ce348d9284d677a185f33295b92266cc435a5b5f775029b300066d26693a"
+      }
+    },
+    "source_text": "Noor laid the survey ribbon across the table. She felt very nervous. She wanted Soren to tell her the answer, but she did not want to ask him the question directly.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren put down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal was still whole. Noor had not opened it. Her sister had asked her to bring it to the meeting, and that was all she had asked.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. Outside, a handcart rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, so it told her nothing.\n\nHe reached for the permit. Noor put two fingers on the folded edge. She was worried he would read it aloud. She did not know what it said.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, with the red thread of the survey ribbon caught beneath one end.",
+    "instruction": "Deepen the tension through subtext without extending the scene. Preserve: The red mark is a proposed fence line, not a known water level. The green seal is intact. Noor has not opened or read the permit. Her sister requested delivery to the meeting and was expected by four; the current time is unknown. The stopped clock reads twenty past two, not the present time. Noor stops Soren reaching for the permit; he leaves his hand on the table without opening it.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-luna",
+    "created_at": "2026-09-29T23:23:27.172225+00:00",
+    "directions": [
+      {
+        "id": "direction-1",
+        "profile": {
+          "schema_version": 2,
+          "name": "Clear, structured epic",
+          "description": "Accessible prose, legible action and earned setup/payoff.",
+          "traits": {
+            "prose": "direct",
+            "description": "balanced",
+            "emotion": "balanced",
+            "distance": "balanced",
+            "dialogue": "balanced",
+            "pacing": "varied",
+            "imagery": "concrete",
+            "humor": "dry"
+          },
+          "guidance": [
+            "Introduce worldbuilding through the scene's immediate needs.",
+            "Keep action spatially clear; preserve setup that earns later payoffs."
+          ],
+          "avoid": [
+            "Exposition that repeats what action already shows."
+          ],
+          "exemplar_scene_ids": [],
+          "exemplar_digests": {},
+          "observations": [],
+          "metrics": {},
+          "created_at": ""
+        },
+        "text": "Noor laid the survey ribbon across the table. The permit between them was folded in thirds, its green seal whole. She wanted Soren to tell her the answer, but asking him directly would make the question hers.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren put down his ruler. \"That's where someone wants a fence.\"\n\nNoor looked at the permit. Her sister had asked her to bring it to the meeting. That was all she had asked.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. Outside, a handcart rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, so it told her nothing.\n\nHe reached for the permit. Noor put two fingers on the folded edge. She was worried he would read it aloud. She did not know what it said.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, with the red thread of the survey ribbon caught beneath one end.",
+        "observations": [
+          {
+            "criterion": "voice_fit",
+            "observation": "The prose stays direct and concrete while using the sealed permit and survey ribbon to carry the unspoken conflict; the dry humor remains intact.",
+            "excerpt": "\"I measured a line. The river wasn't available for comment.\""
+          },
+          {
+            "criterion": "readability",
+            "observation": "The spatial sequence is clear: ribbon and permit establish the table, Soren reaches, Noor stops him, and the final image returns to the ruler and thread.",
+            "excerpt": "He reached for the permit. Noor put two fingers on the folded edge."
+          },
+          {
+            "criterion": "emotional_effect",
+            "observation": "Noor's tension comes through her reluctance to make the question hers and her fear of hearing the permit, without resolving what it contains.",
+            "excerpt": "She wanted Soren to tell her the answer, but asking him directly would make the question hers."
+          },
+          {
+            "criterion": "character_distinction",
+            "observation": "Noor speaks in short, practical questions, while Soren answers with restrained, dry deflection.",
+            "excerpt": "\"The red mark,\" she said. \"Is that where the water will come?\""
+          },
+          {
+            "criterion": "consistency",
+            "observation": "The red mark remains a proposed fence line, the green seal stays whole, Noor has not read the permit, the stopped clock is not treated as current time, and Soren does not open it. Continuity remains uncertain only because Noor's sister is expected by four without a known present time.",
+            "excerpt": "The clock above Soren's desk had stopped at twenty past two, so it told her nothing."
+          }
+        ],
+        "warnings": [
+          "Provider self-review is not independent validation. Check character voice and factual consistency yourself."
+        ],
+        "generation_id": "gen-ff0385e107a8",
+        "measures": {
+          "words": 192,
+          "average_sentence_words": 9.1,
+          "dialogue_passages": 6,
+          "paragraphs": 10
+        },
+        "author_review": {
+          "ratings": {},
+          "notes": ""
+        }
+      }
+    ],
+    "refinement": {
+      "preview_id": "voice-preview-ffcaf68bcae8",
+      "direction_id": "direction-1",
+      "candidate": "Noor laid the survey ribbon across the table and kept her hands clear of it. She wanted Soren to give her the answer, but asking the question plainly would make it hers.\n\n\"The red mark,\" she said. \"Is that where the water will come?\"\n\nSoren set down his ruler. \"That's where someone wants a fence.\"\n\nHis permit lay between them, folded in thirds. The green seal remained whole. Noor had not opened it. Her sister had asked her to bring it to the meeting. Nothing more.\n\n\"You measured it yourself.\"\n\n\"I measured a line. The river wasn't available for comment.\"\n\nNoor almost smiled. The handcart outside rattled over the loose drain cover. She looked toward the window. Her sister should have been there by four. The clock above Soren's desk had stopped at twenty past two, offering no help.\n\nSoren reached for the permit. Noor placed two fingers on its folded edge. She was not ready to hear it read aloud. She did not know what it said, and until it was opened, she could still pretend the delivery was the only thing she had agreed to.\n\n\"Wait,\" she said.\n\nHe left his hand on the table. The ruler lay beside it, the red thread of the survey ribbon caught beneath one end.",
+      "feedback": "Keep Soren's dry river joke and Noor's short practical questions distinct. Replace the opening explanation of nervousness with Noor's attention to the existing ribbon or sealed permit, without adding a new physical action or explaining what the objects symbolize. Do not resolve Noor's ignorance, the water level or the current time. End with the ruler and trapped red thread."
+    }
+  },
+  "workflow": "Source unchanged until apply; exact refined prose applied; undo restored source; approved profile unchanged.",
+  "generations": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "status": "succeeded",
+      "provider_attempts": 1,
+      "latency_ms": 21336
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "status": "succeeded",
+      "provider_attempts": 1,
+      "latency_ms": 15933
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "status": "succeeded",
+      "provider_attempts": 1,
+      "latency_ms": 16844
+    }
+  ]
+}

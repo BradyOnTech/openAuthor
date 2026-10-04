@@ -59,7 +59,7 @@ export type Project = {
   kind: ProjectKind;
   status: ProjectStatusValue;
   settings: Record<string, unknown>;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -73,7 +73,7 @@ export type WorkspaceMember = {
 export type ProjectActivityEvent = {
   id: string;
   projectId: string;
-  actorUserId: string;
+  actorUserId: string | null;
   eventType: string;
   payload: Record<string, unknown>;
   createdAt: string;
@@ -106,6 +106,14 @@ export type SceneSummary = {
   word_count?: number;
 };
 
+export type SceneEditVersion = {
+  schema_version: 1;
+  workspace: string;
+  storyline: string;
+  scene_id: string;
+  fields: Record<"title" | "body" | "summary" | "pov" | "status", string>;
+};
+
 export type SceneDetail = {
   id: string;
   title: string;
@@ -116,6 +124,8 @@ export type SceneDetail = {
   updated_at: string;
   path: string;
   body: string;
+  edit_version?: SceneEditVersion;
+  save_warnings?: string[];
 };
 
 export type StartupHealthReport = {
@@ -154,6 +164,7 @@ export type ProposalRecord = {
   selection?: {
     action: "rewrite" | "shorten" | "expand" | "critique";
     start: number; end: number; before: string; after: string; feedback: string; branch: string;
+    review?: EditorialReview;
   };
   revision_intent?: {
     goal: string;
@@ -170,6 +181,7 @@ export type ProposalRecord = {
   applied_at?: string;
   pre_apply_snapshot?: string;
   applied_revision?: string;
+  coordinated_undo_available?: boolean;
   applied_scene_digest?: string;
   undone_at?: string;
   undo_revision?: string;
@@ -294,6 +306,22 @@ export type ProposalRecord = {
   };
 };
 
+export type EditorialReview = {
+  schema_version: 1;
+  focus: string;
+  scope: "passage" | "chapter";
+  kind: "mechanical" | "editorial";
+  summary: string;
+  strengths: string[];
+  limitations: string[];
+  warnings: string[];
+  sources: Array<{ scene_id: string; title: string; start: number; end: number }>;
+  findings: Array<{
+    id: string; category: string; title: string; observation: string; uncertainty: string; suggestion: string;
+    evidence: CanonEvidence[];
+  }>;
+};
+
 export type RevisionSummary = {
   id: string;
   parent: string;
@@ -330,8 +358,17 @@ export type RevisionRetrospective = {
   summary: string;
 };
 
+export type ManuscriptReading = {
+  schema_version: 1;
+  workspace?: string;
+  sections: Array<{ id: string; title: string; act_title: string; scene_ids: string[] }>;
+  scenes: SceneDetail[];
+  word_count: number;
+};
+
 export type ManuscriptPlan = {
   schema_version: number;
+  workspace?: string;
   brief: {
     synopsis: string;
     genre: string;
@@ -479,6 +516,32 @@ export type ChatMessageRecord = {
     model?: string;
     generation_id?: string;
   };
+  turn_id?: string;
+  thread_id?: string;
+  channel?: "text" | "desktop_voice" | "mobile_voice" | string;
+  turn_position?: number | null;
+};
+
+export type AssistantTurnRecord = {
+  schema_version: number;
+  turn_id: string;
+  thread_id: string;
+  channel: "text" | "desktop_voice" | "mobile_voice";
+  status: "accepted" | "running" | "completed" | "failed" | "interrupted" | "superseded";
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  input_message_id: string | null;
+  message_ids: string[];
+  generation_ids: string[];
+  pending_tool_call_ids: string[];
+  context_pack_id: string | null;
+  provider: string | null;
+  model: string | null;
+  error: { message?: string; category?: string } | null;
+  voice_session_id?: string | null;
+  provider_event_id?: string | null;
+  revision: number;
 };
 
 export type ChatSendResult = {
@@ -487,6 +550,7 @@ export type ChatSendResult = {
   assistant_message: ChatMessageRecord;
   tool_messages: ChatMessageRecord[];
   pending_tool_calls: ChatToolCall[];
+  turn?: AssistantTurnRecord;
 };
 
 export type ChatRetrievalCitation = {
@@ -755,6 +819,7 @@ export type CodexRelationship = {
 export type CanonEvidence = { scene_id: string; excerpt: string; start: number; end: number; attribution?: string; anchor_text?: string; source_field?: "pov" };
 export type CanonFact = {
   id: string;
+  edit_version?: string;
   updated_at?: string;
   subject_entity_id: string;
   predicate: string;

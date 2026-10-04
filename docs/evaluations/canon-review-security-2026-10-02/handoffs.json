@@ -1,0 +1,53 @@
+{
+  "final_whole_source_snapshot": {
+    "added": [
+      "scripts/evaluate_canon_diagnostics.py"
+    ],
+    "capture_scope": "Final538 inputs captured before final rootcore and browser verification after fixture-only correction. Prior desktop/build executed on unchanged desktop and production files from initial537 snapshot. Both snapshots retained.",
+    "captured_at": "2026-10-03T04:29:05.031901+00:00",
+    "captured_before_final_core_and_browser": true,
+    "files": 538,
+    "initial_changed": [
+      "tests/fixtures/canon_evaluation.json",
+      "tests/test_canon_evaluation.py"
+    ],
+    "original_private_path": "/private/tmp/openauthor-canon-build-acceptance-05ysp_jq"
+  },
+  "memory": {
+    "archive": "memory-handoff.tar.gz",
+    "files": 24,
+    "manifest": "memory-handoff-sha256.json",
+    "original_private_path": "/private/tmp/openauthor-memory-gap-audit",
+    "sealed_by_packet_author": true
+  },
+  "memory_supplement": {
+    "archive": "memory-supplement.tar.gz",
+    "files": 6,
+    "initial_24_file_archive_unchanged": true,
+    "later_variants_of_original_files": [],
+    "manifest": "memory-supplement-sha256.json",
+    "new_files": [
+      "evaluation-fixture-diagnosis.md",
+      "evaluation-fixture-green.txt",
+      "evaluation-fixture-hashes.json",
+      "evaluation-fixture-red.txt",
+      "evaluation-fixture-report.json",
+      "validity-after-reorder-probe.json"
+    ],
+    "original_private_path": "/private/tmp/openauthor-memory-gap-audit"
+  },
+  "mobile": {
+    "archive": "mobile-handoff.tar.gz",
+    "files": 102,
+    "manifest": "mobile-handoff-sha256.json",
+    "normal_and_secondary_export_scopes_separate": true,
+    "original_manifest_in_archive": true,
+    "original_private_path": "/private/tmp/openauthor-braces-reachability-5tfl6oro"
+  },
+  "whole_source_snapshot": {
+    "capture_scope": "Before root full core/desktop/build verification. Current source and test inputs including unchanged mobile/contracts; does not certify native or whole installed toolchains.",
+    "captured_before_root_full_check_launch": true,
+    "files": 537,
+    "original_private_path": "/private/tmp/openauthor-canon-build-acceptance-05ysp_jq"
+  }
+}

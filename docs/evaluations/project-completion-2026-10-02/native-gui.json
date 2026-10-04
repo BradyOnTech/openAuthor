@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-02",
+  "verification_kind": "unsigned arm64 packaged GUI on developer Mac",
+  "release_certified": false,
+  "disposable_synthetic_book": true,
+  "observations": {
+    "force_quit_tabs_and_active_plan": "passed in earlier native run",
+    "force_quit_unfinished_plan_synopsis_and_act_title": "retained as local drafts, not automatically saved to book",
+    "caret_restoration": "passed after repair: physical keyboard insertion at offset43 after SIGKILL",
+    "native_gui_verified_backup": "passed; success notification observed",
+    "native_gui_restore_into_new_folder": "passed; restored scene opened and exact prose/title/POV checked against original through public core",
+    "later_keyboard_reentry": "passed: latest author caret resumes after ShiftTab/Tab",
+    "native_full_text_replacement": "passed using CmdA and paste before final crash scenario",
+    "final_replacement_safe_bundle": "offset43 insertion and later keyboard re-entry passed after actual SIGKILL; Plan drafts/tabs recovered"
+  },
+  "restored_scene": {
+    "body_sha256": "65787da1ced7ea8d35a8e6e3c6b89afbf2b3f6ecb47489db8b0bf954eae6c6f5",
+    "scene_count": 1,
+    "title_pov_preserved": true
+  },
+  "caret_probe": {
+    "before_plan": 43,
+    "after_plan": 43,
+    "after_scene_activation_before_focus": 43,
+    "after_first_keyboard_focus_before_typing": 0,
+    "typing_result": "marker prepended instead of inserted at saved offset",
+    "persistence_observation": "readonly SQLite probe scoped only to disposable book location key",
+    "repaired_after_sigkill_insertion": "Leah waited at the office. [setup verified] [restart verified] She kept",
+    "regression_status": "red before repair; green after repair"
+  },
+  "manual_gates": {
+    "signed_execution": "not_observed",
+    "clean_machine_install": "not_observed",
+    "intel_execution": "not_observed",
+    "upgrade": "not_observed",
+    "voiceover": "not_observed",
+    "physical_power_loss": "not_observed"
+  },
+  "artifacts": {
+    "caret_and_force_quit_bundle_application_sha256": "486733f4b506fd2c13ed0241ef7e622e074481e95afffda100341ffde99fb48f",
+    "earlier_backup_restore_bundle_application_sha256": "e6216ce7f8131fedcf44d44d3104d45ab82c6e4b77be625f55d49c0f354c7d21",
+    "final_core_source_sha256": "21a409d391575bf281a022fdc2b6bf0e6e6ab4cb33513521db8ae7c0b0f2cc92"
+  },
+  "implementation_commit": "9feb8925b53d4ca8f3f225bc30c86d4bfe676c1c",
+  "current_bundle_reopen": {
+    "implementation_commit": "4c953fffcbd87ed44609ceb742e4614489c8aa1c",
+    "application_sha256": "c66c18bc9c9e40c4ccf7bf4e4b16935adbf429d8d44d3bf84bce8a70a5148e52",
+    "book": "/private/tmp/openauthor-native-acceptance-2026-10-02",
+    "observed": "Native reopened the same saved 26-word scene and both Scene/Plan tabs; Plan retained its unsaved synopsis and new act title. No prose or Plan was saved by the walkthrough.",
+    "recovered_synopsis": "Unfinished planning: leave the ferry unresolved.",
+    "recovered_act_title": "A still unfinished act",
+    "source_prose_unchanged": true,
+    "scope": "Targeted unsigned development bundle; previous SIGKILL caret and backup observations retain their own earlier binary identities."
+  }
+}

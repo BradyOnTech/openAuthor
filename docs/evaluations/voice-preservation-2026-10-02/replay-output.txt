@@ -1,0 +1,60 @@
+{
+  "evidence_kind": "offline_replay_of_retained_synthetic_provider_output",
+  "new_provider_calls": 0,
+  "retained_comparison_sha256": "188bc33d28dc7114d965d0a93004b0e9ee7c1bd4ff0ab7262acec3219cf20ab3",
+  "selected_source_sha256": "f51e26a329c5ac4c4af491d3aee61802fbfa8a5d8dc4251e682d84b11c9b1731",
+  "exact_author_contract_in_both_payloads": true,
+  "private_scope_expansion": false,
+  "manuscript_unchanged": true,
+  "staged": false,
+  "preservation": [
+    {
+      "kind": "fact",
+      "text": "The red line is a proposed mooring, not a water level."
+    },
+    {
+      "kind": "fact",
+      "text": "The green seal remains whole; neither Nessa nor Ivo knows the letter's contents."
+    },
+    {
+      "kind": "fact",
+      "text": "The clock stopped on Tuesday at twenty past two and gives no current time."
+    },
+    {
+      "kind": "fact",
+      "text": "The boat's departure remains undecided; the second bell has not sounded."
+    },
+    {
+      "kind": "fact",
+      "text": "Nessa stops Ivo's reach; his hand rests on the table and the black thread remains beneath the ruler."
+    },
+    {
+      "kind": "fact",
+      "text": "Nessa's practical questions differ from Ivo's dry qualification."
+    }
+  ],
+  "preservation_fingerprint": "ce2226d03c0935c0933a608a33119a4407df601da9b1ff5435917c5ede926d2a",
+  "live_quality_after_fix": "not_observed",
+  "human_author_acceptance": "not_observed",
+  "semantic_limit": "Replayed prose retains the original personal-departure ambiguity. Delivery and literal checks do not prove semantic preservation or improved model behavior.",
+  "directions": [
+    {
+      "id": "direction-1",
+      "text_unchanged_from_retained_output": true,
+      "consistency_observations_retained": 0,
+      "warnings": [
+        "Provider self-review is not independent semantic validation. Literal quotations show where to compare; judge character knowledge, facts and uncertainty yourself.",
+        "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+      ]
+    },
+    {
+      "id": "direction-2",
+      "text_unchanged_from_retained_output": true,
+      "consistency_observations_retained": 0,
+      "warnings": [
+        "Provider self-review is not independent semantic validation. Literal quotations show where to compare; judge character knowledge, facts and uncertainty yourself.",
+        "Provider self-review included incomplete or unverifiable evidence; affected observations were omitted. Review the generated prose yourself."
+      ]
+    }
+  ]
+}

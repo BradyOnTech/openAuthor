@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-04",
+  "base_commit": "82d264b7d2eff9329e4269d1629f332e80235cc8",
+  "verified_source_commit": "2386aa80627275995c5fe008cce9a2ee45d6eb3e",
+  "bug": "asynchronous tab replacement leaves the chosen review open but unselected",
+  "minimal_public_regression": "desktop/src/contexts/EditorContext.test.tsx",
+  "sdk_case": "tests/desktop-controls.e2e.ts::desktop%20saves%20a%20custom%20Editorial%20Pass%2C%20controls%20Style%20Profile%20sources%20and%20chooses%20a%20reviewed%20creative%20direction",
+  "focused_sdk": {
+    "red": {
+      "discovered": 14,
+      "selected": 3,
+      "executed": 3,
+      "passed": 0,
+      "failed": 3,
+      "flaky": 0,
+      "skipped": 11
+    },
+    "green": {
+      "discovered": 14,
+      "selected": 3,
+      "executed": 3,
+      "passed": 3,
+      "failed": 0,
+      "flaky": 0,
+      "skipped": 11
+    },
+    "selected_attempts_each": 1,
+    "retries": 0,
+    "full_aggregate_certified": false,
+    "unselected_cases_are_deliberately_not_verified": true
+  },
+  "validation": {
+    "desktop_unit": {
+      "files": 93,
+      "passed": 715,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typescript_vite_build": "passed",
+    "independent_focused_review": {
+      "passed": 14,
+      "failed": 0,
+      "reviewer": "merge_mobile_security",
+      "code_review": "no actionable findings"
+    }
+  },
+  "unchanged": [
+    "strict SDK assertions",
+    "SDK retries and timeouts",
+    "full aggregate report guard",
+    "navigationRevision fencing",
+    "secondary split behavior"
+  ],
+  "source_sha256": {
+    "desktop/src/contexts/EditorContext.tsx": "ea6cbeb02584f4cc47479ed9bd7863c188ac25c5d896caa1a28b78f01bcbf2ec",
+    "desktop/src/contexts/EditorContext.test.tsx": "561989287a2d2be6a41d9f9521482855a767b77114f8fa2bef58f38f546480d5"
+  }
+}

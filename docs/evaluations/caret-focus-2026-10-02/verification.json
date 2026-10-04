@@ -1,0 +1,123 @@
+{
+  "date": "2026-10-02",
+  "cause": "WebKit resets an unfocused textarea selection when keyboard focus enters it, after focus handlers and microtasks. A restored DOM range alone does not preserve where typing lands.",
+  "changed_source": [
+    "desktop/src/components/editor/SceneEditor.tsx"
+  ],
+  "minimal_probe": {
+    "original": "Leah waited at the office. She kept the receipt folded.",
+    "restored_range": 26,
+    "chromium_before_fix": {
+      "range_after_keyboard_focus": 26,
+      "typed_result": "Leah waited at the office. [focused probe] She kept the receipt folded."
+    },
+    "webkit_before_fix": {
+      "range_after_keyboard_focus": 0,
+      "typed_result": " [focused probe]Leah waited at the office. She kept the receipt folded."
+    },
+    "webkit_timing_probe": {
+      "focus_handler": "failed",
+      "focusin_handler": "failed",
+      "microtask": "failed",
+      "requestAnimationFrame": "failed",
+      "setTimeout_0": "passed"
+    }
+  },
+  "regression": {
+    "command": "npx playwright test e2e/caret-keyboard.spec.ts --browser webkit",
+    "before_fix": {
+      "result": "failed",
+      "expected": "Leah waited at the office. [setup verified] [restart verified] She kept the receipt folded.",
+      "actual": " [restart verified]Leah waited at the office. [setup verified] She kept the receipt folded.",
+      "checkpoints": "webkit-before-fix-checkpoints.json"
+    },
+    "after_fix": {
+      "result": "passed",
+      "checkpoints": "webkit-after-fix-checkpoints.json"
+    },
+    "webkit_combined": {
+      "result": "2 passed",
+      "seconds": 17.1,
+      "tests": [
+        "desktop/e2e/caret-keyboard.spec.ts",
+        "desktop/e2e/editorial-workspace.spec.ts"
+      ],
+      "log": "/private/tmp/openauthor-webkit-focus-evidence-browser-2026-10-02.log"
+    },
+    "chromium_combined": {
+      "result": "2 passed",
+      "seconds": 12.9,
+      "tests": [
+        "desktop/e2e/caret-keyboard.spec.ts",
+        "desktop/e2e/editorial-workspace.spec.ts"
+      ],
+      "checkpoints": "chromium-after-fix-checkpoints.json",
+      "log": "/private/tmp/openauthor-chromium-focus-evidence-browser-2026-10-02.log"
+    }
+  },
+  "focused_validation": {
+    "typescript": "passed",
+    "tests": 34,
+    "test_files": [
+      "desktop/src/components/editor/SceneEditor.location.test.tsx",
+      "desktop/src/components/editor/SceneEditor.test.tsx",
+      "desktop/src/components/editor/SceneDocument.test.tsx",
+      "desktop/src/editorLocation.test.ts"
+    ]
+  },
+  "verified": [
+    "Actual keyboard typing lands at restored caret43 after a Plan switch and restart in WebKit and Chromium.",
+    "A pointer chooses its own caret instead of replaying the saved range, including when it cancels a queued focus task.",
+    "Later keyboard re-entry restores the most recent author caret rather than the original mount location.",
+    "Immediate key, paste, and IME composition events resume the pending range before input; deferred work does not overwrite a newer caret.",
+    "Focus task is cancelled on blur, pointer entry, unmount and scope change; current draft context is revalidated before relocation.",
+    "Exact evidence navigation focuses before applying its range; existing wide and narrow workspace journeys pass in both engines.",
+    "Explicit select-all, partial/accessibility selection and programmatic nonzero caret placement cancel pending bookmark replay; valid full-draft replacement does not append to old prose."
+  ],
+  "limitations": [
+    "The browser restart uses document reload, not native process termination. Native force-quit checkpoints and verification are recorded separately by the parent task.",
+    "Browser fixture and unit cases use ASCII prose; location module also has an existing Unicode selection and unique-passage relocation regression."
+  ],
+  "full_desktop_validation": {
+    "tests": 374,
+    "test_files": 74,
+    "result": "passed",
+    "seconds": 28.69,
+    "command": "npx tsc --noEmit && npm test",
+    "log": "/private/tmp/openauthor-desktop-caret-replacement-final-2026-10-02.log"
+  },
+  "replacement_regression": {
+    "before_fix": {
+      "result": "4 failures",
+      "log": "replacement-before-fix.log",
+      "symptom": "Pending location collapsed explicit select-all to6..6 and replaced an explicit new caret with the old saved position."
+    },
+    "unit_coverage": [
+      "Select-all preserved for immediate keyboard, paste and composition replacement.",
+      "Explicit nonzero collapsed and partial programmatic selections preserved through queued focus work.",
+      "Saved noncollapsed backward selection restored after automatic WebKit0..0 focus range."
+    ],
+    "webkit": {
+      "result": "2 passed",
+      "seconds": 31.1,
+      "tests": [
+        "desktop/e2e/authoring.spec.ts",
+        "desktop/e2e/caret-keyboard.spec.ts"
+      ],
+      "log": "/private/tmp/openauthor-caret-replacement-webkit-2026-10-02.log"
+    },
+    "chromium": {
+      "result": "2 passed",
+      "seconds": 20.2,
+      "tests": [
+        "desktop/e2e/authoring.spec.ts",
+        "desktop/e2e/caret-keyboard.spec.ts"
+      ],
+      "log": "/private/tmp/openauthor-caret-replacement-chromium-2026-10-02.log"
+    },
+    "verified": [
+      "Existing authoring/conflict/recovery browser journey was not rewritten; original replacement and guarded reconciliation assertions pass.",
+      "Caret keyboard journey now also exercises valid full-draft replacement after leaving prose, while pending restoration exists."
+    ]
+  }
+}

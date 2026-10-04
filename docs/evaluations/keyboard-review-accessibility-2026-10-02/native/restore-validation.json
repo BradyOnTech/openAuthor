@@ -1,0 +1,29 @@
+{
+  "stage": "native-gui-backup-restored",
+  "archive_sha256": "b6bf09ea207c658b948c38c5572edf30f8d95cf75bbc0360223ef7a7093025ca",
+  "scenes": [
+    {
+      "id": "scene-0001",
+      "source_and_recovered_match_exact_original": true,
+      "file_sha256": "f5c0604383392c233b166b14e4d87f24849f06939f71cc2df2fc9105abe36bda",
+      "applied_revision": "bfd07a92ba30f6f4b91cf8614e35553e5e2de95ee1cdacc99688e9d2c5b4709c",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23"
+    },
+    {
+      "id": "scene-0002",
+      "source_and_recovered_match_exact_original": true,
+      "file_sha256": "b1d9007c8fdf8a7f9aa6a4e9ed6084337ff502296abb5ead9cf0de00394fd10c",
+      "applied_revision": "bfd07a92ba30f6f4b91cf8614e35553e5e2de95ee1cdacc99688e9d2c5b4709c",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23"
+    },
+    {
+      "id": "scene-0003",
+      "source_and_recovered_match_exact_original": true,
+      "file_sha256": "a96a696170b00b0aad1022b2b71b8214b4e0528bc3c9487dd4ee410539706c34",
+      "applied_revision": "bfd07a92ba30f6f4b91cf8614e35553e5e2de95ee1cdacc99688e9d2c5b4709c",
+      "undo_revision": "1c8b0b2ead6b8068c03d7e246e610e26e7de30898fd4175ea492ebfb24bfbc23"
+    }
+  ],
+  "revision_history_identical": true,
+  "revision_count": 7
+}
