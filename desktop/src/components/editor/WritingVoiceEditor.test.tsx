@@ -65,7 +65,9 @@ describe("Writing Voice author workflow", () => {
     render(<WritingVoiceEditor />);
     await waitFor(() => expect((screen.getByRole("textbox", { name: /Exact excerpt/ }) as HTMLTextAreaElement).value).toBe("Mara counted boats."));
     fireEvent.change(screen.getByRole("combobox", { name: "Writing Voice preset" }), { target: { value: "kinetic" } });
-    fireEvent.click(screen.getByRole("button", { name: "Compare 3 short previews" }));
+    const compare = screen.getByRole("button", { name: "Compare 3 short previews" }) as HTMLButtonElement;
+    await waitFor(() => expect(compare.disabled).toBe(false));
+    fireEvent.click(compare);
     await screen.findByRole("article", { name: "Preview Kinetic" });
     const request = vi.mocked(writingVoiceAction).mock.calls[0][2];
     expect((request.directions as StyleProfile[]).map((row) => row.name)).toEqual(["Kinetic", "Atmospheric", "Clear epic"]);
@@ -105,7 +107,9 @@ describe("Writing Voice author workflow", () => {
     vi.mocked(writingVoiceAction).mockResolvedValue(structuredClone(preview));
     render(<WritingVoiceEditor />);
     await waitFor(() => expect((screen.getByRole("textbox", { name: /Exact excerpt/ }) as HTMLTextAreaElement).value).toBe("Mara counted boats."));
-    fireEvent.click(screen.getByRole("button", { name: "Compare 3 short previews" }));
+    const compare = screen.getByRole("button", { name: "Compare 3 short previews" }) as HTMLButtonElement;
+    await waitFor(() => expect(compare.disabled).toBe(false));
+    fireEvent.click(compare);
     const card = await screen.findByRole("article", { name: "Preview Kinetic" });
     expect(screen.getAllByRole("article")).toHaveLength(3);
     fireEvent.click(within(card).getByText("Your quality assessment"));

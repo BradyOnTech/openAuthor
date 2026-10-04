@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { useUI, type ActivityView } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { countProposals, countContinuityIssues } from "../../state";
