@@ -3,6 +3,7 @@ set -euo pipefail
 export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT/scripts/rust_env.sh"
 DEST="$ROOT/desktop/src-tauri/resources/runtime/git"
 VERSION="2.55.0"
 SHA256="0842dc384a23ac33ba3e570c4f3a8ded85963ee4713b1cd21153c3db41813d1e"
