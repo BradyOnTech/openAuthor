@@ -63,6 +63,9 @@ jobs:
           OPENAUTHOR_RUNTIME_ARCH: ${{ matrix.arch }}
         run: scripts/prepare_bundled_runtime.sh
 
+      - name: Install repository check prerequisite
+        run: brew install ripgrep
+
       - name: Verify source, contracts, core and native workflows before packaging
         run: make check test test-contracts test-desktop tauri-test
 
