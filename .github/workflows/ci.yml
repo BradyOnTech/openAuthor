@@ -4,17 +4,20 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   shared-gateway-quota:
     runs-on: macos-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "npm"
@@ -30,7 +33,7 @@ jobs:
           python scripts/verify_shared_gateway_limiter.py --pg-bin "$(brew --prefix postgresql@17)/bin" 2>&1 | tee gateway/test-results/shared-quota.txt
       - name: Preserve shared quota evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shared-gateway-quota-evidence
           path: gateway/test-results/shared-quota.txt
@@ -39,15 +42,15 @@ jobs:
   full-gates:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "npm"
@@ -125,14 +128,19 @@ jobs:
 
       - name: Preserve browser workflow evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: authoring-browser-evidence
+          include-hidden-files: true
           path: |
             desktop/test-results/
             mobile/test-results/
             mobile/dist/security-build.json
             mobile/.expo/hosted-e2e/security-build.json
+            !desktop/test-results/**/.git/**
+            !mobile/test-results/**/.git/**
+            !**/.env
+            !**/.env.*
           if-no-files-found: ignore
 
       - name: Tauri backend check

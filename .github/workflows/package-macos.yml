@@ -28,8 +28,8 @@ jobs:
           - arch: x86_64
             runner: macos-15-intel
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -57,7 +57,7 @@ jobs:
         run: ditto -c -k --keepParent desktop/src-tauri/target/release/bundle/macos/openAuthor.app openAuthor-${{ matrix.arch }}-UNSIGNED.zip
       - name: Record archive checksum
         run: shasum -a 256 openAuthor-${{ matrix.arch }}-UNSIGNED.zip > openAuthor-${{ matrix.arch }}-UNSIGNED.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: openAuthor-${{ matrix.arch }}-UNSIGNED-internal-test
           path: |

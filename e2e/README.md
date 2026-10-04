@@ -122,6 +122,9 @@ After each full run, `node e2e/scripts/archive.mjs chromium` (or `webkit`)
 copies its receipt and actual reports into `e2e/.e2e/evidence-<browser>/` before
 another run can replace the shared backend/database outputs. CI does this for
 both browsers, including retained browser artifacts and security build receipts.
+The evidence upload includes hidden files within these explicit test-output
+paths, so `.e2e` reports survive the upload. It excludes fixture Git metadata
+and environment files.
 An additional desktop journey deliberately interrupts a lazy module download,
 checks that the question survives with no generation, and recovers only after
 fresh context permission and prompt review.
