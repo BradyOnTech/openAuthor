@@ -35,12 +35,12 @@ make desktop-smoke
 ## Local setup (blank machine -> first run)
 
 ```bash
-# 1) install Python 3.11+, Node 22.12+ (.nvmrc selects Node 22), Rust stable
+# 1) install Python 3.11+, Node 22.22.2+ on 22.x (.nvmrc selects Node 22), Rust stable
 # 2) clone and enter repository
 git clone <your-repo-url> openAuthor
 cd openAuthor
 
-# 3) install core + desktop dependencies
+# 3) install core + desktop dependencies (Node 24.15+ on 24.x or 26+ also supported)
 python3 -m pip install --upgrade pip
 python3 -m pip install -e .
 make install-desktop

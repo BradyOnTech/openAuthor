@@ -2,7 +2,8 @@
 
 This package uses the actual [tester-army/e2e](https://github.com/tester-army/e2e)
 runner and its web and native mobile engines. Versions and transitive integrity
-pins live in `package-lock.json`. Node 22.12 or newer is required.
+pins live in `package-lock.json`. The desktop toolchain requires Node 22.22.2+
+on 22.x, 24.15+ on 24.x, or 26+; `.nvmrc` selects Node 22.
 
 The tests are deterministic: they use semantic UI actions, exact
 assertions, the local Python provider, signed synthetic JWTs and local HTTP
