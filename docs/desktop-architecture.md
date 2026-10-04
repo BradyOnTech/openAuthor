@@ -144,7 +144,7 @@ The command inventory below describes implemented core and bridge contracts. It 
 - Optional safe repair (`check workspace --repair`) clears stale pin references / resets invalid pin metadata.
 - Performance baseline (`check performance`) captures repeatable timing samples for scene/proposal/run list workloads plus retrieval status.
 - `make test-scale` builds a deterministic 400-scene fixture and enforces budgets from `docs/performance-budgets.json`.
-- These tools are CLI/CI gates and are not visible V2 product features.
+- These tools are local CLI checks and are not visible V2 product features.
 
 ## Why sidecar-first
 

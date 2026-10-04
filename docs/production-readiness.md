@@ -2,6 +2,8 @@
 
 Goal activated: 2026-09-07. Status: **active; production readiness is not established**.
 
+October 4 delivery policy: run checks, dependency audits, end-to-end flows, and packaging locally. GitHub Actions and scheduled dependency updates are disabled; hosted CI is no longer an acceptance requirement. References to CI in earlier dated evidence describe those historical runs. Local commands and report archiving remain available in the [desktop runbook](desktop-runbook.md) and [end-to-end guide](../e2e/README.md).
+
 ## Required outcome
 
 An author can develop and revise a real novel with manuscript-aware AI, review
@@ -22,7 +24,7 @@ build alone satisfies this goal.
 | Creative experiments | Alternate Storylines isolate work and selectively integrate without overwriting unsaved main-manuscript edits | Existing implementation; concurrent-save and recovery interactions need validation |
 | Voice/mobile | Same project context and approval policy; reliable foreground audio, interruptions, encrypted sync, offline capture and desktop review | Local implementation present; deployment, credentials, physical-device and live-provider gates remain |
 | Accessibility and usability | Keyboard/assistive navigation, named controls, reliable feedback, readable long-form review, focus restoration, and responsive layouts | Prior `a523097` named Command Palette/focus restoration and exact keyboard Plan ordering pass 13 real-core journeys per engine; prior sampled contrast and native Search/Plan/caret evidence retain their source scopes. Full VoiceOver, contrast, scaling and long-session author assessment remain required |
-| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, all packages gated in CI, bundled runtime and clean-machine distribution | Current `36a4058` normal unsigned arm64 bundle passes strict identity, exact core, five instrumented packaged-engine recovery stages and all 583 bundled Python tests with the local Codex contract. Other dependency audits retain earlier scopes; the October 3 UTC mobile audit retains 17 high entries from unpatched Forge and Braces advisories. Signed artifacts, remote CI and clean-machine acceptance remain gates |
+| Reproducible delivery | Fresh-checkout installation, supported toolchains, audited dependencies, local checks for all packages, bundled runtime and clean-machine distribution | The `36a4058` unsigned arm64 bundle checkpoint passed strict identity, exact core, five instrumented packaged-engine recovery stages and all 583 bundled Python tests with the local Codex contract. The older October 3 UTC mobile audit retained 17 high entries from unpatched Forge and Braces advisories; later dependency verification is recorded in the dated packets below. Signed artifacts and clean-machine acceptance remain gates |
 | Recovery and release | Forced-crash drills, signed/notarized artifacts, clean-machine installs and explicit privacy behavior | Real core/packaged-engine SIGKILL recovery, local native backup/restore and restored caret/Plan/tab restart are observed; signed-GUI acceptance, distribution and accessibility are incomplete. No release-ready claim |
 
 ## Latest local dependency and marker-gate checkpoint — 2026-10-03

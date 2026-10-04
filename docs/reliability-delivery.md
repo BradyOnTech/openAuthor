@@ -2,12 +2,14 @@
 
 The goal is to complete the September 2026 project review: protect writing and history, make recovery dependable, deliver a verified installation, and establish evidence from real authors. Passing source tests alone does not complete this goal.
 
+October 4 delivery policy: verification and packaging run locally. GitHub Actions workflows, scheduled dependency updates, and the repository-secret upload helper have been removed; Actions is disabled. Earlier dated workflow and CI references below remain historical evidence. Use [macOS release setup](macos-release-setup.md) for local signing and notarization.
+
 **Work and completion evidence**
 
 - [x] Preserve typing during delayed saves, queue newer saves, and verify tab/project changes and failed saves (rendered contract tests).
 - [x] Checkpoint ordinary writing automatically, expose Save version, and restore prose, planning, and Story Memory (core and rendered tests).
 - [x] Restore Story Memory snapshots and SQLite consistently, with rollback and forced-termination tests.
-- [x] Update vulnerable dependencies and add scheduled advisory checks (npm audit: zero findings; workflows need publication).
+- [x] Update vulnerable dependencies and retain local advisory checks (`make js-audit`).
 - [ ] Remove the system-Git installation requirement for Storylines (embedded arm64 runtime verified; Intel still requires its native build).
 - [ ] Verify signed/notarized arm64 and x86_64 artifacts, clean-machine installation, packaged GUI flows, crash recovery, and upgrades.
 - [x] Add portable backups with integrity verification and recovery of history, Story Memory, and Storyline branches. Desktop controls flush pending writing and reject backups when that save fails.
@@ -27,7 +29,7 @@ The executable evaluation runner now prepares isolated source-hashed cases, perf
 
 172 Python tests and the synthetic author-workflow gate pass, along with repository checks. The merge-recovery slice passed 109 frontend tests, six native bridge tests, and the frontend build; the dependency audit reported zero vulnerabilities. The 400-scene scale gate also passed after merge recovery, including 300 proposals, 300 generation records, and 72 entities. The rebuilt embedded arm64 Python/Git combination passes Storyline create, compare, switch, backup, recovery, and older Story Memory restoration with system tools removed from PATH. These counts describe local source/runtime tests, not signed-installation or author-pilot evidence. The latest completed packaged GUI drill covers hunk-retry restart and forced-process-termination recovery, as detailed below; merge-recovery controls have core and rendered coverage, not a native GUI failure/restart drill.
 
-No Apple signing identities or repository secrets were available in the inspected environment. The unsigned packaging workflow permits native arm64 and Intel verification without signing credentials. Its first GitHub run is now in progress; no signed release has been run in this work.
+No Apple signing identities or repository secrets were available in the inspected environment. Local unsigned packaging permits native arm64 and Intel verification without signing credentials; no signed release has been verified in this work.
 
 The September 28 follow-up confirmed that the configured GitHub repository is private, its repository-secret list is empty, and the local keychain still has zero valid code-signing identities. There are no published releases or runs of the signed-release workflow. The inspected runtime configuration reports no credentials for the live providers. With user approval, the reliability branch was pushed and [PR #6](https://github.com/BradyOnTech/openAuthor/pull/6) opened. Full CI and native packaging jobs are running; the PR is not merged. The user approved up to $5 total for live-provider tests, but provider/model setup and actual calls remain pending. Apple setup is documented in `docs/macos-release-setup.md`, with an interactive owner-run secret configuration helper. No credentials have been uploaded by this work.
 

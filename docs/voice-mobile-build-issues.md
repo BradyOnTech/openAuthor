@@ -66,7 +66,7 @@ Evidence:
 Required resolution:
 
 - Run the focused Rust test and the full native test suite in the bundled
-  desktop build environment or on CI with the pinned Rust toolchain.
+  local desktop build environment with the pinned Rust toolchain.
 
 ## VM-004 — Live Realtime audio and signed-app permissions are not verified
 

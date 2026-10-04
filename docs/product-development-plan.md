@@ -751,7 +751,7 @@ Deliverables:
 Exit criteria:
 
 - no visible feature is represented as complete without an end-to-end path
-- CI distinguishes unit/build health from product-flow health
+- local verification distinguishes unit/build health from product-flow health
 - the canonical plan and current status agree
 
 ### Phase B — Install, import, and trust the files

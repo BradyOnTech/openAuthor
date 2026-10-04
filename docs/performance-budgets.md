@@ -30,4 +30,4 @@ Packaged application startup, UI paint, save acknowledgement, Change Set diff re
 
 The author-facing targets reserved for native instrumentation are: cold launch to Welcome within 3,000 ms, warm project-ready load within 2,000 ms, scene-open paint within 300 ms, and save acknowledgement within 500 ms on the supported reference Mac. They are documented targets, not claimed measurements, until the packaged-app harness lands.
 
-Budget changes require a written explanation. A regression should be fixed or explicitly accepted; thresholds should not be raised merely to make CI green.
+Budget changes require a written explanation. A regression should be fixed or explicitly accepted; thresholds should not be raised merely to make the local checks pass.

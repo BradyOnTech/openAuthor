@@ -117,15 +117,12 @@ Reports, JUnit summaries, screenshots and retained failure traces are under
 `e2e/.e2e/<project>-<browser>/` (backend and database omit the browser suffix).
 `verification.json` records the most recent aggregate command. Existing browser
 artifacts remain in `desktop/test-results/` and `mobile/test-results/`.
-The independent `public-workflow-e2e` CI workflow runs the local flow set on pull
-requests and uploads the evidence. It has read-only GitHub permissions.
+Run these flows locally; GitHub Actions is disabled for this repository.
 After each full run, `node e2e/scripts/archive.mjs chromium` (or `webkit`)
 copies its receipt and actual reports into `e2e/.e2e/evidence-<browser>/` before
-another run can replace the shared backend/database outputs. CI does this for
-both browsers, including retained browser artifacts and security build receipts.
-The evidence upload includes hidden files within these explicit test-output
-paths, so `.e2e` reports survive the upload. It excludes fixture Git metadata
-and environment files.
+another run can replace the shared backend/database outputs. Archive each browser
+before starting the next run. Each archive includes the actual reports, retained
+browser artifacts and security build receipts.
 An additional desktop journey deliberately interrupts a lazy module download,
 checks that the question survives with no generation, and recovers only after
 fresh context permission and prompt review.

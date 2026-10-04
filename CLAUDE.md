@@ -71,7 +71,8 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 - **Indent**: 2 spaces everywhere (`.editorconfig`)
 - **Line endings**: LF only (`.gitattributes` enforces)
-- **No placeholders in code**: `audit-no-mocks` scans for TODO/FIXME/TBD/NotImplemented/stubbed/mock markers and CI will fail
+- **Local delivery**: Run verification, dependency audits, packaging, and signing locally. GitHub Actions and scheduled dependency updates are disabled by project policy; do not add hosted CI/CD workflows or dependency update automation unless the user requests it.
+- **No placeholders in code**: `audit-no-mocks` scans for TODO/FIXME/TBD/NotImplemented/stubbed/mock markers and the local check will fail
 - **CLI output**: all commands support `--json` for machine-readable output
 - **Tests use `local` provider**: deterministic adapter, no API keys needed
 - **Snapshot commits** stage only authoring artifacts: `manuscript/scenes/`, `.openauthor/project.json`, `codex/codex.json`, pricing/budget policy files

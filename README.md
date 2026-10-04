@@ -273,7 +273,7 @@ ChatGPT subscription integration:
 
 Phases 0-4 delivered the core engine and a substantial set of advanced primitives. Product readiness is now tracked separately from core implementation: active-shell parity, clean-machine installability, native end-to-end verification, trusted Change Sets, Story Memory, and Storylines are sequenced in [`docs/product-development-plan.md`](docs/product-development-plan.md).
 
-CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
+Verification and packaging run locally. GitHub Actions is disabled for this repository, and there are no hosted CI/CD workflows or scheduled dependency updates. Run the relevant checks before committing:
 
 - `make check`
 - `make test`
@@ -283,3 +283,8 @@ CI now runs full gates on push/PR via `.github/workflows/ci.yml`:
 - `make tauri-check`
 - `make tauri-test`
 - `make test-scale`
+- `make test-all` for Python, desktop, shared contracts, gateway, and mobile checks
+- `make js-audit` for dependency audits across all five JavaScript packages
+- `make test-e2e-all` and `make test-e2e-webkit` for the complete local flow set; see [`e2e/README.md`](e2e/README.md) for PostgreSQL setup and evidence archiving
+
+Local macOS packaging and signing instructions are in [`docs/desktop-runbook.md`](docs/desktop-runbook.md) and [`docs/macos-release-setup.md`](docs/macos-release-setup.md).

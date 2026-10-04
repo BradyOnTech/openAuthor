@@ -501,14 +501,14 @@
       "active_ui": "not_applicable",
       "end_to_end": "missing",
       "release": "not_ready",
-      "scope_note": "A real macOS application bundle has been built and its isolated embedded core verified. Developer ID signing, Apple notarization, both-architecture CI artifacts, and packaged GUI automation must pass before release readiness.",
+      "scope_note": "A real macOS application bundle has been built and its isolated embedded core verified. Developer ID signing, Apple notarization, locally verified artifacts for both architectures, and packaged GUI automation must pass before release readiness.",
       "evidence": [
         "scripts/prepare_bundled_runtime.sh",
         "scripts/verify_bundled_runtime.sh",
         "scripts/verify_macos_bundle.sh",
         "desktop/src-tauri/src/lib.rs",
         "desktop/src-tauri/tauri.conf.json",
-        ".github/workflows/release-macos.yml",
+        "docs/macos-release-setup.md",
         "scripts/verify_packaged_sources.py",
         "docs/evaluations/project-completion-2026-10-02/native-bundle.json"
       ]

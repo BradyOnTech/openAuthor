@@ -2,6 +2,8 @@
 
 > This document preserves the engineering delivery history through Phase 4. A check mark here means the capability existed in the shell at that time; it does not guarantee exposure in the current V2 desktop or public-release readiness. The authoritative current-state registry is [`docs/capabilities.json`](capabilities.json), explained in [`docs/capabilities.md`](capabilities.md). The canonical forward-looking product strategy and roadmap is [`docs/product-development-plan.md`](product-development-plan.md).
 
+As of October 4, 2026, verification and packaging run locally. GitHub Actions workflows and scheduled dependency updates have been removed, and Actions is disabled for the repository. Earlier CI checklist entries below describe delivery history, not current requirements.
+
 ## Phase 0: Bootstrap (completed)
 
 - Initialize git repository.
@@ -142,7 +144,7 @@ Phase 3 exit condition:
   - Keep these fast and independent of Tauri runtime.
 - Desktop integration checks:
   - `npm run build` and `cargo check` for compile-time regression gates.
-  - Promote to CI once workflow is stable.
+  - Run the relevant checks locally before committing; hosted CI/CD is disabled.
 
 ## Current test gates
 

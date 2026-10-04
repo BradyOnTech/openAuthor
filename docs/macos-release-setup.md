@@ -1,50 +1,58 @@
 # macOS release setup
 
-The arm64 and Intel build workflows are configured. Apple credentials must come from the account owner; no signing identity or repository secrets were present at the September 28 check. Do not put credentials in chat, Git, or evaluation reports.
+Build and verify releases manually on local arm64 and Intel Macs. GitHub Actions and scheduled dependency updates are disabled. Signing credentials stay on the operator's Mac; the repository-secret upload helper has been removed.
 
 **Your one-time Apple step**
 
-If you already have a Developer ID Application certificate, export it with its private key as a password-protected `.p12` using Keychain Access. Otherwise the Apple Developer account holder must create it first. Use the outside-the-App-Store certificate, not a development certificate. Follow [Apple's Developer ID instructions](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/).
+Install a valid Developer ID Application certificate and its private key in the local login keychain. If you need a new certificate, follow [Apple's Developer ID instructions](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/).
 
 You also need your Team ID and an Apple app-specific password for notarization, not your normal account password. This matches the [Tauri signing and notarization setup](https://v2.tauri.app/distribute/sign/macos/).
 
-**Secure configuration**
+**Local configuration**
 
-Run this yourself in a terminal from the repository:
+Find the installed signing identity:
 
 ```sh
-bash scripts/configure_macos_release.sh --configure
+security find-identity -v -p codesigning
 ```
 
-The helper confirms the private destination, asks before replacing secret values, uploads only the certificate you select, and uses GitHub CLI's hidden prompts for the remaining values. It never reads the keychain or prints credential values. It does not start a release. An interrupted setup may leave some secrets configured; rerun it to finish. Existing secrets cannot be recovered from GitHub after replacement.
+Set these environment variables in the local build session, following [Tauri's local signing and notarization instructions](https://v2.tauri.app/distribute/sign/macos/). Keep the password out of shell history and repository files.
 
-Alternatively use [repository Actions secrets](https://github.com/BradyOnTech/openAuthor/settings/secrets/actions). The existing release workflow expects exactly these fields:
-
-| Secret | Value |
+| Environment variable | Value |
 | --- | --- |
-| `APPLE_CERTIFICATE` | Base64-encoded exported `.p12`, including private key |
-| `APPLE_CERTIFICATE_PASSWORD` | Password chosen for that export |
 | `APPLE_SIGNING_IDENTITY` | Full Developer ID Application identity |
 | `APPLE_ID` | Apple Developer account email |
 | `APPLE_PASSWORD` | Apple app-specific password |
 | `APPLE_TEAM_ID` | Apple Developer Team ID |
 
-**What happens next**
+**Build and verify locally**
 
-After the owner confirms configuration, inspect names only, run the signed workflow on the approved branch, and verify signing and notarization for both architectures. The workflow creates a draft prerelease, not a public release. Do not publish it or merge the PR without authorization. Secret presence alone does not establish that the credentials work.
+From the repository root on each matching Mac:
 
-Fresh GitHub runners verify packaged code, not a person's installation experience. Clean-machine checks must still download the signed artifact normally, pass Gatekeeper without bypassing warnings, launch the GUI, exercise synthetic writing/apply/undo/backup/recovery, and record machine architecture, OS version, build SHA, and results. An upgrade from a published signed release cannot be claimed before one exists.
+```sh
+source scripts/rust_env.sh
+make install-desktop
+OPENAUTHOR_RUNTIME_ARCH="$(uname -m)" make runtime-prepare
+make check test test-contracts test-desktop tauri-test
+make macos-bundle
+OPENAUTHOR_REQUIRE_SIGNED_BUNDLE=1 \
+  OPENAUTHOR_EXPECT_ARCH="$(uname -m)" \
+  OPENAUTHOR_BUNDLE_REPORT_PATH="$PWD/desktop/src-tauri/target/signed-package-evidence.json" \
+  make macos-bundle-check
+```
 
-**October 2 local and CI hardening**
+The app and DMG are under `desktop/src-tauri/target/release/bundle/`. Record their SHA-256 checksums beside the verification report. Publishing is a separate manual step. A successful build does not establish clean-machine acceptance: download the signed artifact normally, pass Gatekeeper, launch the GUI, exercise writing/apply/undo/backup/recovery, and record architecture, OS version, build SHA, and results. An upgrade from a published signed release cannot be claimed before one exists.
+
+**Verification checks and historical October 2 checkpoint**
 
 The local identity check found zero valid signing identities. A read-only
-repository-secret-name query using the existing repository-owner credential
-returned no Actions secrets; it did not switch accounts or retrieve secret
-values. Apple signing/notarization configuration is still an owner-supplied gate.
+repository-secret-name query returned no Actions secrets. This describes the
+October 2 inspection; release configuration now uses the local keychain and
+local environment. Apple signing/notarization remains unverified.
 
-Unsigned packaging now installs both shared contracts and desktop dependencies
-from their lockfiles and runs on both native architectures. Signed packaging
-runs repository, core, shared-contract, desktop and native checks before building.
+Local packaging installs shared contracts and desktop dependencies from their
+lockfiles. Repeat the build on each native architecture. Signed packaging uses
+the repository, core, shared-contract, desktop and native checks above.
 The bundle verifier checks exact installed Python source against the reviewed
 checkout, application identity/version, and the architecture of the application,
 Python, Codex and embedded Git. Signed verification additionally requires a
@@ -60,7 +68,7 @@ or preserve a completed commit; coordinated undo must then restore the originals
 This does not exercise WebView storage, GUI focus, microphone permission,
 Keychain access under a Developer ID identity or physical power loss.
 
-CI retains a per-architecture evidence JSON with the core source digest, commit,
+The local bundle verifier writes an evidence JSON with the core source digest, commit,
 checkout-clean status, runtime manifests, binary hashes and architecture checks.
 Distributable archive/DMG SHA-256 files accompany those reports. A local dirty
 checkout's digest identifies its actual core bytes; its commit alone does not
@@ -80,7 +88,7 @@ OS/architecture, build identity and observed outcomes for:
 - An upgrade preserving projects, credentials and drafts from a previously
   released signed version, when such a version exists.
 
-Store this evidence beside the CI report. Green build evidence alone does not
+Store this evidence beside the local bundle report. Green build evidence alone does not
 turn these manual entries into passed results.
 
 **Sources**

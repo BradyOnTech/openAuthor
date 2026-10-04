@@ -66,7 +66,7 @@ make macos-bundle
 make macos-bundle-check
 ```
 
-`runtime-prepare` downloads pinned python-build-standalone and Codex assets, verifies their recorded checksums, installs the openAuthor core, and builds checksum-pinned Git source on the native architecture. Git's license and corresponding source ship alongside the binary. Runtime verification exercises Storylines and backup recovery with system tools absent from PATH. The Tauri build fails closed when a required runtime is missing. Local bundles are not distributable releases: the `release-macos` workflow requires Apple Developer ID credentials, signs and notarizes both architectures, and verifies the sealed bundle before leaving artifacts in a draft prerelease. The separate `package-macos` workflow builds unsigned internal-test artifacts on native arm64 and Intel runners without requiring those credentials.
+`runtime-prepare` downloads pinned python-build-standalone and Codex assets, verifies their recorded checksums, installs the openAuthor core, and builds checksum-pinned Git source on the native architecture. Git's license and corresponding source ship alongside the binary. Runtime verification exercises Storylines and backup recovery with system tools absent from PATH. The Tauri build fails closed when a required runtime is missing. Build and verify each architecture locally on its matching Mac. Distribution additionally requires Developer ID signing, Apple notarization, and the installation checks in [macOS release setup](macos-release-setup.md). Packaging and publishing are manual; GitHub Actions is disabled.
 
 ## Smoke checklist (macOS)
 
