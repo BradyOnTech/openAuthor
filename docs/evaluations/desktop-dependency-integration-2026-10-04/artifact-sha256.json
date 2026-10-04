@@ -1,0 +1,17 @@
+{
+  "bundle-receipt.json": "d090b2a2bb8d77a30c129f43fabb25baaaca1897f8376edd922138bc19f9cd51",
+  "npm-audit.json": "2c2cabfd11afb977c236b8b0cc472d88d8a29ac328d00eb262c1c04b06173838",
+  "npm-dependencies.json": "62c24de07e3713d803f275c8bc4281b88a42a4578b8c0d3bb649f01295bce236",
+  "raw/cargo-check.log.gz": "8c4994a5e92952841cfd0bcf42fedd98ec0b9d144451b60f362cbceb010da000",
+  "raw/cargo-test.log.gz": "d5223693aafdc84e8cc9505a6fd6e347f25c3d765311ae21bbb25882e804fbfc",
+  "raw/frontend-build.log.gz": "5ea4eda61c833f5f585b502ec28b3c2e523f185cf56bc010daf5f81a592cd207",
+  "raw/git-runtime-clean-path.log.gz": "945e08606b0e5ab4c3c01fbf3c628b28b9502f78b63d05c3152cb71d205d1532",
+  "raw/package-build.log.gz": "78af2bcc4441dc431d1958b73c78cfd20b20df7b35f8eef955c34e3f8a424afa",
+  "raw/package-check.log.gz": "c039bfb4cb78c8e7855507159bbef4fde679b826ce53a286fb778f280f4efbbf",
+  "raw/runtime-prepare-initial.log.gz": "09a91ad4fd730c03154de138611184b42760623e7b426b29287a85ae0bcae95d",
+  "raw/vitest-final.log.gz": "bbac31a130fdfedff7241f2ca6c203d725824fa06de236f533b72b5efc8fc133",
+  "raw/vitest-permission-red.log.gz": "a4d00b705ecafa11004cb788029b68d030d3fafcdc97655c5d84a12e9ed8b9ab",
+  "review.md": "7ad341f3cc4683b0b909da06ea4d9d07d59d93fd3e9b0ae930a1714c8c9240f3",
+  "source-sha256.json": "8bcd9c296e75cd83215d076fffb0e7e84adf1877e8e7d50749e19de6fd23d3a7",
+  "verification.json": "7bb4a1111839a0265c5b8e8b256095bea70f406f1806fdb55fdcab0657223458"
+}

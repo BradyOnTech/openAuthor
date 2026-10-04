@@ -1,0 +1,16 @@
+{
+  ".github/dependabot.yml": "9d16d164797a0dc8c123e7b504fb78a4e425804daa7ebfdbb1f5281b60e1642c",
+  "CLAUDE.md": "9d35ebb5b97b94183c131655f296d1110023ebeccc3f547c417ce7ada2987de8",
+  "desktop/package-lock.json": "f3228f706c1c12ecf5d92d85d6e6837da8891f742a134d360b64913ba9ec5be8",
+  "desktop/package.json": "83ceef5128428cf365100a012106132e88fe2d346ae250d28cec48dc5bcb4fae",
+  "desktop/src-tauri/Cargo.lock": "30ff69e8fdd748d0b4024e7a97e1c9d19723ecf6c4681573f72404cc9c16ba60",
+  "desktop/src-tauri/Cargo.toml": "6c242907b2269ab1b8ad71c08e77adf6da5e84bf3afa63a939f4e9360a8d2502",
+  "desktop/src-tauri/gen/schemas/acl-manifests.json": "bdc3ced2ae416f11b23bc9c9b62341a3a59aa7bb5322f04f197bb08cb610409f",
+  "desktop/src-tauri/gen/schemas/desktop-schema.json": "4a946fe48fbb0c7c535ea53e6070bd8276f3f3d74f96efbaa6d85bd7b53b0f05",
+  "desktop/src-tauri/gen/schemas/macOS-schema.json": "4a946fe48fbb0c7c535ea53e6070bd8276f3f3d74f96efbaa6d85bd7b53b0f05",
+  "desktop/src/ChatContextReview.test.tsx": "ff705148fe6e68555269a6a9d338024652616a0b3996df51428f17c66277ec15",
+  "desktop/src/components/editor/WritingVoiceEditor.test.tsx": "e4b7280d540eebad6dee5bc3881552de432217e313bb0f5598fcfbf1005ca449",
+  "desktop/src/components/panel/AccountDeletionPanel.tsx": "76c555c367a99d6f131bd1b426ac1cbe7c89188db623d7dbf3a1315f440f67c0",
+  "desktop/src/components/workbench/ActivityBar.tsx": "cbc24cf5cda39bb3478b073ce293a751d526b7e7dec42060d171dbd75518406c",
+  "scripts/prepare_bundled_git.sh": "83dfc80a42caf218bc997980f9629c9a05d3560ede42c3e1498ceaf6a01057ee"
+}
