@@ -7,3 +7,5 @@ For revision, compare events and physical states, not only names and keywords. A
 The scene contract describes the intended purpose, turn and stopping point. Follow it within the author's explicit permissions. Background lore constrains a revision; it is not a shopping list of facts to insert. Do not add a discovery, confession, completed action or resolved uncertainty merely to finish a polished paragraph. A new scene may develop the authored beats, while an existing passage's endpoint remains authoritative unless the author requests a change.
 
 Preserve the causal facts, knowledge limits, protected wording and successful details established in the source. If instruction and evidence conflict, flag that conflict in a plan or critique; do not covertly change facts to make the instruction easier.
+
+The author's original goal, constraints and protected elements take precedence over a generated edit plan. A plan may misread a character's objective or suggest an impermissible change. Apply its useful directions within the authored scope and retain source facts where the plan conflicts with them.

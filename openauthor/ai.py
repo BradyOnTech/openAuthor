@@ -747,6 +747,7 @@ def _normalize_proposal_text(
   instruction: str,
   context: dict[str, Any],
 ) -> tuple[str, dict[str, Any]]:
+  """Normalize plan formatting without shortening its semantic instructions."""
   section_rows: dict[str, list[str]] = {name: [] for name in PROPOSAL_SECTIONS}
   preamble: list[str] = []
   preamble_count = 0
@@ -773,16 +774,16 @@ def _normalize_proposal_text(
         detected_headers.add(current_section)
       trailing = _clean_bullet_line(match.group(2))
       if trailing:
-        section_rows[current_section].append(_truncate(trailing, 220))
+        section_rows[current_section].append(trailing)
       continue
 
     clean = _clean_bullet_line(stripped)
     if not clean:
       continue
     if current_section:
-      section_rows[current_section].append(_truncate(clean, 220))
+      section_rows[current_section].append(clean)
     else:
-      preamble.append(_truncate(clean, 220))
+      preamble.append(clean)
       preamble_count += 1
 
   if preamble and not section_rows["Intent"]:
@@ -795,23 +796,14 @@ def _normalize_proposal_text(
   if not section_rows["Intent"]:
     missing_sections_filled.append("Intent")
     section_rows["Intent"].append(
-      _truncate(
-        f"Apply requested change to scene '{scene['title']}': {instruction.strip()}",
-        220,
-      )
+      f"Apply requested change to scene '{scene['title']}': {instruction.strip()}"
     )
 
   if not section_rows["Constraints"]:
     missing_sections_filled.append("Constraints")
     section_rows["Constraints"] = [
-      _truncate(
-        f"Preserve POV voice: {scene['pov'] or 'unspecified POV in metadata'}.",
-        220,
-      ),
-      _truncate(
-        f"Stay aligned with scene summary: {scene['summary'] or 'no summary provided'}.",
-        220,
-      ),
+      f"Preserve POV voice: {scene['pov'] or 'unspecified POV in metadata'}.",
+      f"Stay aligned with scene summary: {scene['summary'] or 'no summary provided'}.",
     ]
 
   if not section_rows["Edit Plan"]:
@@ -826,7 +818,7 @@ def _normalize_proposal_text(
     issues = context["continuity_issues"]
     if issues:
       section_rows["Continuity Notes"] = [
-        _truncate(f"{issue['title']}: {issue['message']}", 220)
+        f"{issue['title']}: {issue['message']}"
         for issue in issues[:3]
       ]
     else:
@@ -836,7 +828,7 @@ def _normalize_proposal_text(
 
   normalized_sections: list[str] = []
   for section_name in PROPOSAL_SECTIONS:
-    items = section_rows[section_name][:5]
+    items = section_rows[section_name]
     normalized_sections.append(
       section_name + ":\n" + "\n".join(f"- {item}" for item in items)
     )
@@ -849,7 +841,7 @@ def _normalize_proposal_text(
     "missing_sections_filled": missing_sections_filled,
     "normalization_changed": normalized_text.strip() != raw_text.strip(),
     "section_item_counts": {
-      section_name: len(section_rows[section_name][:5])
+      section_name: len(section_rows[section_name])
       for section_name in PROPOSAL_SECTIONS
     },
   }

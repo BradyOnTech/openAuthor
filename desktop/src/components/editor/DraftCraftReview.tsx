@@ -6,7 +6,7 @@ const outcomes: Record<Report["status"], string> = {
   unverified: "Review incomplete · first draft retained",
   kept: "Critic recommended keeping the first draft",
   refined: "Focused revision selected after model verification",
-  rejected: "Revision rejected · first draft retained",
+  rejected: "Focused revision rejected · first draft retained",
   uncertain: "Review uncertain · first draft retained",
   failed: "Review failed · first draft retained",
   unavailable: "Creative review unavailable for local generation",
@@ -16,6 +16,7 @@ export function DraftCraftReview({ report, onChoose, disabled = false }: { repor
   return <section className="review-card__section" aria-label="Draft craft review">
     <h3>{outcomes[report.status]}</h3>
     <p>{report.uncertainty}</p>
+    {["unverified", "rejected", "uncertain", "failed"].includes(report.status) && <p>Review has not cleared this draft. Inspect the quoted concerns and changes before applying.</p>}
     {report.mechanical_checks && <p>Word target: {report.mechanical_checks.word_range.join("–")} · first draft: {report.mechanical_checks.first_words}{report.mechanical_checks.refined_words !== undefined ? ` · focused revision: ${report.mechanical_checks.refined_words}` : ""}. Counts use whitespace-separated words.</p>}
     {report.author_selected && <p>You selected the {report.author_selected === "first" ? "first draft" : "focused revision"} for hunk review.</p>}
     {onChoose && report.refined_candidate && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
