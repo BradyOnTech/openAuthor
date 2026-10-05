@@ -232,6 +232,20 @@ export type ProposalRecord = {
     };
   };
   draft?: {
+    writing_review?: {
+      schema_version: number;
+      status: "unverified" | "kept" | "refined" | "rejected" | "uncertain" | "failed" | "unavailable";
+      selected: "first" | "refined";
+      author_selected?: "first" | "refined";
+      mechanical_checks?: { first_words: number; first_in_range: boolean; word_range: [number, number]; refined_words?: number; refined_in_range?: boolean };
+      first_candidate: string;
+      refined_candidate?: string;
+      uncertainty: string;
+      error?: string;
+      critique?: { verdict: string; uncertainty: string; validation_warnings?: string[]; strengths: Array<{ quote: string; reason: string }>; findings: Array<{ id: string; priority: string; category: string; quote: string; reason: string; suggestion: string; source_evidence: Array<{ path: string; quote: string }> }> };
+      verification?: { verdict: string; uncertainty: string; validation_warnings?: string[]; resolutions: Array<{ id: string; resolved: boolean; quote: string; reason: string }>; regressions: Array<{ quote: string; reason: string }> };
+      stages: Array<{ stage: string; log_path: string; input_tokens: number; output_tokens: number }>;
+    } | null;
     generation_id: string;
     provider: string;
     model: string;

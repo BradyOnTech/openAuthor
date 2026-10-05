@@ -13,7 +13,8 @@ from .scene_edits import workspace_edit_scope
 from .revision_preservation import (PRESERVATION_FIELDS, check_expected_preservation, missing_protected_wording,
   preservation_fingerprint, validate_preservation)
 from .scenes import get_scene
-from .style_profile import DIMENSIONS, PRESETS, QUALITY_CRITERIA, VOICE_GUIDANCE, get_style_profile, validate_profile, voice_context
+from .writing_craft import attach_writing_craft
+from .style_profile import DIMENSIONS, PRESETS, QUALITY_CRITERIA, VOICE_GUIDANCE, get_style_profile, validate_profile, voice_context, voice_evidence_context
 
 
 @serialized_project_access
@@ -109,6 +110,7 @@ def suggest_voice(paths: ProjectPaths, *, request: dict[str, Any]) -> dict[str, 
   source_digests = {row["id"]: hashlib.sha256(row["body"].encode()).hexdigest() for row in scenes}
   profile.update({"exemplar_scene_ids": [row["id"] for row in scenes],
                   "exemplar_digests": source_digests, "source_digests": source_digests,
+                  "use_exemplar_evidence": False,
                   "observations": observations, "metrics": prose_measures("\n\n".join(row["body"] for row in scenes)) if scenes else {}})
   profile = validate_profile(profile)
   by_id = {row["id"]: row["body"] for row in scenes}
@@ -233,6 +235,7 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
   if not isinstance(strict_review, bool):
     raise OpenAuthorError("strict_review must be true or false.")
   variants = []
+  craft = attach_writing_craft(context, task="refine" if refinement else "rewrite", direction=instruction)
   for index, profile in enumerate(profiles):
     observations = []
     if provider == "local":
@@ -256,8 +259,8 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
         "Return JSON {text:string,observations:[{criterion,observation,excerpt,source_excerpt}]}. No more than 500 prose words. "
         "For each review criterion give a concrete self-review with an exact excerpt from your candidate; acknowledge uncertain continuity. "
         "For consistency observations also cite an exact nonempty source_excerpt from the selected original, pairing it with the candidate excerpt so the author can compare meaning. "
-        "These are observations for author judgment, never numerical quality scores."
-      ), payload={"source": source, "instruction": instruction, "preservation": preservation, "writing_voice": voice_context(profile), "context": context,
+        "These are observations for author judgment, never numerical quality scores." + craft
+      ), payload={"source": source, "instruction": instruction, "preservation": preservation, "writing_voice": voice_evidence_context(profile), "context": context,
                   "criteria": QUALITY_CRITERIA, **({"refinement": refinement} if refinement else {})})
       text = _bounded(reply["data"].get("text"), "Preview prose", 8000)
       if not text or len(text.split()) > 500:
@@ -294,7 +297,8 @@ def _preview_voice(paths: ProjectPaths, *, request: dict[str, Any], refinement: 
                      "measures": prose_measures(text), "author_review": {"ratings": {}, "notes": ""}})
   record = {"schema_version": 1, "id": f"voice-preview-{uuid.uuid4().hex[:12]}", "scene_id": scene["id"],
             "scene_version": scene["edit_version"], "source_text": source, "instruction": instruction,
-            "provider": provider, "model": request.get("model", ""), "created_at": utc_now(), "directions": variants}
+            "provider": provider, "model": request.get("model", ""), "created_at": utc_now(), "directions": variants,
+            "writing_craft": context["writing_craft"]}
   if refinement:
     record["refinement"] = refinement
   record.update({"preservation": preservation, "preservation_schema_version": 1,
@@ -363,7 +367,7 @@ def stage_voice_preview(paths: ProjectPaths, *, preview_id: str, direction_id: s
     raise OpenAuthorError("The preview passage no longer matches one scene location.")
   proposal_id = previous["id"] if previous else create_proposal(paths, title=f"Voice preview: {direction['profile']['name']}", scene_id=scene["id"],
     instruction=record["instruction"] + ("\nAuthor revision feedback: " + record["refinement"]["feedback"] if record.get("refinement") else "")
-      + "\nWriting Voice: " + json.dumps(voice_context(direction["profile"]))
+      + "\nWriting Voice: " + json.dumps(voice_evidence_context(direction["profile"]))
       + ("\nAuthor preservation constraints (exact wording): " + json.dumps(record["preservation"], ensure_ascii=False) if record.get("preservation") else ""),
     source="writing_voice_preview", generation={"provider": record["provider"], "model": record["model"], "preview_id": preview_id, "direction_id": direction_id,
       "source_text": record["source_text"], "source_scene_version": record["scene_version"], "voice_observations": direction["observations"],

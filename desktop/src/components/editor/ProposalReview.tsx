@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { GenerationAssessment } from "../common/GenerationAssessment";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, type RevisionAuthorization } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
@@ -10,6 +10,7 @@ import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from 
 import { RevisionContextReview } from "./RevisionContextReview";
 import { EditorialFindings } from "./EditorialFindings";
 import { PassageComparison } from "../shared/PassageComparison";
+import { DraftCraftReview } from "./DraftCraftReview";
 
 type Props = {
   proposal: ProposalRecord;
@@ -402,6 +403,23 @@ export function ProposalReview({ proposal: initial }: Props) {
           </div>
         </div>
       )}
+
+      {proposal.draft?.writing_review && <DraftCraftReview report={proposal.draft.writing_review} disabled={Boolean(busy)}
+        onChoose={proposal.status === "pending" && !proposal.stale ? candidate => {
+          setBusy("choose-candidate");
+          void flushProjectSceneSaves(projectRoot).then(saved => {
+            if (!saved) throw new Error("Save pending writing before choosing a candidate.");
+            return selectDraftCandidate(projectRoot, proposal, candidate);
+          }).then(updated => {
+            if (!view.current.mounted || view.current.key !== viewKey) return;
+            syncTab(updated); setMessage("Candidate selected. Review the rebuilt hunks before applying.");
+            return refreshProposals();
+          }).catch(error => {
+            if (view.current.mounted && view.current.key === viewKey) setError(error instanceof Error ? error.message : String(error));
+          }).finally(() => {
+            if (view.current.mounted && view.current.key === viewKey) setBusy("");
+          });
+        } : undefined} />}
 
       {proposal.notes && (
         <div className="review-card__section">

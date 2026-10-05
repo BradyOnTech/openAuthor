@@ -9,12 +9,13 @@ import { StoryContextChoices } from "../common/StoryContextChoices";
 type Props = {
   projectRoot: string; proposalId?: string; generationInput?: GenerationInput; hunkId?: string; provider: ProposalProvider; model?: string; feedback?: string;
   closeLabel?: string;
+  reviewMode?: "off" | "refine";
   mergeInput?: MergeRequest;
   onSend: (authorization: RevisionAuthorization) => Promise<void>;
   onClose: () => void;
 };
 
-export function RevisionContextReview({ projectRoot, proposalId, generationInput, mergeInput, hunkId, provider, model, feedback = "", closeLabel = "Back to Change Set", onSend, onClose }: Props) {
+export function RevisionContextReview({ projectRoot, proposalId, generationInput, mergeInput, hunkId, provider, model, feedback = "", reviewMode = "off", closeLabel = "Back to Change Set", onSend, onClose }: Props) {
   const [memoryApprovals, setMemoryApprovals] = useState<MemoryApproval[]>([]);
   const [storyApprovals, setStoryApprovals] = useState<string[]>([]);
   const [preview, setPreview] = useState<RevisionContextPreview | null>(null);
@@ -33,12 +34,13 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
       return previewProposalRevision(projectRoot, {
         proposal_id: proposalId, hunk_id: hunkId, provider, model, feedback,
         memory_approvals: memoryApprovals, story_approvals: storyApprovals,
+        review_mode: reviewMode,
       });
     }).then(result => { if (current) setPreview(result); })
       .catch(cause => { if (current) setError(cause instanceof Error ? cause.message : String(cause)); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
-  }, [projectRoot, proposalId, generationInput, mergeInput, hunkId, provider, model, feedback, memoryApprovals, storyApprovals, revision]);
+  }, [projectRoot, proposalId, generationInput, mergeInput, hunkId, provider, model, feedback, reviewMode, memoryApprovals, storyApprovals, revision]);
   const fresh = Boolean(preview && !loading && !error);
   const hasGrant = (id: string, key?: string) => memoryApprovals.some(row => row.entity_id === id && row.detail_key === key);
   function toggleMemory(id: string, key: string | undefined, checked: boolean) {
@@ -62,6 +64,9 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
     {error && <p role="alert">{error} You can remove permissions below, refresh, or return to the Change Set.</p>}
     {preview && <>
       <p>Scene: {preview.context.scene.title || preview.context.scene.id}</p>
+      {preview.context.scene_contract && Object.entries(preview.context.scene_contract).map(([key, value]) => value && <p key={key}>{key === "purpose" ? "Scene purpose" : key === "turn" ? "What changes" : key === "word_range" ? "Word target" : "Where it stops"}: {Array.isArray(value) ? `${value[0]}–${value[1]} words` : value}</p>)}
+      {preview.context.writing_craft && <p>This request includes fiction craft guidance for this writing task. The complete guidance is visible in the exact context below.</p>}
+      {preview.writing_review && <p>Draft review is enabled: up to {preview.writing_review.maximum_calls} model calls for drafting, critique, focused revision and verification. These stages use the same approved sources and the generated candidates. The first draft is retained if review fails or is uncertain. Model review supports your judgment.</p>}
       {generationInput && <p>Nearby scenes: {preview.context.nearby_scenes?.map(scene => scene.title || scene.id).join(", ") || "none"}.</p>}
       {mergeInput && <p>Reconcile {mergeInput.head} into {mergeInput.base}. Story guidance and Memory come from the currently checked-out Storyline: {preview.context.guidance_branch}. Review these sources before confirming.</p>}
       <p className="revision-context-review__count">{preview.provider} / {preview.model} · approximately {preview.estimated_input_tokens.toLocaleString()} app-context tokens · {preview.max_output_tokens.toLocaleString()} output-token {provider === "openai-codex" ? "target, not a hard limit" : "limit"}. Provider overhead is additional.</p>
@@ -81,6 +86,7 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
       <p>Changing Memory permission clears Canon selections and refreshes their availability. Permissions do not carry into a new request.</p>
       <StoryContextChoices choices={preview.story_choices ?? []} selected={storyApprovals} disabled={loading || sending} reviewed={fresh} onChange={ids => { setLoading(true); setStoryApprovals(ids); }} />
       <details><summary>Exact app-supplied revision context</summary><pre>{preview.system_prompt}</pre><pre>{preview.user_prompt}</pre></details>
+      {preview.writing_review && <details><summary>Draft review instructions</summary>{Object.entries(preview.writing_review.systems).map(([stage, instructions]) => <div key={stage}><strong>{stage}</strong><pre>{instructions}</pre></div>)}</details>}
     </>}
     <footer>
       <button className="btn" disabled={loading || sending} onClick={() => { setLoading(true); setRevision(value => value + 1); }}>Refresh preview</button>

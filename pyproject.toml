@@ -16,6 +16,9 @@ openauthor = "openauthor.cli:main"
 [tool.setuptools.packages.find]
 include = ["openauthor*"]
 
+[tool.setuptools.package-data]
+openauthor = ["writing_skills/fiction-writing/*.md", "writing_skills/fiction-writing/references/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["desktop/src-tauri/resources", "desktop/src-tauri/target", "node_modules"]

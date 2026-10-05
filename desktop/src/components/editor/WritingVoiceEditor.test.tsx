@@ -32,6 +32,23 @@ describe("Writing Voice author workflow", () => {
   });
   afterEach(cleanup);
 
+  it("retains an explicit excerpt-sharing choice through recovery and saves only after author approval", async () => {
+    const withEvidence = { ...profile, observations: [{ scene_id: "scene-1", aspect: "Rhythm", observation: "A direct opening.", excerpt: "Mara counted boats." }] };
+    vi.mocked(getWritingVoiceWorkspace).mockResolvedValue({ ...workspace, profile: withEvidence });
+    const view = render(<WritingVoiceEditor />);
+    const choice = await screen.findByRole("checkbox", { name: "Include the quoted exemplar evidence in AI writing" });
+    expect((choice as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(choice);
+    expect(writingVoiceAction).not.toHaveBeenCalled();
+    view.unmount(); render(<WritingVoiceEditor />);
+    await screen.findByText(/Restored your unsaved/);
+    expect((screen.getByRole("checkbox", { name: "Include the quoted exemplar evidence in AI writing" }) as HTMLInputElement).checked).toBe(true);
+    vi.mocked(writingVoiceAction).mockResolvedValue({ ...withEvidence, use_exemplar_evidence: true, version: "saved-2" });
+    fireEvent.click(screen.getByRole("button", { name: "Approve and save Writing Voice" }));
+    await screen.findByText(/Writing Voice approved/);
+    expect(writingVoiceAction).toHaveBeenCalledWith("/books/voice", "save", expect.objectContaining({ profile: expect.objectContaining({ use_exemplar_evidence: true, observations: withEvidence.observations }), expected_version: "saved-1" }));
+  });
+
   it("edits a preset but saves only after approval with the loaded version", async () => {
     vi.mocked(getWritingVoiceWorkspace).mockResolvedValue({ ...workspace, profile: { ...profile, exemplar_scene_ids: ["scene-1"], exemplar_digests: { "scene-1": "a".repeat(64) } } });
     render(<WritingVoiceEditor />);

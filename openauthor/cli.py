@@ -112,6 +112,7 @@ from .proposals import (
   create_proposal,
   edit_change_hunk,
   get_proposal,
+  select_draft_candidate,
   list_proposals,
   rebase_proposal_change_set,
   undo_proposal,
@@ -345,6 +346,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_draft.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
   proposal_draft.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
   proposal_draft.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
+  proposal_draft.add_argument("--review-mode", choices=["off", "refine"], default="off", help="Evidence-based critique and focused refinement (up to four model calls).")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -361,10 +363,15 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_draft.add_argument(
     "--max-output-tokens",
     type=int,
-    default=2000,
-    help="Max output tokens (default: 2000).",
+    default=None,
+    help="Output allowance (default: sized to the complete scene, 2,000–12,000 tokens).",
   )
   proposal_draft.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_draft_select = proposal_sub.add_parser("draft-select", help="Choose a retained draft candidate; rebuilds hunks for author review.")
+  proposal_draft_select.add_argument("--id", required=True)
+  proposal_draft_select.add_argument("--candidate", choices=["first", "refined"], required=True)
+  proposal_draft_select.add_argument("--expected-updated-at", required=True)
+  proposal_draft_select.add_argument("--json", action="store_true")
   proposal_hunk = proposal_sub.add_parser("hunk", help="Accept or reject one Change Hunk.")
   proposal_hunk.add_argument("--id", required=True, help="Proposal id.")
   proposal_hunk.add_argument("--hunk", required=True, help="Change Hunk id.")
@@ -405,6 +412,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
   proposal_generate.add_argument("--request-id", default="", help="Reuse this id to recover the same proposal delivery.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
+  proposal_generate.add_argument("--scene-contract", default="{}", help="JSON object with authored purpose, turn, ending and optional word_range [minimum, maximum].")
   proposal_generate.add_argument("--memory-approvals", default="[]")
   proposal_generate.add_argument("--story-approvals", default="[]")
   proposal_generate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from generation-preview; required for external AI providers.")
@@ -1997,6 +2005,11 @@ def _run(args: argparse.Namespace) -> int:
       print(json.dumps(row) if args.json else f"Undid {len(row['scene_ids'])} scenes together in Revision {row['undo_revision']}")
       return 0
 
+    if args.proposal_command == "draft-select":
+      row = select_draft_candidate(paths, proposal_id=args.id, candidate=args.candidate, expected_updated_at=args.expected_updated_at)
+      print(json.dumps(row) if args.json else f"Selected {args.candidate} candidate; review the rebuilt hunks before applying.")
+      return 0
+
     if args.proposal_command == "hunk":
       row = update_change_hunk(
         paths,
@@ -2094,6 +2107,7 @@ def _run(args: argparse.Namespace) -> int:
         memory_approvals=memory_approvals,
         story_approvals=story_approvals,
         expected_context_fingerprint=args.expected_context_fingerprint,
+        review_mode=args.review_mode,
       )
       if args.json:
         print(json.dumps(row))
@@ -2122,8 +2136,9 @@ def _run(args: argparse.Namespace) -> int:
       try:
         memory_approvals = json.loads(args.memory_approvals)
         story_approvals = json.loads(args.story_approvals)
+        scene_contract = json.loads(args.scene_contract)
       except json.JSONDecodeError as error:
-        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
+        raise OpenAuthorError("Revision permissions and scene intent must be valid JSON.") from error
       row = generate_proposal(
         paths,
         request_id=args.request_id,
@@ -2142,6 +2157,7 @@ def _run(args: argparse.Namespace) -> int:
         retrieval_require_fresh=args.retrieval_require_fresh,
         constraints=args.constraint,
         protected_elements=args.protect,
+        scene_contract=scene_contract,
         change_group_id=args.change_group,
         memory_approvals=memory_approvals,
         story_approvals=story_approvals,

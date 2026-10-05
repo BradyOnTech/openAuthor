@@ -93,6 +93,7 @@ class AssistantSnapshotTests(unittest.TestCase):
         "exemplar_scene_ids": ["scene-0001"],
         "exemplar_digests": {"scene-0001": hashlib.sha256(get_scene(paths, "scene-0001")["body"].encode()).hexdigest()},
         "observations": [{"scene_id": "scene-0001", "aspect": "sound", "observation": "analysis-not-for-mobile", "excerpt": "A bell rings."}],
+        "use_exemplar_evidence": True,
         "metrics": {"private_analysis": "not-for-mobile"},
       })
       previews = paths.project_dir / "workspace" / "voice-previews"

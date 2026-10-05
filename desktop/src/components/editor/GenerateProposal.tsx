@@ -35,6 +35,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
   const setShowPassBuilder = setter("showPassBuilder"), setPassName = setter("passName"), setPassGoal = setter("passGoal");
   const setPassInstruction = setter("passInstruction"), setPassCriteria = setter("passCriteria"), setAlternativeCount = setter("alternativeCount");
   const setCoordinated = setter("coordinated"), setCoordinatedSceneIds = setter("coordinatedSceneIds");
+  const setScenePurpose = setter("scenePurpose"), setSceneTurn = setter("sceneTurn"), setSceneEnding = setter("sceneEnding");
   const session = useMemo(() => proposalGenerationSession(projectRoot), [projectRoot]);
   const { busy, job, error: generationError, stopRequested, reviewTask, planReviewTask } = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const view = useRef({ projectRoot, mounted: true });
@@ -117,6 +118,16 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
 
   async function handleGenerate() {
     if (!sceneId || !instruction.trim()) return;
+    let wordRange: [number, number] | undefined;
+    if (recovery.value.minimumWords?.trim() || recovery.value.maximumWords?.trim()) {
+      const minimum = Number(recovery.value.minimumWords?.trim() || recovery.value.maximumWords);
+      const maximum = Number(recovery.value.maximumWords?.trim() || recovery.value.minimumWords);
+      if (!Number.isInteger(minimum) || !Number.isInteger(maximum) || minimum < 1 || maximum > 20000 || minimum > maximum) {
+        setError("Choose whole-number word targets from 1 to 20,000, with the minimum no greater than the maximum.");
+        return;
+      }
+      wordRange = [minimum, maximum];
+    }
     const inputs: GenerationInput[] = [];
     const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
     if (targetSceneIds.length === 0) return;
@@ -133,6 +144,8 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           temperature: directionCount === 1 ? undefined : 0.35 + index * 0.15,
           constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
           protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
+          sceneContract: { purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}) },
+          reviewMode: recovery.value.reviewDraft ? "refine" : "off",
           changeGroupId: groupId,
         });
       }
@@ -196,10 +209,13 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         {reviewTask && !busy && <p>Draft {reviewTask.index + 1} of {job!.tasks.length} · Edit plan saved; review context before drafting.</p>}
         {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}:draft`} projectRoot={projectRoot}
           proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
+          reviewMode={reviewTask.input.reviewMode}
           onSend={async authorization => { await showResults(await session.approveDraft(reviewTask.index, authorization)); }}
           onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
 
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
+        <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
           <span style={{ color: "var(--text-secondary)" }}>Scene</span>
           <select className="input" value={sceneId} onChange={(e) => setSceneId(e.target.value)}>
@@ -248,6 +264,19 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
 
         <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
         <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
+
+        <details>
+          <summary>What this scene should accomplish</summary>
+          <p>Optional story intent stays with the edit plan and prose draft. {coordinated ? "This intent applies to each selected scene." : "Leave fields blank to preserve the existing scene's direction."}</p>
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+            <label style={{ display: "grid", gap: 6 }}>Scene purpose<textarea className="input" rows={2} maxLength={1200} value={recovery.value.scenePurpose ?? ""} onChange={event => setScenePurpose(event.target.value)} placeholder="What this scene contributes to the story" /></label>
+            <label style={{ display: "grid", gap: 6 }}>What changes<textarea className="input" rows={2} maxLength={1200} value={recovery.value.sceneTurn ?? ""} onChange={event => setSceneTurn(event.target.value)} placeholder="A choice, realization, bargain or change in the relationship" /></label>
+            <label style={{ display: "grid", gap: 6 }}>Where it stops<textarea className="input" rows={2} maxLength={1200} value={recovery.value.sceneEnding ?? ""} onChange={event => setSceneEnding(event.target.value)} placeholder="The ending beat and what should remain unresolved" /></label>
+            <label>Minimum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.minimumWords ?? ""} onChange={event => setter("minimumWords")(event.target.value)} /></label>
+            <label>Maximum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.maximumWords ?? ""} onChange={event => setter("maximumWords")(event.target.value)} /></label>
+            <p>A single number sets an exact target. With draft review enabled, openAuthor counts words and checks the range. Local generation skips creative review.</p>
+          </div>
+        </details>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>

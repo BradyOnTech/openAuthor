@@ -551,6 +551,8 @@ export async function generateProposal(
     retrievalRequireFresh?: boolean;
     constraints?: string[];
     protectedElements?: string[];
+    sceneContract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number] };
+    reviewMode?: "off" | "refine";
     changeGroupId?: string;
     authorization?: RevisionAuthorization;
   }
@@ -607,6 +609,7 @@ export async function generateProposal(
   if (payload.changeGroupId?.trim()) {
     args.push("--change-group", payload.changeGroupId.trim());
   }
+  if (payload.sceneContract) args.push("--scene-contract", JSON.stringify(payload.sceneContract));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -666,9 +669,11 @@ export async function draftProposal(
     temperature?: number;
     maxOutputTokens?: number;
     authorization?: RevisionAuthorization;
+    reviewMode?: "off" | "refine";
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.reviewMode) args.push("--review-mode", payload.reviewMode);
   if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
@@ -684,6 +689,11 @@ export async function draftProposal(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function selectDraftCandidate(projectRoot: string, proposal: ProposalRecord, candidate: "first" | "refined"): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "draft-select", "--id", proposal.id,
+    "--candidate", candidate, "--expected-updated-at", proposal.updated_at, "--json"]));
 }
 
 export async function updateProposalHunk(
@@ -992,12 +1002,14 @@ export type ChatSendPayload = {
 export type MemoryApproval = { entity_id: string; detail_key?: string };
 export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
+  writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string> } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
-  context: { scene: { id: string; title: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  context: { scene: { id: string; title: string }; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number] }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
   limits: { omitted_memory_ids: string[] };
 };
 export async function previewProposalRevision(projectRoot: string, input: {
   proposal_id: string; hunk_id?: string; provider: ProposalProvider; model?: string; feedback?: string;
+  review_mode?: "off" | "refine";
   memory_approvals: MemoryApproval[]; story_approvals: string[];
 }): Promise<RevisionContextPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -1007,7 +1019,7 @@ export async function previewProposalGeneration(projectRoot: string, input: Para
     temperature: input.temperature, max_output_tokens: input.maxOutputTokens, context_scene_radius: input.contextScenes,
     codex_limit: input.codexLimit, retrieval_mode: input.retrievalMode, retrieval_limit: input.retrievalLimit,
     retrieval_min_score: input.retrievalMinScore, retrieval_require_fresh: input.retrievalRequireFresh,
-    constraints: input.constraints, protected_elements: input.protectedElements,
+    constraints: input.constraints, protected_elements: input.protectedElements, scene_contract: input.sceneContract,
     memory_approvals: memoryApprovals, story_approvals: storyApprovals };
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "generation-preview", "--input-json", JSON.stringify(payload), "--json"]));
 }
@@ -2125,6 +2137,7 @@ export type StyleProfile = {
   exemplar_scene_ids: string[];
   exemplar_digests?: Record<string, string>;
   observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }>;
+  use_exemplar_evidence?: boolean;
   created_at: string;
   reference_mode?: "current" | "frozen";
   freshness?: "current" | "stale" | "unknown";

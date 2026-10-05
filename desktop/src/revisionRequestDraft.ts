@@ -5,12 +5,16 @@ export type RevisionRequestDraft = {
   constraints: string; protectedElements: string; selectedPassId: string;
   showPassBuilder: boolean; passName: string; passGoal: string; passInstruction: string; passCriteria: string;
   alternativeCount: 1 | 3; coordinated: boolean; coordinatedSceneIds: string[];
+  scenePurpose?: string; sceneTurn?: string; sceneEnding?: string;
+  reviewDraft?: boolean;
+  minimumWords?: string; maximumWords?: string;
 };
 
 export function emptyRevisionRequest(sceneId: string, provider: ProposalProvider): RevisionRequestDraft {
   return { sceneId, provider, instruction: "", model: "", constraints: "", protectedElements: "", selectedPassId: "",
     showPassBuilder: false, passName: "", passGoal: "", passInstruction: "", passCriteria: "",
-    alternativeCount: 1, coordinated: false, coordinatedSceneIds: sceneId ? [sceneId] : [] };
+    alternativeCount: 1, coordinated: false, coordinatedSceneIds: sceneId ? [sceneId] : [],
+    scenePurpose: "", sceneTurn: "", sceneEnding: "", reviewDraft: true, minimumWords: "", maximumWords: "" };
 }
 
 export function validRevisionRequest(value: unknown): value is RevisionRequestDraft {
@@ -21,5 +25,7 @@ export function validRevisionRequest(value: unknown): value is RevisionRequestDr
     && ["local", "openai", "anthropic", "openrouter", "openai-codex"].includes(row.provider)
     && typeof row.showPassBuilder === "boolean" && typeof row.coordinated === "boolean"
     && [1, 3].includes(row.alternativeCount) && Array.isArray(row.coordinatedSceneIds)
-    && row.coordinatedSceneIds.every(id => typeof id === "string");
+    && row.coordinatedSceneIds.every(id => typeof id === "string")
+    && [row.scenePurpose, row.sceneTurn, row.sceneEnding, row.minimumWords, row.maximumWords].every(item => item === undefined || typeof item === "string")
+    && (row.reviewDraft === undefined || typeof row.reviewDraft === "boolean");
 }

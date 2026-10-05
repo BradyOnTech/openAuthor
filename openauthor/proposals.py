@@ -154,6 +154,29 @@ def update_proposal_status(
 
 
 @serialized_project_access
+def select_draft_candidate(paths: ProjectPaths, *, proposal_id: str, candidate: str, expected_updated_at: str) -> dict[str, Any]:
+  """Let the author choose a retained candidate without spending or applying."""
+  proposal = get_proposal(paths, proposal_id)
+  if proposal.get("status") != "pending" or proposal.get("stale") or proposal.get("selection"):
+    raise OpenAuthorError("Only current pending scene drafts can switch candidates.")
+  if not expected_updated_at or proposal.get("updated_at") != expected_updated_at:
+    raise OpenAuthorError("The Change Set changed. Refresh it before choosing a draft candidate.")
+  draft = dict(proposal.get("draft", {}))
+  report = dict(draft.get("writing_review") or {})
+  field = {"first": "first_candidate", "refined": "refined_candidate"}.get(candidate)
+  body = report.get(field) if field else None
+  if not isinstance(body, str) or not body.strip():
+    raise OpenAuthorError("Choose a retained first or refined draft candidate.")
+  report["author_selected"] = candidate
+  draft["writing_review"] = report
+  source = next((row for row in report.get("stages", []) if row.get("stage") == "refine"), {}) if candidate == "refined" else {}
+  draft["generation_id"] = source.get("generation_id", draft.get("initial_generation_id", draft.get("generation_id")))
+  draft["log_path"] = source.get("log_path", draft.get("initial_log_path", draft.get("log_path")))
+  draft["changed"] = re.sub(r"\s+", " ", body).strip() != re.sub(r"\s+", " ", get_scene(paths, proposal["scene_id"])["body"]).strip()
+  return set_proposal_draft(paths, proposal_id=proposal_id, proposed_body=body, draft=draft)
+
+
+@serialized_project_access
 def set_proposal_draft(
   paths: ProjectPaths,
   *,

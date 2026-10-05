@@ -131,6 +131,7 @@ export class ProposalGenerationSession {
               proposalId: planned.proposalId!, provider: planned.input.provider, model: planned.input.model,
               requestId: planned.draftRequestId ?? `${plannedJob.id}:${index}:draft`,
               authorization: planned.authorization,
+              reviewMode: planned.input.reviewMode,
             });
           }
           this.save({ ...plannedJob, tasks: plannedJob.tasks.map((row, i) => i === index ? { ...row, drafted: true } : row) });

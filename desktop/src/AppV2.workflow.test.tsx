@@ -745,15 +745,31 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByTitle("Create a reviewable Change Set"));
     fireEvent.change(await screen.findByLabelText("What should change?"), { target: { value: "Preserve Mara's uncertainty." } });
     fireEvent.change(screen.getByLabelText("Protect exactly (optional)"), { target: { value: "The blue gate" } });
+    await user.click(screen.getByText("What this scene should accomplish", { exact: true }));
+    fireEvent.change(screen.getByLabelText("Scene purpose"), { target: { value: "Make trust costly." } });
+    fireEvent.change(screen.getByLabelText("What changes"), { target: { value: "Mara chooses to wait." } });
+    fireEvent.change(screen.getByLabelText("Where it stops"), { target: { value: "The permit stays closed." } });
+    fireEvent.change(screen.getByLabelText("Minimum words (optional)"), { target: { value: "500" } });
+    fireEvent.change(screen.getByLabelText("Maximum words (optional)"), { target: { value: "700" } });
+    await user.click(screen.getByLabelText("Review and refine the draft"));
     await user.click(screen.getByTitle(/Plan \(/));
     await user.click(screen.getByRole("tab", { name: "Generate" }));
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
     expect((screen.getByLabelText("Protect exactly (optional)") as HTMLTextAreaElement).value).toBe("The blue gate");
+    expect((screen.getByLabelText("Scene purpose") as HTMLTextAreaElement).value).toBe("Make trust costly.");
+    expect((screen.getByLabelText("What changes") as HTMLTextAreaElement).value).toBe("Mara chooses to wait.");
+    expect((screen.getByLabelText("Where it stops") as HTMLTextAreaElement).value).toBe("The permit stays closed.");
+    expect((screen.getByLabelText("Minimum words (optional)") as HTMLInputElement).value).toBe("500");
+    expect((screen.getByLabelText("Review and refine the draft") as HTMLInputElement).checked).toBe(false);
     cleanup(); render(<AppV2 />);
     await screen.findByRole("tab", { name: "Generate" });
     await user.click(screen.getByTitle(/Changes \(/));
     await user.click(screen.getByTitle("Create a reviewable Change Set"));
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
+    expect((screen.getByLabelText("Scene purpose") as HTMLTextAreaElement).value).toBe("Make trust costly.");
+    expect((screen.getByLabelText("Where it stops") as HTMLTextAreaElement).value).toBe("The permit stays closed.");
+    expect((screen.getByLabelText("Maximum words (optional)") as HTMLInputElement).value).toBe("700");
+    expect((screen.getByLabelText("Review and refine the draft") as HTMLInputElement).checked).toBe(false);
     expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "generate")).toBe(false);
   });
 
@@ -906,13 +922,13 @@ describe("active V2 author workflow", () => {
 
   it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {
     const { user, body } = await openWritingScene();
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
     fireEvent.change(body, { target: { value: "Mara waits. Mara returns." } });
     harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", review_version: "mara-scan-v1", evidence: [
       { scene_id: "scene-0001", excerpt: "Mara waits.", start: 0, end: 11 },
       { scene_id: "scene-0001", excerpt: "Mara returns.", start: 12, end: 25 },
     ] });
-    let finish!: () => void;
-    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
     await user.click(screen.getByTitle(/Story Memory \(/));
     await user.click(screen.getByRole("button", { name: "Scan Manuscript for Memory" }));
     await waitFor(() => expect(finish).toBeTypeOf("function"));
