@@ -10,6 +10,10 @@ Open Changes and create a Change Set. Describe the change, or choose an Editoria
 
 Review the hunks before applying. The craft review shows strengths, supported concerns, uncertainty and any verification result. Expand the retained candidates to compare them. Choosing another candidate rebuilds the hunks and resets their decisions; it does not change the manuscript. You can also edit or reject individual hunks. Apply and undo use the existing revision workflow.
 
+For a local change, select the passage in the scene editor and choose Rewrite, Shorten or Expand. Give a concrete direction and review its context before generating. Acceptance replaces only that selected range; a newer scene makes the proposal stale. Read the result with the surrounding scene and undo it if it weakens the passage. A whole-scene model review can miss lost facts or changed tactics even when it accepts a revision.
+
+Passage context prioritizes permitted Memory subjects named in the selection, the scene's viewpoint character, and subjects in the included neighboring prose before other allowed records. Saved aliases count as names. This prevents unrelated entries from crowding out the viewpoint record under the existing allowance. It preserves source permissions and omits complete entries rather than clipping their facts.
+
 **What is included**
 
 The bundled fiction skill selects references for story integrity, scene purpose, prose, dialogue, viewpoint, pacing, setup/payoff and evidence-based review. Explicit Editorial Passes select their relevant specialist reference. The host records the resource paths, version and content hash, and includes the actual guidance in the context preview. Changing the kit or authored intent invalidates the reviewed request.

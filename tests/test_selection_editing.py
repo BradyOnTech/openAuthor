@@ -175,3 +175,25 @@ class SelectionEditingTests(unittest.TestCase):
     self.assertGreaterEqual(preview["limits"]["omitted_after_characters"], 600)
     self.assertIn(large, preview["limits"]["omitted_memory_ids"])
     self.assertLessEqual(len(preview["system_prompt"]) + len(preview["user_prompt"]), 40000)
+
+  def test_short_selection_keeps_viewpoint_and_nearby_memory_ahead_of_filler(self):
+    body = "Tobinford waited. Wren watched.\n\nThe brothers are dead."
+    update_scene(self.paths, scene_identifier="scene-0001", body=body, pov="Tobin")
+    selected = "The brothers are dead."
+    start = body.index(selected)
+    records = [
+      {"id": f"a-{i}", "type": "lore", "name": f"Unrelated {i}", "description": "x" * 2800, "details": []}
+      for i in range(5)
+    ] + [
+      {"id": "z-viewpoint", "type": "character", "name": "Tobin", "description": "Viewpoint systems knowledge.", "details": []},
+      {"id": "z-speaker", "type": "character", "name": "Wren", "description": "Nearby speaker.", "details": []},
+      {"id": "z-topic", "type": "lore", "name": "Harbor brothers", "aliases": ["the brothers"], "description": "Selected subject.", "details": []},
+      {"id": "b-false-mention", "type": "character", "name": "Tobinford", "description": "Neighbor character.", "details": []},
+    ]
+    args = {**self.args, "start": start, "end": start + len(selected), "selected_text": selected}
+    with patch("openauthor.selection_editing.memory_for_ai", return_value=records):
+      preview = preview_selection(self.paths, **args)
+    names = [row["name"] for row in preview["context"]["memory"]]
+    self.assertEqual(names[:4], ["Harbor brothers", "Tobin", "Tobinford", "Wren"])
+    self.assertTrue(preview["limits"]["omitted_memory_ids"])
+    self.assertLessEqual(sum(len(json.dumps(row, ensure_ascii=False)) for row in preview["context"]["memory"]), 12000)

@@ -30,6 +30,23 @@ ACTIONS = {
 }
 
 
+def _memory_priority(entity: dict[str, Any], selected: str, pov: str, surroundings: str) -> tuple[int, str]:
+  """Rank only already permitted records against the prose actually included."""
+  names = [str(entity.get("name", "")).strip(), *entity.get("aliases", [])]
+  names = [name.strip().casefold() for name in names if isinstance(name, str) and name.strip()]
+  def mentioned(text: str) -> bool:
+    return any(re.search(r"(?<!\w)" + re.escape(name) + r"(?!\w)", text.casefold()) for name in names)
+  if mentioned(selected):
+    rank = 0
+  elif entity.get("type") == "character" and pov.strip().casefold() in names:
+    rank = 1
+  elif mentioned(surroundings):
+    rank = 2
+  else:
+    rank = 3
+  return rank, str(entity["id"])
+
+
 @serialized_project_access
 def preview_selection(
   paths: ProjectPaths, *, scene_id: str, start: int, end: int, selected_text: str,
@@ -56,8 +73,11 @@ def preview_selection(
   included = []
   omitted = []
   remaining = 12000
-  # Prefer entries mentioned in the passage; omit whole entries, never cut JSON or facts.
-  entities.sort(key=lambda row: (str(row.get("name", "")).casefold() not in selected_text.casefold(), str(row["id"])))
+  # A short selection often does not name its viewpoint character. Prioritize
+  # that character and subjects in the bounded neighboring prose before filler
+  # records. Omit whole entries, never clip facts or read more prose to rank them.
+  surroundings = body[max(0, start - 2000):start] + "\n" + body[end:end + 2000]
+  entities.sort(key=lambda row: _memory_priority(row, selected_text, scene.get("pov", ""), surroundings))
   for entity in entities:
     size = len(json.dumps(entity, ensure_ascii=False))
     if size <= remaining:
