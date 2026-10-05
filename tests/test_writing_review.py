@@ -61,6 +61,12 @@ class WritingReviewTests(unittest.TestCase):
       self.assertNotIn("MODEL_GENERATED_EXPLANATION", call.kwargs["user_prompt"])
       self.assertNotIn("EXCLUDED_SECRET", call.kwargs["user_prompt"])
       self.assertEqual(call.kwargs["history"], [])
+      payload = json.loads(call.kwargs["user_prompt"])
+      self.assertEqual(payload["references"]["scene.body"], self.before)
+      self.assertEqual(payload["source_comparison"]["source_reference"], "scene.body")
+      self.assertIn("-She stopped before the seal.", payload["source_comparison"]["changes"])
+      expected_candidate = REFINED if "revised_candidate" in payload else FIRST
+      self.assertIn("+" + expected_candidate, payload["source_comparison"]["changes"])
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.before)
     apply_proposal(self.paths, proposal_id=self.pid)
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], REFINED + "\n")
@@ -95,6 +101,7 @@ class WritingReviewTests(unittest.TestCase):
     for mutate in [lambda row: row["findings"][0].update(quote="Invented quote"),
                    lambda row: row["findings"][0].update(source_evidence=[]),
                    lambda row: row["findings"][0]["source_evidence"][0].update(path="private.notes"),
+                   lambda row: row["findings"][0]["source_evidence"][0].update(path="source_comparison.changes"),
                    lambda row: row.update(uncertainty="Intent is unknown"),
                    lambda row: row.update(verdict=[]),
                    lambda row: row["findings"][0].update(category={}),
