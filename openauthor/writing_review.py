@@ -145,6 +145,8 @@ def _evidence(value: Any, references: dict[str, str], *, required: bool = False)
       path = "scene.body"
     if path not in references:
       raise OpenAuthorError("Writing review cited an unknown reference.")
+    if path.startswith("mechanical_observations.") and _text(row.get("quote")) != references[path]:
+      raise OpenAuthorError("Writing review did not quote the complete host observation.")
     result.append({"path": path, "quote": _quote(row.get("quote"), references[path])})
   return result
 

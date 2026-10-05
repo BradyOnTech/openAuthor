@@ -212,9 +212,10 @@ class WritingReviewTests(unittest.TestCase):
     self.assertEqual(report["stages"], [])
 
   def test_model_can_cite_only_the_actual_host_observations_supplied_to_its_stage(self):
-    for path, quote, accepted in [("mechanical_observations.candidate_words", "7", True),
-                                  ("mechanical_observations.candidate_words", "8", False),
-                                  ("mechanical_observations.unshared_count", "7", False)]:
+    for path, quote, first, accepted in [("mechanical_observations.candidate_words", "7", FIRST, True),
+                                         ("mechanical_observations.candidate_words", "8", FIRST, False),
+                                         ("mechanical_observations.unshared_count", "7", FIRST, False),
+                                         ("mechanical_observations.candidate_words", "7", (FIRST + " ") * 11, False)]:
       with self.subTest(path=path, quote=quote):
         pid = create_proposal(self.paths, title="Cited host count", scene_id="scene-0001", instruction="Keep sealed.",
           revision_intent={"goal": "Keep sealed.", "scene_contract": {"word_range": [9, 10]}})
@@ -225,7 +226,7 @@ class WritingReviewTests(unittest.TestCase):
           {"path": "scene_contract.word_range", "quote": "[9, 10]"}, {"path": path, "quote": quote}])
         verify = copy.deepcopy(VERIFY)
         verify["resolutions"].append({"id": "host-word-range", "resolved": True, "quote": REFINED, "reason": "Nine words meet the target."})
-        outputs = [FIRST, critique, REFINED, verify] if accepted else [FIRST, critique]
+        outputs = [first, critique, REFINED, verify]
         with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in outputs]) as provider:
           result = generate_proposal_draft(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
         report = result["draft"]["writing_review"]
