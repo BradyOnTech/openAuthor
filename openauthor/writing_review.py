@@ -101,6 +101,16 @@ def _references(context: dict[str, Any]) -> dict[str, str]:
   return result
 
 
+def _stage_references(references: dict[str, str], payload: dict[str, Any]) -> dict[str, str]:
+  # Only host observations actually sent in this stage may be cited. They do
+  # not open file access or validate a model's independently invented count.
+  observations = payload.get("mechanical_observations", {})
+  return {**references, **{
+    f"mechanical_observations.{key}": value if isinstance(value, str) else json.dumps(value)
+    for key, value in observations.items()
+  }}
+
+
 def _text(value: Any, *, maximum: int = 1600) -> str:
   if not isinstance(value, str) or not value.strip() or len(value) > maximum:
     raise OpenAuthorError("Writing review returned missing or oversized evidence text.")
@@ -289,7 +299,7 @@ class DraftReview:
       payload = {"references": references, "candidate": candidate}
       if target:
         payload["mechanical_observations"] = {"candidate_words": len(candidate.split()), "requested_word_range": target, "method": "whitespace-separated words"}
-      review = _critique(call("critique", payload, 1800), candidate, references)
+      review = _critique(call("critique", payload, 1800), candidate, _stage_references(references, payload))
       host_issue = length_issue(candidate)
       if host_issue:
         # A counted requirement takes precedence over optional craft preferences.
@@ -316,7 +326,7 @@ class DraftReview:
       if target:
         payload["mechanical_observations"] = {"revised_words": len(refined.split()), "requested_word_range": target, "method": "whitespace-separated words"}
         report["mechanical_checks"].update(refined_words=len(refined.split()), refined_in_range=length_issue(refined) is None)
-      verification = _verification(call("verify", payload, 1800), refined, references, review["findings"])
+      verification = _verification(call("verify", payload, 1800), refined, _stage_references(references, payload), review["findings"])
       host_regression = length_issue(refined)
       if host_regression:
         verification["regressions"].append({"quote": host_regression["quote"], "reason": host_regression["reason"], "source_evidence": host_regression["source_evidence"], "origin": "host"})

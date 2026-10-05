@@ -211,6 +211,30 @@ class WritingReviewTests(unittest.TestCase):
     self.assertEqual(report["mechanical_checks"]["word_range"], [9, 10])
     self.assertEqual(report["stages"], [])
 
+  def test_model_can_cite_only_the_actual_host_observations_supplied_to_its_stage(self):
+    for path, quote, accepted in [("mechanical_observations.candidate_words", "7", True),
+                                  ("mechanical_observations.candidate_words", "8", False),
+                                  ("mechanical_observations.unshared_count", "7", False)]:
+      with self.subTest(path=path, quote=quote):
+        pid = create_proposal(self.paths, title="Cited host count", scene_id="scene-0001", instruction="Keep sealed.",
+          revision_intent={"goal": "Keep sealed.", "scene_contract": {"word_range": [9, 10]}})
+        args = {**self.args, "proposal_id": pid}
+        preview = preview_proposal_revision(self.paths, **args)
+        critique = copy.deepcopy(CRITIQUE)
+        critique["findings"][0].update(category="intent", source_evidence=[
+          {"path": "scene_contract.word_range", "quote": "[9, 10]"}, {"path": path, "quote": quote}])
+        verify = copy.deepcopy(VERIFY)
+        verify["resolutions"].append({"id": "host-word-range", "resolved": True, "quote": REFINED, "reason": "Nine words meet the target."})
+        outputs = [FIRST, critique, REFINED, verify] if accepted else [FIRST, critique]
+        with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in outputs]) as provider:
+          result = generate_proposal_draft(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
+        report = result["draft"]["writing_review"]
+        self.assertEqual(report["status"], "refined" if accepted else "failed")
+        self.assertEqual(provider.call_count, 4 if accepted else 2)
+        if accepted:
+          evidence = next(row for row in report["critique"]["findings"] if row["id"] == "F1")["source_evidence"]
+          self.assertIn({"path": path, "quote": "7"}, evidence)
+
   def test_failed_critic_does_not_hide_counted_requirements_or_drop_a_colliding_finding(self):
     for malformed in [True, False]:
       with self.subTest(malformed=malformed):
