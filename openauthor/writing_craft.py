@@ -11,7 +11,7 @@ from typing import Any
 
 from .project import OpenAuthorError
 
-SKILL_VERSION = "1.2.1"
+SKILL_VERSION = "1.2.2"
 TASKS = {"plan", "draft", "rewrite", "shorten", "expand", "critique", "refine"}
 CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range"}
 _FOCUSES = {

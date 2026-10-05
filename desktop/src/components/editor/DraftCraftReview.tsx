@@ -1,4 +1,4 @@
-import type { ProposalRecord } from "../../types";
+import type { ProposalRecord, SourceMeaningCheck, SourceMeaningCoverage } from "../../types";
 
 type Report = NonNullable<NonNullable<ProposalRecord["draft"]>["writing_review"]>;
 
@@ -11,6 +11,26 @@ const outcomes: Record<Report["status"], string> = {
   failed: "Review failed · first draft retained",
   unavailable: "Creative review unavailable for local generation",
 };
+
+function SourceMeaningReview({ checks, coverage, label }: { checks?: SourceMeaningCheck[]; coverage?: SourceMeaningCoverage; label: string }) {
+  if (!checks || !coverage) return null;
+  const concerns = checks.filter(row => row.assessment === "violation" || row.assessment === "uncertain");
+  const descriptions = { preserved: "model reports preserved", permitted_change: "model reports permitted", violation: "potential loss or altered meaning", uncertain: "meaning uncertain" };
+  return <details open={concerns.length > 0 || coverage.truncated}>
+    <summary>{label} · {coverage.checked_passages} of {coverage.total_passages} changed passages · {concerns.length} concerns</summary>
+    <p>These are model interpretations. Compare the original wording yourself.</p>
+    {coverage.truncated && <p role="status">Some changes were omitted from the bounded comparison. This review is incomplete.</p>}
+    {[...concerns, ...checks.filter(row => !concerns.includes(row))].map(row => <details key={row.id} open={row.assessment === "violation" || row.assessment === "uncertain"}>
+      <summary>{descriptions[row.assessment]}</summary>
+      <p>{row.reason}</p>
+      <strong>Original</strong>{row.source_quote === null ? <p>No original text in this change.</p> : <blockquote>{row.source_quote}</blockquote>}
+      <p>Model’s reading: {row.source_meaning}</p>
+      <strong>Candidate</strong>{row.candidate_quote === null ? <p>No candidate text in this change.</p> : <blockquote>{row.candidate_quote}</blockquote>}
+      <p>Model’s reading: {row.candidate_meaning}</p>
+      {row.permission_evidence.length > 0 && <details><summary>Author direction cited for this change</summary>{row.permission_evidence.map((source, index) => <blockquote key={index}>{source.quote}</blockquote>)}</details>}
+    </details>)}
+  </details>;
+}
 
 export function DraftCraftReview({ report, onChoose, disabled = false }: { report: Report; onChoose?: (candidate: "first" | "refined") => void; disabled?: boolean }) {
   return <section className="review-card__section" aria-label="Draft craft review">
@@ -27,6 +47,7 @@ export function DraftCraftReview({ report, onChoose, disabled = false }: { repor
     {report.error && <p role="alert">{report.error}</p>}
     {report.critique?.uncertainty && <p>{report.critique.uncertainty}</p>}
     {report.critique?.validation_warnings?.map((warning, index) => <p role="status" key={index}>{warning}</p>)}
+    <SourceMeaningReview checks={report.critique?.source_checks} coverage={report.critique?.source_coverage} label="First draft source review" />
     {report.critique?.strengths.length ? <details><summary>What the critic would preserve</summary>{report.critique.strengths.map((row, index) => <div key={index}><blockquote>{row.quote}</blockquote><p>{row.reason}</p></div>)}</details> : null}
     {report.critique?.findings.map(row => <div key={row.id}>
       <strong>{row.priority} · {row.category}</strong><blockquote>{row.quote}</blockquote>
@@ -34,6 +55,7 @@ export function DraftCraftReview({ report, onChoose, disabled = false }: { repor
       {row.source_evidence.map((source, index) => <details key={index}><summary>Reference: {source.path}</summary><blockquote>{source.quote}</blockquote></details>)}
     </div>)}
     {report.verification && <details><summary>Model verification · {report.verification.verdict}</summary>
+      <SourceMeaningReview checks={report.verification.source_checks} coverage={report.verification.source_coverage} label="Focused revision source review" />
       {report.verification.uncertainty && <p>{report.verification.uncertainty}</p>}
       {report.verification.validation_warnings?.map((warning, index) => <p role="status" key={index}>{warning}</p>)}
       {report.verification.resolutions.map(row => <div key={row.id}><strong>{row.id} · {row.resolved ? "reported resolved" : "unresolved"}</strong><blockquote>{row.quote}</blockquote><p>{row.reason}</p></div>)}

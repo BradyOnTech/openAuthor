@@ -12,6 +12,7 @@ from openauthor.codex import add_entity
 from openauthor.project import OpenAuthorError, initialize_project
 from openauthor.proposals import create_proposal, get_proposal, apply_proposal, undo_proposal, select_draft_candidate
 from openauthor.scenes import add_scene, get_scene, update_scene
+from openauthor.writing_review import _critique, _source_comparison, _verification
 
 FIRST = "Mara opened the permit. The seal broke."
 REFINED = "Mara slid the permit back. The seal remained unbroken."
@@ -23,9 +24,31 @@ VERIFY = {"verdict": "accept", "uncertainty": "", "regressions": [], "resolution
   {"id": "F1", "resolved": True, "quote": "The seal remained unbroken.", "reason": "The revision stops before opening the permit."}]}
 
 
-def response(text):
+def response(text, request=None):
+  if isinstance(text, dict) and request and "source_checks" not in text:
+    # Provider fixture receipts exercise stage transport and recovery. They
+    # are not a semantic assessment of the prose.
+    text = copy.deepcopy(text)
+    payload = json.loads(request["user_prompt"])
+    text["source_checks"] = [{"id": row["id"], "assessment": "preserved",
+      "source_quote": row["source"][:100].strip() if row["source"].strip() else None,
+      "candidate_quote": row["candidate"][:100].strip() if row["candidate"].strip() else None,
+      "source_meaning": "Mock provider's source interpretation.",
+      "candidate_meaning": "Mock provider's candidate interpretation.",
+      "reason": "Fixture comparison receipt for transport validation.", "permission_evidence": []}
+      for row in payload.get("source_comparison", {}).get("passages", [])]
   return {"text": text if isinstance(text, str) else json.dumps(text), "input_tokens": 100,
           "output_tokens": 40, "latency_ms": 5, "attempts": 1, "tool_calls": []}
+
+
+def staged_responses(outputs):
+  remaining = iter(outputs)
+  def provider(**kwargs):
+    item = next(remaining)
+    if isinstance(item, Exception):
+      raise item
+    return response(item, kwargs)
+  return provider
 
 
 class WritingReviewTests(unittest.TestCase):
@@ -43,7 +66,7 @@ class WritingReviewTests(unittest.TestCase):
 
   def generate(self, outputs, **kwargs):
     preview = preview_proposal_revision(self.paths, **self.args)
-    with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in outputs]) as provider:
+    with patch("openauthor.ai._call_provider", side_effect=staged_responses(outputs)) as provider:
       result = generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=preview["fingerprint"], **kwargs)
     return result, provider
 
@@ -64,9 +87,9 @@ class WritingReviewTests(unittest.TestCase):
       payload = json.loads(call.kwargs["user_prompt"])
       self.assertEqual(payload["references"]["scene.body"], self.before)
       self.assertEqual(payload["source_comparison"]["source_reference"], "scene.body")
-      self.assertIn("-She stopped before the seal.", payload["source_comparison"]["changes"])
+      self.assertIn("She stopped before the seal.", payload["source_comparison"]["passages"][0]["source"])
       expected_candidate = REFINED if "revised_candidate" in payload else FIRST
-      self.assertIn("+" + expected_candidate, payload["source_comparison"]["changes"])
+      self.assertEqual(expected_candidate, payload["source_comparison"]["passages"][0]["candidate"])
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.before)
     apply_proposal(self.paths, proposal_id=self.pid)
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], REFINED + "\n")
@@ -200,7 +223,7 @@ class WritingReviewTests(unittest.TestCase):
         preview = preview_proposal_revision(self.paths, **args)
         model_keep = {"verdict": "keep", "strengths": [], "findings": [], "uncertainty": ""}
         verify = {"verdict": "accept", "regressions": [], "uncertainty": "", "resolutions": [{"id": "host-word-range", "resolved": True, "quote": refined, "reason": "The model claims the word range is met."}]}
-        with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in [FIRST, model_keep, refined, verify]]) as provider:
+        with patch("openauthor.ai._call_provider", side_effect=staged_responses([FIRST, model_keep, refined, verify])) as provider:
           result = generate_proposal_draft(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
         self.assertEqual(json.loads(provider.call_args_list[2].kwargs["user_prompt"])["mechanical_observations"]["candidate_words"], 7)
         report = result["draft"]["writing_review"]
@@ -234,7 +257,7 @@ class WritingReviewTests(unittest.TestCase):
         verify = copy.deepcopy(VERIFY)
         verify["resolutions"].append({"id": "host-word-range", "resolved": True, "quote": REFINED, "reason": "Nine words meet the target."})
         outputs = [first, critique, REFINED, verify]
-        with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in outputs]) as provider:
+        with patch("openauthor.ai._call_provider", side_effect=staged_responses(outputs)) as provider:
           result = generate_proposal_draft(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
         report = result["draft"]["writing_review"]
         self.assertEqual(report["status"], "refined" if accepted else "failed")
@@ -256,7 +279,7 @@ class WritingReviewTests(unittest.TestCase):
         verify["resolutions"][0]["id"] = "host-word-range"
         verify["resolutions"].append({"id": "host-word-range-count", "resolved": True, "quote": REFINED, "reason": "Nine words meet the target."})
         outputs = [FIRST, "invalid JSON"] if malformed else [FIRST, critique, REFINED, verify]
-        with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in outputs]):
+        with patch("openauthor.ai._call_provider", side_effect=staged_responses(outputs)):
           result = generate_proposal_draft(self.paths, **args, expected_context_fingerprint=preview["fingerprint"])
         report = result["draft"]["writing_review"]
         self.assertFalse(report["mechanical_checks"]["first_in_range"])
@@ -273,7 +296,7 @@ class WritingReviewTests(unittest.TestCase):
       count += 1
       if count == 2:
         update_scene(self.paths, scene_identifier="scene-0001", body="Author's newer writing.")
-        return response(CRITIQUE)
+        return response(CRITIQUE, kwargs)
       return response(FIRST)
     with patch("openauthor.ai._call_provider", side_effect=provider):
       with self.assertRaisesRegex(OpenAuthorError, "scene changed"):
@@ -284,7 +307,7 @@ class WritingReviewTests(unittest.TestCase):
 
   def test_completed_stages_survive_final_delivery_loss_without_repeating_provider_calls(self):
     preview = preview_proposal_revision(self.paths, **self.args)
-    with patch("openauthor.ai._call_provider", side_effect=[response(row) for row in [FIRST, CRITIQUE, REFINED, VERIFY]]) as provider, patch("openauthor.ai.set_proposal_draft", side_effect=RuntimeError("delivery lost")):
+    with patch("openauthor.ai._call_provider", side_effect=staged_responses([FIRST, CRITIQUE, REFINED, VERIFY])) as provider, patch("openauthor.ai.set_proposal_draft", side_effect=RuntimeError("delivery lost")):
       with self.assertRaisesRegex(RuntimeError, "delivery lost"):
         generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=preview["fingerprint"], request_id="recover-stages")
       self.assertEqual(provider.call_count, 4)
@@ -305,14 +328,81 @@ class WritingReviewTests(unittest.TestCase):
 
   def test_interrupted_refinement_resumes_after_completed_draft_and_critique(self):
     preview = preview_proposal_revision(self.paths, **self.args)
-    with patch("openauthor.ai._call_provider", side_effect=[response(FIRST), response(CRITIQUE), RuntimeError("process lost")]):
+    with patch("openauthor.ai._call_provider", side_effect=staged_responses([FIRST, CRITIQUE, RuntimeError("process lost")])):
       with self.assertRaisesRegex(RuntimeError, "process lost"):
         generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=preview["fingerprint"], request_id="partial-review")
-    with patch("openauthor.ai._call_provider", side_effect=[response(REFINED), response(VERIFY)]) as provider:
+    with patch("openauthor.ai._call_provider", side_effect=staged_responses([REFINED, VERIFY])) as provider:
       result = generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=preview["fingerprint"], request_id="partial-review")
     self.assertEqual(provider.call_count, 2)
     self.assertEqual(result["draft"]["writing_review"]["status"], "refined")
     self.assertEqual(result["draft"]["input_tokens"], 400)
+
+  def test_missing_source_receipts_stop_review_before_refinement(self):
+    review = {"verdict": "keep", "strengths": [], "findings": [], "uncertainty": "", "source_checks": []}
+    result, provider = self.generate([FIRST, review])
+    self.assertEqual(provider.call_count, 2)
+    self.assertEqual(result["draft"]["writing_review"]["status"], "failed")
+    self.assertIn("every supplied source change", result["draft"]["writing_review"]["error"])
+    self.assertEqual(result["proposed_body"], FIRST + "\n")
+
+  def test_deleted_source_receipt_can_trigger_repair_without_candidate_quote_or_craft_finding(self):
+    original = FIRST + "\n\nThe unopened letter stayed on the desk."
+    update_scene(self.paths, scene_identifier="scene-0001", body=original)
+    self.args["proposal_id"] = create_proposal(self.paths, title="Keep all physical details", scene_id="scene-0001",
+      instruction="Preserve all physical details.")
+    check = {"id": "change-1", "assessment": "violation", "source_quote": "The unopened letter stayed on the desk.",
+      "candidate_quote": None, "source_meaning": "The unopened letter remains on the desk.",
+      "candidate_meaning": "This passage is absent.", "reason": "The candidate deletes the stated physical detail.", "permission_evidence": []}
+    review = {"verdict": "keep", "strengths": [], "findings": [], "uncertainty": "", "source_checks": [check]}
+    verification = {"verdict": "accept", "resolutions": [], "regressions": [], "uncertainty": "", "source_checks": []}
+    result, provider = self.generate([FIRST, review, original, verification])
+    report = result["draft"]["writing_review"]
+    self.assertEqual(provider.call_count, 4)
+    self.assertEqual(report["critique"]["verdict"], "revise")
+    self.assertEqual(report["status"], "refined")
+    self.assertEqual(json.loads(provider.call_args_list[2].kwargs["user_prompt"])["source_checks"], [check])
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], original + "\n")
+
+  def test_source_audit_rejects_repeated_ids_wrong_side_quotes_and_non_author_permission(self):
+    refs = {"scene.body": "First fact.\nSecond fact.\nThird fact.", "author_goal": "Preserve all facts.", "lore": "A world fact."}
+    candidate = "Changed first.\nSecond fact.\nChanged third."
+    comparison = _source_comparison(refs, candidate)
+    checks = [{"id": row["id"], "assessment": "preserved", "source_quote": row["source"],
+      "candidate_quote": row["candidate"], "source_meaning": "Source interpretation.", "candidate_meaning": "Candidate interpretation.",
+      "reason": "Fixture receipt.", "permission_evidence": []} for row in comparison["passages"]]
+    for change in [lambda rows: rows[1].update(id=rows[0]["id"]),
+                   lambda rows: rows[0].update(source_quote="Changed first."),
+                   lambda rows: rows[0].update(assessment="permitted_change", permission_evidence=[]),
+                   lambda rows: rows[0].update(assessment="permitted_change", permission_evidence=[{"path": "lore", "quote": "A world fact."}])]:
+      with self.subTest(change=change):
+        mutated = copy.deepcopy(checks)
+        change(mutated)
+        review = {"verdict": "keep", "strengths": [], "findings": [], "uncertainty": "", "source_checks": mutated}
+        with self.assertRaises(OpenAuthorError):
+          _critique(json.dumps(review), candidate, refs, comparison)
+
+  def test_incomplete_source_comparison_cannot_clear_a_draft(self):
+    refs = {"scene.body": "Very long source. " * 1000, "author_goal": "Tighten the scene."}
+    comparison = _source_comparison(refs, FIRST)
+    self.assertTrue(comparison["truncated"])
+    self.assertEqual(comparison["passages"], [])
+    review = {"verdict": "keep", "strengths": [], "findings": [], "uncertainty": "", "source_checks": []}
+    result = _critique(json.dumps(review), FIRST, refs, comparison)
+    self.assertEqual(result["verdict"], "uncertain")
+    self.assertEqual(result["source_coverage"]["total_passages"], 1)
+    self.assertIn("incomplete", result["uncertainty"])
+
+  def test_verification_checks_original_changes_beyond_prioritized_findings(self):
+    refs = {"scene.body": self.before}
+    comparison = _source_comparison(refs, REFINED)
+    row = comparison["passages"][0]
+    verification = copy.deepcopy(VERIFY)
+    verification["source_checks"] = [{"id": row["id"], "assessment": "violation", "source_quote": row["source"],
+      "candidate_quote": row["candidate"], "source_meaning": "Original physical actions.", "candidate_meaning": "Changed physical actions.",
+      "reason": "An additional source change remains outside the resolved finding.", "permission_evidence": []}]
+    result = _verification(json.dumps(verification), REFINED, refs, CRITIQUE["findings"], comparison)
+    self.assertTrue(result["resolutions"][0]["resolved"])
+    self.assertEqual(result["verdict"], "reject")
 
 
 if __name__ == "__main__":

@@ -145,6 +145,18 @@ export type StartupHealthReport = {
   }>;
 };
 
+export type SourceMeaningCheck = {
+  id: string;
+  source_quote: string | null;
+  source_meaning: string;
+  candidate_quote: string | null;
+  candidate_meaning: string;
+  assessment: "preserved" | "permitted_change" | "violation" | "uncertain";
+  reason: string;
+  permission_evidence: Array<{ path: string; quote: string }>;
+};
+export type SourceMeaningCoverage = { checked_passages: number; total_passages: number; truncated: boolean };
+
 export type ProposalRecord = {
   id: string;
   title: string;
@@ -242,8 +254,8 @@ export type ProposalRecord = {
       refined_candidate?: string;
       uncertainty: string;
       error?: string;
-      critique?: { verdict: string; uncertainty: string; validation_warnings?: string[]; strengths: Array<{ quote: string; reason: string }>; findings: Array<{ id: string; priority: string; category: string; quote: string; reason: string; suggestion: string; source_evidence: Array<{ path: string; quote: string }> }> };
-      verification?: { verdict: string; uncertainty: string; validation_warnings?: string[]; resolutions: Array<{ id: string; resolved: boolean; quote: string; reason: string }>; regressions: Array<{ quote: string; reason: string }> };
+      critique?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; strengths: Array<{ quote: string; reason: string }>; findings: Array<{ id: string; priority: string; category: string; quote: string; reason: string; suggestion: string; source_evidence: Array<{ path: string; quote: string }> }> };
+      verification?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; resolutions: Array<{ id: string; resolved: boolean; quote: string; reason: string }>; regressions: Array<{ quote: string; reason: string }> };
       stages: Array<{ stage: string; log_path: string; input_tokens: number; output_tokens: number }>;
     } | null;
     generation_id: string;

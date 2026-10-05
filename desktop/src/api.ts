@@ -1002,7 +1002,7 @@ export type ChatSendPayload = {
 export type MemoryApproval = { entity_id: string; detail_key?: string };
 export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
-  writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string> } | null;
+  writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string>; output_allowances?: { critique: number; verify: number } } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
   context: { scene: { id: string; title: string }; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number] }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
   limits: { omitted_memory_ids: string[] };

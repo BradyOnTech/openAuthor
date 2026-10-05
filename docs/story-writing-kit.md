@@ -8,6 +8,8 @@ Open Changes and create a Change Set. Describe the change, or choose an Editoria
 
 “Review and refine the draft” is enabled for new requests. Review the actual context before planning and again before drafting. The draft stage uses two calls when the critic recommends keeping the first candidate, and up to four when it makes a focused revision and verifies it. It uses the same permitted story sources and the generated candidates. Provider budgets apply to each call. Local deterministic generation skips creative review and labels that limitation.
 
+An existing manual Change Set offers the same review choice when building or regenerating its draft. The selected mode travels into the context preview and the recoverable request; retry keeps the original setting.
+
 Review the hunks before applying. The craft review shows strengths, supported concerns, uncertainty and any verification result. Expand the retained candidates to compare them. Choosing another candidate rebuilds the hunks and resets their decisions; it does not change the manuscript. You can also edit or reject individual hunks. Apply and undo use the existing revision workflow.
 
 For a local change, select the passage in the scene editor and choose Rewrite, Shorten or Expand. Give a concrete direction and review its context before generating. Acceptance replaces only that selected range; a newer scene makes the proposal stale. Read the result with the surrounding scene and undo it if it weakens the passage. A whole-scene model review can miss lost facts or changed tactics even when it accepts a revision.
@@ -21,6 +23,10 @@ The bundled fiction skill selects references for story integrity, scene purpose,
 Edit-plan formatting preserves complete instructions and all supplied items. Author intent and protected source facts take precedence over a generated plan. Creative review outcomes appear before the plan and change hunks; a retained draft whose review failed or rejected a refinement remains available for author judgment and is identified as uncleared.
 
 Review stages receive the complete candidate, permitted original references and a bounded comparison highlighting changes from the source. The comparison helps locate omissions and changed meanings; findings must still cite actual candidate wording and authoritative source evidence. A model can miss a problem or approve an unsuccessful revision, so its disposition does not replace reading the changes.
+
+The critic and verifier now report their reading of every supplied changed passage before judging craft. Each pairs original and candidate quotations with a short meaning comparison; a wholly deleted passage can have no candidate quotation. Claimed permission must cite the author's instruction or constraint. Source concerns remain separate from the three prioritized findings, and can trigger a focused repair even when no candidate quotation exists for a deletion. The verifier repeats the comparison against the original source. Expand the source review to inspect these interpretations and cited directions.
+
+The comparison includes up to 24 complete changed passages and 12,000 characters. Omitted passages, uncertain meaning or missing receipts prevent a favorable review disposition; the first draft stays available. Critique and verification each reserve 4,200 output tokens, disclosed in the preview and enforced through the existing per-call provider budget. These calls can still misread a passage or overlook a specific loss. The visible trace helps the author inspect the judgment; it is not a fidelity certificate.
 
 These are original, adaptable craft instructions. They allow quiet scenes, useful exposition, deliberate distance and direct dialogue. They do not prescribe a universal literary style, require a new crisis in every scene, ban ordinary words, or require every sentence to carry subtext. Existing approved style guidance remains descriptive and respects its source freshness.
 
