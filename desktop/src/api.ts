@@ -1027,7 +1027,7 @@ export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "pro
     writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string };
     guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string; body?: string }>;
     codex_entities: Array<{ id: string; name: string; type?: string; description?: string; details?: Array<{ key: string; value: unknown }> }>;
-    writing_voice?: { name: string; description: string; guidance: string[]; avoid: string[]; observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }> };
+    writing_voice?: { name?: string; description?: string; guidance?: string[]; avoid?: string[]; observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }> };
     story_plan: {
       brief?: { synopsis: string; genre: string; themes: string[]; style_guide: string; outline: string };
       structure?: Array<{ id: string; title: string; synopsis: string; chapters: Array<{ id: string; title: string; synopsis: string }> }>;

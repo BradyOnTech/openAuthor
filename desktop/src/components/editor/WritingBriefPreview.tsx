@@ -21,9 +21,9 @@ export function WritingBriefPreview({ preview }: { preview: RevisionContextPrevi
       {!plan.brief?.synopsis && !plan.brief?.outline && !plan.beats?.length && <p>No synopsis, outline or scene beats are included.</p>}
     </details>
     <details><summary>Writing Voice · {brief.source_status.voice_excerpts} approved excerpts</summary>
-      {voice ? <><strong>{voice.name}</strong><p>{voice.description}</p>
-        {voice.guidance.map((line, index) => <p key={index}>{line}</p>)}
-        {voice.avoid.length > 0 && <p>Avoid: {voice.avoid.join("; ")}</p>}
+      {voice?.name ? <><strong>{voice.name}</strong><p>{voice.description}</p>
+        {voice.guidance?.map((line, index) => <p key={index}>{line}</p>)}
+        {Boolean(voice.avoid?.length) && <p>Avoid: {voice.avoid?.join("; ")}</p>}
         {voice.observations?.map((row, index) => <div key={index}><strong>{row.aspect} · {row.scene_id}</strong>
           <blockquote style={{ whiteSpace: "pre-wrap" }}>{row.excerpt}</blockquote><p>{row.observation}</p></div>)}
       </> : <p>No current approved Writing Voice is included. Choose and approve examples in Writing Voice.</p>}
