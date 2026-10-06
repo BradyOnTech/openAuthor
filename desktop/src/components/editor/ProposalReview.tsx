@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { GenerationAssessment } from "../common/GenerationAssessment";
+import { DraftWordTarget } from "./DraftWordTarget";
 import { useEditor } from "../../contexts/EditorContext";
 import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, prepareDraftRevision, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
@@ -329,6 +330,8 @@ export function ProposalReview({ proposal: initial }: Props) {
           </div>
         </div>
       )}
+
+      {hasDraft && <DraftWordTarget body={proposal.proposed_body ?? ""} target={proposal.revision_intent?.scene_contract?.word_range} />}
 
       {proposal.rebase_report?.status === "conflicted" && (
         <div className="review-card__section">

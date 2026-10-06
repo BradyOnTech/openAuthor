@@ -30,4 +30,6 @@ Brief edits use the existing planning conflict and Storyline guards. Exact conte
 
 Feedback revisions show the previous and revised drafts together with text changes highlighted. This comparison is separate from manuscript hunks, which still compare against the saved scene. Unchanged lines anchor long comparisons; broadly rewritten passages may receive broader highlighting. Highlights expose wording changes and do not classify their story meaning.
 
+Draft review displays the actual word count against the retained target, including an overshoot or shortfall, even when automatic model review is off. This uses whitespace-separated words, matching the core review check. The count updates with the proposed text. A missed target remains visible for manual editing or feedback and does not prevent the author from applying a draft.
+
 These controls establish inspectable author direction. Better fiction must still be demonstrated with actual scenes and author judgments, including original, tie and neither outcomes. Application tests verify retention, context delivery and edit behavior; they do not measure literary quality.
