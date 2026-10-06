@@ -195,7 +195,7 @@ export function ProposalReview({ proposal: initial }: Props) {
     try {
       const updated = await rejectProposal(projectRoot, proposal.id);
       syncTab(updated);
-      setMessage(`Proposal rejected: ${proposal.title}`);
+      setMessage(`${selectionUnchanged ? "Result dismissed" : "Proposal rejected"}: ${proposal.title}`);
       await refreshProposals();
     } catch (e) {
       setError(`Reject failed: ${e instanceof Error ? e.message : String(e)}`);

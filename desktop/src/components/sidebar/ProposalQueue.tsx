@@ -155,7 +155,9 @@ export function ProposalQueue() {
           );
         })}
         {ordered.map((p) => {
-          const displayStatus = p.undone_at ? "undone" : p.status;
+          const unchanged = p.selection && p.selection.action !== "critique"
+            && (p.selection.unchanged || p.selection.before === p.selection.after);
+          const displayStatus = p.undone_at ? "undone" : unchanged && p.status === "rejected" ? "dismissed" : p.status;
           const displayTitle = p.title || p.id.slice(0, 12);
           return (
           <button
