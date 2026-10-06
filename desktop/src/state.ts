@@ -61,6 +61,12 @@ function timestamp(value: string): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+export function proposalDisplayLabel(proposal: ProposalRecord): string {
+  const feedback = proposal.draft_revision?.feedback.trim().split(/\r?\n/, 1)[0]?.replace(/\s+/g, " ");
+  if (feedback) return `Feedback: ${feedback.length > 88 ? `${feedback.slice(0, 87)}…` : feedback}`;
+  return proposal.title || proposal.id.slice(0, 12);
+}
+
 export function orderProposalsForReview(rows: ProposalRecord[]): ProposalRecord[] {
   const rank = (status: ProposalRecord["status"]): number => {
     if (status === "pending") return 0;

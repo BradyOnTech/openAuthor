@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { countProposals, orderProposalsForReview } from "../../state";
+import { countProposals, orderProposalsForReview, proposalDisplayLabel } from "../../state";
 import { applyProposalBatch, listRevisions, undoProposalBatch, saveRevision, getScene } from "../../api";
 import { withProjectBookChange } from "../../sceneSaveSession";
 import type { RevisionSummary } from "../../types";
@@ -99,7 +99,7 @@ export function ProposalQueue() {
     openTab({
       id: `proposal:${proposalId}`,
       kind: "proposal",
-      label: title || proposalId.slice(0, 8),
+      label: proposal ? proposalDisplayLabel(proposal) : title || proposalId.slice(0, 8),
       data: proposal,
     });
   }
@@ -158,14 +158,14 @@ export function ProposalQueue() {
           const unchanged = p.selection && p.selection.action !== "critique"
             && (p.selection.unchanged || p.selection.before === p.selection.after);
           const displayStatus = p.undone_at ? "undone" : unchanged && p.status === "rejected" ? "dismissed" : p.status;
-          const displayTitle = p.title || p.id.slice(0, 12);
+          const displayTitle = proposalDisplayLabel(p);
           return (
           <button
             type="button"
             key={p.id}
             className="list-item"
             onClick={() => handleClick(p.id, p.title)}
-            title={`${p.id} \u2014 ${displayStatus}`}
+            title={`${p.title}\n${p.id} \u2014 ${displayStatus}`}
             aria-label={`${displayTitle} \u2014 ${displayStatus}`}
           >
             <span className={`list-item__dot list-item__dot--${displayStatus}`} />

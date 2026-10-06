@@ -11,6 +11,7 @@ import { RevisionContextReview } from "./RevisionContextReview";
 import { EditorialFindings } from "./EditorialFindings";
 import { PassageComparison } from "../shared/PassageComparison";
 import { DraftCraftReview } from "./DraftCraftReview";
+import { proposalDisplayLabel } from "../../state";
 
 type Props = {
   proposal: ProposalRecord;
@@ -93,7 +94,7 @@ export function ProposalReview({ proposal: initial }: Props) {
       const updated = results[0];
       if (updated.id === proposal.id) syncTab(updated);
       else {
-        openTab({ id: `proposal:${updated.id}`, kind: "proposal", label: updated.title, data: updated });
+        openTab({ id: `proposal:${updated.id}`, kind: "proposal", label: proposalDisplayLabel(updated), data: updated });
         setDraftFeedback(""); revisionRequest.current = null;
       }
       draftSession.clear();
@@ -268,7 +269,7 @@ export function ProposalReview({ proposal: initial }: Props) {
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
-        <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
+        <div className="review-card__title">{proposalDisplayLabel(proposal)}</div>
         <div className="review-card__meta">
           <span className={selectionUnchanged ? "badge" : `badge badge--${displayStatus}`}>{statusLabel}</span>
           {proposal.stale && proposal.status === "pending" && (
