@@ -2621,6 +2621,8 @@ def preview_proposal_revision(
   if proposal.get("stale"):
     raise OpenAuthorError("This Change Set is stale. Rebase or rebuild it against the current scene before revising.")
   change_set = proposal.get("change_set", {})
+  if hunk_id and proposal.get("revision_intent", {}).get("scene_contract", {}).get("editable_scope") == "quoted_text":
+    raise OpenAuthorError("This Change Set preserves text outside quotation marks. Regenerate the complete scene, edit a hunk manually, or select a fresh passage; hunk fragments may contain incomplete quotes.")
   hunk = next((row for row in change_set.get("hunks", []) if row["id"] == hunk_id), None)
   if hunk_id and hunk is None:
     raise OpenAuthorError(f"Unknown Change Hunk '{hunk_id}'.")
