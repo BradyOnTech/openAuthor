@@ -54,7 +54,7 @@ it("supports strict mounting and lets authors remove a grant after a failed refr
 it("sends the chosen scene review mode in the preview and discloses the additional review allowance", async () => {
   const sent: RevisionAuthorization[] = [];
   render(<RevisionContextReview projectRoot="/synthetic/source-audit" proposalId="proposal-audit" provider="local" reviewMode="refine" onClose={() => {}} onSend={async value => { sent.push(value); }} />);
-  await screen.findByText(/Critique and verification each allow up to 4,200 output tokens/);
+  await screen.findByText(/Critique and verification each use a 4,200 output-token limit/);
   expect(boundary.calls[boundary.calls.length - 1]?.review_mode).toBe("refine");
   expect(sent).toEqual([]);
   fireEvent.click(screen.getByRole("button", { name: "Generate reviewed scene" }));
