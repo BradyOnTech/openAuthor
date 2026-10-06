@@ -74,6 +74,24 @@ class SelectionEditingTests(unittest.TestCase):
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.body)
     self.assertEqual(len(list(self.paths.generations_dir.glob("*.json"))), 1)
 
+  def test_unchanged_reply_is_recoverable_without_a_manuscript_edit(self):
+    args = {**self.args, "action": "rewrite", "provider": "openai", "instruction": "Correct grammar only if needed."}
+    preview = preview_selection(self.paths, **args)
+    original = (self.paths.root / self.scene["path"]).read_bytes()
+    response = {"choices": [{"message": {"content": self.selected}}], "usage": {"prompt_tokens": 200, "completion_tokens": 8}}
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", return_value=io.BytesIO(json.dumps(response).encode())) as transport:
+      proposal = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"], request_id="unchanged-grammar")
+      recovered = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"], request_id="unchanged-grammar")
+      self.assertEqual(recovered["id"], proposal["id"])
+      self.assertEqual(transport.call_count, 1)
+    self.assertTrue(proposal["selection"]["unchanged"])
+    self.assertEqual(proposal["selection"]["after"], self.selected)
+    self.assertEqual(proposal["proposed_body"], "")
+    with self.assertRaisesRegex(OpenAuthorError, "no replacement"):
+      apply_proposal(self.paths, proposal_id=proposal["id"], force=True)
+    self.assertEqual((self.paths.root / self.scene["path"]).read_bytes(), original)
+    self.assertEqual(len(list(self.paths.generations_dir.glob("*.json"))), 1)
+
   def test_cli_preview_then_generate_is_reviewed_and_recoverable(self):
     def run(action, *extra):
       result = subprocess.run([sys.executable, "-m", "openauthor", "proposal", action, "--input-json", json.dumps(self.args), "--json", *extra], cwd=self.paths.root, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])}, capture_output=True, text=True, check=True)

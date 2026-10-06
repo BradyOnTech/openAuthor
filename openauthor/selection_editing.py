@@ -171,16 +171,18 @@ def generate_selection(
   if not text.strip():
     raise OpenAuthorError("The provider returned no text. Nothing was changed; the attempt is in Runs.")
   replacement = text
+  unchanged = False
   if action != "critique":
     replacement = selected_text[:len(selected_text) - len(selected_text.lstrip())] + text.strip() + selected_text[len(selected_text.rstrip()):]
-    if replacement == selected_text:
-      raise OpenAuthorError("The provider returned unchanged prose. Nothing was changed; try a more specific direction.")
+    unchanged = replacement == selected_text
   with project_write_lock(paths):
     if preview_selection(paths, **args)["fingerprint"] != expected_fingerprint:
       raise OpenAuthorError("The scene, book version or context changed while generating. Nothing was applied. The response is preserved in Runs; select the passage again.")
     selection = {**preview["anchor"], "action": action, "after": "" if action == "critique" else replacement, "feedback": text if action == "critique" else "", "context_fingerprint": expected_fingerprint}
+    if unchanged:
+      selection["unchanged"] = True
     if action == "critique":
       selection["review"] = parse_review(text, preview["context"]["review_sources"], focus=review_focus, scope=review_scope, mechanical=provider == "local")
       selection["review_source_digests"] = review_digests
-    proposal_id = create_proposal(paths, title=f"{action.title()}: {get_scene(paths, scene_id)['title']}", instruction=instruction or ACTIONS[action], scene_id=scene_id, source="selection", proposed_body="" if action == "critique" else body[:start] + replacement + body[end:], selection=selection, proposal_id=current_proposal_delivery().get("proposal_id"), generation={**{key: value for key, value in result.items() if key not in {"text", "tool_calls"}}, "provider": provider, "model": preview["model"], "delivery": current_proposal_delivery()}, revision_intent={"goal": instruction or ACTIONS[action], "scope": "selection", "constraints": [], "protected_elements": []})
+    proposal_id = create_proposal(paths, title=f"{'Unchanged' if unchanged else action.title()}: {get_scene(paths, scene_id)['title']}", instruction=instruction or ACTIONS[action], scene_id=scene_id, source="selection", proposed_body="" if action == "critique" or unchanged else body[:start] + replacement + body[end:], selection=selection, proposal_id=current_proposal_delivery().get("proposal_id"), generation={**{key: value for key, value in result.items() if key not in {"text", "tool_calls"}}, "provider": provider, "model": preview["model"], "delivery": current_proposal_delivery()}, revision_intent={"goal": instruction or ACTIONS[action], "scope": "selection", "constraints": [], "protected_elements": []})
     return get_proposal(paths, proposal_id)

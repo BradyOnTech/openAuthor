@@ -356,6 +356,8 @@ def apply_proposal(
   if isinstance(selection, dict):
     if selection.get("action") == "critique":
       raise OpenAuthorError("Critique is feedback only and cannot be applied to the manuscript.")
+    if selection.get("unchanged") or selection.get("after") == selection.get("before"):
+      raise OpenAuthorError("This result suggests no replacement. The selected passage was returned unchanged.")
     if _proposal_is_stale(paths, payload):
       raise OpenAuthorError("The scene or book version changed. Select the passage again; selection edits cannot force-overwrite newer writing.")
     before = get_scene(paths, scene_id)["body"]

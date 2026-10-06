@@ -176,6 +176,7 @@ export type ProposalRecord = {
   selection?: {
     action: "rewrite" | "shorten" | "expand" | "critique";
     start: number; end: number; before: string; after: string; feedback: string; branch: string;
+    unchanged?: boolean;
     review?: EditorialReview;
   };
   revision_intent?: {

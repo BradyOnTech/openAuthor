@@ -104,7 +104,7 @@ function SelectionAssistSession({ projectRoot, sceneId, branch, selection, disab
         <strong>{input.action[0].toUpperCase() + input.action.slice(1)} selected passage</strong>
         {draft.recovered && <p role="status">Recovered your passage and direction. Review context again before a new request.</p>}
         <blockquote>{input.selected_text}</blockquote>
-        <p>{input.action === "critique" ? "Critique is feedback only and never changes manuscript prose." : "Only this passage can change after you accept it. Any later scene change makes this edit stale."}</p>
+        <p>{input.action === "critique" ? "Critique is feedback only and never changes manuscript prose." : "Only this passage can change after you accept it. The writer may return it unchanged. Any later scene change makes this edit stale."}</p>
         <label>Direction for this passage<textarea className="input" rows={2} maxLength={2000} value={input.instruction} disabled={busy || Boolean(requestId) || disabled} onChange={event => edit({ instruction: event.target.value })} /></label>
         {input.action === "critique" && <div className="selection-assist__toolbar">
           <label>Review focus<select className="input" value={input.review_focus || "general"} disabled={busy || Boolean(requestId) || disabled} onChange={event => edit({ review_focus: event.target.value as SelectionInput["review_focus"] })}>

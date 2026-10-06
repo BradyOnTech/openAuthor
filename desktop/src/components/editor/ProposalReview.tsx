@@ -240,8 +240,10 @@ export function ProposalReview({ proposal: initial }: Props) {
   const changeSet = proposal.change_set;
   const acceptedCount = changeSet?.hunks.filter((hunk) => hunk.decision === "accepted").length ?? 0;
   const displayStatus = proposal.undone_at ? "undone" : proposal.status;
+  const selectionUnchanged = Boolean(proposal.selection && proposal.selection.action !== "critique"
+    && (proposal.selection.unchanged || proposal.selection.before === proposal.selection.after));
   const statusLabel = proposal.status === "pending" && proposal.selection
-    ? proposal.selection.action === "critique" ? "Feedback ready" : "Replacement awaiting review" : displayStatus;
+    ? proposal.selection.action === "critique" ? "Feedback ready" : selectionUnchanged ? "No replacement suggested" : "Replacement awaiting review" : displayStatus;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
@@ -396,11 +398,12 @@ export function ProposalReview({ proposal: initial }: Props) {
       )}
 
       {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
-        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
-        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
+        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : selectionUnchanged ? "Selected passage · unchanged" : "Selected passage · review before applying"}</h3>
+        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {selectionUnchanged ? "The writer returned this passage unchanged. Your manuscript was not altered." : proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" && !selectionUnchanged ? "Accepting replaces only this passage." : ""}</p>
         {proposal.selection.action === "critique" ? proposal.selection.review
           ? <EditorialFindings review={proposal.selection.review} feedback={proposal.selection.feedback} stale={Boolean(proposal.stale)} />
           : <div className="selection-review__comparison"><div><strong>Selected passage</strong><blockquote>{proposal.selection.before}</blockquote></div><div><strong>Feedback · quotations not verified</strong><blockquote>{proposal.selection.feedback}</blockquote></div></div>
+          : selectionUnchanged ? <blockquote>{proposal.selection.before}</blockquote>
           : <PassageComparison before={proposal.selection.before} after={proposal.selection.after} />}
         {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
         {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
@@ -501,7 +504,7 @@ export function ProposalReview({ proposal: initial }: Props) {
             </button>
             </>
           )}
-          {proposal.source !== "merge_resolution" && hasDraft && (
+          {proposal.source !== "merge_resolution" && hasDraft && !selectionUnchanged && (
             <button
               className="btn btn--success"
               disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale)) || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
@@ -516,7 +519,7 @@ export function ProposalReview({ proposal: initial }: Props) {
             </button>
           )}
           <button className="btn btn--danger" disabled={Boolean(busy)} onClick={handleReject}>
-            Reject
+            {selectionUnchanged ? "Dismiss result" : "Reject"}
           </button>
           {proposal.scene_id && (
             <button className="btn btn--ghost" onClick={handleOpenScene}>Open Scene</button>

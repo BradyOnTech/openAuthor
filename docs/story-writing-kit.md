@@ -20,6 +20,8 @@ Review the hunks before applying. The craft review shows strengths, supported co
 
 For a local change, select the passage in the scene editor and choose Rewrite, Shorten or Expand. Give a concrete direction and review its context before generating. Acceptance replaces only that selected range; a newer scene makes the proposal stale. Read the result with the surrounding scene and undo it if it weakens the passage. A whole-scene model review can miss lost facts or changed tactics even when it accepts a revision.
 
+An unchanged passage reply is saved as “No replacement suggested,” with the original text and its generation record. It offers no Apply action. Dismiss it or keep it for reference; recovery reuses the saved result. This lets a conditional request, such as correcting grammar only when an error exists, finish without encouraging another rewrite. The label reports the returned text, not an independent judgment that the prose is ideal.
+
 Passage context prioritizes permitted Memory subjects named in the selection, the scene's viewpoint character, and subjects in the included neighboring prose before other allowed records. Saved aliases count as names. This prevents unrelated entries from crowding out the viewpoint record under the existing allowance. It preserves source permissions and omits complete entries rather than clipping their facts.
 
 **What is included**
