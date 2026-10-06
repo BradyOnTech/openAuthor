@@ -51,6 +51,7 @@ DEFAULT_ACCOUNT_READY_TIMEOUT_SECONDS = 15.0
 ACCOUNT_READY_POLL_SECONDS = 0.25
 VERIFIED_CODEX_VERSION = "0.144.6"
 REASONING_EFFORTS = frozenset({"low", "medium", "high"})
+HIGH_EFFORT_TURN_TIMEOUT_SECONDS = 180.0
 
 # The subscription runtime is a transport, not a second authoring agent. These
 # settings are also supplied at startup so discovery cannot run before a thread.
@@ -678,11 +679,18 @@ class CodexAppServer:
       completed_turn = params.get("turn", {})
       return isinstance(completed_turn, dict) and str(completed_turn.get("id", "")) == turn_id
 
-    completed = self.wait_for(
-      turn_completed,
-      on_message=handle_message,
-      on_server_request=handle_server_request,
-    )
+    try:
+      completed = self.wait_for(
+        turn_completed,
+        on_message=handle_message,
+        on_server_request=handle_server_request,
+        **({"timeout": max(self.request_timeout, HIGH_EFFORT_TURN_TIMEOUT_SECONDS)} if reasoning_effort == "high" else {}),
+      )
+    except CodexAppServerTimeout as error:
+      # A timed-out turn may have consumed inference. Keep its selection and
+      # whatever usage was actually reported; do not infer zero spend.
+      raise CodexAppServerIncompleteTurn(str(error), token_usage=token_usage,
+        model=str(thread_result.get("model") or ""), reasoning_effort=resolved_effort) from error
     completed_turn = completed.get("params", {}).get("turn", {})
     if completed_turn.get("status") != "completed":
       error = completed_turn.get("error") or {}

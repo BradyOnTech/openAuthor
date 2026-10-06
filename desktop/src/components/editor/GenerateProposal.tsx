@@ -224,6 +224,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
             <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
           </select>
           <small>More time to reason during critique, focused revision and verification. The first draft keeps its model default. Higher effort may take longer; compare the resulting prose.</small>
+          {recovery.value.reviewReasoningEffort === "high" && <small>High allows up to three minutes for each review step by default.</small>}
         </label>}
         <div>
           <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>

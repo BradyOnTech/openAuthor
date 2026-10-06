@@ -14,6 +14,7 @@ class CodexAppServerModuleTests(unittest.TestCase):
       server = CodexAppServer(binary=Path("/bin/true"), codex_home=Path(tmp))
       self.addCleanup(server.close)
       selections = []
+      waits = []
       def request(method, params, **callbacks):
         if method == "thread/start":
           selected = params["config"].get("model_reasoning_effort", "low")
@@ -21,6 +22,7 @@ class CodexAppServerModuleTests(unittest.TestCase):
           return {"thread": {"id": "thread-1"}, "model": "gpt-5.6-sol", "reasoningEffort": selected}
         return {"turn": {"id": "turn-1"}}
       def wait_for(predicate, **callbacks):
+        waits.append(callbacks.get("timeout"))
         callbacks["on_message"]({"method": "item/completed", "params": {"item": {"type": "agentMessage", "id": "message-1", "text": "Prose."}}})
         return {"method": "turn/completed", "params": {"turn": {"id": "turn-1", "status": "completed"}}}
       server.request, server.wait_for = request, wait_for
@@ -28,10 +30,18 @@ class CodexAppServerModuleTests(unittest.TestCase):
       self.assertEqual(server.complete(**options, reasoning_effort="high")["reasoning_effort"], "high")
       self.assertEqual(server.complete(**options)["reasoning_effort"], "low")
       self.assertEqual(selections, ["high", "low"])
+      self.assertEqual(waits, [180.0, None])
       with patch.object(server, "request", return_value={"thread": {"id": "thread-2"}, "reasoningEffort": "low"}) as transport:
         with self.assertRaisesRegex(CodexAppServerError, "No generation started"):
           server.complete(**options, reasoning_effort="high")
         self.assertEqual([call.args[0] for call in transport.call_args_list], ["thread/start"])
+      from openauthor.codex_app_server import CodexAppServerTimeout, CodexAppServerIncompleteTurn
+      with patch.object(server, "wait_for", side_effect=CodexAppServerTimeout("Timed out")):
+        with self.assertRaises(CodexAppServerIncompleteTurn) as failure:
+          server.complete(**options, reasoning_effort="high")
+        self.assertEqual(failure.exception.reasoning_effort, "high")
+        self.assertEqual(failure.exception.model, "gpt-5.6-sol")
+        self.assertEqual(failure.exception.token_usage, {})
 
   def test_unverified_runtime_is_refused_before_starting_an_app_server(self):
     import subprocess
