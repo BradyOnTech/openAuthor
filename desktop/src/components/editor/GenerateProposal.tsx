@@ -144,7 +144,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           temperature: directionCount === 1 ? undefined : 0.35 + index * 0.15,
           constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
           protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
-          sceneContract: { purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}) },
+          sceneContract: { purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}), ...(recovery.value.quotedTextOnly ? { editable_scope: "quoted_text" as const } : {}) },
           reviewMode: recovery.value.reviewDraft ? "refine" : "off",
           changeGroupId: groupId,
         });
@@ -216,6 +216,11 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
         <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
         <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
+        <div>
+          <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Edit only contents of paired “…” or "…" passages, including quoted signs and messages. Narration, quote marks and passage order stay unchanged. Review the identified passages before sending. Nested or unpaired marks need passage editing. Requires an AI provider.</p>
+        </div>
+
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
           <span style={{ color: "var(--text-secondary)" }}>Scene</span>
           <select className="input" value={sceneId} onChange={(e) => setSceneId(e.target.value)}>

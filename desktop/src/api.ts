@@ -551,7 +551,7 @@ export async function generateProposal(
     retrievalRequireFresh?: boolean;
     constraints?: string[];
     protectedElements?: string[];
-    sceneContract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number] };
+    sceneContract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" };
     reviewMode?: "off" | "refine";
     changeGroupId?: string;
     authorization?: RevisionAuthorization;
@@ -1004,7 +1004,7 @@ export type RevisionAuthorization = { fingerprint: string; memoryApprovals: Memo
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
   writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string>; output_allowances?: { critique: number; verify: number } } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
-  context: { scene: { id: string; title: string }; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number] }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  context: { scene: { id: string; title: string }; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" }; quoted_editing?: { mode: "quoted_text"; passages: Array<{ id: string; text: string }> }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
   limits: { omitted_memory_ids: string[] };
 };
 export async function previewProposalRevision(projectRoot: string, input: {

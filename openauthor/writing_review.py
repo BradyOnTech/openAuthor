@@ -115,13 +115,16 @@ and no regression remains. If evidence is missing, choose uncertain.
 """
 
 
-def review_policy(direction: str = "") -> dict[str, Any]:
+def review_policy(direction: str = "", *, editable_scope: str | None = None) -> dict[str, Any]:
   """An inspectable recipe included in the author's context fingerprint."""
   critique = writing_craft("critique", direction=direction)
   refine = writing_craft("refine", direction=direction)
   systems = {"critique": SOURCE_AUDIT_SYSTEM + REVIEW_SYSTEM + critique["instructions"],
              "refine": REFINE_SYSTEM + refine["instructions"],
              "verify": SOURCE_AUDIT_SYSTEM + VERIFY_SYSTEM + critique["instructions"]}
+  if editable_scope == "quoted_text":
+    from .quoted_editing import QUOTED_EDIT_SYSTEM
+    systems["refine"] += "\n\n" + QUOTED_EDIT_SYSTEM
   comparison = {"format": "paired_passages", "source_reference": "scene.body",
                 "maximum_characters": SOURCE_COMPARISON_LIMIT,
                 "maximum_passages": SOURCE_COMPARISON_PASSAGES}
@@ -453,8 +456,14 @@ class DraftReview:
         refinement_payload["source_comparison"] = comparison
       if target:
         refinement_payload["mechanical_observations"] = {"candidate_words": len(candidate.split()), "requested_word_range": target, "method": "whitespace-separated words"}
-      refined = call("refine", refinement_payload, max_output_tokens).strip()
-      if refined.startswith("```") and refined.splitlines()[-1].strip() == "```":
+      scoped = context.get("scene_contract", {}).get("editable_scope") == "quoted_text"
+      if scoped:
+        from .quoted_editing import QuotedRevision
+        editor = QuotedRevision(candidate)
+        refinement_payload["quoted_editing"] = editor.context()
+      raw_refined = call("refine", refinement_payload, max_output_tokens)
+      refined = editor.apply(raw_refined) if scoped else raw_refined.strip()
+      if not scoped and refined.startswith("```") and refined.splitlines()[-1].strip() == "```":
         refined = "\n".join(refined.splitlines()[1:-1]).strip()
       if not refined:
         raise OpenAuthorError("Focused revision produced no prose; the first draft was retained.")

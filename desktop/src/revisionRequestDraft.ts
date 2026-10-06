@@ -7,6 +7,7 @@ export type RevisionRequestDraft = {
   alternativeCount: 1 | 3; coordinated: boolean; coordinatedSceneIds: string[];
   scenePurpose?: string; sceneTurn?: string; sceneEnding?: string;
   reviewDraft?: boolean;
+  quotedTextOnly?: boolean;
   minimumWords?: string; maximumWords?: string;
 };
 
@@ -14,7 +15,7 @@ export function emptyRevisionRequest(sceneId: string, provider: ProposalProvider
   return { sceneId, provider, instruction: "", model: "", constraints: "", protectedElements: "", selectedPassId: "",
     showPassBuilder: false, passName: "", passGoal: "", passInstruction: "", passCriteria: "",
     alternativeCount: 1, coordinated: false, coordinatedSceneIds: sceneId ? [sceneId] : [],
-    scenePurpose: "", sceneTurn: "", sceneEnding: "", reviewDraft: true, minimumWords: "", maximumWords: "" };
+    scenePurpose: "", sceneTurn: "", sceneEnding: "", reviewDraft: true, quotedTextOnly: false, minimumWords: "", maximumWords: "" };
 }
 
 export function validRevisionRequest(value: unknown): value is RevisionRequestDraft {
@@ -27,5 +28,6 @@ export function validRevisionRequest(value: unknown): value is RevisionRequestDr
     && [1, 3].includes(row.alternativeCount) && Array.isArray(row.coordinatedSceneIds)
     && row.coordinatedSceneIds.every(id => typeof id === "string")
     && [row.scenePurpose, row.sceneTurn, row.sceneEnding, row.minimumWords, row.maximumWords].every(item => item === undefined || typeof item === "string")
-    && (row.reviewDraft === undefined || typeof row.reviewDraft === "boolean");
+    && (row.reviewDraft === undefined || typeof row.reviewDraft === "boolean")
+    && (row.quotedTextOnly === undefined || typeof row.quotedTextOnly === "boolean");
 }

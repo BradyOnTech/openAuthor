@@ -64,7 +64,11 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
     {error && <p role="alert">{error} You can remove permissions below, refresh, or return to the Change Set.</p>}
     {preview && <>
       <p>Scene: {preview.context.scene.title || preview.context.scene.id}</p>
-      {preview.context.scene_contract && Object.entries(preview.context.scene_contract).map(([key, value]) => value && <p key={key}>{key === "purpose" ? "Scene purpose" : key === "turn" ? "What changes" : key === "word_range" ? "Word target" : "Where it stops"}: {Array.isArray(value) ? `${value[0]}–${value[1]} words` : value}</p>)}
+      {preview.context.scene_contract && Object.entries(preview.context.scene_contract).filter(([key]) => key !== "editable_scope").map(([key, value]) => value && <p key={key}>{key === "purpose" ? "Scene purpose" : key === "turn" ? "What changes" : key === "word_range" ? "Word target" : "Where it stops"}: {Array.isArray(value) ? `${value[0]}–${value[1]} words` : value}</p>)}
+      {preview.context.quoted_editing && <>
+        <p>Quoted-text scope: {preview.context.quoted_editing.passages.length} paired passages can change. openAuthor retains all text outside their quotation marks. Facts and meaning inside the quotes still need your review.</p>
+        <details><summary>Inspect editable quoted passages</summary>{preview.context.quoted_editing.passages.map(passage => <div key={passage.id}><strong>{passage.id}</strong><pre>{passage.text}</pre></div>)}</details>
+      </>}
       {preview.context.writing_craft && <p>This request includes fiction craft guidance for this writing task. The complete guidance is visible in the exact context below.</p>}
       {preview.writing_review && <p>Draft review is enabled: up to {preview.writing_review.maximum_calls} model calls for drafting, critique, focused revision and verification. These stages use the same approved sources and the generated candidates, with source changes highlighted for review. The first draft is retained if review fails or is uncertain. Model review supports your judgment.</p>}
       {preview.writing_review?.output_allowances && <p>Critique and verification each use a {preview.writing_review.output_allowances.critique.toLocaleString()} output-token {provider === "openai-codex" ? "target, not a hard limit" : "limit"} to compare changed passages before judging craft. Incomplete source review retains the first draft. These review calls are additional to the draft allowance below.</p>}

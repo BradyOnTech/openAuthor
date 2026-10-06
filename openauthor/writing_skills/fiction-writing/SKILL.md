@@ -20,3 +20,5 @@ Read only the references needed for the task:
 - Critique or feedback refinement: [evidence and verification](references/review.md).
 
 Honor the host's requested output format. Do not include planning, evaluation or explanations in replacement manuscript prose. A fluent variation is not automatically an improvement; retain successful wording when the task does not justify changing it.
+
+When the author selects quoted-text editing, revise only the supplied quote contents. The host retains narration and passage order. Preserve facts, uncertainty and character knowledge inside the quotes; a permitted editing location does not authorize changing their meaning. Return the host's bounded edit JSON instead of a complete scene.

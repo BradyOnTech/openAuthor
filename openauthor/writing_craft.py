@@ -11,9 +11,9 @@ from typing import Any
 
 from .project import OpenAuthorError
 
-SKILL_VERSION = "1.2.2"
+SKILL_VERSION = "1.2.3"
 TASKS = {"plan", "draft", "rewrite", "shorten", "expand", "critique", "refine"}
-CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range"}
+CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range", "editable_scope"}
 _FOCUSES = {
   "dialogue": "dialogue", "character motivation": "scene", "motivation": "scene",
   "pov integrity": "viewpoint", "pov": "viewpoint", "character-knowledge": "viewpoint",
@@ -28,9 +28,14 @@ def validate_scene_contract(value: Any = None) -> dict[str, Any]:
   if value is None:
     return {}
   if not isinstance(value, dict) or set(value) - CONTRACT_FIELDS:
-    raise OpenAuthorError("Scene intent must contain purpose, turn, ending text or a word range.")
+    raise OpenAuthorError("Scene intent must contain purpose, turn, ending text, a word range or editable scope.")
   result = {}
   for key, text in value.items():
+    if key == "editable_scope":
+      if text != "quoted_text":
+        raise OpenAuthorError("Editable scope must be quoted_text, or omitted for whole-scene editing.")
+      result[key] = text
+      continue
     if key == "word_range":
       if not isinstance(text, list) or len(text) != 2 or any(type(item) is not int for item in text) or not 1 <= text[0] <= text[1] <= 20000:
         raise OpenAuthorError("A scene word range needs two whole numbers, 1–20,000, in ascending order.")
