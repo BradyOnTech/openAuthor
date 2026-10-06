@@ -140,6 +140,25 @@ class RevisionContextTests(unittest.TestCase):
     self.assertEqual(log["user_prompt"], preview["user_prompt"])
     self.assertEqual(log["system_prompt"], preview["system_prompt"])
 
+  def test_scene_direction_keeps_whole_permitted_subjects_before_unrelated_memory(self):
+    for index in range(5):
+      add_entity(self.paths, kind="lore", name=f"Unrelated district {index}", description="x" * 2600)
+    description = "Estuary habitat evidence. " + "y" * 1600
+    subject = add_entity(self.paths, kind="lore", name="The Estuary, tidal coast", description=description)
+    add_entity(self.paths, kind="lore", name="Estuary depths", description="EXCLUDED_DEPTHS_SENTINEL", ai_visibility="exclude")
+    pid = create_proposal(self.paths, title="Arrival", scene_id="scene-0001", instruction="Mara reaches Estuary and considers its depths.")
+    preview = ai.preview_proposal_revision(self.paths, proposal_id=pid)
+    records = preview["context"]["codex_entities"]
+    selected = next(row for row in records if row["id"] == subject)
+    self.assertEqual(selected["description"], description)
+    self.assertIn(self.mara, {row["id"] for row in records})
+    self.assertNotIn("EXCLUDED_DEPTHS_SENTINEL", preview["user_prompt"])
+    self.assertNotIn("PRIVATE_NOTE_SENTINEL", preview["user_prompt"])
+    self.assertTrue(preview["limits"]["omitted_memory_ids"])
+    self.assertLessEqual(sum(len(json.dumps(row, ensure_ascii=False)) for row in records), 12000)
+    plan = ai.preview_proposal_generation(self.paths, scene_id="scene-0001", instruction="Mara reaches Estuary.", codex_limit=2)
+    self.assertEqual({row["id"] for row in plan["context"]["codex_entities"]}, {self.mara, subject})
+
   def test_scene_draft_requires_review_and_preserves_work_when_guidance_changes(self):
     args = dict(proposal_id=self.proposal_id, provider="openai")
     with patch("urllib.request.urlopen") as transport:

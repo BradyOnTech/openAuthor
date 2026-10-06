@@ -2343,7 +2343,8 @@ def preview_proposal_generation(
     codex_limit=codex_limit,
     memory_approvals=memory_approvals,
   )
-  review = _prepare_author_context(paths, base_context, [scene_id], memory_approvals, story_approvals)
+  review = _prepare_author_context(paths, base_context, [scene_id], memory_approvals, story_approvals,
+    direction=instruction, codex_limit=codex_limit)
   retrieval = _resolve_retrieval_context(
     paths,
     context=base_context,
@@ -2585,15 +2586,23 @@ def _prose_change_key(text: str) -> str:
   return re.sub(r"\s+", " ", text).strip()
 
 
-def _prepare_author_context(paths, context, scene_ids, memory_approvals, story_approvals):
+def _prepare_author_context(paths, context, scene_ids, memory_approvals, story_approvals, *, direction="", codex_limit=None):
   """One bounded, permission-aware source policy for revision operations."""
   from .story_grounding import prepare_story_grounding
   from .style_profile import style_profile_context, voice_evidence_context
+  from .memory_relevance import prioritize_scene_memory
   context["story_plan"] = story_plan_for_ai(paths, scene_ids)
   permitted = memory_for_ai(paths, memory_approvals)
-  candidates = context.get("codex_entities", permitted)
+  proposal = context.get("proposal", {})
+  direction = direction or str(proposal.get("goal", proposal.get("instruction", "")))
+  supporting = {key: context.get(key, []) for key in
+    ("constraints", "protected_elements", "story_plan", "nearby_scenes", "theirs_body", "ancestor_body", "current_candidate")}
+  candidates = prioritize_scene_memory(permitted, scene=context["scene"], direction=direction,
+    supporting_text=json.dumps(supporting, ensure_ascii=False))
   remaining, included = 12000, []
   for entity in candidates:
+    if codex_limit is not None and len(included) >= codex_limit:
+      break
     size = len(json.dumps(entity, ensure_ascii=False))
     if size <= remaining:
       included.append(entity)
