@@ -1,4 +1,5 @@
 import type { ProposalProvider } from "./types";
+import type { ReviewReasoningEffort } from "./api";
 
 export type RevisionRequestDraft = {
   sceneId: string; instruction: string; provider: ProposalProvider; model: string;
@@ -7,6 +8,7 @@ export type RevisionRequestDraft = {
   alternativeCount: 1 | 3; coordinated: boolean; coordinatedSceneIds: string[];
   scenePurpose?: string; sceneTurn?: string; sceneEnding?: string;
   reviewDraft?: boolean;
+  reviewReasoningEffort?: "" | ReviewReasoningEffort;
   quotedTextOnly?: boolean;
   minimumWords?: string; maximumWords?: string;
 };
@@ -29,5 +31,6 @@ export function validRevisionRequest(value: unknown): value is RevisionRequestDr
     && row.coordinatedSceneIds.every(id => typeof id === "string")
     && [row.scenePurpose, row.sceneTurn, row.sceneEnding, row.minimumWords, row.maximumWords].every(item => item === undefined || typeof item === "string")
     && (row.reviewDraft === undefined || typeof row.reviewDraft === "boolean")
+    && (row.reviewReasoningEffort === undefined || ["", "low", "medium", "high"].includes(String(row.reviewReasoningEffort)))
     && (row.quotedTextOnly === undefined || typeof row.quotedTextOnly === "boolean");
 }

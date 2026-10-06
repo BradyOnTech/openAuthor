@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { addEditorialPass, listEditorialPasses, type EditorialPass } from "../../api";
+import { addEditorialPass, listEditorialPasses, type EditorialPass, type ReviewReasoningEffort } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
 import { RevisionContextReview } from "./RevisionContextReview";
@@ -146,6 +146,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
           sceneContract: { purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}), ...(recovery.value.quotedTextOnly ? { editable_scope: "quoted_text" as const } : {}) },
           reviewMode: recovery.value.reviewDraft ? "refine" : "off",
+          reviewReasoningEffort: provider === "openai-codex" && recovery.value.reviewDraft ? recovery.value.reviewReasoningEffort || undefined : undefined,
           changeGroupId: groupId,
         });
       }
@@ -210,12 +211,20 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}:draft`} projectRoot={projectRoot}
           proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
           reviewMode={reviewTask.input.reviewMode}
+          reviewReasoningEffort={reviewTask.input.reviewReasoningEffort}
           onSend={async authorization => { await showResults(await session.approveDraft(reviewTask.index, authorization)); }}
           onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
 
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
         <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
         <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
+        {recovery.value.reviewDraft && provider === "openai-codex" && <label style={{ display: "grid", gap: 6 }}>
+          <span>Review reasoning effort</span>
+          <select className="input" value={recovery.value.reviewReasoningEffort ?? ""} onChange={event => setter("reviewReasoningEffort")(event.target.value as "" | ReviewReasoningEffort)}>
+            <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+          <small>More time to reason during critique, focused revision and verification. The first draft keeps its model default. Higher effort may take longer; compare the resulting prose.</small>
+        </label>}
         <div>
           <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>
           <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Edit only contents of paired “…” or "…" passages, including quoted signs and messages. Narration, quote marks and passage order stay unchanged. Review the identified passages before sending. Nested or unpaired marks need passage editing. Requires an AI provider.</p>

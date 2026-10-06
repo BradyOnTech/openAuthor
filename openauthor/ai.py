@@ -69,6 +69,7 @@ class ProviderExecutionError(OpenAuthorError):
     attempts: int = 1,
     reported_usage: dict[str, Any] | None = None,
     resolved_model: str = "",
+    resolved_reasoning_effort: str | None = None,
   ) -> None:
     super().__init__(message)
     self.category = category
@@ -78,6 +79,7 @@ class ProviderExecutionError(OpenAuthorError):
     self.attempts = attempts
     self.reported_usage = reported_usage
     self.resolved_model = resolved_model
+    self.resolved_reasoning_effort = resolved_reasoning_effort
 
 
 def _scene_number(scene_id: str) -> int:
@@ -1267,6 +1269,7 @@ def _openai_codex_chat_completion(
   max_output_tokens: int,
   on_delta: Any = None,
   tools: list[dict[str, Any]] | None = None,
+  reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
   del temperature
   try:
@@ -1289,6 +1292,7 @@ def _openai_codex_chat_completion(
         max_output_tokens=max_output_tokens,
         on_delta=on_delta,
         tools=tools,
+        **({"reasoning_effort": reasoning_effort} if reasoning_effort else {}),
       )
   except ProviderExecutionError:
     raise
@@ -1318,6 +1322,7 @@ def _openai_codex_chat_completion(
       str(error), category="incomplete_turn", retriable=False,
       provider="openai-codex", reported_usage=reported_usage,
       resolved_model=error.model,
+      resolved_reasoning_effort=error.reasoning_effort,
     ) from error
   except CodexAppServerError as error:
     message = str(error)
@@ -1344,10 +1349,13 @@ def _call_provider(
   history: list[dict[str, Any]] | None = None,
   on_delta: Any = None,
   tools: list[dict[str, Any]] | None = None,
+  reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
+  _validate_reasoning_effort(provider, reasoning_effort)
   chat_history = _normalize_chat_history(history)
   tool_calls: list[dict[str, Any]] = []
   resolved_model = ""
+  resolved_reasoning_effort = None
   start = time.perf_counter()
   if provider == "local":
     resolved_model = model
@@ -1432,6 +1440,7 @@ def _call_provider(
       max_output_tokens=max_output_tokens,
       on_delta=on_delta,
       tools=tools,
+      **({"reasoning_effort": reasoning_effort} if reasoning_effort else {}),
     )
     text = payload["text"]
     tool_calls = payload.get("tool_calls", [])
@@ -1439,6 +1448,7 @@ def _call_provider(
     output_tokens = payload["output_tokens"]
     attempts = int(payload.get("attempts", 1) or 1)
     resolved_model = str(payload.get("model") or "")
+    resolved_reasoning_effort = payload.get("reasoning_effort")
   else:
     raise OpenAuthorError(
       f"Invalid provider '{provider}'. Allowed: {', '.join(sorted(SUPPORTED_PROVIDERS))}."
@@ -1462,7 +1472,15 @@ def _call_provider(
     "latency_ms": latency_ms,
     "attempts": attempts,
     "resolved_model": resolved_model,
+    "reasoning_effort": reasoning_effort,
+    "resolved_reasoning_effort": resolved_reasoning_effort,
   }
+
+
+def _validate_reasoning_effort(provider: str, value: str | None) -> None:
+  from .codex_app_server import REASONING_EFFORTS
+  if value is not None and (provider != "openai-codex" or value not in REASONING_EFFORTS):
+    raise OpenAuthorError("Explicit reasoning effort needs the ChatGPT provider and low, medium or high.")
 
 
 def _write_chat_generation_log(
@@ -1485,6 +1503,7 @@ def _write_chat_generation_log(
   round_index: int | None = None,
   local_audit_full_content: bool = False,
   completion_context: dict[str, Any] | None = None,
+  reasoning_effort: str | None = None,
 ) -> tuple[str, str]:
   run_id = f"gen-{uuid.uuid4().hex[:12]}"
   log_file = paths.generations_dir / f"{run_id}.json"
@@ -1507,6 +1526,7 @@ def _write_chat_generation_log(
     "temperature": temperature,
     "max_output_tokens": max_output_tokens,
     "history_message_count": history_message_count,
+    "reasoning_effort": reasoning_effort,
     "prompt_sha256": hashlib.sha256(
       (system_prompt + "\n\n" + user_prompt).encode("utf-8")
     ).hexdigest(),
@@ -1530,6 +1550,7 @@ def _write_chat_generation_log(
     if not isinstance(tool_calls, list):
       tool_calls = []
     payload["resolved_model"] = provider_result.get("resolved_model", "")
+    payload["resolved_reasoning_effort"] = provider_result.get("resolved_reasoning_effort")
     payload["response_sha256"] = hashlib.sha256(response_text.encode("utf-8")).hexdigest()
     payload["tool_call_count"] = len(tool_calls)
     payload["tool_call_provenance"] = [
@@ -1565,17 +1586,19 @@ def _write_chat_generation_log(
       "violations",
       "budget_policy",
       "budget_usage",
-      "budget_projected", "reported_usage", "resolved_model",
+      "budget_projected", "reported_usage", "resolved_model", "resolved_reasoning_effort",
     )
     payload["error"] = {key: error[key] for key in safe_error_keys if key in error}
     if "message" in error:
       payload["error"]["message_sha256"] = hashlib.sha256(
         str(error["message"]).encode("utf-8")
       ).hexdigest()
+  if error is not None:
+    payload["resolved_model"] = error.get("resolved_model", "")
+    payload["resolved_reasoning_effort"] = error.get("resolved_reasoning_effort")
   if error is not None and error.get("reported_usage") is not None:
     payload["usage"] = error["reported_usage"]
     payload["usage_reported"] = True
-    payload["resolved_model"] = error.get("resolved_model", "")
   if local_audit_full_content:
     payload["system_prompt"] = system_prompt
     payload["user_prompt"] = user_prompt
@@ -1609,7 +1632,9 @@ def complete_chat(
   input_token_ceiling: int | None = None,
   response_token_reserve: int = 0,
   completion_context: dict[str, Any] | None = None,
+  reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
+  _validate_reasoning_effort(provider, reasoning_effort)
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
     raise OpenAuthorError(f"Invalid provider '{provider}'. Allowed: {allowed}.")
@@ -1652,6 +1677,7 @@ def complete_chat(
       round_index=round_index,
       local_audit_full_content=local_audit_full_content,
       completion_context=completion_context,
+      reasoning_effort=reasoning_effort,
       error={
         "message": str(error),
         "category": error.category,
@@ -1683,6 +1709,7 @@ def complete_chat(
       history=chat_history,
       on_delta=on_delta,
       tools=tools,
+      **({"reasoning_effort": reasoning_effort} if reasoning_effort else {}),
     )
   except ChatInterrupted:
     _write_chat_generation_log(
@@ -1701,6 +1728,7 @@ def complete_chat(
       round_index=round_index,
       local_audit_full_content=local_audit_full_content,
       completion_context=completion_context,
+      reasoning_effort=reasoning_effort,
       error={
         "message": "Chat turn interrupted by user.",
         "category": "interrupted",
@@ -1728,6 +1756,7 @@ def complete_chat(
       round_index=round_index,
       local_audit_full_content=local_audit_full_content,
       completion_context=completion_context,
+      reasoning_effort=reasoning_effort,
       error={
         "message": str(error),
         "category": error.category,
@@ -1737,6 +1766,7 @@ def complete_chat(
         "provider": error.provider,
         "reported_usage": getattr(error, "reported_usage", {}),
         "resolved_model": getattr(error, "resolved_model", ""),
+        "resolved_reasoning_effort": getattr(error, "resolved_reasoning_effort", None),
       },
     )
     guidance = " Sign in again or update this provider's credentials in Settings." if error.category == "auth_error" else ""
@@ -1747,6 +1777,7 @@ def complete_chat(
       category=error.category, retriable=error.retriable, provider=error.provider,
       http_status=error.http_status, attempts=error.attempts,
       reported_usage=getattr(error, "reported_usage", {}), resolved_model=getattr(error, "resolved_model", ""),
+      resolved_reasoning_effort=getattr(error, "resolved_reasoning_effort", None),
     ) from error
 
   estimated_cost_usd = _estimate_cost_usd(
@@ -1772,6 +1803,7 @@ def complete_chat(
     round_index=round_index,
     local_audit_full_content=local_audit_full_content,
     completion_context=completion_context,
+    reasoning_effort=reasoning_effort,
     provider_result=provider_result,
     estimated_cost_usd=estimated_cost_usd,
   )
@@ -1791,6 +1823,8 @@ def complete_chat(
     "generation_id": generation_id,
     "log_path": log_path,
     "resolved_model": provider_result.get("resolved_model", ""),
+    "reasoning_effort": reasoning_effort,
+    "resolved_reasoning_effort": provider_result.get("resolved_reasoning_effort"),
   }
 
 
@@ -2113,6 +2147,7 @@ def _write_generation_log(
     "raw_response_text": raw_provider_text,
     "normalized_instruction": provider_result["text"],
     "resolved_model": provider_result.get("resolved_model", ""),
+    "resolved_reasoning_effort": provider_result.get("resolved_reasoning_effort"),
     "normalization": normalization,
     "quality": quality,
     "usage": {
@@ -2598,12 +2633,16 @@ def preview_proposal_revision(
   max_output_tokens: int | None = None, feedback: str = "",
   memory_approvals: list[dict[str, str]] | None = None, story_approvals: list[str] | None = None,
   review_mode: str = "off",
+  review_reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
   """Build the exact revision request locally, including its source-state anchor."""
   from .story_grounding import STORY_GROUNDING_INSTRUCTIONS
   from .writing_review import review_policy
   if review_mode not in {"off", "refine"} or (hunk_id and review_mode != "off"):
     raise OpenAuthorError("Choose off or refine for whole-scene writing review.")
+  _validate_reasoning_effort(provider, review_reasoning_effort)
+  if review_reasoning_effort is not None and (review_mode != "refine" or hunk_id):
+    raise OpenAuthorError("Review reasoning effort needs whole-scene draft review.")
   if max_output_tokens is None:
     scene_for_size = get_scene(paths, get_proposal(paths, proposal_id)["scene_id"])
     max_output_tokens = 700 if hunk_id else max(2000, _estimate_tokens(str(scene_for_size["body"])) + 1000)
@@ -2662,7 +2701,7 @@ def preview_proposal_revision(
   return _context_preview(paths, context=context, system=system, user=user, provider=provider,
     model=model or DEFAULT_MODELS[provider], temperature=temperature, max_output_tokens=max_output_tokens,
     review=review, memory_approvals=memory_approvals,
-    extra={"writing_review": policy},
+    extra={"writing_review": policy, **({"review_reasoning_effort": review_reasoning_effort} if review_reasoning_effort else {})},
     anchor={"scene_digest": _digest_scene_payload(scene), "proposal_digest": hashlib.sha256(json.dumps(proposal, sort_keys=True).encode()).hexdigest()})
 
 
@@ -2679,6 +2718,7 @@ def generate_proposal_draft(
   story_approvals: list[str] | None = None,
   expected_context_fingerprint: str = "",
   review_mode: str = "off",
+  review_reasoning_effort: str | None = None,
 ) -> dict[str, Any]:
   if provider not in SUPPORTED_PROVIDERS:
     raise OpenAuthorError(
@@ -2703,7 +2743,8 @@ def generate_proposal_draft(
   selected_model = model or DEFAULT_MODELS[provider]
   preview_args = dict(proposal_id=proposal_id, provider=provider, model=model,
     temperature=temperature, max_output_tokens=max_output_tokens,
-    memory_approvals=memory_approvals, story_approvals=story_approvals, review_mode=review_mode)
+    memory_approvals=memory_approvals, story_approvals=story_approvals, review_mode=review_mode,
+    review_reasoning_effort=review_reasoning_effort)
   if provider != "local" and not expected_context_fingerprint:
     raise OpenAuthorError("Review revision context before sending a scene to an AI provider. Use proposal revision-preview first.")
   prepared = preview_proposal_revision(paths, **preview_args)
@@ -2868,7 +2909,7 @@ def generate_proposal_draft(
       check_source_state()
       return complete_chat(paths, provider=provider, model=selected_model, temperature=temperature,
         chat_mode=False, completion_context={"writing_review_stage": stage, "proposal_id": proposal_id},
-        local_audit_full_content=True, **request)
+        local_audit_full_content=True, **({"reasoning_effort": review_reasoning_effort} if review_reasoning_effort else {}), **request)
     check_source_state()
     proposed_body, review_report = review_session.run(context=context, candidate=proposed_body,
       policy=prepared["writing_review"], complete=review_completion, max_output_tokens=max_output_tokens)
@@ -2893,6 +2934,7 @@ def generate_proposal_draft(
         "delivery": current_proposal_delivery(),
         "writing_craft": context["writing_craft"],
         "writing_review": review_report,
+        "review_reasoning_effort": review_reasoning_effort,
         "initial_generation_id": generation_id,
         "initial_log_path": log_path,
         "generation_id": selected_generation.get("generation_id", generation_id),

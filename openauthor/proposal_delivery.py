@@ -38,6 +38,9 @@ def recoverable_proposal(kind: str):
       bound = signature.bind(paths, **kwargs)
       bound.apply_defaults()
       arguments = {key: value for key, value in bound.arguments.items() if key != "paths"}
+      # Preserve existing draft receipts when this optional execution setting is absent.
+      if arguments.get("review_reasoning_effort") is None:
+        arguments.pop("review_reasoning_effort", None)
       fingerprint = hashlib.sha256(json.dumps(arguments, sort_keys=True).encode()).hexdigest()
       key = hashlib.sha256(f"{kind}:{request_id}".encode()).hexdigest()
       creates_proposal = kind in {"generate", "merge", "selection"}

@@ -70,6 +70,29 @@ class WritingReviewTests(unittest.TestCase):
       result = generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=preview["fingerprint"], **kwargs)
     return result, provider
 
+  def test_review_effort_reaches_only_review_stages_and_changes_authorization(self):
+    self.args.update(provider="openai-codex", review_reasoning_effort="high")
+    reviewed = preview_proposal_revision(self.paths, **self.args)
+    default = preview_proposal_revision(self.paths, **{**self.args, "review_reasoning_effort": None})
+    self.assertNotEqual(reviewed["fingerprint"], default["fingerprint"])
+    self.assertEqual(reviewed["system_prompt"], default["system_prompt"])
+    self.assertEqual(reviewed["user_prompt"], default["user_prompt"])
+    with patch("openauthor.ai._call_provider") as provider:
+      with self.assertRaisesRegex(OpenAuthorError, "context changed"):
+        generate_proposal_draft(self.paths, **self.args, expected_context_fingerprint=default["fingerprint"])
+      provider.assert_not_called()
+    result, provider = self.generate([FIRST, CRITIQUE, REFINED, VERIFY], request_id="deep-review")
+    self.assertNotIn("reasoning_effort", provider.call_args_list[0].kwargs)
+    self.assertEqual([call.kwargs["reasoning_effort"] for call in provider.call_args_list[1:]], ["high"] * 3)
+    self.assertEqual(result["draft"]["review_reasoning_effort"], "high")
+    with patch("openauthor.ai._call_provider") as retry:
+      restored = generate_proposal_draft(self.paths, **self.args, request_id="deep-review", expected_context_fingerprint=reviewed["fingerprint"])
+      self.assertEqual(restored, result)
+      retry.assert_not_called()
+    for settings in ({"provider": "openai", "review_mode": "refine"}, {"provider": "openai-codex", "review_mode": "off"}):
+      with self.assertRaises(OpenAuthorError):
+        preview_proposal_revision(self.paths, proposal_id=self.pid, review_reasoning_effort="high", **settings)
+
   def test_fresh_critic_refines_supported_issue_and_author_can_apply_and_undo(self):
     add_entity(self.paths, kind="lore", name="Hidden", description="EXCLUDED_SECRET", ai_visibility="exclude")
     result, provider = self.generate([FIRST, CRITIQUE, REFINED, VERIFY], request_id="reviewed-draft")

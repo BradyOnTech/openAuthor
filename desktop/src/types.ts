@@ -244,6 +244,7 @@ export type ProposalRecord = {
     };
   };
   draft?: {
+    review_reasoning_effort?: "low" | "medium" | "high" | null;
     writing_review?: {
       schema_version: number;
       status: "unverified" | "kept" | "refined" | "rejected" | "uncertain" | "failed" | "unavailable";
@@ -256,7 +257,7 @@ export type ProposalRecord = {
       error?: string;
       critique?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; strengths: Array<{ quote: string; reason: string }>; findings: Array<{ id: string; priority: string; category: string; quote: string; reason: string; suggestion: string; source_evidence: Array<{ path: string; quote: string }> }> };
       verification?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; resolutions: Array<{ id: string; resolved: boolean; quote: string; reason: string }>; regressions: Array<{ quote: string; reason: string }> };
-      stages: Array<{ stage: string; log_path: string; input_tokens: number; output_tokens: number }>;
+      stages: Array<{ stage: string; log_path: string; input_tokens: number; output_tokens: number; reasoning_effort?: string | null; resolved_reasoning_effort?: string | null; resolved_model?: string }>;
     } | null;
     generation_id: string;
     provider: string;

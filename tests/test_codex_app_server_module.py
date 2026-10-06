@@ -9,6 +9,30 @@ from openauthor.codex_app_server import CodexAppServer, CodexAppServerError, Cod
 
 
 class CodexAppServerModuleTests(unittest.TestCase):
+  def test_reasoning_override_is_per_completion_and_mismatch_stops_before_turn(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      server = CodexAppServer(binary=Path("/bin/true"), codex_home=Path(tmp))
+      self.addCleanup(server.close)
+      selections = []
+      def request(method, params, **callbacks):
+        if method == "thread/start":
+          selected = params["config"].get("model_reasoning_effort", "low")
+          selections.append(selected)
+          return {"thread": {"id": "thread-1"}, "model": "gpt-5.6-sol", "reasoningEffort": selected}
+        return {"turn": {"id": "turn-1"}}
+      def wait_for(predicate, **callbacks):
+        callbacks["on_message"]({"method": "item/completed", "params": {"item": {"type": "agentMessage", "id": "message-1", "text": "Prose."}}})
+        return {"method": "turn/completed", "params": {"turn": {"id": "turn-1", "status": "completed"}}}
+      server.request, server.wait_for = request, wait_for
+      options = dict(project_root=Path(tmp), model="gpt-5.6-sol", system_prompt="Write.", history=[], user_prompt="Revise.", max_output_tokens=300, on_delta=None, tools=None)
+      self.assertEqual(server.complete(**options, reasoning_effort="high")["reasoning_effort"], "high")
+      self.assertEqual(server.complete(**options)["reasoning_effort"], "low")
+      self.assertEqual(selections, ["high", "low"])
+      with patch.object(server, "request", return_value={"thread": {"id": "thread-2"}, "reasoningEffort": "low"}) as transport:
+        with self.assertRaisesRegex(CodexAppServerError, "No generation started"):
+          server.complete(**options, reasoning_effort="high")
+        self.assertEqual([call.args[0] for call in transport.call_args_list], ["thread/start"])
+
   def test_unverified_runtime_is_refused_before_starting_an_app_server(self):
     import subprocess
     with tempfile.TemporaryDirectory() as tmp:

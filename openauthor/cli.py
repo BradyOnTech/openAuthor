@@ -347,6 +347,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_draft.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
   proposal_draft.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
   proposal_draft.add_argument("--review-mode", choices=["off", "refine"], default="off", help="Evidence-based critique and focused refinement (up to four model calls).")
+  proposal_draft.add_argument("--review-reasoning-effort", choices=["low", "medium", "high"], default=None, help="ChatGPT reasoning effort for critique, refinement and verification; writer keeps its model default.")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -2108,6 +2109,7 @@ def _run(args: argparse.Namespace) -> int:
         story_approvals=story_approvals,
         expected_context_fingerprint=args.expected_context_fingerprint,
         review_mode=args.review_mode,
+        review_reasoning_effort=args.review_reasoning_effort,
       )
       if args.json:
         print(json.dumps(row))

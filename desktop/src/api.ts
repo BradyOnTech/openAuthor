@@ -553,6 +553,7 @@ export async function generateProposal(
     protectedElements?: string[];
     sceneContract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" };
     reviewMode?: "off" | "refine";
+    reviewReasoningEffort?: ReviewReasoningEffort;
     changeGroupId?: string;
     authorization?: RevisionAuthorization;
   }
@@ -670,10 +671,12 @@ export async function draftProposal(
     maxOutputTokens?: number;
     authorization?: RevisionAuthorization;
     reviewMode?: "off" | "refine";
+    reviewReasoningEffort?: ReviewReasoningEffort;
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
   if (payload.reviewMode) args.push("--review-mode", payload.reviewMode);
+  if (payload.reviewReasoningEffort) args.push("--review-reasoning-effort", payload.reviewReasoningEffort);
   if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
@@ -1000,8 +1003,10 @@ export type ChatSendPayload = {
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type ReviewReasoningEffort = "low" | "medium" | "high";
 export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
+  review_reasoning_effort?: ReviewReasoningEffort;
   writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string>; output_allowances?: { critique: number; verify: number } } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
   context: { scene: { id: string; title: string }; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" }; quoted_editing?: { mode: "quoted_text"; passages: Array<{ id: string; text: string }> }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
@@ -1010,6 +1015,7 @@ export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "pro
 export async function previewProposalRevision(projectRoot: string, input: {
   proposal_id: string; hunk_id?: string; provider: ProposalProvider; model?: string; feedback?: string;
   review_mode?: "off" | "refine";
+  review_reasoning_effort?: ReviewReasoningEffort;
   memory_approvals: MemoryApproval[]; story_approvals: string[];
 }): Promise<RevisionContextPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));

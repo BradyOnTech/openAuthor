@@ -63,6 +63,6 @@ export function DraftCraftReview({ report, onChoose, disabled = false }: { repor
     </details>}
     <details><summary>First draft</summary><div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)" }}>{report.first_candidate}</div></details>
     {report.refined_candidate && <details><summary>Focused revision{(report.author_selected ?? report.selected) === "first" ? " · not selected" : ""}</summary><div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)" }}>{report.refined_candidate}</div></details>}
-    {report.stages.length > 0 && <details><summary>Review attempts · {report.stages.length} completed model calls</summary>{report.stages.map(row => <p key={row.stage}>{row.stage} · {row.input_tokens} input / {row.output_tokens} output tokens · {row.log_path}</p>)}</details>}
+    {report.stages.length > 0 && <details><summary>Review attempts · {report.stages.length} completed model calls</summary>{report.stages.map(row => <p key={row.stage}>{row.stage}{row.resolved_model ? ` · ${row.resolved_model}` : ""}{row.resolved_reasoning_effort ? ` · ${row.resolved_reasoning_effort} reasoning effort` : ""} · {row.input_tokens} input / {row.output_tokens} output tokens · {row.log_path}</p>)}</details>}
   </section>;
 }
