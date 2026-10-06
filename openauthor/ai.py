@@ -2084,8 +2084,11 @@ def _with_retrieval_prompt_context(
 
 
 def _build_prompts(context: dict[str, Any], instruction: str) -> tuple[str, str]:
+  new_scene = not str(context["scene"]["body"]).strip()
   system_prompt = (
-    "You are an editorial assistant for a fiction project. "
+    ("You are a fiction scene planner preparing new prose from the author's direction. "
+      "There is no existing scene body to edit. " if new_scene else
+      "You are an editorial assistant for a fiction project. ") +
     "Return one proposal instruction block that is actionable, "
     "scene-specific, and continuity-safe. "
     "Use exactly these section headers: Intent, Constraints, Edit Plan, Continuity Notes."
