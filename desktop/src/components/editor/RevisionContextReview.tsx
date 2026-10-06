@@ -6,6 +6,7 @@ import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import type { ProposalProvider } from "../../types";
 import { draftRevisionFocusLabel } from "../../revisionFocus";
 import { StoryContextChoices } from "../common/StoryContextChoices";
+import { WritingBriefPreview } from "./WritingBriefPreview";
 
 type Props = {
   projectRoot: string; proposalId?: string; generationInput?: GenerationInput; hunkId?: string; provider: ProposalProvider; model?: string; feedback?: string;
@@ -61,7 +62,7 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
   const title = mergeInput ? "Review reconciliation context" : generationInput ? "Review edit-plan context" : hunkId ? "Review passage revision context" : "Review scene draft context";
   return <section className="revision-context-review" aria-label={title}>
     <h3>{title}</h3>
-    <p>{mergeInput ? "This reconciliation" : generationInput ? "This edit plan" : hunkId ? "This passage" : "This scene draft"} is not sent until you confirm. Saved story guidance, {mergeInput ? "both scene revisions and their common ancestor" : generationInput ? "the selected scene, nearby scenes and your revision direction" : hunkId ? "the selected original and candidate" : "the complete scene and its edit plan"}, and permitted Memory are included. {generationInput ? "Any retrieval excerpts are visible in the exact payload below." : "No other full scenes are sent."} No chat history or private notes are sent. Approved Canon can contain evidence quotes from other scenes; manuscript text is not automatically redacted.</p>
+    <p>{mergeInput ? "This reconciliation" : generationInput ? "This edit plan" : hunkId ? "This passage" : "This scene draft"} uses your saved book direction and permitted sources. Inspect the writing brief and source passages below before sending. No chat history or private notes are included.</p>
     {feedback && <p className="revision-context-review__feedback">Your direction: {feedback}</p>}
     {loading && <p role="status">Updating context…</p>}
     {error && <p role="alert">{error} You can remove permissions below, refresh, or return to the Change Set.</p>}
@@ -73,7 +74,7 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
         <p>This request revises that draft and keeps its previous Change Set. Original scene intent and protected sources remain included.</p>
       </>}
       <p>Scene: {preview.context.scene.title || preview.context.scene.id}</p>
-      {preview.context.scene_contract && Object.entries(preview.context.scene_contract).filter(([key]) => key !== "editable_scope").map(([key, value]) => value && <p key={key}>{key === "purpose" ? "Scene purpose" : key === "turn" ? "What changes" : key === "word_range" ? "Word target" : "Where it stops"}: {Array.isArray(value) ? `${value[0]}–${value[1]} words` : value}</p>)}
+      <WritingBriefPreview preview={preview} />
       {preview.context.quoted_editing && <>
         <p>Quoted-text scope: {preview.context.quoted_editing.passages.length} paired passages can change. openAuthor retains all text outside their quotation marks. Facts and meaning inside the quotes still need your review.</p>
         <details><summary>Inspect editable quoted passages</summary>{preview.context.quoted_editing.passages.map(passage => <div key={passage.id}><strong>{passage.id}</strong><pre>{passage.text}</pre></div>)}</details>

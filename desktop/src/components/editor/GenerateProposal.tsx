@@ -9,6 +9,8 @@ import { availableProviders, defaultProvider } from "../../providerSelection";
 import { StyleProfilePanel } from "./StyleProfilePanel";
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { emptyRevisionRequest, validRevisionRequest, type RevisionRequestDraft } from "../../revisionRequestDraft";
+import { WritingBriefFields } from "./WritingBriefFields";
+import { SavedSceneBrief } from "./SavedSceneBrief";
 
 export function GenerateProposal({ initialSceneId, initialInstruction = "", tabId = "generate" }: { initialSceneId?: string; initialInstruction?: string; tabId?: string }) {
   const { projectRoot, branches, scenes, runtimeConfig, refreshProposals, refreshRuns, refreshBudget, setError, setMessage } =
@@ -35,7 +37,6 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
   const setShowPassBuilder = setter("showPassBuilder"), setPassName = setter("passName"), setPassGoal = setter("passGoal");
   const setPassInstruction = setter("passInstruction"), setPassCriteria = setter("passCriteria"), setAlternativeCount = setter("alternativeCount");
   const setCoordinated = setter("coordinated"), setCoordinatedSceneIds = setter("coordinatedSceneIds");
-  const setScenePurpose = setter("scenePurpose"), setSceneTurn = setter("sceneTurn"), setSceneEnding = setter("sceneEnding");
   const session = useMemo(() => proposalGenerationSession(projectRoot), [projectRoot]);
   const { busy, job, error: generationError, stopRequested, reviewTask, planReviewTask } = useSyncExternalStore(session.subscribe, session.getSnapshot);
   const view = useRef({ projectRoot, mounted: true });
@@ -129,6 +130,10 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
       wordRange = [minimum, maximum];
     }
     const inputs: GenerationInput[] = [];
+    if (recovery.value.writingBrief?.change_permission === "story" && !recovery.value.writingBrief.allowed_changes?.trim()) {
+      setError("Describe the story changes you allow in the writing brief.");
+      return;
+    }
     const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
     if (targetSceneIds.length === 0) return;
     const groupId = coordinated && targetSceneIds.length > 1 ? `change-group-ui-${crypto.randomUUID()}` : undefined;
@@ -144,7 +149,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           temperature: directionCount === 1 ? undefined : 0.35 + index * 0.15,
           constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
           protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
-          sceneContract: { purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}), ...(recovery.value.quotedTextOnly ? { editable_scope: "quoted_text" as const } : {}) },
+          sceneContract: { ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}), ...(recovery.value.quotedTextOnly ? { editable_scope: "quoted_text" as const } : {}) },
           reviewMode: recovery.value.reviewDraft ? "refine" : "off",
           reviewReasoningEffort: provider === "openai-codex" && recovery.value.reviewDraft ? recovery.value.reviewReasoningEffort || undefined : undefined,
           changeGroupId: groupId,
@@ -206,7 +211,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         {planReviewTask && !busy && <RevisionContextReview key={`${job!.id}:${planReviewTask.index}:plan`} projectRoot={projectRoot}
           generationInput={planReviewTask.input} provider={planReviewTask.input.provider} model={planReviewTask.input.model}
           onSend={async authorization => { await showResults(await session.approvePlan(planReviewTask.index, authorization)); }}
-          onClose={session.clear} closeLabel="Back to request" />}
+          onClose={session.clear} closeLabel="Edit writing brief" />}
         {reviewTask && !busy && <p>Draft {reviewTask.index + 1} of {job!.tasks.length} · Edit plan saved; review context before drafting.</p>}
         {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}:draft`} projectRoot={projectRoot}
           proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
@@ -280,13 +285,15 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
         <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
 
-        <details>
-          <summary>What this scene should accomplish</summary>
-          <p>Optional story intent stays with the edit plan and prose draft. {coordinated ? "This intent applies to each selected scene." : "Leave fields blank to preserve the existing scene's direction."}</p>
+        {!coordinated && sceneId && <SavedSceneBrief key={`${projectRoot}:${branch}:${sceneId}`} projectRoot={projectRoot} sceneId={sceneId} title={scenes.find(scene => scene.id === sceneId)?.title || sceneId} />}
+        <details open>
+          <summary>Writing brief for this request</summary>
+          <p>{coordinated ? "Each selected scene uses its own saved brief; these overrides apply to all of them." : "Use the saved scene brief or adjust it for this request."} Your direction stays with both the edit plan and prose draft. Review the assembled book context before sending.</p>
           <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            <label style={{ display: "grid", gap: 6 }}>Scene purpose<textarea className="input" rows={2} maxLength={1200} value={recovery.value.scenePurpose ?? ""} onChange={event => setScenePurpose(event.target.value)} placeholder="What this scene contributes to the story" /></label>
-            <label style={{ display: "grid", gap: 6 }}>What changes<textarea className="input" rows={2} maxLength={1200} value={recovery.value.sceneTurn ?? ""} onChange={event => setSceneTurn(event.target.value)} placeholder="A choice, realization, bargain or change in the relationship" /></label>
-            <label style={{ display: "grid", gap: 6 }}>Where it stops<textarea className="input" rows={2} maxLength={1200} value={recovery.value.sceneEnding ?? ""} onChange={event => setSceneEnding(event.target.value)} placeholder="The ending beat and what should remain unresolved" /></label>
+            <WritingBriefFields inherited value={{ ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "" }} onChange={value => {
+              const { purpose, turn, ending, ...rest } = value;
+              recovery.session.edit({ ...recovery.session.getSnapshot().value, scenePurpose: purpose ?? "", sceneTurn: turn ?? "", sceneEnding: ending ?? "", writingBrief: rest });
+            }} />
             <label>Minimum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.minimumWords ?? ""} onChange={event => setter("minimumWords")(event.target.value)} /></label>
             <label>Maximum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.maximumWords ?? ""} onChange={event => setter("maximumWords")(event.target.value)} /></label>
             <p>A single number sets an exact target. With draft review enabled, openAuthor counts words and checks the range. Local generation skips creative review.</p>
@@ -305,7 +312,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
             />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
-            <span style={{ color: "var(--text-secondary)" }}>Protect exactly (optional)</span>
+            <span style={{ color: "var(--text-secondary)" }}>Protected wording and story decisions (optional)</span>
             <textarea
               className="input"
               rows={3}

@@ -1,4 +1,5 @@
-import type { ProposalProvider } from "./types";
+import type { ProposalProvider, SceneWritingBrief } from "./types";
+import { validSceneWritingBrief } from "./writingBrief";
 import type { ReviewReasoningEffort } from "./api";
 
 export type RevisionRequestDraft = {
@@ -11,6 +12,7 @@ export type RevisionRequestDraft = {
   reviewReasoningEffort?: "" | ReviewReasoningEffort;
   quotedTextOnly?: boolean;
   minimumWords?: string; maximumWords?: string;
+  writingBrief?: SceneWritingBrief;
 };
 
 export function emptyRevisionRequest(sceneId: string, provider: ProposalProvider): RevisionRequestDraft {
@@ -32,5 +34,6 @@ export function validRevisionRequest(value: unknown): value is RevisionRequestDr
     && [row.scenePurpose, row.sceneTurn, row.sceneEnding, row.minimumWords, row.maximumWords].every(item => item === undefined || typeof item === "string")
     && (row.reviewDraft === undefined || typeof row.reviewDraft === "boolean")
     && (row.reviewReasoningEffort === undefined || ["", "low", "medium", "high"].includes(String(row.reviewReasoningEffort)))
-    && (row.quotedTextOnly === undefined || typeof row.quotedTextOnly === "boolean");
+    && (row.quotedTextOnly === undefined || typeof row.quotedTextOnly === "boolean")
+    && (row.writingBrief === undefined || validSceneWritingBrief(row.writingBrief));
 }

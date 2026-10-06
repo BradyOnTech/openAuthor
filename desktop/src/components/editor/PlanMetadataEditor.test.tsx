@@ -10,14 +10,14 @@ beforeEach(() => { localStorage.clear(); vi.resetAllMocks(); });
 afterEach(cleanup);
 it("recovers story time and labels with the baseline they were edited from", async () => {
   const first = render(<PlanMetadataEditor {...props} />);
-  fireEvent.click(screen.getByText("Story time & labels"));
+  fireEvent.click(screen.getByText("Saved scene brief, story time & labels"));
   fireEvent.change(screen.getByRole("textbox", { name: "Story time for Dawn" }), { target: { value: "Day 2" } });
   fireEvent.change(screen.getByRole("textbox", { name: "Labels for Dawn" }), { target: { value: "" } });
   first.unmount(); render(<PlanMetadataEditor {...props} />);
-  fireEvent.click(screen.getByText("Story time & labels"));
+  fireEvent.click(screen.getByText("Saved scene brief, story time & labels"));
   expect((screen.getByRole("textbox", { name: "Story time for Dawn" }) as HTMLInputElement).value).toBe("Day 2");
   vi.mocked(updatePlanSceneMetadata).mockResolvedValue({ timeline_position: "Day 2", labels: [] });
   fireEvent.click(screen.getByRole("button", { name: "Save planning details" }));
-  await waitFor(() => expect(updatePlanSceneMetadata).toHaveBeenCalledWith("book", "scene-1", { timelinePosition: "Day 2", labels: [] }, { workspace: "main", value: metadata }));
+  await waitFor(() => expect(updatePlanSceneMetadata).toHaveBeenCalledWith("book", "scene-1", { timelinePosition: "Day 2", labels: [], writingBrief: {} }, { workspace: "main", value: metadata }));
   await screen.findByText(/Planning details saved/);
 });

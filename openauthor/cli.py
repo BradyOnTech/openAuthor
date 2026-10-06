@@ -581,6 +581,7 @@ def build_parser() -> argparse.ArgumentParser:
   plan_scene_meta.add_argument("--label", action="append", default=None, dest="labels")
   plan_scene_meta.add_argument("--expected-version", default=None)
   plan_scene_meta.add_argument("--clear-labels", action="store_true")
+  plan_scene_meta.add_argument("--writing-brief", default=None, help="Scene writing brief as JSON; an empty object clears it.")
   plan_scene_meta.add_argument("--json", action="store_true", help="Output JSON.")
   plan_beat = plan_sub.add_parser("beat-add", help="Add a planned beat to a scene.")
   plan_beat.add_argument("--scene", required=True, dest="scene_id")
@@ -1568,13 +1569,14 @@ def _run(args: argparse.Namespace) -> int:
         before_scene_id=args.before_scene_id,
       )
     elif args.plan_command == "scene-meta":
-      if args.timeline_position is None and args.labels is None and not args.clear_labels:
+      if args.timeline_position is None and args.labels is None and not args.clear_labels and args.writing_brief is None:
         raise OpenAuthorError("No scene planning metadata updates provided.")
       row = update_scene_metadata(
         paths,
         scene_id=args.scene_id,
         timeline_position=args.timeline_position,
         labels=[] if args.clear_labels else args.labels,
+        writing_brief=json.loads(args.writing_brief) if args.writing_brief is not None else None,
         expected_version=json.loads(args.expected_version) if args.expected_version is not None else None,
       )
     elif args.plan_command == "beat-add":

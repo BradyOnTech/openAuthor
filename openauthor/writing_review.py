@@ -127,6 +127,8 @@ def review_policy(direction: str = "", *, editable_scope: str | None = None,
   systems = {"critique": SOURCE_AUDIT_SYSTEM + REVIEW_SYSTEM + critique["instructions"],
              "refine": REFINE_SYSTEM + refine["instructions"],
              "verify": SOURCE_AUDIT_SYSTEM + VERIFY_SYSTEM + critique["instructions"]}
+  from .writing_brief import WRITING_BRIEF_GUIDANCE
+  systems = {stage: instructions + "\n\n" + WRITING_BRIEF_GUIDANCE for stage, instructions in systems.items()}
   if editable_scope == "quoted_text":
     from .quoted_editing import QUOTED_EDIT_SYSTEM
     systems["refine"] += "\n\n" + QUOTED_EDIT_SYSTEM

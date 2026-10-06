@@ -3,6 +3,7 @@ import { generateSelection, previewSelection, type MemoryApproval, type Selectio
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { StoryContextChoices } from "../common/StoryContextChoices";
 import type { ProposalProvider, ProposalRecord } from "../../types";
+import { WritingBriefDirection } from "./WritingBriefDirection";
 
 type Draft = { input: SelectionInput | null; fingerprint: string; requestId: string };
 const empty: Draft = { input: null, fingerprint: "", requestId: "" };
@@ -121,6 +122,9 @@ function SelectionAssistSession({ projectRoot, sceneId, branch, selection, disab
         </div>
         <p>Saved story guidance, approved Writing Voice guidance and permitted Memory may be sent with {input.action === "critique" && input.review_scope === "chapter" ? "full scenes from this chapter in saved reading order" : "up to 2,000 surrounding characters per side"}. Canon and relationships require your permission below. {input.action === "critique" && input.review_scope === "chapter" ? "No full scenes outside this chapter, chat history or private notes are sent." : "No full other scenes, chat history or private notes are sent."} Text in included prose, guidance or approved evidence is not automatically redacted.</p>
         {preview && <div className="selection-assist__preview">
+          {preview.context?.writing_brief && <details><summary>Saved scene writing brief used for this passage</summary>
+            <WritingBriefDirection value={preview.context.writing_brief.direction} permission={preview.context.writing_brief.change_permission} />
+          </details>}
           {preview.review && <p>{preview.review.scope === "chapter" ? "Connected chapter" : "Passage"} critique · {preview.review.focus.replace(/-/g, " ")} · {preview.review.scene_ids.length} source scene{preview.review.scene_ids.length === 1 ? "" : "s"}. Inspect the exact sources below before sending.</p>}
           <p role="status">{preview.provider} / {preview.model} · approximately {preview.estimated_input_tokens.toLocaleString()} app-context tokens · {preview.max_output_tokens.toLocaleString()} output-token {preview.provider === "openai-codex" ? "target (not a hard limit)" : "limit"}</p>
           <p>The estimate covers only openAuthor’s supplied text. Provider instructions and runtime overhead can substantially increase actual token usage; Runs records reported usage.</p>

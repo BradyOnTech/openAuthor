@@ -6,6 +6,19 @@ export type CoreCommandResponse = {
 
 export type ProposalProvider = "local" | "openai" | "anthropic" | "openrouter" | "openai-codex";
 
+export type SceneWritingBrief = {
+  purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text";
+  character_goals?: string; knowledge?: string; reveal_limits?: string; voice_direction?: string;
+  change_permission?: "preserve" | "details" | "story"; allowed_changes?: string;
+};
+
+export type WritingBriefReceipt = {
+  schema_version: number; scene_id: string; pov: string; story_time: string; scene_summary: string;
+  direction: SceneWritingBrief; change_permission: "preserve" | "details" | "story";
+  source_status: { voice_excerpts: number; memory_entries: number; approved_canon: number };
+  warnings: string[];
+};
+
 export type ProjectStatus = {
   found: boolean;
   project_root: string;
@@ -190,6 +203,7 @@ export type ProposalRecord = {
     scope: string;
     constraints: string[];
     protected_elements: string[];
+    scene_contract?: SceneWritingBrief;
   };
   rebase_report?: {
     status: "rebased" | "conflicted";
@@ -427,6 +441,7 @@ export type ManuscriptPlan = {
   scene_metadata: Record<string, {
     timeline_position: string;
     labels: string[];
+    writing_brief?: SceneWritingBrief;
   }>;
   beats: Array<{
     id: string;

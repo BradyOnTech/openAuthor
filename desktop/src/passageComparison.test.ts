@@ -23,4 +23,15 @@ describe("passage comparison", () => {
     expect(result.after.filter(part => part.changed).map(part => part.text).join("")).toBe("counted");
     expect(result.after.some(part => !part.changed && part.text.includes("the lights."))).toBe(true);
   });
+  it("keeps distant story changes visible without marking the intervening scene", () => {
+    const paragraphs = Array.from({ length: 60 }, (_, index) => `Room ${index}: Mara counted the lamps and waited for the courier. The seal stayed intact.`);
+    const before = paragraphs.join("\n\n");
+    const after = before.replace("Room 1: Mara counted", "Room 1: Mara inspected").replace("Room 58: Mara counted", "Room 58: Mara promised to record the results and counted");
+    const result = comparePassage(before, after);
+    expect(result.before.map(part => part.text).join("")).toBe(before);
+    expect(result.after.map(part => part.text).join("")).toBe(after);
+    const changed = result.after.filter(part => part.changed).map(part => part.text).join("");
+    expect(changed).toContain("promised to record the results");
+    expect(changed).not.toContain("Room 30");
+  });
 });

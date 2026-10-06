@@ -13,6 +13,7 @@ import { PassageComparison } from "../shared/PassageComparison";
 import { DraftCraftReview } from "./DraftCraftReview";
 import { proposalDisplayLabel } from "../../state";
 import { draftRevisionFocusLabel, draftRevisionFocusOptions } from "../../revisionFocus";
+import { WritingBriefDirection } from "./WritingBriefDirection";
 
 type Props = {
   proposal: ProposalRecord;
@@ -466,10 +467,16 @@ export function ProposalReview({ proposal: initial }: Props) {
         <div className="review-card__section-title">Draft feedback</div>
         {proposal.draft_revision.focus && <p>Revision focus: {draftRevisionFocusLabel(proposal.draft_revision.focus)}</p>}
         <p style={{ whiteSpace: "pre-wrap" }}>{proposal.draft_revision.feedback}</p>
-        <details><summary>Previous draft · retained for comparison</summary>
-          <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)" }}>{proposal.draft_revision.source.body}</div>
+        <details open><summary>Compare previous draft with this revision</summary>
+          <p>These highlights compare the two proposed drafts. The manuscript changes above still compare against the saved scene.</p>
+          <PassageComparison beforeLabel="Previous draft" afterLabel="Revised draft" before={proposal.draft_revision.source.body} after={proposal.proposed_body ?? ""} />
         </details>
       </section>}
+
+      {proposal.revision_intent?.scene_contract && Object.keys(proposal.revision_intent.scene_contract).length > 0 && <details className="review-card__section">
+        <summary>Writing brief retained with this Change Set</summary>
+        <WritingBriefDirection value={proposal.revision_intent.scene_contract} />
+      </details>}
 
       {proposal.draft && hasDraft && !proposal.selection && (
         <div className="review-card__generation-meta" aria-label="Draft generation receipt">

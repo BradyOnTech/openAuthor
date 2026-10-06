@@ -2,6 +2,10 @@ export type PassageChunk = { text: string; changed: boolean };
 
 /** Preserve every source character while highlighting a bounded word comparison. */
 export function comparePassage(before: string, after: string): { before: PassageChunk[]; after: PassageChunk[] } {
+  return compareText(before, after, true);
+}
+
+function compareText(before: string, after: string, allowLineAnchors: boolean): { before: PassageChunk[]; after: PassageChunk[] } {
   const tokenize = (value: string) => value.match(/\s+|[\p{L}\p{N}_]+|[^\s\p{L}\p{N}_]/gu) || [];
   const left = tokenize(before), right = tokenize(after);
   let first = 0, leftEnd = left.length, rightEnd = right.length;
@@ -17,7 +21,36 @@ export function comparePassage(before: string, after: string): { before: Passage
   const prefix = left.slice(0, first).join("");
   append(result.before, prefix, false); append(result.after, prefix, false);
   if (a.length * b.length > 400_000) {
-    append(result.before, a.join(""), true); append(result.after, b.join(""), true);
+    const oldText = a.join(""), newText = b.join("");
+    // Whole-scene revisions can change a few distant paragraphs. Preserve
+    // unique unchanged lines as anchors before falling back to a broad mark.
+    const oldLines = oldText.match(/[^\n]*\n|[^\n]+$/g) || [];
+    const newLines = newText.match(/[^\n]*\n|[^\n]+$/g) || [];
+    const uniquePositions = (lines: string[]) => {
+      const positions = new Map<string, number>();
+      lines.forEach((line, index) => positions.set(line, positions.has(line) ? -1 : index));
+      return positions;
+    };
+    const oldPositions = uniquePositions(oldLines), newPositions = uniquePositions(newLines);
+    const anchors: Array<[number, number]> = [];
+    if (allowLineAnchors) oldLines.forEach((line, index) => {
+      const next = newPositions.get(line);
+      if (oldPositions.get(line) === index && next !== undefined && next >= 0 && next > (anchors[anchors.length - 1]?.[1] ?? -1)) anchors.push([index, next]);
+    });
+    if (anchors.length) {
+      let oldStart = 0, newStart = 0;
+      for (const [oldEnd, newEnd] of [...anchors, [oldLines.length, newLines.length]]) {
+        const part = compareText(oldLines.slice(oldStart, oldEnd).join(""), newLines.slice(newStart, newEnd).join(""), false);
+        part.before.forEach(chunk => append(result.before, chunk.text, chunk.changed));
+        part.after.forEach(chunk => append(result.after, chunk.text, chunk.changed));
+        if (oldEnd < oldLines.length) {
+          append(result.before, oldLines[oldEnd], false); append(result.after, newLines[newEnd], false);
+        }
+        oldStart = oldEnd + 1; newStart = newEnd + 1;
+      }
+    } else {
+      append(result.before, oldText, true); append(result.after, newText, true);
+    }
   } else {
     const table = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
     for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) {

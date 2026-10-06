@@ -13,7 +13,8 @@ from .project import OpenAuthorError
 
 SKILL_VERSION = "1.2.4"
 TASKS = {"plan", "draft", "rewrite", "shorten", "expand", "critique", "refine"}
-CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range", "editable_scope"}
+CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range", "editable_scope", "character_goals",
+                   "knowledge", "reveal_limits", "voice_direction", "change_permission", "allowed_changes"}
 DRAFT_REVISION_FOCUSES = {"", "dialogue", "motivation", "pov", "pacing", "setup-payoff", "prose clarity"}
 _FOCUSES = {
   "dialogue": "dialogue", "character motivation": "scene", "motivation": "scene",
@@ -29,9 +30,14 @@ def validate_scene_contract(value: Any = None) -> dict[str, Any]:
   if value is None:
     return {}
   if not isinstance(value, dict) or set(value) - CONTRACT_FIELDS:
-    raise OpenAuthorError("Scene intent must contain purpose, turn, ending text, a word range or editable scope.")
+    raise OpenAuthorError("Writing brief contains unsupported fields.")
   result = {}
   for key, text in value.items():
+    if key == "change_permission":
+      if not isinstance(text, str) or text not in {"preserve", "details", "story"}:
+        raise OpenAuthorError("Choose preserve, details or story for creative freedom.")
+      result[key] = text
+      continue
     if key == "editable_scope":
       if text != "quoted_text":
         raise OpenAuthorError("Editable scope must be quoted_text, or omitted for whole-scene editing.")
@@ -46,8 +52,12 @@ def validate_scene_contract(value: Any = None) -> dict[str, Any]:
       raise OpenAuthorError(f"Scene intent {key} must be text of at most 1,200 characters.")
     if text.strip():
       result[key] = text.strip()
-  if sum(len(text) for text in result.values() if isinstance(text, str)) > 3000:
+  if sum(len(result.get(key, "")) for key in ("purpose", "turn", "ending")) > 3000:
     raise OpenAuthorError("Scene intent exceeds 3,000 characters; shorten it before generating.")
+  if sum(len(text) for text in result.values() if isinstance(text, str)) > 8000:
+    raise OpenAuthorError("Writing brief exceeds 8,000 characters; shorten it before generating.")
+  if result.get("change_permission") == "story" and not result.get("allowed_changes"):
+    raise OpenAuthorError("Describe the story changes you allow before choosing story changes.")
   return result
 
 
