@@ -242,15 +242,16 @@ export function ProposalReview({ proposal: initial }: Props) {
   const displayStatus = proposal.undone_at ? "undone" : proposal.status;
   const selectionUnchanged = Boolean(proposal.selection && proposal.selection.action !== "critique"
     && (proposal.selection.unchanged || proposal.selection.before === proposal.selection.after));
-  const statusLabel = proposal.status === "pending" && proposal.selection
-    ? proposal.selection.action === "critique" ? "Feedback ready" : selectionUnchanged ? "No replacement suggested" : "Replacement awaiting review" : displayStatus;
+  const statusLabel = selectionUnchanged && proposal.status === "rejected" ? "Dismissed"
+    : proposal.status === "pending" && proposal.selection
+      ? proposal.selection.action === "critique" ? "Feedback ready" : selectionUnchanged ? "No replacement suggested" : "Replacement awaiting review" : displayStatus;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
         <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
         <div className="review-card__meta">
-          <span className={`badge badge--${displayStatus}`}>{statusLabel}</span>
+          <span className={selectionUnchanged ? "badge" : `badge badge--${displayStatus}`}>{statusLabel}</span>
           {proposal.stale && proposal.status === "pending" && (
             <span className="badge badge--warning" title="The scene changed after this proposal was written">
               scene changed
@@ -518,7 +519,7 @@ export function ProposalReview({ proposal: initial }: Props) {
                   : proposal.selection ? "Accept selected replacement" : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
             </button>
           )}
-          <button className="btn btn--danger" disabled={Boolean(busy)} onClick={handleReject}>
+          <button className={selectionUnchanged ? "btn" : "btn btn--danger"} disabled={Boolean(busy)} onClick={handleReject}>
             {selectionUnchanged ? "Dismiss result" : "Reject"}
           </button>
           {proposal.scene_id && (
