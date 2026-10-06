@@ -17,6 +17,7 @@ import type {
   CanonEvidence,
   ContinuityIssue,
   CoreCommandResponse,
+  DraftRevisionFocus,
   GenerationBudgetReport,
   GenerationPin,
   GenerationRunDetail,
@@ -695,9 +696,9 @@ export async function draftProposal(
 }
 
 export async function prepareDraftRevision(projectRoot: string, proposal: ProposalRecord,
-  feedback: string, requestId: string): Promise<ProposalRecord> {
+  feedback: string, requestId: string, focus: DraftRevisionFocus = ""): Promise<ProposalRecord> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "draft-revision", "--input-json",
-    JSON.stringify({ proposal_id: proposal.id, feedback, expected_updated_at: proposal.updated_at, request_id: requestId }), "--json"]));
+    JSON.stringify({ proposal_id: proposal.id, feedback, expected_updated_at: proposal.updated_at, request_id: requestId, ...(focus ? { focus } : {}) }), "--json"]));
 }
 
 export async function selectDraftCandidate(projectRoot: string, proposal: ProposalRecord, candidate: "first" | "refined"): Promise<ProposalRecord> {
@@ -1015,7 +1016,7 @@ export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "pro
   review_reasoning_effort?: ReviewReasoningEffort;
   writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string>; output_allowances?: { critique: number; verify: number } } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
-  context: { scene: { id: string; title: string }; author_feedback?: string; current_candidate?: string; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" }; quoted_editing?: { mode: "quoted_text"; passages: Array<{ id: string; text: string }> }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  context: { scene: { id: string; title: string }; author_feedback?: string; revision_focus?: DraftRevisionFocus; current_candidate?: string; scene_contract?: { purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text" }; quoted_editing?: { mode: "quoted_text"; passages: Array<{ id: string; text: string }> }; writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
   limits: { omitted_memory_ids: string[] };
 };
 export async function previewProposalRevision(projectRoot: string, input: {

@@ -2714,10 +2714,13 @@ def preview_proposal_revision(
       raise OpenAuthorError("Draft feedback needs an AI provider; local generation does not revise candidate prose.")
     context["current_candidate"] = draft_revision["source"]["body"]
     context["author_feedback"] = draft_revision["feedback"]
+    if draft_revision.get("focus"):
+      context["revision_focus"] = draft_revision["focus"]
   review = _prepare_author_context(paths, context, [scene["id"]], memory_approvals, story_approvals,
     direction=str(context["proposal"]["goal"]) + "\n" + context["author_feedback"] if draft_revision else "")
   craft = attach_writing_craft(context, task="rewrite" if hunk or draft_revision else "draft",
     direction=str(intent.get("goal", proposal["instruction"])),
+    focus=draft_revision.get("focus", "") if draft_revision else "",
     scene_contract=proposal.get("revision_intent", {}).get("scene_contract", {}))
   scope = context["scene_contract"].get("editable_scope") if not hunk else None
   if scope == "quoted_text":

@@ -14,6 +14,7 @@ from .project import OpenAuthorError
 SKILL_VERSION = "1.2.4"
 TASKS = {"plan", "draft", "rewrite", "shorten", "expand", "critique", "refine"}
 CONTRACT_FIELDS = {"purpose", "turn", "ending", "word_range", "editable_scope"}
+DRAFT_REVISION_FOCUSES = {"", "dialogue", "motivation", "pov", "pacing", "setup-payoff", "prose clarity"}
 _FOCUSES = {
   "dialogue": "dialogue", "character motivation": "scene", "motivation": "scene",
   "pov integrity": "viewpoint", "pov": "viewpoint", "character-knowledge": "viewpoint",

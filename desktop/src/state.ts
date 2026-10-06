@@ -5,6 +5,7 @@ import type {
   ProposalRecord,
   SceneSummary
 } from "./types";
+import { draftRevisionFocusLabel } from "./revisionFocus";
 
 export type ProposalCounts = {
   pending: number;
@@ -63,7 +64,7 @@ function timestamp(value: string): number {
 
 export function proposalDisplayLabel(proposal: ProposalRecord): string {
   const feedback = proposal.draft_revision?.feedback.trim().split(/\r?\n/, 1)[0]?.replace(/\s+/g, " ");
-  if (feedback) return `Feedback: ${feedback.length > 88 ? `${feedback.slice(0, 87)}…` : feedback}`;
+  if (feedback) return `${proposal.draft_revision?.focus ? `${draftRevisionFocusLabel(proposal.draft_revision.focus)} · ` : ""}Feedback: ${feedback.length > 88 ? `${feedback.slice(0, 87)}…` : feedback}`;
   return proposal.title || proposal.id.slice(0, 12);
 }
 

@@ -4,7 +4,7 @@ import { GenerationAssessment } from "../common/GenerationAssessment";
 import { useEditor } from "../../contexts/EditorContext";
 import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, prepareDraftRevision, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
-import type { ProposalProvider, ProposalRecord } from "../../types";
+import type { DraftRevisionFocus, ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
 import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
 import { RevisionContextReview } from "./RevisionContextReview";
@@ -12,6 +12,7 @@ import { EditorialFindings } from "./EditorialFindings";
 import { PassageComparison } from "../shared/PassageComparison";
 import { DraftCraftReview } from "./DraftCraftReview";
 import { proposalDisplayLabel } from "../../state";
+import { draftRevisionFocusLabel, draftRevisionFocusOptions } from "../../revisionFocus";
 
 type Props = {
   proposal: ProposalRecord;
@@ -43,7 +44,8 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
   const [reviewDraft, setReviewDraft] = useState(true);
   const [draftFeedback, setDraftFeedback] = useState("");
-  const revisionRequest = useRef<{ feedback: string; updatedAt: string; id: string } | null>(null);
+  const [draftFocus, setDraftFocus] = useState<DraftRevisionFocus>(initial.draft_revision?.focus ?? "");
+  const revisionRequest = useRef<{ feedback: string; focus: DraftRevisionFocus; updatedAt: string; id: string } | null>(null);
   const [reviewEffort, setReviewEffort] = useState<"" | "low" | "medium" | "high">(initial.draft?.review_reasoning_effort ?? "");
   const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
   const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
@@ -78,9 +80,9 @@ export function ProposalReview({ proposal: initial }: Props) {
       else {
         let target = proposal;
         if (draftFeedback.trim()) {
-          if (revisionRequest.current?.feedback !== draftFeedback || revisionRequest.current?.updatedAt !== proposal.updated_at)
-            revisionRequest.current = { feedback: draftFeedback, updatedAt: proposal.updated_at, id: crypto.randomUUID() };
-          target = await prepareDraftRevision(projectRoot, proposal, draftFeedback, revisionRequest.current.id);
+          if (revisionRequest.current?.feedback !== draftFeedback || revisionRequest.current?.focus !== draftFocus || revisionRequest.current?.updatedAt !== proposal.updated_at)
+            revisionRequest.current = { feedback: draftFeedback, focus: draftFocus, updatedAt: proposal.updated_at, id: crypto.randomUUID() };
+          target = await prepareDraftRevision(projectRoot, proposal, draftFeedback, revisionRequest.current.id, draftFocus);
           await refreshProposals();
         }
         results = await draftSession.start([{
@@ -461,6 +463,7 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {proposal.draft_revision && <section className="review-card__section" aria-label="Draft revision source">
         <div className="review-card__section-title">Draft feedback</div>
+        {proposal.draft_revision.focus && <p>Revision focus: {draftRevisionFocusLabel(proposal.draft_revision.focus)}</p>}
         <p style={{ whiteSpace: "pre-wrap" }}>{proposal.draft_revision.feedback}</p>
         <details><summary>Previous draft · retained for comparison</summary>
           <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)" }}>{proposal.draft_revision.source.body}</div>
@@ -519,6 +522,11 @@ export function ProposalReview({ proposal: initial }: Props) {
           <label htmlFor={`draft-feedback-${proposal.id}`}>Feedback for this draft</label>
           <textarea id={`draft-feedback-${proposal.id}`} className="input" rows={3} maxLength={6000} value={draftFeedback}
             disabled={Boolean(busy)} onChange={event => setDraftFeedback(event.target.value)} placeholder="What should change in this draft?" />
+          <label style={{ display: "grid", gap: "var(--space-1)", marginTop: "var(--space-2)" }}>Revision focus
+            <select className="input" value={draftFocus} disabled={Boolean(busy)} onChange={event => setDraftFocus(event.target.value as DraftRevisionFocus)}>
+              {draftRevisionFocusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
           <p>Feedback creates a separate Change Set. This draft remains available, and your manuscript changes only when you apply.</p>
         </section>}
         <div className="review-card__actions">

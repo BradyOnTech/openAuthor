@@ -4,6 +4,7 @@ import type { GenerationInput } from "../../proposalGenerationSession";
 import type { MergeRequest } from "../../mergeResolutionSession";
 import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import type { ProposalProvider } from "../../types";
+import { draftRevisionFocusLabel } from "../../revisionFocus";
 import { StoryContextChoices } from "../common/StoryContextChoices";
 
 type Props = {
@@ -67,6 +68,7 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
     {preview && <>
       {typeof preview.context.author_feedback === "string" && <>
         <p style={{ whiteSpace: "pre-wrap" }}>Your draft feedback: {preview.context.author_feedback}</p>
+        {preview.context.revision_focus && <p>Revision focus: {draftRevisionFocusLabel(preview.context.revision_focus)}</p>}
         <details><summary>Draft being revised</summary><pre>{String(preview.context.current_candidate ?? "")}</pre></details>
         <p>This request revises that draft and keeps its previous Change Set. Original scene intent and protected sources remain included.</p>
       </>}

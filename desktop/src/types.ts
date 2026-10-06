@@ -156,6 +156,7 @@ export type SourceMeaningCheck = {
   permission_evidence: Array<{ path: string; quote: string }>;
 };
 export type SourceMeaningCoverage = { checked_passages: number; total_passages: number; truncated: boolean };
+export type DraftRevisionFocus = "" | "dialogue" | "motivation" | "pov" | "pacing" | "setup-payoff" | "prose clarity";
 
 export type ProposalRecord = {
   id: string;
@@ -175,6 +176,7 @@ export type ProposalRecord = {
   proposed_body?: string;
   draft_revision?: {
     feedback: string;
+    focus?: DraftRevisionFocus;
     source: { proposal_id: string; updated_at: string; body: string; generation_id: string; provider: string; model: string };
   };
   selection?: {

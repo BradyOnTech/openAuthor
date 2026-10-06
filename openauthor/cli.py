@@ -2100,7 +2100,8 @@ def _run(args: argparse.Namespace) -> int:
         payload = json.loads(args.input_json)
       except json.JSONDecodeError as error:
         raise OpenAuthorError("Draft revision input must be valid JSON.") from error
-      if not isinstance(payload, dict) or set(payload) != {"proposal_id", "feedback", "expected_updated_at", "request_id"}:
+      required = {"proposal_id", "feedback", "expected_updated_at", "request_id"}
+      if not isinstance(payload, dict) or not required <= set(payload) or set(payload) - required - {"focus"}:
         raise OpenAuthorError("Draft revision needs a proposal, feedback, updated time and request id.")
       row = prepare_draft_revision(paths, **payload)
       print(json.dumps(row) if args.json else f"Prepared draft revision {row['id']}; no AI request was sent.")

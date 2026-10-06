@@ -15,6 +15,7 @@ from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_wr
 from .project_locks import serialized_project_access
 from .revisions import create_revision, get_revision, read_file_at_revision, revision_head
 from .scenes import get_scene, split_scene_text, update_scene
+from .writing_craft import DRAFT_REVISION_FOCUSES
 
 STATUSES = {"pending", "applied", "rejected"}
 
@@ -90,10 +91,12 @@ def create_proposal(
 
 @serialized_project_access
 def prepare_draft_revision(paths: ProjectPaths, *, proposal_id: str, feedback: str,
-                           expected_updated_at: str, request_id: str) -> dict[str, Any]:
+                           expected_updated_at: str, request_id: str, focus: str = "") -> dict[str, Any]:
   """Fork an unapplied candidate locally; the source and manuscript stay intact."""
   if not isinstance(feedback, str) or not feedback.strip() or len(feedback) > 6000:
     raise OpenAuthorError("Draft feedback needs 1–6,000 characters.")
+  if not isinstance(focus, str) or focus not in DRAFT_REVISION_FOCUSES:
+    raise OpenAuthorError("Choose a supported draft revision focus.")
   if not isinstance(request_id, str) or not re.fullmatch(r"[a-zA-Z0-9_-]{8,128}", request_id):
     raise OpenAuthorError("A draft revision needs a stable request id.")
   source = get_proposal(paths, proposal_id)
@@ -107,6 +110,8 @@ def prepare_draft_revision(paths: ProjectPaths, *, proposal_id: str, feedback: s
     "generation_id": source.get("draft", {}).get("generation_id", ""),
     "provider": source.get("draft", {}).get("provider", ""), "model": source.get("draft", {}).get("model", ""),
   }}
+  if focus:
+    revision["focus"] = focus
   if _proposal_file(paths, revision_id).exists():
     existing = get_proposal(paths, revision_id)
     if existing.get("draft_revision") != revision:

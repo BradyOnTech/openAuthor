@@ -90,6 +90,24 @@ class DraftFeedbackTests(unittest.TestCase):
     with self.assertRaisesRegex(OpenAuthorError, "unapplied"):
       self.prepare(request_id="feedback-case-002")
 
+  def test_selected_focus_is_frozen_and_changes_reviewed_guidance(self):
+    general = self.prepare()
+    child = self.prepare(request_id="dialogue-focus-001", focus="dialogue")
+    self.assertEqual(child["draft_revision"]["focus"], "dialogue")
+    options = dict(provider="openai-codex", model="test-writer")
+    focused = ai.preview_proposal_revision(self.paths, proposal_id=child["id"], **options)
+    prior = ai.preview_proposal_revision(self.paths, proposal_id=general["id"], **options)
+    self.assertEqual(focused["context"]["revision_focus"], "dialogue")
+    self.assertIn("references/dialogue.md", focused["context"]["writing_craft"]["resources"])
+    self.assertNotIn("references/dialogue.md", prior["context"]["writing_craft"]["resources"])
+    self.assertNotEqual(focused["fingerprint"], prior["fingerprint"])
+    self.assertEqual(focused["context"]["current_candidate"], prior["context"]["current_candidate"])
+    self.assertEqual(focused["context"]["codex_entities"], prior["context"]["codex_entities"])
+    with self.assertRaisesRegex(OpenAuthorError, "another draft or direction"):
+      self.prepare(request_id="dialogue-focus-001", focus="pacing")
+    with self.assertRaisesRegex(OpenAuthorError, "supported draft revision focus"):
+      self.prepare(request_id="dialogue-focus-002", focus="unrecognized")
+
   def test_quoted_feedback_edits_the_previous_draft_quote_and_keeps_narration(self):
     original = 'Mara kept the key. “No.” She waited.'
     candidate = 'Mara kept the key. “Not yet.” She waited.'
