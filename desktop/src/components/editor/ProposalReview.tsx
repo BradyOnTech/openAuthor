@@ -41,6 +41,7 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [hunkFeedback, setHunkFeedback] = useState("");
   const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
   const [reviewDraft, setReviewDraft] = useState(true);
+  const [reviewEffort, setReviewEffort] = useState<"" | "low" | "medium" | "high">(initial.draft?.review_reasoning_effort ?? "");
   const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
   const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
   const hunkSession = useMemo(() => proposalGenerationSession(projectRoot, `${initial.id}:hunks`), [projectRoot, initial.id]);
@@ -69,7 +70,9 @@ export function ProposalReview({ proposal: initial }: Props) {
       const results = authorization && draftState.reviewTask ? await draftSession.approveDraft(draftState.reviewTask.index, authorization)
         : draftState.job ? await draftSession.retry() : await draftSession.start([{
         sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
+        model: proposal.draft?.model ?? proposal.generation?.model,
         reviewMode: reviewDraft ? "refine" : "off",
+        reviewReasoningEffort: reviewDraft && draftProvider === "openai-codex" ? reviewEffort || undefined : undefined,
       }], proposal.id);
       if (!results || !view.current.mounted || view.current.key !== viewKey) return;
       const updated = results[0];
@@ -464,7 +467,8 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {draftState.reviewTask && !draftState.busy && <RevisionContextReview key={`${draftState.job!.id}:${draftState.reviewTask.index}`}
         projectRoot={projectRoot} proposalId={draftState.reviewTask.proposalId} provider={draftState.reviewTask.input.provider}
-        model={draftState.reviewTask.input.model} reviewMode={draftState.reviewTask.input.reviewMode} onSend={handleDraft} onClose={draftSession.clear} />}
+        model={draftState.reviewTask.input.model} reviewMode={draftState.reviewTask.input.reviewMode}
+        reviewReasoningEffort={draftState.reviewTask.input.reviewReasoningEffort} onSend={handleDraft} onClose={draftSession.clear} />}
 
       {proposal.status === "pending" && (
         <div className="review-card__actions">
@@ -482,6 +486,12 @@ export function ProposalReview({ proposal: initial }: Props) {
           {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && (
             <>
             {!draftState.job && <label><input type="checkbox" checked={reviewDraft} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewDraft(event.target.checked)} /> Review and refine the draft</label>}
+            {!draftState.job && reviewDraft && draftProvider === "openai-codex" && <label>
+              Review reasoning effort <select className="input" value={reviewEffort} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewEffort(event.target.value as typeof reviewEffort)}>
+                <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+              </select>
+              {reviewEffort === "high" && <small>High allows up to three minutes for each review step by default. The first draft keeps its model default.</small>}
+            </label>}
             <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={() => void handleDraft()}>
               {draftState.busy
                 ? "Drafting..."
