@@ -115,6 +115,8 @@ class QuotedWorkflowTests(unittest.TestCase):
     self.assertEqual(result["draft"]["writing_review"]["first_candidate"], first)
     self.assertEqual(result["proposed_body"], refined)
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.before)
+    with self.assertRaisesRegex(OpenAuthorError, "hunk fragments may contain incomplete quotes"):
+      preview_proposal_revision(self.paths, proposal_id=self.pid, hunk_id=result["change_set"]["hunks"][0]["id"], provider="openai")
     apply_proposal(self.paths, proposal_id=self.pid)
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], refined)
     undo_proposal(self.paths, proposal_id=self.pid)

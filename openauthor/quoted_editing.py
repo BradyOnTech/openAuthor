@@ -36,6 +36,8 @@ def _escaped(text: str, index: int) -> bool:
 def _spans(source: str) -> list[tuple[int, int]]:
   spans, start, close = [], None, ""
   for index, char in enumerate(source):
+    if char not in {'"', '“', '”'}:
+      continue
     if _escaped(source, index):
       continue
     if start is None:
