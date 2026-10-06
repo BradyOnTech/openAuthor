@@ -530,6 +530,18 @@ export function ProposalReview({ proposal: initial }: Props) {
           </label>
           <p>Feedback creates a separate Change Set. This draft remains available, and your manuscript changes only when you apply.</p>
         </section>}
+        {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && !draftState.job && <section className="review-card__section" aria-label="Draft settings" style={{ display: "grid", gap: "var(--space-3)" }}>
+          <label style={{ display: "grid", gap: "var(--space-1)" }}>Writing model (optional)
+            <input className="input" value={writingModel} disabled={Boolean(busy) || draftState.busy} onChange={event => setWritingModel(event.target.value)} placeholder="Provider default" />
+          </label>
+          <label><input type="checkbox" checked={reviewDraft} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewDraft(event.target.checked)} /> Review and refine the draft</label>
+          {reviewDraft && draftProvider === "openai-codex" && <label style={{ display: "grid", gap: "var(--space-1)" }}>
+            Review reasoning effort <select className="input" value={reviewEffort} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewEffort(event.target.value as typeof reviewEffort)}>
+              <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+            </select>
+            {reviewEffort === "high" && <small>High allows up to three minutes for each review step by default. The first draft keeps its model default.</small>}
+          </label>}
+        </section>}
         <div className="review-card__actions">
           {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
           {draftState.error && !draftState.busy && draftState.job?.tasks.find(task => !task.drafted)?.authorization && <>
@@ -544,16 +556,6 @@ export function ProposalReview({ proposal: initial }: Props) {
           )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && (
             <>
-            {!draftState.job && <label>Writing model (optional)
-              <input className="input" value={writingModel} disabled={Boolean(busy) || draftState.busy} onChange={event => setWritingModel(event.target.value)} placeholder="Provider default" />
-            </label>}
-            {!draftState.job && <label><input type="checkbox" checked={reviewDraft} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewDraft(event.target.checked)} /> Review and refine the draft</label>}
-            {!draftState.job && reviewDraft && draftProvider === "openai-codex" && <label>
-              Review reasoning effort <select className="input" value={reviewEffort} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewEffort(event.target.value as typeof reviewEffort)}>
-                <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-              </select>
-              {reviewEffort === "high" && <small>High allows up to three minutes for each review step by default. The first draft keeps its model default.</small>}
-            </label>}
             <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={() => void handleDraft()}>
               {draftState.busy
                 ? "Drafting..."
