@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { GenerationAssessment } from "../common/GenerationAssessment";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, type RevisionAuthorization } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, prepareDraftRevision, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
@@ -41,6 +41,8 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [hunkFeedback, setHunkFeedback] = useState("");
   const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
   const [reviewDraft, setReviewDraft] = useState(true);
+  const [draftFeedback, setDraftFeedback] = useState("");
+  const revisionRequest = useRef<{ feedback: string; updatedAt: string; id: string } | null>(null);
   const [reviewEffort, setReviewEffort] = useState<"" | "low" | "medium" | "high">(initial.draft?.review_reasoning_effort ?? "");
   const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
   const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
@@ -55,6 +57,8 @@ export function ProposalReview({ proposal: initial }: Props) {
   }, []);
 
   const draftProvider: ProposalProvider =
+    (proposal.draft?.provider as ProposalProvider | undefined) ??
+    ((proposal.draft_revision?.source.provider || undefined) as ProposalProvider | undefined) ??
     (proposal.generation?.provider as ProposalProvider | undefined) ??
     defaultProvider(runtimeConfig).id;
 
@@ -67,16 +71,31 @@ export function ProposalReview({ proposal: initial }: Props) {
     setBusy("draft");
     try {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending writing before drafting.");
-      const results = authorization && draftState.reviewTask ? await draftSession.approveDraft(draftState.reviewTask.index, authorization)
-        : draftState.job ? await draftSession.retry() : await draftSession.start([{
-        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
-        model: proposal.draft?.model ?? proposal.generation?.model,
-        reviewMode: reviewDraft ? "refine" : "off",
-        reviewReasoningEffort: reviewDraft && draftProvider === "openai-codex" ? reviewEffort || undefined : undefined,
-      }], proposal.id);
+      let results;
+      if (authorization && draftState.reviewTask) results = await draftSession.approveDraft(draftState.reviewTask.index, authorization);
+      else if (draftState.job) results = await draftSession.retry();
+      else {
+        let target = proposal;
+        if (draftFeedback.trim()) {
+          if (revisionRequest.current?.feedback !== draftFeedback || revisionRequest.current?.updatedAt !== proposal.updated_at)
+            revisionRequest.current = { feedback: draftFeedback, updatedAt: proposal.updated_at, id: crypto.randomUUID() };
+          target = await prepareDraftRevision(projectRoot, proposal, draftFeedback, revisionRequest.current.id);
+          await refreshProposals();
+        }
+        results = await draftSession.start([{
+          sceneId: target.scene_id, instruction: target.instruction, provider: draftProvider,
+          model: proposal.draft?.model ?? (proposal.draft_revision?.source.model || undefined) ?? proposal.generation?.model,
+          reviewMode: reviewDraft ? "refine" : "off",
+          reviewReasoningEffort: reviewDraft && draftProvider === "openai-codex" ? reviewEffort || undefined : undefined,
+        }], target.id);
+      }
       if (!results || !view.current.mounted || view.current.key !== viewKey) return;
       const updated = results[0];
-      syncTab(updated);
+      if (updated.id === proposal.id) syncTab(updated);
+      else {
+        openTab({ id: `proposal:${updated.id}`, kind: "proposal", label: updated.title, data: updated });
+        setDraftFeedback(""); revisionRequest.current = null;
+      }
       draftSession.clear();
       setMessage("Draft ready — review the revised scene text below, then apply.");
       await refreshProposals();
@@ -439,6 +458,14 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
+      {proposal.draft_revision && <section className="review-card__section" aria-label="Draft revision source">
+        <div className="review-card__section-title">Draft feedback</div>
+        <p style={{ whiteSpace: "pre-wrap" }}>{proposal.draft_revision.feedback}</p>
+        <details><summary>Previous draft · retained for comparison</summary>
+          <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)" }}>{proposal.draft_revision.source.body}</div>
+        </details>
+      </section>}
+
       {proposal.draft && hasDraft && !proposal.selection && (
         <div className="review-card__generation-meta" aria-label="Draft generation receipt">
           <strong>{proposal.draft.writing_review?.stages.length ? "Draft and review" : "Draft"}</strong>
@@ -486,6 +513,13 @@ export function ProposalReview({ proposal: initial }: Props) {
         reviewReasoningEffort={draftState.reviewTask.input.reviewReasoningEffort} onSend={handleDraft} onClose={draftSession.clear} />}
 
       {proposal.status === "pending" && (
+        <>
+        {hasDraft && !proposal.selection && proposal.source !== "merge_resolution" && !draftState.job && !proposal.stale && <section className="review-card__section">
+          <label htmlFor={`draft-feedback-${proposal.id}`}>Feedback for this draft</label>
+          <textarea id={`draft-feedback-${proposal.id}`} className="input" rows={3} maxLength={6000} value={draftFeedback}
+            disabled={Boolean(busy)} onChange={event => setDraftFeedback(event.target.value)} placeholder="What should change in this draft?" />
+          <p>Feedback creates a separate Change Set. This draft remains available, and your manuscript changes only when you apply.</p>
+        </section>}
         <div className="review-card__actions">
           {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
           {draftState.error && !draftState.busy && draftState.job?.tasks.find(task => !task.drafted)?.authorization && <>
@@ -511,7 +545,7 @@ export function ProposalReview({ proposal: initial }: Props) {
               {draftState.busy
                 ? "Drafting..."
                 : draftState.job ? "Retry draft" : hasDraft
-                  ? "Regenerate Change Set"
+                  ? draftFeedback.trim() ? "Review draft revision" : "Regenerate Change Set"
                   : "Build Change Set"}
             </button>
             </>
@@ -537,6 +571,7 @@ export function ProposalReview({ proposal: initial }: Props) {
             <button className="btn btn--ghost" onClick={handleOpenScene}>Open Scene</button>
           )}
         </div>
+        </>
       )}
 
       {proposal.status !== "pending" && proposal.scene_id && (

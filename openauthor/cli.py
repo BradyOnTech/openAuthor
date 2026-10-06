@@ -110,6 +110,7 @@ from .proposals import (
   apply_proposal,
   apply_proposal_batch,
   create_proposal,
+  prepare_draft_revision,
   edit_change_hunk,
   get_proposal,
   select_draft_candidate,
@@ -368,6 +369,9 @@ def build_parser() -> argparse.ArgumentParser:
     help="Output allowance (default: sized to the complete scene, 2,000–12,000 tokens).",
   )
   proposal_draft.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_revision_create = proposal_sub.add_parser("draft-revision", help="Prepare a separate Change Set from feedback on an unapplied draft; no inference.")
+  proposal_revision_create.add_argument("--input-json", required=True)
+  proposal_revision_create.add_argument("--json", action="store_true")
   proposal_draft_select = proposal_sub.add_parser("draft-select", help="Choose a retained draft candidate; rebuilds hunks for author review.")
   proposal_draft_select.add_argument("--id", required=True)
   proposal_draft_select.add_argument("--candidate", choices=["first", "refined"], required=True)
@@ -2089,6 +2093,17 @@ def _run(args: argparse.Namespace) -> int:
         print(json.dumps(row))
         return 0
       print(f"Undid proposal {args.id} (scene {row.get('scene_id', '')} restored)")
+      return 0
+
+    if args.proposal_command == "draft-revision":
+      try:
+        payload = json.loads(args.input_json)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Draft revision input must be valid JSON.") from error
+      if not isinstance(payload, dict) or set(payload) != {"proposal_id", "feedback", "expected_updated_at", "request_id"}:
+        raise OpenAuthorError("Draft revision needs a proposal, feedback, updated time and request id.")
+      row = prepare_draft_revision(paths, **payload)
+      print(json.dumps(row) if args.json else f"Prepared draft revision {row['id']}; no AI request was sent.")
       return 0
 
     if args.proposal_command == "draft":

@@ -38,6 +38,7 @@ def create_proposal(
   change_group_id: str = "",
   proposal_id: str | None = None,
   selection: dict[str, Any] | None = None,
+  draft_revision: dict[str, Any] | None = None,
 ) -> str:
   proposal_id = proposal_id or f"proposal-{uuid.uuid4().hex[:12]}"
   if not re.fullmatch(r"proposal-[a-f0-9]{12,64}", proposal_id):
@@ -81,8 +82,40 @@ def create_proposal(
     payload["merge"] = merge
   if selection is not None:
     payload["selection"] = selection
+  if draft_revision is not None:
+    payload["draft_revision"] = draft_revision
   atomic_write_json(_proposal_file(paths, proposal_id), payload)
   return proposal_id
+
+
+@serialized_project_access
+def prepare_draft_revision(paths: ProjectPaths, *, proposal_id: str, feedback: str,
+                           expected_updated_at: str, request_id: str) -> dict[str, Any]:
+  """Fork an unapplied candidate locally; the source and manuscript stay intact."""
+  if not isinstance(feedback, str) or not feedback.strip() or len(feedback) > 6000:
+    raise OpenAuthorError("Draft feedback needs 1–6,000 characters.")
+  if not isinstance(request_id, str) or not re.fullmatch(r"[a-zA-Z0-9_-]{8,128}", request_id):
+    raise OpenAuthorError("A draft revision needs a stable request id.")
+  source = get_proposal(paths, proposal_id)
+  if source["updated_at"] != expected_updated_at:
+    raise OpenAuthorError("This draft changed. Review it again before creating a revision.")
+  if source["status"] != "pending" or source.get("stale") or source.get("selection") or source.get("source") == "merge_resolution" or not source.get("scene_id") or not str(source.get("proposed_body", "")).strip():
+    raise OpenAuthorError("Choose a current, unapplied whole-scene draft to revise.")
+  revision_id = "proposal-" + hashlib.sha256(request_id.encode()).hexdigest()[:32]
+  revision = {"feedback": feedback.strip(), "source": {
+    "proposal_id": source["id"], "updated_at": source["updated_at"], "body": source["proposed_body"],
+    "generation_id": source.get("draft", {}).get("generation_id", ""),
+    "provider": source.get("draft", {}).get("provider", ""), "model": source.get("draft", {}).get("model", ""),
+  }}
+  if _proposal_file(paths, revision_id).exists():
+    existing = get_proposal(paths, revision_id)
+    if existing.get("draft_revision") != revision:
+      raise OpenAuthorError("This revision request id belongs to another draft or direction.")
+    return existing
+  create_proposal(paths, proposal_id=revision_id, title=f"Revise draft: {source['title']}",
+    instruction=source["instruction"], scene_id=source["scene_id"], source="draft_revision",
+    generation=source.get("generation"), revision_intent=source.get("revision_intent"), draft_revision=revision)
+  return get_proposal(paths, revision_id)
 
 
 def _read_proposal(proposal_file: Path) -> dict[str, Any]:

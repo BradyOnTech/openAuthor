@@ -47,7 +47,7 @@ Copy source_quote from that passage's source and candidate_quote from that
 passage's candidate. Use null only for an empty side of insertion or deletion.
 Source_meaning must account for every material proposition and narration
 action, not just the dialogue. Keep quotes, meanings and reasons concise.
-A permitted_change needs literal permission evidence from author_goal or an
+A permitted_change needs literal permission evidence from author_goal, author_feedback or an
 authored constraint; explain why it covers this change. Story references may
 establish an added claim but do not authorize removing an existing fact.
 A matching quote proves text exists, not that its inferred meaning is true.
@@ -119,7 +119,8 @@ and no regression remains. If evidence is missing, choose uncertain.
 """
 
 
-def review_policy(direction: str = "", *, editable_scope: str | None = None) -> dict[str, Any]:
+def review_policy(direction: str = "", *, editable_scope: str | None = None,
+                  source_reference: str = "scene.body") -> dict[str, Any]:
   """An inspectable recipe included in the author's context fingerprint."""
   critique = writing_craft("critique", direction=direction)
   refine = writing_craft("refine", direction=direction)
@@ -129,7 +130,7 @@ def review_policy(direction: str = "", *, editable_scope: str | None = None) -> 
   if editable_scope == "quoted_text":
     from .quoted_editing import QUOTED_EDIT_SYSTEM
     systems["refine"] += "\n\n" + QUOTED_EDIT_SYSTEM
-  comparison = {"format": "paired_passages", "source_reference": "scene.body",
+  comparison = {"format": "paired_passages", "source_reference": source_reference,
                 "maximum_characters": SOURCE_COMPARISON_LIMIT,
                 "maximum_passages": SOURCE_COMPARISON_PASSAGES}
   output = {"critique": REVIEW_OUTPUT_TOKENS, "verify": REVIEW_OUTPUT_TOKENS}
@@ -141,7 +142,8 @@ def review_policy(direction: str = "", *, editable_scope: str | None = None) -> 
 
 
 def _source_comparison(references: dict[str, str], candidate: str) -> dict[str, Any] | None:
-  source = references.get("scene.body")
+  source_reference = "current_candidate" if references.get("author_feedback") else "scene.body"
+  source = references.get(source_reference)
   if not source or not source.strip():
     return None
   old, new = source.splitlines(), candidate.splitlines()
@@ -157,7 +159,7 @@ def _source_comparison(references: dict[str, str], candidate: str) -> dict[str, 
     if len(rows) < SOURCE_COMPARISON_PASSAGES and used + size <= SOURCE_COMPARISON_LIMIT:
       rows.append(row)
       used += size
-  return {"format": "paired_passages", "source_reference": "scene.body",
+  return {"format": "paired_passages", "source_reference": source_reference,
           "passages": rows, "total_passages": total, "truncated": total != len(rows)}
 
 
@@ -270,7 +272,7 @@ def _source_checks(value: Any, comparison: dict[str, Any], references: dict[str,
         check[side + "_quote"] = None
       check[side + "_meaning"] = _text(row.get(side + "_meaning"))
     permission = _evidence(row.get("permission_evidence", []), references, required=assessment == "permitted_change")
-    if any(e["path"] != "author_goal" and not e["path"].startswith(("constraints[", "protected_elements[", "scene_contract.")) for e in permission):
+    if any(e["path"] not in {"author_goal", "author_feedback"} and not e["path"].startswith(("constraints[", "protected_elements[", "scene_contract.")) for e in permission):
       raise OpenAuthorError("A permitted source change needs the author's instruction, not a story fact or model plan.")
     check["permission_evidence"] = permission
     checks.append(check)

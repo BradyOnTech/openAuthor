@@ -173,6 +173,10 @@ export type ProposalRecord = {
   source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
   change_group_id?: string;
   proposed_body?: string;
+  draft_revision?: {
+    feedback: string;
+    source: { proposal_id: string; updated_at: string; body: string; generation_id: string; provider: string; model: string };
+  };
   selection?: {
     action: "rewrite" | "shorten" | "expand" | "critique";
     start: number; end: number; before: string; after: string; feedback: string; branch: string;

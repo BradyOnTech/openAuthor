@@ -65,6 +65,11 @@ export function RevisionContextReview({ projectRoot, proposalId, generationInput
     {loading && <p role="status">Updating context…</p>}
     {error && <p role="alert">{error} You can remove permissions below, refresh, or return to the Change Set.</p>}
     {preview && <>
+      {typeof preview.context.author_feedback === "string" && <>
+        <p style={{ whiteSpace: "pre-wrap" }}>Your draft feedback: {preview.context.author_feedback}</p>
+        <details><summary>Draft being revised</summary><pre>{String(preview.context.current_candidate ?? "")}</pre></details>
+        <p>This request revises that draft and keeps its previous Change Set. Original scene intent and protected sources remain included.</p>
+      </>}
       <p>Scene: {preview.context.scene.title || preview.context.scene.id}</p>
       {preview.context.scene_contract && Object.entries(preview.context.scene_contract).filter(([key]) => key !== "editable_scope").map(([key, value]) => value && <p key={key}>{key === "purpose" ? "Scene purpose" : key === "turn" ? "What changes" : key === "word_range" ? "Word target" : "Where it stops"}: {Array.isArray(value) ? `${value[0]}–${value[1]} words` : value}</p>)}
       {preview.context.quoted_editing && <>
