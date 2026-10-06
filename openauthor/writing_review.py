@@ -64,6 +64,8 @@ Approved voice observations illustrate craft; their plot details are not facts
 of this scene. Do not require the new scene to repeat an exemplar's events.
 Keep effective choices. Do not require a problem or reward more ornamentation.
 Return only a JSON object with:
+source_checks: the complete required source-comparison record described above,
+or [] when no source comparison is supplied;
 verdict: keep | revise | uncertain;
 strengths: up to 3 objects {quote, reason};
 findings: up to 3 objects {id, priority: high | medium | low,
@@ -105,7 +107,9 @@ supplied finding, facts, POV knowledge, reveals, scope, voice and ending.
 When supplied, source_comparison highlights changes from the original source
 to the revised candidate. Recheck ALL its passages, including changes not
 covered by the first critic's findings. Cite original references for evidence.
-Return only JSON: {verdict: accept | reject | uncertain,
+Return only JSON: {source_checks: the complete required source-comparison
+record described above, or [] when no source comparison is supplied,
+verdict: accept | reject | uncertain,
 resolutions: [{id, resolved: true | false, quote, reason}],
 regressions: [{quote, reason, source_evidence: [{path, quote}]}], uncertainty: string}.
 Copy all quotes literally. Resolutions must cite the revised candidate and
