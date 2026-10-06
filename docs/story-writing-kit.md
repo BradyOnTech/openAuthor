@@ -24,6 +24,8 @@ To iterate on an unapplied whole-scene draft, enter “Feedback for this draft�
 
 “Revision focus” can select dialogue, character motivation, viewpoint and knowledge, pacing, setup and payoff, or prose clarity. The selected focus is saved with the feedback and appears in the request preview. It adds the corresponding craft reference to the writer's guidance; it does not change the original scene permissions or supply missing character facts. General retains the original direction's guidance. Choosing a focus is an instruction to consider that aspect, not a guarantee that the resulting prose improves it.
 
+“Writing model (optional)” lets you select a model for drafting or revising a Change Set. A saved draft initially uses its recorded model; leaving the field empty requests the provider default. Review the selected model in the context preview before sending. An unsupported model can fail; it is not silently replaced.
+
 Creative review compares a feedback revision with the saved draft as well as the original scene evidence and intent. Your comment can explain which change you want; a generated plan alone cannot authorize one. Private notes and excluded Memory remain outside the request. Quoted-text scope, when present, also applies to feedback revisions. Local deterministic generation does not support this prose-feedback workflow.
 
 Change Set receipts label draft generation and edit-plan generation separately, each with its own model, usage and timing. When creative review ran, “Draft and review” shows the stored aggregate for that workflow; expand the review attempts for individual calls. The plan's format score belongs to the instruction block; it does not assess the drafted fiction.

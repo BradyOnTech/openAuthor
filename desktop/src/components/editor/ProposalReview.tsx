@@ -43,6 +43,7 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [hunkFeedback, setHunkFeedback] = useState("");
   const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
   const [reviewDraft, setReviewDraft] = useState(true);
+  const [writingModel, setWritingModel] = useState(initial.draft?.model ?? (initial.draft_revision?.source.model || undefined) ?? initial.generation?.model ?? "");
   const [draftFeedback, setDraftFeedback] = useState("");
   const [draftFocus, setDraftFocus] = useState<DraftRevisionFocus>(initial.draft_revision?.focus ?? "");
   const revisionRequest = useRef<{ feedback: string; focus: DraftRevisionFocus; updatedAt: string; id: string } | null>(null);
@@ -87,7 +88,7 @@ export function ProposalReview({ proposal: initial }: Props) {
         }
         results = await draftSession.start([{
           sceneId: target.scene_id, instruction: target.instruction, provider: draftProvider,
-          model: proposal.draft?.model ?? (proposal.draft_revision?.source.model || undefined) ?? proposal.generation?.model,
+          model: writingModel.trim() || undefined,
           reviewMode: reviewDraft ? "refine" : "off",
           reviewReasoningEffort: reviewDraft && draftProvider === "openai-codex" ? reviewEffort || undefined : undefined,
         }], target.id);
@@ -543,6 +544,9 @@ export function ProposalReview({ proposal: initial }: Props) {
           )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && (
             <>
+            {!draftState.job && <label>Writing model (optional)
+              <input className="input" value={writingModel} disabled={Boolean(busy) || draftState.busy} onChange={event => setWritingModel(event.target.value)} placeholder="Provider default" />
+            </label>}
             {!draftState.job && <label><input type="checkbox" checked={reviewDraft} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewDraft(event.target.checked)} /> Review and refine the draft</label>}
             {!draftState.job && reviewDraft && draftProvider === "openai-codex" && <label>
               Review reasoning effort <select className="input" value={reviewEffort} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewEffort(event.target.value as typeof reviewEffort)}>
