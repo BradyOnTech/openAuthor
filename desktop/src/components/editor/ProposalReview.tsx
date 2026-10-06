@@ -439,8 +439,19 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
+      {proposal.draft && hasDraft && !proposal.selection && (
+        <div className="review-card__generation-meta" aria-label="Draft generation receipt">
+          <strong>{proposal.draft.writing_review?.stages.length ? "Draft and review" : "Draft"}</strong>
+          <span>{proposal.draft.provider}/{proposal.draft.model}</span>
+          <span>{proposal.draft.input_tokens} in / {proposal.draft.output_tokens} out</span>
+          {proposal.draft.latency_ms != null && <span>{(proposal.draft.latency_ms / 1000).toFixed(1)}s</span>}
+          {proposal.draft.estimated_cost_usd != null && <span>${proposal.draft.estimated_cost_usd.toFixed(4)}</span>}
+        </div>
+      )}
+
       {gen && (
-        <div className="review-card__generation-meta">
+        <div className="review-card__generation-meta" aria-label={proposal.selection ? "Passage generation receipt" : "Edit plan generation receipt"}>
+          <strong>{proposal.selection ? "Passage" : "Edit plan"}</strong>
           <span>{gen.provider}/{gen.model}</span>
           <span>{gen.input_tokens} in / {gen.output_tokens} out</span>
           {gen.latency_ms != null && <span>{(gen.latency_ms / 1000).toFixed(1)}s</span>}

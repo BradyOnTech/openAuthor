@@ -20,6 +20,8 @@ Quote scope protects editing locations, not meaning. Read for lost facts, altere
 
 Review the hunks before applying. The craft review shows strengths, supported concerns, uncertainty and any verification result. Expand the retained candidates to compare them. Choosing another candidate rebuilds the hunks and resets their decisions; it does not change the manuscript. You can also edit or reject individual hunks. Apply and undo use the existing revision workflow.
 
+Change Set receipts label draft generation and edit-plan generation separately, each with its own model, usage and timing. When creative review ran, “Draft and review” shows the stored aggregate for that workflow; expand the review attempts for individual calls. The plan's format score belongs to the instruction block; it does not assess the drafted fiction.
+
 For a local change, select the passage in the scene editor and choose Rewrite, Shorten or Expand. Give a concrete direction and review its context before generating. Acceptance replaces only that selected range; a newer scene makes the proposal stale. Read the result with the surrounding scene and undo it if it weakens the passage. A whole-scene model review can miss lost facts or changed tactics even when it accepts a revision.
 
 An unchanged passage reply is saved as “No replacement suggested,” with the original text and its generation record. It offers no Apply action. Dismiss it or keep it for reference; recovery reuses the saved result. This lets a conditional request, such as correcting grammar only when an error exists, finish without encouraging another rewrite. The label reports the returned text, not an independent judgment that the prose is ideal.
