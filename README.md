@@ -13,6 +13,7 @@ Product capabilities include:
 - Temporal Story Memory with Canon Facts, character knowledge, relationships, arcs, setups/payoffs, and diagnostics
 - Book, Scene, Chapter, Character, and Storyline-scoped Assistant conversations with durable artifact promotion
 - Author-approved [Writing Voice](docs/writing-voice.md), original craft presets, exemplar analysis and short prose comparisons with review-first manuscript handoff
+- A [story writing kit](docs/story-writing-kit.md) with scene intent, task-specific craft references, evidence-based draft review, retained candidates and counted word targets
 - Human-readable Markdown scenes, portable planning files, import/export, and a private content-free product dashboard
 
 The desktop product uses Tauri + React with a supervised, checksum-pinned embedded Python core. The runtime boundary preserves local files and a clean path to replace individual services only when evidence justifies it.

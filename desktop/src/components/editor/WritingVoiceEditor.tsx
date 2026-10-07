@@ -28,6 +28,7 @@ function recoveredDraft(value: unknown): value is { draft: StyleProfile; brief: 
     && object(draft.traits) && Object.values(draft.traits).every((trait) => typeof trait === "string")
     && stringList(draft.guidance) && stringList(draft.avoid) && stringList(draft.exemplar_scene_ids)
     && object(draft.metrics) && typeof draft.created_at === "string"
+    && (draft.use_exemplar_evidence === undefined || typeof draft.use_exemplar_evidence === "boolean")
     && (draft.observations === undefined || (Array.isArray(draft.observations) && draft.observations.every((row) =>
       object(row) && [row.scene_id, row.aspect, row.observation, row.excerpt].every((field) => typeof field === "string"))));
 }
@@ -245,6 +246,8 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
         <div className="writing-voice__traits">{Object.entries(workspace.dimensions).map(([key, dimension]) => <label key={key}>{dimension.label}<select className="input" aria-label={`Voice ${dimension.label}`} disabled={!!busy} value={draft.traits[key] || (key === "pacing" ? "varied" : key === "humor" ? "earnest" : "balanced")} onChange={(event) => edit({ traits: { ...draft.traits, [key]: event.target.value } })}>{dimension.options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div>
         <div className="writing-voice__traits"><label>Do more of (one preference per line)<textarea className="input" rows={4} value={draft.guidance.join("\n")} disabled={!!busy} onChange={(event) => edit({ guidance: lines(event.target.value) })} /></label>
           <label>Avoid (one preference per line)<textarea className="input" rows={4} value={draft.avoid.join("\n")} disabled={!!busy} onChange={(event) => edit({ avoid: lines(event.target.value) })} /></label></div>
+        <label><input type="checkbox" checked={draft.use_exemplar_evidence ?? false} disabled={!!busy || !draft.observations?.length} onChange={(event) => edit({ use_exemplar_evidence: event.target.checked })} /> Include the quoted exemplar evidence in AI writing</label>
+        <p>Review the quotations below before enabling this. Writing requests can use those excerpts to guide voice. Existing profiles use their trait summary until you enable and save this choice.</p>
         <button className="btn btn--primary" disabled={!!busy} onClick={() => void save()}>{busy === "save" ? "Saving…" : "Approve and save Writing Voice"}</button>
       </section>
       <section className="writing-voice__section">

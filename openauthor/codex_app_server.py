@@ -32,10 +32,11 @@ class CodexAppServerUnsafeConfiguration(CodexAppServerError):
 
 
 class CodexAppServerIncompleteTurn(CodexAppServerError):
-  def __init__(self, message: str, *, token_usage: dict[str, Any], model: str) -> None:
+  def __init__(self, message: str, *, token_usage: dict[str, Any], model: str, reasoning_effort: str | None = None) -> None:
     super().__init__(message)
     self.token_usage = token_usage
     self.model = model
+    self.reasoning_effort = reasoning_effort
 
 
 DEFAULT_MODEL_SENTINELS = {
@@ -49,6 +50,8 @@ DEFAULT_LOGIN_TIMEOUT_SECONDS = 180.0
 DEFAULT_ACCOUNT_READY_TIMEOUT_SECONDS = 15.0
 ACCOUNT_READY_POLL_SECONDS = 0.25
 VERIFIED_CODEX_VERSION = "0.144.6"
+REASONING_EFFORTS = frozenset({"low", "medium", "high"})
+HIGH_EFFORT_TURN_TIMEOUT_SECONDS = 180.0
 
 # The subscription runtime is a transport, not a second authoring agent. These
 # settings are also supplied at startup so discovery cannot run before a thread.
@@ -539,8 +542,11 @@ class CodexAppServer:
     max_output_tokens: int,
     on_delta: Callable[[str], None] | None,
     tools: list[dict[str, Any]] | None,
+    reasoning_effort: str | None = None,
   ) -> dict[str, Any]:
     del project_root  # Only the host's reviewed prompts may identify manuscript data.
+    if reasoning_effort is not None and reasoning_effort not in REASONING_EFFORTS:
+      raise CodexAppServerError("Choose low, medium or high reasoning effort.")
     self._check_instruction_boundary()
     dynamic_tools = [
       {
@@ -570,7 +576,7 @@ class CodexAppServer:
       "approvalPolicy": "never",
       "sandbox": "read-only",
       "environments": [],
-      "config": self._completion_config,
+      "config": {**self._completion_config, **({"model_reasoning_effort": reasoning_effort} if reasoning_effort else {})},
       "ephemeral": True,
       "baseInstructions": "You are openAuthor's writing collaborator. Follow the host's writing instructions and use only explicitly provided manuscript context.",
       "developerInstructions": developer_instructions,
@@ -581,6 +587,11 @@ class CodexAppServer:
       thread_params["dynamicTools"] = dynamic_tools
 
     thread_result = self.request("thread/start", thread_params)
+    resolved_effort = thread_result.get("reasoningEffort")
+    if reasoning_effort is not None and resolved_effort != reasoning_effort:
+      raise CodexAppServerError(
+        f"Codex selected reasoning effort {resolved_effort!r}, but {reasoning_effort!r} was requested. No generation started."
+      )
     thread = thread_result.get("thread", {})
     thread_id = str(thread.get("id", "")) if isinstance(thread, dict) else ""
     if thread_id == "":
@@ -668,11 +679,18 @@ class CodexAppServer:
       completed_turn = params.get("turn", {})
       return isinstance(completed_turn, dict) and str(completed_turn.get("id", "")) == turn_id
 
-    completed = self.wait_for(
-      turn_completed,
-      on_message=handle_message,
-      on_server_request=handle_server_request,
-    )
+    try:
+      completed = self.wait_for(
+        turn_completed,
+        on_message=handle_message,
+        on_server_request=handle_server_request,
+        **({"timeout": max(self.request_timeout, HIGH_EFFORT_TURN_TIMEOUT_SECONDS)} if reasoning_effort == "high" else {}),
+      )
+    except CodexAppServerTimeout as error:
+      # A timed-out turn may have consumed inference. Keep its selection and
+      # whatever usage was actually reported; do not infer zero spend.
+      raise CodexAppServerIncompleteTurn(str(error), token_usage=token_usage,
+        model=str(thread_result.get("model") or ""), reasoning_effort=resolved_effort) from error
     completed_turn = completed.get("params", {}).get("turn", {})
     if completed_turn.get("status") != "completed":
       error = completed_turn.get("error") or {}
@@ -681,6 +699,7 @@ class CodexAppServer:
       raise CodexAppServerIncompleteTurn(
         f"Codex turn did not complete ({status}). {details}".strip(),
         token_usage=token_usage, model=str(thread_result.get("model") or ""),
+        reasoning_effort=resolved_effort,
       )
 
     text_parts = [text for text in final_messages.values() if text.strip()]
@@ -701,4 +720,5 @@ class CodexAppServer:
       "raw_usage": token_usage,
       "attempts": 1,
       "model": str(thread_result.get("model") or ""),
+      "reasoning_effort": resolved_effort,
     }

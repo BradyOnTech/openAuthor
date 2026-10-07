@@ -74,6 +74,24 @@ class SelectionEditingTests(unittest.TestCase):
     self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.body)
     self.assertEqual(len(list(self.paths.generations_dir.glob("*.json"))), 1)
 
+  def test_unchanged_reply_is_recoverable_without_a_manuscript_edit(self):
+    args = {**self.args, "action": "rewrite", "provider": "openai", "instruction": "Correct grammar only if needed."}
+    preview = preview_selection(self.paths, **args)
+    original = (self.paths.root / self.scene["path"]).read_bytes()
+    response = {"choices": [{"message": {"content": self.selected}}], "usage": {"prompt_tokens": 200, "completion_tokens": 8}}
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "synthetic-test-key"}), patch("urllib.request.urlopen", return_value=io.BytesIO(json.dumps(response).encode())) as transport:
+      proposal = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"], request_id="unchanged-grammar")
+      recovered = generate_selection(self.paths, **args, expected_fingerprint=preview["fingerprint"], request_id="unchanged-grammar")
+      self.assertEqual(recovered["id"], proposal["id"])
+      self.assertEqual(transport.call_count, 1)
+    self.assertTrue(proposal["selection"]["unchanged"])
+    self.assertEqual(proposal["selection"]["after"], self.selected)
+    self.assertEqual(proposal["proposed_body"], "")
+    with self.assertRaisesRegex(OpenAuthorError, "no replacement"):
+      apply_proposal(self.paths, proposal_id=proposal["id"], force=True)
+    self.assertEqual((self.paths.root / self.scene["path"]).read_bytes(), original)
+    self.assertEqual(len(list(self.paths.generations_dir.glob("*.json"))), 1)
+
   def test_cli_preview_then_generate_is_reviewed_and_recoverable(self):
     def run(action, *extra):
       result = subprocess.run([sys.executable, "-m", "openauthor", "proposal", action, "--input-json", json.dumps(self.args), "--json", *extra], cwd=self.paths.root, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])}, capture_output=True, text=True, check=True)
@@ -175,3 +193,25 @@ class SelectionEditingTests(unittest.TestCase):
     self.assertGreaterEqual(preview["limits"]["omitted_after_characters"], 600)
     self.assertIn(large, preview["limits"]["omitted_memory_ids"])
     self.assertLessEqual(len(preview["system_prompt"]) + len(preview["user_prompt"]), 40000)
+
+  def test_short_selection_keeps_viewpoint_and_nearby_memory_ahead_of_filler(self):
+    body = "Tobinford waited. Wren watched.\n\nThe brothers are dead."
+    update_scene(self.paths, scene_identifier="scene-0001", body=body, pov="Tobin")
+    selected = "The brothers are dead."
+    start = body.index(selected)
+    records = [
+      {"id": f"a-{i}", "type": "lore", "name": f"Unrelated {i}", "description": "x" * 2800, "details": []}
+      for i in range(5)
+    ] + [
+      {"id": "z-viewpoint", "type": "character", "name": "Tobin", "description": "Viewpoint systems knowledge.", "details": []},
+      {"id": "z-speaker", "type": "character", "name": "Wren", "description": "Nearby speaker.", "details": []},
+      {"id": "z-topic", "type": "lore", "name": "Harbor brothers", "aliases": ["the brothers"], "description": "Selected subject.", "details": []},
+      {"id": "b-false-mention", "type": "character", "name": "Tobinford", "description": "Neighbor character.", "details": []},
+    ]
+    args = {**self.args, "start": start, "end": start + len(selected), "selected_text": selected}
+    with patch("openauthor.selection_editing.memory_for_ai", return_value=records):
+      preview = preview_selection(self.paths, **args)
+    names = [row["name"] for row in preview["context"]["memory"]]
+    self.assertEqual(names[:4], ["Harbor brothers", "Tobin", "Tobinford", "Wren"])
+    self.assertTrue(preview["limits"]["omitted_memory_ids"])
+    self.assertLessEqual(sum(len(json.dumps(row, ensure_ascii=False)) for row in preview["context"]["memory"]), 12000)

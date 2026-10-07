@@ -744,16 +744,31 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByTitle(/Changes \(/));
     await user.click(screen.getByTitle("Create a reviewable Change Set"));
     fireEvent.change(await screen.findByLabelText("What should change?"), { target: { value: "Preserve Mara's uncertainty." } });
-    fireEvent.change(screen.getByLabelText("Protect exactly (optional)"), { target: { value: "The blue gate" } });
+    fireEvent.change(screen.getByLabelText("Protected wording and story decisions (optional)"), { target: { value: "The blue gate" } });
+    fireEvent.change(screen.getByLabelText("Scene purpose"), { target: { value: "Make trust costly." } });
+    fireEvent.change(screen.getByLabelText("What changes"), { target: { value: "Mara chooses to wait." } });
+    fireEvent.change(screen.getByLabelText("Where it stops"), { target: { value: "The permit stays closed." } });
+    fireEvent.change(screen.getByLabelText("Minimum words (optional)"), { target: { value: "500" } });
+    fireEvent.change(screen.getByLabelText("Maximum words (optional)"), { target: { value: "700" } });
+    await user.click(screen.getByLabelText("Review and refine the draft"));
     await user.click(screen.getByTitle(/Plan \(/));
     await user.click(screen.getByRole("tab", { name: "Generate" }));
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
-    expect((screen.getByLabelText("Protect exactly (optional)") as HTMLTextAreaElement).value).toBe("The blue gate");
+    expect((screen.getByLabelText("Protected wording and story decisions (optional)") as HTMLTextAreaElement).value).toBe("The blue gate");
+    expect((screen.getByLabelText("Scene purpose") as HTMLTextAreaElement).value).toBe("Make trust costly.");
+    expect((screen.getByLabelText("What changes") as HTMLTextAreaElement).value).toBe("Mara chooses to wait.");
+    expect((screen.getByLabelText("Where it stops") as HTMLTextAreaElement).value).toBe("The permit stays closed.");
+    expect((screen.getByLabelText("Minimum words (optional)") as HTMLInputElement).value).toBe("500");
+    expect((screen.getByLabelText("Review and refine the draft") as HTMLInputElement).checked).toBe(false);
     cleanup(); render(<AppV2 />);
     await screen.findByRole("tab", { name: "Generate" });
     await user.click(screen.getByTitle(/Changes \(/));
     await user.click(screen.getByTitle("Create a reviewable Change Set"));
     expect((await screen.findByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve Mara's uncertainty.");
+    expect((screen.getByLabelText("Scene purpose") as HTMLTextAreaElement).value).toBe("Make trust costly.");
+    expect((screen.getByLabelText("Where it stops") as HTMLTextAreaElement).value).toBe("The permit stays closed.");
+    expect((screen.getByLabelText("Maximum words (optional)") as HTMLInputElement).value).toBe("700");
+    expect((screen.getByLabelText("Review and refine the draft") as HTMLInputElement).checked).toBe(false);
     expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "generate")).toBe(false);
   });
 
@@ -906,13 +921,13 @@ describe("active V2 author workflow", () => {
 
   it("waits for manuscript saves before a Memory scan and presents all evidence without calibrated-looking percentages", async () => {
     const { user, body } = await openWritingScene();
+    let finish!: () => void;
+    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
     fireEvent.change(body, { target: { value: "Mara waits. Mara returns." } });
     harness.suggestions.push({ id: "suggestion-mara", kind: "entity_create", name: "Mara", description: "Repeated name", confidence: 0.92, reason: "Repeated proper-name mentions", status: "pending", review_version: "mara-scan-v1", evidence: [
       { scene_id: "scene-0001", excerpt: "Mara waits.", start: 0, end: 11 },
       { scene_id: "scene-0001", excerpt: "Mara returns.", start: 12, end: 25 },
     ] });
-    let finish!: () => void;
-    harness.saveGate = () => new Promise<void>(resolve => { finish = resolve; });
     await user.click(screen.getByTitle(/Story Memory \(/));
     await user.click(screen.getByRole("button", { name: "Scan Manuscript for Memory" }));
     await waitFor(() => expect(finish).toBeTypeOf("function"));
@@ -1781,7 +1796,7 @@ describe("active V2 author workflow", () => {
     await waitFor(() => expect(harness.proposals).toHaveLength(2));
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
-    await user.click(screen.getByTitle("proposal-golden-2 — pending"));
+    await user.click(await screen.findByTitle(/proposal-golden-2 — pending/));
     expect(screen.getByText("scene-0002", { selector: ".review-card__meta span" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Apply together" }));
     expect(await screen.findByRole("button", { name: "Undo change" })).toBeTruthy();
@@ -1898,12 +1913,12 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add beat to The Arrival" }));
     expect(await screen.findByText(/clock skips thirteen minutes/)).toBeTruthy();
     expect(harness.calls.some((args) => args[0] === "plan" && args[1] === "beat-add")).toBe(true);
-    await user.click(screen.getByText("Story time & labels"));
+    await user.click(screen.getByText("Saved scene brief, story time & labels"));
     await user.type(screen.getByLabelText("Story time for The Arrival"), "Day 2, dusk");
     await user.type(screen.getByLabelText("Labels for The Arrival"), "turning point, Mara");
     await user.click(screen.getByRole("button", { name: "Close Plan" }));
     await user.click(screen.getByRole("button", { name: "Open Story Board" }));
-    await user.click(await screen.findByText("Story time & labels"));
+    await user.click(await screen.findByText("Saved scene brief, story time & labels"));
     expect((screen.getByLabelText("Story time for The Arrival") as HTMLInputElement).value).toBe("Day 2, dusk");
     expect((screen.getByLabelText("Labels for The Arrival") as HTMLInputElement).value).toBe("turning point, Mara");
     await user.click(screen.getByRole("button", { name: "Save planning details" }));

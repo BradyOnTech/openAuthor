@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03",
+  "updated_at": "2026-10-05",
   "status_definitions": {
     "core": [
       "implemented",
@@ -23,6 +23,29 @@
     ]
   },
   "capabilities": [
+    {
+      "id": "story_writing_kit",
+      "name": "Task-specific fiction guidance, authored scene intent, and evidence-bound draft refinement",
+      "visible": true,
+      "core": "implemented",
+      "active_ui": "implemented",
+      "end_to_end": "missing",
+      "release": "not_ready",
+      "scope_note": "Planning, prose and passage operations compile an inspectable fiction skill. New scene requests can carry purpose, turn, ending and a counted word target. Optional fresh critique, focused revision and verification retain both candidates and require author hunk review before applying. Approved Writing Voice observations carry stored exemplar evidence. Core tests cover privacy, stale context, unsupported evidence, checkpoint recovery and candidate provenance; the browser/real-Python journey covers intent, receipts, local review limitations, apply and undo. Live-provider scenes and native form inspection are development evidence. Automated rendered remote critique/refinement, independent reader comparisons, native competitor outputs and release certification remain absent.",
+      "evidence": [
+        "openauthor/writing_craft.py",
+        "openauthor/writing_review.py",
+        "openauthor/style_profile.py",
+        "openauthor/writing_skills/fiction-writing/SKILL.md",
+        "tests/test_writing_craft.py",
+        "tests/test_writing_review.py",
+        "tests/test_style_profile_module.py",
+        "desktop/src/components/editor/DraftCraftReview.tsx",
+        "desktop/src/components/editor/GenerateProposal.tsx",
+        "desktop/e2e/authoring.spec.ts",
+        "docs/story-writing-kit.md"
+      ]
+    },
     {
       "id": "project_onboarding",
       "name": "Project creation, open, and local binding",

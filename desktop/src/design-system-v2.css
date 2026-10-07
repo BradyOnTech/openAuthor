@@ -1022,7 +1022,7 @@ body {
 .selection-assist label { display: grid; gap: 6px; }
 .selection-assist fieldset label { display: flex; align-items: center; min-height: 40px; }
 .selection-assist__preview { display: grid; gap: 8px; font-variant-numeric: tabular-nums; }
-.selection-assist blockquote, .selection-assist pre, .selection-review blockquote { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.selection-assist blockquote, .selection-assist pre, .selection-review blockquote, .selection-review__comparison blockquote { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
 .selection-assist blockquote { max-height: 120px; overflow: auto; font-family: var(--font-prose); }
 .selection-assist pre { font-size: var(--text-xs); }
 .selection-assist p, .selection-review p { text-wrap: pretty; line-height: 1.5; }

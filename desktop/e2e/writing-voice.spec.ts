@@ -38,8 +38,13 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     await page.getByRole("button", { name: "Propose a voice profile", exact: true }).click();
     await expect(page.getByText(/This is an unsaved proposal/)).toBeVisible();
     expect((await json(["style", "get"])).description).not.toBe("Close perspective, dry humor and restrained feeling.");
+    const evidenceChoice = page.getByRole("checkbox", { name: "Include the quoted exemplar evidence in AI writing", exact: true });
+    await expect(evidenceChoice).not.toBeChecked();
+    await evidenceChoice.check();
+    expect((await json(["style", "get"])).use_exemplar_evidence).toBe(false);
     await page.getByRole("button", { name: "Approve and save Writing Voice", exact: true }).click();
     await expect(page.getByText(/Writing Voice approved/)).toBeVisible();
+    expect((await json(["style", "get"])).use_exemplar_evidence).toBe(true);
     const preservation = [{ kind: "fact", text: "  The key stays in Ivo's pocket.  " }, { kind: "protected_text", text: "Ivo kept the key in his pocket." }];
     await page.getByRole("button", { name: "Add preservation instruction", exact: true }).click();
     await page.getByRole("textbox", { name: "Preservation instruction 1", exact: true }).fill(preservation[0].text);
@@ -91,6 +96,7 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     if (await page.getByRole("button", { name: "Writing Voice", exact: true }).count() === 0) await page.getByRole("button", { name: "Assistant (Cmd+L)" }).click();
     await page.getByRole("button", { name: "Writing Voice", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "Profile name", exact: true })).toHaveValue("Harbor voice");
+    await expect(page.getByRole("checkbox", { name: "Include the quoted exemplar evidence in AI writing", exact: true })).toBeChecked();
     await expect(page.getByRole("article", { name: "Preview Harbor voice", exact: true })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Preservation instruction 1", exact: true })).toHaveValue(preservation[0].text);
     await expect(page.getByRole("textbox", { name: "Preservation instruction 2", exact: true })).toHaveValue(preservation[1].text);

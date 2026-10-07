@@ -6,6 +6,19 @@ export type CoreCommandResponse = {
 
 export type ProposalProvider = "local" | "openai" | "anthropic" | "openrouter" | "openai-codex";
 
+export type SceneWritingBrief = {
+  purpose?: string; turn?: string; ending?: string; word_range?: [number, number]; editable_scope?: "quoted_text";
+  character_goals?: string; knowledge?: string; reveal_limits?: string; voice_direction?: string;
+  change_permission?: "preserve" | "details" | "story"; allowed_changes?: string;
+};
+
+export type WritingBriefReceipt = {
+  schema_version: number; scene_id: string; pov: string; story_time: string; scene_summary: string;
+  direction: SceneWritingBrief; change_permission: "preserve" | "details" | "story";
+  source_status: { voice_excerpts: number; memory_entries: number; approved_canon: number };
+  warnings: string[];
+};
+
 export type ProjectStatus = {
   found: boolean;
   project_root: string;
@@ -145,6 +158,19 @@ export type StartupHealthReport = {
   }>;
 };
 
+export type SourceMeaningCheck = {
+  id: string;
+  source_quote: string | null;
+  source_meaning: string;
+  candidate_quote: string | null;
+  candidate_meaning: string;
+  assessment: "preserved" | "permitted_change" | "violation" | "uncertain";
+  reason: string;
+  permission_evidence: Array<{ path: string; quote: string }>;
+};
+export type SourceMeaningCoverage = { checked_passages: number; total_passages: number; truncated: boolean };
+export type DraftRevisionFocus = "" | "dialogue" | "motivation" | "pov" | "pacing" | "setup-payoff" | "prose clarity";
+
 export type ProposalRecord = {
   id: string;
   title: string;
@@ -161,9 +187,15 @@ export type ProposalRecord = {
   source?: "manual" | "ai_generate" | "chat_agent" | "merge_resolution" | string;
   change_group_id?: string;
   proposed_body?: string;
+  draft_revision?: {
+    feedback: string;
+    focus?: DraftRevisionFocus;
+    source: { proposal_id: string; updated_at: string; body: string; generation_id: string; provider: string; model: string };
+  };
   selection?: {
     action: "rewrite" | "shorten" | "expand" | "critique";
     start: number; end: number; before: string; after: string; feedback: string; branch: string;
+    unchanged?: boolean;
     review?: EditorialReview;
   };
   revision_intent?: {
@@ -171,6 +203,7 @@ export type ProposalRecord = {
     scope: string;
     constraints: string[];
     protected_elements: string[];
+    scene_contract?: SceneWritingBrief;
   };
   rebase_report?: {
     status: "rebased" | "conflicted";
@@ -197,6 +230,7 @@ export type ProposalRecord = {
     intent: {
       goal: string;
       scope: string;
+      editable_scope?: "quoted_text";
       constraints: string[];
       protected_elements: string[];
     };
@@ -232,6 +266,21 @@ export type ProposalRecord = {
     };
   };
   draft?: {
+    review_reasoning_effort?: "low" | "medium" | "high" | null;
+    writing_review?: {
+      schema_version: number;
+      status: "unverified" | "kept" | "refined" | "rejected" | "uncertain" | "failed" | "unavailable";
+      selected: "first" | "refined";
+      author_selected?: "first" | "refined";
+      mechanical_checks?: { first_words: number; first_in_range: boolean; word_range: [number, number]; refined_words?: number; refined_in_range?: boolean };
+      first_candidate: string;
+      refined_candidate?: string;
+      uncertainty: string;
+      error?: string;
+      critique?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; strengths: Array<{ quote: string; reason: string }>; findings: Array<{ id: string; priority: string; category: string; quote: string; reason: string; suggestion: string; source_evidence: Array<{ path: string; quote: string }> }> };
+      verification?: { verdict: string; uncertainty: string; validation_warnings?: string[]; source_checks?: SourceMeaningCheck[]; source_coverage?: SourceMeaningCoverage; resolutions: Array<{ id: string; resolved: boolean; quote: string; reason: string }>; regressions: Array<{ quote: string; reason: string }> };
+      stages: Array<{ stage: string; log_path: string; input_tokens: number; output_tokens: number; reasoning_effort?: string | null; resolved_reasoning_effort?: string | null; resolved_model?: string }>;
+    } | null;
     generation_id: string;
     provider: string;
     model: string;
@@ -393,6 +442,7 @@ export type ManuscriptPlan = {
   scene_metadata: Record<string, {
     timeline_position: string;
     labels: string[];
+    writing_brief?: SceneWritingBrief;
   }>;
   beats: Array<{
     id: string;

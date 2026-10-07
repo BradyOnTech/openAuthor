@@ -31,6 +31,53 @@ from openauthor.scenes import add_scene
 
 
 class AIModuleTests(unittest.TestCase):
+  def test_complete_edit_plan_reaches_draft_without_losing_late_constraints(self) -> None:
+    long_intent = (
+      "Differentiate Tobin and Wren through immediate objectives: Wren tests the "
+      "evidence and bargains for repair while Tobin responds with systems expertise "
+      "and evades the moral cost of maintaining both factions; do not make either "
+      "man disclose who renewed the rule."
+    )
+    constraints = [
+      "Keep third-person past tense.",
+      "Retain the order of events.",
+      "Keep all narration unchanged.",
+      "Do not add backstory.",
+      "Preserve all technical facts.",
+      "Wren controls the service credential; he is not seeking it from Tobin.",
+      "Neither man knows who renewed the inherited rule.",
+    ]
+    raw_plan = (
+      f"# Intent: {long_intent}\n\nConstraints:\n"
+      + "\n".join(f"{i + 1}. {line}" for i, line in enumerate(constraints))
+      + "\n\nEdit Plan:\n- Replace aphorisms with concrete bargaining."
+      + "\n\nContinuity Notes:\n- Keep the renewal's author unknown."
+    )
+    requests = []
+
+    def provider(**request):
+      requests.append(request)
+      return {
+        "text": raw_plan if len(requests) == 1 else "Tobin put the paper beside the tablet.",
+        "input_tokens": 30, "output_tokens": 20, "latency_ms": 1, "attempts": 1,
+      }
+
+    with tempfile.TemporaryDirectory() as tmp:
+      paths = initialize_project(Path(tmp), name="Complete plan handoff")
+      add_scene(paths, title="The Same Second", body="Tobin unfolded the paper.")
+      with patch("openauthor.ai._call_provider", side_effect=provider):
+        proposal = generate_proposal(paths, scene_id="scene-0001", instruction="Revise dialogue.")
+        generate_proposal_draft(paths, proposal_id=proposal["id"])
+
+      draft_request = requests[1]
+      self.assertIn(long_intent, draft_request["context"]["proposal"]["instruction"])
+      for line in constraints:
+        self.assertIn(line, draft_request["context"]["proposal"]["instruction"])
+        self.assertIn(line, draft_request["user_prompt"])
+      log = json.loads((paths.root / proposal["generation"]["log_path"]).read_text())
+      self.assertEqual(log["normalization"]["section_item_counts"]["Constraints"], 7)
+      self.assertEqual(log["raw_response_text"], raw_plan)
+
   def test_local_line_edit_preserves_comparative_rather_than(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Preserve comparison")

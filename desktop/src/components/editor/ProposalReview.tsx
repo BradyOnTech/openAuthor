@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { GenerationAssessment } from "../common/GenerationAssessment";
+import { DraftWordTarget } from "./DraftWordTarget";
 import { useEditor } from "../../contexts/EditorContext";
-import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, type RevisionAuthorization } from "../../api";
+import { applyProposal, editProposalHunk, rebaseProposal, rejectProposal, undoProposal, getProposal, getScene, updateProposalHunk, selectDraftCandidate, prepareDraftRevision, type RevisionAuthorization } from "../../api";
 import { proposalGenerationSession } from "../../proposalGenerationSession";
-import type { ProposalProvider, ProposalRecord } from "../../types";
+import type { DraftRevisionFocus, ProposalProvider, ProposalRecord } from "../../types";
 import { defaultProvider } from "../../providerSelection";
 import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from "../../sceneSaveSession";
 import { RevisionContextReview } from "./RevisionContextReview";
 import { EditorialFindings } from "./EditorialFindings";
 import { PassageComparison } from "../shared/PassageComparison";
+import { DraftCraftReview } from "./DraftCraftReview";
+import { proposalDisplayLabel } from "../../state";
+import { draftRevisionFocusLabel, draftRevisionFocusOptions } from "../../revisionFocus";
+import { WritingBriefDirection } from "./WritingBriefDirection";
 
 type Props = {
   proposal: ProposalRecord;
@@ -39,6 +44,12 @@ export function ProposalReview({ proposal: initial }: Props) {
   const [feedbackHunkId, setFeedbackHunkId] = useState("");
   const [hunkFeedback, setHunkFeedback] = useState("");
   const [hunkReview, setHunkReview] = useState<{ id: string; feedback: string } | null>(null);
+  const [reviewDraft, setReviewDraft] = useState(true);
+  const [writingModel, setWritingModel] = useState(initial.draft?.model ?? (initial.draft_revision?.source.model || undefined) ?? initial.generation?.model ?? "");
+  const [draftFeedback, setDraftFeedback] = useState("");
+  const [draftFocus, setDraftFocus] = useState<DraftRevisionFocus>(initial.draft_revision?.focus ?? "");
+  const revisionRequest = useRef<{ feedback: string; focus: DraftRevisionFocus; updatedAt: string; id: string } | null>(null);
+  const [reviewEffort, setReviewEffort] = useState<"" | "low" | "medium" | "high">(initial.draft?.review_reasoning_effort ?? "");
   const draftSession = useMemo(() => proposalGenerationSession(projectRoot, initial.id), [projectRoot, initial.id]);
   const draftState = useSyncExternalStore(draftSession.subscribe, draftSession.getSnapshot);
   const hunkSession = useMemo(() => proposalGenerationSession(projectRoot, `${initial.id}:hunks`), [projectRoot, initial.id]);
@@ -52,6 +63,8 @@ export function ProposalReview({ proposal: initial }: Props) {
   }, []);
 
   const draftProvider: ProposalProvider =
+    (proposal.draft?.provider as ProposalProvider | undefined) ??
+    ((proposal.draft_revision?.source.provider || undefined) as ProposalProvider | undefined) ??
     (proposal.generation?.provider as ProposalProvider | undefined) ??
     defaultProvider(runtimeConfig).id;
 
@@ -64,13 +77,31 @@ export function ProposalReview({ proposal: initial }: Props) {
     setBusy("draft");
     try {
       if (!await flushProjectSceneSaves(projectRoot)) throw new Error("Save pending writing before drafting.");
-      const results = authorization && draftState.reviewTask ? await draftSession.approveDraft(draftState.reviewTask.index, authorization)
-        : draftState.job ? await draftSession.retry() : await draftSession.start([{
-        sceneId: proposal.scene_id, instruction: proposal.instruction, provider: draftProvider,
-      }], proposal.id);
+      let results;
+      if (authorization && draftState.reviewTask) results = await draftSession.approveDraft(draftState.reviewTask.index, authorization);
+      else if (draftState.job) results = await draftSession.retry();
+      else {
+        let target = proposal;
+        if (draftFeedback.trim()) {
+          if (revisionRequest.current?.feedback !== draftFeedback || revisionRequest.current?.focus !== draftFocus || revisionRequest.current?.updatedAt !== proposal.updated_at)
+            revisionRequest.current = { feedback: draftFeedback, focus: draftFocus, updatedAt: proposal.updated_at, id: crypto.randomUUID() };
+          target = await prepareDraftRevision(projectRoot, proposal, draftFeedback, revisionRequest.current.id, draftFocus);
+          await refreshProposals();
+        }
+        results = await draftSession.start([{
+          sceneId: target.scene_id, instruction: target.instruction, provider: draftProvider,
+          model: writingModel.trim() || undefined,
+          reviewMode: reviewDraft ? "refine" : "off",
+          reviewReasoningEffort: reviewDraft && draftProvider === "openai-codex" ? reviewEffort || undefined : undefined,
+        }], target.id);
+      }
       if (!results || !view.current.mounted || view.current.key !== viewKey) return;
       const updated = results[0];
-      syncTab(updated);
+      if (updated.id === proposal.id) syncTab(updated);
+      else {
+        openTab({ id: `proposal:${updated.id}`, kind: "proposal", label: proposalDisplayLabel(updated), data: updated });
+        setDraftFeedback(""); revisionRequest.current = null;
+      }
       draftSession.clear();
       setMessage("Draft ready — review the revised scene text below, then apply.");
       await refreshProposals();
@@ -189,7 +220,7 @@ export function ProposalReview({ proposal: initial }: Props) {
     try {
       const updated = await rejectProposal(projectRoot, proposal.id);
       syncTab(updated);
-      setMessage(`Proposal rejected: ${proposal.title}`);
+      setMessage(`${selectionUnchanged ? "Result dismissed" : "Proposal rejected"}: ${proposal.title}`);
       await refreshProposals();
     } catch (e) {
       setError(`Reject failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -234,15 +265,18 @@ export function ProposalReview({ proposal: initial }: Props) {
   const changeSet = proposal.change_set;
   const acceptedCount = changeSet?.hunks.filter((hunk) => hunk.decision === "accepted").length ?? 0;
   const displayStatus = proposal.undone_at ? "undone" : proposal.status;
-  const statusLabel = proposal.status === "pending" && proposal.selection
-    ? proposal.selection.action === "critique" ? "Feedback ready" : "Replacement awaiting review" : displayStatus;
+  const selectionUnchanged = Boolean(proposal.selection && proposal.selection.action !== "critique"
+    && (proposal.selection.unchanged || proposal.selection.before === proposal.selection.after));
+  const statusLabel = selectionUnchanged && proposal.status === "rejected" ? "Dismissed"
+    : proposal.status === "pending" && proposal.selection
+      ? proposal.selection.action === "critique" ? "Feedback ready" : selectionUnchanged ? "No replacement suggested" : "Replacement awaiting review" : displayStatus;
 
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
-        <div className="review-card__title">{proposal.title || proposal.id.slice(0, 12)}</div>
+        <div className="review-card__title">{proposalDisplayLabel(proposal)}</div>
         <div className="review-card__meta">
-          <span className={`badge badge--${displayStatus}`}>{statusLabel}</span>
+          <span className={selectionUnchanged ? "badge" : `badge badge--${displayStatus}`}>{statusLabel}</span>
           {proposal.stale && proposal.status === "pending" && (
             <span className="badge badge--warning" title="The scene changed after this proposal was written">
               scene changed
@@ -252,6 +286,23 @@ export function ProposalReview({ proposal: initial }: Props) {
           {proposal.source && <span>{proposal.source}</span>}
         </div>
       </div>
+
+      {proposal.draft?.writing_review && <DraftCraftReview report={proposal.draft.writing_review} disabled={Boolean(busy)}
+        onChoose={proposal.status === "pending" && !proposal.stale ? candidate => {
+          setBusy("choose-candidate");
+          void flushProjectSceneSaves(projectRoot).then(saved => {
+            if (!saved) throw new Error("Save pending writing before choosing a candidate.");
+            return selectDraftCandidate(projectRoot, proposal, candidate);
+          }).then(updated => {
+            if (!view.current.mounted || view.current.key !== viewKey) return;
+            syncTab(updated); setMessage("Candidate selected. Review the rebuilt hunks before applying.");
+            return refreshProposals();
+          }).catch(error => {
+            if (view.current.mounted && view.current.key === viewKey) setError(error instanceof Error ? error.message : String(error));
+          }).finally(() => {
+            if (view.current.mounted && view.current.key === viewKey) setBusy("");
+          });
+        } : undefined} />}
 
       {proposal.instruction && (
         <div className="review-card__section">
@@ -279,6 +330,8 @@ export function ProposalReview({ proposal: initial }: Props) {
           </div>
         </div>
       )}
+
+      {hasDraft && <DraftWordTarget body={proposal.proposed_body ?? ""} target={proposal.revision_intent?.scene_contract?.word_range} />}
 
       {proposal.rebase_report?.status === "conflicted" && (
         <div className="review-card__section">
@@ -373,11 +426,12 @@ export function ProposalReview({ proposal: initial }: Props) {
       )}
 
       {proposal.selection && <section className="review-card__section selection-review" aria-label="Selected passage review">
-        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : "Selected passage · review before applying"}</h3>
-        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" ? "Accepting replaces only this passage." : ""}</p>
+        <h3>{proposal.selection.action === "critique" ? "Critique · feedback only" : selectionUnchanged ? "Selected passage · unchanged" : "Selected passage · review before applying"}</h3>
+        <p>Characters {proposal.selection.start + 1}–{proposal.selection.end}. {selectionUnchanged ? "The writer returned this passage unchanged. Your manuscript was not altered." : proposal.selection.action === "critique" ? "Feedback never changes the manuscript." : "Surrounding prose is protected."} {proposal.stale ? "The scene or book version changed; select the passage again for a new request." : proposal.status === "pending" && proposal.selection.action !== "critique" && !selectionUnchanged ? "Accepting replaces only this passage." : ""}</p>
         {proposal.selection.action === "critique" ? proposal.selection.review
           ? <EditorialFindings review={proposal.selection.review} feedback={proposal.selection.feedback} stale={Boolean(proposal.stale)} />
           : <div className="selection-review__comparison"><div><strong>Selected passage</strong><blockquote>{proposal.selection.before}</blockquote></div><div><strong>Feedback · quotations not verified</strong><blockquote>{proposal.selection.feedback}</blockquote></div></div>
+          : selectionUnchanged ? <blockquote>{proposal.selection.before}</blockquote>
           : <PassageComparison before={proposal.selection.before} after={proposal.selection.after} />}
         {proposal.generation?.provider === "local" && <p>Local deterministic result. This is a mechanical aid, not a creative AI quality assessment.</p>}
         {!selectionVerified && <p role="status">Checking current scene and book version before any manuscript change.</p>}
@@ -412,8 +466,34 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       )}
 
+      {proposal.draft_revision && <section className="review-card__section" aria-label="Draft revision source">
+        <div className="review-card__section-title">Draft feedback</div>
+        {proposal.draft_revision.focus && <p>Revision focus: {draftRevisionFocusLabel(proposal.draft_revision.focus)}</p>}
+        <p style={{ whiteSpace: "pre-wrap" }}>{proposal.draft_revision.feedback}</p>
+        <details open><summary>Compare previous draft with this revision</summary>
+          <p>These highlights compare the two proposed drafts. The manuscript changes above still compare against the saved scene.</p>
+          <PassageComparison beforeLabel="Previous draft" afterLabel="Revised draft" before={proposal.draft_revision.source.body} after={proposal.proposed_body ?? ""} />
+        </details>
+      </section>}
+
+      {proposal.revision_intent?.scene_contract && Object.keys(proposal.revision_intent.scene_contract).length > 0 && <details className="review-card__section">
+        <summary>Writing brief retained with this Change Set</summary>
+        <WritingBriefDirection value={proposal.revision_intent.scene_contract} />
+      </details>}
+
+      {proposal.draft && hasDraft && !proposal.selection && (
+        <div className="review-card__generation-meta" aria-label="Draft generation receipt">
+          <strong>{proposal.draft.writing_review?.stages.length ? "Draft and review" : "Draft"}</strong>
+          <span>{proposal.draft.provider}/{proposal.draft.model}</span>
+          <span>{proposal.draft.input_tokens} in / {proposal.draft.output_tokens} out</span>
+          {proposal.draft.latency_ms != null && <span>{(proposal.draft.latency_ms / 1000).toFixed(1)}s</span>}
+          {proposal.draft.estimated_cost_usd != null && <span>${proposal.draft.estimated_cost_usd.toFixed(4)}</span>}
+        </div>
+      )}
+
       {gen && (
-        <div className="review-card__generation-meta">
+        <div className="review-card__generation-meta" aria-label={proposal.selection ? "Passage generation receipt" : "Edit plan generation receipt"}>
+          <strong>{proposal.selection ? "Passage" : "Edit plan"}</strong>
           <span>{gen.provider}/{gen.model}</span>
           <span>{gen.input_tokens} in / {gen.output_tokens} out</span>
           {gen.latency_ms != null && <span>{(gen.latency_ms / 1000).toFixed(1)}s</span>}
@@ -444,9 +524,34 @@ export function ProposalReview({ proposal: initial }: Props) {
 
       {draftState.reviewTask && !draftState.busy && <RevisionContextReview key={`${draftState.job!.id}:${draftState.reviewTask.index}`}
         projectRoot={projectRoot} proposalId={draftState.reviewTask.proposalId} provider={draftState.reviewTask.input.provider}
-        model={draftState.reviewTask.input.model} onSend={handleDraft} onClose={draftSession.clear} />}
+        model={draftState.reviewTask.input.model} reviewMode={draftState.reviewTask.input.reviewMode}
+        reviewReasoningEffort={draftState.reviewTask.input.reviewReasoningEffort} onSend={handleDraft} onClose={draftSession.clear} />}
 
       {proposal.status === "pending" && (
+        <>
+        {hasDraft && !proposal.selection && proposal.source !== "merge_resolution" && !draftState.job && !proposal.stale && <section className="review-card__section">
+          <label htmlFor={`draft-feedback-${proposal.id}`}>Feedback for this draft</label>
+          <textarea id={`draft-feedback-${proposal.id}`} className="input" rows={3} maxLength={6000} value={draftFeedback}
+            disabled={Boolean(busy)} onChange={event => setDraftFeedback(event.target.value)} placeholder="What should change in this draft?" />
+          <label style={{ display: "grid", gap: "var(--space-1)", marginTop: "var(--space-2)" }}>Revision focus
+            <select className="input" value={draftFocus} disabled={Boolean(busy)} onChange={event => setDraftFocus(event.target.value as DraftRevisionFocus)}>
+              {draftRevisionFocusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <p>Feedback creates a separate Change Set. This draft remains available, and your manuscript changes only when you apply.</p>
+        </section>}
+        {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && !draftState.job && <section className="review-card__section" aria-label="Draft settings" style={{ display: "grid", gap: "var(--space-3)" }}>
+          <label style={{ display: "grid", gap: "var(--space-1)" }}>Writing model (optional)
+            <input className="input" value={writingModel} disabled={Boolean(busy) || draftState.busy} onChange={event => setWritingModel(event.target.value)} placeholder="Provider default" />
+          </label>
+          <label><input type="checkbox" checked={reviewDraft} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewDraft(event.target.checked)} /> Review and refine the draft</label>
+          {reviewDraft && draftProvider === "openai-codex" && <label style={{ display: "grid", gap: "var(--space-1)" }}>
+            Review reasoning effort <select className="input" value={reviewEffort} disabled={Boolean(busy) || draftState.busy} onChange={event => setReviewEffort(event.target.value as typeof reviewEffort)}>
+              <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+            </select>
+            {reviewEffort === "high" && <small>High allows up to three minutes for each review step by default. The first draft keeps its model default.</small>}
+          </label>}
+        </section>}
         <div className="review-card__actions">
           {draftState.error && <p role="alert">{draftState.error} Saved results are reused; an unsaved provider result may require another paid attempt.</p>}
           {draftState.error && !draftState.busy && draftState.job?.tasks.find(task => !task.drafted)?.authorization && <>
@@ -460,15 +565,17 @@ export function ProposalReview({ proposal: initial }: Props) {
             </button>
           )}
           {proposal.scene_id && proposal.source !== "merge_resolution" && !proposal.selection && !draftState.reviewTask && (
+            <>
             <button className="btn btn--primary" style={{ minHeight: 40 }} disabled={Boolean(busy) || draftState.busy} onClick={() => void handleDraft()}>
               {draftState.busy
                 ? "Drafting..."
                 : draftState.job ? "Retry draft" : hasDraft
-                  ? "Regenerate Change Set"
+                  ? draftFeedback.trim() ? "Review draft revision" : "Regenerate Change Set"
                   : "Build Change Set"}
             </button>
+            </>
           )}
-          {proposal.source !== "merge_resolution" && hasDraft && (
+          {proposal.source !== "merge_resolution" && hasDraft && !selectionUnchanged && (
             <button
               className="btn btn--success"
               disabled={Boolean(busy) || Boolean(proposal.selection && (!selectionVerified || proposal.stale)) || Boolean(changeSet && (acceptedCount === 0 || proposal.stale))}
@@ -482,13 +589,14 @@ export function ProposalReview({ proposal: initial }: Props) {
                   : proposal.selection ? "Accept selected replacement" : `Apply ${acceptedCount || "selected"} ${acceptedCount === 1 ? "change" : "changes"}`}
             </button>
           )}
-          <button className="btn btn--danger" disabled={Boolean(busy)} onClick={handleReject}>
-            Reject
+          <button className={selectionUnchanged ? "btn" : "btn btn--danger"} disabled={Boolean(busy)} onClick={handleReject}>
+            {selectionUnchanged ? "Dismiss result" : "Reject"}
           </button>
           {proposal.scene_id && (
             <button className="btn btn--ghost" onClick={handleOpenScene}>Open Scene</button>
           )}
         </div>
+        </>
       )}
 
       {proposal.status !== "pending" && proposal.scene_id && (

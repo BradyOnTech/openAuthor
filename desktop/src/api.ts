@@ -1,4 +1,6 @@
 import type {
+  SceneWritingBrief,
+  WritingBriefReceipt,
   BranchDiffReport,
   BranchMergeResult,
   BranchPreflightReport,
@@ -17,6 +19,7 @@ import type {
   CanonEvidence,
   ContinuityIssue,
   CoreCommandResponse,
+  DraftRevisionFocus,
   GenerationBudgetReport,
   GenerationPin,
   GenerationRunDetail,
@@ -454,13 +457,14 @@ export async function previewPlanSceneMove(
 export async function updatePlanSceneMetadata(
   projectRoot: string,
   sceneId: string,
-  metadata: { timelinePosition: string; labels: string[] },
+  metadata: { timelinePosition: string; labels: string[]; writingBrief?: SceneWritingBrief },
   expectedVersion?: { workspace: string; value: ManuscriptPlan["scene_metadata"][string] }
 ): Promise<ManuscriptPlan["scene_metadata"][string]> {
   const args = ["plan", "scene-meta", "--scene", sceneId, "--timeline", metadata.timelinePosition];
   for (const label of metadata.labels) args.push("--label", label);
   if (!metadata.labels.length) args.push("--clear-labels");
   if (expectedVersion) args.push("--expected-version", JSON.stringify(expectedVersion));
+  if (metadata.writingBrief !== undefined) args.push("--writing-brief", JSON.stringify(metadata.writingBrief));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson(result);
@@ -551,6 +555,9 @@ export async function generateProposal(
     retrievalRequireFresh?: boolean;
     constraints?: string[];
     protectedElements?: string[];
+    sceneContract?: SceneWritingBrief;
+    reviewMode?: "off" | "refine";
+    reviewReasoningEffort?: ReviewReasoningEffort;
     changeGroupId?: string;
     authorization?: RevisionAuthorization;
   }
@@ -607,6 +614,7 @@ export async function generateProposal(
   if (payload.changeGroupId?.trim()) {
     args.push("--change-group", payload.changeGroupId.trim());
   }
+  if (payload.sceneContract) args.push("--scene-contract", JSON.stringify(payload.sceneContract));
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
@@ -666,9 +674,13 @@ export async function draftProposal(
     temperature?: number;
     maxOutputTokens?: number;
     authorization?: RevisionAuthorization;
+    reviewMode?: "off" | "refine";
+    reviewReasoningEffort?: ReviewReasoningEffort;
   }
 ): Promise<ProposalRecord> {
   const args = ["proposal", "draft", "--id", payload.proposalId, "--provider", payload.provider];
+  if (payload.reviewMode) args.push("--review-mode", payload.reviewMode);
+  if (payload.reviewReasoningEffort) args.push("--review-reasoning-effort", payload.reviewReasoningEffort);
   if (payload.requestId) args.push("--request-id", payload.requestId);
   if (payload.model && payload.model.trim() !== "") {
     args.push("--model", payload.model);
@@ -684,6 +696,17 @@ export async function draftProposal(
   args.push("--json");
   const result = await runCoreCommand(projectRoot, args);
   return decodeJson<ProposalRecord>(result);
+}
+
+export async function prepareDraftRevision(projectRoot: string, proposal: ProposalRecord,
+  feedback: string, requestId: string, focus: DraftRevisionFocus = ""): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "draft-revision", "--input-json",
+    JSON.stringify({ proposal_id: proposal.id, feedback, expected_updated_at: proposal.updated_at, request_id: requestId, ...(focus ? { focus } : {}) }), "--json"]));
+}
+
+export async function selectDraftCandidate(projectRoot: string, proposal: ProposalRecord, candidate: "first" | "refined"): Promise<ProposalRecord> {
+  return decodeJson(await runCoreCommand(projectRoot, ["proposal", "draft-select", "--id", proposal.id,
+    "--candidate", candidate, "--expected-updated-at", proposal.updated_at, "--json"]));
 }
 
 export async function updateProposalHunk(
@@ -990,14 +1013,34 @@ export type ChatSendPayload = {
 };
 
 export type MemoryApproval = { entity_id: string; detail_key?: string };
+export type ReviewReasoningEffort = "low" | "medium" | "high";
 export type RevisionAuthorization = { fingerprint: string; memoryApprovals: MemoryApproval[]; storyApprovals: string[] };
 export type RevisionContextPreview = Pick<SelectionPreview, "fingerprint" | "provider" | "model" | "system_prompt" | "user_prompt" | "estimated_input_tokens" | "max_output_tokens" | "memory_choices" | "story_choices"> & {
+  review_reasoning_effort?: ReviewReasoningEffort;
+  writing_review?: { mode: string; maximum_calls: number; systems: Record<string, string>; output_allowances?: { critique: number; verify: number } } | null;
   style_profile_status?: { freshness: "absent" | "current" | "stale" | "unknown"; included: boolean; reference_mode: "current" | "frozen" };
-  context: { scene: { id: string; title: string }; guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string }>; codex_entities: Array<{ id: string; name: string }>; story_plan: { limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number } } };
+  context: {
+    scene: { id: string; title: string }; author_feedback?: string; revision_focus?: DraftRevisionFocus;
+    current_candidate?: string; scene_contract?: SceneWritingBrief; writing_brief?: WritingBriefReceipt;
+    preceding_prose?: Array<{ id: string; title: string; pov: string; body: string; omitted_characters: number }>;
+    quoted_editing?: { mode: "quoted_text"; passages: Array<{ id: string; text: string }> };
+    writing_craft?: { name: string; version: string; task: string; resources: string[]; sha256: string };
+    guidance_branch?: string; nearby_scenes?: Array<{ id: string; title: string; body?: string }>;
+    codex_entities: Array<{ id: string; name: string; type?: string; description?: string; details?: Array<{ key: string; value: unknown }> }>;
+    writing_voice?: { name?: string; description?: string; guidance?: string[]; avoid?: string[]; observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }> };
+    story_plan: {
+      brief?: { synopsis: string; genre: string; themes: string[]; style_guide: string; outline: string };
+      structure?: Array<{ id: string; title: string; synopsis: string; chapters: Array<{ id: string; title: string; synopsis: string }> }>;
+      beats?: Array<{ scene_id: string; summary: string; status: string }>;
+      limits: { clipped_fields: string[]; omitted_chapters: number; omitted_relevant_beats: number }
+    };
+  };
   limits: { omitted_memory_ids: string[] };
 };
 export async function previewProposalRevision(projectRoot: string, input: {
   proposal_id: string; hunk_id?: string; provider: ProposalProvider; model?: string; feedback?: string;
+  review_mode?: "off" | "refine";
+  review_reasoning_effort?: ReviewReasoningEffort;
   memory_approvals: MemoryApproval[]; story_approvals: string[];
 }): Promise<RevisionContextPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "revision-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -1007,7 +1050,7 @@ export async function previewProposalGeneration(projectRoot: string, input: Para
     temperature: input.temperature, max_output_tokens: input.maxOutputTokens, context_scene_radius: input.contextScenes,
     codex_limit: input.codexLimit, retrieval_mode: input.retrievalMode, retrieval_limit: input.retrievalLimit,
     retrieval_min_score: input.retrievalMinScore, retrieval_require_fresh: input.retrievalRequireFresh,
-    constraints: input.constraints, protected_elements: input.protectedElements,
+    constraints: input.constraints, protected_elements: input.protectedElements, scene_contract: input.sceneContract,
     memory_approvals: memoryApprovals, story_approvals: storyApprovals };
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "generation-preview", "--input-json", JSON.stringify(payload), "--json"]));
 }
@@ -1029,6 +1072,7 @@ export type SelectionPreview = {
   memory_choices: ChatContextPreview["memory_choices"];
   story_choices?: StoryContextChoice[];
   review?: { focus: EditorialReviewFocus; scope: "passage" | "chapter"; scene_ids: string[] };
+  context?: { writing_brief?: WritingBriefReceipt };
 };
 export async function previewSelection(projectRoot: string, input: SelectionInput): Promise<SelectionPreview> {
   return decodeJson(await runCoreCommand(projectRoot, ["proposal", "selection-preview", "--input-json", JSON.stringify(input), "--json"]));
@@ -2125,6 +2169,7 @@ export type StyleProfile = {
   exemplar_scene_ids: string[];
   exemplar_digests?: Record<string, string>;
   observations?: Array<{ scene_id: string; aspect: string; observation: string; excerpt: string }>;
+  use_exemplar_evidence?: boolean;
   created_at: string;
   reference_mode?: "current" | "frozen";
   freshness?: "current" | "stale" | "unknown";

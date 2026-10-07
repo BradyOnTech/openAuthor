@@ -11,7 +11,10 @@ CHANGE_SET_SCHEMA_VERSION = 1
 HUNK_DECISIONS = {"accepted", "rejected"}
 
 
-def _units(text: str) -> list[str]:
+def _units(text: str, editable_scope: str = "") -> list[str]:
+  if editable_scope == "quoted_text":
+    from .quoted_editing import quoted_units
+    return quoted_units(text)
   if not text:
     return []
   return [unit for unit in re.split(r"(?<=[.!?])(?=\s)|(?<=\n)(?=\S)", text) if unit]
@@ -40,13 +43,24 @@ def build_change_set(
   provenance: dict[str, Any] | None = None,
   constraints: list[str] | None = None,
   protected_elements: list[str] | None = None,
+  editable_scope: str = "",
 ) -> dict[str, Any]:
+  if editable_scope not in {"", "quoted_text"}:
+    raise OpenAuthorError("Choose whole-scene or quoted-text editing for Change Hunks.")
   after_body = _preserve_terminal_newline(before_body, after_body)
-  before_units = _units(before_body)
-  after_units = _units(after_body)
-  matcher = difflib.SequenceMatcher(a=before_units, b=after_units, autojunk=False)
+  before_units = _units(before_body, editable_scope)
+  after_units = _units(after_body, editable_scope)
+  if editable_scope == "quoted_text":
+    from .quoted_editing import QuotedRevision
+    QuotedRevision(before_body).validate_result(after_body)
+    # Passage positions are fixed. Sequence matching can align quoted sentences
+    # with narration and create hunks that are unsafe to accept independently.
+    opcodes = [("replace", index, index + 1, index, index + 1)
+      for index in range(1, len(before_units), 2) if before_units[index] != after_units[index]]
+  else:
+    opcodes = difflib.SequenceMatcher(a=before_units, b=after_units, autojunk=False).get_opcodes()
   hunks: list[dict[str, Any]] = []
-  for tag, before_start, before_end, after_start, after_end in matcher.get_opcodes():
+  for tag, before_start, before_end, after_start, after_end in opcodes:
     if tag == "equal":
       continue
     before_text = "".join(before_units[before_start:before_end])
@@ -102,6 +116,7 @@ def build_change_set(
       "scope": "scene",
       "constraints": constraints or [],
       "protected_elements": protected_elements or [],
+      **({"editable_scope": editable_scope} if editable_scope else {}),
     },
     "base_body": before_body,
     "proposed_body": after_body,
@@ -167,7 +182,9 @@ def edit_hunk_after_text(
 
 def render_change_set(change_set: dict[str, Any]) -> str:
   validate_change_set(change_set)
-  before_units = _units(str(change_set.get("base_body", "")))
+  editable_scope = change_set.get("intent", {}).get("editable_scope", "")
+  base_body = str(change_set.get("base_body", ""))
+  before_units = _units(base_body, editable_scope)
   output: list[str] = []
   cursor = 0
   for hunk in sorted(change_set["hunks"], key=lambda row: int(row.get("order", 0))):
@@ -182,7 +199,11 @@ def render_change_set(change_set: dict[str, Any]) -> str:
       output.extend(before_units[start:end])
     cursor = end
   output.extend(before_units[cursor:])
-  return "".join(output)
+  result = "".join(output)
+  if editable_scope == "quoted_text":
+    from .quoted_editing import QuotedRevision
+    QuotedRevision(base_body).validate_result(result)
+  return result
 
 
 def rebase_change_set(change_set: dict[str, Any], current_body: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -194,9 +215,26 @@ def rebase_change_set(change_set: dict[str, Any], current_body: str) -> tuple[di
     (str(hunk.get("before_text", "")), str(hunk.get("after_text", ""))): hunk.get("decision", "accepted")
     for hunk in change_set["hunks"]
   }
+  editable_scope = change_set.get("intent", {}).get("editable_scope", "")
+  if editable_scope == "quoted_text":
+    try:
+      original_units = _units(str(change_set.get("base_body", "")), editable_scope)
+      current_units = _units(current_body, editable_scope)
+    except OpenAuthorError as error:
+      return change_set, {"status": "conflicted", "carried_hunk_ids": [], "conflicts": [{
+        "hunk_id": "", "reason": "quotation_boundaries_changed", "message": str(error)}]}
   for hunk in sorted(change_set["hunks"], key=lambda row: int(row.get("order", 0))):
     before_text = str(hunk.get("before_text", ""))
     after_text = str(hunk.get("after_text", ""))
+    if editable_scope == "quoted_text":
+      start, end = int(hunk["before_start"]), int(hunk["before_end"])
+      if len(original_units) != len(current_units) or start % 2 != 1 or end != start + 1 or start >= len(current_units) or current_units[start] != before_text:
+        conflicts.append({"hunk_id": hunk["id"], "reason": "source_passage_changed",
+          "message": "The quoted passage or its position changed. Review a fresh quoted-text draft."})
+      else:
+        current_units[start] = after_text
+        carried.append(hunk["id"])
+      continue
     if not before_text:
       conflicts.append({
         "hunk_id": hunk["id"],
@@ -229,6 +267,8 @@ def rebase_change_set(change_set: dict[str, Any], current_body: str) -> tuple[di
   if conflicts:
     return change_set, report
 
+  if editable_scope == "quoted_text":
+    candidate = "".join(current_units)
   rebased = build_change_set(
     proposal_id=str(change_set.get("proposal_id", "")),
     scene_id=str(change_set.get("scene_id", "")),
@@ -238,9 +278,11 @@ def rebase_change_set(change_set: dict[str, Any], current_body: str) -> tuple[di
     provenance=dict(change_set.get("provenance", {})),
     constraints=[str(value) for value in change_set.get("intent", {}).get("constraints", [])],
     protected_elements=[str(value) for value in change_set.get("intent", {}).get("protected_elements", [])],
+    editable_scope=editable_scope,
   )
+  quote_decisions = {row["before_start"]: row["decision"] for row in change_set["hunks"]}
   for hunk in rebased["hunks"]:
-    hunk["decision"] = original_decisions.get(
+    hunk["decision"] = quote_decisions.get(hunk["before_start"], "accepted") if editable_scope == "quoted_text" else original_decisions.get(
       (str(hunk.get("before_text", "")), str(hunk.get("after_text", ""))),
       "accepted",
     )

@@ -15,6 +15,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: async (_: string, payload: { ar
   return { status: 0, stderr: "", stdout: JSON.stringify({
     fingerprint: approved ? "approved-fingerprint" : "initial-fingerprint", provider: "local", model: "heuristic-v1", estimated_input_tokens: 350, max_output_tokens: 700,
     system_prompt: "Preserve the original facts.", user_prompt: "Saved terse style guidance.",
+    writing_review: input.review_mode === "refine" ? { mode: "refine", maximum_calls: 4, systems: { critique: "Compare source meaning." }, output_allowances: { critique: 4200, verify: 4200 } } : null,
     context: { scene: { id: "scene-1", title: "Gate" }, codex_entities: [], story_plan: { limits: { clipped_fields: [], omitted_chapters: 0, omitted_relevant_beats: 0 } } },
     limits: { omitted_memory_ids: [] }, memory_choices: [],
     story_choices: [{ id: "fact-blue", kind: "fact", label: "Gate is blue", eligible: true, approved, included: approved, reason: "" }],
@@ -47,5 +48,15 @@ it("supports strict mounting and lets authors remove a grant after a failed refr
   await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   await waitFor(() => expect((screen.getByRole("button", { name: "Generate reviewed passage" }) as HTMLButtonElement).disabled).toBe(false));
   fireEvent.click(screen.getByRole("button", { name: "Generate reviewed passage" }));
+  await waitFor(() => expect(sent).toEqual([{ fingerprint: "initial-fingerprint", memoryApprovals: [], storyApprovals: [] }]));
+});
+
+it("sends the chosen scene review mode in the preview and discloses the additional review allowance", async () => {
+  const sent: RevisionAuthorization[] = [];
+  render(<RevisionContextReview projectRoot="/synthetic/source-audit" proposalId="proposal-audit" provider="local" reviewMode="refine" onClose={() => {}} onSend={async value => { sent.push(value); }} />);
+  await screen.findByText(/Critique and verification each use a 4,200 output-token limit/);
+  expect(boundary.calls[boundary.calls.length - 1]?.review_mode).toBe("refine");
+  expect(sent).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: "Generate reviewed scene" }));
   await waitFor(() => expect(sent).toEqual([{ fingerprint: "initial-fingerprint", memoryApprovals: [], storyApprovals: [] }]));
 });

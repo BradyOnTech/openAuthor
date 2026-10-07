@@ -194,7 +194,7 @@ class WritingVoiceTests(unittest.TestCase):
 
   def test_invalid_traits_and_oversized_preferences_fail_closed(self):
     before = self.save()
-    for profile in ({"traits": {"pacing": "warp"}}, {"traits": {"invented": "value"}}, {"description": "x" * 2401}, {"guidance": ["x" * 401]}, {"observations": [{}]}):
+    for profile in ({"traits": {"pacing": "warp"}}, {"traits": {"invented": "value"}}, {"description": "x" * 2401}, {"guidance": ["x" * 401]}, {"observations": [{}]}, {"use_exemplar_evidence": "yes"}):
       with self.subTest(profile=profile), self.assertRaises(OpenAuthorError):
         self.save(profile)
       self.assertEqual(get_style_profile(self.paths), before)
@@ -210,10 +210,11 @@ class WritingVoiceTests(unittest.TestCase):
     self.assertEqual(approved["description"], "Close perspective and dry humor.")
 
   def test_model_analysis_is_evidence_linked_bounded_and_not_automatically_saved(self):
-    response = self.provider_result({"profile": PRESETS[2], "observations": [{"scene_id": "scene-0001", "aspect": "Emotional restraint", "observation": "The count is spoken without an emotional explanation.", "excerpt": '"Seven," she said.'}]})
+    response = self.provider_result({"profile": {**PRESETS[2], "use_exemplar_evidence": True}, "observations": [{"scene_id": "scene-0001", "aspect": "Emotional restraint", "observation": "The count is spoken without an emotional explanation.", "excerpt": '"Seven," she said.'}]})
     with patch("openauthor.ai._call_provider", return_value=response) as provider:
       result = suggest_voice(self.paths, request={"brief": "Restrained feeling and atmospheric imagery.", "scene_ids": ["scene-0001"], "provider": "openai"})
     self.assertIsNone(get_style_profile(self.paths))
+    self.assertFalse(result["profile"]["use_exemplar_evidence"])
     prompt = provider.call_args.kwargs["user_prompt"]
     self.assertNotIn("UNSELECTED-MATERIAL", prompt)
     self.assertIn("Restrained feeling", prompt)

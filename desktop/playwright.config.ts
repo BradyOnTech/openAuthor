@@ -15,7 +15,9 @@ export default defineConfig({
     launchOptions: process.env.OPENAUTHOR_TEST_BROWSER === "webkit" ? {} : { executablePath: process.env.OPENAUTHOR_BROWSER_EXECUTABLE },
   },
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 4173",
+    command: process.env.OPENAUTHOR_TEST_PREVIEW === "1"
+      ? "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort"
+      : "npm run dev -- --host 127.0.0.1 --port 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: false,
     env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_ANON_KEY: "", VITE_PROJECT_REGISTRY: "local" },

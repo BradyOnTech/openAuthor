@@ -15,6 +15,8 @@ These states are intentionally independent. Core code is not treated as a shippe
 
 ## Current product truth
 
+The October 5 [story writing kit](story-writing-kit.md) adds task-specific fiction guidance, optional authored scene intent and word targets, and a fresh critique/refine/verify draft loop. Approved Writing Voice observations now include their stored exemplar quotations in writing context. Live development scenes and a real-engine browser journey have run; remote refinement has core coverage but no complete rendered automation or independent literary acceptance. Its registry entry remains below end-to-end and release certification.
+
 The current task-oriented assessment is [Author journey readiness](author-journey-readiness.md).
 The October 3 [tester-army/e2e workflow pass](../e2e/README.md) adds rendered
 coverage for Editorial Passes, Style Profiles, creative alternatives, Assistant

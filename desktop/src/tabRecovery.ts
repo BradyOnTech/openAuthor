@@ -1,5 +1,6 @@
 import { getScene, getCodexEntity, getProposal, listRevisions } from "./api";
 import type { EditorTab, SplitDirection } from "./contexts/EditorContext";
+import { proposalDisplayLabel } from "./state";
 
 type Bookmark = Pick<EditorTab, "id" | "kind" | "label"> & {
   reference?: string;
@@ -44,7 +45,7 @@ export async function restoreBookmarks(root: string, saved: SavedWorkspace): Pro
       if (simpleKinds.has(tab.kind)) return { id: tab.id, kind: tab.kind, label: tab.label, ...(tab.kind === "generate" && tab.request ? { data: { ...tab.request } } : {}) };
       if (tab.kind === "scene" && tab.reference) { const scene = await getScene(root, tab.reference); return { ...tab, label: scene.title, data: scene }; }
       if (tab.kind === "codex" && tab.reference) { const entity = await getCodexEntity(root, tab.reference); return { ...tab, label: entity.name, data: entity }; }
-      if (tab.kind === "proposal" && tab.reference) { const proposal = await getProposal(root, tab.reference); return { ...tab, data: proposal }; }
+      if (tab.kind === "proposal" && tab.reference) { const proposal = await getProposal(root, tab.reference); return { ...tab, ...(proposal.draft_revision ? { label: proposalDisplayLabel(proposal) } : {}), data: proposal }; }
       if (tab.kind === "alternatives" && tab.references?.length) { const proposals = await Promise.all(tab.references.map(id => getProposal(root, id))); return { ...tab, data: proposals }; }
       if (tab.kind === "revision" && tab.reference) { const revision = (await listRevisions(root, 500)).find(row => row.id === tab.reference); return revision ? { ...tab, data: revision } : null; }
       return null;

@@ -22,6 +22,20 @@ const requestId = (args: string[]) => args[args.indexOf("--request-id") + 1];
 const approval = { fingerprint: "reviewed-draft", memoryApprovals: [], storyApprovals: [] };
 
 describe("durable proposal generation", () => {
+  it("retains scene intent and the review mode through planning, restart and drafting", async () => {
+    const request = { ...input, provider: "openai-codex" as const, sceneContract: { purpose: "Test trust", turn: "Choose to wait", ending: "Keep the permit closed" }, reviewMode: "refine" as const, reviewReasoningEffort: "high" as const };
+    transport.send = async args => args[1] === "list" ? [{ id: "proposal-1" }] : { id: "proposal-1" };
+    const session = new ProposalGenerationSession("/synthetic/craft");
+    await session.start([request]);
+    await session.approvePlan(0, approval);
+    expect(transport.calls[0]).toContain(JSON.stringify(request.sceneContract));
+    const restarted = new ProposalGenerationSession("/synthetic/craft");
+    expect(restarted.getSnapshot().reviewTask?.input).toEqual(request);
+    await restarted.approveDraft(0, approval);
+    const draft = transport.calls.find(args => args[1] === "draft")!;
+    expect(draft[draft.indexOf("--review-reasoning-effort") + 1]).toBe("high");
+    expect(draft[draft.indexOf("--review-mode") + 1]).toBe("refine");
+  });
   it("sends no initial plan before its context is durably approved", async () => {
     const session = new ProposalGenerationSession("/synthetic/first-review");
     await session.start([input]);

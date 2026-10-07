@@ -72,6 +72,7 @@ def get_plan(paths: ProjectPaths, *, persist: bool = True) -> dict[str, Any]:
     scene_id: {
       "timeline_position": str(value.get("timeline_position", "")).strip(),
       "labels": [str(label).strip() for label in value.get("labels", []) if str(label).strip()],
+      **({"writing_brief": value["writing_brief"]} if "writing_brief" in value else {}),
     }
     for scene_id, value in plan.get("scene_metadata", {}).items()
     if scene_id in current and isinstance(value, dict)
@@ -107,6 +108,7 @@ def update_scene_metadata(
   scene_id: str,
   timeline_position: str | None = None,
   labels: list[str] | None = None,
+  writing_brief: dict[str, Any] | None = None,
   expected_version: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
   _check_plan_edit(paths, expected_version, _read_plan(paths)["scene_metadata"].get(scene_id, {"timeline_position": "", "labels": []}))
@@ -118,6 +120,9 @@ def update_scene_metadata(
     current["timeline_position"] = timeline_position.strip()
   if labels is not None:
     current["labels"] = list(dict.fromkeys(value.strip() for value in labels if value.strip()))
+  if writing_brief is not None:
+    from .writing_craft import validate_scene_contract
+    current["writing_brief"] = validate_scene_contract(writing_brief)
   plan["scene_metadata"][scene_id] = current
   atomic_write_json(paths.structure_file, plan)
   return current

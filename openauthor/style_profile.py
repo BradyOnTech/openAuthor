@@ -146,6 +146,9 @@ def validate_profile(value: Any, *, require_verified_sources: bool = False, allo
   metrics = value.get("metrics", {})
   if not isinstance(metrics, dict) or len(json.dumps(metrics)) > 4000:
     raise OpenAuthorError("Writing Voice metrics are invalid.")
+  use_evidence = value.get("use_exemplar_evidence", False)
+  if type(use_evidence) is not bool:
+    raise OpenAuthorError("Choose whether approved exemplar quotations may be included in AI writing.")
   return {
     "schema_version": 2, "name": _text(value.get("name", "My book's voice"), "name", 100) or "My book's voice",
     "description": _text(value.get("description", ""), "description", 2400), "traits": normalized,
@@ -154,7 +157,8 @@ def validate_profile(value: Any, *, require_verified_sources: bool = False, allo
     "reference_mode": value.get("reference_mode", "current"),
     "source_digests": source_digests,
     "measurement": value.get("measurement", {"method": "author_approved_traits", "limitations": ["Author preferences are not measured prose quality."]}),
-    "observations": evidence, "metrics": metrics, "created_at": _text(value.get("created_at", ""), "created timestamp", 100),
+    "observations": evidence, "use_exemplar_evidence": use_evidence,
+    "metrics": metrics, "created_at": _text(value.get("created_at", ""), "created timestamp", 100),
   }
 
 
@@ -190,8 +194,19 @@ def voice_context(profile: dict[str, Any] | None) -> dict[str, Any]:
   return {key: checked[key] for key in ("name", "description", "traits", "guidance", "avoid")}
 
 
+def voice_evidence_context(profile: dict[str, Any] | None) -> dict[str, Any]:
+  """AI writing projection; companion snapshots retain the trait-only summary."""
+  result = voice_context(profile)
+  if not profile:
+    return result
+  checked = validate_profile(profile)
+  if checked["use_exemplar_evidence"] and checked["observations"]:
+    result["observations"] = checked["observations"]
+  return result
+
+
 def voice_prompt(profile: dict[str, Any] | None) -> str:
-  context = voice_context(profile)
+  context = voice_evidence_context(profile)
   return VOICE_GUIDANCE + ("\nApproved manuscript Writing Voice:\n" + json.dumps(context, ensure_ascii=False) if context else "")
 
 
@@ -210,6 +225,11 @@ def style_profile_context(paths: ProjectPaths) -> dict[str, Any]:
   projection = {key: profile[key] for key in (
     "name", "description", "traits", "avoid", "exemplar_scene_ids", "created_at", "source_digests", "reference_mode", "freshness", "metrics", "measurement", "guidance",
   )} if profile["usable_for_ai"] else None
+  if projection is not None and profile["use_exemplar_evidence"] and profile["observations"]:
+    # These bounded quotations were inspected and approved with the profile.
+    # A frozen reference keeps the stored evidence, never newer exemplar prose.
+    projection["observations"] = profile["observations"]
+    projection["use_exemplar_evidence"] = True
   return {"profile": projection, "status": {
     "freshness": profile["freshness"], "included": profile["usable_for_ai"],
     "reference_mode": profile.get("reference_mode", "current"), "fingerprint": profile["fingerprint"],

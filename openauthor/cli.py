@@ -110,8 +110,10 @@ from .proposals import (
   apply_proposal,
   apply_proposal_batch,
   create_proposal,
+  prepare_draft_revision,
   edit_change_hunk,
   get_proposal,
+  select_draft_candidate,
   list_proposals,
   rebase_proposal_change_set,
   undo_proposal,
@@ -345,6 +347,8 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_draft.add_argument("--memory-approvals", default="[]", help="JSON array of one-request Memory permissions.")
   proposal_draft.add_argument("--story-approvals", default="[]", help="JSON array of one-request Canon and relationship ids.")
   proposal_draft.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from revision-preview; required for external AI providers.")
+  proposal_draft.add_argument("--review-mode", choices=["off", "refine"], default="off", help="Evidence-based critique and focused refinement (up to four model calls).")
+  proposal_draft.add_argument("--review-reasoning-effort", choices=["low", "medium", "high"], default=None, help="ChatGPT reasoning effort for critique, refinement and verification; writer keeps its model default.")
   proposal_draft.add_argument(
     "--provider",
     choices=sorted(SUPPORTED_PROVIDERS),
@@ -361,10 +365,18 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_draft.add_argument(
     "--max-output-tokens",
     type=int,
-    default=2000,
-    help="Max output tokens (default: 2000).",
+    default=None,
+    help="Output allowance (default: sized to the complete scene, 2,000–12,000 tokens).",
   )
   proposal_draft.add_argument("--json", action="store_true", help="Output JSON.")
+  proposal_revision_create = proposal_sub.add_parser("draft-revision", help="Prepare a separate Change Set from feedback on an unapplied draft; no inference.")
+  proposal_revision_create.add_argument("--input-json", required=True)
+  proposal_revision_create.add_argument("--json", action="store_true")
+  proposal_draft_select = proposal_sub.add_parser("draft-select", help="Choose a retained draft candidate; rebuilds hunks for author review.")
+  proposal_draft_select.add_argument("--id", required=True)
+  proposal_draft_select.add_argument("--candidate", choices=["first", "refined"], required=True)
+  proposal_draft_select.add_argument("--expected-updated-at", required=True)
+  proposal_draft_select.add_argument("--json", action="store_true")
   proposal_hunk = proposal_sub.add_parser("hunk", help="Accept or reject one Change Hunk.")
   proposal_hunk.add_argument("--id", required=True, help="Proposal id.")
   proposal_hunk.add_argument("--hunk", required=True, help="Change Hunk id.")
@@ -405,6 +417,7 @@ def build_parser() -> argparse.ArgumentParser:
   proposal_generate.add_argument("--scene", required=True, help="Scene id.")
   proposal_generate.add_argument("--request-id", default="", help="Reuse this id to recover the same proposal delivery.")
   proposal_generate.add_argument("--instruction", required=True, help="User generation instruction.")
+  proposal_generate.add_argument("--scene-contract", default="{}", help="JSON object with authored purpose, turn, ending and optional word_range [minimum, maximum].")
   proposal_generate.add_argument("--memory-approvals", default="[]")
   proposal_generate.add_argument("--story-approvals", default="[]")
   proposal_generate.add_argument("--expected-context-fingerprint", default="", help="Fingerprint from generation-preview; required for external AI providers.")
@@ -568,6 +581,7 @@ def build_parser() -> argparse.ArgumentParser:
   plan_scene_meta.add_argument("--label", action="append", default=None, dest="labels")
   plan_scene_meta.add_argument("--expected-version", default=None)
   plan_scene_meta.add_argument("--clear-labels", action="store_true")
+  plan_scene_meta.add_argument("--writing-brief", default=None, help="Scene writing brief as JSON; an empty object clears it.")
   plan_scene_meta.add_argument("--json", action="store_true", help="Output JSON.")
   plan_beat = plan_sub.add_parser("beat-add", help="Add a planned beat to a scene.")
   plan_beat.add_argument("--scene", required=True, dest="scene_id")
@@ -1555,13 +1569,14 @@ def _run(args: argparse.Namespace) -> int:
         before_scene_id=args.before_scene_id,
       )
     elif args.plan_command == "scene-meta":
-      if args.timeline_position is None and args.labels is None and not args.clear_labels:
+      if args.timeline_position is None and args.labels is None and not args.clear_labels and args.writing_brief is None:
         raise OpenAuthorError("No scene planning metadata updates provided.")
       row = update_scene_metadata(
         paths,
         scene_id=args.scene_id,
         timeline_position=args.timeline_position,
         labels=[] if args.clear_labels else args.labels,
+        writing_brief=json.loads(args.writing_brief) if args.writing_brief is not None else None,
         expected_version=json.loads(args.expected_version) if args.expected_version is not None else None,
       )
     elif args.plan_command == "beat-add":
@@ -1997,6 +2012,11 @@ def _run(args: argparse.Namespace) -> int:
       print(json.dumps(row) if args.json else f"Undid {len(row['scene_ids'])} scenes together in Revision {row['undo_revision']}")
       return 0
 
+    if args.proposal_command == "draft-select":
+      row = select_draft_candidate(paths, proposal_id=args.id, candidate=args.candidate, expected_updated_at=args.expected_updated_at)
+      print(json.dumps(row) if args.json else f"Selected {args.candidate} candidate; review the rebuilt hunks before applying.")
+      return 0
+
     if args.proposal_command == "hunk":
       row = update_change_hunk(
         paths,
@@ -2077,6 +2097,18 @@ def _run(args: argparse.Namespace) -> int:
       print(f"Undid proposal {args.id} (scene {row.get('scene_id', '')} restored)")
       return 0
 
+    if args.proposal_command == "draft-revision":
+      try:
+        payload = json.loads(args.input_json)
+      except json.JSONDecodeError as error:
+        raise OpenAuthorError("Draft revision input must be valid JSON.") from error
+      required = {"proposal_id", "feedback", "expected_updated_at", "request_id"}
+      if not isinstance(payload, dict) or not required <= set(payload) or set(payload) - required - {"focus"}:
+        raise OpenAuthorError("Draft revision needs a proposal, feedback, updated time and request id.")
+      row = prepare_draft_revision(paths, **payload)
+      print(json.dumps(row) if args.json else f"Prepared draft revision {row['id']}; no AI request was sent.")
+      return 0
+
     if args.proposal_command == "draft":
       try:
         memory_approvals = json.loads(args.memory_approvals)
@@ -2094,6 +2126,8 @@ def _run(args: argparse.Namespace) -> int:
         memory_approvals=memory_approvals,
         story_approvals=story_approvals,
         expected_context_fingerprint=args.expected_context_fingerprint,
+        review_mode=args.review_mode,
+        review_reasoning_effort=args.review_reasoning_effort,
       )
       if args.json:
         print(json.dumps(row))
@@ -2122,8 +2156,9 @@ def _run(args: argparse.Namespace) -> int:
       try:
         memory_approvals = json.loads(args.memory_approvals)
         story_approvals = json.loads(args.story_approvals)
+        scene_contract = json.loads(args.scene_contract)
       except json.JSONDecodeError as error:
-        raise OpenAuthorError("Revision permissions must be valid JSON arrays.") from error
+        raise OpenAuthorError("Revision permissions and scene intent must be valid JSON.") from error
       row = generate_proposal(
         paths,
         request_id=args.request_id,
@@ -2142,6 +2177,7 @@ def _run(args: argparse.Namespace) -> int:
         retrieval_require_fresh=args.retrieval_require_fresh,
         constraints=args.constraint,
         protected_elements=args.protect,
+        scene_contract=scene_contract,
         change_group_id=args.change_group,
         memory_approvals=memory_approvals,
         story_approvals=story_approvals,

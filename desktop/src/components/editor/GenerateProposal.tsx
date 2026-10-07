@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
-import { addEditorialPass, listEditorialPasses, type EditorialPass } from "../../api";
+import { addEditorialPass, listEditorialPasses, type EditorialPass, type ReviewReasoningEffort } from "../../api";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
 import { RevisionContextReview } from "./RevisionContextReview";
@@ -9,6 +9,8 @@ import { availableProviders, defaultProvider } from "../../providerSelection";
 import { StyleProfilePanel } from "./StyleProfilePanel";
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { emptyRevisionRequest, validRevisionRequest, type RevisionRequestDraft } from "../../revisionRequestDraft";
+import { WritingBriefFields } from "./WritingBriefFields";
+import { SavedSceneBrief } from "./SavedSceneBrief";
 
 export function GenerateProposal({ initialSceneId, initialInstruction = "", tabId = "generate" }: { initialSceneId?: string; initialInstruction?: string; tabId?: string }) {
   const { projectRoot, branches, scenes, runtimeConfig, refreshProposals, refreshRuns, refreshBudget, setError, setMessage } =
@@ -117,6 +119,16 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
 
   async function handleGenerate() {
     if (!sceneId || !instruction.trim()) return;
+    let wordRange: [number, number] | undefined;
+    if (recovery.value.minimumWords?.trim() || recovery.value.maximumWords?.trim()) {
+      const minimum = Number(recovery.value.minimumWords?.trim() || recovery.value.maximumWords);
+      const maximum = Number(recovery.value.maximumWords?.trim() || recovery.value.minimumWords);
+      if (!Number.isInteger(minimum) || !Number.isInteger(maximum) || minimum < 1 || maximum > 20000 || minimum > maximum) {
+        setError("Choose whole-number word targets from 1 to 20,000, with the minimum no greater than the maximum.");
+        return;
+      }
+      wordRange = [minimum, maximum];
+    }
     const inputs: GenerationInput[] = [];
     const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
     if (targetSceneIds.length === 0) return;
@@ -133,6 +145,9 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           temperature: directionCount === 1 ? undefined : 0.35 + index * 0.15,
           constraints: constraints.split("\n").map((value) => value.trim()).filter(Boolean),
           protectedElements: protectedElements.split("\n").map((value) => value.trim()).filter(Boolean),
+          sceneContract: { ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "", ...(wordRange ? { word_range: wordRange } : {}), ...(recovery.value.quotedTextOnly ? { editable_scope: "quoted_text" as const } : {}) },
+          reviewMode: recovery.value.reviewDraft ? "refine" : "off",
+          reviewReasoningEffort: provider === "openai-codex" && recovery.value.reviewDraft ? recovery.value.reviewReasoningEffort || undefined : undefined,
           changeGroupId: groupId,
         });
       }
@@ -192,14 +207,31 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         {planReviewTask && !busy && <RevisionContextReview key={`${job!.id}:${planReviewTask.index}:plan`} projectRoot={projectRoot}
           generationInput={planReviewTask.input} provider={planReviewTask.input.provider} model={planReviewTask.input.model}
           onSend={async authorization => { await showResults(await session.approvePlan(planReviewTask.index, authorization)); }}
-          onClose={session.clear} closeLabel="Back to request" />}
+          onClose={session.clear} closeLabel="Edit writing brief" />}
         {reviewTask && !busy && <p>Draft {reviewTask.index + 1} of {job!.tasks.length} · Edit plan saved; review context before drafting.</p>}
         {reviewTask && !busy && <RevisionContextReview key={`${job!.id}:${reviewTask.index}:draft`} projectRoot={projectRoot}
           proposalId={reviewTask.proposalId} provider={reviewTask.input.provider} model={reviewTask.input.model}
+          reviewMode={reviewTask.input.reviewMode}
+          reviewReasoningEffort={reviewTask.input.reviewReasoningEffort}
           onSend={async authorization => { await showResults(await session.approveDraft(reviewTask.index, authorization)); }}
           onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
 
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
+        <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
+        {recovery.value.reviewDraft && provider === "openai-codex" && <label style={{ display: "grid", gap: 6 }}>
+          <span>Review reasoning effort</span>
+          <select className="input" value={recovery.value.reviewReasoningEffort ?? ""} onChange={event => setter("reviewReasoningEffort")(event.target.value as "" | ReviewReasoningEffort)}>
+            <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+          <small>More time to reason during critique, focused revision and verification. The first draft keeps its model default. Higher effort may take longer; compare the resulting prose.</small>
+          {recovery.value.reviewReasoningEffort === "high" && <small>High allows up to three minutes for each review step by default.</small>}
+        </label>}
+        <div>
+          <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Edit only contents of paired “…” or "…" passages, including quoted signs and messages. Narration, quote marks and passage order stay unchanged. Review the identified passages before sending. Nested or unpaired marks need passage editing. Requires an AI provider.</p>
+        </div>
+
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
           <span style={{ color: "var(--text-secondary)" }}>Scene</span>
           <select className="input" value={sceneId} onChange={(e) => setSceneId(e.target.value)}>
@@ -249,6 +281,21 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
         <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
         <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
 
+        {!coordinated && sceneId && <SavedSceneBrief key={`${projectRoot}:${branch}:${sceneId}`} projectRoot={projectRoot} sceneId={sceneId} title={scenes.find(scene => scene.id === sceneId)?.title || sceneId} />}
+        <details open>
+          <summary>Writing brief for this request</summary>
+          <p>{coordinated ? "Each selected scene uses its own saved brief; these overrides apply to all of them." : "Use the saved scene brief or adjust it for this request."} Your direction stays with both the edit plan and prose draft. Review the assembled book context before sending.</p>
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+            <WritingBriefFields inherited value={{ ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "" }} onChange={value => {
+              const { purpose, turn, ending, ...rest } = value;
+              recovery.session.edit({ ...recovery.session.getSnapshot().value, scenePurpose: purpose ?? "", sceneTurn: turn ?? "", sceneEnding: ending ?? "", writingBrief: rest });
+            }} />
+            <label>Minimum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.minimumWords ?? ""} onChange={event => setter("minimumWords")(event.target.value)} /></label>
+            <label>Maximum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.maximumWords ?? ""} onChange={event => setter("maximumWords")(event.target.value)} /></label>
+            <p>A single number sets an exact target. With draft review enabled, openAuthor counts words and checks the range. Local generation skips creative review.</p>
+          </div>
+        </details>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
             <span style={{ color: "var(--text-secondary)" }}>Constraints (optional, one per line)</span>
@@ -261,7 +308,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
             />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
-            <span style={{ color: "var(--text-secondary)" }}>Protect exactly (optional)</span>
+            <span style={{ color: "var(--text-secondary)" }}>Protected wording and story decisions (optional)</span>
             <textarea
               className="input"
               rows={3}

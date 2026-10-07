@@ -9,10 +9,36 @@ from openauthor.project import initialize_project
 from openauthor.scenes import add_scene, update_scene
 from openauthor.ai import generate_proposal, preview_proposal_revision
 from openauthor.generations import get_generation_run
-from openauthor.style_profile import build_style_profile, get_style_profile
+from openauthor.style_profile import build_style_profile, get_style_profile, save_style_profile, set_style_profile_reference, voice_prompt, voice_context
 
 
 class StyleProfileTests(unittest.TestCase):
+  def test_approved_voice_evidence_reaches_drafting_and_frozen_sources_never_substitute_newer_prose(self) -> None:
+    with tempfile.TemporaryDirectory() as folder:
+      paths = initialize_project(Path(folder), name="Literal voice evidence")
+      add_scene(paths, title="Exemplar", body="The kettle was empty. I put it on anyway.")
+      add_scene(paths, title="Unselected", body="UNSELECTED PRIVATE SCENE")
+      add_scene(paths, title="New moment", body="I stopped at the door.")
+      measured = build_style_profile(paths, scene_ids=["scene-0001"])
+      evidence = [{"scene_id": "scene-0001", "aspect": "First-person judgment", "observation": "An ordinary action makes the narrator's denial visible.", "excerpt": "The kettle was empty. I put it on anyway."}]
+      approved = save_style_profile(paths, profile={**measured, "observations": evidence, "use_exemplar_evidence": True}, expected_version=measured["version"])
+      proposal = generate_proposal(paths, scene_id="scene-0003", instruction="Keep my first-person voice", provider="local")
+      preview = preview_proposal_revision(paths, proposal_id=proposal["id"])
+      profile = preview["context"]["author_selected_style_profile"]
+      self.assertEqual(profile["observations"], evidence)
+      self.assertIn(evidence[0]["excerpt"], voice_prompt(profile))
+      self.assertNotIn("observations", voice_context(approved))
+      self.assertNotIn("UNSELECTED PRIVATE SCENE", json.dumps(profile))
+      update_scene(paths, scene_identifier="scene-0001", body="NEW UNAPPROVED RHYTHM")
+      stale_preview = preview_proposal_revision(paths, proposal_id=proposal["id"])
+      self.assertNotIn("author_selected_style_profile", stale_preview["context"])
+      stale = get_style_profile(paths)
+      set_style_profile_reference(paths, mode="frozen", expected_fingerprint=stale["fingerprint"])
+      frozen = preview_proposal_revision(paths, proposal_id=proposal["id"])
+      self.assertEqual(frozen["context"]["author_selected_style_profile"]["observations"], evidence)
+      self.assertNotIn("NEW UNAPPROVED RHYTHM", json.dumps(frozen["context"]["author_selected_style_profile"]))
+      self.assertNotEqual(preview["fingerprint"], frozen["fingerprint"])
+
   def test_corrupt_profile_is_a_recoverable_error_not_an_ai_context(self) -> None:
     from openauthor.project import OpenAuthorError
     from openauthor.style_profile import style_profile_for_ai

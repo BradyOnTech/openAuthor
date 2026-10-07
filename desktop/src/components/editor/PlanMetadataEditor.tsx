@@ -2,17 +2,20 @@ import { useEffect, useState } from "react";
 import { getManuscriptPlan, updatePlanSceneMetadata } from "../../api";
 import { useRetainedDraft } from "../../hooks/useRetainedDraft";
 import { retentionKey } from "../../workspaceRetention";
-import type { ManuscriptPlan } from "../../types";
+import type { ManuscriptPlan, SceneWritingBrief } from "../../types";
+import { validSceneWritingBrief } from "../../writingBrief";
+import { WritingBriefFields } from "./WritingBriefFields";
 import { RecoveryNotice } from "./RecoveryNotice";
 
 type Metadata = ManuscriptPlan["scene_metadata"][string];
-type Draft = { timeline: string; labels: string; baseline: Metadata } | null;
+type Draft = { timeline: string; labels: string; writingBrief?: SceneWritingBrief; baseline: Metadata } | null;
 function valid(value: unknown): value is Draft {
   if (value === null) return true;
   const row = value as Exclude<Draft, null>;
   return !!row && typeof row.timeline === "string" && typeof row.labels === "string"
     && !!row.baseline && typeof row.baseline.timeline_position === "string" && Array.isArray(row.baseline.labels)
-    && row.baseline.labels.every((item) => typeof item === "string");
+    && row.baseline.labels.every((item) => typeof item === "string")
+    && (row.writingBrief === undefined || validSceneWritingBrief(row.writingBrief));
 }
 export function PlanMetadataEditor({ project, scope, sceneId, title, metadata, onSaved }: { project: string; scope: string; sceneId: string; title: string; metadata?: Metadata; onSaved?: (value: Metadata) => void }) {
   const [saved, setSaved] = useState(metadata || { timeline_position: "", labels: [] });
@@ -20,13 +23,13 @@ export function PlanMetadataEditor({ project, scope, sceneId, title, metadata, o
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => { setSaved(metadata || { timeline_position: "", labels: [] }); }, [JSON.stringify(metadata)]);
-  const value = draft.value || { timeline: saved.timeline_position, labels: saved.labels.join(", "), baseline: saved };
+  const value = draft.value || { timeline: saved.timeline_position, labels: saved.labels.join(", "), writingBrief: saved.writing_brief ?? {}, baseline: saved };
   async function save() {
     if (busy) return;
     const submitted = value;
     setBusy(true);
     try {
-      const result = await updatePlanSceneMetadata(project, sceneId, { timelinePosition: submitted.timeline, labels: submitted.labels.split(",").map((item) => item.trim()).filter(Boolean) }, scope === "legacy" ? undefined : { workspace: scope, value: submitted.baseline });
+      const result = await updatePlanSceneMetadata(project, sceneId, { timelinePosition: submitted.timeline, labels: submitted.labels.split(",").map((item) => item.trim()).filter(Boolean), writingBrief: submitted.writingBrief ?? submitted.baseline.writing_brief }, scope === "legacy" ? undefined : { workspace: scope, value: submitted.baseline });
       setSaved(result);
       onSaved?.(result);
       draft.change((current) => current === submitted ? null : current ? { ...current, baseline: result } : null);
@@ -35,12 +38,14 @@ export function PlanMetadataEditor({ project, scope, sceneId, title, metadata, o
     finally { setBusy(false); }
   }
   return <details onClick={(event) => event.stopPropagation()}>
-    <summary>Story time &amp; labels</summary>
+    <summary>Saved scene brief, story time &amp; labels</summary>
     <div style={{ display: "grid", gap: 6, marginTop: 7 }}>
       {draft.value && <RecoveryNotice draft={draft} label="planning details" />}
       {!draft.value && draft.warning && <p role="alert">{draft.warning}</p>}
       <input className="input" aria-label={`Story time for ${title}`} placeholder="Story time, e.g. Day 3 · dusk" value={value.timeline} onChange={(event) => draft.change({ ...value, timeline: event.target.value })} />
       <input className="input" aria-label={`Labels for ${title}`} placeholder="Labels, comma separated" value={value.labels} onChange={(event) => draft.change({ ...value, labels: event.target.value })} />
+      <p>This brief stays with this scene in Plan. It guides future writing requests; it does not establish new canon.</p>
+      <WritingBriefFields saved value={value.writingBrief ?? value.baseline.writing_brief ?? {}} onChange={writingBrief => draft.change({ ...value, writingBrief })} />
       <button className="btn btn--sm" disabled={busy} onClick={() => void save()}>Save planning details</button>
       <button className="btn btn--sm" disabled={busy} onClick={() => {
         void getManuscriptPlan(project).then((plan) => {
