@@ -7,8 +7,9 @@ import unittest
 from unittest.mock import patch
 
 from openauthor.ai import generate_proposal_draft, preview_proposal_generation, preview_proposal_revision
-from openauthor.project import OpenAuthorError, initialize_project
-from openauthor.proposals import create_proposal, apply_proposal, undo_proposal
+from openauthor.project import OpenAuthorError, initialize_project, atomic_write_json
+from openauthor.proposals import create_proposal, apply_proposal, apply_proposal_batch, undo_proposal, set_proposal_draft, update_change_hunk, rebase_proposal_change_set, get_proposal, edit_change_hunk
+from openauthor.changes import build_change_set, render_change_set
 from openauthor.scenes import add_scene, get_scene
 from openauthor.quoted_editing import QuotedRevision
 
@@ -18,6 +19,15 @@ def edits(text, identifier="quote-1"):
 
 
 class QuoteBoundaryTests(unittest.TestCase):
+  def test_growth_within_result_allowance_survives_hunk_rendering(self):
+    source = '“Wait.”' + ' ' * 99993
+    result = QuotedRevision(source).apply(edits('Stay.' * 1000))
+    self.assertGreater(len(result), 100000)
+    self.assertLess(len(result), 120000)
+    change_set = build_change_set(proposal_id="proposal-large", scene_id="scene-0001", intent="Expand quoted contents.",
+      before_body=source, after_body=result, editable_scope="quoted_text")
+    self.assertEqual(render_change_set(change_set), result)
+
   def test_sparse_edits_preserve_attribution_spacing_and_mixed_delimiters(self):
     source = '  “Wait,” Mara said.\n\n"The sign says \\"CLOSED\\"."\n'
     editor = QuotedRevision(source)
@@ -80,6 +90,104 @@ class QuotedWorkflowTests(unittest.TestCase):
     self.pid = create_proposal(self.paths, title="Dialogue", scene_id="scene-0001", instruction="Sharpen the question.",
       revision_intent={"goal": "Sharpen the question; preserve uncertainty.", "scene_contract": {"editable_scope": "quoted_text"}})
     self.args = dict(proposal_id=self.pid, provider="openai", review_mode="refine")
+
+  def test_individual_quote_decisions_preserve_narration_through_apply_and_undo(self):
+    from openauthor.scenes import update_scene
+    from itertools import product
+    source = '“Wait.” She waited. He watched. She turned. “Leave.” He left.\n'
+    update_scene(self.paths, scene_identifier="scene-0001", body=source)
+    replacement = ['She turned. He watched. She turned. He left.', 'He left.']
+    candidate = QuotedRevision(source).apply(json.dumps({"edits": [
+      {"id": f"quote-{index + 1}", "text": text} for index, text in enumerate(replacement)]}))
+    for decisions in product(("accepted", "rejected"), repeat=2):
+      with self.subTest(decisions=decisions):
+        pid = create_proposal(self.paths, title="Independent quotes", scene_id="scene-0001", instruction="Edit quoted contents.",
+          revision_intent={"goal": "Edit quoted contents.", "scene_contract": {"editable_scope": "quoted_text"}})
+        draft = set_proposal_draft(self.paths, proposal_id=pid, proposed_body=candidate)
+        self.assertEqual([row["before_text"] for row in draft["change_set"]["hunks"]], ["Wait.", "Leave."])
+        for hunk, decision in zip(draft["change_set"]["hunks"], decisions):
+          update_change_hunk(self.paths, proposal_id=pid, hunk_id=hunk["id"], decision=decision)
+        if decisions == ("rejected", "rejected"):
+          with self.assertRaisesRegex(OpenAuthorError, "identical"):
+            apply_proposal(self.paths, proposal_id=pid)
+        else:
+          apply_proposal(self.paths, proposal_id=pid)
+          expected = QuotedRevision(source).apply(json.dumps({"edits": [
+            {"id": f"quote-{index + 1}", "text": replacement[index]} for index, decision in enumerate(decisions) if decision == "accepted"]}))
+          self.assertEqual(get_scene(self.paths, "scene-0001")["body"], expected)
+          undo_proposal(self.paths, proposal_id=pid)
+        self.assertEqual(get_scene(self.paths, "scene-0001")["body"], source)
+
+  def test_old_sentence_hunks_cannot_cross_scope_on_individual_or_batch_apply(self):
+    from openauthor.scenes import update_scene
+    source = '“Wait.” She waited. He watched. She turned. “Leave.” He left.\n'
+    update_scene(self.paths, scene_identifier="scene-0001", body=source)
+    candidate = QuotedRevision(source).apply(json.dumps({"edits": [
+      {"id": "quote-1", "text": "She turned. He watched. She turned. He left."}, {"id": "quote-2", "text": "He left."}]}))
+    legacy = set_proposal_draft(self.paths, proposal_id=self.pid, proposed_body=candidate)
+    legacy["change_set"] = build_change_set(proposal_id=self.pid, scene_id="scene-0001", intent="Quotes only", before_body=source, after_body=candidate)
+    atomic_write_json(self.paths.proposals_dir / f"{self.pid}.json", legacy)
+    update_change_hunk(self.paths, proposal_id=self.pid, hunk_id=legacy["change_set"]["hunks"][0]["id"], decision="rejected")
+    with self.assertRaisesRegex(OpenAuthorError, "violate quoted-text scope"):
+      apply_proposal(self.paths, proposal_id=self.pid)
+    add_scene(self.paths, title="Other", body="Other prose.")
+    other = create_proposal(self.paths, title="Other edit", scene_id="scene-0002", instruction="Tighten.")
+    set_proposal_draft(self.paths, proposal_id=other, proposed_body="Sharper prose.")
+    with self.assertRaisesRegex(OpenAuthorError, "violate quoted-text scope"):
+      apply_proposal_batch(self.paths, proposal_ids=[other, self.pid])
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], source)
+    self.assertEqual(get_scene(self.paths, "scene-0002")["body"], "Other prose.\n")
+    self.assertEqual(get_proposal(self.paths, self.pid)["status"], "pending")
+    self.assertEqual(get_proposal(self.paths, other)["status"], "pending")
+
+  def test_quote_rebase_keeps_passage_positions_decisions_and_new_narration(self):
+    from openauthor.scenes import update_scene
+    source = '“Wait.” She waited. “Wait.” He watched.\n'
+    update_scene(self.paths, scene_identifier="scene-0001", body=source)
+    candidate = QuotedRevision(source).apply(json.dumps({"edits": [
+      {"id": "quote-1", "text": "Stay."}, {"id": "quote-2", "text": "Stay."}]}))
+    draft = set_proposal_draft(self.paths, proposal_id=self.pid, proposed_body=candidate)
+    first = draft["change_set"]["hunks"][0]["id"]
+    update_change_hunk(self.paths, proposal_id=self.pid, hunk_id=first, decision="rejected")
+    current = source.replace("She waited.", "Wait. She waited beside the gate.")
+    update_scene(self.paths, scene_identifier="scene-0001", body=current)
+    rebased = rebase_proposal_change_set(self.paths, proposal_id=self.pid)
+    self.assertEqual(rebased["rebase_report"]["status"], "rebased")
+    self.assertEqual([h["decision"] for h in rebased["change_set"]["hunks"]], ["rejected", "accepted"])
+    apply_proposal(self.paths, proposal_id=self.pid)
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], current.replace('“Wait.” He watched.', '“Stay.” He watched.'))
+
+  def test_manual_quote_hunk_cannot_inject_narration(self):
+    candidate = self.before.replace("Is it approved?", "Is it ready?")
+    draft = set_proposal_draft(self.paths, proposal_id=self.pid, proposed_body=candidate)
+    with self.assertRaises(OpenAuthorError):
+      edit_change_hunk(self.paths, proposal_id=self.pid, hunk_id=draft["change_set"]["hunks"][0]["id"], after_text='Yes.” New narration. “Wait.')
+    self.assertEqual(get_proposal(self.paths, self.pid)["proposed_body"], candidate)
+    self.assertEqual(get_scene(self.paths, "scene-0001")["body"], self.before)
+
+  def test_individual_and_batch_apply_retain_terminal_outside_whitespace(self):
+    for coordinated in (False, True):
+      with self.subTest(coordinated=coordinated):
+        scene_path = self.paths.root / get_scene(self.paths, "scene-0001")["path"]
+        scene_path.write_text(scene_path.read_text().rstrip() + "  \n\n", encoding="utf-8")
+        source = get_scene(self.paths, "scene-0001")["body"]
+        candidate = source.replace("Is it approved?", "Is it ready?")
+        pid = create_proposal(self.paths, title="Whitespace-safe quote", scene_id="scene-0001", instruction="Edit quoted contents.",
+          revision_intent={"goal": "Edit quoted contents.", "scene_contract": {"editable_scope": "quoted_text"}})
+        set_proposal_draft(self.paths, proposal_id=pid, proposed_body=candidate)
+        if coordinated:
+          add_scene(self.paths, title="Other", body="Other prose.")
+          other = create_proposal(self.paths, title="Other edit", scene_id="scene-0002", instruction="Tighten.")
+          set_proposal_draft(self.paths, proposal_id=other, proposed_body="Sharper prose.")
+          apply_proposal_batch(self.paths, proposal_ids=[pid, other])
+          self.assertEqual(get_scene(self.paths, "scene-0001")["body"], candidate)
+          from openauthor.proposals import undo_proposal_batch
+          undo_proposal_batch(self.paths, applied_revision=get_proposal(self.paths, pid)["applied_revision"])
+        else:
+          apply_proposal(self.paths, proposal_id=pid)
+          self.assertEqual(get_scene(self.paths, "scene-0001")["body"], candidate)
+          undo_proposal(self.paths, proposal_id=pid)
+        self.assertEqual(get_scene(self.paths, "scene-0001")["body"], source)
 
   def test_author_scope_survives_preview_draft_refinement_apply_and_undo(self):
     preview = preview_proposal_revision(self.paths, **self.args)

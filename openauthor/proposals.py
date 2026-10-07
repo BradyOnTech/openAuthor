@@ -221,6 +221,7 @@ def set_proposal_draft(
   proposal_id: str,
   proposed_body: str,
   draft: dict[str, Any] | None = None,
+  scene_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
   file_path = _proposal_file(paths, proposal_id)
   if not file_path.exists():
@@ -241,7 +242,12 @@ def set_proposal_draft(
   payload["proposed_body"] = proposed_body
   generation = payload.get("generation", {})
   retrieval = generation.get("retrieval", {}) if isinstance(generation, dict) else {}
-  revision_intent = payload.get("revision_intent", {})
+  revision_intent = dict(payload.get("revision_intent", {}))
+  from .writing_brief import scene_writing_direction
+  revision_intent["scene_contract"] = scene_writing_direction(paths, scene_id,
+    scene_contract if scene_contract is not None else revision_intent.get("scene_contract"),
+    use_saved=scene_contract is None and "scene_contract" not in revision_intent)
+  payload["revision_intent"] = revision_intent
   payload["change_set"] = build_change_set(
     proposal_id=proposal_id,
     scene_id=scene_id,
@@ -256,6 +262,7 @@ def set_proposal_draft(
     },
     constraints=[str(value) for value in revision_intent.get("constraints", [])],
     protected_elements=[str(value) for value in revision_intent.get("protected_elements", [])],
+    editable_scope=revision_intent["scene_contract"].get("editable_scope", ""),
   )
   payload["proposed_body"] = payload["change_set"]["proposed_body"]
   from .canon import assess_story_memory_impact
@@ -444,6 +451,7 @@ def apply_proposal(
   else:
     accepted_hunks = []
     rejected_hunks = []
+  _validate_selected_scope(payload, scene_before["body"], selected_body)
   if str(scene_before.get("body", "")).rstrip("\n") == selected_body.rstrip("\n"):
     raise OpenAuthorError(
       "The drafted scene is identical to the current prose, so no manuscript revision was applied."
@@ -462,8 +470,9 @@ def apply_proposal(
       f"Cannot apply safely because the pre-change revision failed: {error}"
     ) from error
 
-  update_scene(paths, scene_identifier=scene_id, body=selected_body)
   try:
+    update_scene(paths, scene_identifier=scene_id, body=selected_body, preserve_body=_quoted_text_scope(payload))
+    _validate_selected_scope(payload, scene_before["body"], get_scene(paths, scene_id)["body"])
     applied_revision = create_revision(
       paths,
       f"Apply {proposal_id}: {payload.get('title', '').strip()}",
@@ -514,6 +523,20 @@ def apply_proposal(
   return payload
 
 
+def _quoted_text_scope(proposal: dict[str, Any]) -> bool:
+  return proposal.get("revision_intent", {}).get("scene_contract", {}).get("editable_scope") == "quoted_text"
+
+
+def _validate_selected_scope(proposal: dict[str, Any], source: str, selected_body: str) -> None:
+  # Also protect older saved drafts whose hunks used ordinary sentence units.
+  if _quoted_text_scope(proposal):
+    from .quoted_editing import QuotedRevision
+    try:
+      QuotedRevision(source).validate_result(selected_body)
+    except OpenAuthorError as error:
+      raise OpenAuthorError(f"Selected edits violate quoted-text scope: {error} Nothing was applied. Rebuild the draft and review its quoted passages.") from error
+
+
 @serialized_project_access
 @recoverable_project_edit
 def apply_proposal_batch(
@@ -551,6 +574,7 @@ def apply_proposal_batch(
     if not selected_body.strip():
       raise OpenAuthorError(f"Proposal '{proposal_id}' has no drafted scene text.")
     scene = get_scene(paths, scene_id)
+    _validate_selected_scope(payload, scene["body"], selected_body)
     if str(scene.get("body", "")).rstrip("\n") == selected_body.rstrip("\n"):
       raise OpenAuthorError(f"Proposal '{proposal_id}' contains no selected prose change.")
     accepted_hunks: list[str] = []
@@ -602,7 +626,8 @@ def apply_proposal_batch(
 
   try:
     for row in prepared:
-      update_scene(paths, scene_identifier=row["scene_id"], body=row["selected_body"])
+      update_scene(paths, scene_identifier=row["scene_id"], body=row["selected_body"], preserve_body=_quoted_text_scope(row["payload"]))
+      _validate_selected_scope(row["payload"], row["scene"]["body"], get_scene(paths, row["scene_id"])["body"])
     applied_revision = create_revision(
       paths,
       f"Apply coordinated Change Set {group_id}",

@@ -25,7 +25,7 @@ _FOCUSES = {
 }
 
 
-def validate_scene_contract(value: Any = None) -> dict[str, Any]:
+def validate_scene_contract(value: Any = None, *, partial: bool = False) -> dict[str, Any]:
   """Retain authored intent literally; unknown fields and clipping are errors."""
   if value is None:
     return {}
@@ -56,7 +56,7 @@ def validate_scene_contract(value: Any = None) -> dict[str, Any]:
     raise OpenAuthorError("Scene intent exceeds 3,000 characters; shorten it before generating.")
   if sum(len(text) for text in result.values() if isinstance(text, str)) > 8000:
     raise OpenAuthorError("Writing brief exceeds 8,000 characters; shorten it before generating.")
-  if result.get("change_permission") == "story" and not result.get("allowed_changes"):
+  if not partial and result.get("change_permission") == "story" and not result.get("allowed_changes"):
     raise OpenAuthorError("Describe the story changes you allow before choosing story changes.")
   return result
 

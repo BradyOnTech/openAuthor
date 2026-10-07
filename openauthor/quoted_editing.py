@@ -68,6 +68,15 @@ def _object(pairs):
   return result
 
 
+def quoted_units(source: str) -> list[str]:
+  """Alternate retained outside pieces and editable quote contents."""
+  pieces, cursor = [], 0
+  for start, end in _spans(source):
+    pieces.extend([source[cursor:start], source[start:end]])
+    cursor = end
+  return [*pieces, source[cursor:]]
+
+
 @dataclass(frozen=True)
 class QuotedRevision:
   """One reviewed source, stable passage IDs, and a bounded replacement reply."""
@@ -84,6 +93,11 @@ class QuotedRevision:
       "source_sha256": hashlib.sha256(self.source.encode()).hexdigest(),
       "passages": [{"id": f"quote-{number}", "text": self.source[start:end]}
         for number, (start, end) in enumerate(_spans(self.source), 1)]}
+
+  def validate_result(self, candidate: str) -> None:
+    """Enforce the reviewed boundary on full drafts and selected hunks alike."""
+    if quoted_units(self.source)[::2] != quoted_units(candidate)[::2]:
+      raise OpenAuthorError("Quoted-text revision crossed a quotation boundary; no draft was delivered.")
 
   def apply(self, reply: str) -> str:
     """Never take outside prose from the model, even when it approves itself."""
@@ -112,14 +126,5 @@ class QuotedRevision:
       raise OpenAuthorError("Quoted-text revision exceeds the scene size limit; no draft was delivered.")
     # Check reconstruction boundaries. A replacement can neither close its
     # quote early nor escape the host's closing mark with a trailing slash.
-    actual = _spans(result)
-    def outside(text, ranges):
-      cursor, pieces = 0, []
-      for start, end in ranges:
-        pieces.append(text[cursor:start])
-        cursor = end
-      pieces.append(text[cursor:])
-      return pieces
-    if outside(self.source, spans) != outside(result, actual):
-      raise OpenAuthorError("Quoted-text revision crossed a quotation boundary; no draft was delivered.")
+    self.validate_result(result)
     return result

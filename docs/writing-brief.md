@@ -10,6 +10,8 @@ Create a Change Set can override those fields for one request. Blank request fie
 
 Before generation, inspect the assembled brief, book direction, chapter and beat context, permitted Memory, approved voice excerpts, and included continuity prose. Return to edit the brief before sending the plan. The effective direction is retained with the Change Set and inherited by feedback revisions. Later changes to the saved scene brief do not silently rewrite an existing Change Set's direction.
 
+For a manual Change Set, the effective brief is retained when its first draft is delivered. Subsequent regeneration and feedback revisions inherit that retained brief, including an empty brief. Request overrides are merged with saved direction before checking whether described story changes have the required permission text.
+
 **Creative freedom**
 
 - Preserve story decisions: revise expression while retaining events, facts, motives, knowledge, relationships, agreements and the ending.

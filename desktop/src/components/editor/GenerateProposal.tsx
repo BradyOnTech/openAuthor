@@ -130,10 +130,6 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
       wordRange = [minimum, maximum];
     }
     const inputs: GenerationInput[] = [];
-    if (recovery.value.writingBrief?.change_permission === "story" && !recovery.value.writingBrief.allowed_changes?.trim()) {
-      setError("Describe the story changes you allow in the writing brief.");
-      return;
-    }
     const targetSceneIds = coordinated ? coordinatedSceneIds : [sceneId];
     if (targetSceneIds.length === 0) return;
     const groupId = coordinated && targetSceneIds.length > 1 ? `change-group-ui-${crypto.randomUUID()}` : undefined;

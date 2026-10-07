@@ -30,7 +30,7 @@ WRITING_BRIEF_GUIDANCE = (
 def scene_writing_direction(paths: ProjectPaths, scene_id: str, overrides: Any = None, *, use_saved: bool = True) -> dict[str, Any]:
   metadata = get_plan(paths, persist=False).get("scene_metadata", {}).get(scene_id, {})
   saved = validate_scene_contract(metadata.get("writing_brief", {})) if use_saved else {}
-  override = validate_scene_contract(overrides)
+  override = validate_scene_contract(overrides, partial=True)
   return validate_scene_contract({**saved, **override})
 
 

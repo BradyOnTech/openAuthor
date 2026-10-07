@@ -38,7 +38,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByTitle("Create a reviewable Change Set").click();
     await page.getByRole("checkbox", { name: "Coordinate this revision across multiple scenes" }).check();
     await page.getByRole("checkbox", { name: "The Seventh Bell", exact: true }).check();
-    await page.getByRole("textbox", { name: /Protect exactly/ }).fill("The seventh bell must ring before dawn.\nthe boundary with her finger");
+    await page.getByRole("textbox", { name: "Protected wording and story decisions (optional)" }).fill("The seventh bell must ring before dawn.\nthe boundary with her finger");
     await page.getByPlaceholder(/Tighten the pacing/).fill("Tighten the opening phrasing in both scenes while preserving all names, facts, and the protected bell deadline.");
     await page.getByRole("combobox", { name: "Provider", exact: true }).selectOption("local");
     await page.getByRole("button", { name: "Create 2 Coordinated Change Sets", exact: true }).click();

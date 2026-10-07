@@ -9,6 +9,7 @@ from openauthor.ai import generate_proposal, generate_proposal_draft, preview_pr
 from openauthor.codex import add_entity
 from openauthor.planning import get_plan_workspace, update_scene_metadata
 from openauthor.project import OpenAuthorError, initialize_project
+from openauthor.proposals import create_proposal, get_proposal, prepare_draft_revision
 from openauthor.scenes import add_scene, get_scene, update_scene
 
 
@@ -25,6 +26,34 @@ class WritingBriefWorkflowTests(unittest.TestCase):
                   "change_permission": "preserve", "voice_direction": "Concrete observations; no narrator explanation of her motives."}
     update_scene_metadata(self.paths, scene_id="scene-0002", writing_brief=self.brief, timeline_position="Day 2 · before dawn")
     self.original = get_scene(self.paths, "scene-0002")["body"]
+
+  def test_story_permission_inherits_blank_description_but_requires_effective_permission(self):
+    update_scene_metadata(self.paths, scene_id="scene-0002", writing_brief={
+      **self.brief, "change_permission": "story", "allowed_changes": "Let Mara open the letter."})
+    preview = preview_proposal_generation(self.paths, scene_id="scene-0002", instruction="Let Mara decide.",
+      scene_contract={"change_permission": "story", "allowed_changes": "  "})
+    self.assertEqual(preview["context"]["scene_contract"]["allowed_changes"], "Let Mara open the letter.")
+    update_scene_metadata(self.paths, scene_id="scene-0002", writing_brief=self.brief)
+    with self.assertRaisesRegex(OpenAuthorError, "Describe the story changes"):
+      preview_proposal_generation(self.paths, scene_id="scene-0002", instruction="Let Mara decide.",
+        scene_contract={"change_permission": "story", "allowed_changes": ""})
+
+  def test_manual_draft_freezes_delivered_brief_for_feedback_and_regeneration(self):
+    pid = create_proposal(self.paths, title="Tighten", scene_id="scene-0002", instruction="Tighten the opening.")
+    preview = preview_proposal_revision(self.paths, proposal_id=pid)
+    drafted = generate_proposal_draft(self.paths, proposal_id=pid, expected_context_fingerprint=preview["fingerprint"], request_id="freeze-manual-brief")
+    self.assertEqual(drafted["revision_intent"]["scene_contract"], self.brief)
+    update_scene_metadata(self.paths, scene_id="scene-0002", writing_brief={"knowledge": "Mara has read the letter.", "reveal_limits": "Reveal everything."})
+    self.assertEqual(preview_proposal_revision(self.paths, proposal_id=pid)["context"]["scene_contract"], self.brief)
+    # A replay retains the first delivery without another generation or new brief.
+    replay = generate_proposal_draft(self.paths, proposal_id=pid, expected_context_fingerprint=preview["fingerprint"], request_id="freeze-manual-brief")
+    self.assertEqual(replay["draft"]["generation_id"], drafted["draft"]["generation_id"])
+    child = prepare_draft_revision(self.paths, proposal_id=pid, feedback="Use more restrained language.",
+      expected_updated_at=drafted["updated_at"], request_id="freeze-feedback-brief")
+    feedback_preview = preview_proposal_revision(self.paths, proposal_id=child["id"], provider="openai")
+    self.assertEqual(feedback_preview["context"]["scene_contract"], self.brief)
+    self.assertEqual(get_proposal(self.paths, pid)["proposed_body"], drafted["proposed_body"])
+    self.assertEqual(get_scene(self.paths, "scene-0002")["body"], self.original)
 
   def test_saved_direction_overrides_and_exact_delivery_survive_the_whole_workflow(self):
     args = dict(scene_id="scene-0002", instruction="Tighten the opening.", scene_contract={"turn": "She chooses to wait."})

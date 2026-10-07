@@ -57,7 +57,9 @@ def render_scene_markdown(
   created_at: str,
   updated_at: str,
   body: str,
+  preserve_body: bool = False,
 ) -> str:
+  scene_body = body if preserve_body else body.rstrip() + "\n"
   return (
     "---\n"
     f"id: {_serialize_front_matter_value(scene_identifier)}\n"
@@ -68,7 +70,7 @@ def render_scene_markdown(
     f"created_at: {_serialize_front_matter_value(created_at)}\n"
     f"updated_at: {_serialize_front_matter_value(updated_at)}\n"
     "---\n\n"
-    f"{body.rstrip()}\n"
+    f"{scene_body}"
   )
 
 
@@ -228,12 +230,13 @@ def update_scene(
   pov: str | None = None,
   status: str | None = None,
   body: str | None = None,
+  preserve_body: bool = False,
 ) -> Path:
   scene_file = find_scene_file(paths, scene_identifier)
   current = _scene_detail(paths, scene_file)
   fields = {"title": title, "summary": summary, "pov": pov, "status": status, "body": body}
   if all(
-    value is None or (value.rstrip("\n") == current[key].rstrip("\n") if key == "body" else value == current[key])
+    value is None or (value.rstrip("\n") == current[key].rstrip("\n") if key == "body" and not preserve_body else value == current[key])
     for key, value in fields.items()
   ):
     return scene_file
@@ -257,6 +260,7 @@ def update_scene(
     created_at=updated["created_at"],
     updated_at=updated["updated_at"],
     body=updated["body"],
+    preserve_body=preserve_body,
   )
   atomic_write_text(scene_file, content)
   return scene_file

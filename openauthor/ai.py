@@ -2989,6 +2989,7 @@ def generate_proposal_draft(
       paths,
       proposal_id=proposal_id,
       proposed_body=proposed_body,
+      scene_contract=context["scene_contract"],
       draft={
         "delivery": current_proposal_delivery(),
         "writing_craft": context["writing_craft"],

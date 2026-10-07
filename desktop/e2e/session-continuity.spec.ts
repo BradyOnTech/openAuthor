@@ -80,7 +80,7 @@ test("recovers Plan text, reading position and an unfinished voice assessment af
     await page.getByPlaceholder("Chapter title").fill("The unsealed letter");
     await page.getByRole("textbox", { name: "New beat for Dawn" }).fill("Mara refuses to let go.");
     const dawn = page.locator("article").filter({ has: page.getByRole("button", { name: "Dawn", exact: true }) });
-    await dawn.getByText("Story time & labels", { exact: true }).click();
+    await dawn.getByText("Saved scene brief, story time & labels", { exact: true }).click();
     await dawn.getByRole("textbox", { name: "Story time for Dawn" }).fill("Day 3, dawn");
     await page.reload();
     await page.getByRole("button", { name: /^Plan \(/ }).click();
@@ -88,7 +88,7 @@ test("recovers Plan text, reading position and an unfinished voice assessment af
     await expect(page.getByPlaceholder("New act title")).toHaveValue("Return to the harbor");
     await expect(page.getByPlaceholder("Chapter title")).toHaveValue("The unsealed letter");
     await expect(page.getByRole("textbox", { name: "New beat for Dawn" })).toHaveValue("Mara refuses to let go.");
-    await dawn.getByText("Story time & labels", { exact: true }).click();
+    await dawn.getByText("Saved scene brief, story time & labels", { exact: true }).click();
     await expect(dawn.getByRole("textbox", { name: "Story time for Dawn" })).toHaveValue("Day 3, dawn");
     const savedPlan = await json(["plan", "get"]);
     expect(savedPlan.brief.synopsis).toBe("");

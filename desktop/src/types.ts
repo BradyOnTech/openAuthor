@@ -230,6 +230,7 @@ export type ProposalRecord = {
     intent: {
       goal: string;
       scope: string;
+      editable_scope?: "quoted_text";
       constraints: string[];
       protected_elements: string[];
     };
