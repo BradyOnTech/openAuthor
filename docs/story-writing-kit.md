@@ -72,7 +72,7 @@ Whole-scene drafting now sizes its default output allowance to the scene and any
 
 The package includes a normal `SKILL.md` and selective Markdown references, compiled by `openauthor/writing_craft.py`. It does not enable inherited Codex skills, local memories, tools or file access. `openauthor/writing_review.py` owns evidence validation and stage recovery; callers own provider access, budget enforcement and source-state checks.
 
-The [research](research/ai-fiction-writing-skills-2026-10-04.md) and [comparison plan](research/fiction-writing-comparison-plan-2026-10-05.md) informed the design. Development evaluation uses copied test manuscript fixtures and discloses the source voice as provisional AI-written QA prose. The public-method comparator is our adaptation of documented methods. It is not native Novelcrafter or Sudowrite output. Passing software tests, model reviews or a small development comparison does not establish market superiority.
+The [research](research/ai-fiction-writing-skills-2026-10-04.md) and [comparison plan](research/fiction-writing-comparison-plan-2026-10-05.md) informed the design. Development evaluation uses copied fixtures from a private test manuscript and discloses the source voice as provisional AI-written QA prose. The public-method comparator is our adaptation of documented methods. It is not native Novelcrafter or Sudowrite output. Passing software tests, model reviews or a small development comparison does not establish market superiority.
 
 **Sources**
 

@@ -62,3 +62,6 @@ desktop/src-tauri/resources/runtime/codex/**
 !desktop/src-tauri/resources/runtime/codex/.gitkeep
 desktop/src-tauri/resources/runtime/git/**
 !desktop/src-tauri/resources/runtime/git/.gitkeep
+
+# local tool output (Playwright captures, scratch artifacts)
+output/

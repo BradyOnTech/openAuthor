@@ -9,7 +9,7 @@ remain uncommitted and unchanged.
 ## Access and local history
 
 GitHub Desktop and the browser could see the private repository because their
-owner session had access. The active GitHub CLI account was `a secondary account`;
+owner session had access. The active GitHub CLI account was a different, secondary account;
 the stored `BradyOnTech` login had access and push permission. Repository-local
 Git credential routing now selects that existing owner login for this exact
 repository. Ordinary `git ls-remote origin` succeeds. The helper retrieves the

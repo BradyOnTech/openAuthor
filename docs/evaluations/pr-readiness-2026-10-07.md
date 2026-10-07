@@ -42,4 +42,4 @@ cd desktop
 OPENAUTHOR_TEST_PREVIEW=1 OPENAUTHOR_BROWSER_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:e2e -- e2e/authoring.spec.ts
 ```
 
-The earlier [writing comparison](writing-comparison-2026-10-06/assessment.md) remains the evidence for writing quality. These fixes establish inspectable direction and safe edit boundaries; they do not expand that comparison's literary claims.
+The earlier writing comparison (withheld from the public repo because it quotes a private manuscript) remains the evidence for writing quality. These fixes establish inspectable direction and safe edit boundaries; they do not expand that comparison's literary claims.

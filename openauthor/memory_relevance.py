@@ -9,8 +9,8 @@ def _reference_forms(entity: dict[str, Any]) -> list[str]:
   label = str(entity.get("name", "")).strip()
   name = label.casefold()
   forms = [name, *(alias.strip().casefold() for alias in entity.get("aliases", []) if isinstance(alias, str))]
-  # Labels can append a descriptive clause, as in "The Tidewardens, people of
-  # Lumen". These lookup forms do not rename records or create saved aliases.
+  # Labels can append a descriptive clause, as in "The Tidewardens, keepers of
+  # the harbor". These lookup forms do not rename records or create saved aliases.
   head, comma, description = label.partition(",")
   if comma and description.strip()[:1].islower():
     forms.append(head.strip().casefold())

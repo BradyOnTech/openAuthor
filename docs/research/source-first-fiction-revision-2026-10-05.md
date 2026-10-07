@@ -4,9 +4,9 @@ Research checked October 5, 2026. Test a compact source-only inventory before ca
 
 **The specific gap**
 
-In the quoted-editing experiment, the critic considered a change from “People need to know someone is still trying” to “People need someone to keep trying” permissible. Its own summaries shifted from public evidence to a persistent representative. The first line makes awareness of effort part of Theo's argument; the second emphasizes continued effort itself. The evaluating agent retained the original line. That is one consequential interpretation in a development case, not independent author validation. [Native assessment](docs/evaluations/story-writing-kit-2026-10-05/native-quoted-editing-v1/assessment.md).
+In the quoted-editing experiment, the critic considered a change from “People need to know someone is still trying” to “People need someone to keep trying” permissible. Its own summaries shifted from public evidence to a persistent representative. The first line makes awareness of effort part of the speaker's argument; the second emphasizes continued effort itself. The evaluating agent retained the original line. That is one consequential interpretation in a development case, not independent author validation. Native assessment (withheld from the public repo because it quotes a private manuscript).
 
-The earlier [source-fidelity report](docs/research/source-fidelity-in-fiction-revision-2026-10-05.md) covers bidirectional auditing, nullable omission receipts, and broad fact retention. This follow-up concerns the relationship around a proposition: who knows, believes, appears, claims, or wants someone else to believe it. Merely retaining the subject and the action can lose that relationship.
+The earlier [source-fidelity report](source-fidelity-in-fiction-revision-2026-10-05.md) covers bidirectional auditing, nullable omission receipts, and broad fact retention. This follow-up concerns the relationship around a proposition: who knows, believes, appears, claims, or wants someone else to believe it. Merely retaining the subject and the action can lose that relationship.
 
 **Four primary sources and what they establish**
 
@@ -26,14 +26,14 @@ Use host-assigned source passage IDs and exact evidence. Each relevant item reco
 
 | Field | Application to the observed line |
 | --- | --- |
-| Attribution | Theo says this; it is not automatically narrator-established truth |
+| Attribution | The character says this; it is not automatically narrator-established truth |
 | Holder or audience | People, in the public-role context |
 | Relation | Need to know |
 | Embedded proposition | Someone is still trying |
 | Consequential distinction | Awareness of effort is part of the stated need |
 | Possible strategy | Justifying a public representative or visible effort; interpretation needs neighboring evidence |
 
-The inventory must not infer that the public already knows, that effort succeeds, or that Theo is truthful. Preserve the source's claimed relation while leaving those points unresolved. Apply the same treatment to seeming versus being, wanting versus doing, suspicion versus confirmation, permission versus capability, and an assurance versus a commitment.
+The inventory must not infer that the public already knows, that effort succeeds, or that the speaker is truthful. Preserve the source's claimed relation while leaving those points unresolved. Apply the same treatment to seeming versus being, wanting versus doing, suspicion versus confirmation, permission versus capability, and an assurance versus a commitment.
 
 For dialogue strategy, record what the speaker wants the listener to do or believe, the offered or withheld object, and the grounds used as leverage when the text supports them. Keep those arguments distinct from grammatical form. A question can preserve an accusation or challenge; two questions can pursue different bargains. Rhetorical changes need contextual judgment and the author's permitted scope.
 
@@ -53,7 +53,7 @@ A source-first record can also omit the very relationship we want to preserve. M
 
 **A focused experiment**
 
-First freeze human-labeled pairs from new scenes: faithful paraphrases, knowledge-to-action drift, appearance-to-reality drift, desire-to-commitment drift, attribution changes, and authorized tactical changes. Include ambiguous controls that should remain uncertain. Keep the known Theo example as development material.
+First freeze human-labeled pairs from new scenes: faithful paraphrases, knowledge-to-action drift, appearance-to-reality drift, desire-to-commitment drift, attribution changes, and authorized tactical changes. Include ambiguous controls that should remain uncertain. Keep the known quoted-editing example as development material.
 
 Create source-only inventories without access to those candidates. On identical frozen candidates, compare the current audit against an audit supplied the frozen inventory, holding model and reasoning settings constant. This isolates review behavior from any effect on prose generation. Then run a separate generation comparison to test whether the inventory helps the writer preserve meaning. Reuse existing planning calls where applicable and disclose actual token and call usage.
 

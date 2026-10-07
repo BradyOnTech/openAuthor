@@ -10,8 +10,7 @@ The canonical forward-looking roadmap is `docs/product-development-plan.md`. `do
 
 ## Source
 
-- Shared conversation: `(private planning conversation)`
-- Conversation title: `AI-Assisted Fiction Authoring`
+- Originated in a private planning conversation titled `AI-Assisted Fiction Authoring`.
 
 ## Problem statement
 

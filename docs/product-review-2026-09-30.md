@@ -22,7 +22,7 @@ No real manuscript was uploaded. No prose was applied in the native app. The syn
 
 Confirmed in the native app: select prose, choose Expand or Critique, and inspect the instructions and context-review controls. The cream editor inherits the dark shell's pale text. The source colors, `#e8e4df` on `#faf6f0`, calculate to roughly 1.18:1 contrast. The problem affects explanatory and privacy text, not only disabled buttons.
 
-Give the assistant a coherent surface and text palette. Test both themes, keyboard focus, selected text, errors, and a long context preview in the packaged app. Keep the primary action visible without scrolling through raw prompt JSON. The relevant styles begin at [design-system-v2.css](desktop/src/design-system-v2.css:904).
+Give the assistant a coherent surface and text palette. Test both themes, keyboard focus, selected text, errors, and a long context preview in the packaged app. Keep the primary action visible without scrolling through raw prompt JSON. The relevant styles begin at [design-system-v2.css](../desktop/src/design-system-v2.css#L904).
 
 ### Knowledge diagnostics can accuse correct prose
 
@@ -32,15 +32,15 @@ Three fresh cases reproduced incorrect knowledge warnings:
 - A secret value of `key` is matched inside `monkey`.
 - A sentence explicitly stating that the character does not know where the key is hidden triggers a knowledge-leak warning.
 
-The implementation iterates every historical `does_not_know` entry and searches for a case-insensitive substring. It does not resolve the latest knowledge state or distinguish mention from knowledge. See [canon.py](openauthor/canon.py:418).
+The implementation iterates every historical `does_not_know` entry and searches for a case-insensitive substring. It does not resolve the latest knowledge state or distinguish mention from knowledge. See [canon.py](../openauthor/canon.py#L418).
 
 Resolve knowledge at the target scene, honor fact validity, avoid substring matches, and distinguish assertions, questions, negation, and dialogue. Keep ambiguous findings tentative. Acceptance: all three cases above are quiet, a genuine disclosure remains detectable, and every warning cites an exact current passage.
 
 ### AI actions do not consistently use the same story context
 
-A fresh deterministic request confirmed that whole-scene drafting includes the saved style guide but regenerating a changed passage drops it. The latter asks the model to preserve voice without providing the saved voice guidance. See [ai.py](openauthor/ai.py:2730).
+A fresh deterministic request confirmed that whole-scene drafting includes the saved style guide but regenerating a changed passage drops it. The latter asks the model to preserve voice without providing the saved voice guidance. See [ai.py](../openauthor/ai.py#L2730).
 
-The packaged selection assistant explicitly excludes Canon and relationships. The checkout contains a promising explicit-approval implementation for selection and chat, but the desktop controls are absent and the chat bridge does not forward the new approval field. These are unfinished integrations, not shipped capabilities. See [server.py](openauthor/server.py:37).
+The packaged selection assistant explicitly excludes Canon and relationships. The checkout contains a promising explicit-approval implementation for selection and chat, but the desktop controls are absent and the chat bridge does not forward the new approval field. These are unfinished integrations, not shipped capabilities. See [server.py](../openauthor/server.py#L37).
 
 Use one shared context contract across selection, scene drafting, individual-change regeneration, chat, and merge reconciliation. Show included and omitted guidance, applicable facts, character knowledge, relationships, and cost estimates. Never silently share private notes or turn an expired permission into a persistent grant. Acceptance: a saved constraint survives each workflow, an unavailable or stale source is disclosed, and changed context requires renewed review.
 
@@ -52,7 +52,7 @@ The new eight-case challenge set produced the expected result only for the simpl
 
 The dye warning is consistent with the current conservative wording, but still creates avoidable review work. The other examples distinguish genuine implementation defects from broader unsupported language understanding. This deliberately difficult, small set is not an independent benchmark; its precision and recall output must not be used as product-wide accuracy claims.
 
-Preserved cases: [product-review-challenges.json](docs/product-review-challenges.json). Reproduce from the repository root:
+Preserved cases: [product-review-challenges.json](product-review-challenges.json). Reproduce from the repository root:
 
 ```bash
 python3 -c 'import json; from pathlib import Path; from scripts.evaluate_canon_diagnostics import evaluate; print(json.dumps(evaluate(Path("docs/product-review-challenges.json")), indent=2))'
@@ -64,7 +64,7 @@ Recommended direction: keep fast local checks for narrow, reliable rules; offer 
 
 The earlier generic native critique missed the conflict between Mara knowing the key's location and the claim that nobody in the square knew it. In this pass, a focused request to check factual consistency and character knowledge found both passages, identified the location ambiguity, and proposed a minimal correction. It also correctly distinguished knowing that a key was found from knowing its hiding place.
 
-This is evidence that a targeted mode can help, not proof that a prompt change solves continuity. The new run is `gen-b3c0bbb063e4`, resolved model `gpt-5.6-sol`, with feedback in `proposal-7d6e999472783528002d48e0` in the synthetic QA book. The response remained feedback only. Earlier expansion testing also invented a hook material and a blue wall; see [selection editorial evaluation](docs/selection-editorial-evaluation.json).
+This is evidence that a targeted mode can help, not proof that a prompt change solves continuity. The new run is `gen-b3c0bbb063e4`, resolved model `gpt-5.6-sol`, with feedback in `proposal-7d6e999472783528002d48e0` in the synthetic QA book. The response remained feedback only. Earlier expansion testing also invented a hook material and a blue wall; see [selection editorial evaluation](selection-editorial-evaluation.json).
 
 Add clear review modes: continuity, character knowledge, motivation, pacing, and voice. Separate “preserve all facts” from “explore new possibilities.” For each finding, show evidence, uncertainty, and the smallest suggested edit. Validate those modes on fresh passages rather than tuning only to this scene.
 
@@ -76,7 +76,7 @@ Recommended improvements: expose chapter hierarchy while writing; collapse the s
 
 ### Voice and language support are weaker than their labels suggest
 
-A Chinese-only synthetic scene produced a Style Profile with zero words and guidance to aim for zero words per sentence. Searching the retrieval index for the exact Chinese term already in that scene failed with “query must include at least one searchable token.” The retrieval and Style Profile tokenizers are ASCII-oriented. See [retrieval.py](openauthor/retrieval.py:18) and [style_profile.py](openauthor/style_profile.py:39).
+A Chinese-only synthetic scene produced a Style Profile with zero words and guidance to aim for zero words per sentence. Searching the retrieval index for the exact Chinese term already in that scene failed with “query must include at least one searchable token.” The retrieval and Style Profile tokenizers are ASCII-oriented. See [retrieval.py](../openauthor/retrieval.py#L18) and [style_profile.py](../openauthor/style_profile.py#L39).
 
 Even for English, average sentence length, punctuation rates, and frequent words are not a full model of author voice. Add language-aware measurement or clearly report unsupported input instead of producing misleading guidance. Use author-approved voice examples and explicit preferences, with a way to refresh them when source scenes change. Semantic retrieval is worth evaluating after fixing basic Unicode handling and maintaining source freshness and sharing controls.
 

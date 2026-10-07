@@ -14,13 +14,13 @@ Sudowrite's guidance also identifies conflicting or ambiguous story information 
 
 Use the existing Change Set plan stage for a new scene. Route an empty manuscript to scene preparation rather than editing existing prose. The craft reference asks the planner for causal movements and the consequential states later movements depend on: time relationships, access, possession, conditional promises and unresolved knowledge. Permitted local inventions remain proposals rather than established history.
 
-Freeze the same test manuscript QA brief, permissions, Memory selection, original direction, model and medium effort. Preserve the first plan and the first resulting chapter. The plan call has a 1,800-token target; the prose call retains the 4,400-token target and authored 1,800–2,200-word range. Both are existing ChatGPT-backed inference; no additional account is used. Read the entire result against the earlier direct draft and retain failures. No generated chapter is automatically applied.
+Freeze the same QA brief, permissions, Memory selection, original direction, model and medium effort. Preserve the first plan and the first resulting chapter. The plan call has a 1,800-token target; the prose call retains the 4,400-token target and authored 1,800–2,200-word range. Both are existing ChatGPT-backed inference; no additional account is used. Read the entire result against the earlier direct draft and retain failures. No generated chapter is automatically applied.
 
 This is an adaptive workflow comparison after inspecting the direct draft. It adds a plan call and changes planning guidance, so any improvement cannot be attributed to the skill alone or described as equal-budget superiority. It supplies no independent reader preference or native competing-product output. A transfer scene must also check whether planning adds useful specificity without imposing a formula on quieter fiction.
 
 **Observed outcome**
 
-The [actual chapter and quiet-scene comparison](../evaluations/story-writing-kit-2026-10-05/chapter-causal-preparation-v1/assessment.md) did not establish a clear literary gain. The technical chapter was still over length; both quiet drafts met their local requirements with different strengths. The added preparation paragraph was removed from the shipped kit. The accurate empty-scene planning role remains. No automatic planning call or universal narrative template was added.
+The actual chapter and quiet-scene comparison (withheld from the public repo because it quotes a private manuscript) did not establish a clear literary gain. The technical chapter was still over length; both quiet drafts met their local requirements with different strengths. The added preparation paragraph was removed from the shipped kit. The accurate empty-scene planning role remains. No automatic planning call or universal narrative template was added.
 
 **Sources**
 

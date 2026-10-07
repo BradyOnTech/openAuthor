@@ -38,11 +38,11 @@ Freeze the resolved model, reasoning effort, input facts, style excerpts, passag
 
 **Fixture inputs**
 
-Derive the first three tasks from verified test manuscript material, choosing moments the author actually intends. The examples below describe test pressures, not proposed canon events. Each fixture needs a frozen source excerpt, relevant accepted facts, forbidden inventions, character knowledge, reveal boundaries, intended scene change, and a short approved voice sample.
+Derive the first three tasks from verified material in the private test manuscript, choosing moments the author actually intends. The examples below describe test pressures, not proposed canon events. Each fixture needs a frozen source excerpt, relevant accepted facts, forbidden inventions, character knowledge, reveal boundaries, intended scene change, and a short approved voice sample.
 
 | Task | Required pressure | What would expose a weak system |
 | --- | --- | --- |
-| Scene generation, 500–700 words | A practical conflict involving Tobin and a concrete constraint from the outline | Added generic technology, contradictory logistics, or description that never affects a choice |
+| Scene generation, 500–700 words | A practical conflict involving the viewpoint character and a concrete constraint from the outline | Added generic technology, contradictory logistics, or description that never affects a choice |
 | Dialogue, 500–700 words | Two characters with competing immediate aims and different knowledge | Interchangeable voices, explanatory speeches, premature disclosures, or agreement without a credible concession |
 | Quiet aftermath, 500–700 words | A character processing a consequence without an obligatory new crisis | Forced action, formulaic body cues, inflated emotion, or banning useful summary |
 | Local revision, supplied 300–500-word passage | One precise dialogue or motivation improvement with protected surrounding prose | Changed meaning, new plot, unnecessary rewriting, or a revision worse than the original |

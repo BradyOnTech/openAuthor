@@ -21,15 +21,15 @@ One new, feedback-only subscription request tested a 75-word synthetic passage. 
 
 ## Confirmed defects and incomplete behavior
 
-**Style guidance can become stale without warning.** I built a Style Profile, rewrote its source scene, and fetched the profile again. It remained identical, without a freshness indicator. An intentionally frozen reference could be useful, but the product must distinguish that from a current-source profile. Show the source version, flag changes, and offer explicit refresh or keep-frozen choices. See [style_profile.py](openauthor/style_profile.py:19).
+**Style guidance can become stale without warning.** I built a Style Profile, rewrote its source scene, and fetched the profile again. It remained identical, without a freshness indicator. An intentionally frozen reference could be useful, but the product must distinguish that from a current-source profile. Show the source version, flag changes, and offer explicit refresh or keep-frozen choices. See [style_profile.py](../openauthor/style_profile.py#L19).
 
-**Language handling produces misleading results.** The Chinese passage `夜雨落在长街。小林看见蓝色的灯。她没有回头。` produced a zero-word profile and guidance to aim for zero words per sentence. Retrieval rejected the exact query `夜雨` as having no searchable token. Support Unicode/language-aware segmentation, or state the limitation and suppress misleading advice. This finding concerns AI retrieval, not every search feature. See [style_profile.py](openauthor/style_profile.py:38) and [retrieval.py](openauthor/retrieval.py:18).
+**Language handling produces misleading results.** The Chinese passage `夜雨落在长街。小林看见蓝色的灯。她没有回头。` produced a zero-word profile and guidance to aim for zero words per sentence. Retrieval rejected the exact query `夜雨` as having no searchable token. Support Unicode/language-aware segmentation, or state the limitation and suppress misleading advice. This finding concerns AI retrieval, not every search feature. See [style_profile.py](../openauthor/style_profile.py#L38) and [retrieval.py](../openauthor/retrieval.py#L18).
 
-**The book word count can lag behind saved writing.** Adding 41 words and immediately navigating away saved the scene correctly, but the footer remained at 10,160 rather than 10,201. Applying a later proposal refreshed it. The save callback only refreshes the scene list while its editor is mounted. Refresh project-level derived state when a background save completes, without targeting a different project. See [SceneEditor.tsx](desktop/src/components/editor/SceneEditor.tsx:44).
+**The book word count can lag behind saved writing.** Adding 41 words and immediately navigating away saved the scene correctly, but the footer remained at 10,160 rather than 10,201. Applying a later proposal refreshed it. The save callback only refreshes the scene list while its editor is mounted. Refresh project-level derived state when a background save completes, without targeting a different project. See [SceneEditor.tsx](../desktop/src/components/editor/SceneEditor.tsx#L44).
 
-**AI context remains inconsistent across workflows.** The uncommitted passage-regeneration work now includes saved guidance and reviewed permissions in Python tests, addressing the earlier omission; native verification of that work remains pending. However, whole-scene drafting and merge reconciliation still do not share the selection/chat review contract. The merge prompt is assembled from three scene versions without the shared Plan/Style/Canon builder. Complete one context contract and verify it through the native UI. See [ai.py](openauthor/ai.py:2544) and [merge reconciliation](openauthor/ai.py:2924).
+**AI context remains inconsistent across workflows.** The uncommitted passage-regeneration work now includes saved guidance and reviewed permissions in Python tests, addressing the earlier omission; native verification of that work remains pending. However, whole-scene drafting and merge reconciliation still do not share the selection/chat review contract. The merge prompt is assembled from three scene versions without the shared Plan/Style/Canon builder. Complete one context contract and verify it through the native UI. See [ai.py](../openauthor/ai.py#L2544) and [merge reconciliation](../openauthor/ai.py#L2924).
 
-**The current desktop test failure must be resolved before another release candidate.** The error is `window.__TAURI_INTERNALS__.invoke is not a function`, not evidence that the packaged app has that failure. Supply the working native boundary and retain the permission-recovery assertions. See [RevisionContextReview.test.tsx](desktop/src/RevisionContextReview.test.tsx:22).
+**The current desktop test failure must be resolved before another release candidate.** The error is `window.__TAURI_INTERNALS__.invoke is not a function`, not evidence that the packaged app has that failure. Supply the working native boundary and retain the permission-recovery assertions. See [RevisionContextReview.test.tsx](../desktop/src/RevisionContextReview.test.tsx#L22).
 
 ## Daily writing improvements
 
@@ -73,8 +73,8 @@ Not established here: full current-bundle failure recovery, disk-full behavior, 
 
 **Sources and reproduction**
 
-- [Detailed probe evidence](docs/product-review-followup-evidence.json)
-- [Continuity challenge corpus](docs/product-review-challenges.json)
+- [Detailed probe evidence](product-review-followup-evidence.json)
+- [Continuity challenge corpus](product-review-challenges.json)
 - [Inscriptor context picker](https://github.com/lukashonke/inscriptor/blob/main/src/components/Common/PromptSelector/PromptContextSelector.vue)
 - [NovelForge memory invalidation](https://github.com/LunaRime/novelforge/blob/master/src/services/memory/memory-invalidation.ts)
 - [xnovelist documented scope](https://github.com/giapnguyen74/xnovelist)
