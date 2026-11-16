@@ -236,7 +236,7 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
             <h1 style={{ margin: "4px 0 0", color: "var(--text-primary)", fontFamily: "var(--font-prose)", fontWeight: 500 }}>Plan</h1>
           </div>
           <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>
-            {plan.acts.length} acts · {scenes.length} scenes · {plan.beats.length} beats
+            {counted(plan.acts.length, "act")} · {counted(scenes.length, "scene")} · {counted(plan.beats.length, "beat")}
           </div>
         </div>
 
@@ -465,3 +465,7 @@ const sectionTitle = {
   fontSize: "var(--text-lg)",
   fontWeight: 600,
 } as const;
+
+function counted(count: number, noun: string): string {
+  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+}

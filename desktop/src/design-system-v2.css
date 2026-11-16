@@ -3936,3 +3936,11 @@ button.status-bar__item {
   font-weight: var(--weight-medium);
   color: var(--text-secondary);
 }
+
+/* ── Search ────────────────────────────────────────────────────── */
+
+.search-mark {
+  color: inherit;
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 2px;
+}

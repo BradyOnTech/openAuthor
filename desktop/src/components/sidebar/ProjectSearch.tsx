@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { findMatches } from "../editor/FindBar";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { getCodexEntity, getScene, searchProject, type ProjectSearchResult } from "../../api";
@@ -89,8 +90,8 @@ export function ProjectSearch() {
               {r.source_kind === "scene" ? "\u25CB" : r.source_kind === "memory" ? "\u25C6" : "\u25A6"}
             </span>
             <div className="list-item__content">
-              <div className="list-item__title">{r.title}</div>
-              <div className="list-item__meta project-search__excerpt">{r.excerpt}</div>
+              <div className="list-item__title"><Highlighted text={r.title} query={query} /></div>
+              <div className="list-item__meta project-search__excerpt"><Highlighted text={r.excerpt} query={query} /></div>
             </div>
           </button>
         ))}
@@ -102,4 +103,17 @@ export function ProjectSearch() {
       </div>
     </>
   );
+}
+
+/** The text with each occurrence of the search phrase marked. */
+function Highlighted({ text, query }: { text: string; query: string }) {
+  const matches = findMatches(text, query.trim().replace(/\s+/g, " "));
+  if (!matches.length) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let from = 0;
+  for (const match of matches) {
+    parts.push(text.slice(from, match.start), <mark key={match.start} className="search-mark">{text.slice(match.start, match.end)}</mark>);
+    from = match.end;
+  }
+  return <>{parts}{text.slice(from)}</>;
 }

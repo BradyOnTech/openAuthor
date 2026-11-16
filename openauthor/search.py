@@ -24,6 +24,23 @@ def _excerpt(text: str, query: str, radius: int = 90) -> str:
   return fragment
 
 
+def _best_excerpt(fields: list[str], query: str) -> str:
+  """Quote the match from prose rather than from a join of title and metadata.
+
+  ``fields`` are ordered by how useful they are to read (prose first). The
+  first one containing the query is quoted around the match; when the query
+  only matched a title or label, the opening of the first field is shown.
+  """
+  folded = query.casefold()
+  for text in fields:
+    if text and folded in text.casefold():
+      return _excerpt(text, query)
+  for text in fields:
+    if text and text.strip():
+      return _excerpt(text, query)
+  return ""
+
+
 def _score(query: str, title: str, text: str) -> float:
   q = query.casefold()
   title_folded = title.casefold()
@@ -57,7 +74,7 @@ def search_project(paths: ProjectPaths, query: str, *, limit: int = 80) -> list[
       "source_id": scene["id"],
       "title": scene["title"] or scene["id"],
       "path": scene["path"],
-      "excerpt": _excerpt(searchable, cleaned),
+      "excerpt": _best_excerpt([scene.get("body", ""), scene.get("summary", "")], cleaned),
       "score": _score(cleaned, scene["title"], searchable),
     })
 
@@ -78,7 +95,7 @@ def search_project(paths: ProjectPaths, query: str, *, limit: int = 80) -> list[
       "source_id": entity["id"],
       "title": entity["name"],
       "path": "codex/codex.json",
-      "excerpt": _excerpt(searchable, cleaned),
+      "excerpt": _best_excerpt([entity.get("description", ""), detail_text, entity.get("notes", ""), " ".join(entity.get("aliases", []))], cleaned),
       "score": _score(cleaned, entity["name"], searchable),
     })
 
@@ -107,7 +124,7 @@ def search_project(paths: ProjectPaths, query: str, *, limit: int = 80) -> list[
           "source_id": chapter["id"],
           "title": f"{act['title']} · {chapter['title']}",
           "path": "manuscript/structure.json",
-          "excerpt": _excerpt(searchable, cleaned),
+          "excerpt": _best_excerpt([chapter.get("synopsis", ""), act.get("synopsis", "")], cleaned),
           "score": _score(cleaned, chapter["title"], searchable),
         })
 

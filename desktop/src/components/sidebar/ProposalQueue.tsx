@@ -5,6 +5,7 @@ import { countProposals, orderProposalsForReview, proposalDisplayLabel } from ".
 import { applyProposalBatch, listRevisions, undoProposalBatch, saveRevision, getScene } from "../../api";
 import { withProjectBookChange } from "../../sceneSaveSession";
 import type { RevisionSummary } from "../../types";
+import { isSafetySnapshot, revisionKindLabel } from "../../revisionLabels";
 
 export function ProposalQueue() {
   const { projectRoot, proposals, scenes, refreshProposals, refreshScenes, setError, setMessage } = useWorkspace();
@@ -39,8 +40,8 @@ export function ProposalQueue() {
 
   // Every change is preceded by an automatic "before" snapshot. They make undo
   // possible but double the list, so they stay folded away until asked for.
-  const snapshotCount = revisions.filter(isSafetySnapshot).length;
-  const shownRevisions = showSnapshots ? revisions : revisions.filter(revision => !isSafetySnapshot(revision));
+  const snapshotCount = revisions.filter(revision => isSafetySnapshot(revision.kind)).length;
+  const shownRevisions = showSnapshots ? revisions : revisions.filter(revision => !isSafetySnapshot(revision.kind));
   const sceneName = (id?: string) => (id && scenes.find(scene => scene.id === id)?.title) || id || "";
   const withSceneNames = (text: string) => text.replace(/\bscene-\d+\b/g, id => sceneName(id));
 
@@ -227,29 +228,6 @@ export function ProposalQueue() {
       </div>
     </>
   );
-}
-
-const REVISION_KIND_LABELS: Record<string, string> = {
-  author_edit: "Your edit",
-  author_edit_before: "Snapshot before your edit",
-  change_set_apply: "Change Set applied",
-  change_set_before: "Snapshot before a Change Set",
-  change_set_undo: "Change Set undone",
-  change_group_apply: "Change Sets applied together",
-  change_group_before: "Snapshot before Change Sets",
-  change_group_undo: "Change Sets undone together",
-  manuscript_import: "Import",
-  restore: "Restored version",
-  backup: "Backup",
-  manual: "Saved version",
-};
-
-function isSafetySnapshot(revision: RevisionSummary): boolean {
-  return /_before$/.test(revision.kind);
-}
-
-function revisionKindLabel(kind: string): string {
-  return REVISION_KIND_LABELS[kind] ?? kind.replace(/_/g, " ");
 }
 
 function timeAgo(iso: string): string {
