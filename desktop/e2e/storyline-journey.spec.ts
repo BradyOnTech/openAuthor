@@ -3,6 +3,7 @@ import { copyFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("a clean open scene follows the active Storyline before the author resumes writing", async ({ page }) => {
   const book = await localBook(page);
@@ -22,7 +23,7 @@ test("a clean open scene follows the active Storyline before the author resumes 
     await expect(page.getByText("Exploring: Chosen responsibility", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
     await page.getByRole("textbox", { name: "Scene prose" }).fill("Mara stays to repair the city.");
-    await page.getByRole("textbox", { name: "Scene prose" }).press("Control+s");
+    await page.getByRole("textbox", { name: "Scene prose" }).press("ControlOrMeta+s");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     const result = await book.core(book.projectRoot, ["scene", "get", "--id", "scene-0001", "--json"]);
     expect(JSON.parse(result.stdout).body.trim()).toBe("Mara stays to repair the city.");
@@ -67,7 +68,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     const originalFerry = await json(["scene", "get", "--id", "scene-0004"]);
     await page.getByRole("button", { name: /The Last Door Draft/ }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(prose).toHaveValue(originalEnding.body);
+    await expectProse(prose, originalEnding.body);
 
     await page.getByRole("button", { name: /^Storylines \(/ }).click();
     await page.getByPlaceholder("Storyline name", { exact: true }).fill("Mara stays to repair the city");
@@ -78,15 +79,15 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
     const ending = originalEnding.body.replace("She put the map in the brass case and followed Ivo home.", "She put the map in the brass case and gave Ivo the route home. She stayed to rebuild the keeper's street.");
     await prose.fill(ending);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(ending);
     await page.getByRole("button", { name: /The Ferry Debt Draft/ }).click();
-    await expect(prose).toHaveValue(originalFerry.body);
+    await expectProse(prose, originalFerry.body);
     const ferry = originalFerry.body.replace("They crossed in silence.", "They crossed while Ivo named the streets he wanted to see again.");
     expect(ferry).not.toBe(originalFerry.body);
     await prose.fill(ferry);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     expect((await json(["scene", "get", "--id", "scene-0004"])).body).toBe(ferry);
 
@@ -144,7 +145,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     // Primary restores its own working tabs; explicitly return to the ferry
     // scene to compare it with the experiment's version.
     await page.getByRole("button", { name: /The Ferry Debt Draft/ }).click();
-    await expect(prose).toHaveValue(originalFerry.body);
+    await expectProse(prose, originalFerry.body);
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(originalEnding.body);
     await page.getByRole("button", { name: /^Storylines \(/ }).click();
     await page.getByRole("button", { name: "Compare", exact: true }).click();
@@ -159,7 +160,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     expect((await json(["scene", "get", "--id", "scene-0004"])).body).toBe(originalFerry.body);
     await page.screenshot({ path: testInfo.outputPath("selected-ending-integrated.png") });
     await page.getByRole("button", { name: "Undo change", exact: true }).click();
-    await expect(prose).toHaveValue(originalEnding.body);
+    await expectProse(prose, originalEnding.body);
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(originalEnding.body);
     expect(book.errors).toEqual([]);
   } finally {

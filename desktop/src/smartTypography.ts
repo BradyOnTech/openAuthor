@@ -1,4 +1,4 @@
-// Typographic help for the prose textarea. Scenes stay plain Markdown, so this
+// Typographic help for the prose page. Scenes stay plain Markdown, so this
 // only chooses characters and emphasis markers; it never stores formatting.
 
 const SMART_PUNCTUATION_KEY = "openauthor.smartPunctuation";
@@ -62,22 +62,4 @@ export function toggleEmphasis(value: string, start: number, end: number, marker
   const text = selected.slice(0, lead) + marker + core + marker + selected.slice(selected.length - trail);
   const selectStart = start + lead + size;
   return { start, end, text, selectStart, selectEnd: selectStart + core.length };
-}
-
-/**
- * Replace a range through the browser's editing pipeline so native undo and
- * redo keep working. Falls back to a direct edit where that is unavailable.
- */
-export function replaceTextRange(textarea: HTMLTextAreaElement, start: number, end: number, text: string): void {
-  textarea.focus();
-  textarea.setSelectionRange(start, end);
-  let inserted = false;
-  try {
-    inserted = typeof document.execCommand === "function" && document.execCommand("insertText", false, text);
-  } catch {
-    inserted = false;
-  }
-  if (inserted) return;
-  textarea.setRangeText(text, start, end, "end");
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }

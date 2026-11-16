@@ -5,6 +5,7 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
 import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
 import { setSmartPunctuationEnabled, smartPunctuationEnabled } from "../../smartTypography";
+import { DEFAULT_PROSE_SIZE, PROSE_SIZES, proseSize, setProseSize } from "../../proseSize";
 
 const PROVIDER_INFO: {
   id: ProposalProvider;
@@ -154,6 +155,12 @@ export function SettingsEditor() {
 
 function WritingPreferencesCard() {
   const [smart, setSmart] = useState(smartPunctuationEnabled);
+  const [size, setSize] = useState(proseSize);
+  useEffect(() => {
+    const follow = (event: Event) => setSize((event as CustomEvent<number>).detail);
+    window.addEventListener("openauthor-prose-size", follow);
+    return () => window.removeEventListener("openauthor-prose-size", follow);
+  }, []);
   return (
     <div className="settings-editor__section">
       <h3 className="settings-editor__section-title">Writing</h3>
@@ -163,6 +170,15 @@ function WritingPreferencesCard() {
       </label>
       <div className="settings-editor__note">
         Turns straight quotes into curly quotes and two hyphens into an em dash as you type. Existing text is never changed, and Undo restores what you typed.
+      </div>
+      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", minHeight: 40, marginTop: "var(--space-2)" }}>
+        Text size on the page
+        <select className="select" value={size} onChange={(event) => setSize(setProseSize(Number(event.target.value)))} aria-label="Text size on the page">
+          {PROSE_SIZES.map(option => <option key={option} value={option}>{option} px{option === DEFAULT_PROSE_SIZE ? " (standard)" : ""}</option>)}
+        </select>
+      </label>
+      <div className="settings-editor__note">
+        Changes the prose only: on the page, in focus mode and in Read manuscript. Cmd+Plus and Cmd+Minus do the same from the keyboard; Cmd+0 returns to the standard size.
       </div>
       <div className="settings-editor__grid" style={{ marginTop: "var(--space-3)" }}>
         {[["Italic", "Cmd+I"], ["Find and replace in a scene", "Cmd+F"], ["Next / previous match", "Cmd+G / Cmd+Shift+G"], ["Focus mode", "Cmd+Shift+D"], ["New scene", "Cmd+N"], ["Close tab", "Cmd+W"]].map(([label, keys]) => (

@@ -24,7 +24,7 @@ test("keeps an oversized chapter question and retries with complete scene contex
       await page.getByRole("button", { name: "Add Scene", exact: true }).click();
       await expect(page.getByRole("textbox", { name: "Scene title", exact: true })).toHaveValue(title);
       await page.getByRole("textbox", { name: "Scene prose" }).fill(prose);
-      await page.getByRole("textbox", { name: "Scene prose" }).press("Control+s");
+      await page.getByRole("textbox", { name: "Scene prose" }).press("ControlOrMeta+s");
       await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     }
     const act = await json(["plan", "act-add", "--title", "The Return"]);

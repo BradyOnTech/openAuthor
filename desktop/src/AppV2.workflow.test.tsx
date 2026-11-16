@@ -60,6 +60,11 @@ function changeText(text: string) {
   return (_content: string, node: Element | null) => node?.classList.contains("change-text") === true && node.textContent === text;
 }
 
+/** Waits for the prose page to show exactly this text. */
+async function prose(text: string) {
+  await waitFor(() => expect((screen.getByRole("textbox", { name: "Scene prose" }) as HTMLTextAreaElement).value).toBe(text));
+}
+
 function response(payload: unknown, status = 0) {
   return {
     status,
@@ -1211,7 +1216,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Undo change" }));
     await waitFor(() => expect(harness.proposals[0]?.undo_revision).toBe("snapshot-undo-proposal-golden"));
     expect(harness.scenes[0]?.body).toBe("Mara waits at the crossroads.");
-    expect(await screen.findByDisplayValue("Mara waits at the crossroads.")).toBeTruthy();
+    await prose("Mara waits at the crossroads.");
     expect(screen.getByRole("button", { name: /Strengthen the turning point \u2014 undone/ })).toBeTruthy();
   });
 
@@ -1228,8 +1233,8 @@ describe("active V2 author workflow", () => {
     const editor = await screen.findByRole("textbox", { name: "Scene prose" });
     fireEvent.change(editor, { target: { value: "Mara seals the letter." } });
 
-    // The primary modifier is Control here; on a Mac it is Command only.
-    fireEvent.keyDown(window, { key: "w", metaKey: true });
+    // The primary modifier: Control here, Command only on a Mac.
+    fireEvent.keyDown(window, { key: "w" });
     expect(screen.getByRole("tab", { name: /The Letter/ })).toBeTruthy();
     fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     await waitFor(() => expect(screen.queryByRole("tab", { name: /The Letter/ })).toBeNull());
@@ -1363,7 +1368,7 @@ describe("active V2 author workflow", () => {
     expect(screen.getByRole("tab", { name: "Plan" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }));
-    expect(await screen.findByDisplayValue("Mara crosses before the signal changes.")).toBeTruthy();
+    await prose("Mara crosses before the signal changes.");
 
     await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
     await user.click(await screen.findByRole("button", { name: "Inspector" }));
@@ -1386,7 +1391,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }));
     await user.type(screen.getByPlaceholderText("Search manuscript..."), "crosses");
     await user.click(await screen.findByRole("button", { name: "Open The Crossing" }));
-    expect(await screen.findByDisplayValue("Mara crosses before the signal changes.")).toBeTruthy();
+    await prose("Mara crosses before the signal changes.");
   });
 
   it("restores the selected Plan document with its Plan activity rail after restarting the shell", async () => {

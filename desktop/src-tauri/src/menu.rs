@@ -72,6 +72,12 @@ pub const VIEW_MODES: &[MenuShortcut] = &[
   shortcut("menu:theme", "Switch Light or Dark", "t", true),
 ];
 
+pub const VIEW_TEXT: &[MenuShortcut] = &[
+  shortcut("menu:text-bigger", "Bigger Text", "=", false),
+  shortcut("menu:text-smaller", "Smaller Text", "-", false),
+  shortcut("menu:text-standard", "Standard Text Size", "0", false),
+];
+
 pub fn all_shortcuts() -> impl Iterator<Item = &'static MenuShortcut> {
   std::iter::once(&SETTINGS)
     .chain(FILE)
@@ -79,10 +85,16 @@ pub fn all_shortcuts() -> impl Iterator<Item = &'static MenuShortcut> {
     .chain(VIEW_PLACES)
     .chain(VIEW_PANELS)
     .chain(VIEW_MODES)
+    .chain(VIEW_TEXT)
 }
 
 pub fn accelerator(item: &MenuShortcut) -> String {
-  let key = if item.key == "," { "Comma".to_string() } else { item.key.to_uppercase() };
+  let key = match item.key {
+    "," => "Comma".to_string(),
+    "=" => "Equal".to_string(),
+    "-" => "Minus".to_string(),
+    other => other.to_uppercase(),
+  };
   if item.shift { format!("CmdOrCtrl+Shift+{key}") } else { format!("CmdOrCtrl+{key}") }
 }
 
@@ -98,7 +110,11 @@ fn add_shortcuts<'m, R: Runtime>(
   items: &[MenuShortcut],
 ) -> tauri::Result<SubmenuBuilder<'m, R, AppHandle<R>>> {
   for item in items {
-    let entry = MenuItemBuilder::with_id(item.id, item.label).accelerator(accelerator(item)).build(app)?;
+    // An accelerator the platform cannot parse must cost one key hint, not the whole menu.
+    let entry = match MenuItemBuilder::with_id(item.id, item.label).accelerator(accelerator(item)).build(app) {
+      Ok(entry) => entry,
+      Err(_) => MenuItemBuilder::with_id(item.id, item.label).build(app)?,
+    };
     menu = menu.item(&entry);
   }
   Ok(menu)
@@ -135,7 +151,8 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
   let view = add_shortcuts(app, SubmenuBuilder::new(app, "View"), VIEW_PLACES)?.separator();
   let view = add_shortcuts(app, view, VIEW_PANELS)?.separator();
-  let view = add_shortcuts(app, view, VIEW_MODES)?.separator().fullscreen().build()?;
+  let view = add_shortcuts(app, view, VIEW_MODES)?.separator();
+  let view = add_shortcuts(app, view, VIEW_TEXT)?.separator().fullscreen().build()?;
 
   let window = SubmenuBuilder::new(app, "Window")
     .minimize()

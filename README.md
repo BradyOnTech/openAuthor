@@ -64,8 +64,9 @@ flowchart LR
 ## Features
 
 **Write**
-- Distraction-free scene editor with autosave, a crash-recovery journal and focus mode
-- Smart punctuation as you type, Markdown italics (`Cmd+I`), find and replace within a scene, and a page that grows with the prose
+- A prose editor that keeps each scene as exact Markdown text while showing it as a manuscript page: real italics with their markers hidden until you edit the phrase, centred scene breaks, smart punctuation, and undo that survives saves and tab switches
+- Focus mode with paragraph dimming and typewriter scrolling, find and replace within a scene, an adjustable text size, and italics preserved when you paste from a word processor
+- Autosave with a crash-recovery journal
 - Import Markdown, plain text, DOCX and Scrivener content with a structure preview; export Markdown or DOCX with a loss report. Italics and bold carry through Word import and export
 - A built-in sample book (`Explore a sample book` on the welcome screen) with a Change Set to review and a continuity slip to find
 - A Plan view with acts, chapters, scenes, beats, story time and labels, plus move-impact previews
@@ -180,7 +181,7 @@ To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--pro
 
 ```bash
 make test            # Python suite (745 tests, ~1 min, no network)
-make test-desktop    # desktop Vitest suite (752 tests)
+make test-desktop    # desktop Vitest suite (764 tests)
 make test-all        # Python, desktop, contracts, gateway and mobile
 make check           # repository integrity and the no-placeholder audit
 ```

@@ -1,5 +1,6 @@
 import { test, expect, type Locator } from "@playwright/test";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -42,7 +43,7 @@ test("Command Palette announces selection, contains focus and resumes exact pros
     await page.getByRole("button", { name: "Hide first-run guide" }).click();
     await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "Harbor 01 Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(prose).toHaveValue("Elin kept ticket 1 folded.\n");
+    await expectProse(prose, "Elin kept ticket 1 folded.\n");
     await prose.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 5); });
     await page.keyboard.press("ControlOrMeta+k");
     const palette = page.getByRole("dialog", { name: "Command Palette", exact: true });
@@ -70,7 +71,7 @@ test("Command Palette announces selection, contains focus and resumes exact pros
     expect(await prose.evaluate((node: HTMLTextAreaElement) => [node.selectionStart, node.selectionEnd])).toEqual([5, 5]);
     await page.keyboard.insertText("[resume] ");
     const savedBody = "Elin [resume] kept ticket 1 folded.\n";
-    await expect(prose).toHaveValue(savedBody);
+    await expectProse(prose, savedBody);
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     expect((await json(["scene", "get", "--id", "scene-0001"])).body).toBe(savedBody);
 
@@ -88,7 +89,7 @@ test("Command Palette announces selection, contains focus and resumes exact pros
     await page.keyboard.press("Enter");
     await expect(palette).toHaveCount(0);
     await expect(page.getByRole("tab", { name: "Harbor 02", exact: true })).toHaveAttribute("aria-selected", "true");
-    await expect(prose).toHaveValue("Elin kept ticket 2 folded.\n");
+    await expectProse(prose, "Elin kept ticket 2 folded.\n");
     await page.screenshot({ path: testInfo.outputPath("palette-opened-second-scene.png"), animations: "disabled" });
     expect((await json(["scene", "get", "--id", "scene-0001"])).body).toBe(savedBody);
     expect(book.errors).toEqual([]);

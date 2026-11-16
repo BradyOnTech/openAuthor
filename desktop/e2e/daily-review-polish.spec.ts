@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("keeps saved planning compact, recovers edits, and exposes passage actions beside long context", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
@@ -41,7 +42,7 @@ test("keeps saved planning compact, recovers edits, and exposes passage actions 
     await page.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).click();
     await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Count Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(prose).toHaveValue(body + "\n");
+    await expectProse(prose, body + "\n");
     await prose.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(0, "Mara began to count.".length); node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true })); });
     await page.getByRole("button", { name: "Shorten", exact: true }).click();
     await page.getByRole("combobox", { name: "Provider", exact: true }).selectOption("local");

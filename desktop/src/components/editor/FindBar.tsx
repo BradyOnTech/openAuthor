@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { replaceTextRange } from "../../smartTypography";
+import type { ProseFieldElement } from "./ProseField";
 
 export type FindMatch = { start: number; end: number };
 const MATCH_LIMIT = 2000;
@@ -23,7 +23,7 @@ export function findMatches(body: string, query: string): FindMatch[] {
 
 type Props = {
   body: string;
-  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  textareaRef: RefObject<ProseFieldElement | null>;
   readOnly: boolean;
   initialQuery: string;
   /** Bumped by Cmd+F so an already open bar takes focus again. */
@@ -83,7 +83,7 @@ export function FindBar({ body, textareaRef, readOnly, initialQuery, focusReques
     const textarea = textareaRef.current;
     const match = active >= 0 ? matches[active] : null;
     if (!textarea || !match || readOnly) return;
-    replaceTextRange(textarea, match.start, match.end, replacement);
+    textarea.replaceRange(match.start, match.end, replacement);
     inputRef.current?.focus();
   };
   const replaceAll = () => {
@@ -96,7 +96,7 @@ export function FindBar({ body, textareaRef, readOnly, initialQuery, focusReques
       from = match.end;
     }
     // One edit, so one undo restores every replaced passage.
-    replaceTextRange(textarea, 0, textarea.value.length, next + body.slice(from));
+    textarea.replaceRange(0, textarea.value.length, next + body.slice(from));
     inputRef.current?.focus();
   };
 
@@ -136,23 +136,4 @@ export function FindBar({ body, textareaRef, readOnly, initialQuery, focusReques
       )}
     </div>
   );
-}
-
-/** Draws match highlights behind the transparent prose field. */
-export function FindMarks({ body, matches, current }: { body: string; matches: FindMatch[]; current: number }) {
-  const currentRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    currentRef.current?.scrollIntoView?.({ block: "center" });
-  }, [current, matches]);
-  if (!matches.length) return null;
-  const parts: React.ReactNode[] = [];
-  let from = 0;
-  matches.forEach((match, index) => {
-    parts.push(body.slice(from, match.start));
-    parts.push(<mark key={match.start} ref={index === current ? currentRef : undefined} className={index === current ? "find-mark find-mark--current" : "find-mark"}>{body.slice(match.start, match.end)}</mark>);
-    from = match.end;
-  });
-  parts.push(body.slice(from));
-  // The trailing newline keeps the layer as tall as a field ending in a break.
-  return <div className="scene-editor__marks" aria-hidden="true">{parts}{"\n"}</div>;
 }

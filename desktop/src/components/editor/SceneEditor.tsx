@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { getScene, updateScene } from "../../api";
@@ -18,10 +18,10 @@ import { rememberTextLocation, restoreTextLocation, type TextLocation } from "..
 import { availableProviders } from "../../providerSelection";
 import { registerSceneSave } from "../../sceneSaveSession";
 import { isProjectBookChanging } from "../../bookOperationBarrier";
-import { replaceTextRange, smartPunctuationEnabled, smartReplacement, toggleEmphasis } from "../../smartTypography";
 import { primaryModifier } from "../../platformKeys";
 import { SelectionAssist } from "./SelectionAssist";
-import { FindBar, FindMarks, type FindMatch } from "./FindBar";
+import { FindBar, type FindMatch } from "./FindBar";
+import { ProseField, type ProseFieldElement } from "./ProseField";
 import { ZenMode } from "../overlay/ZenMode";
 
 type Props = {
@@ -32,12 +32,17 @@ type Props = {
   onExitZen?: () => void;
 };
 
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
 export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExitZen }: Props) {
   const { projectRoot, branches, runtimeConfig, refreshScenes, refreshProposals, setError } = useWorkspace();
   const { updateTab, activeTabId: selectedTabId, openTab } = useEditor();
   const activeTabId = tabId ?? selectedTabId;
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<ProseFieldElement | null>(null);
   const pendingLocationRef = useRef<TextLocation | null>(null);
   const locationFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [readOnly, setReadOnly] = useState(isProjectBookChanging(projectRoot));
@@ -58,7 +63,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     const textarea = textareaRef.current;
     if (textarea && !pendingLocationRef.current) rememberTextLocation(projectRoot, locationScope, scene.id, textarea);
   };
-  const applyLocation = (textarea: HTMLTextAreaElement, location: { start: number; end: number; direction: "forward" | "backward" | "none"; scrollTop: number; containerScrollTop?: number }) => {
+  const applyLocation = (textarea: ProseFieldElement, location: { start: number; end: number; direction: "forward" | "backward" | "none"; scrollTop: number; containerScrollTop?: number }) => {
     textarea.setSelectionRange(location.start, location.end, location.direction);
     textarea.scrollTop = location.scrollTop;
     const container = textarea.closest(".scene-editor");
@@ -68,7 +73,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     if (locationFocusTimerRef.current) clearTimeout(locationFocusTimerRef.current);
     locationFocusTimerRef.current = null;
   };
-  const acceptNewSelection = (textarea: HTMLTextAreaElement) => {
+  const acceptNewSelection = (textarea: ProseFieldElement) => {
     const pending = pendingLocationRef.current;
     if (!pending || (textarea.selectionStart === 0 && textarea.selectionEnd === 0)
       || (textarea.selectionStart === pending.start && textarea.selectionEnd === pending.end)) return;
@@ -78,7 +83,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     pendingLocationRef.current = null;
     rememberLocation();
   };
-  const resumeLocation = (textarea: HTMLTextAreaElement) => {
+  const resumeLocation = (textarea: ProseFieldElement) => {
     acceptNewSelection(textarea);
     if (!pendingLocationRef.current) return;
     cancelLocationFocus();
@@ -127,6 +132,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   const saveRef = useRef<(showIndicator: boolean) => Promise<void>>(async () => {});
   const saveInFlightRef = queue.pending;
   const acknowledgedSceneRef = queue.acknowledged;
+  const mirroredSceneRef = useRef<SceneDetail | null>(null);
   const ownedRecoveryDraftRef = useRef<SceneRecoveryDraft | null>(null);
   const [recoveryOwner] = useState(() => crypto.randomUUID());
   const recoverySequenceRef = useRef(0);
@@ -154,10 +160,12 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   useEffect(() => {
     // A save response describes the submitted draft, which may already be
     // older than the text on screen. Never reload our own acknowledgement.
-    if (scene === acknowledgedSceneRef.current) return;
+    if (scene === acknowledgedSceneRef.current || scene === mirroredSceneRef.current) return;
     if (conflictRef.current) return;
-    const latest = latestPayloadRef.current;
-    if (latest.title !== lastSavedRef.current.title || latest.body !== lastSavedRef.current.body) return;
+    // Compare the text on screen in this very render. The payload ref is
+    // refreshed by a later effect, so a keystroke that lands together with a
+    // refreshed scene would look saved and be replaced by the older text.
+    if (title !== lastSavedRef.current.title || body !== lastSavedRef.current.body) return;
     setTitle(scene.title);
     setBody(scene.body);
     lastSavedRef.current = { title: scene.title, body: scene.body };
@@ -180,25 +188,8 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     };
   }, [scene.id, title, body, activeTabId]);
 
-  // The page grows with the prose so a long scene scrolls as one sheet, not as
-  // a short box inside the page. Runs before the caret and scroll restore.
-  useLayoutEffect(() => {
-    const fit = () => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-      const container = textarea.closest(".scene-editor");
-      const scrolled = container?.scrollTop ?? 0;
-      textarea.style.height = "auto";
-      if (textarea.scrollHeight > 0) textarea.style.height = `${textarea.scrollHeight}px`;
-      if (container && container.scrollTop !== scrolled) container.scrollTop = scrolled;
-    };
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
-  }, [body, zenMode]);
-
   const isDirty = Boolean(conflict) || title !== lastSavedRef.current.title || body !== lastSavedRef.current.body;
-  const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
+  const wordCount = countWords(body);
 
   useEffect(() => {
     if (!isDirty && !saving) {
@@ -223,7 +214,12 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   }, [body, isDirty, saving, projectRoot, scene.id, scene.updated_at, title, recoveryOwner]);
 
   useEffect(() => {
-    updateTab(activeTabId, { modified: isDirty, data: { ...scene, title, body, edit_version: baseVersionRef.current } });
+    // The tab keeps a copy of the text on screen. That copy comes straight
+    // back as this editor's `scene`, so it is remembered and not mistaken for
+    // a scene that changed somewhere else.
+    const mirrored = { ...scene, title, body, edit_version: baseVersionRef.current };
+    mirroredSceneRef.current = mirrored;
+    updateTab(activeTabId, { modified: isDirty, data: mirrored });
   }, [isDirty, title, body, activeTabId, updateTab]);
 
   const save = useCallback(async (showIndicator: boolean) => {
@@ -343,15 +339,17 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   const [findMarks, setFindMarks] = useState<{ matches: FindMatch[]; current: number }>({ matches: [], current: -1 });
   const showFindMarks = useCallback((matches: FindMatch[], current: number) => setFindMarks({ matches, current }), []);
   const closeFind = useCallback(() => setFind(value => ({ ...value, open: false })), []);
+  const highlights = useMemo(() => (find.open ? findMarks : undefined), [find.open, findMarks]);
+  const currentMatch = find.open ? findMarks.matches[findMarks.current] : undefined;
+  useEffect(() => {
+    if (currentMatch) textareaRef.current?.revealPosition(currentMatch.start);
+  }, [currentMatch?.start, currentMatch?.end]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      const command = e.metaKey || e.ctrlKey;
-      // Find keys answer to the primary modifier only: on a Mac, Control+F
-      // and Control+G belong to caret movement in a text field.
       const primary = primaryModifier(e);
       const key = e.key.toLowerCase();
-      if (command && key === "s") {
+      if (primary && key === "s") {
         e.preventDefault();
         void save(true);
       }
@@ -374,7 +372,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     <div className={`scene-editor${zenMode ? " zen-mode" : ""}`} onScroll={rememberLocation} role={zenMode ? "dialog" : undefined} aria-modal={zenMode || undefined} aria-label={zenMode ? "Focused writing" : undefined}>
       {zenMode && onExitZen && <ZenMode onExit={onExitZen} />}
       <div className="scene-editor__status" aria-live="polite">
-        <span>{wordCount.toLocaleString()} word{wordCount === 1 ? "" : "s"}</span>
+        <span>{selection ? `${countWords(selection.body.slice(selection.start, selection.end)).toLocaleString()} of ` : ""}{wordCount.toLocaleString()} word{wordCount === 1 ? "" : "s"}</span>
         <span aria-hidden="true">·</span>
         <span className={isDirty ? "scene-editor__status--dirty" : ""}>{saving ? "Saving…" : conflict ? "Review conflict" : saveError ? "Save failed" : isDirty ? "Unsaved" : "Saved"}</span>
       </div>
@@ -454,7 +452,19 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
       )}
       <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches?.find(row => row.current)?.name ?? ""} selection={selection} disabled={readOnly || Boolean(conflict)} providers={availableProviders(runtimeConfig).map(row => row.id)} flush={flush} onResult={async proposal => { await refreshProposals(); openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || "Review selection", data: proposal }); }} />
       {find.open && <FindBar body={body} textareaRef={textareaRef} readOnly={readOnly || Boolean(conflict)} initialQuery={find.query} focusRequest={find.focusRequest} step={find.step} onMatches={showFindMarks} onClose={closeFind} />}
-      <div className="scene-editor__content">
+      <div className="scene-editor__content" onMouseDown={(event) => {
+        // The blank page below the last line belongs to the prose: a click
+        // there continues writing at the end.
+        const field = textareaRef.current;
+        if (event.target !== event.currentTarget || !field) return;
+        const below = event.clientY > field.getBoundingClientRect().bottom;
+        if (!below) return;
+        event.preventDefault();
+        cancelLocationFocus();
+        pendingLocationRef.current = null;
+        field.focus();
+        field.setSelectionRange(field.value.length, field.value.length);
+      }}>
         <input
           aria-label="Scene title"
           className="scene-editor__title"
@@ -464,71 +474,60 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
           onFocus={() => setFocusRing(arrivedByKeyboardRef.current ? "title" : "")}
           onBlur={() => setFocusRing("")}
           onChange={(e) => { setFocusRing(""); setTitle(e.target.value); }}
+          onKeyDown={(event) => {
+            // Return or Down leaves the title for the first line of prose.
+            if ((event.key !== "Enter" && event.key !== "ArrowDown") || event.nativeEvent.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+            const field = textareaRef.current;
+            if (!field) return;
+            event.preventDefault();
+            cancelLocationFocus();
+            pendingLocationRef.current = null;
+            field.focus();
+            field.setSelectionRange(0, 0);
+          }}
           placeholder="Scene title..."
         />
         <div className="scene-editor__divider" />
-        <div className="scene-editor__page">
-        {find.open && <FindMarks body={body} matches={findMarks.matches} current={findMarks.current} />}
-        <textarea
-          ref={textareaRef}
-          aria-label="Scene prose"
+        <ProseField
+          fieldRef={textareaRef}
+          stateKey={JSON.stringify([projectRoot, locationScope, scene.id])}
+          ariaLabel="Scene prose"
+          className="scene-editor__body"
+          placeholder="Begin writing..."
+          value={body}
           readOnly={readOnly}
-          data-focus-ring={focusRing === "body" || undefined}
+          focusRing={focusRing === "body"}
+          dimOtherParagraphs={zenMode}
+          typewriter={zenMode}
+          highlights={highlights}
+          onChange={(value) => { setFocusRing(""); setBody(value); }}
           onPointerDown={() => { setFocusRing(""); cancelLocationFocus(); pendingLocationRef.current = null; }}
-          onFocus={event => {
+          onFocus={(field) => {
             setFocusRing(arrivedByKeyboardRef.current ? "body" : "");
-            const textarea = event.currentTarget;
             const location = pendingLocationRef.current;
             if (!location) { rememberLocation(); return; }
-            // WebKit finishes moving its native caret after focus handlers.
             // A pointer or a newer activation can cancel this pending task.
             cancelLocationFocus();
             locationFocusTimerRef.current = setTimeout(() => {
               locationFocusTimerRef.current = null;
-              if (textareaRef.current === textarea && document.activeElement === textarea && pendingLocationRef.current === location) resumeLocation(textarea);
+              if (textareaRef.current === field && document.activeElement === field && pendingLocationRef.current === location) resumeLocation(field);
             }, 0);
           }}
-          onKeyDown={event => {
-            if (event.key === "Tab") return;
-            const textarea = event.currentTarget;
-            resumeLocation(textarea);
-            if (readOnly || event.nativeEvent.isComposing || event.altKey) return;
-            const command = event.metaKey || event.ctrlKey;
-            const key = event.key.toLowerCase();
-            if (primaryModifier(event) && !event.shiftKey && key === "i") {
-              // Scenes are Markdown: italics are stored as *text*. Cmd+B stays
-              // with the sidebar; bold is rare in fiction and can be typed as **text**.
-              event.preventDefault();
-              const change = toggleEmphasis(textarea.value, textarea.selectionStart, textarea.selectionEnd, "*");
-              replaceTextRange(textarea, change.start, change.end, change.text);
-              textarea.setSelectionRange(change.selectStart, change.selectEnd);
-              return;
-            }
-            if (command || !smartPunctuationEnabled()) return;
-            const change = smartReplacement(textarea.value, textarea.selectionStart, textarea.selectionEnd, event.key);
-            if (!change) return;
-            event.preventDefault();
-            replaceTextRange(textarea, change.start, change.end, change.text);
+          onBeforeEdit={(field) => resumeLocation(field)}
+          onSelectionChange={(field) => {
+            acceptNewSelection(field);
+            setSelection(field.selectionEnd > field.selectionStart ? { body: field.value, start: field.selectionStart, end: field.selectionEnd } : null);
+            rememberLocation();
           }}
-          onBeforeInput={event => resumeLocation(event.currentTarget)}
-          onPaste={event => resumeLocation(event.currentTarget)}
-          onCompositionStart={event => resumeLocation(event.currentTarget)}
-          onSelect={event => { const node = event.currentTarget; acceptNewSelection(node); setSelection(node.selectionEnd > node.selectionStart ? { body: node.value, start: node.selectionStart, end: node.selectionEnd } : null); rememberLocation(); }}
-          onScroll={rememberLocation}
-          onBlur={event => {
+          onBlur={(field) => {
             setFocusRing("");
             cancelLocationFocus();
             if (!pendingLocationRef.current) {
               rememberLocation();
-              pendingLocationRef.current = restoreTextLocation(projectRoot, locationScope, scene.id, event.currentTarget.value);
+              pendingLocationRef.current = restoreTextLocation(projectRoot, locationScope, scene.id, field.value);
             }
           }}
-          className="scene-editor__body"
-          value={body}
-          onChange={(e) => { setFocusRing(""); setBody(e.target.value); }}
-          placeholder="Begin writing..."
         />
-        </div>
       </div>
     </div>
   );

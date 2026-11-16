@@ -9,6 +9,7 @@ import { focusNewSceneTitle, useWorkspaceNavigation } from "./hooks/useWorkspace
 import { useEditor } from "./contexts/EditorContext";
 import { listenForMenuShortcuts } from "./menuShortcuts";
 import { primaryModifier } from "./platformKeys";
+import { applyStoredProseSize, DEFAULT_PROSE_SIZE, setProseSize, stepProseSize } from "./proseSize";
 import { loadProjectBindings } from "./projectBindings";
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
@@ -17,6 +18,7 @@ function ThemeInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+  useEffect(() => applyStoredProseSize(), []);
 
   return <>{children}</>;
 }
@@ -40,18 +42,24 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      const mod = e.metaKey || e.ctrlKey;
+      const mod = primaryModifier(e);
       const key = e.key.toLowerCase();
 
-      // New shortcuts answer to the primary modifier only: on a Mac,
-      // Control+N and Control+W are caret and deletion keys in a text field.
-      if (primaryModifier(e) && key === "n" && !e.shiftKey && !e.altKey) {
+      if (mod && key === "n" && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         void navigateTo("manuscript").then(focusNewSceneTitle);
         return;
       }
 
-      if (primaryModifier(e) && key === "w" && !e.shiftKey && !e.altKey) {
+      // Text size, on the keys every Mac app uses for it.
+      if (mod && !e.altKey && (key === "=" || key === "+" || key === "-" || key === "0")) {
+        e.preventDefault();
+        if (key === "0") setProseSize(DEFAULT_PROSE_SIZE);
+        else stepProseSize(key === "-" ? -1 : 1);
+        return;
+      }
+
+      if (mod && key === "w" && !e.shiftKey && !e.altKey) {
         // Closing a scene tab saves pending writing, exactly like its close button.
         e.preventDefault();
         if (activeTabId) closeTab(activeTabId);

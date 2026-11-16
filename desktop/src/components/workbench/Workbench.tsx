@@ -10,6 +10,7 @@ import { SecondarySidebar } from "../secondary/SecondarySidebar";
 import { PanelArea } from "../panel/PanelArea";
 import { WelcomeScreen } from "../welcome/WelcomeScreen";
 import { FirstRunGuide } from "../onboarding/FirstRunGuide";
+import { primaryModifier } from "../../platformKeys";
 
 export function Workbench() {
   const { activeTabId } = useEditor();
@@ -51,7 +52,7 @@ export function Workbench() {
   useEffect(() => {
     if (!projectReady) return;
     function handleKeyDown(event: KeyboardEvent) {
-      const mod = event.metaKey || event.ctrlKey;
+      const mod = primaryModifier(event);
       if (mod && event.shiftKey && event.key.toLowerCase() === "o") {
         event.preventDefault();
         closeProject();

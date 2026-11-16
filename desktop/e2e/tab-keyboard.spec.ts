@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("keyboard tabs preserve writing, defer activation and retain focus after closing", async ({ page }, testInfo) => {
   const book = await localBook(page);
@@ -16,7 +17,7 @@ test("keyboard tabs preserve writing, defer activation and retain focus after cl
     await page.getByRole("button", { name: "Hide first-run guide" }).click();
     await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Ferry Office Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(prose).toHaveValue("Elin kept the ticket folded.\n");
+    await expectProse(prose, "Elin kept the ticket folded.\n");
     await prose.fill("Elin kept the ticket folded. She waited beside the ledger.\n");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Plan (Cmd+Shift+P)", exact: true }).click();
@@ -33,7 +34,7 @@ test("keyboard tabs preserve writing, defer activation and retain focus after cl
     await expect(page.getByRole("heading", { name: "Scene Inbox" })).toBeVisible();
     await page.keyboard.press("Enter");
     await expect(sceneTab).toHaveAttribute("aria-selected", "true");
-    await expect(prose).toHaveValue("Elin kept the ticket folded. She waited beside the ledger.\n");
+    await expectProse(prose, "Elin kept the ticket folded. She waited beside the ledger.\n");
     const panel = page.getByRole("tabpanel", { name: "The Ferry Office", exact: true });
     await expect(panel).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("keyboard-scene-panel.png"), animations: "disabled" });
@@ -44,13 +45,13 @@ test("keyboard tabs preserve writing, defer activation and retain focus after cl
     await expect(page.getByRole("button", { name: "Close Plan", exact: true })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(sceneTab).toBeFocused();
-    await expect(prose).toHaveValue("Elin kept the ticket folded. She waited beside the ledger.\n");
+    await expectProse(prose, "Elin kept the ticket folded. She waited beside the ledger.\n");
     const saved = await book.core(book.projectRoot, ["scene", "get", "--id", "scene-0001", "--json"]);
     expect(saved.status, saved.stderr).toBe(0);
     expect(JSON.parse(saved.stdout).body).toBe("Elin kept the ticket folded. She waited beside the ledger.\n");
     await page.reload();
     await expect(sceneTab).toHaveAttribute("aria-selected", "true");
-    await expect(prose).toHaveValue("Elin kept the ticket folded. She waited beside the ledger.\n");
+    await expectProse(prose, "Elin kept the ticket folded. She waited beside the ledger.\n");
     expect(book.errors).toEqual([]);
   } finally { await book.close(); }
 });

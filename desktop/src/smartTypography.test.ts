@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { curlyQuote, replaceTextRange, smartReplacement, toggleEmphasis } from "./smartTypography";
+import { curlyQuote, smartReplacement, toggleEmphasis } from "./smartTypography";
 
 describe("smart punctuation", () => {
   it("opens quotes at the start, after spaces and after dashes, and closes them after words", () => {
@@ -42,20 +42,5 @@ describe("emphasis markers", () => {
 
   it("inserts an empty pair at a caret with the caret between the markers", () => {
     expect(toggleEmphasis("ab", 1, 1, "*")).toEqual({ start: 1, end: 1, text: "**", selectStart: 2, selectEnd: 2 });
-  });
-});
-
-describe("replaceTextRange", () => {
-  it("edits the textarea and reports the change when the editing command is unavailable", () => {
-    const textarea = document.createElement("textarea");
-    document.body.append(textarea);
-    textarea.value = "wait-";
-    let inputs = 0;
-    textarea.addEventListener("input", () => { inputs += 1; });
-    replaceTextRange(textarea, 4, 5, "—");
-    expect(textarea.value).toBe("wait—");
-    expect(textarea.selectionStart).toBe(5);
-    expect(inputs).toBe(1);
-    textarea.remove();
   });
 });

@@ -1,6 +1,7 @@
 import { test } from "@e2e-dev/web";
 import { expect } from "e2e";
 import { desktopBook } from "../support/desktopBook.ts";
+import { expectProse } from "../support/prose.ts";
 
 test("desktop promotes permission-reviewed Assistant replies into notes, reviewed Memory, a Storyline, Writing Voice and a Change Set", { tags: ["desktop", "assistant", "promotions", "privacy"], timeout: 180_000 }, async ({ app, browser, screen }) => {
   const book = await desktopBook(browser);
@@ -118,7 +119,7 @@ test("desktop promotes permission-reviewed Assistant replies into notes, reviewe
 
     await screen.getByRole("button", /^Manuscript \(/).tap();
     await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Winter Key Draft/).tap();
-    await expect(screen.getByRole("textbox", "Scene prose")).toHaveValue(prose + "\n");
+    await expectProse(browser, prose + "\n");
     await screen.getByRole("button", "+").tap();
     await expect(screen.getByText("Send a message to start the conversation.")).toBeVisible();
     await screen.getByRole("combobox", "Assistant conversation scope").selectOption({ value: "scene" });

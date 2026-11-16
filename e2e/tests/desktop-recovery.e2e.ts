@@ -3,6 +3,7 @@ import { expect } from "e2e";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { desktopBook } from "../support/desktopBook.ts";
+import { expectProse } from "../support/prose.ts";
 
 test("desktop repairs missing workspace storage and restores a verified backup without overwriting another book", { tags: ["desktop", "recovery", "backup", "startup-health", "hygiene"], timeout: 150_000 }, async ({ app, browser, screen }) => {
   const book = await desktopBook(browser);
@@ -27,7 +28,7 @@ test("desktop repairs missing workspace storage and restores a verified backup w
     await screen.getByRole("button", "Run hygiene checks").tap();
     await expect(screen.getByRole("button", /Scene summary is empty/)).toBeVisible();
     await screen.getByRole("button", /Scene summary is empty/).tap();
-    await expect(screen.getByRole("textbox", "Scene prose")).toHaveValue("Mara carried the brass map case home.\n");
+    await expectProse(browser, "Mara carried the brass map case home.\n");
 
     const archive = join(book.sandbox, "book.zip");
     await screen.getByRole("button", /^Settings \(/).tap();

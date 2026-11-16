@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { expectProse } from "./prose";
 
 const exec = promisify(execFile);
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -77,13 +78,13 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     const original = "Mara unrolled the map beside the lamp. A red line crept across the paper, passing streets the city had forgotten. She locked the door and watched it move.\n\nAt midnight, the line reached her own door.";
     await prose.fill(original);
-    await prose.press("Control+Shift+D");
+    await prose.press("ControlOrMeta+Shift+D");
     await expect(page.getByRole("button", { name: "Exit focus mode" })).toBeVisible();
-    await expect(prose).toHaveValue(original);
+    await expectProse(prose, original);
     await page.screenshot({ path: testInfo.outputPath("focus-mode.png"), animations: "disabled" });
     await prose.press("Escape");
     await expect(page.getByRole("button", { name: "Exit focus mode" })).toHaveCount(0);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("writing.png") });
 
@@ -128,12 +129,12 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     const revised = JSON.parse((await core(projectRoot, ["scene", "get", "--id", "scene-0001", "--json"])).stdout);
     expect(revised.body.trimEnd()).toBe(original.replace("reached her own door", "found her own door"));
     await page.getByRole("button", { name: "Undo change", exact: true }).click();
-    await expect(prose).toHaveValue(original + "\n");
+    await expectProse(prose, original + "\n");
     const restored = JSON.parse((await core(projectRoot, ["scene", "get", "--id", "scene-0001", "--json"])).stdout);
     expect(restored.body.trimEnd()).toBe(original);
     await page.reload();
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
-    await expect(prose).toHaveValue(original + "\n");
+    await expectProse(prose, original + "\n");
 
     // A second writer changes the persisted scene after this editor loaded it.
     // Saving this older draft must preserve that write and offer reconciliation.
@@ -143,21 +144,21 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     expect(independentSave.status).toBe(0);
     const expectedWrites = completedSceneWrites + 1;
     await prose.fill(localDraft);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect.poll(() => completedSceneWrites).toBe(expectedWrites);
     const afterConflict = JSON.parse((await core(projectRoot, ["scene", "get", "--id", "scene-0001", "--json"])).stdout);
     expect(afterConflict.body.trimEnd()).toBe(elsewhere);
     await expect(page.getByRole("heading", { name: "Scene changed elsewhere" })).toBeVisible();
-    await expect(prose).toHaveValue(localDraft);
+    await expectProse(prose, localDraft);
     await page.screenshot({ path: testInfo.outputPath("scene-conflict.png") });
     // Reopening and restoring must retain the OLD precondition, not treat the
     // newest on-disk scene as permission to overwrite it with recovered text.
     await page.reload();
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
     await page.getByRole("button", { name: "Restore", exact: true }).click();
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(page.getByRole("heading", { name: "Scene changed elsewhere" })).toBeVisible();
-    await expect(prose).toHaveValue(localDraft);
+    await expectProse(prose, localDraft);
     const resolution = "Mara hid the moving map beneath the floorboards, then followed its line to the impossible door.";
     await prose.fill(resolution);
     // The reviewed comparison can itself become stale. Guard the deliberate
@@ -166,14 +167,14 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     expect((await core(projectRoot, ["scene", "update", "--id", "scene-0001", "--body", third, "--json"])).status).toBe(0);
     await page.getByRole("button", { name: "Save reconciled version" }).click();
     await expect(page.getByRole("textbox", { name: "Saved prose" })).toHaveValue(third + "\n");
-    await expect(prose).toHaveValue(resolution);
+    await expectProse(prose, resolution);
     await page.getByRole("button", { name: "Save reconciled version" }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     const reconciled = JSON.parse((await core(projectRoot, ["scene", "get", "--id", "scene-0001", "--json"])).stdout);
     expect(reconciled.body.trimEnd()).toBe(resolution);
     await page.reload();
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
-    await expect(prose).toHaveValue(resolution + "\n");
+    await expectProse(prose, resolution + "\n");
     await expect(page.getByRole("button", { name: "Restore", exact: true })).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {

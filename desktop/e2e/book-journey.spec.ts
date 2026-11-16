@@ -3,6 +3,7 @@ import { copyFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 // Keep the connected author journey usable on a smaller laptop, not only a
 // wide development monitor. Other journeys retain the default 1400px viewport.
@@ -82,7 +83,7 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await expect(page.getByRole("button", { name: "Open Mara", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Open The Clocktower", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Open The Clocktower", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(/missing hour/);
+    await expectProse(page.getByRole("textbox", { name: "Scene prose" }), /missing hour/);
 
     await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
     await page.getByTitle("New thread", { exact: true }).click();
@@ -115,7 +116,7 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await expect(notes.getByRole("status")).toHaveText("1 of 1 notes");
     await page.screenshot({ path: testInfo.outputPath("saved-notes.png") });
     await notes.getByRole("button", { name: "Open scene: The Clocktower" }).click();
-    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(beforeRevision.body);
+    await expectProse(page.getByRole("textbox", { name: "Scene prose" }), beforeRevision.body);
     await page.getByRole("button", { name: "View saved note", exact: true }).click();
     await notes.getByRole("button", { name: "Plan a revision" }).click();
     await expect(page.getByRole("combobox", { name: "Scene", exact: true })).toHaveValue("scene-0002");
@@ -162,7 +163,7 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await expect(page.getByRole("heading", { name: "Notes", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Read manuscript", exact: true }).click();
     await page.getByRole("button", { name: "Edit The Clocktower", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(/missing hour/);
+    await expectProse(page.getByRole("textbox", { name: "Scene prose" }), /missing hour/);
     expect(book.errors).toEqual([]);
   } finally {
     if (!page.isClosed()) await page.screenshot({ path: testInfo.outputPath("last-screen.png") }).catch(() => {});

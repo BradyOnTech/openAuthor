@@ -1,6 +1,7 @@
 import { test, expect, type Locator } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 async function appearance(control: Locator, pseudo: "::placeholder" | null = null) {
   return control.evaluate((node, pseudo) => {
@@ -113,7 +114,10 @@ for (const theme of ["dark", "light"] as const) {
       await title.fill("The Ferry Office");
       await page.keyboard.press("Tab");
       await visibleFocus("prose keyboard focus", prose);
-      await readable("prose placeholder", prose, "::placeholder");
+      // The prose page is a rich editor: its hint is an element, not a
+      // field's placeholder pseudo-element, and is measured as one.
+      await expectProse(prose, "");
+      await readable("prose placeholder", page.locator(".prose-field .cm-placeholder"));
       await page.keyboard.type("Leah kept the ticket folded.");
       await readable("unsaved status", page.getByText("Unsaved", { exact: true }));
       await prose.press("ControlOrMeta+s");
@@ -133,7 +137,7 @@ for (const theme of ["dark", "light"] as const) {
       await message.fill("");
       await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
       await prose.focus();
-      await prose.press(process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home");
+      await prose.press(process.platform === "darwin" ? "Meta+ArrowUp" : "ControlOrMeta+Home");
       for (let step = 0; step < 5; step++) await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ControlOrMeta+Shift+d");
       await readable("unfocused focus-mode Exit", page.getByRole("button", { name: "Exit focus mode", exact: true }));
@@ -142,7 +146,7 @@ for (const theme of ["dark", "light"] as const) {
       await page.keyboard.press("Escape");
       await expect(prose).toBeFocused();
       await page.keyboard.type("still ");
-      await expect(prose).toHaveValue("Leah still kept the ticket folded.");
+      await expectProse(prose, "Leah still kept the ticket folded.");
       await prose.press("ControlOrMeta+s");
       await expect(page.getByText("Saved", { exact: true })).toBeVisible();
       await page.screenshot({ path: testInfo.outputPath(`${theme}-writing-focus.png`), animations: "disabled" });

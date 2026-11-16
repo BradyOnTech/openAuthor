@@ -1,8 +1,11 @@
 export type TextLocation = { start: number; end: number; direction: "forward" | "backward" | "none"; scrollTop: number; containerScrollTop?: number; anchor: string; before: string; after: string };
 const key = (root: string, scope: string, scene: string) => `openauthor.location.v1:${JSON.stringify([root, scope, scene])}`;
-export function rememberTextLocation(root: string, scope: string, scene: string, textarea: HTMLTextAreaElement) {
+/** The part of a text field this module reads: a textarea, or the prose page. */
+type LocatedField = Pick<HTMLTextAreaElement, "selectionStart" | "selectionEnd" | "value" | "scrollTop" | "closest"> & { selectionDirection: string };
+
+export function rememberTextLocation(root: string, scope: string, scene: string, textarea: LocatedField) {
   const start = textarea.selectionStart, end = textarea.selectionEnd, body = textarea.value;
-  const location: TextLocation = { start, end, direction: textarea.selectionDirection, scrollTop: textarea.scrollTop, containerScrollTop: textarea.closest(".scene-editor")?.scrollTop || 0,
+  const location: TextLocation = { start, end, direction: textarea.selectionDirection as TextLocation["direction"], scrollTop: textarea.scrollTop, containerScrollTop: textarea.closest(".scene-editor")?.scrollTop || 0,
     anchor: body.slice(start, end).slice(0, 160), before: body.slice(Math.max(0, start - 48), start), after: body.slice(end, end + 48) };
   try { localStorage.setItem(key(root, scope, scene), JSON.stringify(location)); } catch { /* Location is optional; manuscript recovery reports its own storage errors. */ }
 }

@@ -1,6 +1,7 @@
 import { test } from "@e2e-dev/web";
 import { expect } from "e2e";
 import { desktopBook } from "../support/desktopBook.ts";
+import { expectProse } from "../support/prose.ts";
 
 test("desktop writes and plans a book, reviews a revision, undoes it and refuses a stale save", { tags: ["desktop", "authoring", "writing-safety"], timeout: 150_000 }, async ({ app, browser, screen }) => {
   const book = await desktopBook(browser);
@@ -15,10 +16,10 @@ test("desktop writes and plans a book, reviews a revision, undoes it and refuses
     const prose = screen.getByRole("textbox", "Scene prose");
     const original = "Mara unrolled the map beside the lamp. A red line crept across the paper, passing streets the city had forgotten. She locked the door and watched it move.\n\nAt midnight, the line reached her own door.";
     await prose.fill(original);
-    await prose.press("Control+Shift+D");
+    await prose.press("ControlOrMeta+Shift+D");
     await expect(screen.getByRole("button", "Exit focus mode")).toBeVisible();
     await prose.press("Escape");
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByText("Saved")).toBeVisible();
     await screen.getByRole("button", "Hide first-run guide").tap();
 
@@ -89,21 +90,21 @@ test("desktop writes and plans a book, reviews a revision, undoes it and refuses
     expect((await book.json(["scene", "get", "--id", "scene-0001"])).body.trimEnd()).toBe(original);
     await screen.getByRole("button", /^Manuscript \(/).tap();
     await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Moving Map Draft/).tap();
-    await expect(prose).toHaveValue(original + "\n");
+    await expectProse(browser, original + "\n");
     await browser.reload();
-    await expect(prose).toHaveValue(original + "\n");
+    await expectProse(browser, original + "\n");
 
     const savedElsewhere = "Mara followed the line to a door that had never existed.";
     await book.json(["scene", "update", "--id", "scene-0001", "--body", savedElsewhere]);
     const localDraft = "Mara hid the moving map beneath the floorboards.";
     await prose.fill(localDraft);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByRole("heading", "Scene changed elsewhere")).toBeVisible();
     expect((await book.json(["scene", "get", "--id", "scene-0001"])).body.trimEnd()).toBe(savedElsewhere);
     await browser.reload();
     await screen.getByRole("button", "Restore").tap();
-    await expect(prose).toHaveValue(localDraft);
-    await prose.press("Control+s");
+    await expectProse(browser, localDraft);
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByRole("heading", "Scene changed elsewhere")).toBeVisible();
     await prose.fill("Mara hid the map, then followed its line to the impossible door.");
     await screen.getByRole("button", "Save reconciled version").tap();

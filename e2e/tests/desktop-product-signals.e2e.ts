@@ -3,6 +3,7 @@ import { expect } from "e2e";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { desktopBook } from "../support/desktopBook.ts";
+import { expectProse } from "../support/prose.ts";
 
 test("desktop records a private golden loop, pauses collection and keeps saved signals content-free", { tags: ["desktop", "privacy", "product-signals"], timeout: 150_000 }, async ({ app, browser, screen }) => {
   const book = await desktopBook(browser);
@@ -51,9 +52,9 @@ test("desktop records a private golden loop, pauses collection and keeps saved s
     await screen.getByRole("button", "Add Scene").tap();
     await expect(screen.getByRole("tab", sceneTitle)).toHaveAttribute("aria-selected", "true");
     const prose = screen.getByRole("textbox", "Scene prose");
-    await expect(prose).toHaveValue("");
+    await expectProse(browser, "");
     await prose.fill(original);
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByText("Saved", { exact: true })).toBeVisible();
     await screen.getByRole("button", /^Changes \(/).tap();
     await screen.getByRole("button", "+ AI").tap();

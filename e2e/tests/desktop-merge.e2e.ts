@@ -1,6 +1,7 @@
 import { test } from "@e2e-dev/web";
 import { expect } from "e2e";
 import { desktopBook } from "../support/desktopBook.ts";
+import { expectProse } from "../support/prose.ts";
 
 test("desktop branches a Storyline, reviews a conflict and merges the approved reconciliation", { tags: ["desktop", "merge", "storylines"], timeout: 150_000 }, async ({ app, browser, screen }) => {
   const book = await desktopBook(browser);
@@ -17,7 +18,7 @@ test("desktop branches a Storyline, reviews a conflict and merges the approved r
     expect((await book.core(book.projectRoot, ["snapshot", "create", "--message", "The first ending"])).status).toBe(0);
     const primary = (await book.json(["branch", "list"])).find((row: { current: boolean }) => row.current).name;
     await browser.reload();
-    await browser.keyboard.press("Control+j");
+    await browser.keyboard.press("ControlOrMeta+j");
     await screen.getByRole("tablist", "Project tools").getByRole("tab", "Merge").tap();
     const merge = screen.getByRole("tabpanel", "Merge");
     await merge.getByRole("textbox", "New storyline name").fill("gate-open");
@@ -27,7 +28,7 @@ test("desktop branches a Storyline, reviews a conflict and merges the approved r
     await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate Draft").tap();
     const prose = screen.getByRole("textbox", "Scene prose");
     await prose.fill("Mara left the gate open for Ivo.");
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByText("Saved")).toBeVisible();
     expect((await book.core(book.projectRoot, ["snapshot", "create", "--message", "Keep the gate open"])).status).toBe(0);
     const switchPrimary = merge.getByRole("button", `Switch to ${primary}`);
@@ -36,9 +37,9 @@ test("desktop branches a Storyline, reviews a conflict and merges the approved r
     await expect(merge.getByText(`${primary} (current)`)).toBeVisible();
     await expect(screen.getByRole("status").filter({ hasText: "Switched to storyline" })).toBeVisible();
     await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate Draft").tap();
-    await expect(prose).toHaveValue("Mara closed the gate before dawn.\n");
+    await expectProse(browser, "Mara closed the gate before dawn.\n");
     await prose.fill("Mara chained the gate shut before dawn.");
-    await prose.press("Control+s");
+    await prose.press("ControlOrMeta+s");
     await expect(screen.getByText("Saved")).toBeVisible();
     expect((await book.core(book.projectRoot, ["snapshot", "create", "--message", "Chain the gate"])).status).toBe(0);
     await merge.getByRole("combobox", "Storyline to merge").selectOption({ value: "gate-open" });

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("restores tabs and caret and reviews current evidence in a wide workspace", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
@@ -25,19 +26,19 @@ test("restores tabs and caret and reviews current evidence in a wide workspace",
     await page.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).click();
     await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "After Draft", exact: true }).click();
     const editor = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(editor).toHaveValue(prose + "\n");
+    await expectProse(editor, prose + "\n");
     await editor.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(310, 320, "backward"); node.scrollTop = 150; node.dispatchEvent(new Event("select", { bubbles: true })); node.dispatchEvent(new Event("scroll", { bubbles: true })); });
     await page.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).click();
     await page.getByRole("tab", { name: "After" }).click();
     await expect.poll(() => editor.evaluate((node: HTMLTextAreaElement) => [node.selectionStart, node.selectionEnd])).toEqual([310, 320]);
     await page.reload();
     await expect(page.getByRole("tab", { name: "Plan" })).toBeVisible();
-    await expect(editor).toHaveValue(prose + "\n");
+    await expectProse(editor, prose + "\n");
     await expect.poll(() => editor.evaluate((node: HTMLTextAreaElement) => [node.selectionStart, node.selectionEnd])).toEqual([310, 320]);
     // A bookmark must reload external changes, then relocate a unique passage.
     await json(["scene", "update", "--id", "scene-0002", "--body", "A new opening.\n\n" + prose]);
     await page.reload();
-    await expect(editor).toHaveValue("A new opening.\n\n" + prose + "\n");
+    await expectProse(editor, "A new opening.\n\n" + prose + "\n");
     await expect.poll(() => editor.evaluate((node: HTMLTextAreaElement) => [node.selectionStart, node.selectionEnd])).toEqual([326, 336]);
     await page.getByRole("button", { name: "Story Memory (Cmd+Shift+X)" }).click();
     await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();

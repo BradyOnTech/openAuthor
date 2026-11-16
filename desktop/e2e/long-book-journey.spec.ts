@@ -3,6 +3,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("reviews distant evidence and keeps coordinated revisions usable in a book-sized project", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
@@ -128,7 +129,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
       await expect(page.getByRole("button", { name: `○ ${title}`, exact: true })).toBeVisible();
     }
     await page.getByRole("button", { name: "○ The Hidden Key", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(fixture.originals["scene-0001"] + "\n");
+    await expectProse(page.getByRole("textbox", { name: "Scene prose" }), fixture.originals["scene-0001"] + "\n");
     await page.getByText("Context used", { exact: true }).click();
     await expect(page.getByText("1 accepted canon fact supplied.", { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("distant-evidence-in-chat.png") });
@@ -148,7 +149,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await expect(finding.getByText("Review evidence (2)", { exact: true })).toBeVisible();
     await expect(finding.getByText("Only Ivo knew the tide key was hidden beneath the western bridge.", { exact: true })).toBeVisible();
     await finding.getByRole("button", { name: /^Open evidence \d+ in Knowledge Before Its Time$/ }).click();
-    await expect(page.getByRole("textbox", { name: "Scene prose" })).toHaveValue(fixture.originals["scene-0032"] + "\n");
+    await expectProse(page.getByRole("textbox", { name: "Scene prose" }), fixture.originals["scene-0032"] + "\n");
     await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
     await finding.getByText("Record review decision", { exact: true }).click();
     await finding.getByRole("combobox", { name: "Decision", exact: true }).selectOption("intentional");

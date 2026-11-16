@@ -20,7 +20,7 @@ test("desktop keyboard budget controls clear one limit, enforce generation and a
     const original = "Mara unrolled the map beside the lamp.\n\nAt midnight, the line reached her own door.";
     await book.json(["scene", "add", "--title", "The Moving Map", "--body", original]);
     await browser.reload();
-    await browser.keyboard.press("Control+j");
+    await browser.keyboard.press("ControlOrMeta+j");
     const tools = screen.getByRole("tablist", "Project tools");
     await tools.getByRole("tab", "Runs").focus();
     await browser.keyboard.press("ArrowRight");
@@ -157,7 +157,7 @@ test("desktop saves a custom Editorial Pass, controls Style Profile sources and 
     await screen.getByRole("button", "Apply 1 change").tap();
     await expect(screen.getByRole("button", "Undo change")).toBeVisible();
     expect((await book.json(["scene", "get", "--id", "scene-0001"])).body).toContain("found her own door");
-    await browser.keyboard.press("Control+j");
+    await browser.keyboard.press("ControlOrMeta+j");
     await screen.getByRole("tablist", "Project tools").getByRole("tab", "Runs").tap();
     await expect(screen.getByRole("tabpanel", "Runs").getByRole("cell", "local")).toHaveCount(6);
     await screen.getByRole("button", "Undo change").tap();

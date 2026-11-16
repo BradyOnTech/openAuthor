@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { localBook } from "./localBook";
+import { expectProse } from "./prose";
 
 test("scans cold Memory, reviews evidence, corrects a type, refuses stale decisions, and reopens review history", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
@@ -70,7 +71,7 @@ test("scans cold Memory, reviews evidence, corrects a type, refuses stale decisi
     await expect(article.getByRole("button", { name: "Accept", exact: true })).toBeDisabled();
     await article.getByRole("button", { name: "Open evidence 1 in The Crossing" }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
-    await expect(prose).toHaveValue("The mist lifted.\n\n" + body + "\n");
+    await expectProse(prose, "The mist lifted.\n\n" + body + "\n");
     await expect.poll(() => prose.evaluate((node: HTMLTextAreaElement) => node.value.slice(node.selectionStart, node.selectionEnd))).toBe("Last Ferry");
     await page.getByRole("tab", { name: "Story Memory", exact: true }).click();
     await expect(article).toBeVisible();
