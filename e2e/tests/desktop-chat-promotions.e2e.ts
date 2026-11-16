@@ -117,7 +117,7 @@ test("desktop promotes permission-reviewed Assistant replies into notes, reviewe
     expect(acceptedMemory.description).toBe(projectReply);
 
     await screen.getByRole("button", /^Manuscript \(/).tap();
-    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Winter Key DRA/).tap();
+    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Winter Key Draft/).tap();
     await expect(screen.getByRole("textbox", "Scene prose")).toHaveValue(prose + "\n");
     await screen.getByRole("button", "+").tap();
     await expect(screen.getByText("Send a message to start the conversation.")).toBeVisible();

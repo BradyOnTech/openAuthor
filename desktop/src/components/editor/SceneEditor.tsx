@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { getScene, updateScene } from "../../api";
@@ -6,6 +6,7 @@ import { SceneEditConflictError, type SceneConflict } from "../../sceneConflicts
 import {
   clearSceneRecoveryDraft,
   listSceneRecoveryDrafts,
+  pruneSceneRecoveryJournal,
   recoveryDraftMatchesScene,
   writeSceneRecoveryDraft,
   type SceneRecoveryDraft,
@@ -17,7 +18,9 @@ import { rememberTextLocation, restoreTextLocation, type TextLocation } from "..
 import { availableProviders } from "../../providerSelection";
 import { registerSceneSave } from "../../sceneSaveSession";
 import { isProjectBookChanging } from "../../bookOperationBarrier";
+import { replaceTextRange, smartPunctuationEnabled, smartReplacement, toggleEmphasis } from "../../smartTypography";
 import { SelectionAssist } from "./SelectionAssist";
+import { FindBar, FindMarks, type FindMatch } from "./FindBar";
 import { ZenMode } from "../overlay/ZenMode";
 
 type Props = {
@@ -38,6 +41,17 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   const locationFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [readOnly, setReadOnly] = useState(isProjectBookChanging(projectRoot));
   const [selection, setSelection] = useState<{ body: string; start: number; end: number } | null>(null);
+  // The caret already marks a clicked or typed-in page. Only keyboard arrival
+  // (Tab) needs the ring, and it yields to the caret once writing starts.
+  const [focusRing, setFocusRing] = useState<"" | "title" | "body">("");
+  const arrivedByKeyboardRef = useRef(false);
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => { if (event.key === "Tab") arrivedByKeyboardRef.current = true; };
+    const pointer = () => { arrivedByKeyboardRef.current = false; };
+    window.addEventListener("keydown", keyboard, true);
+    window.addEventListener("pointerdown", pointer, true);
+    return () => { window.removeEventListener("keydown", keyboard, true); window.removeEventListener("pointerdown", pointer, true); };
+  }, []);
   const locationScope = scene.edit_version?.workspace || branches?.find(row => row.current)?.name || "main";
   const rememberLocation = () => {
     const textarea = textareaRef.current;
@@ -130,6 +144,10 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     };
   }, []);
 
+  // Saved recovery copies from long-closed editors would otherwise accumulate
+  // until browser storage fills. Unsaved writing is never touched by this.
+  useEffect(() => { pruneSceneRecoveryJournal(); }, []);
+
   useEffect(() => setAllowStorylineTransfer(false), [conflict]);
 
   useEffect(() => {
@@ -160,6 +178,23 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
       tabId: activeTabId,
     };
   }, [scene.id, title, body, activeTabId]);
+
+  // The page grows with the prose so a long scene scrolls as one sheet, not as
+  // a short box inside the page. Runs before the caret and scroll restore.
+  useLayoutEffect(() => {
+    const fit = () => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      const container = textarea.closest(".scene-editor");
+      const scrolled = container?.scrollTop ?? 0;
+      textarea.style.height = "auto";
+      if (textarea.scrollHeight > 0) textarea.style.height = `${textarea.scrollHeight}px`;
+      if (container && container.scrollTop !== scrolled) container.scrollTop = scrolled;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [body, zenMode]);
 
   const isDirty = Boolean(conflict) || title !== lastSavedRef.current.title || body !== lastSavedRef.current.body;
   const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
@@ -303,11 +338,28 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
     };
   }, []);
 
+  const [find, setFind] = useState<{ open: boolean; query: string; focusRequest: number; step: number }>({ open: false, query: "", focusRequest: 0, step: 0 });
+  const [findMarks, setFindMarks] = useState<{ matches: FindMatch[]; current: number }>({ matches: [], current: -1 });
+  const showFindMarks = useCallback((matches: FindMatch[], current: number) => setFindMarks({ matches, current }), []);
+  const closeFind = useCallback(() => setFind(value => ({ ...value, open: false })), []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      const command = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
+      if (command && key === "s") {
         e.preventDefault();
         void save(true);
+      }
+      if (command && !e.shiftKey && !e.altKey && key === "f") {
+        e.preventDefault();
+        const textarea = textareaRef.current;
+        const picked = textarea && document.activeElement === textarea ? textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) : "";
+        setFind(value => ({ open: true, query: picked && !picked.includes("\n") && picked.length <= 200 ? picked : "", focusRequest: value.focusRequest + 1, step: value.step }));
+      }
+      if (command && !e.altKey && key === "g") {
+        e.preventDefault();
+        setFind(value => value.open ? { ...value, step: value.step + (e.shiftKey ? -1 : 1) } : value);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -397,22 +449,30 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
         </div>
       )}
       <SelectionAssist projectRoot={projectRoot} sceneId={scene.id} branch={branches?.find(row => row.current)?.name ?? ""} selection={selection} disabled={readOnly || Boolean(conflict)} providers={availableProviders(runtimeConfig).map(row => row.id)} flush={flush} onResult={async proposal => { await refreshProposals(); openTab({ id: `proposal:${proposal.id}`, kind: "proposal", label: proposal.title || "Review selection", data: proposal }); }} />
+      {find.open && <FindBar body={body} textareaRef={textareaRef} readOnly={readOnly || Boolean(conflict)} initialQuery={find.query} focusRequest={find.focusRequest} step={find.step} onMatches={showFindMarks} onClose={closeFind} />}
       <div className="scene-editor__content">
         <input
           aria-label="Scene title"
           className="scene-editor__title"
           value={title}
           readOnly={readOnly}
-          onChange={(e) => setTitle(e.target.value)}
+          data-focus-ring={focusRing === "title" || undefined}
+          onFocus={() => setFocusRing(arrivedByKeyboardRef.current ? "title" : "")}
+          onBlur={() => setFocusRing("")}
+          onChange={(e) => { setFocusRing(""); setTitle(e.target.value); }}
           placeholder="Scene title..."
         />
         <div className="scene-editor__divider" />
+        <div className="scene-editor__page">
+        {find.open && <FindMarks body={body} matches={findMarks.matches} current={findMarks.current} />}
         <textarea
           ref={textareaRef}
           aria-label="Scene prose"
           readOnly={readOnly}
-          onPointerDown={() => { cancelLocationFocus(); pendingLocationRef.current = null; }}
+          data-focus-ring={focusRing === "body" || undefined}
+          onPointerDown={() => { setFocusRing(""); cancelLocationFocus(); pendingLocationRef.current = null; }}
           onFocus={event => {
+            setFocusRing(arrivedByKeyboardRef.current ? "body" : "");
             const textarea = event.currentTarget;
             const location = pendingLocationRef.current;
             if (!location) { rememberLocation(); return; }
@@ -424,13 +484,35 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
               if (textareaRef.current === textarea && document.activeElement === textarea && pendingLocationRef.current === location) resumeLocation(textarea);
             }, 0);
           }}
-          onKeyDown={event => { if (event.key !== "Tab") resumeLocation(event.currentTarget); }}
+          onKeyDown={event => {
+            if (event.key === "Tab") return;
+            const textarea = event.currentTarget;
+            resumeLocation(textarea);
+            if (readOnly || event.nativeEvent.isComposing || event.altKey) return;
+            const command = event.metaKey || event.ctrlKey;
+            const key = event.key.toLowerCase();
+            if (command && !event.shiftKey && key === "i") {
+              // Scenes are Markdown: italics are stored as *text*. Cmd+B stays
+              // with the sidebar; bold is rare in fiction and can be typed as **text**.
+              event.preventDefault();
+              const change = toggleEmphasis(textarea.value, textarea.selectionStart, textarea.selectionEnd, "*");
+              replaceTextRange(textarea, change.start, change.end, change.text);
+              textarea.setSelectionRange(change.selectStart, change.selectEnd);
+              return;
+            }
+            if (command || !smartPunctuationEnabled()) return;
+            const change = smartReplacement(textarea.value, textarea.selectionStart, textarea.selectionEnd, event.key);
+            if (!change) return;
+            event.preventDefault();
+            replaceTextRange(textarea, change.start, change.end, change.text);
+          }}
           onBeforeInput={event => resumeLocation(event.currentTarget)}
           onPaste={event => resumeLocation(event.currentTarget)}
           onCompositionStart={event => resumeLocation(event.currentTarget)}
           onSelect={event => { const node = event.currentTarget; acceptNewSelection(node); setSelection(node.selectionEnd > node.selectionStart ? { body: node.value, start: node.selectionStart, end: node.selectionEnd } : null); rememberLocation(); }}
           onScroll={rememberLocation}
           onBlur={event => {
+            setFocusRing("");
             cancelLocationFocus();
             if (!pendingLocationRef.current) {
               rememberLocation();
@@ -439,9 +521,10 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
           }}
           className="scene-editor__body"
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => { setFocusRing(""); setBody(e.target.value); }}
           placeholder="Begin writing..."
         />
+        </div>
       </div>
     </div>
   );

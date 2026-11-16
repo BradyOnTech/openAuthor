@@ -14,7 +14,7 @@ test("keyboard tabs preserve writing, defer activation and retain focus after cl
     expect(added.status, added.stderr).toBe(0);
     await page.reload();
     await page.getByRole("button", { name: "Hide first-run guide" }).click();
-    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Ferry Office DRA", exact: true }).click();
+    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Ferry Office Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     await expect(prose).toHaveValue("Elin kept the ticket folded.\n");
     await prose.fill("Elin kept the ticket folded. She waited beside the ledger.\n");

@@ -20,7 +20,7 @@ type TransportFaults = {
 export async function localBook(page: Page, faults: TransportFaults = {}) {
   const sandbox = await realpath(await mkdtemp(join(tmpdir(), "openauthor-journey-")));
   const projectRoot = join(sandbox, "The Lantern Cartographer");
-  const env = { ...process.env, PYTHONPATH: repository, OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "", OPENROUTER_API_KEY: "", OPENAUTHOR_CODEX_HOME: join(sandbox, "codex") };
+  const env = { ...process.env, PYTHONPATH: repository, OPENAI_API_KEY: "", ANTHROPIC_API_KEY: "", OPENROUTER_API_KEY: "", OPENAUTHOR_CODEX_HOME: join(sandbox, "codex"), OPENAUTHOR_PROJECTS_DIR: join(sandbox, "books") };
   const python = process.env.OPENAUTHOR_TEST_PYTHON || "python3";
   const pending = new Set<Promise<unknown>>();
   const errors: string[] = [];
@@ -44,6 +44,7 @@ export async function localBook(page: Page, faults: TransportFaults = {}) {
       if (requested && requested !== "local") throw new Error("Only the offline provider is allowed.");
     }
     if (args[0] === "init") scopedPath(args[1]);
+    if (args[0] === "project" && args[1] === "sample") scopedPath(args[args.indexOf("--target") + 1]);
     for (const option of args[0] === "manuscript" ? ["--source", "--target"] : []) {
       const index = args.indexOf(option);
       if (index >= 0) scopedPath(args[index + 1]);

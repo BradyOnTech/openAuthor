@@ -23,7 +23,7 @@ test("restores tabs and caret and reviews current evidence in a wide workspace",
     await page.reload();
     await page.getByRole("button", { name: "Hide first-run guide" }).click();
     await page.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).click();
-    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "After DRA", exact: true }).click();
+    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "After Draft", exact: true }).click();
     const editor = page.getByRole("textbox", { name: "Scene prose" });
     await expect(editor).toHaveValue(prose + "\n");
     await editor.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(310, 320, "backward"); node.scrollTop = 150; node.dispatchEvent(new Event("select", { bubbles: true })); node.dispatchEvent(new Event("scroll", { bubbles: true })); });

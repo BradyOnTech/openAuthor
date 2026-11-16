@@ -55,12 +55,12 @@ test("imports a book, plans chapters, saves Memory, discusses a scene, and expor
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
     const navigation = page.getByRole("navigation", { name: "Manuscript scenes" });
     const chapterNavigation = navigation.getByRole("region", { name: "The Summons" });
-    await expect(chapterNavigation.getByRole("button", { name: / DRA$/ })).toHaveText(["○The ClocktowerDRA", "○The Moving MapDRA"]);
+    await expect(chapterNavigation.getByRole("button", { name: / Draft$/ })).toHaveText(["○The ClocktowerDraft", "○The Moving MapDraft"]);
     await chapterNavigation.getByRole("button", { name: /The Summons/ }).click();
-    await expect(navigation.getByRole("button", { name: "The Clocktower DRA" })).toBeHidden();
+    await expect(navigation.getByRole("button", { name: "The Clocktower Draft" })).toBeHidden();
     await page.getByRole("searchbox", { name: "Filter manuscript scenes" }).fill("Clocktower");
-    await expect(navigation.getByRole("button", { name: "The Clocktower DRA" })).toBeVisible();
-    await expect(navigation.getByRole("button", { name: "The Moving Map DRA" })).toHaveCount(0);
+    await expect(navigation.getByRole("button", { name: "The Clocktower Draft" })).toBeVisible();
+    await expect(navigation.getByRole("button", { name: "The Moving Map Draft" })).toHaveCount(0);
     await page.getByRole("searchbox", { name: "Filter manuscript scenes" }).fill("");
     await page.screenshot({ path: testInfo.outputPath("chapter-navigation.png") });
     await page.getByRole("button", { name: "Read manuscript", exact: true }).click();

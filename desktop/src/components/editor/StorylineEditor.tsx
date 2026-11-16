@@ -157,7 +157,7 @@ export function StorylineEditor() {
               ? `Exploring: ${currentStoryline.name}`
               : primaryBranch
                 ? "Primary manuscript"
-                : "Not initialized"}
+                : "No Storylines yet"}
           </span>
         </div>
         <section style={panelStyle}>

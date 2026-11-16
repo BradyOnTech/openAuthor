@@ -55,6 +55,11 @@ const harness = vi.hoisted(() => ({
   exportedBodies: [] as string[],
 }));
 
+/** Matches reviewed prose whose changed words are marked inside the passage. */
+function changeText(text: string) {
+  return (_content: string, node: Element | null) => node?.classList.contains("change-text") === true && node.textContent === text;
+}
+
 function response(payload: unknown, status = 0) {
   return {
     status,
@@ -952,7 +957,7 @@ describe("active V2 author workflow", () => {
     await user.click(await screen.findByRole("button", { name: "Generate reviewed scene" }));
     await screen.findByText(/Synthetic provider connection lost/);
     await user.click(screen.getByRole("button", { name: "Retry generation" }));
-    await screen.findByText("Mara chooses the dangerous road, knowing the cost.");
+    await screen.findByText(changeText("Mara chooses the dangerous road, knowing the cost."));
     expect(harness.proposals).toHaveLength(1);
     expect(harness.calls.filter(args => args[0] === "proposal" && args[1] === "generate")).toHaveLength(1);
     harness.failDraftOnce = true;
@@ -1175,7 +1180,7 @@ describe("active V2 author workflow", () => {
     expect(harness.calls.some(args => args[0] === "proposal" && args[1] === "draft")).toBe(false);
     await user.click(reviewDraft);
 
-    expect(await screen.findByText("Mara chooses the dangerous road, knowing the cost.")).toBeTruthy();
+    expect(await screen.findByText(changeText("Mara chooses the dangerous road, knowing the cost."))).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Comment" }));
     await user.type(screen.getByLabelText("Revision comment for hunk 1"), "Make the consequence immediate.");
     harness.failHunkOnce = true;
@@ -1222,7 +1227,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Add Scene" }));
     const editor = await screen.findByRole("textbox", { name: "Scene prose" });
     fireEvent.change(editor, { target: { value: "Mara has not sent this letter." } });
-    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+    fireEvent.keyDown(window, { key: "D", metaKey: true, shiftKey: true });
 
     expect(screen.getAllByPlaceholderText("Begin writing...")).toHaveLength(1);
     expect(screen.getByRole("textbox", { name: "Scene prose" })).toBe(editor);
@@ -1263,7 +1268,7 @@ describe("active V2 author workflow", () => {
     body.setSelectionRange(4, 4);
     fireEvent.select(body);
     if (path === "entry") screen.getByRole("tab", { name: /^Opening/ }).focus();
-    fireEvent.keyDown(window, { key: "Z", metaKey: true, shiftKey: true });
+    fireEvent.keyDown(window, { key: "D", metaKey: true, shiftKey: true });
     const exit = screen.getByRole("button", { name: "Exit focus mode" });
     if (path !== "entry") {
       await user.tab();
@@ -1797,7 +1802,8 @@ describe("active V2 author workflow", () => {
     expect(harness.proposals[0]?.change_group_id).toBeTruthy();
     expect(harness.proposals[1]?.change_group_id).toBe(harness.proposals[0]?.change_group_id);
     await user.click(await screen.findByTitle(/proposal-golden-2 — pending/));
-    expect(screen.getByText("scene-0002", { selector: ".review-card__meta span" })).toBeTruthy();
+    // The header names the scene; its id stays available as the tooltip.
+    expect(document.querySelector('.review-card__meta span[title="scene-0002"]')).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Apply together" }));
     expect(await screen.findByRole("button", { name: "Undo change" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Apply 1 change" })).toBeNull();

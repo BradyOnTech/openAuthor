@@ -65,6 +65,8 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 **Editor preconditions**: Desktop prose and Inspector saves send the `edit_version` returned by `get_scene` through `scene update --expected-version`. `scene_edits.save_scene_edit` compares submitted fields and Storyline scope under the project lock and archives conflicts without replacing the manuscript. Never substitute a freshly fetched version for a dirty editor's loaded version without explicit review. Internal `update_scene` and legacy CLI updates without the flag do not provide this check.
 
+**Failure reporting**: Unexpected exceptions never reach the author as tracebacks: the CLI prints one `error:` line (exit 1) and the sidecar answers the failing request with category `internal_error` and keeps serving. Scene files are read as UTF-8 with a tolerated BOM; an undecodable file raises an `OpenAuthorError` naming it. A model response cut off at its output limit is rejected (`truncated_output`) for anything that becomes manuscript text; a cut-off chat reply is kept and flagged with `usage.truncated`.
+
 **Merge-conflict flow**: `branch conflicts` scans base...head for three-way conflicts without touching the worktree (git merge-file per overlapping path). `branch resolve --path <scene>` generates an AI-reconciled scene as a `merge_resolution` proposal; `branch merge --resolution <proposal-id>` performs the merge writing the reconciled content into conflicted files. Merges without resolutions still auto-abort on conflict.
 
 ## Key Conventions
@@ -87,9 +89,16 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 - Proposal flow in-app: `+ AI` in the Proposals sidebar opens the generate tab; proposal review supports Draft scene text → Apply to scene
 - `createProjectRegistryClient()` returns the local registry under Vitest unless `VITE_PROJECT_REGISTRY=supabase` (keeps tests hermetic despite `.env.local`)
 - Local storage persists per-project UI preferences (comparison profiles, voice transcripts)
+- The prose editor is a plain `<textarea>` that grows with its content (the `.scene-editor` container scrolls, never the field). `desktop/src/smartTypography.ts` provides smart punctuation and Markdown italics (`Cmd+I` stores `*italic*`; `Cmd+B` stays the sidebar toggle); edits go through `replaceTextRange` so native undo/redo keep working. `Cmd+F` opens `FindBar`, whose highlights are drawn on a layer behind the field
+- Keep `Cmd+Shift+Z` unbound: it is Redo. Focus mode is `Cmd+Shift+D`
+- Fonts are bundled through `@fontsource-variable/*` and imported in `main.tsx`; do not add remote font or asset URLs, the app must render fully offline
+- The selection toolbar (`SelectionAssist`) is hidden until text is selected, then floats without shifting the prose; the prose focus ring shows only on keyboard arrival (`data-focus-ring`)
 
 ## Environment Variables
 
 - `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` — for real AI provider calls
 - `OPENAUTHOR_PROVIDER_MAX_RETRIES` (default `2`) — provider retry count
 - `OPENAUTHOR_PROVIDER_RETRY_BASE_MS` (default `350`) — retry backoff base
+- `OPENAUTHOR_LOCK_TIMEOUT_MS` (default `30000`) — how long a command waits for the project lock before failing with a clear message
+- `OPENAUTHOR_DEBUG=1` — print tracebacks for unexpected errors; otherwise the CLI and sidecar report one `error:` line
+- `OPENAUTHOR_PROJECTS_DIR` (default `~/Documents/openAuthor`) — where `project suggest-root` places new books; tests point it at a sandbox

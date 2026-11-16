@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
 export type Theme = "light" | "dark";
@@ -57,7 +57,18 @@ function getSystemTheme(): Theme {
 }
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeRaw] = useLocalStorage<Theme>("openauthor.theme", getSystemTheme());
+  // Until the author picks a theme, the app follows the system appearance,
+  // including when it changes while the app is open.
+  const [chosenTheme, setThemeRaw] = useLocalStorage<Theme | null>("openauthor.theme", null);
+  const [systemTheme, setSystemTheme] = useState<Theme>(getSystemTheme);
+  useEffect(() => {
+    const query = typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined;
+    if (!query?.addEventListener) return;
+    const follow = () => setSystemTheme(query.matches ? "dark" : "light");
+    query.addEventListener("change", follow);
+    return () => query.removeEventListener("change", follow);
+  }, []);
+  const theme: Theme = chosenTheme === "dark" || chosenTheme === "light" ? chosenTheme : systemTheme;
   const [sidebarOpen, setSidebarOpen] = useLocalStorage("openauthor.v2.sidebarOpen", true);
   const [activeView, setActiveView] = useLocalStorage<ActivityView>("openauthor.v2.activeView", "manuscript");
   const [secondarySidebarOpen, setSecondarySidebarOpen] = useLocalStorage("openauthor.v2.secondarySidebarOpen", false);

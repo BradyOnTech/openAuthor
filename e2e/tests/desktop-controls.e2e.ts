@@ -58,7 +58,7 @@ test("desktop keyboard budget controls clear one limit, enforce generation and a
     await screen.getByRole("button", /^Changes \(/).tap();
     await screen.getByRole("button", "+ AI").tap();
     await screen.getByRole("textbox", "What should change?").fill("Make the final paragraph more ominous while preserving every name and story event.");
-    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("combobox", "Provider").selectOption({ value: "local" });
     await screen.getByRole("button", "Create Change Set").tap();
     await screen.getByRole("button", "Generate reviewed edit plan").tap();
     await expect(screen.getByRole("region", "Generation recovery").getByRole("alert")).toContainText("blocked by budget policy");
@@ -139,7 +139,7 @@ test("desktop saves a custom Editorial Pass, controls Style Profile sources and 
     await profile.getByRole("button", "Rebuild from selected scenes").tap();
     await expect(profile.getByRole("status")).toContainText("Current sources");
 
-    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("combobox", "Provider").selectOption({ value: "local" });
     await screen.getByRole("radio", "Compare 3 creative directions").check();
     const unchanged = (await book.json(["scene", "get", "--id", "scene-0001"])).body;
     await screen.getByRole("button", "Create 3 Alternatives").tap();

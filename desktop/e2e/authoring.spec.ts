@@ -77,7 +77,7 @@ test("writes, focuses, reviews an AI revision, undoes it, and reopens the saved 
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     const original = "Mara unrolled the map beside the lamp. A red line crept across the paper, passing streets the city had forgotten. She locked the door and watched it move.\n\nAt midnight, the line reached her own door.";
     await prose.fill(original);
-    await prose.press("Control+Shift+Z");
+    await prose.press("Control+Shift+D");
     await expect(page.getByRole("button", { name: "Exit focus mode" })).toBeVisible();
     await expect(prose).toHaveValue(original);
     await page.screenshot({ path: testInfo.outputPath("focus-mode.png"), animations: "disabled" });

@@ -4,6 +4,7 @@ import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
 import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
+import { setSmartPunctuationEnabled, smartPunctuationEnabled } from "../../smartTypography";
 
 const PROVIDER_INFO: {
   id: ProposalProvider;
@@ -14,7 +15,7 @@ const PROVIDER_INFO: {
   { id: "openai", label: "OpenAI", envVar: "OPENAI_API_KEY", envUrl: "OPENAUTHOR_OPENAI_BASE_URL" },
   { id: "anthropic", label: "Anthropic", envVar: "ANTHROPIC_API_KEY", envUrl: "OPENAUTHOR_ANTHROPIC_BASE_URL" },
   { id: "openrouter", label: "OpenRouter", envVar: "OPENROUTER_API_KEY", envUrl: "OPENAUTHOR_OPENROUTER_BASE_URL" },
-  { id: "local", label: "Local (testing)", envVar: "" },
+  { id: "local", label: "Offline demo (mechanical edits only)", envVar: "" },
 ];
 
 export function SettingsEditor() {
@@ -31,22 +32,16 @@ export function SettingsEditor() {
   return (
     <div className="settings-editor">
       <div className="settings-editor__inner">
-        <h2 className="settings-editor__title">Provider Settings</h2>
+        <h2 className="settings-editor__title">Settings</h2>
         <p className="settings-editor__subtitle">
-          Configure AI providers for chat and proposal generation.
+          Connect an AI provider, set how the page behaves while you write, and export or back up your book.
         </p>
 
-        <ManuscriptExportCard
-          projectRoot={projectRoot}
-          setError={setError}
-          setMessage={setMessage}
-        />
-
-        <LocalActivityCard projectRoot={projectRoot} setError={setError} />
-        <BackupCreate projectRoot={projectRoot} setError={setError} setMessage={setMessage} />
-
         <div className="settings-editor__section">
-          <h3 className="settings-editor__section-title">Subscription</h3>
+          <h3 className="settings-editor__section-title">AI provider</h3>
+          <div className="settings-editor__note" style={{ marginBottom: "var(--space-2)" }}>
+            Sign in with ChatGPT to revise and discuss your book using the plan you already pay for. Without a provider, openAuthor falls back to an offline demo that makes only small rule-based edits.
+          </div>
           <CodexAuthCard
             config={runtimeConfig}
             projectRoot={projectRoot}
@@ -56,6 +51,22 @@ export function SettingsEditor() {
           />
         </div>
 
+
+        <WritingPreferencesCard />
+
+        <ManuscriptExportCard
+          projectRoot={projectRoot}
+          setError={setError}
+          setMessage={setMessage}
+        />
+
+        <BackupCreate projectRoot={projectRoot} setError={setError} setMessage={setMessage} />
+
+        <details className="settings-editor__advanced">
+          <summary>Advanced: API-key providers, retries and usage</summary>
+          <div className="settings-editor__note" style={{ marginTop: "var(--space-3)" }}>
+            API-key providers are read from environment variables when openAuthor starts. An app opened from Finder or the Dock does not see variables set in a shell profile; start openAuthor from a terminal, or use ChatGPT sign-in above.
+          </div>
         <div className="settings-editor__section">
           <h3 className="settings-editor__section-title">API Key Providers</h3>
           {PROVIDER_INFO.map((p) => (
@@ -114,6 +125,33 @@ export function SettingsEditor() {
             </div>
           </div>
         )}
+        </details>
+
+        <LocalActivityCard projectRoot={projectRoot} setError={setError} />
+      </div>
+    </div>
+  );
+}
+
+function WritingPreferencesCard() {
+  const [smart, setSmart] = useState(smartPunctuationEnabled);
+  return (
+    <div className="settings-editor__section">
+      <h3 className="settings-editor__section-title">Writing</h3>
+      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", minHeight: 40 }}>
+        <input type="checkbox" checked={smart} onChange={(event) => { setSmart(event.target.checked); setSmartPunctuationEnabled(event.target.checked); }} />
+        Smart punctuation while typing
+      </label>
+      <div className="settings-editor__note">
+        Turns straight quotes into curly quotes and two hyphens into an em dash as you type. Existing text is never changed, and Undo restores what you typed.
+      </div>
+      <div className="settings-editor__grid" style={{ marginTop: "var(--space-3)" }}>
+        {[["Italic", "Cmd+I"], ["Find and replace in a scene", "Cmd+F"], ["Next / previous match", "Cmd+G / Cmd+Shift+G"], ["Focus mode", "Cmd+Shift+D"]].map(([label, keys]) => (
+          <div className="settings-editor__field" key={label}><span className="settings-editor__label">{label}</span><span className="settings-editor__value">{keys}</span></div>
+        ))}
+      </div>
+      <div className="settings-editor__note">
+        Scenes are plain Markdown files: italic is stored as <code>*word*</code> and bold is typed as <code>**word**</code>. Both carry through Word import and export and show as emphasis in Read manuscript.
       </div>
     </div>
   );

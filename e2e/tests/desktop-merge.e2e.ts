@@ -24,7 +24,7 @@ test("desktop branches a Storyline, reviews a conflict and merges the approved r
     await merge.getByRole("button", "Branch storyline").tap();
     await expect(merge.getByText("gate-open (current)")).toBeVisible();
     await expect(screen.getByRole("status").filter({ hasText: "Created storyline" })).toBeVisible();
-    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate DRA").tap();
+    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate Draft").tap();
     const prose = screen.getByRole("textbox", "Scene prose");
     await prose.fill("Mara left the gate open for Ivo.");
     await prose.press("Control+s");
@@ -35,7 +35,7 @@ test("desktop branches a Storyline, reviews a conflict and merges the approved r
     await switchPrimary.press("Enter");
     await expect(merge.getByText(`${primary} (current)`)).toBeVisible();
     await expect(screen.getByRole("status").filter({ hasText: "Switched to storyline" })).toBeVisible();
-    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate DRA").tap();
+    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", "The Gate Draft").tap();
     await expect(prose).toHaveValue("Mara closed the gate before dawn.\n");
     await prose.fill("Mara chained the gate shut before dawn.");
     await prose.press("Control+s");

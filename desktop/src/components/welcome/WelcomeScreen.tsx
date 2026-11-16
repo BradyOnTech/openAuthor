@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BackupRestore } from "../BackupControls";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import {
@@ -8,6 +8,8 @@ import {
   previewManuscriptImport,
   type ManuscriptImportPreview,
   type ImportCorrections,
+  createSampleBook,
+  suggestProjectRoot,
 } from "../../api";
 import { ImportStructureReview } from "./ImportStructureReview";
 import { getProjectBinding } from "../../projectBindings";
@@ -132,6 +134,42 @@ export function WelcomeScreen() {
     setOpenState({ kind: "idle" });
   }, []);
 
+  // Until the author picks a folder, the title chooses one under their books
+  // folder, so a new novel needs a title and nothing else.
+  const folderChosen = useRef(false);
+  useEffect(() => {
+    if (!showNewForm || folderChosen.current) return;
+    const title = form.name.trim();
+    if (!title) {
+      setForm((prev) => (prev.savePath ? { ...prev, savePath: "" } : prev));
+      return;
+    }
+    let current = true;
+    const timer = window.setTimeout(() => {
+      void suggestProjectRoot(title).then((path) => {
+        if (current && !folderChosen.current) setForm((prev) => (prev.name.trim() === title ? { ...prev, savePath: path } : prev));
+      }).catch(() => {
+        // No suggestion is available; the author chooses a folder as before.
+      });
+    }, 200);
+    return () => { current = false; window.clearTimeout(timer); };
+  }, [showNewForm, form.name]);
+
+  const [openingSample, setOpeningSample] = useState(false);
+  const handleOpenSample = useCallback(async () => {
+    setOpeningSample(true);
+    try {
+      const target = await suggestProjectRoot("The Tide Clock (sample)");
+      const created = await createSampleBook(target);
+      if (!await attachProjectRoot(created.project_root || target)) setError("The sample book was created but could not be opened.");
+      else setMessage("Sample book ready. A Change Set is waiting in Changes, and Plan lists a few things to try.");
+    } catch (e) {
+      setError(`Could not create the sample book: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setOpeningSample(false);
+    }
+  }, [attachProjectRoot, setError, setMessage]);
+
   const handleCreate = useCallback(async () => {
     if (form.importKind !== "none" && (!importPreview || previewDirty || previewBusy)) return;
     const importSource = form.importKind !== "none" && form.importPath.trim()
@@ -144,6 +182,7 @@ export function WelcomeScreen() {
     });
     if (ok) {
       setShowNewForm(false);
+      folderChosen.current = false;
       setForm({ name: "", savePath: "", importKind: "none", importPath: "", importStrategy: "auto", showImport: false });
       resetPreview();
     }
@@ -189,6 +228,7 @@ export function WelcomeScreen() {
   const handleBrowseSavePath = useCallback(async () => {
     const selected = await browseFolder(form.savePath || undefined);
     if (selected) {
+      folderChosen.current = true;
       setForm((prev) => ({ ...prev, savePath: selected }));
     }
   }, [form.savePath]);
@@ -283,9 +323,23 @@ export function WelcomeScreen() {
             openAuthor
           </h1>
           <p style={{
+            fontFamily: "var(--font-prose)",
+            fontSize: "var(--text-lg)",
+            color: "var(--text-primary)",
+            margin: "var(--space-3) 0 0 0",
+            textWrap: "balance",
+          }}>
+            Write your novel with an AI that proposes and never overwrites.
+          </p>
+          <ul className="welcome-promises">
+            <li>Your scenes are plain files in a folder you choose.</li>
+            <li>Every AI suggestion is a before-and-after you approve.</li>
+            <li>Every change is a revision you can undo.</li>
+          </ul>
+          <p style={{
             fontSize: "var(--text-sm)",
             color: "var(--text-tertiary)",
-            margin: "var(--space-2) 0 0 0",
+            margin: "var(--space-4) 0 0 0",
           }}>
             Choose a project to begin writing.
           </p>
@@ -315,7 +369,12 @@ export function WelcomeScreen() {
           </button>
         </div>
 
-        <button className="btn btn--ghost" style={{ minHeight: 40 }} aria-expanded={showRecovery} onClick={() => setShowRecovery(value => !value)} disabled={busy}>Restore backup</button>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
+          <button className="btn btn--ghost" style={{ minHeight: 40 }} onClick={() => void handleOpenSample()} disabled={busy || openingSample} title="A four-scene book with a Change Set to review and a continuity slip to find">
+            {openingSample ? "Creating sample…" : "Explore a sample book"}
+          </button>
+          <button className="btn btn--ghost" style={{ minHeight: 40 }} aria-expanded={showRecovery} onClick={() => setShowRecovery(value => !value)} disabled={busy}>Restore backup</button>
+        </div>
         {showRecovery && <BackupRestore onRestored={attachProjectRoot} setError={setError} />}
 
         {/* Not-found prompt (from Open Project) */}
@@ -409,7 +468,7 @@ export function WelcomeScreen() {
                   className="input input--mono"
                   placeholder="Choose a folder for this novel"
                   value={form.savePath}
-                  onChange={(e) => setForm((prev) => ({ ...prev, savePath: e.target.value }))}
+                  onChange={(e) => { folderChosen.current = e.target.value.trim() !== ""; setForm((prev) => ({ ...prev, savePath: e.target.value })); }}
                   style={{ flex: 1 }}
                 />
                 <button
@@ -419,7 +478,7 @@ export function WelcomeScreen() {
                   Browse…
                 </button>
               </div>
-              <span style={{ color: "var(--text-ghost)" }}>Scenes, Story Memory, and revision history stay in this local folder.</span>
+              <span style={{ color: "var(--text-ghost)" }}>Scenes, Story Memory, and revision history stay in this local folder. A folder is suggested from the title; choose another if you prefer.</span>
             </div>
 
             {/* Add existing content toggle */}

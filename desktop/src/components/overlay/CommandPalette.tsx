@@ -61,7 +61,7 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   }, [opener]);
 
   const commands: ResultItem[] = useMemo(() => [
-    { id: "cmd:zen", kind: "command", label: "Toggle Zen Mode", shortcut: "Cmd+Shift+Z" },
+    { id: "cmd:zen", kind: "command", label: "Toggle Focus Mode", shortcut: "Cmd+Shift+D" },
     { id: "cmd:theme", kind: "command", label: "Toggle Theme", shortcut: "Cmd+Shift+T" },
     { id: "cmd:sidebar", kind: "command", label: "Toggle Sidebar", shortcut: "Cmd+B" },
     { id: "cmd:secondary", kind: "command", label: "Toggle AI Chat", shortcut: "Cmd+Shift+B" },

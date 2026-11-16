@@ -49,7 +49,7 @@ export function FirstRunGuide() {
     : !progress.hasProposal
       ? { title: "Try a safe revision", detail: "Open Changes and ask for one small, reviewable improvement.", action: "Open Changes", run: openProposalFlow }
       : !progress.completedLoop
-        ? { title: "Review before you apply", detail: "Inspect each hunk, apply only what helps, and try Undo once.", action: "Review Changes", run: openProposalFlow }
+        ? { title: "Review before you apply", detail: "Read each before-and-after, apply only what helps, and try Undo once.", action: "Review Changes", run: openProposalFlow }
         : null;
 
   return (

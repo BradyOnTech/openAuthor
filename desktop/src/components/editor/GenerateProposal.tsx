@@ -5,7 +5,7 @@ import { addEditorialPass, listEditorialPasses, type EditorialPass, type ReviewR
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { proposalGenerationSession, type GenerationInput } from "../../proposalGenerationSession";
 import { RevisionContextReview } from "./RevisionContextReview";
-import { availableProviders, defaultProvider } from "../../providerSelection";
+import { availableProviders, defaultProvider, onlyOfflineDemo, providerLabel } from "../../providerSelection";
 import { StyleProfilePanel } from "./StyleProfilePanel";
 import { useRecoverableDraft } from "../../recoverableDraft";
 import { emptyRevisionRequest, validRevisionRequest, type RevisionRequestDraft } from "../../revisionRequestDraft";
@@ -177,8 +177,8 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           Create a Change Set
         </h2>
         <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)", lineHeight: "var(--leading-relaxed)" }}>
-          Describe the revision once. The AI produces concrete prose split into reviewable hunks; it never
-          edits your manuscript directly. You choose what to include, and openAuthor records a named Revision.
+          Say what should change. You get a before-and-after to review; nothing touches your manuscript until
+          you apply it, and every applied change can be undone.
         </p>
         <p role={recovery.error ? "alert" : "status"}>{recovery.error || (recovery.dirty
           ? "Unfinished request saved on this device for this book and Storyline. Nothing is sent until you confirm."
@@ -217,21 +217,6 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           onClose={session.clear} closeLabel="Keep plan; cancel drafting" />}
 
         <fieldset disabled={busy || Boolean(job)} style={{ display: "contents", border: 0, padding: 0, margin: 0 }}>
-        <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
-        {recovery.value.reviewDraft && provider === "openai-codex" && <label style={{ display: "grid", gap: 6 }}>
-          <span>Review reasoning effort</span>
-          <select className="input" value={recovery.value.reviewReasoningEffort ?? ""} onChange={event => setter("reviewReasoningEffort")(event.target.value as "" | ReviewReasoningEffort)}>
-            <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-          </select>
-          <small>More time to reason during critique, focused revision and verification. The first draft keeps its model default. Higher effort may take longer; compare the resulting prose.</small>
-          {recovery.value.reviewReasoningEffort === "high" && <small>High allows up to three minutes for each review step by default.</small>}
-        </label>}
-        <div>
-          <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Edit only contents of paired “…” or "…" passages, including quoted signs and messages. Narration, quote marks and passage order stay unchanged. Review the identified passages before sending. Nested or unpaired marks need passage editing. Requires an AI provider.</p>
-        </div>
-
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
           <span style={{ color: "var(--text-secondary)" }}>Scene</span>
           <select className="input" value={sceneId} onChange={(e) => setSceneId(e.target.value)}>
@@ -243,16 +228,55 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           </select>
         </label>
 
-        {scenes.length > 1 && <div style={{ display: "grid", gap: 8 }}>
-          <label><input type="checkbox" checked={coordinated} onChange={e => {
-            setCoordinated(e.target.checked);
-            if (e.target.checked) { setAlternativeCount(1); setCoordinatedSceneIds(ids => [...new Set([sceneId, ...ids].filter(Boolean))]); }
-          }} /> Coordinate this revision across multiple scenes</label>
-          {coordinated && scenes.map(scene => <label key={scene.id}>
-            <input type="checkbox" checked={coordinatedSceneIds.includes(scene.id)} onChange={e => setCoordinatedSceneIds(ids => e.target.checked ? [...new Set([...ids, scene.id])] : ids.filter(id => id !== scene.id))} /> {scene.title || scene.id}
-          </label>)}
-        </div>}
+        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
+          <span style={{ color: "var(--text-secondary)" }}>What should change?</span>
+          <textarea
+            className="input"
+            rows={4}
+            autoFocus={!initialInstruction}
+            placeholder="e.g. Tighten the pacing in the middle section and sharpen Elara's dialogue"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+          />
+        </label>
 
+        <div style={{ display: "flex", gap: "var(--space-2)" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)", flex: 1 }}>
+            <span style={{ color: "var(--text-secondary)" }}>Provider</span>
+            <select
+              className="input"
+              value={provider}
+              onChange={(e) => {
+                providerWasSelected.current = true;
+                setProvider(e.target.value as ProposalProvider);
+              }}
+            >
+              {providers.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {providerLabel(p.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)", flex: 1 }}>
+            <span style={{ color: "var(--text-secondary)" }}>Model (optional)</span>
+            <input
+              className="input"
+              placeholder={providers.find((p) => p.name === provider)?.model ?? "default"}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+          </label>
+        </div>
+
+        {provider === "local" && <p role="note" className="generate-request__notice">
+          {onlyOfflineDemo(runtimeConfig)
+            ? "No AI provider is connected, so this request will use the offline demo. It makes small rule-based edits and cannot follow creative direction. "
+            : "The offline demo makes small rule-based edits and cannot follow creative direction. "}
+          <button type="button" className="btn btn--sm" onClick={() => openTab({ id: "settings", kind: "settings", label: "Settings" })}>Connect ChatGPT in Settings</button>
+        </p>}
+        <h3 className="generate-request__optional">Optional guidance</h3>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)", marginTop: "calc(-1 * var(--space-2))" }}>Everything below is optional. The request above is enough to create a Change Set.</p>
         <section aria-label="Editorial Pass library" style={{ display: "grid", gap: 12, padding: "var(--space-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
           <label style={{ display: "grid", gap: 6 }}>
             <span>Editorial Pass</span>
@@ -278,23 +302,30 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           </fieldset>}
         </section>
 
-        <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
-        <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
+        <label><input type="checkbox" checked={Boolean(recovery.value.reviewDraft)} onChange={event => setter("reviewDraft")(event.target.checked)} /> Review and refine the draft</label>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>A fresh critic checks the scene against your intent. A focused revision is kept only when its verification supports the change. Uses up to four draft-stage model calls; local generation skips this review.</p>
+        {recovery.value.reviewDraft && provider === "openai-codex" && <label style={{ display: "grid", gap: 6 }}>
+          <span>Review reasoning effort</span>
+          <select className="input" value={recovery.value.reviewReasoningEffort ?? ""} onChange={event => setter("reviewReasoningEffort")(event.target.value as "" | ReviewReasoningEffort)}>
+            <option value="">Model default</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+          <small>More time to reason during critique, focused revision and verification. The first draft keeps its model default. Higher effort may take longer; compare the resulting prose.</small>
+          {recovery.value.reviewReasoningEffort === "high" && <small>High allows up to three minutes for each review step by default.</small>}
+        </label>}
+        <div>
+          <label><input type="checkbox" checked={recovery.value.quotedTextOnly ?? false} onChange={event => setter("quotedTextOnly")(event.target.checked)} /> Preserve text outside quotation marks</label>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Edit only contents of paired “…” or "…" passages, including quoted signs and messages. Narration, quote marks and passage order stay unchanged. Review the identified passages before sending. Nested or unpaired marks need passage editing. Requires an AI provider.</p>
+        </div>
 
-        {!coordinated && sceneId && <SavedSceneBrief key={`${projectRoot}:${branch}:${sceneId}`} projectRoot={projectRoot} sceneId={sceneId} title={scenes.find(scene => scene.id === sceneId)?.title || sceneId} />}
-        <details open>
-          <summary>Writing brief for this request</summary>
-          <p>{coordinated ? "Each selected scene uses its own saved brief; these overrides apply to all of them." : "Use the saved scene brief or adjust it for this request."} Your direction stays with both the edit plan and prose draft. Review the assembled book context before sending.</p>
-          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            <WritingBriefFields inherited value={{ ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "" }} onChange={value => {
-              const { purpose, turn, ending, ...rest } = value;
-              recovery.session.edit({ ...recovery.session.getSnapshot().value, scenePurpose: purpose ?? "", sceneTurn: turn ?? "", sceneEnding: ending ?? "", writingBrief: rest });
-            }} />
-            <label>Minimum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.minimumWords ?? ""} onChange={event => setter("minimumWords")(event.target.value)} /></label>
-            <label>Maximum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.maximumWords ?? ""} onChange={event => setter("maximumWords")(event.target.value)} /></label>
-            <p>A single number sets an exact target. With draft review enabled, openAuthor counts words and checks the range. Local generation skips creative review.</p>
-          </div>
-        </details>
+        {scenes.length > 1 && <div style={{ display: "grid", gap: 8 }}>
+          <label><input type="checkbox" checked={coordinated} onChange={e => {
+            setCoordinated(e.target.checked);
+            if (e.target.checked) { setAlternativeCount(1); setCoordinatedSceneIds(ids => [...new Set([sceneId, ...ids].filter(Boolean))]); }
+          }} /> Coordinate this revision across multiple scenes</label>
+          {coordinated && scenes.map(scene => <label key={scene.id}>
+            <input type="checkbox" checked={coordinatedSceneIds.includes(scene.id)} onChange={e => setCoordinatedSceneIds(ids => e.target.checked ? [...new Set([...ids, scene.id])] : ids.filter(id => id !== scene.id))} /> {scene.title || scene.id}
+          </label>)}
+        </div>}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
@@ -319,47 +350,25 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           </label>
         </div>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)" }}>
-          <span style={{ color: "var(--text-secondary)" }}>What should change?</span>
-          <textarea
-            className="input"
-            rows={4}
-            placeholder="e.g. Tighten the pacing in the middle section and sharpen Elara's dialogue"
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-          />
-        </label>
+        {!coordinated && sceneId && <SavedSceneBrief key={`${projectRoot}:${branch}:${sceneId}`} projectRoot={projectRoot} sceneId={sceneId} title={scenes.find(scene => scene.id === sceneId)?.title || sceneId} />}
+        <details open>
+          <summary>Writing brief for this request</summary>
+          <p>{coordinated ? "Each selected scene uses its own saved brief; these overrides apply to all of them." : "Use the saved scene brief or adjust it for this request."} Your direction stays with both the edit plan and prose draft. Review the assembled book context before sending.</p>
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+            <WritingBriefFields inherited value={{ ...recovery.value.writingBrief, purpose: recovery.value.scenePurpose ?? "", turn: recovery.value.sceneTurn ?? "", ending: recovery.value.sceneEnding ?? "" }} onChange={value => {
+              const { purpose, turn, ending, ...rest } = value;
+              recovery.session.edit({ ...recovery.session.getSnapshot().value, scenePurpose: purpose ?? "", sceneTurn: turn ?? "", sceneEnding: ending ?? "", writingBrief: rest });
+            }} />
+            <label>Minimum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.minimumWords ?? ""} onChange={event => setter("minimumWords")(event.target.value)} /></label>
+            <label>Maximum words (optional)<input className="input" type="number" min={1} max={20000} step={1} value={recovery.value.maximumWords ?? ""} onChange={event => setter("maximumWords")(event.target.value)} /></label>
+            <p>A single number sets an exact target. With draft review enabled, openAuthor counts words and checks the range. Local generation skips creative review.</p>
+          </div>
+        </details>
 
-        <div style={{ display: "flex", gap: "var(--space-2)" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)", flex: 1 }}>
-            <span style={{ color: "var(--text-secondary)" }}>Provider</span>
-            <select
-              className="input"
-              value={provider}
-              onChange={(e) => {
-                providerWasSelected.current = true;
-                setProvider(e.target.value as ProposalProvider);
-              }}
-            >
-              {providers.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)", flex: 1 }}>
-            <span style={{ color: "var(--text-secondary)" }}>Model (optional)</span>
-            <input
-              className="input"
-              placeholder={providers.find((p) => p.name === provider)?.model ?? "default"}
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-            />
-          </label>
-        </div>
+        <button className="btn" onClick={() => openTab({ id: "writing-voice", kind: "writing-voice", label: "Writing Voice" })}>Edit Writing Voice</button>
+        <StyleProfilePanel key={JSON.stringify([projectRoot, branches.find(branch => branch.current)?.name])} projectRoot={projectRoot} scenes={scenes} disabled={busy || Boolean(job)} />
 
-        <div>
+        <div className="generate-request__actions">
           <div style={{ display: "flex", gap: 10, marginBottom: 10, color: "var(--text-secondary)", fontSize: "var(--text-xs)" }}>
             <label style={{ display: "flex", gap: 5, alignItems: "center" }}><input type="radio" name="alternatives" checked={alternativeCount === 1} onChange={() => setAlternativeCount(1)} />One focused direction</label>
             <label style={{ display: "flex", gap: 5, alignItems: "center" }}><input type="radio" name="alternatives" checked={alternativeCount === 3} onChange={() => setAlternativeCount(3)} />Compare 3 creative directions</label>

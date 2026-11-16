@@ -60,7 +60,8 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (mod && e.shiftKey && key === "z") {
+      // Cmd+Shift+Z stays with the system: it is Redo in every text field.
+      if (mod && e.shiftKey && key === "d") {
         e.preventDefault();
         toggleZenMode();
         return;

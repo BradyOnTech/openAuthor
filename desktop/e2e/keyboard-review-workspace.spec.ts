@@ -40,7 +40,7 @@ test("Command Palette announces selection, contains focus and resumes exact pros
     }
     await page.reload();
     await page.getByRole("button", { name: "Hide first-run guide" }).click();
-    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "Harbor 01 DRA", exact: true }).click();
+    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "Harbor 01 Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     await expect(prose).toHaveValue("Elin kept ticket 1 folded.\n");
     await prose.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 5); });

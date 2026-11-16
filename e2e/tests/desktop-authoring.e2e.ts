@@ -15,7 +15,7 @@ test("desktop writes and plans a book, reviews a revision, undoes it and refuses
     const prose = screen.getByRole("textbox", "Scene prose");
     const original = "Mara unrolled the map beside the lamp. A red line crept across the paper, passing streets the city had forgotten. She locked the door and watched it move.\n\nAt midnight, the line reached her own door.";
     await prose.fill(original);
-    await prose.press("Control+Shift+Z");
+    await prose.press("Control+Shift+D");
     await expect(screen.getByRole("button", "Exit focus mode")).toBeVisible();
     await prose.press("Escape");
     await prose.press("Control+s");
@@ -46,17 +46,17 @@ test("desktop writes and plans a book, reviews a revision, undoes it and refuses
     const setup = "The map has chosen Mara's door.";
     await book.json(["memory", "setup-add", "--description", setup, "--scene", "scene-0001", "--excerpt", "At midnight, the line reached her own door."]);
     await screen.getByRole("button", /^Changes \(/).tap();
-    await screen.getByRole("button", /^Plan brief author_edit/).tap();
+    await screen.getByRole("button", /^Plan brief Your edit/).tap();
     await expect(screen.getByText("Revision retrospective")).toBeVisible();
     await expect(screen.getByText("manuscript/structure.json")).toBeVisible();
     await expect(screen.getByText(/\+.*"synopsis": "A living map chooses Mara's door\."/)).toBeVisible();
-    await screen.getByRole("button", /^Memory setup-add author_edit/).tap();
+    await screen.getByRole("button", /^Memory setup-add Your edit/).tap();
     await expect(screen.getByText("codex/memory.json")).toBeVisible();
     await expect(screen.getByText(/\+.*"description": "The map has chosen Mara's door\."/)).toBeVisible();
     await expect(screen.getByText(`• ${setup}`)).toBeVisible();
     await screen.getByRole("button", "+ AI").tap();
     await screen.getByRole("textbox", "What should change?").fill("Make the final paragraph more ominous while preserving all names, facts, and events.");
-    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("combobox", "Provider").selectOption({ value: "local" });
     await screen.getByRole("button", "Create Change Set").tap();
     await screen.getByRole("button", "Generate reviewed edit plan").tap();
     await screen.getByRole("button", "Generate reviewed scene").tap();
@@ -88,7 +88,7 @@ test("desktop writes and plans a book, reviews a revision, undoes it and refuses
     expect((await book.json(["revision", "list"])).length).toBe(revisionCount + 1);
     expect((await book.json(["scene", "get", "--id", "scene-0001"])).body.trimEnd()).toBe(original);
     await screen.getByRole("button", /^Manuscript \(/).tap();
-    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Moving Map DRA/).tap();
+    await screen.getByRole("navigation", "Manuscript scenes").getByRole("button", /The Moving Map Draft/).tap();
     await expect(prose).toHaveValue(original + "\n");
     await browser.reload();
     await expect(prose).toHaveValue(original + "\n");

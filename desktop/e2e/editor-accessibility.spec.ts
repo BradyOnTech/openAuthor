@@ -135,7 +135,7 @@ for (const theme of ["dark", "light"] as const) {
       await prose.focus();
       await prose.press(process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home");
       for (let step = 0; step < 5; step++) await page.keyboard.press("ArrowRight");
-      await page.keyboard.press("ControlOrMeta+Shift+z");
+      await page.keyboard.press("ControlOrMeta+Shift+d");
       await readable("unfocused focus-mode Exit", page.getByRole("button", { name: "Exit focus mode", exact: true }));
       await page.keyboard.press("Tab");
       await expect(page.getByRole("button", { name: "Exit focus mode", exact: true })).toBeFocused();

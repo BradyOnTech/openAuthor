@@ -59,7 +59,7 @@ test("desktop records a private golden loop, pauses collection and keeps saved s
     await screen.getByRole("button", "+ AI").tap();
     await screen.getByRole("combobox", "Scene").selectOption({ value: "scene-0002" });
     await screen.getByRole("textbox", "What should change?").fill(instruction);
-    await screen.getByRole("combobox", "Provider").selectOption("local");
+    await screen.getByRole("combobox", "Provider").selectOption({ value: "local" });
     await screen.getByRole("button", "Create Change Set").tap();
     await expect(screen.getByRole("region", "Review edit-plan context")).toContainText(sceneTitle);
     await screen.getByRole("button", "Generate reviewed edit plan").tap();

@@ -52,7 +52,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await page.getByRole("button", { name: /Preview/ }).click();
     await expect(page.getByText(/6 scenes ·/)).toBeVisible();
     await page.getByRole("button", { name: "Create novel" }).click();
-    await expect(page.getByRole("button", { name: /The Last Door DRA/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /The Last Door Draft/ })).toBeVisible();
 
     // Fixture setup uses the same public CLI as the already-covered Plan UI.
     await json(["plan", "brief", "--synopsis", "Mara must restore seven erased families without stealing Ivo's choice.", "--style-guide", "Close third person, past tense. Preserve Ivo's blind right eye, the brass case, seven families, and the door closing before dawn."]);
@@ -65,7 +65,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     }
     const originalEnding = await json(["scene", "get", "--id", "scene-0006"]);
     const originalFerry = await json(["scene", "get", "--id", "scene-0004"]);
-    await page.getByRole("button", { name: /The Last Door DRA/ }).click();
+    await page.getByRole("button", { name: /The Last Door Draft/ }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     await expect(prose).toHaveValue(originalEnding.body);
 
@@ -81,7 +81,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await prose.press("Control+s");
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(ending);
-    await page.getByRole("button", { name: /The Ferry Debt DRA/ }).click();
+    await page.getByRole("button", { name: /The Ferry Debt Draft/ }).click();
     await expect(prose).toHaveValue(originalFerry.body);
     const ferry = originalFerry.body.replace("They crossed in silence.", "They crossed while Ivo named the streets he wanted to see again.");
     expect(ferry).not.toBe(originalFerry.body);
@@ -143,7 +143,7 @@ test("explores an alternate ending, keeps chapter context, and integrates only t
     await page.getByRole("button", { name: /^Manuscript \(/ }).click();
     // Primary restores its own working tabs; explicitly return to the ferry
     // scene to compare it with the experiment's version.
-    await page.getByRole("button", { name: /The Ferry Debt DRA/ }).click();
+    await page.getByRole("button", { name: /The Ferry Debt Draft/ }).click();
     await expect(prose).toHaveValue(originalFerry.body);
     expect((await json(["scene", "get", "--id", "scene-0006"])).body).toBe(originalEnding.body);
     await page.getByRole("button", { name: /^Storylines \(/ }).click();

@@ -127,3 +127,60 @@ export function clearSceneRecoveryDraft(
     // An unavailable recovery store must not interrupt a successful disk save.
   }
 }
+
+const RETIRED_DRAFT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Remove recovery copies that can no longer be offered to the author.
+ *
+ * A draft is only deleted when a save receipt covers its latest sequence and
+ * it has not been written for a day, so it belongs to an editor that is long
+ * gone. Unsaved writing is never pruned here; it stays until the author
+ * restores or discards it. Returns the number of storage entries removed.
+ */
+export function pruneSceneRecoveryJournal(now: number = Date.now()): number {
+  const storage = availableStorage();
+  if (!storage) return 0;
+  let removed = 0;
+  try {
+    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+      .filter((key): key is string => Boolean(key && key.startsWith(`${OWNED_PREFIX}:`)));
+    // Receipts and drafts are grouped by scene slot, then by owning editor.
+    const receipts = new Map<string, Array<{ key: string; sequence: number }>>();
+    const drafts: Array<{ key: string; owner: string }> = [];
+    for (const key of keys) {
+      const receipt = key.match(/^(.*:)retired:([^:]+):(\d+)$/);
+      if (receipt) {
+        const owner = `${receipt[1]}${receipt[2]}`;
+        receipts.set(owner, [...(receipts.get(owner) || []), { key, sequence: Number(receipt[3]) }]);
+        continue;
+      }
+      const draft = key.match(/^(.*:)draft:([^:]+)$/);
+      if (draft) drafts.push({ key, owner: `${draft[1]}${draft[2]}` });
+    }
+    const draftOwners = new Set(drafts.map(draft => draft.owner));
+    for (const { key, owner } of drafts) {
+      const retired = Math.max(0, ...(receipts.get(owner) || []).map(row => row.sequence));
+      let row: SceneRecoveryDraft | null = null;
+      try { row = JSON.parse(storage.getItem(key) || "null"); } catch { continue; }
+      const written = row ? Date.parse(row.journaledAt) : NaN;
+      if (!row || !Number.isSafeInteger(row.sequence) || row.sequence! > retired) continue;
+      if (!Number.isFinite(written) || now - written < RETIRED_DRAFT_RETENTION_MS) continue;
+      storage.removeItem(key);
+      removed += 1;
+      draftOwners.delete(owner);
+    }
+    for (const [owner, rows] of receipts) {
+      const latest = Math.max(...rows.map(row => row.sequence));
+      for (const row of rows) {
+        // Only the highest receipt matters; none matter once the draft is gone.
+        if (draftOwners.has(owner) && row.sequence === latest) continue;
+        storage.removeItem(row.key);
+        removed += 1;
+      }
+    }
+  } catch {
+    // Pruning is housekeeping; recovery and saving never depend on it.
+  }
+  return removed;
+}

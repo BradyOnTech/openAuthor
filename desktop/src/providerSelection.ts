@@ -36,3 +36,26 @@ export function defaultProvider(
     model: runtimeConfig?.providers.local.default_model ?? "local-deterministic",
   };
 }
+
+const PROVIDER_LABELS: Record<ProposalProvider, string> = {
+  "openai-codex": "ChatGPT (your subscription)",
+  openai: "OpenAI API",
+  anthropic: "Anthropic API",
+  openrouter: "OpenRouter",
+  local: "Offline demo (mechanical edits only)",
+};
+
+/** The name an author sees for a provider id. */
+export function providerLabel(id: ProposalProvider): string {
+  return PROVIDER_LABELS[id] ?? id;
+}
+
+/**
+ * True when only the built-in offline engine is available. It makes small
+ * rule-based edits and cannot follow creative direction, so surfaces that
+ * generate prose say so before the author judges the result.
+ */
+export function onlyOfflineDemo(runtimeConfig: GenerationRuntimeConfig | null | undefined): boolean {
+  if (!runtimeConfig) return false;
+  return availableProviders(runtimeConfig).every(provider => provider.id === "local");
+}

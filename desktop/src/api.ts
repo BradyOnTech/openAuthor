@@ -250,6 +250,18 @@ export async function projectEnsureId(
 
 const CONTROL_PROJECT_ROOT = ".";
 
+/** An unused folder for a new book, under the author's default books folder. */
+export async function suggestProjectRoot(projectName: string): Promise<string> {
+  const result = await runCoreCommand(CONTROL_PROJECT_ROOT, ["project", "suggest-root", "--name", projectName, "--json"]);
+  return decodeJson<{ path: string }>(result).path;
+}
+
+/** Create the built-in sample book in an empty folder. */
+export async function createSampleBook(targetPath: string): Promise<InitProjectResult> {
+  const result = await runCoreCommand(CONTROL_PROJECT_ROOT, ["project", "sample", "--target", targetPath.trim(), "--json"]);
+  return decodeJson<InitProjectResult>(result);
+}
+
 export async function initializeLocalProject(
   targetPath: string,
   payload?: {
@@ -281,9 +293,24 @@ export async function initializeLocalProject(
   return decodeJson<InitProjectResult>(result);
 }
 
+/**
+ * The sentence to show an author when a core command fails. The engine prints
+ * `error: <message>`; if it ever dies with a stack trace instead, only the
+ * final line is a message and the rest is kept for the developer console.
+ */
+export function coreFailureMessage(response: Pick<CoreCommandResponse, "stderr" | "stdout">): string {
+  const raw = (response.stderr || response.stdout || "").trim();
+  if (!raw) return "The openAuthor engine stopped without an explanation. Try again.";
+  if (!raw.includes("Traceback (most recent call last)")) return raw.replace(/^error:\s*/i, "");
+  console.error(raw);
+  const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const last = (lines[lines.length - 1] || "").replace(/^[\w.]+(?:Error|Exception):\s*/, "");
+  return `The openAuthor engine hit an unexpected problem${last ? `: ${last}` : "."}`;
+}
+
 function decodeJson<T>(response: CoreCommandResponse): T {
   if (response.status !== 0) {
-    throw new Error(response.stderr || response.stdout || "Core command failed.");
+    throw new Error(coreFailureMessage(response));
   }
   try {
     return JSON.parse(response.stdout) as T;

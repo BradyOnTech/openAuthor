@@ -65,7 +65,9 @@ flowchart LR
 
 **Write**
 - Distraction-free scene editor with autosave, a crash-recovery journal and focus mode
-- Import Markdown, plain text, DOCX and Scrivener content with a structure preview; export Markdown or DOCX with a loss report
+- Smart punctuation as you type, Markdown italics (`Cmd+I`), find and replace within a scene, and a page that grows with the prose
+- Import Markdown, plain text, DOCX and Scrivener content with a structure preview; export Markdown or DOCX with a loss report. Italics and bold carry through Word import and export
+- A built-in sample book (`Explore a sample book` on the welcome screen) with a Change Set to review and a continuity slip to find
 - A Plan view with acts, chapters, scenes, beats, story time and labels, plus move-impact previews
 
 **Changes and revisions**
@@ -126,7 +128,7 @@ flowchart TB
 | --- | --- | --- |
 | [`openauthor/`](openauthor) | Python core: CLI, scenes, Story Memory, Change Sets, providers, budgets, retrieval, git ops, continuity checks | ~27k lines |
 | [`desktop/`](desktop) | Tauri 2 + React 19 + TypeScript desktop app and Rust bridge | ~39k lines |
-| [`tests/`](tests) | Python suite, run with the deterministic local provider | 640+ tests |
+| [`tests/`](tests) | Python suite, run with the deterministic local provider | 720+ tests |
 | [`mobile/`](mobile) | Expo / React Native read, chat, capture and review companion (also a PWA); intentionally cannot edit the manuscript | ~12k lines |
 | [`gateway/`](gateway) | Service that issues short-lived OpenAI Realtime voice sessions; the API key never leaves the server | ~6k lines |
 | [`supabase/`](supabase) | Postgres migrations and database tests for encrypted sync, device enrollment and account deletion | ~7k lines |
@@ -148,6 +150,8 @@ make desktop-tauri     # full desktop app
 make desktop-web       # UI only, in a browser via Vite (no Rust needed)
 ```
 
+On first launch, choose **Explore a sample book** to open a short four-scene novel, or **New Project** and type a title; the book folder defaults to `~/Documents/openAuthor/<title>`.
+
 ### Try the core loop from the CLI
 
 No API key needed: the `local` provider is deterministic.
@@ -165,6 +169,8 @@ openauthor proposal undo  --id <proposal-id>                     # restores the 
 
 openauthor branch create --name alt-ending                       # explore a Storyline
 openauthor check continuity
+
+openauthor project sample --target ~/tide-clock-sample           # or start from the built-in sample book
 ```
 
 To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--provider openai` or `--provider anthropic`, or sign in with a ChatGPT plan via `openauthor auth login --provider openai-codex`. The full command set is in [docs/cli-reference.md](docs/cli-reference.md).
@@ -172,8 +178,8 @@ To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--pro
 ### Run the tests
 
 ```bash
-make test            # Python suite (642 tests, ~1 min, no network)
-make test-desktop    # desktop Vitest suite (728 tests)
+make test            # Python suite (729 tests, ~1 min, no network)
+make test-desktop    # desktop Vitest suite (747 tests)
 make test-all        # Python, desktop, contracts, gateway and mobile
 make check           # repository integrity and the no-placeholder audit
 ```

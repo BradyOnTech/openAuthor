@@ -11,6 +11,7 @@ import { flushProjectSceneSaves, sceneSaveSession, withProjectBookChange } from 
 import { RevisionContextReview } from "./RevisionContextReview";
 import { EditorialFindings } from "./EditorialFindings";
 import { PassageComparison } from "../shared/PassageComparison";
+import { comparePassage } from "../../passageComparison";
 import { DraftCraftReview } from "./DraftCraftReview";
 import { proposalDisplayLabel } from "../../state";
 import { draftRevisionFocusLabel, draftRevisionFocusOptions } from "../../revisionFocus";
@@ -19,6 +20,32 @@ import { WritingBriefDirection } from "./WritingBriefDirection";
 type Props = {
   proposal: ProposalRecord;
 };
+
+const SOURCE_LABELS: Record<string, string> = {
+  ai_generate: "AI revision",
+  ai_selection: "Passage edit",
+  selection: "Passage edit",
+  merge_resolution: "Storyline reconciliation",
+  chat_agent: "From the Assistant",
+  manual: "Written by you",
+};
+
+function proposalSourceLabel(source: string): string {
+  return SOURCE_LABELS[source] ?? source.replace(/_/g, " ");
+}
+
+/**
+ * One side of a before/after pair with only the words that differ marked, so a
+ * one-word edit reads as one word rather than two identical paragraphs.
+ */
+function ChangedWords({ before, after, side }: { before: string; after: string; side: "before" | "after" }) {
+  const parts = useMemo(() => comparePassage(before, after)[side], [before, after, side]);
+  // A wholly rewritten passage gains nothing from marking every word.
+  if (parts.every(part => part.changed)) return <span className="change-text">{side === "before" ? before : after}</span>;
+  return <span className="change-text">{parts.map((part, index) => part.changed
+    ? <mark key={index} className={`change-word change-word--${side}`}>{part.text}</mark>
+    : part.text)}</span>;
+}
 
 export function ProposalReview({ proposal: initial }: Props) {
   const { projectRoot, runtimeConfig, scenes, branches, refreshProposals, refreshScenes, setError, setMessage } =
@@ -282,8 +309,8 @@ export function ProposalReview({ proposal: initial }: Props) {
               scene changed
             </span>
           )}
-          {proposal.scene_id && <span>{proposal.scene_id}</span>}
-          {proposal.source && <span>{proposal.source}</span>}
+          {proposal.scene_id && <span title={proposal.scene_id}>{scenes.find(scene => scene.id === proposal.scene_id)?.title || proposal.scene_id}</span>}
+          {proposal.source && <span title={proposal.source}>{proposalSourceLabel(proposal.source)}</span>}
         </div>
       </div>
 
@@ -303,33 +330,6 @@ export function ProposalReview({ proposal: initial }: Props) {
             if (view.current.mounted && view.current.key === viewKey) setBusy("");
           });
         } : undefined} />}
-
-      {proposal.instruction && (
-        <div className="review-card__section">
-          <div className="review-card__section-title">
-            {proposal.source === "merge_resolution" ? "Reconciliation" : "Edit plan"}
-          </div>
-          <div className="review-card__section-body" style={{ whiteSpace: "pre-wrap" }}>
-            {proposal.instruction}
-          </div>
-        </div>
-      )}
-
-      {proposal.revision_intent && (proposal.revision_intent.constraints.length > 0 || proposal.revision_intent.protected_elements.length > 0) && (
-        <div className="review-card__section">
-          <div className="review-card__section-title">Protected intent</div>
-          <div className="review-card__section-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>CONSTRAINTS</div>
-              {proposal.revision_intent.constraints.length ? proposal.revision_intent.constraints.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>MUST NOT CHANGE</div>
-              {proposal.revision_intent.protected_elements.length ? proposal.revision_intent.protected_elements.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
-            </div>
-          </div>
-        </div>
-      )}
 
       {hasDraft && <DraftWordTarget body={proposal.proposed_body ?? ""} target={proposal.revision_intent?.scene_contract?.word_range} />}
 
@@ -388,11 +388,11 @@ export function ProposalReview({ proposal: initial }: Props) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border-subtle)" }}>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--danger) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
                     <div style={{ color: "var(--danger-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>BEFORE</div>
-                    {hunk.before_text || "∅"}
+                    {hunk.before_text ? <ChangedWords before={hunk.before_text} after={hunk.after_text} side="before" /> : "∅"}
                   </div>
                   <div style={{ padding: "var(--space-3)", background: "color-mix(in srgb, var(--success) 8%, var(--bg-surface))", whiteSpace: "pre-wrap", fontFamily: "var(--font-prose)", fontSize: "var(--text-sm)" }}>
                     <div style={{ color: "var(--success-text)", fontFamily: "var(--font-ui)", fontSize: "var(--text-xs)", marginBottom: "var(--space-1)" }}>AFTER</div>
-                    {hunk.after_text || "∅"}
+                    {hunk.after_text ? <ChangedWords before={hunk.before_text} after={hunk.after_text} side="after" /> : "∅"}
                   </div>
                 </div>
                 {editingHunkId === hunk.id && (
@@ -421,6 +421,33 @@ export function ProposalReview({ proposal: initial }: Props) {
             {changeSet.hunks.length === 0 && (
               <div style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>No prose changes were generated. Redraft with a clearer intent.</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {proposal.instruction && (
+        <div className="review-card__section">
+          <div className="review-card__section-title">
+            {proposal.source === "merge_resolution" ? "Reconciliation" : "Edit plan"}
+          </div>
+          <div className="review-card__section-body" style={{ whiteSpace: "pre-wrap" }}>
+            {proposal.instruction}
+          </div>
+        </div>
+      )}
+
+      {proposal.revision_intent && (proposal.revision_intent.constraints.length > 0 || proposal.revision_intent.protected_elements.length > 0) && (
+        <div className="review-card__section">
+          <div className="review-card__section-title">Protected intent</div>
+          <div className="review-card__section-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>CONSTRAINTS</div>
+              {proposal.revision_intent.constraints.length ? proposal.revision_intent.constraints.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
+            </div>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)", marginBottom: "var(--space-1)" }}>MUST NOT CHANGE</div>
+              {proposal.revision_intent.protected_elements.length ? proposal.revision_intent.protected_elements.map((value) => <div key={value}>• {value}</div>) : <div>None</div>}
+            </div>
           </div>
         </div>
       )}

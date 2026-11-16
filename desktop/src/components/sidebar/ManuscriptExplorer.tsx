@@ -111,10 +111,10 @@ function ManuscriptNavigation() {
               <span aria-hidden="true">{expanded ? "▾" : "▸"}</span><span>{group.title}<small>{count} scene{count === 1 ? "" : "s"} · {words.toLocaleString()} words</small></span>
             </button>
             <div id={`manuscript-group-${group.id}`} hidden={!expanded}>
-              {group.scenes.map((s) => <button type="button" key={s.id} className={`tree-item${activeTabId === `scene:${s.id}` ? " tree-item--selected" : ""}`} aria-label={`${s.title || s.id} ${s.status.slice(0, 3).toUpperCase()}`} aria-current={activeTabId === `scene:${s.id}` ? "page" : undefined} onClick={() => handleSceneClick(s.id, s.title)} title={`${s.id} — ${s.pov || "no POV"}`}>
+              {group.scenes.map((s) => <button type="button" key={s.id} className={`tree-item${activeTabId === `scene:${s.id}` ? " tree-item--selected" : ""}`} aria-label={`${s.title || s.id} ${statusLabel(s.status)}`} aria-current={activeTabId === `scene:${s.id}` ? "page" : undefined} onClick={() => handleSceneClick(s.id, s.title)} title={`${s.id} — ${s.pov || "no POV"}`}>
                 <span className="tree-item__icon" aria-hidden="true" style={{ color: statusColor(s.status) }}>{statusDot(s.status)}</span>
                 <span className="tree-item__label">{s.title || s.id}</span>
-                <span className={`tree-item__badge tree-item__badge--${s.status}`}>{s.status.slice(0, 3).toUpperCase()}</span>
+                <span className={`tree-item__badge tree-item__badge--${s.status}`}>{statusLabel(s.status)}</span>
               </button>)}
               {count === 0 && <p className="manuscript-navigation__notice">No scenes placed yet. Arrange this chapter in Plan.</p>}
             </div>
@@ -211,4 +211,10 @@ function statusDot(status: string): string {
     case "final": return "\u25CF";
     default: return "\u25CB";
   }
+}
+
+/** A scene's status as a whole word, e.g. "Draft". */
+function statusLabel(status: string): string {
+  const text = status.replace(/[_-]+/g, " ").trim();
+  return text ? text[0].toUpperCase() + text.slice(1) : "";
 }

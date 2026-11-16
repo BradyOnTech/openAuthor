@@ -81,3 +81,28 @@ describe("scene recovery journal", () => {
     expect(writeSceneRecoveryDraft({ ...draft, body: "Delayed older write" })).toBeNull();
   });
 });
+
+describe("recovery journal pruning", () => {
+  const draft = { projectRoot: "/book", sceneId: "scene-0001", baseUpdatedAt: "2026-01-01T00:00:00Z", title: "Opening", body: "Mara waits." };
+  const day = 24 * 60 * 60 * 1000;
+
+  it("removes saved copies after a day but keeps unsaved writing and recent copies", async () => {
+    const { pruneSceneRecoveryJournal } = await import("./recoveryJournal");
+    localStorage.clear();
+    const saved = writeSceneRecoveryDraft({ ...draft, draftId: "saved-editor", sequence: 3 })!;
+    clearSceneRecoveryDraft(draft.projectRoot, draft.sceneId, { draftId: "saved-editor", sequence: 1 });
+    clearSceneRecoveryDraft(draft.projectRoot, draft.sceneId, saved);
+    const unsaved = writeSceneRecoveryDraft({ ...draft, draftId: "crashed-editor", sequence: 2, body: "Mara waits. Then she runs." })!;
+    clearSceneRecoveryDraft(draft.projectRoot, draft.sceneId, { draftId: "crashed-editor", sequence: 1 });
+
+    // Inside the retention window only redundant receipts go.
+    expect(pruneSceneRecoveryJournal(Date.parse(saved.journaledAt) + 1000)).toBe(1);
+    expect(listSceneRecoveryDrafts(draft.projectRoot, draft.sceneId).map(row => row.draftId)).toEqual(["crashed-editor"]);
+    expect(Object.keys(localStorage).some(key => key.includes("draft:saved-editor"))).toBe(true);
+
+    expect(pruneSceneRecoveryJournal(Date.parse(unsaved.journaledAt) + 2 * day)).toBe(2);
+    expect(Object.keys(localStorage).filter(key => key.includes("saved-editor"))).toEqual([]);
+    expect(listSceneRecoveryDrafts(draft.projectRoot, draft.sceneId).map(row => row.body)).toEqual(["Mara waits. Then she runs."]);
+    expect(pruneSceneRecoveryJournal(Date.parse(unsaved.journaledAt) + 3 * day)).toBe(0);
+  });
+});

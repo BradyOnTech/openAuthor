@@ -565,6 +565,8 @@ export type ChatMessageRecord = {
     provider?: ProposalProvider | string;
     model?: string;
     generation_id?: string;
+    /** Present and true only when the reply stopped at the output length limit. */
+    truncated?: boolean;
   };
   turn_id?: string;
   thread_id?: string;

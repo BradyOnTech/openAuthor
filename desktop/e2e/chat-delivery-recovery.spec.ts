@@ -89,8 +89,8 @@ test("re-reviews stale pending Memory context with fresh permission and a durabl
     await expect(page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true })).toBeVisible();
     const threadPicker = page.getByTitle("Switch thread", { exact: true });
     if (!await threadPicker.isVisible()) await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
-    await threadPicker.click();
-    await page.locator(".chat-dropdown__item").filter({ hasText: "New Chat" }).click();
+    // The Assistant resumes the most recent conversation when it opens.
+    await expect(threadPicker).toContainText("New Chat");
     await page.getByRole("button", { name: "Review current context" }).click();
     await expect(review.getByRole("textbox", { name: "Saved question" })).toHaveValue("How can Mara returning the key show responsibility?");
     await expect(review.getByRole("checkbox", { name: "Allow Mara for this turn" })).not.toBeChecked();
@@ -161,8 +161,8 @@ test("recovers a completed reply after transport loss without re-sending changed
     await expect(page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true })).toBeVisible();
     const threadPicker = page.getByTitle("Switch thread", { exact: true });
     if (!await threadPicker.isVisible()) await page.getByRole("button", { name: "Assistant (Cmd+L)", exact: true }).click();
-    await threadPicker.click();
-    await page.locator(".chat-dropdown__item").filter({ hasText: "New Chat" }).click();
+    // The Assistant resumes the most recent conversation when it opens.
+    await expect(threadPicker).toContainText("New Chat");
     await page.getByPlaceholder("Type a message... (@ to mention)").fill("A different next question.");
     await page.getByRole("combobox", { name: "Assistant conversation scope" }).selectOption("storyline");
     await page.getByRole("button", { name: "Review current context" }).click();

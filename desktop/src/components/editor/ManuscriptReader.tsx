@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getManuscriptReading, getScene } from "../../api";
 import { useEditor } from "../../contexts/EditorContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import type { ManuscriptReading } from "../../types";
+import { emphasisSpans, isSceneBreak } from "../../proseEmphasis";
 import { readPosition, retentionKey, savePosition } from "../../workspaceRetention";
 import { isReadingPosition, locateReadingPosition, READING_PAGE_SIZE as PAGE_SIZE, type ReadingPosition } from "../../readingPosition";
 
@@ -113,7 +114,7 @@ function ReadingView({ projectRoot }: { projectRoot: string }) {
         const scene = byId.get(id);
         return scene && <article key={id} data-reading-scene={id} aria-label={scene.title}>
           <div className="manuscript-reader__scene-heading"><h3>{scene.title}</h3><button className="btn btn--sm" aria-label={`Edit ${scene.title}`} onClick={() => void editScene(id)}>Edit scene</button></div>
-          <div className="manuscript-reader__body">{scene.body || "This scene has no prose yet."}</div>
+          <div className="manuscript-reader__body">{scene.body ? <ReadingProse body={scene.body} /> : "This scene has no prose yet."}</div>
         </article>;
       })}
       <nav aria-label="Manuscript reading navigation">
@@ -123,4 +124,15 @@ function ReadingView({ projectRoot }: { projectRoot: string }) {
       </nav>
     </main>}
   </div>;
+}
+
+/** Saved prose with Markdown emphasis shown as emphasis and breaks centred. */
+function ReadingProse({ body }: { body: string }) {
+  const lines = body.split("\n");
+  return <>{lines.map((line, index) => {
+    const end = index + 1 < lines.length ? "\n" : "";
+    if (isSceneBreak(line)) return <span key={index} className="manuscript-reader__break">{line.trim()}{end}</span>;
+    return <Fragment key={index}>{emphasisSpans(line).map((span, part) => span.style === "em" ? <em key={part}>{span.text}</em>
+      : span.style === "strong" ? <strong key={part}>{span.text}</strong> : span.text)}{end}</Fragment>;
+  })}</>;
 }

@@ -12,6 +12,7 @@ export function ProposalQueue() {
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [applyingGroup, setApplyingGroup] = useState("");
   const [versionName, setVersionName] = useState("");
+  const [showSnapshots, setShowSnapshots] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
 
   async function handleSaveVersion() {
@@ -35,6 +36,13 @@ export function ProposalQueue() {
       .catch((error) => { if (active) setError(`Failed to load Revision history: ${error instanceof Error ? error.message : String(error)}`); });
     return () => { active = false; };
   }, [projectRoot, proposals, setError]);
+
+  // Every change is preceded by an automatic "before" snapshot. They make undo
+  // possible but double the list, so they stay folded away until asked for.
+  const snapshotCount = revisions.filter(isSafetySnapshot).length;
+  const shownRevisions = showSnapshots ? revisions : revisions.filter(revision => !isSafetySnapshot(revision));
+  const sceneName = (id?: string) => (id && scenes.find(scene => scene.id === id)?.title) || id || "";
+  const withSceneNames = (text: string) => text.replace(/\bscene-\d+\b/g, id => sceneName(id));
 
   const counts = useMemo(() => countProposals(proposals), [proposals]);
   const ordered = useMemo(() => orderProposalsForReview(proposals), [proposals]);
@@ -172,7 +180,7 @@ export function ProposalQueue() {
             <div className="list-item__content">
               <div className="list-item__title">{displayTitle}</div>
               <div className="list-item__meta">
-                {p.scene_id || "no scene"} {"\u00B7"} {timeAgo(p.created_at)}
+                {sceneName(p.scene_id) || "no scene"} {"\u00B7"} {timeAgo(p.created_at)}
               </div>
             </div>
           </button>
@@ -187,26 +195,61 @@ export function ProposalQueue() {
 
         <div className="section-header" style={{ marginTop: "var(--space-3)" }}>
           <span>Revision History</span>
-          <span className="section-header__count">({revisions.length})</span>
+          <span className="section-header__count">({shownRevisions.length})</span>
         </div>
-        {revisions.map((revision) => (
+        {shownRevisions.map((revision) => (
           <button
             type="button"
             key={revision.id}
             className="list-item"
             onClick={() => openTab({ id: `revision:${revision.id}`, kind: "revision", label: revision.message || revision.id.slice(0, 8), data: revision })}
-            title={revision.id}
+            title={`${revision.kind} · ${revision.id}`}
           >
             <span className="list-item__dot list-item__dot--applied" />
             <div className="list-item__content">
-              <div className="list-item__title">{revision.message || revision.kind}</div>
-              <div className="list-item__meta">{revision.kind} · {timeAgo(revision.created_at)}</div>
+              <div className="list-item__title">{revision.message ? withSceneNames(revision.message) : revisionKindLabel(revision.kind)}</div>
+              <div className="list-item__meta">{revisionKindLabel(revision.kind)} · {timeAgo(revision.created_at)}</div>
             </div>
           </button>
         ))}
+        {snapshotCount > 0 && (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            style={{ margin: "var(--space-2) var(--space-3)" }}
+            aria-expanded={showSnapshots}
+            title="Before each change, openAuthor keeps a snapshot so the change can be undone."
+            onClick={() => setShowSnapshots(value => !value)}
+          >
+            {showSnapshots ? "Hide safety snapshots" : `Show ${snapshotCount} safety snapshot${snapshotCount === 1 ? "" : "s"}`}
+          </button>
+        )}
       </div>
     </>
   );
+}
+
+const REVISION_KIND_LABELS: Record<string, string> = {
+  author_edit: "Your edit",
+  author_edit_before: "Snapshot before your edit",
+  change_set_apply: "Change Set applied",
+  change_set_before: "Snapshot before a Change Set",
+  change_set_undo: "Change Set undone",
+  change_group_apply: "Change Sets applied together",
+  change_group_before: "Snapshot before Change Sets",
+  change_group_undo: "Change Sets undone together",
+  manuscript_import: "Import",
+  restore: "Restored version",
+  backup: "Backup",
+  named: "Saved version",
+};
+
+function isSafetySnapshot(revision: RevisionSummary): boolean {
+  return /_before$/.test(revision.kind);
+}
+
+function revisionKindLabel(kind: string): string {
+  return REVISION_KIND_LABELS[kind] ?? kind.replace(/_/g, " ");
 }
 
 function timeAgo(iso: string): string {

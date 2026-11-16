@@ -722,7 +722,7 @@ A modal overlay triggered by `Cmd+K` (or `Cmd+Shift+P`).
             | COMMANDS                                    |
             |   New Scene                     Cmd+N       |
             |   Generate Proposal             Cmd+G       |
-            |   Toggle Zen Mode               Cmd+Shift+Z |
+            |   Toggle Zen Mode               Cmd+Shift+D |
             |   Run Continuity Checks                     |
             |   Toggle Theme                  Cmd+Shift+T |
             +---------------------------------------------+
@@ -750,7 +750,7 @@ A modal overlay triggered by `Cmd+K` (or `Cmd+Shift+P`).
 
 ## 8. Zen Mode
 
-Toggle: `Cmd+Shift+Z`
+Toggle: `Cmd+Shift+D`
 
 Hides all panels (activity bar, sidebars, panel, status bar, tab bar, breadcrumbs).
 The writing surface expands to fill the entire window with extra-generous margins.
@@ -776,7 +776,7 @@ The writing surface expands to fill the entire window with extra-generous margin
 - Background: solid `--editor-bg` (full window)
 - Text max-width: 640px, centered
 - Extra vertical padding (80px top)
-- Esc or `Cmd+Shift+Z` to exit
+- Esc or `Cmd+Shift+D` to exit
 - Subtle floating word count in bottom-right corner (fades on typing)
 - Mouse movement near top edge reveals a thin "Exit Zen Mode" bar
 
@@ -798,7 +798,7 @@ The writing surface expands to fill the entire window with extra-generous margin
 | Cmd+Shift+R     | Focus Proposal Queue            |
 | Cmd+Shift+C     | Focus Continuity Checks         |
 | Cmd+L           | Focus AI Chat                   |
-| Cmd+Shift+Z     | Toggle Zen Mode                 |
+| Cmd+Shift+D     | Toggle Zen Mode                 |
 | Cmd+1/2/3       | Focus Editor Group 1/2/3        |
 | Cmd+W           | Close Current Tab               |
 | Cmd+Tab         | Cycle Tabs                      |

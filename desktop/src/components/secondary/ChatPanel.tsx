@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from "react";
 import { chatDeliverySession } from "../../chatDeliverySession";
 import { ChatContextReview } from "./ChatContextReview";
 import type { ChatSendPayload } from "../../api";
@@ -7,6 +7,7 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import {
   createChatThread,
+  listChatThreads,
   updateChatThread,
   executeChatToolCall,
   createProposal,
@@ -34,7 +35,7 @@ import type {
   SceneSummary,
   CodexEntity,
 } from "../../types";
-import { availableProviders as getAvailableProviders } from "../../providerSelection";
+import { availableProviders as getAvailableProviders, onlyOfflineDemo } from "../../providerSelection";
 import { VoiceControl } from "../../voice/VoiceControl";
 import { ReviewContextReceipt } from "./ReviewContextReceipt";
 
@@ -80,6 +81,23 @@ function ThreadPanel() {
       void refreshChatThreads();
     }
   }, [delivery.sending, delivery.reconciling, refreshChatMessages, refreshChatThreads]);
+
+  // The Assistant opens ready to type. It resumes the latest conversation from
+  // the list loaded with the book, at once, so the panel never switches
+  // conversation after the author has started using it. The book's first
+  // conversation is created only when the author starts writing a message.
+  useEffect(() => {
+    if (!projectFound || !projectRoot || activeChatThreadId || chatThreads.length === 0) return;
+    setActiveChatThreadId(latestConversation(chatThreads).id);
+  }, [projectFound, projectRoot, activeChatThreadId, chatThreads, setActiveChatThreadId]);
+  const startConversation = useCallback(() => {
+    if (!projectFound || !projectRoot || activeChatThreadId) return;
+    void openingConversation(projectRoot, getAvailableProviders(runtimeConfig)[0]).then(async (thread) => {
+      if (!thread) return;
+      await refreshChatThreads();
+      setActiveChatThreadId(thread.id);
+    });
+  }, [projectFound, projectRoot, activeChatThreadId, runtimeConfig, refreshChatThreads, setActiveChatThreadId]);
 
   if (!projectFound) {
     return (
@@ -228,6 +246,12 @@ function ThreadPanel() {
           </>}
         </div>
       )}
+      {onlyOfflineDemo(runtimeConfig) && (
+        <p role="note" className="chat-offline-note">
+          No AI provider is connected, so replies come from the offline demo, which can only point at saved passages.
+          <button type="button" className="btn btn--sm" onClick={() => openTab({ id: "settings", kind: "settings", label: "Settings" })}>Connect ChatGPT</button>
+        </p>
+      )}
       <Composer
         projectRoot={projectRoot}
         threadId={activeChatThreadId}
@@ -239,6 +263,7 @@ function ThreadPanel() {
         activeThread={activeThread}
         currentSceneId={currentSceneId}
         onInterrupt={handleInterrupt}
+        onNeedConversation={startConversation}
         onSend={handleComposerSend}
         editing={editing}
         editDiscardCount={editDiscardCount}
@@ -250,6 +275,47 @@ function ThreadPanel() {
       />
     </div>
   );
+}
+
+
+/* ── Opening conversation ───────────────────────────────────────── */
+
+const openingConversations = new Map<string, Promise<ChatThreadRecord | null>>();
+const firstMessageDrafts = new Map<string, string>();
+
+/** Record a conversation being created so concurrent callers share it. */
+function trackOpeningConversation(projectRoot: string, creation: Promise<ChatThreadRecord>): Promise<ChatThreadRecord> {
+  const shared: Promise<ChatThreadRecord | null> = creation.then(thread => thread, () => null);
+  openingConversations.set(projectRoot, shared);
+  void shared.finally(() => { if (openingConversations.get(projectRoot) === shared) openingConversations.delete(projectRoot); });
+  return creation;
+}
+
+function latestConversation(threads: ChatThreadRecord[]): ChatThreadRecord {
+  return [...threads].sort((a, b) => (b.updated_at || b.created_at || "").localeCompare(a.updated_at || a.created_at || ""))[0];
+}
+
+/**
+ * The conversation for a first message: the most recently used one if the book
+ * already has any, otherwise a new one. Shared per book so two callers never
+ * create two first conversations.
+ */
+function openingConversation(projectRoot: string, provider?: { id: ProposalProvider; model?: string }): Promise<ChatThreadRecord | null> {
+  const pending = openingConversations.get(projectRoot);
+  if (pending) return pending;
+  const request = (async () => {
+    try {
+      const threads = await listChatThreads(projectRoot);
+      if (threads.length) return latestConversation(threads);
+      return await createChatThread(projectRoot, { title: "New Chat", provider: provider?.id ?? "local", model: provider?.model });
+    } catch {
+      // The header's New thread button remains and reports its own errors.
+      return null;
+    }
+  })();
+  openingConversations.set(projectRoot, request);
+  void request.finally(() => { if (openingConversations.get(projectRoot) === request) openingConversations.delete(projectRoot); });
+  return request;
 }
 
 
@@ -360,11 +426,13 @@ function ThreadHeader({
     try {
       const provider = availableProviders[0]?.id ?? "local";
       const model = availableProviders[0]?.model;
-      const t = await createChatThread(projectRoot, {
+      // Registered so a message box focused meanwhile joins this conversation
+      // instead of starting a second one.
+      const t = await trackOpeningConversation(projectRoot, createChatThread(projectRoot, {
         title: "New Chat",
         provider,
         model,
-      });
+      }));
       onThreadCreated(t);
     } catch (e) {
       setError(`Failed to create thread: ${e instanceof Error ? e.message : String(e)}`);
@@ -543,7 +611,7 @@ function MessageList({
         <div className="chat-empty">
           <div className="chat-empty__icon">{"✨"}</div>
           <div className="chat-empty__text">
-            {threadId ? "Send a message to start the conversation." : "Create or select a thread to begin."}
+            {threadId ? "Send a message to start the conversation." : "Ask about your book, a scene or a character. Your first message starts a conversation."}
           </div>
         </div>
       </div>
@@ -884,6 +952,11 @@ function ChatMessage({
         </div>
       )}
 
+      {isAssistant && message.usage.truncated && (
+        <div className="chat-message__usage" role="note" style={{ color: "var(--warning-text)" }}>
+          This reply reached the length limit and stops early. Ask the Assistant to continue, or ask a narrower question.
+        </div>
+      )}
       {isAssistant && message.usage.input_tokens != null && (
         <div className="chat-message__usage">
           {message.usage.input_tokens} in / {message.usage.output_tokens} out
@@ -993,6 +1066,7 @@ function Composer({
   currentSceneId,
   onSend,
   onInterrupt,
+  onNeedConversation,
   editing,
   editDiscardCount,
   onCancelEdit,
@@ -1012,6 +1086,7 @@ function Composer({
   currentSceneId?: string;
   onSend: (text: string, sceneIds: string[], codexIds: string[], scope: AssistantScope, reviewed?: ChatAuthorization) => Promise<boolean>;
   onInterrupt: () => void;
+  onNeedConversation: () => void;
   editing: { messageId: string; text: string } | null;
   editDiscardCount: number;
   onCancelEdit: () => void;
@@ -1020,7 +1095,9 @@ function Composer({
   onExternalQuestionChange?: (message: string) => void;
   onExternalReviewClosed: () => void;
 }) {
-  const [text, setText] = useState("");
+  // Words typed before the book's first conversation exists are carried into
+  // the conversation panel that replaces this one.
+  const [text, setText] = useState(() => (threadId ? firstMessageDrafts.get(projectRoot) ?? "" : ""));
   const [reviewPayload, setReviewPayload] = useState<ChatSendPayload | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
@@ -1070,8 +1147,18 @@ function Composer({
     return items;
   }, [mentionQuery, scenes, codexEntities]);
 
+  useEffect(() => {
+    if (!threadId || !firstMessageDrafts.has(projectRoot)) return;
+    firstMessageDrafts.delete(projectRoot);
+    const field = textareaRef.current;
+    if (!field) return;
+    field.focus();
+    field.setSelectionRange(field.value.length, field.value.length);
+  }, []);
+
   function handleInput(value: string) {
     setText(value);
+    if (!threadId) firstMessageDrafts.set(projectRoot, value);
     autoGrow();
 
     // Detect @ mention trigger
@@ -1255,12 +1342,13 @@ function Composer({
         <textarea
           ref={textareaRef}
           className="chat-composer__input"
-          placeholder={threadId ? "Type a message... (@ to mention)" : "Select a thread first"}
+          placeholder="Type a message... (@ to mention)"
           value={text}
+          onFocus={() => { if (!threadId) onNeedConversation(); }}
           onChange={(e) => handleInput(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          disabled={!threadId || sending}
+          disabled={sending}
         />
         <button className="btn btn--sm" style={{ minHeight: 40 }} onClick={() => setReviewPayload(composerPayload())} disabled={!text.trim() || sending || recoveryPending || !threadId || ((scope === "chapter" || scope === "character") && !scopeId)}>Context</button>
         {sending && streaming ? (

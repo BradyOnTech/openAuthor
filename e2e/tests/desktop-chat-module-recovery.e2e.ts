@@ -56,10 +56,9 @@ test("desktop preserves an unsent question after an Assistant module outage and 
     await browser.unroute(eventModule);
     await browser.reload();
     await expect(screen.getByRole("button", "Assistant (Cmd+L)")).toBeVisible();
-    const threadPicker = screen.getByRole("button", "No thread ▾");
-    if (!await threadPicker.isVisible()) await screen.getByRole("button", "Assistant (Cmd+L)").tap();
-    await threadPicker.tap();
-    await screen.getByText("Module recovery", { exact: true }).tap();
+    // The Assistant resumes the most recent conversation when it opens.
+    if (!await screen.getByPlaceholder("Type a message... (@ to mention)").isVisible()) await screen.getByRole("button", "Assistant (Cmd+L)").tap();
+    await expect(screen.getByRole("button", "Module recovery ▾")).toBeVisible();
     await expect(recovery).toContainText(question);
     expect(await book.json(["chat", "message", "list", "--thread", thread.id])).toEqual([]);
     expect(await book.json(["generation", "list"])).toEqual([]);

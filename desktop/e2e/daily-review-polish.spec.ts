@@ -39,7 +39,7 @@ test("keeps saved planning compact, recovers edits, and exposes passage actions 
     expect((await json(["plan", "get"])).brief.synopsis).toBe(synopsis);
 
     await page.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).click();
-    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Count DRA", exact: true }).click();
+    await page.getByRole("navigation", { name: "Manuscript scenes" }).getByRole("button", { name: "The Count Draft", exact: true }).click();
     const prose = page.getByRole("textbox", { name: "Scene prose" });
     await expect(prose).toHaveValue(body + "\n");
     await prose.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(0, "Mara began to count.".length); node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true })); });

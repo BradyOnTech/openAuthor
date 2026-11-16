@@ -23,7 +23,7 @@ const plan: ManuscriptPlan = {
     { id: "chapter-2", title: "The Cost", synopsis: "", position: 2, scene_ids: [] },
   ] }],
 };
-const sceneButtons = () => within(screen.getByRole("navigation", { name: "Manuscript scenes" })).getAllByRole("button", { name: / DRA$/ });
+const sceneButtons = () => within(screen.getByRole("navigation", { name: "Manuscript scenes" })).getAllByRole("button", { name: / Draft$/ });
 
 describe("chapter-aware manuscript navigation", () => {
   beforeEach(() => {
@@ -35,14 +35,14 @@ describe("chapter-aware manuscript navigation", () => {
   it("follows Plan order, retains unassigned scenes, marks the open scene and opens saved prose", async () => {
     render(<ManuscriptExplorer />);
     const chapter = await screen.findByRole("region", { name: "The Choice" });
-    expect(sceneButtons().map((button) => button.textContent)).toEqual(["○The DoorDRA", "○The MapDRA", "○The FerryDRA"]);
+    expect(sceneButtons().map((button) => button.textContent)).toEqual(["○The DoorDraft", "○The MapDraft", "○The FerryDraft"]);
     expect(within(chapter).getByRole("button", { name: /The Choice/ }).textContent).toContain("2 scenes · 200 words");
-    expect(screen.getByRole("button", { name: "The Door DRA" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("button", { name: "The Door Draft" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("region", { name: "Unassigned scenes" })).toBeTruthy();
     expect(screen.getByText("No scenes placed yet. Arrange this chapter in Plan.")).toBeTruthy();
     const fresh = { ...scenes[0], body: "Current saved prose." };
     vi.mocked(getScene).mockResolvedValue(fresh);
-    fireEvent.click(screen.getByRole("button", { name: "The Map DRA" }));
+    fireEvent.click(screen.getByRole("button", { name: "The Map Draft" }));
     await waitFor(() => expect(editor.openTab).toHaveBeenCalledWith({ id: "scene:scene-1", kind: "scene", label: "The Map", data: fresh }));
   });
 
@@ -51,11 +51,11 @@ describe("chapter-aware manuscript navigation", () => {
     const chapter = await screen.findByRole("button", { name: /The Choice/ });
     fireEvent.click(chapter);
     expect(chapter.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("button", { name: "The Door DRA" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "The Door Draft" })).toBeNull();
     const filter = screen.getByRole("searchbox", { name: "Filter manuscript scenes" });
     fireEvent.change(filter, { target: { value: "Ivo" } });
     expect(sceneButtons()).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "The Door DRA" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "The Door Draft" })).toBeTruthy();
     fireEvent.change(filter, { target: { value: "The Choice" } });
     expect(sceneButtons()).toHaveLength(2);
     fireEvent.change(filter, { target: { value: "Missing scene" } });
@@ -77,7 +77,7 @@ describe("chapter-aware manuscript navigation", () => {
     render(<ManuscriptExplorer />);
     await screen.findByRole("region", { name: "The Choice" });
     expect(sceneButtons()).toHaveLength(3);
-    expect(within(screen.getByRole("region", { name: "Unassigned scenes" })).getByRole("button", { name: "The Ferry DRA" })).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Unassigned scenes" })).getByRole("button", { name: "The Ferry Draft" })).toBeTruthy();
   });
 
   it("refreshes chapter membership after leaving the Plan tab", async () => {

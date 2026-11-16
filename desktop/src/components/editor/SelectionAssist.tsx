@@ -4,6 +4,7 @@ import { useRecoverableDraft } from "../../recoverableDraft";
 import { StoryContextChoices } from "../common/StoryContextChoices";
 import type { ProposalProvider, ProposalRecord } from "../../types";
 import { WritingBriefDirection } from "./WritingBriefDirection";
+import { providerLabel } from "../../providerSelection";
 
 type Draft = { input: SelectionInput | null; fingerprint: string; requestId: string };
 const empty: Draft = { input: null, fingerprint: "", requestId: "" };
@@ -94,10 +95,13 @@ function SelectionAssistSession({ projectRoot, sceneId, branch, selection, disab
     finally { pending.current = false; if (mounted.current) setBusy(false); }
   }
 
-  return <section className="selection-assist" aria-label="Selection assistant">
-    <div className="selection-assist__toolbar">
-      {(["rewrite", "shorten", "expand", "critique"] as SelectionAction[]).map(action => <button key={action} className="btn btn--ghost" disabled={disabled || busy || Boolean(input) || !selection || !selection.body.slice(selection.start, selection.end).trim()} onMouseDown={event => event.preventDefault()} onClick={() => choose(action)}>{action[0].toUpperCase() + action.slice(1)}</button>)}
-      {!input && <span>Select a passage to edit or critique.</span>}
+  // With nothing selected the page stays clear. A selection brings up a small
+  // floating bar that does not move the prose; a started request docks above it.
+  const hasSelection = Boolean(selection && selection.body.slice(selection.start, selection.end).trim());
+  const floating = !input && !draft.error;
+  return <section className={`selection-assist${floating ? " selection-assist--floating" : ""}`} aria-label="Selection assistant" hidden={floating && !hasSelection}>
+    <div className="selection-assist__toolbar" role={floating ? "toolbar" : undefined} aria-label={floating ? "Ask for help with the selected passage" : undefined}>
+      {(["rewrite", "shorten", "expand", "critique"] as SelectionAction[]).map(action => <button key={action} className="btn btn--ghost" disabled={disabled || busy || Boolean(input) || !hasSelection} onMouseDown={event => event.preventDefault()} onClick={() => choose(action)}>{action[0].toUpperCase() + action.slice(1)}</button>)}
     </div>
     {draft.error && <p role="alert">{draft.error}</p>}
     {input && <div className="selection-assist__request">
@@ -117,7 +121,7 @@ function SelectionAssistSession({ projectRoot, sceneId, branch, selection, disab
           {input.review_scope === "chapter" && <p>Compare this passage with its saved chapter in reading order. Review the exact included context before sending.</p>}
         </div>}
         <div className="selection-assist__toolbar">
-          <label>Provider<select className="input" value={input.provider} disabled={busy || Boolean(requestId) || disabled} onChange={event => edit({ provider: event.target.value as ProposalProvider, model: "" })}>{[...new Set([...providers, input.provider])].map(provider => <option key={provider} value={provider}>{provider === "local" ? "Local (mechanical edits only)" : provider}</option>)}</select></label>
+          <label>Provider<select className="input" value={input.provider} disabled={busy || Boolean(requestId) || disabled} onChange={event => edit({ provider: event.target.value as ProposalProvider, model: "" })}>{[...new Set([...providers, input.provider])].map(provider => <option key={provider} value={provider}>{providerLabel(provider)}</option>)}</select></label>
           <label>Model override<input className="input" value={input.model} placeholder="Provider default" disabled={busy || Boolean(requestId) || disabled} onChange={event => edit({ model: event.target.value })} /></label>
         </div>
         <p>Saved story guidance, approved Writing Voice guidance and permitted Memory may be sent with {input.action === "critique" && input.review_scope === "chapter" ? "full scenes from this chapter in saved reading order" : "up to 2,000 surrounding characters per side"}. Canon and relationships require your permission below. {input.action === "critique" && input.review_scope === "chapter" ? "No full scenes outside this chapter, chat history or private notes are sent." : "No full other scenes, chat history or private notes are sent."} Text in included prose, guidance or approved evidence is not automatically redacted.</p>
