@@ -1077,21 +1077,26 @@ export function WorkspaceProvider({ children, registryMode = "auto" }: { childre
           await projectEnsureId(status.project_root, activeProjectId);
         }
         if (cancelled) return;
-        setProjectFound(status.found);
-        if (status.found) {
-          await Promise.all([
-            refreshStartupHealth(),
-            refreshScenes(),
-            refreshCodex(),
-            refreshProposals(),
-            refreshRuns(),
-            refreshBranches(),
-            refreshBudget(),
-            refreshRuntimeConfig(),
-            refreshChatThreads(),
-            refreshProjectActivity(),
-          ]);
+        if (!status.found) {
+          setProjectFound(false);
+          return;
         }
+        const background = Promise.all([
+          refreshStartupHealth(),
+          refreshCodex(),
+          refreshRuns(),
+          refreshBranches(),
+          refreshBudget(),
+          refreshRuntimeConfig(),
+          refreshChatThreads(),
+          refreshProjectActivity(),
+        ]);
+        // The book opens with its scenes and pending changes already in
+        // hand, so the first screen never claims an empty manuscript.
+        await Promise.all([refreshScenes(), refreshProposals()]);
+        if (cancelled) return;
+        setProjectFound(true);
+        await background;
       } catch (e) {
         if (cancelled) return;
         setProjectFound(false);

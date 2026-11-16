@@ -1412,6 +1412,27 @@ describe("active V2 author workflow", () => {
     expect.soft(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("reopens the remembered book quietly, with its scenes loaded and no leftover command palette", async () => {
+    await openWritingScene();
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    await screen.findByRole("dialog", { name: "Command Palette" });
+
+    cleanup();
+    let release!: () => void;
+    harness.sceneListWait = new Promise<void>((resolve) => { release = resolve; });
+    render(<AppV2 />);
+    // While the book is being read there is no welcome screen to flash past
+    // and no workbench claiming an empty manuscript.
+    expect((await screen.findByRole("status")).textContent).toBe("Opening Save Safety…");
+    expect(screen.queryByText("Choose a project to begin writing.")).toBeNull();
+    expect(screen.queryByText("No scenes yet.")).toBeNull();
+    release();
+    await screen.findByRole("tab", { name: /^Opening/ });
+    expect(screen.queryByText("No scenes yet.")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Command Palette" })).toBeNull();
+    expect(screen.queryByRole("status", { name: /Opening Save Safety/ })).toBeNull();
+  });
+
   it("retains explicitly selected Search and independent panels beside the Plan document on restart", async () => {
     const { user } = await openWritingScene();
     await user.click(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }));

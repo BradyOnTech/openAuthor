@@ -23,6 +23,7 @@ function ReadingView({ projectRoot }: { projectRoot: string }) {
   const viewport = useRef<HTMLDivElement>(null);
   const positionKey = useRef("");
   const restore = useRef<ReadingPosition | null>(null);
+  const readerMoved = useRef(false);
   const [retentionWarning, setRetentionWarning] = useState("");
   const pendingTab = tabs.find((tab) => tab.kind === "scene" && tab.modified);
   const pendingWriting = Boolean(pendingTab);
@@ -52,10 +53,23 @@ function ReadingView({ projectRoot }: { projectRoot: string }) {
     const view = viewport.current;
     if (!reading || !view) return;
     const anchor = restore.current;
-    const element = Array.from(view.querySelectorAll<HTMLElement>("[data-reading-scene]")).find((item) => item.dataset.readingScene === anchor?.sceneId);
-    const top = element ? element.getBoundingClientRect().top - view.getBoundingClientRect().top + view.scrollTop : 0;
-    view.scrollTop = element && anchor?.offset != null ? Math.max(0, top + anchor.offset) : 0;
+    const place = () => {
+      const element = Array.from(view.querySelectorAll<HTMLElement>("[data-reading-scene]")).find((item) => item.dataset.readingScene === anchor?.sceneId);
+      const top = element ? element.getBoundingClientRect().top - view.getBoundingClientRect().top + view.scrollTop : 0;
+      view.scrollTop = element && anchor?.offset != null ? Math.max(0, top + anchor.offset) : 0;
+      return view.scrollTop;
+    };
+    place();
     restore.current = null;
+    // Prose laid out before its typeface arrives is measured again when it
+    // does, and the page shifts. Return to the same sentence then, unless the
+    // reader has started moving the page themselves.
+    readerMoved.current = false;
+    const fonts = typeof document !== "undefined" ? document.fonts : undefined;
+    if (anchor?.offset == null || !fonts?.addEventListener) return;
+    const settle = () => { if (!readerMoved.current) place(); };
+    fonts.addEventListener("loadingdone", settle);
+    return () => fonts.removeEventListener("loadingdone", settle);
   }, [reading, sectionId, page]);
 
   function retain(position: ReadingPosition) {
@@ -91,7 +105,8 @@ function ReadingView({ projectRoot }: { projectRoot: string }) {
     } catch (reason) { setError(`Could not open scene: ${reason instanceof Error ? reason.message : String(reason)}`); }
   }
 
-  return <div className="manuscript-reader" ref={viewport} onScroll={onScroll}>
+  const moved = () => { readerMoved.current = true; };
+  return <div className="manuscript-reader" ref={viewport} onScroll={onScroll} onWheel={moved} onTouchMove={moved} onKeyDown={moved} onPointerDown={moved}>
     <header className="manuscript-reader__toolbar">
       <div><h1>Read manuscript</h1><p>Saved prose in Plan order. Reading here never changes your manuscript.</p></div>
       <button className="btn btn--sm" disabled={pendingWriting} onClick={() => setRefresh((value) => value + 1)}>Refresh reading copy</button>

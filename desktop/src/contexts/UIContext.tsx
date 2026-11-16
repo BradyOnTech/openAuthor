@@ -80,7 +80,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [panelOpen, setPanelOpen] = useLocalStorage("openauthor.v2.panelOpen", false);
   const [panelTab, setPanelTab] = useLocalStorage<PanelTab>("openauthor.v2.panelTab", "runs");
   const [zenMode, setZenMode] = useLocalStorage("openauthor.v2.zenMode", false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useLocalStorage("openauthor.v2.commandPalette", false);
+  // An open palette is a moment, not a preference: it never survives a relaunch.
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeRaw(t);
