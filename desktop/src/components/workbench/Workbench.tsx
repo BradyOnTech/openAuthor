@@ -11,6 +11,7 @@ import { PanelArea } from "../panel/PanelArea";
 import { WelcomeScreen } from "../welcome/WelcomeScreen";
 import { FirstRunGuide } from "../onboarding/FirstRunGuide";
 import { primaryModifier } from "../../platformKeys";
+import { scheduleHistoryUpkeep } from "../../historyUpkeep";
 
 export function Workbench() {
   const { activeTabId } = useEditor();
@@ -23,6 +24,7 @@ export function Workbench() {
   const {
     activeProjectId,
     projectFound,
+    projectRoot,
     closeProject,
     error,
     message,
@@ -33,6 +35,9 @@ export function Workbench() {
   } = useWorkspace();
 
   const projectReady = !!(activeProjectId && projectFound === true);
+
+  // Thin old automatic saves, at most once a day, a little after the book opens.
+  useEffect(() => (projectReady && projectRoot ? scheduleHistoryUpkeep(projectRoot) : undefined), [projectReady, projectRoot]);
 
   useEffect(() => {
     const revealEditor = () => {

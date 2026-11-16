@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BackupCreate } from "../BackupControls";
 import { flushProjectSceneSaves } from "../../sceneSaveSession";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import { authLogin, authLogout, exportManuscript, getLocalProductDashboard, pickExportTarget, updateLocalProductSignals } from "../../api";
+import { authLogin, authLogout, compactRevisions, exportManuscript, getLocalProductDashboard, getRevisionRetention, pickExportTarget, setRevisionRetention, updateLocalProductSignals, type RevisionRetention } from "../../api";
 import type { GenerationRuntimeConfig, LocalProductDashboard, ProposalProvider } from "../../types";
 import { setSmartPunctuationEnabled, smartPunctuationEnabled } from "../../smartTypography";
 import { DEFAULT_PROSE_SIZE, PROSE_SIZES, proseSize, setProseSize } from "../../proseSize";
@@ -71,6 +71,8 @@ export function SettingsEditor() {
         />
 
         <BackupCreate projectRoot={projectRoot} setError={setError} setMessage={setMessage} />
+
+        <HistoryCard projectRoot={projectRoot} setError={setError} setMessage={setMessage} />
 
         <details className="settings-editor__advanced">
           <summary>Advanced: API-key providers, retries and usage</summary>
@@ -187,6 +189,79 @@ function WritingPreferencesCard() {
       </div>
       <div className="settings-editor__note">
         Every shortcut is also in the menu bar. Scenes are plain Markdown files: italic is stored as <code>*word*</code> and bold is typed as <code>**word**</code>. Both carry through Word import and export and show as emphasis in Read manuscript.
+      </div>
+    </div>
+  );
+}
+
+function megabytes(bytes: number): string {
+  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function HistoryCard({ projectRoot, setError, setMessage }: { projectRoot: string; setError: (value: string) => void; setMessage: (value: string) => void }) {
+  const [retention, setRetention] = useState<RevisionRetention | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let current = true;
+    setRetention(null);
+    void getRevisionRetention(projectRoot).then(row => { if (current) setRetention(row); }).catch(() => {
+      // An engine without retention simply shows no history controls.
+    });
+    return () => { current = false; };
+  }, [projectRoot]);
+  if (!retention) return null;
+
+  async function toggle(enabled: boolean) {
+    const previous = retention;
+    // The switch answers at once; the book confirms, or the switch goes back.
+    setRetention(current => current && { ...current, policy: { ...current.policy, enabled } });
+    try {
+      setRetention(await setRevisionRetention(projectRoot, enabled));
+    } catch (error) {
+      setRetention(previous);
+      setError(`History setting could not be saved: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async function thinNow() {
+    setBusy(true);
+    try {
+      let removed = 0;
+      // Large backlogs are worked off in bounded passes so saving is never held up.
+      for (let pass = 0; pass < 20; pass += 1) {
+        const result = await compactRevisions(projectRoot);
+        removed += result.removed_revisions;
+        if (!result.ran || result.complete) break;
+      }
+      setRetention(await getRevisionRetention(projectRoot));
+      setMessage(removed ? `Thinned ${removed.toLocaleString()} old automatic save${removed === 1 ? "" : "s"}.` : "Nothing old enough to thin yet.");
+    } catch (error) {
+      setError(`History could not be thinned: ${error instanceof Error ? error.message : String(error)}`);
+    } finally { setBusy(false); }
+  }
+
+  const { policy, store, last_run: lastRun } = retention;
+  return (
+    <div className="settings-editor__section">
+      <h3 className="settings-editor__section-title">History</h3>
+      <div className="settings-editor__note">
+        Every save is kept as a Revision. This book holds {store.revisions.toLocaleString()} of them, using {megabytes(store.allocated_bytes)} on disk.
+      </div>
+      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", minHeight: 40 }}>
+        <input type="checkbox" checked={policy.enabled} disabled={busy} onChange={(event) => void toggle(event.target.checked)} />
+        Thin old automatic saves
+      </label>
+      <div className="settings-editor__note">
+        Everything from the last {policy.keep_all_days} days is kept. Older automatic saves are reduced to one per hour, and after {policy.daily_after_days} days to one per day.
+        Versions you named, every applied or undone Change Set, imports, restores and Storyline changes are never removed. Turn this off to keep every automatic save forever.
+      </div>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
+        <button className="btn btn--sm" style={{ minHeight: 40 }} disabled={busy || !policy.enabled} onClick={() => void thinNow()}>{busy ? "Working…" : "Thin now"}</button>
+        <span className="settings-editor__note" style={{ margin: 0 }}>
+          {lastRun.at
+            ? `Last thinned ${new Date(lastRun.at).toLocaleDateString()}${lastRun.removed_revisions ? `, removing ${lastRun.removed_revisions.toLocaleString()} and freeing ${megabytes(lastRun.freed_bytes)}` : ""}.`
+            : "Not thinned yet. It runs by itself about once a day while the book is open."}
+        </span>
       </div>
     </div>
   );

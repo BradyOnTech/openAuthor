@@ -43,7 +43,8 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 - Proposals/chats: `.openauthor/workspace/` (gitignored)
 - Generation logs: `.openauthor/generations/*.json` (full provenance)
 - Retrieval index: `.openauthor/retrieval/index.json` (gitignored)
-- Revision history: `.openauthor/revisions/` holds records (a manifest delta against the parent, with a full manifest at bounded intervals) and zlib-packed objects (`<digest>.z`, optionally stored against one earlier version of the same file). Read manifests only through `revisions._full_manifest`. Older full-manifest records and plain objects stay readable forever and are never rewritten; see `docs/manuscript-transactions.md`
+- Revision history: `.openauthor/revisions/` holds records (a manifest delta against the parent, with a full manifest at bounded intervals) and zlib-packed objects (`<digest>.z`, optionally stored against one earlier version of the same file). Read manifests only through `revisions._full_manifest`. Older full-manifest records and plain objects stay readable forever; see `docs/manuscript-transactions.md`
+- History retention: `openauthor/revision_retention.py` is the only code that removes history. It thins automatic prose saves older than 7 days (one per hour, then one per day after 90), never anything named, applied, undone, imported, restored or still referenced, and only when `revision compact` is called; the desktop calls `revision compact --if-due` once a day (`desktop/src/historyUpkeep.ts`). Policy is per book in `.openauthor/revision_retention.json`. Read `docs/revision-retention.md` before touching it
 
 **Python module map**:
 - `cli.py` — argument parsing, command dispatch

@@ -840,6 +840,42 @@ export async function listRevisions(projectRoot: string, limit = 50): Promise<Re
   return decodeJson<RevisionSummary[]>(result);
 }
 
+export type RevisionRetention = {
+  policy: { enabled: boolean; keep_all_days: number; daily_after_days: number };
+  store: { revisions: number; bytes: number; allocated_bytes: number };
+  last_run: { at: string | null; removed_revisions: number; freed_bytes: number };
+  due: boolean;
+};
+
+export type RevisionCompaction = {
+  ran: boolean;
+  reason: string;
+  removed_revisions: number;
+  kept_revisions: number;
+  removed_objects: number;
+  freed_bytes: number;
+  freed_allocated_bytes: number;
+  complete: boolean;
+};
+
+/** How this book thins old automatic saves, and how much history it holds. */
+export async function getRevisionRetention(projectRoot: string): Promise<RevisionRetention> {
+  return decodeJson(await runCoreCommand(projectRoot, ["revision", "retention", "--json"]));
+}
+
+export async function setRevisionRetention(projectRoot: string, enabled: boolean): Promise<RevisionRetention> {
+  return decodeJson(await runCoreCommand(projectRoot, ["revision", "retention", "--enabled", enabled ? "true" : "false", "--json"]));
+}
+
+/**
+ * Thin old automatic saves. With `ifDue` this is the daily upkeep call: it does
+ * nothing unless the book allows thinning and none has run in the last day.
+ * `complete: false` means it stopped at its time bound with more left to do.
+ */
+export async function compactRevisions(projectRoot: string, options: { ifDue?: boolean } = {}): Promise<RevisionCompaction> {
+  return decodeJson(await runCoreCommand(projectRoot, ["revision", "compact", ...(options.ifDue ? ["--if-due"] : []), "--json"]));
+}
+
 export async function saveRevision(projectRoot: string, message: string): Promise<RevisionSummary> {
   return decodeJson(await runCoreCommand(projectRoot, ["revision", "save", "--message", message, "--json"]));
 }

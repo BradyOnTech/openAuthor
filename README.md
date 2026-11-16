@@ -29,7 +29,7 @@ I also built openAuthor the way it asks writers to work. I developed it agentica
 | Software engineering | openAuthor | What it gives an author |
 | --- | --- | --- |
 | Git repository | **Project** of Markdown scene files | Plain, human-readable files that stay useful without the app |
-| Commit | **Revision** | Saving, applying AI changes, importing and editing memory all create named, restorable revisions |
+| Commit | **Revision** | Saving, applying AI changes, importing and editing memory all create named, restorable revisions. Old automatic saves are thinned like `git gc`; nothing you named or applied is ever removed |
 | Pull request + code review | **Change Set** | AI proposes; you accept, reject, edit or comment on each hunk; multi-scene changes apply atomically and undo in one click |
 | Branch / merge | **Storyline** | Try an alternate ending, compare it with the main manuscript, and integrate it with AI-assisted conflict reconciliation |
 | `CLAUDE.md` / codebase context | **Story Memory** + **Context Pack** | Temporal canon facts, who-knows-what-when, relationships and arcs, each cited to the passages that support it. You review and approve the exact context sent to a model |
@@ -130,7 +130,7 @@ flowchart TB
 | --- | --- | --- |
 | [`openauthor/`](openauthor) | Python core: CLI, scenes, Story Memory, Change Sets, providers, budgets, retrieval, git ops, continuity checks | ~27k lines |
 | [`desktop/`](desktop) | Tauri 2 + React 19 + TypeScript desktop app and Rust bridge | ~39k lines |
-| [`tests/`](tests) | Python suite, run with the deterministic local provider | 740+ tests |
+| [`tests/`](tests) | Python suite, run with the deterministic local provider | 800 tests |
 | [`mobile/`](mobile) | Expo / React Native read, chat, capture and review companion (also a PWA); intentionally cannot edit the manuscript | ~12k lines |
 | [`gateway/`](gateway) | Service that issues short-lived OpenAI Realtime voice sessions; the API key never leaves the server | ~6k lines |
 | [`supabase/`](supabase) | Postgres migrations and database tests for encrypted sync, device enrollment and account deletion | ~7k lines |
@@ -180,8 +180,8 @@ To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--pro
 ### Run the tests
 
 ```bash
-make test            # Python suite (745 tests, ~1 min, no network)
-make test-desktop    # desktop Vitest suite (764 tests)
+make test            # Python suite (801 tests, ~1 min, no network)
+make test-desktop    # desktop Vitest suite (767 tests)
 make test-all        # Python, desktop, contracts, gateway and mobile
 make check           # repository integrity and the no-placeholder audit
 ```
