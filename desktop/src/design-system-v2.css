@@ -381,6 +381,10 @@ body {
   overflow: hidden;
 }
 
+/* Errors stay in the layout: they must remain readable without covering the
+   controls needed to recover. Brief confirmations float instead, so the page
+   does not jump twice in three seconds; only their dismiss button takes the
+   pointer, and everything underneath stays clickable. */
 .workbench-notification {
   display: flex;
   flex-shrink: 0;
@@ -388,6 +392,36 @@ body {
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.workbench-notification--error {
+  background: var(--danger-subtle);
+  border-bottom: 1px solid var(--danger-border);
+  color: var(--danger-text);
+}
+
+.workbench-notification--message {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--status-bar-height) + var(--space-4));
+  transform: translateX(-50%);
+  z-index: 600;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--success-border);
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-elevated));
+  color: var(--success-text);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  animation: notification-enter var(--duration-normal) var(--ease-out);
+}
+
+@keyframes notification-enter {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
 }
 
 .workbench-notification__text {
@@ -400,26 +434,56 @@ body {
 
 .workbench-notification > button {
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
+/* One quiet line above the workbench: where the author is in the first loop
+   and the single next thing to do. */
 .first-run-guide {
   display: flex;
   flex-shrink: 0;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-3);
-  max-height: 25vh;
-  overflow: auto;
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
+  gap: var(--space-2) var(--space-3);
+  min-height: 40px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-size: var(--text-sm);
 }
 
-.first-run-guide__heading {
-  display: flex;
-  justify-content: space-between;
+.first-run-guide__progress {
+  display: inline-flex;
+  align-items: baseline;
   gap: var(--space-2);
-  width: 200px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.first-run-guide__progress > span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.first-run-guide__step {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.first-run-guide__step > strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.first-run-guide__close {
+  margin-left: auto;
 }
 
 .workbench {

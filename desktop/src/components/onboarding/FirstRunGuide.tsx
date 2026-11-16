@@ -60,26 +60,22 @@ export function FirstRunGuide() {
 
   return (
     <aside aria-label="Getting started" className="first-run-guide">
-      <div className="first-run-guide__heading">
-        <div>
-          <div style={{ fontWeight: 650, color: "var(--text-primary)" }}>Getting started</div>
-          <div style={{ fontSize: "var(--text-xs)", color: "var(--text-tertiary)" }}>{completed}/3 complete</div>
-        </div>
-        <button className="btn btn--ghost btn--sm" onClick={finish} aria-label="Hide first-run guide">×</button>
-      </div>
-
+      <span className="first-run-guide__progress" aria-label={`Getting started: ${completed} of 3 complete`}>
+        <strong>Getting started</strong>
+        <span aria-hidden="true">{completed}/3</span>
+      </span>
       {nextStep ? (
-        <GuideStep complete={false} title={nextStep.title} detail={nextStep.detail} actionLabel={nextStep.action} onAction={nextStep.run}
+        <GuideStep title={nextStep.title} detail={nextStep.detail} actionLabel={nextStep.action} onAction={nextStep.run}
           secondaryLabel={"connect" in nextStep && nextStep.connect ? "Connect ChatGPT" : undefined} onSecondary={() => void navigateTo("settings")} />
       ) : (
-        <><div style={{ fontSize: "var(--text-sm)", color: "var(--success)" }}>You completed the safe revision loop.</div><button className="btn btn--primary btn--sm" onClick={finish}>Finish</button></>
+        <><span className="first-run-guide__step" style={{ color: "var(--success-text)" }}>You completed the safe revision loop.</span><button className="btn btn--primary btn--sm" onClick={finish}>Finish</button></>
       )}
+      <button className="btn btn--ghost btn--sm first-run-guide__close" onClick={finish} aria-label="Hide first-run guide">×</button>
     </aside>
   );
 }
 
 function GuideStep({
-  complete,
   title,
   detail,
   actionLabel,
@@ -87,7 +83,6 @@ function GuideStep({
   secondaryLabel,
   onSecondary,
 }: {
-  complete: boolean;
   title: string;
   detail: string;
   actionLabel?: string;
@@ -96,18 +91,13 @@ function GuideStep({
   onSecondary?: () => void;
 }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: "var(--space-2)" }}>
-      <span style={{ color: complete ? "var(--success)" : "var(--text-ghost)" }}>{complete ? "✓" : "○"}</span>
-      <div>
-        <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-primary)" }}>{title}</div>
-        <div style={{ fontSize: "var(--text-xs)", lineHeight: "var(--leading-relaxed)", color: "var(--text-secondary)", marginTop: 2 }}>{detail}</div>
-        {actionLabel && onAction && (
-          <button className="btn btn--ghost btn--sm" style={{ marginTop: "var(--space-1)" }} onClick={onAction}>{actionLabel}</button>
-        )}
-        {secondaryLabel && onSecondary && (
-          <button className="btn btn--ghost btn--sm" style={{ marginTop: "var(--space-1)", marginLeft: "var(--space-1)" }} onClick={onSecondary}>{secondaryLabel}</button>
-        )}
-      </div>
-    </div>
+    <>
+      <span className="first-run-guide__step">
+        <strong>{title}</strong>
+        <span>{detail}</span>
+      </span>
+      {actionLabel && onAction && <button className="btn btn--sm" onClick={onAction}>{actionLabel}</button>}
+      {secondaryLabel && onSecondary && <button className="btn btn--ghost btn--sm" onClick={onSecondary}>{secondaryLabel}</button>}
+    </>
   );
 }

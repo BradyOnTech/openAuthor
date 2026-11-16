@@ -22,6 +22,15 @@ export function SceneDocument({ tabId, scene, modified = false, focusPassage, ze
   const [ready, setReady] = useState(modified);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  // Opening a scene usually takes a blink. The loading line appears only when
+  // it does not, so switching tabs shows a still page, not a flash of text.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (ready) return;
+    setSlow(false);
+    const timer = window.setTimeout(() => setSlow(true), 350);
+    return () => window.clearTimeout(timer);
+  }, [ready, attempt]);
 
   useEffect(() => {
     if (startedDirty) return;
@@ -38,8 +47,8 @@ export function SceneDocument({ tabId, scene, modified = false, focusPassage, ze
     return () => { current = false; };
   }, [projectRoot, scene.id, tabId, startedDirty, attempt, updateTab]);
 
-  if (!ready) return <div style={{ padding: "var(--space-5)" }}>
-    {error ? <><p role="alert">{error}</p><button className="btn" onClick={() => setAttempt((value) => value + 1)}>Retry opening scene</button></> : <p role="status">Loading saved scene…</p>}
+  if (!ready) return <div className="scene-editor" style={{ padding: "var(--space-5)" }} aria-busy={!error}>
+    {error ? <><p role="alert">{error}</p><button className="btn" onClick={() => setAttempt((value) => value + 1)}>Retry opening scene</button></> : slow && <p role="status">Loading saved scene…</p>}
   </div>;
   return <SceneEditor tabId={tabId} scene={scene} focusPassage={focusPassage} zenMode={zenMode} onExitZen={onExitZen} />;
 }

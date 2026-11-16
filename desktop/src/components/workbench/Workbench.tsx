@@ -76,11 +76,7 @@ export function Workbench() {
   return (
     <div className="workbench-frame">
       {(error || message) && (
-        <div className="workbench-notification" role={error ? "alert" : "status"} style={{
-          background: error ? "var(--danger-subtle)" : "var(--success-subtle)",
-          borderBottom: `1px solid ${error ? "var(--danger-border)" : "var(--success-border)"}`,
-          color: error ? "var(--danger-text)" : "var(--success-text)",
-        }}>
+        <div className={`workbench-notification workbench-notification--${error ? "error" : "message"}`} role={error ? "alert" : "status"}>
           <span className="workbench-notification__text" tabIndex={0} aria-label="Notification details">{error || message}</span>
           <button className="btn btn--ghost btn--sm" aria-label="Dismiss notification" onClick={() => { setError(""); setMessage(""); }}>×</button>
         </div>
