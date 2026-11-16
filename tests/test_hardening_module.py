@@ -15,7 +15,14 @@ from openauthor.hardening import (
 from openauthor.project import initialize_project
 from openauthor.proposals import create_proposal
 from openauthor.retrieval import build_retrieval_index
+from openauthor.revision_retention import compact_revisions
+from openauthor.revisions import list_revisions
 from openauthor.scenes import add_scene, update_scene
+
+try:
+  from retention_support import editor_saves, old_history, thin_today
+except ImportError:
+  from tests.retention_support import editor_saves, old_history, thin_today
 
 
 class HardeningModuleTests(unittest.TestCase):
@@ -39,6 +46,23 @@ class HardeningModuleTests(unittest.TestCase):
       repaired = {row["id"] for row in after["checks"] if row["repaired"]}
       self.assertIn("project_directories", repaired)
       self.assertIn("revision_store", repaired)
+
+      # The same checks and the same repair on a history that was thinned.
+      with old_history():
+        add_scene(paths, title="Opening", body="The harbor was quiet.")
+        editor_saves(paths, "scene-0001", 6, "draft")
+      self.assertEqual(thin_today(paths)["removed_revisions"], 5)
+      remaining = len(list_revisions(paths, limit=100))
+      healthy = collect_startup_health(paths)
+      self.assertTrue(healthy["ready"])
+      store = next(row for row in healthy["checks"] if row["id"] == "revision_store")
+      self.assertEqual((store["status"], store["message"]), ("ok", f"Local revision history is available ({remaining} revision(s))."))
+      paths.proposals_dir.rmdir()
+      self.assertFalse(collect_startup_health(paths)["ready"])
+      mended = collect_startup_health(paths, repair=True)
+      self.assertTrue(mended["ready"])
+      self.assertEqual(len(list_revisions(paths, limit=100)), remaining)
+      self.assertEqual(compact_revisions(paths, dry_run=True)["removed_revisions"], 0)
 
   def test_collect_performance_baseline_returns_metrics(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

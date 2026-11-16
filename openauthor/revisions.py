@@ -21,6 +21,13 @@ from .book_transactions import recoverable_book_edit, validate_project_identity_
 # Record format written by this version. Format 1 (a full manifest in every
 # record, objects as plain text) stays readable forever and is never rewritten.
 REVISION_SCHEMA_VERSION = 2
+# Format 3 is never written for a new Revision. It is what retention leaves
+# behind when the saves between a Revision and an older one were thinned: the
+# record keeps every field its id was computed from (``parent`` included, even
+# though that parent is gone), carries its complete manifest, and names the
+# nearest surviving older Revision in ``ancestor``. History is followed through
+# ``ancestor``; ``parent`` is then only an input to the id.
+RELINKED_SCHEMA_VERSION = 3
 # A format-2 record normally lists only the paths that differ from its parent.
 # Writers store a full manifest at least this often, so reading any Revision
 # opens a bounded number of ancestors.
@@ -441,23 +448,37 @@ def _load_record(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
     payload = json.loads(record_path.read_text(encoding="utf-8"))
   except (OSError, ValueError) as error:
     raise OpenAuthorError(f"Revision '{normalized}' is unreadable: {error}") from error
+  return _checked_record(payload, normalized)
+
+
+def _checked_record(payload: Any, normalized: str) -> dict[str, Any]:
+  """Accept a parsed record only if it is well formed for the id it claims."""
   if not isinstance(payload, dict) or payload.get("id") != normalized:
     raise OpenAuthorError(f"Revision '{normalized}' has invalid metadata.")
   version = payload.get("schema_version")
-  if isinstance(version, int) and not isinstance(version, bool) and version > REVISION_SCHEMA_VERSION:
+  if isinstance(version, int) and not isinstance(version, bool) and version > RELINKED_SCHEMA_VERSION:
     raise OpenAuthorError(
       f"Revision '{normalized}' was written in record format {version}, which this version of openAuthor cannot read. "
       "Update openAuthor to open this book's history; nothing was changed."
     )
-  if version not in (1, 2) or isinstance(version, bool):
+  if version not in (1, 2, RELINKED_SCHEMA_VERSION) or isinstance(version, bool):
     raise OpenAuthorError(f"Revision '{normalized}' has invalid metadata.")
-  if version == 2:
+  if version >= 2:
     parent = payload.get("parent")
     if (
       any(not isinstance(payload.get(field), str) for field in ("parent", "created_at", "message", "kind", "nonce"))
       or (parent and not _DIGEST.fullmatch(parent))
       or not isinstance(payload.get("file_count"), int) or isinstance(payload.get("file_count"), bool)
       or ("manifest" in payload) == ("manifest_delta" in payload)
+    ):
+      raise OpenAuthorError(f"Revision '{normalized}' has invalid metadata.")
+  if version == RELINKED_SCHEMA_VERSION:
+    ancestor = payload.get("ancestor")
+    thinned = payload.get("thinned")
+    if (
+      not isinstance(ancestor, str) or (ancestor and not _DIGEST.fullmatch(ancestor)) or ancestor == normalized
+      or "manifest" not in payload
+      or not isinstance(thinned, int) or isinstance(thinned, bool) or thinned < 1
     ):
       raise OpenAuthorError(f"Revision '{normalized}' has invalid metadata.")
   if "manifest_delta" in payload and version == 2:
@@ -483,6 +504,60 @@ def _load_record(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
   return payload
 
 
+def _link(record: dict[str, Any]) -> str:
+  """The older Revision that history continues with, or "" at the start.
+
+  This is the recorded parent, except for a record retention relinked, whose
+  recorded parent no longer exists.
+  """
+  if record["schema_version"] == RELINKED_SCHEMA_VERSION:
+    return record["ancestor"]
+  return str(record.get("parent", "")).strip()
+
+
+def _relinked_record(record: dict[str, Any], manifest: dict[str, str], ancestor: str, thinned: int) -> dict[str, Any]:
+  """Describe ``record`` again so that history continues at ``ancestor``.
+
+  Nothing the Revision id was computed from changes: the recorded parent,
+  timestamp, message, kind, nonce and complete manifest are carried over, so
+  the result still reproduces the same id. A record that began in format 1
+  has no stored nonce (its id could never be recomputed) and keeps an empty
+  one. ``thinned`` counts the Revisions removed between it and ``ancestor``.
+  """
+  return {
+    "schema_version": RELINKED_SCHEMA_VERSION,
+    "id": record["id"],
+    "parent": str(record.get("parent", "")),
+    "ancestor": ancestor,
+    "created_at": record.get("created_at", ""),
+    "message": record.get("message", ""),
+    "kind": record.get("kind", ""),
+    "manifest": dict(manifest),
+    "file_count": len(manifest),
+    "nonce": record.get("nonce", ""),
+    "thinned": thinned,
+    "metadata": record.get("metadata", {}),
+  }
+
+
+def _named_digests(record: dict[str, Any]) -> set[str]:
+  """Every object digest a stored record names itself (not through ancestors)."""
+  if "manifest" in record:
+    return set(record["manifest"].values())
+  return set(record["manifest_delta"]["changed"].values())
+
+
+def _object_base(paths: ProjectPaths, digest: str) -> str:
+  """The object ``digest`` was stored against, or "" when it needs no other."""
+  _, packed = _object_paths(paths, digest)
+  try:
+    with packed.open("rb") as handle:
+      head = handle.read(256)
+  except FileNotFoundError:
+    return ""
+  return _parse_packed(head, digest)[0]
+
+
 class _ManifestMemo(dict):
   """Manifests rebuilt during one operation, bounded to the newest few."""
 
@@ -505,7 +580,12 @@ def _full_manifest(paths: ProjectPaths, record: dict[str, Any], memo: _ManifestM
   revision_id = record["id"]
   if "manifest" in record:
     manifest = dict(record["manifest"])
-    if record["schema_version"] == 2 and (len(manifest) != record["file_count"] or _identity(record, manifest) != revision_id):
+    # A relinked record that began in format 1 has no nonce: like every
+    # format-1 record, its id cannot be recomputed.
+    checkable = record["schema_version"] == 2 or record.get("nonce", "") != ""
+    if record["schema_version"] >= 2 and (
+      len(manifest) != record["file_count"] or (checkable and _identity(record, manifest) != revision_id)
+    ):
       raise OpenAuthorError(f"Revision '{revision_id}' failed its integrity check: its file list does not match its id.")
     return manifest
   pending: list[dict[str, Any]] = []
@@ -518,7 +598,7 @@ def _full_manifest(paths: ProjectPaths, record: dict[str, Any], memo: _ManifestM
       manifest = dict(current["manifest"])
     else:
       pending.append(current)
-      ancestor = current["parent"]
+      ancestor = _link(current)
       try:
         parent = _load_record(paths, ancestor)
       except OpenAuthorError as error:
@@ -526,7 +606,9 @@ def _full_manifest(paths: ProjectPaths, record: dict[str, Any], memo: _ManifestM
           f"Revision '{revision_id}' cannot be read because an earlier revision it depends on, '{ancestor}', "
           f"is missing or damaged ({error}) Restore .openauthor/revisions from a backup to recover this history."
         ) from error
-      if _distance(parent) != _distance(current) - 1:
+      # A relinked record always carries its complete manifest, so it ends
+      # the walk whatever distance the records after it were written with.
+      if parent["schema_version"] != RELINKED_SCHEMA_VERSION and _distance(parent) != _distance(current) - 1:
         raise OpenAuthorError(
           f"Revision '{revision_id}' cannot be read because its recorded changes do not line up with "
           f"the earlier revision '{ancestor}'. Restore .openauthor/revisions from a backup to recover this history."
@@ -554,16 +636,22 @@ def get_revision(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:
   record = _load_record(paths, revision_id)
   if record["schema_version"] == 1:
     return record
-  return {
+  row = {
     "schema_version": record["schema_version"],
     "id": record["id"],
-    "parent": record["parent"],
+    "parent": _link(record),
     "created_at": record["created_at"],
     "message": record["message"],
     "kind": record["kind"],
     "manifest": _full_manifest(paths, record),
     "metadata": record.get("metadata", {}),
   }
+  if record["schema_version"] == RELINKED_SCHEMA_VERSION:
+    # ``parent`` is the nearest Revision that still exists, so a comparison
+    # with it works; the id was computed from ``recorded_parent``.
+    row["recorded_parent"] = record["parent"]
+    row["thinned"] = record["thinned"]
+  return row
 
 
 def read_file_at_revision(paths: ProjectPaths, revision_id: str, relative_path: str) -> str:
@@ -614,7 +702,7 @@ def verify_revision_store(paths: ProjectPaths) -> dict[str, Any]:
           verified_objects.add(digest)
         except (OpenAuthorError, OSError) as error:
           errors.append(str(error))
-    current = str(record.get("parent", "")).strip()
+    current = _link(record)
   return {
     "ready": not errors,
     "head": head,
@@ -636,14 +724,15 @@ def list_revisions(paths: ProjectPaths, *, limit: int = 50) -> list[dict[str, An
     record = _load_record(paths, current)
     rows.append({
       "id": record["id"],
-      "parent": record.get("parent", ""),
+      "parent": _link(record) if record["schema_version"] == RELINKED_SCHEMA_VERSION else record.get("parent", ""),
       "created_at": record.get("created_at", ""),
       "message": record.get("message", ""),
       "kind": record.get("kind", ""),
       "file_count": len(record["manifest"]) if record["schema_version"] == 1 else record["file_count"],
       "metadata": record.get("metadata", {}),
+      **({"thinned": record["thinned"]} if record["schema_version"] == RELINKED_SCHEMA_VERSION else {}),
     })
-    current = str(record.get("parent", "")).strip()
+    current = _link(record)
   return rows
 
 

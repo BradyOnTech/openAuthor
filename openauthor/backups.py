@@ -24,6 +24,8 @@ ROOT_FILES = {
   ".openauthor/generation_budget_policy.json", ".openauthor/editorial_passes.json",
   ".openauthor/style_profile.json", ".openauthor/workspace/storylines.json",
   ".openauthor/last_import_report.json",
+  # A book whose owner turned thinning off must stay that way when restored.
+  ".openauthor/revision_retention.json",
   ".gitignore",
 }
 PREFIXES = (

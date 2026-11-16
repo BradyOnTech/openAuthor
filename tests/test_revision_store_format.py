@@ -4,11 +4,12 @@ import hashlib
 import json
 import os
 import random
+import sys
 import tempfile
 import time
 import unittest
 import uuid
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,11 @@ from openauthor.revisions import (
   verify_revision_store,
 )
 from openauthor.scenes import add_scene, find_scene_file, get_scene, update_scene
+
+try:
+  from retention_support import editor_saves, old_history, thin_today
+except ImportError:
+  from tests.retention_support import editor_saves, old_history, thin_today
 
 _WORDS = (
   "the of and a to in is that it he was for on are as with his they at be this have from or one had by "
@@ -390,8 +396,9 @@ class RevisionStoreFormatTests(unittest.TestCase):
     paths, ids, _ = self._chain()
     location = paths.revision_records_dir / f"{ids[-1]}.json"
     original = location.read_text(encoding="utf-8")
-    location.write_text(json.dumps({**json.loads(original), "schema_version": 3}), encoding="utf-8")
-    with self.assertRaisesRegex(OpenAuthorError, rf"Revision '{ids[-1]}' was written in record format 3.*Update openAuthor"):
+    # Format 3 is a record relinked by retention; 4 is the first unknown one.
+    location.write_text(json.dumps({**json.loads(original), "schema_version": 4}), encoding="utf-8")
+    with self.assertRaisesRegex(OpenAuthorError, rf"Revision '{ids[-1]}' was written in record format 4.*Update openAuthor"):
       get_revision(paths, ids[-1])
     self.assertFalse(verify_revision_store(paths)["ready"])
     location.write_text(original, encoding="utf-8")
@@ -492,30 +499,52 @@ class RevisionStoreFormatTests(unittest.TestCase):
     self.assertEqual(texts[0], (paths.root / relative).read_text(encoding="utf-8"))
     self.assertEqual(verify_revision_store(paths)["errors"], [])
 
+  def _aged(self, thinned: bool) -> ExitStack:
+    """Record history weeks ago when the case goes on to thin it."""
+    stack = ExitStack()
+    if thinned:
+      clock = stack.enter_context(old_history())
+      # Format-1 records in these tests are stamped by this module's clock.
+      stack.enter_context(patch.object(sys.modules[__name__], "utc_now", clock))
+    return stack
+
   def test_backup_round_trips_a_mixed_store_with_history_intact(self) -> None:
-    store = MixedStore(self.root / "book")
-    paths, history = store.paths, store.history
-    archive = self.root / "book.zip"
-    report = create_backup(paths, archive)
-    self.assertEqual(report["revision"], history[-1][0])
-    self.assertTrue(verify_backup(archive)["verified"])
-    restore_backup(archive, self.root / "recovered")
-    recovered = resolve_project(self.root / "recovered")
+    for thinned in (False, True):
+      with self.subTest(thinned=thinned):
+        root = self.root / ("thinned" if thinned else "plain")
+        with self._aged(thinned):
+          store = MixedStore(root / "book")
+          paths, history = store.paths, store.history
+          if thinned:
+            editor_saves(paths, "scene-0002", 4, "aside")
+        if thinned:
+          # The backup is of a store that holds relinked records.
+          self.assertEqual(thin_today(paths)["removed_revisions"], 3)
+          self.assertIn(3, {raw_record(paths, row["id"])["schema_version"] for row in list_revisions(paths, limit=100)})
+        else:
+          self.assertEqual(revision_head(paths), history[-1][0])
+        head, state, count = revision_head(paths), book_state(paths), len(list_revisions(paths, limit=100))
+        archive = root / "book.zip"
+        report = create_backup(paths, archive)
+        self.assertEqual(report["revision"], head)
+        self.assertTrue(verify_backup(archive)["verified"])
+        restore_backup(archive, root / "recovered")
+        recovered = resolve_project(root / "recovered")
 
-    self.assertEqual(store_files(recovered), store_files(paths))
-    self.assertEqual(revision_head(recovered), history[-1][0])
-    self.assert_history_intact(recovered, history)
-    health = verify_revision_store(recovered)
-    self.assertEqual((health["errors"], health["revision_count"]), ([], len(history)))
-    self.assertEqual(book_state(recovered), history[-1][1])
+        self.assertEqual(store_files(recovered), {name: content for name, content in store_files(paths).items() if name != "retention.lock"})
+        self.assertEqual(revision_head(recovered), head)
+        self.assert_history_intact(recovered, history)
+        health = verify_revision_store(recovered)
+        self.assertEqual((health["errors"], health["revision_count"]), ([], count))
+        self.assertEqual(book_state(recovered), state)
 
-    # The recovered book keeps writing on top of both forms and can go back.
-    update_scene(recovered, scene_identifier="scene-0002", body="Rewritten after recovery.")
-    newer = create_revision(recovered, "After recovery")
-    self.assertEqual(get_revision(recovered, newer)["manifest"], digests(book_state(recovered)))
-    restore_revision(recovered, history[0][0])
-    for relative, content in history[0][1].items():
-      self.assertEqual((recovered.root / relative).read_bytes(), content.encode("utf-8"))
+        # The recovered book keeps writing on top of every form and can go back.
+        update_scene(recovered, scene_identifier="scene-0002", body="Rewritten after recovery.")
+        newer = create_revision(recovered, "After recovery")
+        self.assertEqual(get_revision(recovered, newer)["manifest"], digests(book_state(recovered)))
+        restore_revision(recovered, history[0][0])
+        for relative, content in history[0][1].items():
+          self.assertEqual((recovered.root / relative).read_bytes(), content.encode("utf-8"))
 
   def _proposal(self, paths: ProjectPaths, scene_id: str, body: str, **extra: Any) -> str:
     proposal = create_proposal(paths, title=f"Revise {scene_id}", instruction="Tighten", scene_id=scene_id, **extra)
@@ -523,13 +552,15 @@ class RevisionStoreFormatTests(unittest.TestCase):
     return proposal
 
   def test_undo_of_an_applied_change_set_restores_exact_bytes(self) -> None:
-    for writer in ("format 2", "format 1"):
-      with self.subTest(applied_with=writer):
-        store = MixedStore(self.root / writer.replace(" ", "-"))
+    for writer, thinned in (("format 2", False), ("format 1", False), ("format 2", True), ("format 1", True)):
+      with self.subTest(applied_with=writer, thinned=thinned), self._aged(thinned) as aged:
+        store = MixedStore(self.root / f"{writer.replace(' ', '-')}-{thinned}")
         paths = store.paths
         scene_file = find_scene_file(paths, "scene-0003")
         original = scene_file.read_bytes()
         proposal = self._proposal(paths, "scene-0003", "A rewritten scene.\n\nWith two paragraphs.")
+        if thinned:
+          editor_saves(paths, "scene-0002", 3, "before")
         if writer == "format 1":
           # A Change Set applied before this format existed is undone by the
           # current code from format-1 records and plain objects.
@@ -540,6 +571,12 @@ class RevisionStoreFormatTests(unittest.TestCase):
           applied = apply_proposal(paths, proposal_id=proposal)
           self.assertEqual(raw_record(paths, applied["applied_revision"])["schema_version"], 2)
         self.assertNotEqual(scene_file.read_bytes(), original)
+        if thinned:
+          # Weeks pass, with editor saves on both sides of the apply, and
+          # most of those saves are thinned before the author undoes it.
+          editor_saves(paths, "scene-0002", 3, "after")
+          aged.close()
+          self.assertEqual(thin_today(paths)["removed_revisions"], 4)
         undone = undo_proposal(paths, proposal_id=proposal)
         self.assertEqual(scene_file.read_bytes(), original)
         self.assertEqual(get_revision(paths, undone["undo_revision"])["kind"], "change_set_undo")
@@ -548,9 +585,9 @@ class RevisionStoreFormatTests(unittest.TestCase):
         self.assert_history_intact(paths, store.history)
 
   def test_coordinated_undo_restores_exact_bytes_in_every_scene(self) -> None:
-    for writer in ("format 2", "format 1"):
-      with self.subTest(applied_with=writer):
-        store = MixedStore(self.root / writer.replace(" ", "-"))
+    for writer, thinned in (("format 2", False), ("format 1", False), ("format 2", True), ("format 1", True)):
+      with self.subTest(applied_with=writer, thinned=thinned), self._aged(thinned) as aged:
+        store = MixedStore(self.root / f"{writer.replace(' ', '-')}-{thinned}")
         paths = store.paths
         files = [find_scene_file(paths, scene_id) for scene_id in ("scene-0002", "scene-0003", "scene-0005")]
         originals = [path.read_bytes() for path in files]
@@ -558,6 +595,8 @@ class RevisionStoreFormatTests(unittest.TestCase):
           self._proposal(paths, "scene-0002", "Second scene, revised.", change_group_id="arc"),
           self._proposal(paths, "scene-0005", "Fifth scene, revised.", change_group_id="arc"),
         ]
+        if thinned:
+          editor_saves(paths, "scene-0003", 3, "before")
         if writer == "format 1":
           with patch("openauthor.proposals.create_revision", side_effect=legacy_create_revision):
             applied = apply_proposal_batch(paths, proposal_ids=ids)
@@ -565,6 +604,10 @@ class RevisionStoreFormatTests(unittest.TestCase):
           applied = apply_proposal_batch(paths, proposal_ids=ids)
         self.assertNotEqual(files[0].read_bytes(), originals[0])
         self.assertNotEqual(files[2].read_bytes(), originals[2])
+        if thinned:
+          editor_saves(paths, "scene-0003", 3, "after")
+          aged.close()
+          self.assertEqual(thin_today(paths)["removed_revisions"], 4)
         # Unrelated newer writing in another scene is kept.
         update_scene(paths, scene_identifier="scene-0003", body="Unrelated newer writing.")
         create_revision(paths, "Unrelated work")

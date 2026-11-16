@@ -543,6 +543,16 @@ def build_parser() -> argparse.ArgumentParser:
   revision_restore.add_argument("--id", required=True)
   revision_restore.add_argument("--path", action="append", required=True, dest="paths")
   revision_restore.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_retention = revision_sub.add_parser("retention", help="Show or change how old automatic saves are thinned for this book.")
+  revision_retention.add_argument("--enabled", choices=["true", "false"], help="Turn thinning of old automatic saves on or off.")
+  revision_retention.add_argument("--keep-all-days", type=int, help="Keep every Revision newer than this many days (at least 1).")
+  revision_retention.add_argument("--daily-after-days", type=int, help="Beyond this many days keep one automatic save per day instead of per hour.")
+  revision_retention.add_argument("--json", action="store_true", help="Output JSON.")
+  revision_compact = revision_sub.add_parser("compact", help="Thin old automatic saves according to this book's retention policy.")
+  revision_compact.add_argument("--dry-run", action="store_true", help="Report what would be removed without changing anything.")
+  revision_compact.add_argument("--if-due", action="store_true", help="Do nothing unless thinning is enabled and has not completed in the last 24 hours.")
+  revision_compact.add_argument("--max-seconds", type=float, default=None, help="Stop after about this long and report complete: false (default 30).")
+  revision_compact.add_argument("--json", action="store_true", help="Output JSON.")
   revision_retro = revision_sub.add_parser("retrospective", help="Summarize creative outcomes and remaining goals.")
   revision_retro.add_argument("--base", required=True)
   revision_retro.add_argument("--head", required=True)
@@ -1431,6 +1441,48 @@ def _run(args: argparse.Namespace) -> int:
       else:
         for row in rows:
           print(f"{row['id'][:12]}\t{row['kind']}\t{row['message']}")
+      return 0
+    if args.revision_command == "retention":
+      from .revision_retention import retention_status, update_policy
+      if args.enabled is None and args.keep_all_days is None and args.daily_after_days is None:
+        row = retention_status(paths)
+      else:
+        row = update_policy(
+          paths,
+          enabled=None if args.enabled is None else args.enabled == "true",
+          keep_all_days=args.keep_all_days,
+          daily_after_days=args.daily_after_days,
+        )
+      if args.json:
+        print(json.dumps(row))
+      else:
+        policy = row["policy"]
+        print(
+          f"Thinning of old automatic saves is {'on' if policy['enabled'] else 'off'}: every save is kept for {policy['keep_all_days']} days, "
+          f"then one per hour, and one per day after {policy['daily_after_days']} days.\n"
+          f"History holds {row['store']['revisions']} Revisions in {row['store']['allocated_bytes']} bytes on disk. "
+          f"Last thinned: {row['last_run']['at'] or 'never'}. Due now: {'yes' if row['due'] else 'no'}."
+        )
+      return 0
+    if args.revision_command == "compact":
+      from .revision_retention import DEFAULT_MAX_SECONDS, compact_revisions
+      row = compact_revisions(
+        paths,
+        dry_run=args.dry_run,
+        if_due=args.if_due,
+        max_seconds=DEFAULT_MAX_SECONDS if args.max_seconds is None else args.max_seconds,
+      )
+      if args.json:
+        print(json.dumps(row))
+      elif args.dry_run:
+        print(f"Would remove {row['removed_revisions']} automatic saves and {row['removed_objects']} stored files ({row['freed_allocated_bytes']} bytes on disk), keeping {row['kept_revisions']} Revisions. Nothing was changed.")
+      elif not row["ran"]:
+        print(f"Nothing was thinned ({row['reason']}).")
+      else:
+        print(
+          f"Removed {row['removed_revisions']} automatic saves and {row['removed_objects']} stored files ({row['freed_allocated_bytes']} bytes on disk); "
+          f"{row['kept_revisions']} Revisions remain." + ("" if row["complete"] else " More remains; run it again.")
+        )
       return 0
     if args.revision_command == "save":
       if not args.message.strip():

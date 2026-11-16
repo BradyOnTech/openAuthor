@@ -218,7 +218,9 @@ identical content is stored once and existing Revision ids and digests remain
 valid. `openauthor/revisions.py` is the only module that interprets these files;
 backups copy them byte for byte and everything else goes through
 `get_revision`, `read_file_at_revision`, `list_revisions`, `compare_revisions`,
-`restore_revision` and `verify_revision_store`.
+`restore_revision` and `verify_revision_store`. The one exception is
+`openauthor/revision_retention.py`, which thins old automatic saves and uses
+the store's own helpers to do it; see [revision-retention.md](revision-retention.md).
 
 **Records.** Format 1 (`"schema_version": 1`) repeats the complete path-to-digest
 `manifest` in every record. Format 2 stores either a `manifest` or a
@@ -236,6 +238,15 @@ known); it cannot yield a different manifest. Callers still receive records in
 the format-1 shape with a complete `manifest`, and CLI JSON is unchanged except
 that `schema_version` reports the stored format.
 
+Format 3 is never written for a new Revision. It is the record retention
+leaves for the Revision that follows a thinned run of saves: the same identity
+fields (its `parent` is kept as an input to the id even though that Revision is
+gone), always a complete `manifest`, an `ancestor` naming the nearest surviving
+older Revision, and `thinned`, the number removed in between. Readers follow
+`ancestor` for history and report it as `parent`. Because such a record carries
+its whole manifest, it ends the walk in `_full_manifest` whatever distance the
+records after it were written with.
+
 **Objects.** Format-1 objects are plain text at `<digest>`. New objects are
 written to `<digest>.z`: one ASCII header line, then a zlib stream. The header
 is `openauthor-object 2 zlib` for a self-contained object, or
@@ -250,8 +261,9 @@ against its digest on every read; if both forms of an object exist, either
 intact one is used.
 
 **Compatibility.** Readers accept both formats indefinitely and in any order
-along one history. Only newly written Revisions use format 2; existing records
-and objects are never rewritten, migrated or removed. An older openAuthor does
+along one history. Only newly written Revisions use format 2; saving, reading
+and restoring never rewrite, migrate or remove existing records and objects.
+Only retention does, and only for old editor saves. An older openAuthor does
 not misread a book written by this one: it rejects a format-2 record as invalid
 Revision metadata before using it, and never opens packed data as prose because
 `<digest>.z` is not a name it looks for. Its history list, editor saves,
@@ -260,8 +272,9 @@ instead of continuing, so a backup made by this version must be restored with
 this version or a newer one. The one thing it can still do is record a named
 version, which it writes as a complete format-1 record with plain objects;
 this version reads that in place. Record
-formats above 2 and unknown object headers are refused with an "Update
-openAuthor" message.
+formats above 3 and unknown object headers are refused with an "Update
+openAuthor" message; a version that knows only formats 1 and 2 refuses a
+relinked format-3 record the same way.
 
 **Durability.** Objects, then the record, then `HEAD` are each published with a
 temporary file, `fsync`, rename and directory `fsync`, in that order. A
@@ -318,10 +331,12 @@ it is not a transaction for every filesystem operation. In particular:
   resources other than `book-write`, and Assistant thread locks, still wait
   without a limit.
 
-- The Revision store keeps every Revision; nothing prunes, expires or compacts
-  it. Any future removal of old history must treat the ancestors of a difference
-  record (up to the previous full manifest) and the base of a dictionary-form
-  object as still in use, or later Revisions become unreadable. Damage to a full
+- Old automatic editor saves are thinned only by `revision compact`, under the
+  per-book policy in [revision-retention.md](revision-retention.md), which also
+  lists that feature's own limits; no other command removes or rewrites history.
+  It treats the ancestors of a difference record (up to the previous full
+  manifest) and the base of a dictionary-form object as still in use, as any
+  other removal of history would have to. Damage to a full
   manifest record affects up to `FULL_MANIFEST_INTERVAL` following Revisions,
   and damage to a shared base object affects up to `SHARED_BASE_LIMIT` later
   versions of that one file; both are reported, not misread. Each save still

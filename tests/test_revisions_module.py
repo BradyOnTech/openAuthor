@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 import os
+from contextlib import ExitStack
 import subprocess
 import sys
 from unittest.mock import patch
@@ -13,6 +14,7 @@ from openauthor.codex import add_entity, get_entity, update_entity
 from openauthor.planning import get_plan, update_brief
 from openauthor.canon import add_canon_fact, list_canon_facts
 from openauthor.revisions import (
+  checkpointed_edit,
   compare_revisions,
   create_revision,
   get_revision,
@@ -25,12 +27,29 @@ from openauthor.revisions import (
 )
 from openauthor.scenes import add_scene, get_scene, update_scene
 
+try:
+  from retention_support import editor_saves, old_history, thin_today
+except ImportError:
+  from tests.retention_support import editor_saves, old_history, thin_today
+
 
 class RevisionModuleTests(unittest.TestCase):
   def test_process_termination_during_edit_recovers_previous_committed_book(self) -> None:
+    for thinned in (False, True):
+      with self.subTest(thinned=thinned):
+        self._interrupted_edit_recovers(thinned)
+
+  def _interrupted_edit_recovers(self, thinned: bool) -> None:
     with tempfile.TemporaryDirectory() as tmp:
       paths = initialize_project(Path(tmp), name="Interrupted Save")
       add_scene(paths, title="Opening", body="Last committed prose")
+      if thinned:
+        # Weeks of editor saves, since thinned, lie behind the interrupted edit.
+        with old_history():
+          editor_saves(paths, "scene-0001", 4, "draft")
+          with checkpointed_edit(paths, "Scene update: scene-0001"):
+            update_scene(paths, scene_identifier="scene-0001", body="Last committed prose")
+        self.assertEqual(thin_today(paths)["removed_revisions"], 4)
       script = """
 import os, sys
 from pathlib import Path
@@ -51,22 +70,44 @@ with checkpointed_edit(paths, 'Interrupted change'):
       self.assertTrue(verify_revision_store(paths)["ready"])
 
   def test_restore_prose_plan_and_canon_from_one_version(self) -> None:
-    with tempfile.TemporaryDirectory() as tmp:
+    for thinned in (False, True):
+      with self.subTest(thinned=thinned):
+        self._restore_named_version(thinned)
+
+  def _restore_named_version(self, thinned: bool) -> None:
+    with tempfile.TemporaryDirectory() as tmp, ExitStack() as aged:
       paths = initialize_project(Path(tmp), name="Book Restore")
+      if thinned:
+        aged.enter_context(old_history())
+        add_scene(paths, title="Aside", body="A scene the author keeps typing in.")
+        editor_saves(paths, "scene-0001", 3, "early")
+        scene = "scene-0002"
+      else:
+        scene = "scene-0001"
       add_scene(paths, title="Opening", body="Mara carries a key.")
       entity = add_entity(paths, kind="character", name="Mara")
       update_brief(paths, synopsis="Original premise")
-      add_canon_fact(paths, subject_entity_id=entity, predicate="carries", value="key", evidence=[{"scene_id": "scene-0001", "excerpt": "Mara carries a key."}])
+      add_canon_fact(paths, subject_entity_id=entity, predicate="carries", value="key", evidence=[{"scene_id": scene, "excerpt": "Mara carries a key."}])
       original = create_revision(paths, "Original")
-      update_scene(paths, scene_identifier="scene-0001", body="Mara carries a lantern.")
+      if thinned:
+        editor_saves(paths, "scene-0001", 3, "middle")
+      update_scene(paths, scene_identifier=scene, body="Mara carries a lantern.")
       update_brief(paths, synopsis="Different premise")
-      add_canon_fact(paths, subject_entity_id=entity, predicate="carries", value="lantern", evidence=[{"scene_id": "scene-0001", "excerpt": "Mara carries a lantern."}])
+      add_canon_fact(paths, subject_entity_id=entity, predicate="carries", value="lantern", evidence=[{"scene_id": scene, "excerpt": "Mara carries a lantern."}])
       later = create_revision(paths, "Later")
+      if thinned:
+        # The named version is restored weeks later, after the editor saves
+        # on both sides of it were thinned.
+        saves = editor_saves(paths, "scene-0001", 3, "late")
+        aged.close()
+        self.assertEqual(thin_today(paths)["removed_revisions"], 6)
+        self.assertEqual(get_revision(paths, saves[-1])["parent"], later)
       restore_revision(paths, original)
       self.assertEqual(get_plan(paths)["brief"]["synopsis"], "Original premise")
       self.assertEqual([fact["value"] for fact in list_canon_facts(paths)], ["key"])
-      self.assertEqual(get_scene(paths, "scene-0001")["body"].strip(), "Mara carries a key.")
+      self.assertEqual(get_scene(paths, scene)["body"].strip(), "Mara carries a key.")
       self.assertEqual(get_revision(paths, later)["message"], "Later")
+      self.assertTrue(verify_revision_store(paths)["ready"])
 
   def test_failed_restore_rolls_back_files_and_runtime_memory(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

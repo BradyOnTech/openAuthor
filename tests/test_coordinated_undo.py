@@ -15,6 +15,11 @@ from openauthor.proposals import apply_proposal_batch, create_proposal, get_prop
 from openauthor.revisions import create_revision, get_revision, list_revisions, revision_head, verify_revision_store
 from openauthor.scenes import add_scene, get_scene, update_scene
 
+try:
+  from retention_support import editor_saves, old_history, thin_today
+except ImportError:
+  from tests.retention_support import editor_saves, old_history, thin_today
+
 
 class CoordinatedUndoTests(unittest.TestCase):
   def setUp(self) -> None:
@@ -33,7 +38,12 @@ class CoordinatedUndoTests(unittest.TestCase):
       proposal = create_proposal(self.paths, title=f"Revise {index}", instruction="Tighten", scene_id=f"scene-{index:04d}", change_group_id="shared-label")
       set_proposal_draft(self.paths, proposal_id=proposal, proposed_body=f"Revised {index}")
       self.ids.append(proposal)
+    self.other_writing()
     self.applied = apply_proposal_batch(self.paths, proposal_ids=self.ids)
+    self.other_writing()
+
+  def other_writing(self) -> None:
+    """Writing around the coordinated apply; none in the plain suite."""
 
   def undo(self):
     return undo_proposal_batch(self.paths, applied_revision=self.applied["applied_revision"])
@@ -238,3 +248,24 @@ class CoordinatedUndoTests(unittest.TestCase):
     result = subprocess.run([sys.executable, "-m", "openauthor", "proposal", "undo-batch", "--revision", self.applied["applied_revision"], "--json"], cwd=self.paths.root, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])}, capture_output=True, text=True)
     self.assertEqual(result.returncode, 0, result.stderr)
     self.assertEqual(json.loads(result.stdout)["scene_ids"], ["scene-0001", "scene-0002"])
+
+
+class CoordinatedUndoAfterThinningTests(CoordinatedUndoTests):
+  """Every case above again, on a book whose old editor saves were thinned.
+
+  The group was applied weeks ago between runs of editor saves in a scene it
+  does not touch; thinning then removed most of those saves on both sides.
+  """
+
+  def setUp(self) -> None:
+    with old_history():
+      super().setUp()
+    before = {row["id"] for row in list_revisions(self.paths, limit=500)}
+    self.thinned = thin_today(self.paths)
+    after = {row["id"] for row in list_revisions(self.paths, limit=500)}
+    self.assertEqual(self.thinned["removed_revisions"], 4)
+    self.assertTrue({self.applied["pre_apply_snapshot"], self.applied["applied_revision"]} <= after)
+    self.assertEqual(len(before - after), 4)
+
+  def other_writing(self) -> None:
+    editor_saves(self.paths, "scene-0003", 3, "aside")

@@ -40,6 +40,20 @@ python3 -m openauthor proposal draft --id proposal-xxxxxxxxxxxx --provider local
 python3 -m openauthor proposal apply --id proposal-xxxxxxxxxxxx                            # fails closed; records before/after revisions; refuses stale drafts unless --force
 python3 -m openauthor proposal undo --id proposal-xxxxxxxxxxxx                             # restores the pre-apply scene and records the undo as a new revision
 
+# name, list, compare and restore versions of the book
+python3 -m openauthor revision save --message "Before the rewrite" --json
+python3 -m openauthor revision list --limit 50 --json
+python3 -m openauthor revision diff --base <revision-id> --head <revision-id> --json
+python3 -m openauthor revision restore --id <revision-id> --path manuscript/scenes/0001-opening.md --json
+
+# thin old automatic saves (per-book policy; nothing runs this implicitly)
+python3 -m openauthor revision retention --json                                            # policy, store size, last run, whether a run is due
+python3 -m openauthor revision retention --enabled true --keep-all-days 7 --daily-after-days 90 --json
+python3 -m openauthor revision retention --enabled false --json                            # this book is then never thinned
+python3 -m openauthor revision compact --dry-run --json                                    # what a run would remove; writes nothing
+python3 -m openauthor revision compact --if-due --json                                     # no-op unless enabled and not completed in the last 24 hours
+python3 -m openauthor revision compact --max-seconds 30 --json                             # "complete": false means call again
+
 # generate proposal using local provider (real deterministic adapter)
 python3 -m openauthor proposal generate --scene scene-0001 --instruction "Tighten pacing and keep POV voice" --provider local --json
 

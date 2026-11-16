@@ -13,8 +13,14 @@ from openauthor.book_transactions import transaction_recovery_status, resolve_tr
 from openauthor.codex import add_entity, get_entity, update_entity
 from openauthor.project import OpenAuthorError, atomic_write_json, initialize_project, read_project_config
 from openauthor.proposals import apply_proposal_batch, create_proposal, get_proposal, set_proposal_draft, undo_proposal_batch, apply_proposal, undo_proposal
-from openauthor.revisions import create_revision, revision_head, restore_revision, verify_revision_store
+from openauthor.revision_retention import compact_revisions
+from openauthor.revisions import checkpointed_edit, create_revision, revision_head, restore_revision, verify_revision_store
 from openauthor.scenes import add_scene, get_scene, update_scene
+
+try:
+  from retention_support import editor_save, old_history
+except ImportError:
+  from tests.retention_support import editor_save, old_history
 
 
 _CHILD = r'''
@@ -82,13 +88,21 @@ class BookTransactionTests(unittest.TestCase):
     paths = initialize_project(Path(directory), name="Crash recovery", project_id="crash-book")
     for title, body in [("Opening", "Mara keeps the key."), ("Ending", "Ivo closes the gate.")]:
       add_scene(paths, title=title, body=body)
+    self._earlier_writing(paths)
     baseline = create_revision(paths, "Original book")
+    self._baseline_recorded(paths)
     proposal_ids = []
     for number, body in [(1, "Mara keeps the brass key."), (2, "Ivo closes the eastern gate.")]:
       proposal = create_proposal(paths, title="Focused edit", instruction="Clarify", scene_id=f"scene-{number:04d}")
       set_proposal_draft(paths, proposal_id=proposal, proposed_body=body)
       proposal_ids.append(proposal)
     return paths, baseline, proposal_ids
+
+  def _earlier_writing(self, paths):
+    """History from before the baseline; none in the plain suite."""
+
+  def _baseline_recorded(self, paths):
+    """Called once the baseline exists, before the Change Sets are drafted."""
 
   def _capture(self, paths):
     candidates = [*paths.scenes_dir.glob("*.md"), *paths.proposals_dir.glob("*.json"), paths.revision_head_file, paths.config_file, paths.root / "codex/codex.json"]
@@ -379,3 +393,20 @@ except OpenAuthorError as error:
       resolved = subprocess.run([*args, "recovery-resolve", "--fingerprint", status["fingerprint"], "--decisions", json.dumps({scene.relative_to(paths.root).as_posix(): "restore_before"}), "--json"], cwd=directory, capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])})
       self.assertEqual(resolved.returncode, 0, resolved.stderr)
       self.assertEqual(get_scene(paths, "scene-0001")["body"].strip(), "Mara keeps the key.")
+
+
+class BookTransactionAfterThinningTests(BookTransactionTests):
+  """Every interruption and recovery above, on a book whose history was thinned."""
+
+  def _earlier_writing(self, paths):
+    with old_history():
+      for sentence in ("He waits.", "He listens."):
+        editor_save(paths, "scene-0002", sentence)
+      # The last save puts the scene back, so the book the cases expect is unchanged.
+      with checkpointed_edit(paths, "Scene update: scene-0002"):
+        update_scene(paths, scene_identifier="scene-0002", body="Ivo closes the gate.")
+
+  def _baseline_recorded(self, paths):
+    result = compact_revisions(paths)
+    self.assertEqual((result["complete"], result["removed_revisions"]), (True, 2))
+    self.assertTrue(verify_revision_store(paths)["ready"])

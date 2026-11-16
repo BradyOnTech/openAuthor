@@ -19,7 +19,7 @@ Recovery can run outside a project: `openauthor backup restore --source /absolut
 - Does not copy provider credential stores, environment files, database journals, Git hooks/configuration/remotes, caches, or recovery drafts that have not successfully saved.
 - Archives are not encrypted. They include earlier prose and prompts, including material later removed from the current manuscript. Treat them as private author data.
 - Hash verification detects corruption; it does not authenticate the sender. Restore only archives you trust.
-- Revision history is copied byte for byte in whichever on-disk format each Revision was written (see `docs/manuscript-transactions.md`). A backup created by a version that writes the compact format must be restored with that version or a newer one; an older version stops with a history verification error instead of restoring it.
+- Revision history is copied byte for byte in whichever on-disk format each Revision was written (see `docs/manuscript-transactions.md`). A history that was thinned is backed up as thinned, and the book's retention policy (`.openauthor/revision_retention.json`, see `docs/revision-retention.md`) is included, so a book with thinning turned off stays that way when restored. A backup created by a version that writes the compact format must be restored with that version or a newer one; an older version stops with a history verification error instead of restoring it.
 - Recovery preserves the book identity. Opening the recovered copy updates this device's project binding to that folder; the original folder remains untouched.
 
 **Runtime and release evidence**

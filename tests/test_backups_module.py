@@ -5,6 +5,7 @@ import unittest
 import json
 import zipfile
 import hashlib
+from contextlib import ExitStack
 from pathlib import Path
 
 from openauthor.backups import create_backup, restore_backup, verify_backup
@@ -15,6 +16,12 @@ from openauthor.storylines import create_storyline, list_storylines, switch_stor
 from openauthor.hardening import collect_startup_health
 from openauthor.revisions import create_revision, get_revision, restore_revision
 from openauthor.scenes import add_scene, get_scene, update_scene
+from openauthor.revision_retention import compact_revisions, load_policy, update_policy
+
+try:
+  from retention_support import editor_saves, old_history, thin_today
+except ImportError:
+  from tests.retention_support import editor_saves, old_history, thin_today
 
 
 class BackupModuleTests(unittest.TestCase):
@@ -76,13 +83,29 @@ class BackupModuleTests(unittest.TestCase):
       self.assertFalse((root / "destination").exists())
 
   def test_portable_backup_restores_book_memory_and_older_versions(self) -> None:
-    with tempfile.TemporaryDirectory() as tmp:
+    for thinned in (False, True):
+      with self.subTest(thinned=thinned):
+        self._portable_backup_round_trip(thinned)
+
+  def _portable_backup_round_trip(self, thinned: bool) -> None:
+    with tempfile.TemporaryDirectory() as tmp, ExitStack() as aged:
       root = Path(tmp)
       paths = initialize_project(root / "original", name="Portable Novel")
       add_scene(paths, title="Opening", body="Original prose")
+      if thinned:
+        aged.enter_context(old_history())
+        add_scene(paths, title="Aside", body="A scene the author keeps typing in.")
+        editor_saves(paths, "scene-0002", 3, "early")
       entity = add_entity(paths, kind="character", name="Mara", description="Gatekeeper")
       update_brief(paths, synopsis="The original premise")
       first = create_revision(paths, "First version")
+      if thinned:
+        # The backup is made weeks later, of a history that was thinned and
+        # of a book whose owner then turned thinning off.
+        editor_saves(paths, "scene-0002", 3, "late")
+        aged.close()
+        self.assertEqual(thin_today(paths)["removed_revisions"], 4)
+        update_policy(paths, enabled=False)
       update_scene(paths, scene_identifier="scene-0001", body="Revised prose")
       update_entity(paths, entity_id=entity, description="Former gatekeeper")
       archive = root / "novel.openauthor.zip"
@@ -97,6 +120,16 @@ class BackupModuleTests(unittest.TestCase):
       self.assertEqual(get_entity(recovered, entity)["description"], "Former gatekeeper")
       self.assertEqual(get_plan(recovered)["brief"]["synopsis"], "The original premise")
       self.assertEqual(get_revision(recovered, first)["message"], "First version")
+      if thinned:
+        # The restored book is as thinned as the original and still refuses more.
+        self.assertEqual(load_policy(recovered), {"enabled": False, "keep_all_days": 7, "daily_after_days": 90})
+        with self.assertRaisesRegex(OpenAuthorError, "Thinning is turned off"):
+          compact_revisions(recovered)
+        self.assertEqual(
+          sorted(path.name for path in recovered.revision_records_dir.iterdir()),
+          sorted(path.name for path in paths.revision_records_dir.iterdir()),
+        )
+        self.assertEqual(compact_revisions(recovered, dry_run=True)["removed_revisions"], 0)
       restore_revision(recovered, first)
       self.assertEqual(get_scene(recovered, "scene-0001")["body"].strip(), "Original prose")
       self.assertEqual(get_entity(recovered, entity)["description"], "Gatekeeper")
