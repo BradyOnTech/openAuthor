@@ -1219,6 +1219,7 @@ body {
   outline: 1px solid var(--editor-focus);
 }
 
+/* The find bar belongs to the page, so it wears the page's colours in both themes. */
 .find-bar {
   position: sticky;
   top: 30px;
@@ -1226,9 +1227,9 @@ body {
   display: grid;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-subtle);
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  border-bottom: 1px solid var(--editor-border);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
 }
@@ -1242,15 +1243,41 @@ body {
   width: 100%;
 }
 
-.find-bar__input {
+.find-bar .input {
   flex: 1;
   min-width: 0;
+  min-height: 32px;
+  background: color-mix(in srgb, var(--editor-text) 5%, var(--editor-bg));
+  color: var(--editor-text);
+  border-color: color-mix(in srgb, var(--editor-text) 18%, transparent);
+}
+
+.find-bar .input::placeholder {
+  color: var(--editor-text-secondary);
+}
+
+.find-bar .btn {
+  min-height: 32px;
+  color: var(--editor-text);
+}
+
+.find-bar .btn:not(.btn--ghost) {
+  background: color-mix(in srgb, var(--editor-text) 9%, var(--editor-bg));
+  border-color: color-mix(in srgb, var(--editor-text) 18%, transparent);
+}
+
+.find-bar .btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--editor-text) 12%, var(--editor-bg));
+}
+
+.find-bar .btn:disabled {
+  color: var(--editor-text-secondary);
 }
 
 .find-bar__count {
   min-width: 72px;
   text-align: right;
-  color: var(--text-secondary);
+  color: var(--editor-text-secondary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

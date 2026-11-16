@@ -241,7 +241,7 @@ const REVISION_KIND_LABELS: Record<string, string> = {
   manuscript_import: "Import",
   restore: "Restored version",
   backup: "Backup",
-  named: "Saved version",
+  manual: "Saved version",
 };
 
 function isSafetySnapshot(revision: RevisionSummary): boolean {
