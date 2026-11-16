@@ -8,9 +8,9 @@
 ![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Status: active development](https://img.shields.io/badge/status-active%20development-orange)
 
-![openAuthor desktop: manuscript, revision history and an assistant reply showing exactly which context it used](docs/images/workspace-context.png)
+![openAuthor desktop: a scene, the Changes list and an Assistant reply showing exactly which context it used](docs/images/workspace-context.png)
 
-<sub>The desktop workspace on a synthetic 64-scene test book. The left panel shows reversible revision history. The assistant on the right lists every scene, fact and retrieved passage it was given and what it omitted.</sub>
+<sub>The desktop workspace on the built-in sample book. The left panel lists Change Sets waiting for review and the revision history. The Assistant on the right lists every scene, chapter and retrieved passage it was given.</sub>
 
 ## Why I built this
 
@@ -54,12 +54,12 @@ flowchart LR
 
 | Review a Change Set | Catch continuity errors |
 | --- | --- |
-| ![A coordinated two-scene Change Set showing intent, protected constraints, a before/after hunk and one-click undo](docs/images/change-set-review.png) | ![Continuity diagnostics flagging a physical-detail contradiction with evidence from two scenes](docs/images/continuity-diagnostics.png) |
-| Each change records its intent, the constraints it must not break, per-hunk before/after text, token usage and cost. Two scenes applied together undo together. | Diagnostics cite the conflicting passages and leave the call to the author: an intentional change or a mistake. |
+| ![A Change Set showing the before and after of one passage with the changed words marked, followed by its intent, constraints and edit plan](docs/images/change-set-review.png) | ![Continuity diagnostics flagging a physical-detail contradiction with evidence from two scenes](docs/images/continuity-diagnostics.png) |
+| Review starts with the before and after, with only the changed words marked. Each change also records its intent, the constraints it must not break, token usage and cost. Several scenes applied together undo together. | Diagnostics cite the conflicting passages and leave the call to the author: an intentional change or a mistake. |
 
 ![Before generating a passage edit, the author reviews the exact context payload, including budgets and omitted fields](docs/images/context-review.png)
 
-<sub>Context review before a passage edit: the author inspects the exact payload, including what was clipped to fit the budget and whether private notes are included, before anything is sent.</sub>
+<sub>Context review before a passage edit: the author sees what will be sent and what is withheld, and can open the exact payload, before anything leaves the device.</sub>
 
 ## Features
 
@@ -75,6 +75,7 @@ flowchart LR
 - Per-hunk accept, reject, edit, comment and regenerate, plus rebase when the scene changes underneath
 - Optional draft → fresh critique → focused refine → verify loop, keeping every candidate for comparison
 - A "preserve text outside quotation marks" mode for dialogue-only revisions
+- Stop a running AI step at any time: finished work is kept and Retry resumes what remains
 
 **Story Memory**
 - Characters, locations, lore, items, factions and events, with temporal facts, character knowledge, relationships, arcs, and setups and payoffs

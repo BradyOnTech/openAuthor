@@ -1,4 +1,4 @@
-import { draftProposal, generateProposal, listProposals, regenerateProposalHunk, type RevisionAuthorization } from "./api";
+import { cancelCoreCommands, draftProposal, generateProposal, generationCancelKey, listProposals, regenerateProposalHunk, type RevisionAuthorization } from "./api";
 import type { ProposalRecord } from "./types";
 
 export type GenerationInput = Parameters<typeof generateProposal>[1];
@@ -149,11 +149,20 @@ export class ProposalGenerationSession {
       this.publish({ error: `Generation failed: ${error instanceof Error ? error.message : String(error)}` });
       return null;
     } finally {
-      this.publish({ busy: false, ...(this.state.stopRequested ? { error: "Stopped after the current step. Completed work is retained; Retry resumes what remains." } : {}) });
+      this.publish({ busy: false, ...(this.state.stopRequested ? { error: "Stopped. Completed work is retained; Retry resumes what remains. A request that had already reached the AI provider may still count against your plan." } : {}) });
     }
   };
 
-  stop = () => { if (this.state.busy) this.publish({ stopRequested: true }); };
+  // Stop ends the running engine command instead of waiting for it. That is
+  // safe by the same design that survives a crash: writes are atomic, and each
+  // provider request carries an id, so Retry recovers a reply that was saved.
+  stop = () => {
+    if (!this.state.busy || this.state.stopRequested) return;
+    this.publish({ stopRequested: true });
+    void cancelCoreCommands(generationCancelKey(this.projectRoot)).catch(() => {
+      // Without a way to interrupt, the run still stops after its current step.
+    });
+  };
 
   clear = () => {
     if (this.state.busy) return;

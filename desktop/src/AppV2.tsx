@@ -5,7 +5,10 @@ import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { EditorProvider } from "./contexts/EditorContext";
 import { Workbench } from "./components/workbench/Workbench";
 import { CommandPalette } from "./components/overlay/CommandPalette";
-import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
+import { focusNewSceneTitle, useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
+import { useEditor } from "./contexts/EditorContext";
+import { listenForMenuShortcuts } from "./menuShortcuts";
+import { primaryModifier } from "./platformKeys";
 import { loadProjectBindings } from "./projectBindings";
 
 function ThemeInitializer({ children }: { children: React.ReactNode }) {
@@ -30,11 +33,30 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
     setSecondarySidebarOpen,
   } = useUI();
   const navigateTo = useWorkspaceNavigation();
+  const { activeTabId, closeTab } = useEditor();
+
+  // Menu bar choices arrive as the shortcut they stand for.
+  useEffect(() => listenForMenuShortcuts(), []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const mod = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
+
+      // New shortcuts answer to the primary modifier only: on a Mac,
+      // Control+N and Control+W are caret and deletion keys in a text field.
+      if (primaryModifier(e) && key === "n" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        void navigateTo("manuscript").then(focusNewSceneTitle);
+        return;
+      }
+
+      if (primaryModifier(e) && key === "w" && !e.shiftKey && !e.altKey) {
+        // Closing a scene tab saves pending writing, exactly like its close button.
+        e.preventDefault();
+        if (activeTabId) closeTab(activeTabId);
+        return;
+      }
 
       if (mod && key === "k" && !e.shiftKey) {
         e.preventDefault();
@@ -134,7 +156,7 @@ function KeyboardShortcuts({ children }: { children: React.ReactNode }) {
   }, [
     toggleSidebar, toggleSecondarySidebar, togglePanel, toggleZenMode,
     toggleTheme, setCommandPaletteOpen, navigateTo,
-    setSecondaryTab, setSecondarySidebarOpen,
+    setSecondaryTab, setSecondarySidebarOpen, activeTabId, closeTab,
   ]);
 
   return <>{children}</>;

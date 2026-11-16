@@ -506,7 +506,7 @@ function ThreadHeader({
             onClick={() => { setShowModelPicker(!showModelPicker); setShowThreadList(false); }}
             title="Change model"
           >
-            {shortModel(activeThread.model)}
+            {activeThread.provider === "local" ? "Offline demo" : shortModel(activeThread.model)}
           </button>
         )}
         <button

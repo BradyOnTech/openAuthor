@@ -31,7 +31,7 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     expect((await json(["style", "get"])).traits.emotion).toBe("restrained");
     await page.locator(".writing-voice").evaluate((element) => { element.scrollTop = 0; });
     await page.screenshot({ path: testInfo.outputPath("writing-voice-profile.png") });
-    await page.getByRole("textbox", { name: "Tell the copilot how this book should read" }).fill("Close perspective, dry humor and restrained feeling.");
+    await page.getByRole("textbox", { name: "Tell the Assistant how this book should read" }).fill("Close perspective, dry humor and restrained feeling.");
     await page.getByText("Choose your exemplar scenes (0 selected)", { exact: true }).click();
     await page.getByRole("checkbox", { name: "The gate", exact: true }).check();
     await page.getByRole("combobox", { name: "Writing provider", exact: true }).selectOption("local");
@@ -112,7 +112,7 @@ test("approves an original Writing Voice, compares baselines and supplies the pr
     expect(messages.find((row: any) => row.role === "assistant").context_used.review.writing_voice_name).toBe("Harbor voice");
     await page.getByRole("button", { name: "Save as…", exact: true }).click();
     await page.getByRole("button", { name: "Writing Voice brief", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Tell the copilot how this book should read" })).not.toHaveValue("");
+    await expect(page.getByRole("textbox", { name: "Tell the Assistant how this book should read" })).not.toHaveValue("");
     expect(await json(["scene", "get", "--id", "scene-0001"])).toEqual(before);
     expect(book.errors).toEqual([]);
   } finally { await book.close(); }

@@ -162,21 +162,24 @@ export function StorylineEditor() {
         </div>
         <section style={panelStyle}>
           <h2 style={sectionTitle}>New Experiment</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)", margin: "0 0 var(--space-3)" }}>A Storyline is a copy of the book you can change freely. Name it and say what you are testing; the rest is optional.</p>
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}
           >
-            <input
+            <label className="field"><span className="field__label">Name</span><input
               className="input"
+              aria-label="Storyline name"
               placeholder="Storyline name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-            />
-            <input
+            /></label>
+            <label className="field"><span className="field__label">Hypothesis</span><input
               className="input"
+              aria-label="Hypothesis: why might this version be stronger?"
               placeholder="Hypothesis: why might this version be stronger?"
               value={hypothesis}
               onChange={(event) => setHypothesis(event.target.value)}
-            />
+            /></label>
           </div>
           <div
             style={{
@@ -186,27 +189,29 @@ export function StorylineEditor() {
               marginTop: 8,
             }}
           >
-            <input
+            <label className="field"><span className="field__label">Scope</span><input
               className="input"
+              aria-label="Intended scope (ending, character arc, chapters…)"
               placeholder="Intended scope (ending, character arc, chapters…)"
               value={scope}
               onChange={(event) => setScope(event.target.value)}
-            />
-            <input
+            /></label>
+            <label className="field"><span className="field__label">How you will judge it</span><input
               className="input"
+              aria-label="Success criteria"
               placeholder="Success criteria"
               value={success}
               onChange={(event) => setSuccess(event.target.value)}
-            />
+            /></label>
           </div>
-          <textarea
+          <label className="field" style={{ marginTop: 8 }}><span className="field__label">What must not change</span><textarea
             className="input"
             rows={2}
+            aria-label="Protected constraints, one per line"
             placeholder="Protected constraints, one per line"
             value={constraints}
             onChange={(event) => setConstraints(event.target.value)}
-            style={{ marginTop: 8 }}
-          />
+          /></label>
           <button
             className="btn btn--primary"
             disabled={busy || !name.trim() || !hypothesis.trim()}

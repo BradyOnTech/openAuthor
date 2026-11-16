@@ -185,7 +185,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
       setDraft(profile); setBaseVersion(profile.version || ""); setDirty(false);
       setWorkspace((value) => value && ({ ...value, profile }));
       try { localStorage.removeItem(storageKey); } catch { /* The saved core profile remains authoritative. */ }
-      setNotice("Writing Voice approved. New copilot requests and manuscript revisions use this profile; no prose was changed.");
+      setNotice("Writing Voice approved. New Assistant requests and manuscript revisions use this profile; no prose was changed.");
     });
   }
   async function suggest() {
@@ -227,7 +227,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
 
   return <div className="writing-voice">
     <header><span className="writing-voice__eyebrow">CRAFT / ORIGINAL PROSE</span><h1>Writing Voice</h1>
-      <p>Shape how this book reads. Explore traits, learn from your writing, then approve the direction. Your copilot stays conversational.</p>
+      <p>Shape how this book reads. Explore traits, learn from your writing, then approve the direction. Your Assistant stays conversational.</p>
     </header>
     {error && <div className="writing-voice__notice" role="alert">{error}<button className="btn btn--sm" onClick={() => setDiscard(true)}>Reload saved profile…</button></div>}
     {discard && <div className="writing-voice__notice" role="alert">Discard the local profile draft and load the saved version? Your manuscript and saved profile will not change.
@@ -252,7 +252,7 @@ export function WritingVoiceEditor({ initialBrief = "" }: { initialBrief?: strin
       </section>
       <section className="writing-voice__section">
         <h2>2. Discover your voice</h2><p>Describe what you want, choose your own exemplar scenes, or combine both. Analysis proposes editable traits; it never silently changes your profile.</p>
-        <label>Tell the copilot how this book should read<textarea className="input" rows={3} maxLength={4000} value={brief} disabled={!!busy} onChange={(event) => { setBrief(event.target.value); setDirty(true); }} placeholder="Close perspective, restrained emotion, dry humor. Let dialogue imply more than it explains." /></label>
+        <label>Tell the Assistant how this book should read<textarea className="input" rows={3} maxLength={4000} value={brief} disabled={!!busy} onChange={(event) => { setBrief(event.target.value); setDirty(true); }} placeholder="Close perspective, restrained emotion, dry humor. Let dialogue imply more than it explains." /></label>
         <details><summary>Choose your exemplar scenes ({selected.length} selected)</summary><div className="writing-voice__exemplars">{scenes.map((scene) => <label key={scene.id}><input type="checkbox" checked={selected.includes(scene.id)} disabled={!!busy || (!selected.includes(scene.id) && selected.length >= 6)} onChange={(event) => { setSelected(event.target.checked ? [...selected, scene.id] : selected.filter((id) => id !== scene.id)); setDirty(true); }} />{scene.title}</label>)}</div></details>
         <div className="writing-voice__traits"><label>Writing provider<select className="input" value={provider} disabled={!!busy} onChange={(event) => { providerWasSelected.current = true; setProvider(event.target.value as ProposalProvider); }}>{availableProviders(runtimeConfig).map((row) => <option key={row.id} value={row.id}>{row.id === "local" ? "Local measurements — no creative generation" : row.id}</option>)}</select></label><label>Writing model (optional)<input className="input" value={model} disabled={!!busy} onChange={(event) => setModel(event.target.value)} placeholder="Provider default" /></label></div>
         <p className="writing-voice__muted">An AI provider receives your brief and selected exemplars when you request analysis. Previews also use relevant book context. Existing provider budgets apply.</p>

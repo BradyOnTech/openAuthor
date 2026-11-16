@@ -35,8 +35,8 @@ export function PlanNotes({ notes, scenes, focusNoteId, onOpenScene, onRevise }:
 
   return <section aria-label="Saved notes" style={{ marginTop: "var(--space-4)", padding: "var(--space-4)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--bg-surface)" }}>
     <h2 style={{ margin: "0 0 var(--space-2)", fontSize: "var(--text-lg)", color: "var(--text-primary)" }}>Notes</h2>
-    <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>Keep ideas from Copilot here, return to their scenes, or use them to plan a revision. Notes are planning material; review factual claims before treating them as canon.</p>
-    {notes.length === 0 ? <p>Save a Copilot reply with “Save as…” → “Scene note” or “Project note” to find it here later.</p> : <>
+    <p style={{ color: "var(--text-secondary)", fontSize: "var(--text-sm)" }}>Keep ideas from the Assistant here, return to their scenes, or use them to plan a revision. Notes are planning material; review factual claims before treating them as canon.</p>
+    {notes.length === 0 ? <p>Save an Assistant reply with “Save as…” → “Scene note” or “Project note” to find it here later.</p> : <>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
         <input type="search" className="input" aria-label="Search saved notes" placeholder="Find an idea, phrase, or scene…" value={query} onChange={(event) => setQuery(event.target.value)} style={{ flex: "1 1 240px" }} />
         <select className="select" aria-label="Filter notes by scene" value={scope} onChange={(event) => setScope(event.target.value)}>

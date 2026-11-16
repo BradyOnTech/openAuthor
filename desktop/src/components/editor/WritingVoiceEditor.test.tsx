@@ -117,7 +117,7 @@ describe("Writing Voice author workflow", () => {
     await screen.findByRole("textbox", { name: "Profile name" });
     view.unmount(); render(<WritingVoiceEditor />);
     await screen.findByText(/Restored your unsaved/);
-    expect((screen.getByRole("textbox", { name: "Tell the copilot how this book should read" }) as HTMLTextAreaElement).value).toBe("Close perspective, dry humor.");
+    expect((screen.getByRole("textbox", { name: "Tell the Assistant how this book should read" }) as HTMLTextAreaElement).value).toBe("Close perspective, dry humor.");
   });
 
   it("compares short samples, records human judgment and queues only the chosen direction", async () => {

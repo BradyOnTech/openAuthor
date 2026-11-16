@@ -146,12 +146,12 @@ function WritingPreferencesCard() {
         Turns straight quotes into curly quotes and two hyphens into an em dash as you type. Existing text is never changed, and Undo restores what you typed.
       </div>
       <div className="settings-editor__grid" style={{ marginTop: "var(--space-3)" }}>
-        {[["Italic", "Cmd+I"], ["Find and replace in a scene", "Cmd+F"], ["Next / previous match", "Cmd+G / Cmd+Shift+G"], ["Focus mode", "Cmd+Shift+D"]].map(([label, keys]) => (
+        {[["Italic", "Cmd+I"], ["Find and replace in a scene", "Cmd+F"], ["Next / previous match", "Cmd+G / Cmd+Shift+G"], ["Focus mode", "Cmd+Shift+D"], ["New scene", "Cmd+N"], ["Close tab", "Cmd+W"]].map(([label, keys]) => (
           <div className="settings-editor__field" key={label}><span className="settings-editor__label">{label}</span><span className="settings-editor__value">{keys}</span></div>
         ))}
       </div>
       <div className="settings-editor__note">
-        Scenes are plain Markdown files: italic is stored as <code>*word*</code> and bold is typed as <code>**word**</code>. Both carry through Word import and export and show as emphasis in Read manuscript.
+        Every shortcut is also in the menu bar. Scenes are plain Markdown files: italic is stored as <code>*word*</code> and bold is typed as <code>**word**</code>. Both carry through Word import and export and show as emphasis in Read manuscript.
       </div>
     </div>
   );

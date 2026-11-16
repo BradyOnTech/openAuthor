@@ -160,13 +160,13 @@ describe("late Writing Voice completion", () => {
     try {
       const view = render(<WritingVoiceEditor />); await ready();
       fireEvent.change(screen.getByRole("textbox", { name: "Profile name" }), { target: { value: "First book's draft" } });
-      fireEvent.change(screen.getByRole("textbox", { name: "Tell the copilot how this book should read" }), { target: { value: "First book's brief" } });
+      fireEvent.change(screen.getByRole("textbox", { name: "Tell the Assistant how this book should read" }), { target: { value: "First book's brief" } });
       state.project = "/books/another"; view.rerender(<WritingVoiceEditor />); await ready();
       expect((screen.getByRole("textbox", { name: "Profile name" }) as HTMLInputElement).value).toBe(profile.name);
-      expect((screen.getByRole("textbox", { name: "Tell the copilot how this book should read" }) as HTMLTextAreaElement).value).toBe("");
+      expect((screen.getByRole("textbox", { name: "Tell the Assistant how this book should read" }) as HTMLTextAreaElement).value).toBe("");
       state.project = "/books/preservation"; state.storyline = "alternate"; view.rerender(<WritingVoiceEditor />); await ready();
       expect((screen.getByRole("textbox", { name: "Profile name" }) as HTMLInputElement).value).toBe("First book's draft");
-      expect((screen.getByRole("textbox", { name: "Tell the copilot how this book should read" }) as HTMLTextAreaElement).value).toBe("First book's brief");
+      expect((screen.getByRole("textbox", { name: "Tell the Assistant how this book should read" }) as HTMLTextAreaElement).value).toBe("First book's brief");
       vi.mocked(writingVoiceAction).mockRejectedValue(new Error("Original Storyline changed."));
       fireEvent.click(screen.getByRole("button", { name: "Approve and save Writing Voice" }));
       await screen.findByText(/Original Storyline changed/);

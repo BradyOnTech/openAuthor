@@ -4,10 +4,14 @@ import { ProposalGenerationSession } from "./proposalGenerationSession";
 
 const transport = vi.hoisted(() => ({
   calls: [] as string[][],
+  cancelKeys: [] as Array<string | undefined>,
+  stopped: [] as string[],
   send: async (_args: string[]): Promise<unknown> => ({}),
 }));
-vi.mock("@tauri-apps/api/core", () => ({ invoke: async (_command: string, payload: { args: string[] }) => {
+vi.mock("@tauri-apps/api/core", () => ({ invoke: async (command: string, payload: { args: string[]; cancelKey?: string }) => {
+  if (command === "cancel_core_commands") { transport.stopped.push(payload.cancelKey ?? ""); return 1; }
   transport.calls.push(payload.args);
+  transport.cancelKeys.push(payload.cancelKey);
   return { status: 0, stderr: "", stdout: JSON.stringify(await transport.send(payload.args)) };
 } }));
 
@@ -15,6 +19,8 @@ beforeEach(() => {
   Object.defineProperty(window, "__TAURI_INTERNALS__", { value: {}, configurable: true });
   localStorage.clear();
   transport.calls = [];
+  transport.cancelKeys = [];
+  transport.stopped = [];
 });
 afterEach(() => { delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__; });
 const input = { sceneId: "scene-1", instruction: "Tighten this synthetic passage.", provider: "local" as const };
@@ -142,7 +148,7 @@ describe("durable proposal generation", () => {
     expect(restarted.getSnapshot().job?.tasks[0].drafted).toBe(true);
   });
 
-  it("stops after the current step, serializes clicks, and resumes the remaining batch", async () => {
+  it("stops the running step, serializes clicks, and resumes the remaining batch", async () => {
     let finish!: (result: unknown) => void;
     transport.send = () => new Promise(resolve => { finish = resolve; });
     const session = new ProposalGenerationSession("/synthetic/book");
@@ -152,6 +158,11 @@ describe("durable proposal generation", () => {
     expect(await session.start([input])).toBeNull();
     expect(await session.retry()).toBeNull();
     session.stop();
+    session.stop();
+    // Stop asks the engine to end the running command, once, under the key
+    // the command was started with.
+    expect(transport.cancelKeys).toEqual(["generation:/synthetic/book"]);
+    await vi.waitFor(() => expect(transport.stopped).toEqual(["generation:/synthetic/book"]));
     session.clear();
     finish({ id: "proposal-1" });
     expect(await running).toBeNull();

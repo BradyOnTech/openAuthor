@@ -3,7 +3,8 @@ import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { getScene, getCodexEntity } from "../../api";
-import { useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
+import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
+import { replayMenuShortcut } from "../../menuShortcuts";
 
 type ResultItem = {
   id: string;
@@ -61,10 +62,15 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   }, [opener]);
 
   const commands: ResultItem[] = useMemo(() => [
+    { id: "cmd:new-scene", kind: "command", label: "New Scene", shortcut: "Cmd+N" },
+    { id: "cmd:new-change-set", kind: "command", label: "New Change Set (ask the AI for a revision)" },
+    { id: "cmd:find", kind: "command", label: "Find in Scene", shortcut: "Cmd+F" },
+    { id: "cmd:read", kind: "command", label: "Read Manuscript" },
+    { id: "cmd:export", kind: "command", label: "Export or Back Up Manuscript" },
     { id: "cmd:zen", kind: "command", label: "Toggle Focus Mode", shortcut: "Cmd+Shift+D" },
     { id: "cmd:theme", kind: "command", label: "Toggle Theme", shortcut: "Cmd+Shift+T" },
     { id: "cmd:sidebar", kind: "command", label: "Toggle Sidebar", shortcut: "Cmd+B" },
-    { id: "cmd:secondary", kind: "command", label: "Toggle AI Chat", shortcut: "Cmd+Shift+B" },
+    { id: "cmd:secondary", kind: "command", label: "Toggle Assistant Panel", shortcut: "Cmd+Shift+B" },
     { id: "cmd:panel", kind: "command", label: "Toggle Panel", shortcut: "Cmd+J" },
     { id: "cmd:manuscript", kind: "command", label: "Focus Manuscript", shortcut: "Cmd+Shift+E" },
     { id: "cmd:plan", kind: "command", label: "Focus Plan", shortcut: "Cmd+Shift+P" },
@@ -74,7 +80,7 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
     { id: "cmd:proposals", kind: "command", label: "Focus Changes", shortcut: "Cmd+Shift+R" },
     { id: "cmd:checks", kind: "command", label: "Focus Checks", shortcut: "Cmd+Shift+C" },
     { id: "cmd:settings", kind: "command", label: "Open Settings", shortcut: "Cmd+," },
-    { id: "cmd:chat", kind: "command", label: "Focus Chat", shortcut: "Cmd+L" },
+    { id: "cmd:chat", kind: "command", label: "Open Assistant", shortcut: "Cmd+L" },
     { id: "cmd:inspector", kind: "command", label: "Open Inspector" },
   ], []);
 
@@ -90,7 +96,7 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
           label: s.title || s.id,
           detail: `${s.status} \u2014 ${s.pov || "no POV"}`,
         })),
-        ...commands.slice(0, 5),
+        ...commands.filter(command => ["cmd:new-scene", "cmd:new-change-set", "cmd:find", "cmd:zen", "cmd:chat"].includes(command.id)),
       ];
     }
 
@@ -152,6 +158,12 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
 
   const executeCommand = useCallback((id: string) => {
     switch (id) {
+      case "cmd:new-scene": void navigateTo("manuscript").then(focusNewSceneTitle); break;
+      case "cmd:new-change-set": openTab({ id: "generate", kind: "generate", label: "Generate" }); break;
+      // Find lives in the scene editor; ask for it after the palette has closed.
+      case "cmd:find": window.setTimeout(() => replayMenuShortcut({ key: "f", shift: false }), 0); break;
+      case "cmd:read": openTab({ id: "reader", kind: "reader", label: "Read manuscript" }); break;
+      case "cmd:export": void navigateTo("settings"); break;
       case "cmd:zen": toggleZenMode(); break;
       case "cmd:theme": toggleTheme(); break;
       case "cmd:sidebar": toggleSidebar(); break;
@@ -168,7 +180,7 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
       case "cmd:chat": setSecondaryTab("chat"); setSecondarySidebarOpen(true); break;
       case "cmd:inspector": setSecondaryTab("inspector"); setSecondarySidebarOpen(true); break;
     }
-  }, [toggleZenMode, toggleTheme, toggleSidebar, toggleSecondarySidebar, togglePanel, navigateTo, setSecondaryTab, setSecondarySidebarOpen]);
+  }, [toggleZenMode, toggleTheme, toggleSidebar, toggleSecondarySidebar, togglePanel, navigateTo, setSecondaryTab, setSecondarySidebarOpen, openTab]);
 
   const handleSelect = useCallback(async (item: ResultItem) => {
     // Dismissal returns to writing; activation lets the chosen destination own

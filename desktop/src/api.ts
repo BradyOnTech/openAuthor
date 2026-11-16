@@ -212,11 +212,27 @@ export async function getManuscriptReading(projectRoot: string): Promise<import(
   return decodeJson(await runCoreCommand(projectRoot, ["manuscript", "read", "--json"]));
 }
 
+/** The key under which a book's AI generation commands can be stopped together. */
+export function generationCancelKey(projectRoot: string): string {
+  return `generation:${projectRoot}`;
+}
+
+/**
+ * Stop every running engine command started with `cancelKey`. A stopped
+ * command reports "Stopped." like any other failure. Returns how many were
+ * running; zero when the request arrived after they had finished.
+ */
+export async function cancelCoreCommands(cancelKey: string): Promise<number> {
+  return tauriInvoke<number>("cancel_core_commands", { cancelKey });
+}
+
 export async function runCoreCommand(
   projectRoot: string,
-  args: string[]
+  args: string[],
+  options: { cancelKey?: string } = {}
 ): Promise<CoreCommandResponse> {
   ensureAllowed(args);
+  if (options.cancelKey) return tauriInvoke<CoreCommandResponse>("core_command", { projectRoot, args, cancelKey: options.cancelKey });
   const reads: Record<string, string[]> = {
     style: ["get"],
     plan: ["get", "scene-preview"],
@@ -643,7 +659,7 @@ export async function generateProposal(
   }
   if (payload.sceneContract) args.push("--scene-contract", JSON.stringify(payload.sceneContract));
   args.push("--json");
-  const result = await runCoreCommand(projectRoot, args);
+  const result = await runCoreCommand(projectRoot, args, { cancelKey: generationCancelKey(projectRoot) });
   return decodeJson<ProposalRecord>(result);
 }
 
@@ -721,7 +737,7 @@ export async function draftProposal(
   if (payload.authorization) args.push("--expected-context-fingerprint", payload.authorization.fingerprint,
     "--memory-approvals", JSON.stringify(payload.authorization.memoryApprovals), "--story-approvals", JSON.stringify(payload.authorization.storyApprovals));
   args.push("--json");
-  const result = await runCoreCommand(projectRoot, args);
+  const result = await runCoreCommand(projectRoot, args, { cancelKey: generationCancelKey(projectRoot) });
   return decodeJson<ProposalRecord>(result);
 }
 
@@ -789,7 +805,7 @@ export async function regenerateProposalHunk(
   if (authorization) args.push("--expected-context-fingerprint", authorization.fingerprint,
     "--memory-approvals", JSON.stringify(authorization.memoryApprovals), "--story-approvals", JSON.stringify(authorization.storyApprovals));
   args.push("--json");
-  const result = await runCoreCommand(projectRoot, args);
+  const result = await runCoreCommand(projectRoot, args, { cancelKey: generationCancelKey(projectRoot) });
   return decodeJson<ProposalRecord>(result);
 }
 

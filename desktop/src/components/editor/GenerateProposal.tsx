@@ -194,7 +194,7 @@ export function GenerateProposal({ initialSceneId, initialInstruction = "", tabI
           {generationError && <p role="alert">{generationError}</p>}
           <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Saved steps are reused. An interrupted provider request without a saved result may incur another charge when retried.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {busy ? <button className="btn" style={{ minHeight: 40 }} disabled={stopRequested} onClick={session.stop}>{stopRequested ? "Stopping after current step…" : "Stop after current step"}</button> : job && <>
+            {busy ? <button className="btn" style={{ minHeight: 40 }} disabled={stopRequested} onClick={session.stop}>{stopRequested ? "Stopping…" : "Stop"}</button> : job && <>
               {!reviewTask && !planReviewTask && <button className="btn btn--primary" style={{ minHeight: 40 }} onClick={() => void session.retry().then(showResults)}>{job.tasks.every(task => task.drafted) ? "Open results" : "Retry generation"}</button>}
               {generationError && job.tasks.some(task => !task.drafted && (task.authorization || task.planAuthorization)) && <button className="btn" style={{ minHeight: 40 }} onClick={session.reviewDraftAgain}>Start new context review</button>}
               <button className="btn" style={{ minHeight: 40 }} onClick={session.clear}>Start new request</button>

@@ -67,6 +67,8 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 
 **Failure reporting**: Unexpected exceptions never reach the author as tracebacks: the CLI prints one `error:` line (exit 1) and the sidecar answers the failing request with category `internal_error` and keeps serving. Scene files are read as UTF-8 with a tolerated BOM; an undecodable file raises an `OpenAuthorError` naming it. A model response cut off at its output limit is rejected (`truncated_output`) for anything that becomes manuscript text; a cut-off chat reply is kept and flagged with `usage.truncated`.
 
+**Stopping AI work**: The generation commands (`proposal generate`, `proposal draft`, hunk regeneration) are started with a cancel key (`generationCancelKey` in `desktop/src/api.ts`). Stop calls the native `cancel_core_commands`, which interrupts the engine process (SIGINT, then SIGKILL after 3 s) and reports status 130 with `error: Stopped.`. This relies on the crash-safety the core already has: atomic journaled writes, and a request id on every provider call so Retry recovers a saved reply. Give any new long-running command a cancel key rather than a second stop mechanism.
+
 **Merge-conflict flow**: `branch conflicts` scans base...head for three-way conflicts without touching the worktree (git merge-file per overlapping path). `branch resolve --path <scene>` generates an AI-reconciled scene as a `merge_resolution` proposal; `branch merge --resolution <proposal-id>` performs the merge writing the reconciled content into conflicted files. Merges without resolutions still auto-abort on conflict.
 
 ## Key Conventions
@@ -91,6 +93,7 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 - Local storage persists per-project UI preferences (comparison profiles, voice transcripts)
 - The prose editor is a plain `<textarea>` that grows with its content (the `.scene-editor` container scrolls, never the field). `desktop/src/smartTypography.ts` provides smart punctuation and Markdown italics (`Cmd+I` stores `*italic*`; `Cmd+B` stays the sidebar toggle); edits go through `replaceTextRange` so native undo/redo keep working. `Cmd+F` opens `FindBar`, whose highlights are drawn on a layer behind the field
 - Keep `Cmd+Shift+Z` unbound: it is Redo. Focus mode is `Cmd+Shift+D`
+- The native menu bar (`desktop/src-tauri/src/menu.rs`) is a table of shortcuts; choosing an item dispatches an `openauthor-menu` DOM event on the window (no Tauri event module or permission involved) and `desktop/src/menuShortcuts.ts` replays it as a key press, so an action has one implementation (its key handler). Add a menu item by adding a table row for a shortcut the frontend already handles. New shortcuts on letters that are Mac caret keys with Control (`F`, `N`, `W`, `G`, `I`, ...) must use `primaryModifier` from `platformKeys.ts`
 - Fonts are bundled through `@fontsource-variable/*` and imported in `main.tsx`; do not add remote font or asset URLs, the app must render fully offline
 - The selection toolbar (`SelectionAssist`) is hidden until text is selected, then floats without shifting the prose; the prose focus ring shows only on keyboard arrival (`data-focus-ring`)
 

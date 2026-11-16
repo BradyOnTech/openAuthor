@@ -33,7 +33,15 @@ export async function localBook(page: Page, faults: TransportFaults = {}) {
     return candidate;
   }
 
-  async function core(root: string, args: string[]) {
+  // Commands started with a cancel key can be stopped, as in the native bridge.
+  const stoppable = new Map<string, Set<{ kill: (signal: NodeJS.Signals) => boolean; stopped?: boolean }>>();
+  function stopCommands(cancelKey: string) {
+    const running = [...(stoppable.get(cancelKey) || [])];
+    for (const child of running) { child.stopped = true; child.kill("SIGINT"); }
+    return running.length;
+  }
+
+  async function core(root: string, args: string[], cancelKey?: string) {
     const cwd = scopedPath(root);
     await mkdir(cwd, { recursive: true });
     const provider = args.indexOf("--provider");
@@ -49,12 +57,18 @@ export async function localBook(page: Page, faults: TransportFaults = {}) {
       const index = args.indexOf(option);
       if (index >= 0) scopedPath(args[index + 1]);
     }
+    const running = exec(python, ["-m", "openauthor", ...args], { cwd, env, timeout: 20_000, maxBuffer: 8 * 1024 * 1024 });
+    const child: { kill: (signal: NodeJS.Signals) => boolean; stopped?: boolean } = running.child;
+    if (cancelKey) stoppable.set(cancelKey, (stoppable.get(cancelKey) || new Set()).add(child));
     try {
-      const result = await exec(python, ["-m", "openauthor", ...args], { cwd, env, timeout: 20_000, maxBuffer: 8 * 1024 * 1024 });
+      const result = await running;
       return { status: 0, ...result };
     } catch (error) {
+      if (child.stopped) return { status: 130, stdout: "", stderr: "error: Stopped." };
       const failure = error as { code?: number; stdout?: string; stderr?: string };
       return { status: failure.code || 1, stdout: failure.stdout || "", stderr: failure.stderr || String(error) };
+    } finally {
+      if (cancelKey) stoppable.get(cancelKey)?.delete(child);
     }
   }
 
@@ -96,7 +110,8 @@ export async function localBook(page: Page, faults: TransportFaults = {}) {
         const result = await core(root, ["project", "inspect", "--json"]);
         return { found: result.status === 0, project_root: root };
       }
-      if (command === "core_command") return core(root, payload.args || []);
+      if (command === "core_command") return core(root, payload.args || [], payload.cancelKey);
+      if (command === "cancel_core_commands") return stopCommands(payload.cancelKey);
       if (command === "sidecar_request") {
         await faults.beforeSidecar?.(root, payload.request);
         const response = await sidecar(root, payload.request);

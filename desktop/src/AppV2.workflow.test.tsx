@@ -1215,6 +1215,30 @@ describe("active V2 author workflow", () => {
     expect(screen.getByRole("button", { name: /Strengthen the turning point \u2014 undone/ })).toBeTruthy();
   });
 
+  it("closes the active tab after saving its writing, and starts a new scene, from the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<AppV2 />);
+    await screen.findByText("Choose a project to begin writing.");
+    await user.click(screen.getByRole("button", { name: "New Project" }));
+    await user.type(screen.getByRole("textbox", { name: "Novel title" }), "Shortcut Novel");
+    await user.type(screen.getByRole("textbox", { name: "Project folder" }), harness.projectRoot);
+    await user.click(screen.getByRole("button", { name: "Create novel" }));
+    await user.type(await screen.findByPlaceholderText("New scene title..."), "The Letter");
+    await user.click(screen.getByRole("button", { name: "Add Scene" }));
+    const editor = await screen.findByRole("textbox", { name: "Scene prose" });
+    fireEvent.change(editor, { target: { value: "Mara seals the letter." } });
+
+    // The primary modifier is Control here; on a Mac it is Command only.
+    fireEvent.keyDown(window, { key: "w", metaKey: true });
+    expect(screen.getByRole("tab", { name: /The Letter/ })).toBeTruthy();
+    fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /The Letter/ })).toBeNull());
+    await waitFor(() => expect(harness.scenes[0]?.body).toBe("Mara seals the letter."));
+
+    fireEvent.keyDown(window, { key: "n", ctrlKey: true });
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByPlaceholderText("New scene title...")));
+  });
+
   it("keeps the same unsaved draft and editor when entering and leaving focus mode", async () => {
     const user = userEvent.setup();
     render(<AppV2 />);
@@ -1298,7 +1322,7 @@ describe("active V2 author workflow", () => {
     await user.click(screen.getByRole("button", { name: "Create novel" }));
 
     expect(await screen.findByText("Start Blank Novel")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Assistant" })).toBeNull();
     expect(window.location.pathname).toMatch(/^\/w\/personal-workspace\/p\//);
 
     await user.click(screen.getByRole("button", { name: "Name your first scene" }));
@@ -1312,9 +1336,9 @@ describe("active V2 author workflow", () => {
     expect(screen.getByText("Saved")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
-    expect(await screen.findByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Assistant" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
-    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Assistant" })).toBeNull();
   });
 
   it("keeps rail navigation, the editor, and editable scene details in sync", async () => {
@@ -1392,7 +1416,7 @@ describe("active V2 author workflow", () => {
     fireEvent.keyDown(window, { key: "j", metaKey: true });
     expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Assistant" })).toBeTruthy();
     expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
 
     cleanup();
@@ -1400,7 +1424,7 @@ describe("active V2 author workflow", () => {
     await screen.findByRole("tab", { name: "Plan" });
     expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Assistant" })).toBeTruthy();
     expect(screen.getByText("Runs", { selector: ".panel-area__tab" })).toBeTruthy();
     expect(screen.getByPlaceholderText("Search manuscript...")).toBeTruthy();
   });
@@ -1435,7 +1459,7 @@ describe("active V2 author workflow", () => {
       await screen.findByRole("tab", { name: "Plan" });
       expect(screen.getByRole("tab", { name: "Plan" }).getAttribute("aria-selected")).toBe("true");
       expect.soft(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("true");
-      expect.soft(screen.queryByRole("button", { name: "Chat" })).not.toBeNull();
+      expect.soft(screen.queryByRole("button", { name: "Assistant" })).not.toBeNull();
       expect.soft(screen.queryByText("Runs", { selector: ".panel-area__tab" })).not.toBeNull();
     } finally {
       release();
@@ -1461,7 +1485,7 @@ describe("active V2 author workflow", () => {
     expect(JSON.parse(localStorage.getItem("openauthor.activeProjectId") || "null")).toBe(different.id);
     expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Search (Cmd+Shift+F)" }).getAttribute("aria-pressed")).toBe("false");
-    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Assistant" })).toBeNull();
     expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
   });
 
@@ -1689,7 +1713,7 @@ describe("active V2 author workflow", () => {
     await user.click(await screen.findByRole("button", { name: "Plan (Cmd+Shift+P)" }));
     expect(await screen.findByRole("tab", { name: "Plan" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Assistant (Cmd+L)" }));
-    expect(await screen.findByRole("button", { name: "Chat" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Assistant" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Projects" }));
     await screen.findByText("Choose a project to begin writing.");
@@ -1701,7 +1725,7 @@ describe("active V2 author workflow", () => {
     expect(await screen.findByText("Start Second Novel")).toBeTruthy();
     expect(screen.queryByRole("tab", { name: "Plan" })).toBeNull();
     expect(screen.queryByText("Project Brief")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Chat" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Assistant" })).toBeNull();
     expect(screen.getByRole("button", { name: "Manuscript (Cmd+Shift+E)" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Plan (Cmd+Shift+P)" }).getAttribute("aria-pressed")).toBe("false");
   });

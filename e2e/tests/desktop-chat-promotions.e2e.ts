@@ -90,7 +90,7 @@ test("desktop promotes permission-reviewed Assistant replies into notes, reviewe
 
     await screen.getByRole("button", "Save as…").tap();
     await screen.getByRole("group", "Save reply as").getByRole("button", "Writing Voice brief").tap();
-    await expect(screen.getByRole("textbox", "Tell the copilot how this book should read")).toHaveValue(projectReply);
+    await expect(screen.getByRole("textbox", "Tell the Assistant how this book should read")).toHaveValue(projectReply);
     expect((await book.json(["style", "workspace"])).profile).toBeNull();
     await screen.getByRole("combobox", "Writing provider").selectOption({ value: "local" });
     await screen.getByRole("button", "Propose a voice profile").tap();

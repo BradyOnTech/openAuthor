@@ -3,7 +3,7 @@ import { ChatPanel } from "./ChatPanel";
 import { InspectorPanel } from "./InspectorPanel";
 
 const TABS = [
-  { id: "chat" as const, label: "Chat" },
+  { id: "chat" as const, label: "Assistant" },
   { id: "inspector" as const, label: "Inspector" },
 ];
 

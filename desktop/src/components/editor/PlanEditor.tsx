@@ -268,14 +268,14 @@ function PlanWorkspace({ initial, focusNoteId }: { initial: ManuscriptPlan; focu
           </div>}
           <div id={briefFieldsId} hidden={!showBriefEditor}>
             <div className="plan-brief__fields">
-              <textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} />
+              <label className="field"><span className="field__label">Synopsis</span><textarea className="input" rows={4} aria-label="Synopsis" placeholder="What is this story about?" value={brief.synopsis} onChange={(event) => setBrief({ ...brief, synopsis: event.target.value })} /></label>
               <div style={{ display: "grid", gap: "var(--space-2)" }}>
-                <input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} />
-                <input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={retained.value.themesText ?? brief.themes.join(", ")} onChange={(event) => { const themesText = event.target.value; retained.change(old => ({ ...old, brief: { ...brief, themes: themesText.split(",").map(value => value.trim()).filter(Boolean) }, baseline: old.baseline || plan.brief, themesText })); }} />
+                <label className="field"><span className="field__label">Genre</span><input className="input" aria-label="Genre" placeholder="Genre" value={brief.genre} onChange={(event) => setBrief({ ...brief, genre: event.target.value })} /></label>
+                <label className="field"><span className="field__label">Themes</span><input className="input" aria-label="Themes" placeholder="Themes, comma separated" value={retained.value.themesText ?? brief.themes.join(", ")} onChange={(event) => { const themesText = event.target.value; retained.change(old => ({ ...old, brief: { ...brief, themes: themesText.split(",").map(value => value.trim()).filter(Boolean) }, baseline: old.baseline || plan.brief, themesText })); }} /></label>
               </div>
             </div>
-            <textarea className="input" rows={3} aria-label="Style guide" placeholder="Style guide: voice, tense, prose boundaries…" style={{ marginTop: "var(--space-3)" }} value={brief.style_guide} onChange={(event) => setBrief({ ...brief, style_guide: event.target.value })} />
-            <textarea className="input" rows={4} aria-label="Outline" placeholder="High-level outline or north-star ending…" style={{ marginTop: "var(--space-3)" }} value={brief.outline} onChange={(event) => setBrief({ ...brief, outline: event.target.value })} />
+            <label className="field" style={{ marginTop: "var(--space-3)" }}><span className="field__label">Style guide</span><textarea className="input" rows={3} aria-label="Style guide" placeholder="Style guide: voice, tense, prose boundaries…" value={brief.style_guide} onChange={(event) => setBrief({ ...brief, style_guide: event.target.value })} /></label>
+            <label className="field" style={{ marginTop: "var(--space-3)" }}><span className="field__label">Outline</span><textarea className="input" rows={4} aria-label="Outline" placeholder="High-level outline or north-star ending…" value={brief.outline} onChange={(event) => setBrief({ ...brief, outline: event.target.value })} /></label>
           </div>
         </section>
 

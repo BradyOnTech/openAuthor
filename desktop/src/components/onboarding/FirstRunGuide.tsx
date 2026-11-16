@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { focusNewSceneTitle, useWorkspaceNavigation } from "../../hooks/useWorkspaceNavigation";
+import { onlyOfflineDemo } from "../../providerSelection";
 
 function guideKey(projectId: string): string {
   return `openauthor.firstRunGuide.v1:${projectId}`;
 }
 
 export function FirstRunGuide() {
-  const { activeProjectId, scenes, proposals } = useWorkspace();
+  const { activeProjectId, scenes, proposals, runtimeConfig } = useWorkspace();
+  // Revisions made without a provider come from the offline demo, which only
+  // makes small rule-based edits; say so before the author judges the result.
+  const offlineOnly = onlyOfflineDemo(runtimeConfig);
   const navigateTo = useWorkspaceNavigation();
   const [hidden, setHidden] = useState(() => {
     if (typeof window === "undefined" || !activeProjectId) return false;
@@ -47,7 +51,9 @@ export function FirstRunGuide() {
   const nextStep = !progress.hasManuscript
     ? { title: "Create your first scene", detail: "Give the opening a title, then write a few real paragraphs.", action: "Start a scene", run: openManuscript }
     : !progress.hasProposal
-      ? { title: "Try a safe revision", detail: "Open Changes and ask for one small, reviewable improvement.", action: "Open Changes", run: openProposalFlow }
+      ? { title: "Try a safe revision", detail: offlineOnly
+          ? "Open Changes and ask for one small, reviewable improvement. Connect ChatGPT first for real revisions; without it you get the offline demo."
+          : "Open Changes and ask for one small, reviewable improvement.", action: "Open Changes", run: openProposalFlow, connect: offlineOnly }
       : !progress.completedLoop
         ? { title: "Review before you apply", detail: "Read each before-and-after, apply only what helps, and try Undo once.", action: "Review Changes", run: openProposalFlow }
         : null;
@@ -63,7 +69,8 @@ export function FirstRunGuide() {
       </div>
 
       {nextStep ? (
-        <GuideStep complete={false} title={nextStep.title} detail={nextStep.detail} actionLabel={nextStep.action} onAction={nextStep.run} />
+        <GuideStep complete={false} title={nextStep.title} detail={nextStep.detail} actionLabel={nextStep.action} onAction={nextStep.run}
+          secondaryLabel={"connect" in nextStep && nextStep.connect ? "Connect ChatGPT" : undefined} onSecondary={() => void navigateTo("settings")} />
       ) : (
         <><div style={{ fontSize: "var(--text-sm)", color: "var(--success)" }}>You completed the safe revision loop.</div><button className="btn btn--primary btn--sm" onClick={finish}>Finish</button></>
       )}
@@ -77,12 +84,16 @@ function GuideStep({
   detail,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondary,
 }: {
   complete: boolean;
   title: string;
   detail: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: "var(--space-2)" }}>
@@ -92,6 +103,9 @@ function GuideStep({
         <div style={{ fontSize: "var(--text-xs)", lineHeight: "var(--leading-relaxed)", color: "var(--text-secondary)", marginTop: 2 }}>{detail}</div>
         {actionLabel && onAction && (
           <button className="btn btn--ghost btn--sm" style={{ marginTop: "var(--space-1)" }} onClick={onAction}>{actionLabel}</button>
+        )}
+        {secondaryLabel && onSecondary && (
+          <button className="btn btn--ghost btn--sm" style={{ marginTop: "var(--space-1)", marginLeft: "var(--space-1)" }} onClick={onSecondary}>{secondaryLabel}</button>
         )}
       </div>
     </div>

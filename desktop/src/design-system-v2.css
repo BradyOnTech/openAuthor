@@ -3789,3 +3789,21 @@ button.status-bar__item {
   font-size: var(--text-xs);
   line-height: var(--leading-relaxed);
 }
+
+/* ── Labelled fields ───────────────────────────────────────────── */
+
+/* A visible label above a field. Placeholders are examples, not labels: they
+   vanish as soon as the author types. */
+.field {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  min-width: 0;
+}
+
+.field__label {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}

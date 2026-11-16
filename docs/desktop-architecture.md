@@ -11,6 +11,7 @@
 - Frontend calls Tauri commands:
   - `project_status(project_root)`
   - `core_command(project_root, args[])`
+  - `cancel_core_commands(cancel_key)`: interrupts every running `core_command` that was started with that `cancel_key`. The stopped command answers with status 130 and `error: Stopped.`. Used by Stop during AI generation
 - Tauri backend executes:
   - `python3 -m openauthor <args...>`
   - Working directory is set to `project_root`

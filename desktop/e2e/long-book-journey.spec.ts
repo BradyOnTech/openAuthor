@@ -202,7 +202,7 @@ test("reviews distant evidence and keeps coordinated revisions usable in a book-
     await page.getByRole("button", { name: "Canon & Continuity", exact: true }).click();
     await page.getByText("Add or update story records", { exact: true }).click();
     await facts.getByRole("combobox", { name: "Filter Canon Facts" }).selectOption("rejected");
-    await expect(fact).toContainText("Excluded from new Copilot canon context");
+    await expect(fact).toContainText("Excluded from new Assistant canon context");
     await fact.getByRole("button", { name: "Correct or withdraw fact" }).click();
     await fact.getByRole("combobox", { name: "Canon status" }).selectOption("accepted");
     await fact.getByRole("textbox", { name: "Supporting passage 1" }).fill("This passage was never in the book.");

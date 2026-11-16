@@ -82,7 +82,7 @@ export function CanonFactCard({ fact, subjectName, scenes, projectRoot, branch, 
     <strong>{subjectName} · {fact.predicate}</strong>
     <p style={{ color: "var(--text-secondary)", whiteSpace: "pre-wrap" }}>{fact.value}</p>
     <p style={smallText}>{statusLabels[fact.status]} · {sceneName(fact.validity.from_scene_id, "beginning")} → {sceneName(fact.validity.to_scene_id, "ongoing")}</p>
-    {fact.status !== "accepted" && <p style={smallText}>Excluded from new Copilot canon context and fact-based continuity checks. Earlier conversations retain their original context.</p>}
+    {fact.status !== "accepted" && <p style={smallText}>Excluded from new Assistant canon context and fact-based continuity checks. Earlier conversations retain their original context.</p>}
     <MemoryEvidence evidence={fact.evidence} scenes={scenes} onOpenScene={onOpenScene} />
     {recovery.error && <p role="alert">{recovery.error}</p>}
     {notice && <p role="status">{notice}</p>}

@@ -28,6 +28,7 @@ const SOURCE_LABELS: Record<string, string> = {
   merge_resolution: "Storyline reconciliation",
   chat_agent: "From the Assistant",
   manual: "Written by you",
+  sample: "Sample suggestion",
 };
 
 function proposalSourceLabel(source: string): string {

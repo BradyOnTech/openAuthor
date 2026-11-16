@@ -100,9 +100,9 @@ function SelectionAssistSession({ projectRoot, sceneId, branch, selection, disab
   const hasSelection = Boolean(selection && selection.body.slice(selection.start, selection.end).trim());
   const floating = !input && !draft.error;
   return <section className={`selection-assist${floating ? " selection-assist--floating" : ""}`} aria-label="Selection assistant" hidden={floating && !hasSelection}>
-    <div className="selection-assist__toolbar" role={floating ? "toolbar" : undefined} aria-label={floating ? "Ask for help with the selected passage" : undefined}>
-      {(["rewrite", "shorten", "expand", "critique"] as SelectionAction[]).map(action => <button key={action} className="btn btn--ghost" disabled={disabled || busy || Boolean(input) || !hasSelection} onMouseDown={event => event.preventDefault()} onClick={() => choose(action)}>{action[0].toUpperCase() + action.slice(1)}</button>)}
-    </div>
+    {!input && <div className="selection-assist__toolbar" role={floating ? "toolbar" : undefined} aria-label={floating ? "Ask for help with the selected passage" : undefined}>
+      {(["rewrite", "shorten", "expand", "critique"] as SelectionAction[]).map(action => <button key={action} className="btn btn--ghost" disabled={disabled || busy || !hasSelection} onMouseDown={event => event.preventDefault()} onClick={() => choose(action)}>{action[0].toUpperCase() + action.slice(1)}</button>)}
+    </div>}
     {draft.error && <p role="alert">{draft.error}</p>}
     {input && <div className="selection-assist__request">
       <div className="selection-assist__panel" role="region" aria-label="Selection context and permissions" tabIndex={0}>

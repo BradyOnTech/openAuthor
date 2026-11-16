@@ -135,6 +135,9 @@ export async function desktopBook(browser: Browser) {
           return { value: { found: result.status === 0, project_root: root } };
         }
         if (command === "core_command") return { value: await core(root, payload.args || []) };
+        // This adapter cannot interrupt a running command; reporting none
+        // running makes Stop fall back to stopping after the current step.
+        if (command === "cancel_core_commands") return { value: 0 };
         if (command === "sidecar_request") {
           const { response, events } = await sidecar(root, payload.request);
           return { value: response, events };

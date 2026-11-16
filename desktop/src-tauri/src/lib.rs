@@ -1,4 +1,5 @@
 mod credentials;
+mod menu;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -8,7 +9,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -213,10 +214,90 @@ fn python_candidates(project_root: &PathBuf) -> Vec<String> {
   candidates
 }
 
+/// Engine commands the author may stop while they run, by cancel key. Each
+/// entry is a process id and whether a stop has been requested for it.
+fn stoppable_commands() -> &'static Mutex<HashMap<String, Vec<(u32, bool)>>> {
+  static REGISTRY: OnceLock<Mutex<HashMap<String, Vec<(u32, bool)>>>> = OnceLock::new();
+  REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn register_stoppable(cancel_key: &str, pid: u32) {
+  if let Ok(mut commands) = stoppable_commands().lock() {
+    commands.entry(cancel_key.to_string()).or_default().push((pid, false));
+  }
+}
+
+/// Forget a finished command and report whether the author asked it to stop.
+fn finish_stoppable(cancel_key: &str, pid: u32) -> bool {
+  let Ok(mut commands) = stoppable_commands().lock() else { return false };
+  let Some(entries) = commands.get_mut(cancel_key) else { return false };
+  let stopped = entries.iter().any(|(entry, stop)| *entry == pid && *stop);
+  entries.retain(|(entry, _)| *entry != pid);
+  if entries.is_empty() {
+    commands.remove(cancel_key);
+  }
+  stopped
+}
+
+fn still_running(cancel_key: &str, pid: u32) -> bool {
+  stoppable_commands()
+    .lock()
+    .map(|commands| commands.get(cancel_key).is_some_and(|entries| entries.iter().any(|(entry, _)| *entry == pid)))
+    .unwrap_or(false)
+}
+
+#[cfg(unix)]
+fn signal_process(pid: u32, signal: &str) {
+  let _ = Command::new("/bin/kill").arg(format!("-{signal}")).arg(pid.to_string()).status();
+}
+
+#[cfg(not(unix))]
+fn signal_process(pid: u32, _signal: &str) {
+  let _ = Command::new("taskkill").args(["/PID", &pid.to_string(), "/T", "/F"]).status();
+}
+
+/// Ask every running command under `cancel_key` to stop. The engine is
+/// interrupted first so it can release the book and close its provider
+/// connection; a process that has not exited shortly afterwards is ended.
+/// The core treats this like any interrupted command: its writes are atomic and
+/// journaled, and a request that already reached a provider is recovered or
+/// retried through the request id the caller supplied.
+#[tauri::command]
+fn cancel_core_commands(cancel_key: String) -> usize {
+  let pids: Vec<u32> = match stoppable_commands().lock() {
+    Ok(mut commands) => commands
+      .get_mut(&cancel_key)
+      .map(|entries| {
+        entries.iter_mut().for_each(|entry| entry.1 = true);
+        entries.iter().map(|entry| entry.0).collect()
+      })
+      .unwrap_or_default(),
+    Err(_) => Vec::new(),
+  };
+  for pid in &pids {
+    signal_process(*pid, "INT");
+  }
+  if !pids.is_empty() {
+    let waiting = pids.clone();
+    std::thread::spawn(move || {
+      std::thread::sleep(Duration::from_secs(3));
+      for pid in waiting {
+        if still_running(&cancel_key, pid) {
+          signal_process(pid, "KILL");
+        }
+      }
+    });
+  }
+  pids.len()
+}
+
+const STOPPED_STATUS: i32 = 130;
+
 fn run_core_with_python(
   python_bin: &str,
   project_root: &PathBuf,
   args: &[String],
+  cancel_key: Option<&str>,
 ) -> Result<CoreCommandResponse, String> {
   let mut command = python_command(python_bin, project_root);
   configure_runtime_environment(&mut command);
@@ -226,9 +307,27 @@ fn run_core_with_python(
     .arg("openauthor")
     .args(args);
 
-  let output = command
-    .output()
-    .map_err(|error| format!("Failed to execute python core via '{python_bin}': {error}"))?;
+  let output = match cancel_key {
+    None => command.output(),
+    Some(key) => {
+      command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+      let child = command
+        .spawn()
+        .map_err(|error| format!("Failed to execute python core via '{python_bin}': {error}"))?;
+      let pid = child.id();
+      register_stoppable(key, pid);
+      let output = child.wait_with_output();
+      if finish_stoppable(key, pid) {
+        return Ok(CoreCommandResponse {
+          status: STOPPED_STATUS,
+          stdout: String::new(),
+          stderr: "error: Stopped.".to_string(),
+        });
+      }
+      output
+    }
+  }
+  .map_err(|error| format!("Failed to execute python core via '{python_bin}': {error}"))?;
 
   let status = output.status.code().unwrap_or(-1);
   let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -575,15 +674,15 @@ fn project_status(project_root: String) -> Result<ProjectStatus, String> {
 }
 
 #[tauri::command]
-async fn core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandResponse, String> {
+async fn core_command(project_root: String, args: Vec<String>, cancel_key: Option<String>) -> Result<CoreCommandResponse, String> {
   // Python commands can wait for disk, providers, or another book writer.
   // Keep both the native event loop and async executor responsive while they do.
-  tauri::async_runtime::spawn_blocking(move || execute_core_command(project_root, args))
+  tauri::async_runtime::spawn_blocking(move || execute_core_command(project_root, args, cancel_key))
     .await
     .map_err(|error| format!("Core command worker failed: {error}"))?
 }
 
-fn execute_core_command(project_root: String, args: Vec<String>) -> Result<CoreCommandResponse, String> {
+fn execute_core_command(project_root: String, args: Vec<String>, cancel_key: Option<String>) -> Result<CoreCommandResponse, String> {
   validate_core_args(&args)?;
   let root = resolve_project_root(&project_root);
   if !root.exists() {
@@ -593,9 +692,9 @@ fn execute_core_command(project_root: String, args: Vec<String>) -> Result<CoreC
   let mut last_response: Option<CoreCommandResponse> = None;
   let mut spawn_errors: Vec<String> = Vec::new();
   for python_bin in python_candidates(&root) {
-    match run_core_with_python(&python_bin, &root, &args) {
+    match run_core_with_python(&python_bin, &root, &args, cancel_key.as_deref()) {
       Ok(response) => {
-        if response.status == 0 {
+        if response.status == 0 || response.status == STOPPED_STATUS {
           return Ok(response);
         }
         if is_missing_module(&response) {
@@ -625,10 +724,25 @@ fn execute_core_command(project_root: String, args: Vec<String>) -> Result<CoreC
 pub fn run() {
   tauri::Builder::default()
     .manage(SidecarRegistry::default())
+    .setup(|app| {
+      // A menu that cannot be built must never stop the app from opening; the
+      // platform's default menu stays in place and shortcuts keep working.
+      match menu::build(app.handle()) {
+        Ok(application_menu) => {
+          if let Err(error) = app.set_menu(application_menu) {
+            eprintln!("openAuthor: could not install the application menu: {error}");
+          }
+        }
+        Err(error) => eprintln!("openAuthor: could not build the application menu: {error}"),
+      }
+      Ok(())
+    })
+    .on_menu_event(|app, event| menu::handle_event(app, event.id().as_ref()))
     .invoke_handler(tauri::generate_handler![
       credentials::desktop_secret,
       project_status,
       core_command,
+      cancel_core_commands,
       sidecar_request,
       pick_folder,
       pick_zip_file,
@@ -660,6 +774,7 @@ mod tests {
     tauri::async_runtime::block_on(core_command(
       root.to_string_lossy().to_string(),
       args.iter().map(|item| item.to_string()).collect(),
+      None,
     ))
     .expect("Tauri core command bridge")
   }
@@ -692,7 +807,7 @@ with open('.openauthor/workspace/locks/project.lock', 'a+') as handle:
     assert_eq!(ready.trim(), "ready");
 
     let started = std::time::Instant::now();
-    let mut pending = Box::pin(core_command(root.to_string_lossy().to_string(), vec!["plan".into(), "brief".into(), "--synopsis".into(), "Saved after the lock releases.".into(), "--json".into()]));
+    let mut pending = Box::pin(core_command(root.to_string_lossy().to_string(), vec!["plan".into(), "brief".into(), "--synopsis".into(), "Saved after the lock releases.".into(), "--json".into()], None));
     let waker = std::task::Waker::from(Arc::new(WakeIgnore));
     let mut context = std::task::Context::from_waker(&waker);
     let yielded = std::future::Future::poll(pending.as_mut(), &mut context).is_pending();
@@ -708,6 +823,65 @@ with open('.openauthor/workspace/locks/project.lock', 'a+') as handle:
     assert!(readable.found, "project discovery remains available");
     assert_eq!(saved.status, 0, "pending save completes after the lock releases");
     fs::remove_dir_all(root).expect("remove synthetic book");
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn native_bridge_stops_a_running_command_without_changing_the_book() {
+    let root = temporary_project_root("stopped-command");
+    json_output(command(&root, &["init", ".", "--name", "Stopped Draft", "--json"]));
+    // Hold the book so the command under test is certainly still running.
+    let mut locker = python_command(&python_candidates(&root)[0], &root);
+    configure_runtime_environment(&mut locker);
+    let mut child = locker.arg("-c").arg(r#"import fcntl, sys, select
+import os
+os.makedirs('.openauthor/workspace/locks', exist_ok=True)
+with open('.openauthor/workspace/locks/project.lock', 'a+') as handle:
+  fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+  print('ready', flush=True)
+  select.select([sys.stdin], [], [], 20)
+"#).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().expect("hold synthetic book lock");
+    let mut ready = String::new();
+    BufReader::new(child.stdout.take().expect("lock output")).read_line(&mut ready).expect("lock ready signal");
+    assert_eq!(ready.trim(), "ready");
+
+    let key = format!("generation:{}", root.to_string_lossy());
+    assert_eq!(cancel_core_commands(key.clone()), 0, "nothing is running yet");
+    let running = {
+      let root = root.to_string_lossy().to_string();
+      let key = key.clone();
+      std::thread::spawn(move || tauri::async_runtime::block_on(core_command(
+        root,
+        vec!["plan".into(), "brief".into(), "--synopsis".into(), "Must not be saved.".into(), "--json".into()],
+        Some(key),
+      )))
+    };
+    let started = std::time::Instant::now();
+    while !still_registered_for_test(&key) {
+      assert!(started.elapsed() < Duration::from_secs(10), "the command never started");
+      std::thread::sleep(Duration::from_millis(20));
+    }
+    // Give the engine a moment to reach its wait for the book.
+    std::thread::sleep(Duration::from_millis(400));
+    let stopping = std::time::Instant::now();
+    assert_eq!(cancel_core_commands(key.clone()), 1);
+    let stopped = running.join().expect("command thread").expect("stopped command still answers");
+    assert_eq!(stopped.status, STOPPED_STATUS);
+    assert_eq!(stopped.stderr, "error: Stopped.");
+    assert!(stopping.elapsed() < Duration::from_millis(2500), "the engine should stop on the interrupt, not wait to be ended: {:?}", stopping.elapsed());
+    assert!(!still_registered_for_test(&key), "a finished command is forgotten");
+
+    child.stdin.take().expect("lock input").write_all(b"\n").expect("release lock");
+    child.wait().expect("lock holder exits");
+    let plan = json_output(command(&root, &["plan", "get", "--json"]));
+    assert_eq!(plan["brief"]["synopsis"], "", "the stopped command saved nothing");
+    let later = command(&root, &["plan", "brief", "--synopsis", "Saved afterwards.", "--json"]);
+    assert_eq!(later.status, 0, "the book is usable after a stop: {}", later.stderr);
+    fs::remove_dir_all(root).expect("remove synthetic book");
+  }
+
+  fn still_registered_for_test(cancel_key: &str) -> bool {
+    stoppable_commands().lock().expect("registry").contains_key(cancel_key)
   }
 
   #[test]

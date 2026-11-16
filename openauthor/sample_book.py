@@ -189,8 +189,12 @@ def create_sample_book(root: Path) -> ProjectPaths:
       "Continuity Notes:\n- The nineteenth and twenty-third steps are referred to later and are untouched."
     ),
     scene_id=scene_ids[1],
+    source="sample",
   )
   set_proposal_draft(paths, proposal_id=proposal_id, proposed_body=_TIGHTENED_SECOND_SCENE_OPENING + separator + remainder)
+  # History starts with the book as delivered, so the first edit has something to be compared with.
+  from .revisions import create_revision
+  create_revision(paths, "Sample book created", kind="manual")
   return paths
 
 

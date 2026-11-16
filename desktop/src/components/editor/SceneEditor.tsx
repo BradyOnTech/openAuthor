@@ -19,6 +19,7 @@ import { availableProviders } from "../../providerSelection";
 import { registerSceneSave } from "../../sceneSaveSession";
 import { isProjectBookChanging } from "../../bookOperationBarrier";
 import { replaceTextRange, smartPunctuationEnabled, smartReplacement, toggleEmphasis } from "../../smartTypography";
+import { primaryModifier } from "../../platformKeys";
 import { SelectionAssist } from "./SelectionAssist";
 import { FindBar, FindMarks, type FindMatch } from "./FindBar";
 import { ZenMode } from "../overlay/ZenMode";
@@ -346,18 +347,21 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const command = e.metaKey || e.ctrlKey;
+      // Find keys answer to the primary modifier only: on a Mac, Control+F
+      // and Control+G belong to caret movement in a text field.
+      const primary = primaryModifier(e);
       const key = e.key.toLowerCase();
       if (command && key === "s") {
         e.preventDefault();
         void save(true);
       }
-      if (command && !e.shiftKey && !e.altKey && key === "f") {
+      if (primary && !e.shiftKey && !e.altKey && key === "f") {
         e.preventDefault();
         const textarea = textareaRef.current;
         const picked = textarea && document.activeElement === textarea ? textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) : "";
         setFind(value => ({ open: true, query: picked && !picked.includes("\n") && picked.length <= 200 ? picked : "", focusRequest: value.focusRequest + 1, step: value.step }));
       }
-      if (command && !e.altKey && key === "g") {
+      if (primary && !e.altKey && key === "g") {
         e.preventDefault();
         setFind(value => value.open ? { ...value, step: value.step + (e.shiftKey ? -1 : 1) } : value);
       }
@@ -491,7 +495,7 @@ export function SceneEditor({ scene, tabId, focusPassage, zenMode = false, onExi
             if (readOnly || event.nativeEvent.isComposing || event.altKey) return;
             const command = event.metaKey || event.ctrlKey;
             const key = event.key.toLowerCase();
-            if (command && !event.shiftKey && key === "i") {
+            if (primaryModifier(event) && !event.shiftKey && key === "i") {
               // Scenes are Markdown: italics are stored as *text*. Cmd+B stays
               // with the sidebar; bold is rare in fiction and can be typed as **text**.
               event.preventDefault();

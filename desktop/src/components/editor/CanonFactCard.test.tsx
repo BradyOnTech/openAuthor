@@ -34,7 +34,7 @@ it("withdraws without losing sources and makes restoration available", async () 
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save fact correction" })));
   expect(updateCanonFact).toHaveBeenCalledWith("/book", fact, expect.objectContaining({ status: "rejected", evidence: fact.evidence }));
   view.rerender(<CanonFactCard {...props} fact={withdrawn} />);
-  expect(screen.getByText(/Excluded from new Copilot canon context/)).toBeTruthy();
+  expect(screen.getByText(/Excluded from new Assistant canon context/)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Correct or withdraw fact" }));
   fireEvent.change(screen.getByLabelText("Canon status"), { target: { value: "accepted" } });
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save fact correction" })));
