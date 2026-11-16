@@ -37,7 +37,7 @@ from .project_locks import serialized_project_access
 from .proposals import create_proposal, edit_change_hunk, get_proposal, set_proposal_draft, _digest_scene_payload
 from .proposal_delivery import current_proposal_delivery, recoverable_proposal
 from .project_lock import project_write_lock
-from .retrieval import get_retrieval_index_status, query_retrieval_index
+from .retrieval import get_retrieval_index_status, query_retrieval_index, refresh_retrieval_index_for_auto
 from .scenes import get_scene, list_scenes
 
 SUPPORTED_PROVIDERS = {"local", "openai", "anthropic", "openrouter", "openai-codex"}
@@ -351,6 +351,7 @@ def _openai_style_stream(
   def consume(frames: Any) -> dict[str, Any]:
     parts: list[str] = []
     usage: dict[str, Any] = {}
+    finish_reason = ""
     completed = False
     for frame in frames:
       if frame == "[DONE]":
@@ -364,6 +365,8 @@ def _openai_style_stream(
       choices = frame.get("choices") or []
       if not choices or not isinstance(choices[0], dict):
         continue
+      if isinstance(choices[0].get("finish_reason"), str):
+        finish_reason = choices[0]["finish_reason"]
       delta = choices[0].get("delta", {})
       content = delta.get("content") if isinstance(delta, dict) else None
       if isinstance(content, str) and content != "":
@@ -374,7 +377,7 @@ def _openai_style_stream(
         "Provider response was incomplete. Retry the request explicitly.",
         category="incomplete_stream", retriable=False, provider=provider,
       )
-    return {"text": "".join(parts).strip(), "usage": usage}
+    return {"text": "".join(parts).strip(), "usage": usage, "stop_reason": finish_reason}
 
   result, attempts = _stream_post(
     provider=provider,
@@ -390,6 +393,7 @@ def _openai_style_stream(
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
     "attempts": attempts,
+    "stop_reason": result["stop_reason"],
   }
 
 
@@ -406,6 +410,7 @@ def _anthropic_stream(
     parts: list[str] = []
     input_tokens = 0
     output_tokens = 0
+    stop_reason = ""
     completed = False
     for frame in frames:
       if not isinstance(frame, dict):
@@ -428,6 +433,9 @@ def _anthropic_stream(
         delta_usage = frame.get("usage", {})
         if isinstance(delta_usage, dict):
           output_tokens = int(delta_usage.get("output_tokens", 0) or 0)
+        message_delta = frame.get("delta", {})
+        if isinstance(message_delta, dict) and isinstance(message_delta.get("stop_reason"), str):
+          stop_reason = message_delta["stop_reason"]
     if not completed:
       raise ProviderExecutionError(
         "Provider response was incomplete. Retry the request explicitly.",
@@ -437,6 +445,7 @@ def _anthropic_stream(
       "text": "".join(parts).strip(),
       "input_tokens": input_tokens,
       "output_tokens": output_tokens,
+      "stop_reason": stop_reason,
     }
 
   result, attempts = _stream_post(
@@ -455,6 +464,7 @@ def _anthropic_stream(
       "output_tokens": result["output_tokens"],
     },
     "attempts": attempts,
+    "stop_reason": result["stop_reason"],
   }
 
 
@@ -1039,6 +1049,7 @@ def _openai_chat_completion(
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
     "attempts": attempts,
+    "stop_reason": str(choice.get("finish_reason") or ""),
   }
 
 
@@ -1182,6 +1193,7 @@ def _anthropic_message(
     "output_tokens": int(usage.get("output_tokens", 0) or 0),
     "raw_usage": usage,
     "attempts": attempts,
+    "stop_reason": str(response.get("stop_reason") or ""),
   }
 
 
@@ -1255,6 +1267,7 @@ def _openrouter_chat_completion(
     "output_tokens": int(usage.get("completion_tokens", 0) or 0),
     "raw_usage": usage,
     "attempts": attempts,
+    "stop_reason": str(choice.get("finish_reason") or ""),
   }
 
 
@@ -1356,6 +1369,7 @@ def _call_provider(
   tool_calls: list[dict[str, Any]] = []
   resolved_model = ""
   resolved_reasoning_effort = None
+  payload: dict[str, Any] = {}
   start = time.perf_counter()
   if provider == "local":
     resolved_model = model
@@ -1455,7 +1469,11 @@ def _call_provider(
     )
 
   latency_ms = int((time.perf_counter() - start) * 1000)
-  if not text.strip() and not tool_calls:
+  stop_reason = str(payload.get("stop_reason") or "")
+  truncated = stop_reason in LENGTH_STOP_REASONS.get(provider, frozenset())
+  # A response cut off before any text is reported as truncated by the caller
+  # (with its usage), not as an unexplained empty reply.
+  if not text.strip() and not tool_calls and not truncated:
     raise ProviderExecutionError(
       "Provider returned empty output.",
       category="invalid_provider_output",
@@ -1474,7 +1492,66 @@ def _call_provider(
     "resolved_model": resolved_model,
     "reasoning_effort": reasoning_effort,
     "resolved_reasoning_effort": resolved_reasoning_effort,
+    "stop_reason": stop_reason,
+    "truncated": truncated,
   }
+
+
+# The provider's own word for "generation stopped because it ran out of output
+# room". Codex reports any turn that did not finish as an incomplete turn, which
+# its adapter already rejects for every caller.
+LENGTH_STOP_REASONS: dict[str, frozenset[str]] = {
+  "anthropic": frozenset({"max_tokens", "model_context_window_exceeded"}),
+  "openai": frozenset({"length"}),
+  "openrouter": frozenset({"length"}),
+}
+TRUNCATED_OUTPUT_CATEGORY = "truncated_output"
+TRUNCATED_OUTPUT_MESSAGE = (
+  "The model's response was cut off at its output length limit, so nothing was changed. "
+  "Ask for a smaller change or raise the output token limit, then retry."
+)
+
+
+def _failure_guidance(error: ProviderExecutionError) -> str:
+  """Author-facing detail appended to a wrapped provider failure message."""
+  return f" {TRUNCATED_OUTPUT_MESSAGE}" if error.category == TRUNCATED_OUTPUT_CATEGORY else ""
+
+
+def _reject_truncated_output(
+  paths: ProjectPaths,
+  *,
+  provider: str,
+  model: str,
+  provider_result: dict[str, Any],
+) -> None:
+  """Refuse a length-truncated response before it can become manuscript text.
+
+  A partial scene, passage, merge or structured result looks complete to every
+  later step. The spend is real, so it is reported on the failed run.
+  """
+  if not provider_result.get("truncated"):
+    return
+  raise ProviderExecutionError(
+    TRUNCATED_OUTPUT_MESSAGE,
+    category=TRUNCATED_OUTPUT_CATEGORY,
+    retriable=False,
+    provider=provider,
+    attempts=int(provider_result.get("attempts", 1) or 1),
+    reported_usage={
+      "input_tokens": int(provider_result.get("input_tokens", 0) or 0),
+      "output_tokens": int(provider_result.get("output_tokens", 0) or 0),
+      "estimated_cost_usd": _estimate_cost_usd(
+        paths,
+        provider=provider,
+        model=model,
+        input_tokens=int(provider_result.get("input_tokens", 0) or 0),
+        output_tokens=int(provider_result.get("output_tokens", 0) or 0),
+      ),
+      "provider_attempts": int(provider_result.get("attempts", 1) or 1),
+    },
+    resolved_model=str(provider_result.get("resolved_model") or ""),
+    resolved_reasoning_effort=provider_result.get("resolved_reasoning_effort"),
+  )
 
 
 def _validate_reasoning_effort(provider: str, value: str | None) -> None:
@@ -1576,6 +1653,9 @@ def _write_chat_generation_log(
       "provider_attempts": provider_result["attempts"],
       "estimated_cost_usd": estimated_cost_usd,
     }
+    if provider_result.get("truncated"):
+      payload["truncated"] = True
+      payload["stop_reason"] = str(provider_result.get("stop_reason", ""))
   if error is not None:
     safe_error_keys = (
       "category",
@@ -1633,7 +1713,15 @@ def complete_chat(
   response_token_reserve: int = 0,
   completion_context: dict[str, Any] | None = None,
   reasoning_effort: str | None = None,
+  allow_truncated: bool = False,
 ) -> dict[str, Any]:
+  """Run one provider completion with budget enforcement and a run log.
+
+  A response cut off at the provider's output length limit is rejected unless
+  ``allow_truncated`` is set. Only conversational replies set it: their partial
+  text is still readable, and the result says ``truncated``. A cut-off tool
+  call or an empty reply is rejected either way.
+  """
   _validate_reasoning_effort(provider, reasoning_effort)
   if provider not in SUPPORTED_PROVIDERS:
     allowed = ", ".join(sorted(SUPPORTED_PROVIDERS))
@@ -1711,6 +1799,8 @@ def complete_chat(
       tools=tools,
       **({"reasoning_effort": reasoning_effort} if reasoning_effort else {}),
     )
+    if not allow_truncated or provider_result["tool_calls"] or not provider_result["text"].strip():
+      _reject_truncated_output(paths, provider=provider, model=selected_model, provider_result=provider_result)
   except ChatInterrupted:
     _write_chat_generation_log(
       paths,
@@ -1772,6 +1862,7 @@ def complete_chat(
     guidance = " Sign in again or update this provider's credentials in Settings." if error.category == "auth_error" else ""
     if error.category == "unreviewed_runtime_context":
       guidance = " Use a dedicated openAuthor Codex home without AGENTS instruction files; no manuscript was sent."
+    guidance += _failure_guidance(error)
     raise ProviderExecutionError(
       f"Chat completion failed ({error.category}).{guidance} See {log_path}.",
       category=error.category, retriable=error.retriable, provider=error.provider,
@@ -1825,6 +1916,7 @@ def complete_chat(
     "resolved_model": provider_result.get("resolved_model", ""),
     "reasoning_effort": reasoning_effort,
     "resolved_reasoning_effort": provider_result.get("resolved_reasoning_effort"),
+    "truncated": bool(provider_result.get("truncated")),
   }
 
 
@@ -1972,6 +2064,10 @@ def _resolve_retrieval_context(
   }
   if retrieval_mode == "off":
     return base_payload
+  if retrieval_mode == "auto":
+    # A failed build changes nothing here: the query below then degrades just
+    # as it did when the index had to be built by hand.
+    refresh_retrieval_index_for_auto(paths)
 
   try:
     result = query_retrieval_index(
@@ -2043,6 +2139,10 @@ def _resolve_retrieval_context(
       "source_count": index_row.get("source_count", 0),
       "git_head": index_row.get("git_head", ""),
       "indexed_git_head": index_row.get("indexed_git_head", ""),
+      # How the cited index came to exist (built by hand, or built/refreshed
+      # by auto mode and why). It describes the index, so it is identical in
+      # the reviewed preview and the send that follows it.
+      "build": index_row.get("build", {}),
     },
   }
 
@@ -2453,6 +2553,7 @@ def generate_proposal(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
     )
+    _reject_truncated_output(paths, provider=provider, model=selected_model, provider_result=provider_result)
   except ProviderExecutionError as error:
     _, failure_log_path = _write_generation_failure_log(
       paths,
@@ -2471,7 +2572,7 @@ def generate_proposal(
       error=error,
     )
     raise OpenAuthorError(
-      f"Proposal generation failed ({error.category}). See {failure_log_path}."
+      f"Proposal generation failed ({error.category}).{_failure_guidance(error)} See {failure_log_path}."
     ) from error
   raw_provider_text = provider_result["text"]
   normalized_text, normalization_diagnostics = _normalize_proposal_text(
@@ -2868,6 +2969,7 @@ def generate_proposal_draft(
         temperature=temperature,
         max_output_tokens=max_output_tokens,
       )
+      _reject_truncated_output(paths, provider=provider, model=selected_model, provider_result=provider_result)
     except ProviderExecutionError as error:
       _, failure_log_path = _write_generation_failure_log(
         paths,
@@ -2886,7 +2988,7 @@ def generate_proposal_draft(
         error=error,
       )
       raise OpenAuthorError(
-        f"Draft generation failed ({error.category}). See {failure_log_path}."
+        f"Draft generation failed ({error.category}).{_failure_guidance(error)} See {failure_log_path}."
       ) from error
 
     raw_provider_text = provider_result["text"]
@@ -3092,6 +3194,7 @@ def regenerate_change_hunk(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
     )
+    _reject_truncated_output(paths, provider=provider, model=selected_model, provider_result=result)
   except BudgetPolicyError as error:
     run_id, log_path = _write_generation_budget_failure_log(paths, **failure_context, error=error)
     _attach_proposal_to_generation_log(paths, run_id=run_id, proposal_id=proposal_id)
@@ -3318,6 +3421,7 @@ def generate_merge_resolution(
       temperature=temperature,
       max_output_tokens=max_output_tokens,
     )
+    _reject_truncated_output(paths, provider=provider, model=selected_model, provider_result=provider_result)
   except ProviderExecutionError as error:
     _, failure_log_path = _write_generation_failure_log(
       paths,
@@ -3336,7 +3440,7 @@ def generate_merge_resolution(
       error=error,
     )
     raise OpenAuthorError(
-      f"Merge resolution failed ({error.category}). See {failure_log_path}."
+      f"Merge resolution failed ({error.category}).{_failure_guidance(error)} See {failure_log_path}."
     ) from error
 
   raw_provider_text = provider_result["text"]

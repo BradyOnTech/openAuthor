@@ -133,7 +133,9 @@ class ReviewContextTests(unittest.TestCase):
       self.assertEqual(receipt["scope"], "adaptive")
       self.assertEqual(receipt["scene_titles"], ["Choice"])
       self.assertFalse(receipt["selected_text_included"])
-      self.assertEqual(receipt["retrieval_result_count"], 0)
+      # Auto retrieval builds its own index, so the turn now cites passages
+      # (this was 0 while the index had to be built by hand first).
+      self.assertGreater(receipt["retrieval_result_count"], 0)
       log = json.loads((paths.root / drafted["draft"]["log_path"]).read_text())
       self.assertEqual((log["context_scene_radius"], log["codex_limit"]), (1, 8))
 

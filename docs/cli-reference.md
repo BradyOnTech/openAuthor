@@ -9,6 +9,10 @@ See the [README](../README.md) for an overview and [desktop-architecture.md](des
 # initialize in current folder
 python3 -m openauthor init .
 
+# suggest a folder for a new book, or create the built-in sample book (no project needed)
+python3 -m openauthor project suggest-root --name "The Salt Road" --json   # ~/Documents/openAuthor/The Salt Road, or under OPENAUTHOR_PROJECTS_DIR
+python3 -m openauthor project sample --target "/path/to/empty-folder" --json
+
 # add and list scenes
 python3 -m openauthor scene add --title "Opening Scene" --summary "Introduce protagonist" --pov "Elara"
 python3 -m openauthor scene list

@@ -27,6 +27,18 @@ Acquisition failures stop the operation before its body runs. Hosts without
 POSIX locking fail closed; this is verified on macOS, not a Windows support
 claim. A read also needs access to the project's workspace lock file.
 
+Waiting for ownership is bounded. A caller waits up to 30 seconds (override
+with `OPENAUTHOR_LOCK_TIMEOUT_MS`; `0` means do not wait) for both the in-process
+thread lock and the file lock, under one deadline. If the book is still owned
+then, the operation fails before its body runs with "Another openAuthor
+operation on this book is still running…", which the CLI reports as an ordinary
+error (exit status 2). A caller that obtains ownership within the deadline
+behaves as before: the file lock is requested without blocking and retried at
+2–50 ms intervals, so a waiter resumes within about 50 ms of release. Reentrant
+acquisition by the owning thread never waits. `tests/test_lock_timeout.py`
+covers timeout, late success, recovery after a timeout, same-process threads,
+reentrancy and the CLI message.
+
 Do not hold this lock across provider/network calls. If an Assistant operation
 also needs a thread lock, acquire the Assistant thread lock first, then the
 project lock. Project-locked code must not acquire an Assistant thread lock.
@@ -226,6 +238,16 @@ it is not a transaction for every filesystem operation. In particular:
 - Journals rely on the operating system honoring fsync and atomic filesystem
   operations. Damaged/missing journals or immutable objects, whole-device loss,
   signed-app forced-termination drills and verified backup recovery remain gates.
+
+- The bounded wait reports a busy book; it does not detect or stop a hung
+  holder. Ownership is released only when the holding operation returns or its
+  process exits, so a stuck holder makes every later command fail after the
+  timeout until that process is ended. Waiters are not queued in arrival order,
+  and a legitimate operation that holds the book longer than the timeout (a very
+  large import, for example) causes concurrent commands to fail and need a retry.
+  The timeout covers only the shared project lock: named `project_write_lock`
+  resources other than `book-write`, and Assistant thread locks, still wait
+  without a limit.
 
 The prevention rule for future manuscript operations is to enter through the
 shared transaction interface and add a competing-caller regression, not introduce

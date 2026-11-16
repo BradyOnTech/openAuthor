@@ -20,7 +20,7 @@ from ..project import (
   ensure_project_identity,
   utc_now,
 )
-from ..retrieval import query_retrieval_index
+from ..retrieval import query_retrieval_index, refresh_retrieval_index_for_auto
 from ..revisions import revision_head
 from ..scenes import get_scene
 from ..project_locks import serialized_project_access
@@ -468,6 +468,10 @@ def build_context_pack(
     "degraded": False,
   }
   if policy.retrieval_mode != "off":
+    if policy.retrieval_mode == "auto":
+      # The desktop has no index-build step. Failure leaves the query below to
+      # degrade as before.
+      refresh_retrieval_index_for_auto(paths)
     try:
       result = query_retrieval_index(
         paths,

@@ -4,6 +4,7 @@ import hashlib
 import difflib
 import json
 import re
+import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
@@ -63,6 +64,29 @@ def _store_object(paths: ProjectPaths, content: str) -> str:
   return digest
 
 
+# A file whose modification time is this close to "now" could be rewritten in
+# place within the same filesystem timestamp tick and keep an identical stat
+# record, so it is always read again rather than trusted (as Git does for its
+# index). Two seconds covers the coarsest timestamps in common use.
+_SETTLED_AFTER_NS = 2_000_000_000
+
+
+def _file_signature(file_path: Path) -> tuple[tuple[int, int, int, int], bool]:
+  status = file_path.stat()
+  settled = time.time_ns() - status.st_mtime_ns > _SETTLED_AFTER_NS
+  return (status.st_ino, status.st_size, status.st_mtime_ns, status.st_ctime_ns), settled
+
+
+def _read_book_file(file_path: Path) -> str:
+  try:
+    return file_path.read_text(encoding="utf-8")
+  except UnicodeDecodeError as error:
+    raise OpenAuthorError(
+      f"Book file {file_path} is not valid UTF-8 text (unreadable byte at position {error.start}). "
+      "Open it in a text editor, re-save it with UTF-8 encoding, then try again. Nothing was changed."
+    ) from error
+
+
 @serialized_project_access
 def create_revision(
   paths: ProjectPaths,
@@ -71,12 +95,33 @@ def create_revision(
   kind: str = "manual",
   metadata: dict[str, Any] | None = None,
   skip_unchanged: bool = False,
+  known_digests: dict[str, tuple[tuple[int, int, int, int], str]] | None = None,
 ) -> str:
+  """Record the current book files as a Revision.
+
+  ``known_digests`` lets one operation that records two Revisions under a
+  single lock hold (before and after an edit) hash each untouched file once:
+  it maps a book path to the stat record and object digest seen earlier in the
+  same process. Every writer replaces files atomically, which changes the stat
+  record, so a matching settled record means the stored object is current.
+  """
   ensure_revision_store(paths)
   manifest: dict[str, str] = {}
   for file_path in _book_files(paths):
     relative = file_path.relative_to(paths.root).as_posix()
-    manifest[relative] = _store_object(paths, file_path.read_text(encoding="utf-8"))
+    if known_digests is None:
+      manifest[relative] = _store_object(paths, _read_book_file(file_path))
+      continue
+    signature, settled = _file_signature(file_path)
+    known = known_digests.get(relative)
+    if known is not None and settled and known[0] == signature:
+      manifest[relative] = known[1]
+      continue
+    manifest[relative] = _store_object(paths, _read_book_file(file_path))
+    if settled:
+      known_digests[relative] = (signature, manifest[relative])
+    else:
+      known_digests.pop(relative, None)
 
   created_at = utc_now()
   parent = revision_head(paths)
@@ -151,10 +196,11 @@ def checkpointed_edit(paths: ProjectPaths, message: str, *, kind: str = "author_
   with project_write_lock(paths):
     recover_interrupted_edit(paths)
     with recoverable_book_edit(paths):
-      before = create_revision(paths, f"Before {message}", kind=f"{kind}_before", skip_unchanged=True)
+      digests: dict[str, tuple[tuple[int, int, int, int], str]] = {}
+      before = create_revision(paths, f"Before {message}", kind=f"{kind}_before", skip_unchanged=True, known_digests=digests)
       transaction_id = uuid.uuid4().hex
       yield before
-      create_revision(paths, message, kind=kind, metadata={**(metadata or {}), "edit_transaction_id": transaction_id, "before_revision": before}, skip_unchanged=kind == "author_edit")
+      create_revision(paths, message, kind=kind, metadata={**(metadata or {}), "edit_transaction_id": transaction_id, "before_revision": before}, skip_unchanged=kind == "author_edit", known_digests=digests)
 
 
 def get_revision(paths: ProjectPaths, revision_id: str) -> dict[str, Any]:

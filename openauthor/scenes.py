@@ -141,13 +141,31 @@ def add_scene(
   raise OpenAuthorError("Unable to allocate a scene index.")
 
 
+def read_scene_text(scene_file: Path) -> str:
+  """Read one scene file as UTF-8 text, tolerating a leading byte-order mark.
+
+  Some editors prepend a BOM when saving. It is not part of the prose and would
+  hide the frontmatter block, so it is dropped here and never written back.
+  """
+  try:
+    return scene_file.read_text(encoding="utf-8-sig")
+  except UnicodeDecodeError as error:
+    raise OpenAuthorError(
+      f"Scene file {scene_file} is not valid UTF-8 text (unreadable byte at position {error.start}). "
+      "Open it in a text editor, re-save it with UTF-8 encoding, then try again. Nothing was changed."
+    ) from error
+
+
 def parse_front_matter(scene_file: Path) -> dict[str, str]:
-  text = scene_file.read_text(encoding="utf-8")
+  text = read_scene_text(scene_file)
   front_matter, _ = split_scene_text(text)
   return front_matter
 
 
 def split_scene_text(text: str) -> tuple[dict[str, str], str]:
+  # A byte-order mark is an encoding artifact, not prose: left in place it
+  # hides the frontmatter block and the scene loses its id and metadata.
+  text = text.removeprefix("\ufeff")
   if not text.startswith("---\n"):
     return {}, text
   end = text.find("\n---\n", 4)
@@ -165,7 +183,7 @@ def split_scene_text(text: str) -> tuple[dict[str, str], str]:
 
 
 def _scene_detail(paths: ProjectPaths, scene_file: Path) -> dict[str, str]:
-  text = scene_file.read_text(encoding="utf-8")
+  text = read_scene_text(scene_file)
   front_matter, body = split_scene_text(text)
   return {
     "id": front_matter.get("id", scene_file.stem),
@@ -200,9 +218,30 @@ def list_scenes(paths: ProjectPaths) -> list[dict[str, Any]]:
   return rows
 
 
+_GENERATED_SCENE_ID = re.compile(r"scene-(\d+)")
+
+
+def _scene_files_for(paths: ProjectPaths, scene_identifier: str):
+  """Yield scene files, most likely holder of ``scene_identifier`` first.
+
+  Generated ids and filenames share their number (``scene-0042`` lives in
+  ``0042-<slug>.md``), so a lookup normally reads one file instead of scanning
+  the manuscript. The frontmatter id stays authoritative: callers still compare
+  it, and every other file follows in name order for renamed or hand-made files.
+  """
+  named: list[Path] = []
+  match = _GENERATED_SCENE_ID.fullmatch(scene_identifier)
+  if match:
+    named = sorted(paths.scenes_dir.glob(f"{match.group(1)}-*.md"))
+    yield from named
+  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+    if scene_file not in named:
+      yield scene_file
+
+
 @serialized_project_access
 def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
-  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+  for scene_file in _scene_files_for(paths, scene_identifier):
     front_matter = parse_front_matter(scene_file)
     if front_matter.get("id") == scene_identifier:
       return scene_file
@@ -213,7 +252,7 @@ def find_scene_file(paths: ProjectPaths, scene_identifier: str) -> Path:
 def get_scene(paths: ProjectPaths, scene_identifier: str) -> dict[str, Any]:
   from .scene_edits import scene_edit_version
 
-  for scene_file in sorted(paths.scenes_dir.glob("*.md")):
+  for scene_file in _scene_files_for(paths, scene_identifier):
     detail = _scene_detail(paths, scene_file)
     if detail["id"] == scene_identifier:
       return {**detail, "edit_version": scene_edit_version(paths, detail)}

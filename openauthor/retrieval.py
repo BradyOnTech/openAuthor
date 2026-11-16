@@ -11,7 +11,7 @@ from .memory_context import list_assistant_memory
 from .ai_visibility import memory_for_ai
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, utc_now
 from .revisions import revision_head
-from .scenes import split_scene_text
+from .scenes import read_scene_text, split_scene_text
 from .text_analysis import retrieval_terms
 
 RETRIEVAL_INDEX_SCHEMA_VERSION = 1
@@ -37,7 +37,7 @@ def _current_git_head(paths: ProjectPaths) -> str:
 def _collect_sources(paths: ProjectPaths) -> list[dict[str, str]]:
   sources: list[dict[str, str]] = []
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
-    front_matter, body = split_scene_text(scene_file.read_text(encoding="utf-8"))
+    front_matter, body = split_scene_text(read_scene_text(scene_file))
     scene_id = front_matter.get("id", scene_file.stem).strip()
     if scene_id == "":
       continue
@@ -211,7 +211,12 @@ def build_retrieval_index(
   *,
   chunk_words: int = DEFAULT_CHUNK_WORDS,
   overlap_words: int = DEFAULT_OVERLAP_WORDS,
+  trigger: str = "manual",
+  action: str = "built",
+  reasons: list[str] | None = None,
 ) -> dict[str, Any]:
+  """Write the index. ``trigger``/``action``/``reasons`` are stored with it so a
+  run that cites the index also records how the index came to exist."""
   _validate_chunk_params(chunk_words=chunk_words, overlap_words=overlap_words)
   paths.retrieval_dir.mkdir(parents=True, exist_ok=True)
 
@@ -234,6 +239,7 @@ def build_retrieval_index(
     "memory_policy_version": 1,
     "tokenizer_version": TOKENIZER_VERSION,
     "created_at": utc_now(),
+    "build": {"trigger": trigger, "action": action, "reasons": list(reasons or [])},
     "project_root": str(paths.root),
     "git_head": git_head,
     "source_digest": source_digest,
@@ -315,7 +321,58 @@ def get_retrieval_index_status(paths: ProjectPaths) -> dict[str, Any]:
     "indexed_git_head": indexed_head,
     "source_digest": current_digest,
     "indexed_source_digest": indexed_digest,
+    "build": _build_record(payload),
   }
+
+
+def _build_record(payload: dict[str, Any]) -> dict[str, Any]:
+  record = payload.get("build")
+  if not isinstance(record, dict):
+    # Indexes written before build provenance existed came from the CLI.
+    record = {"trigger": "manual", "action": "built", "reasons": []}
+  return {
+    "trigger": str(record.get("trigger", "manual")),
+    "action": str(record.get("action", "built")),
+    "reasons": [str(reason) for reason in record.get("reasons", []) if isinstance(reason, str)],
+    "created_at": str(payload.get("created_at", "")),
+  }
+
+
+def refresh_retrieval_index_for_auto(paths: ProjectPaths) -> dict[str, Any]:
+  """Give ``auto`` retrieval a usable index: build a missing one, refresh a stale one.
+
+  The desktop has no separate "build index" step, so without this an author on
+  the default mode never gets retrieved passages. The project lock is held only
+  while sources are read and the index is written, never across a provider
+  call. Failure is reported, not raised: the caller queries as before and
+  ``auto`` degrades exactly as it does when no index exists.
+  """
+  from .project_locks import project_lock
+
+  outcome: dict[str, Any] = {"action": "none", "reasons": [], "error": ""}
+  try:
+    with project_lock(paths):
+      chunk_words, overlap_words = DEFAULT_CHUNK_WORDS, DEFAULT_OVERLAP_WORDS
+      try:
+        status = get_retrieval_index_status(paths)
+      except OpenAuthorError:
+        status = {"present": True, "stale": True, "stale_reasons": ["index_unreadable"]}
+      if not status.get("present"):
+        outcome.update(action="built", reasons=["index_missing"])
+      elif status.get("stale"):
+        outcome.update(action="refreshed", reasons=list(status.get("stale_reasons", [])))
+        # Keep the chunking an author chose when building the index by hand.
+        chunk_words = int(status.get("chunk_words", chunk_words))
+        overlap_words = int(status.get("overlap_words", overlap_words))
+      else:
+        return outcome
+      build_retrieval_index(
+        paths, chunk_words=chunk_words, overlap_words=overlap_words,
+        trigger="auto", action=outcome["action"], reasons=outcome["reasons"],
+      )
+  except (OpenAuthorError, OSError, ValueError) as error:
+    return {**outcome, "action": "failed", "error": str(error)}
+  return outcome
 
 
 def query_retrieval_index(
@@ -477,6 +534,7 @@ def query_retrieval_index(
       "source_count": status.get("source_count"),
       "git_head": status.get("git_head"),
       "indexed_git_head": status.get("indexed_git_head"),
+      "build": status.get("build", {}),
     },
     "results": results,
   }

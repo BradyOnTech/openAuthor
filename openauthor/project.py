@@ -63,6 +63,17 @@ def utc_now() -> str:
   return datetime.now(UTC).isoformat()
 
 
+def debug_tracebacks_enabled() -> bool:
+  return os.environ.get("OPENAUTHOR_DEBUG", "").strip() == "1"
+
+
+def describe_unexpected_error(error: BaseException) -> str:
+  """One line an author can report, without a traceback."""
+  detail = " ".join(str(error).split())
+  summary = f"{type(error).__name__}: {detail}" if detail else type(error).__name__
+  return f"Unexpected internal error ({summary}). Set OPENAUTHOR_DEBUG=1 and retry to see the full traceback."
+
+
 def atomic_write_text(path: Path, content: str) -> None:
   from .book_transactions import write_transaction_text
   if write_transaction_text(path, content):

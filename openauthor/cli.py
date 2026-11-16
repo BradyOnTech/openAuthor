@@ -99,6 +99,8 @@ from .git_ops import (
 )
 from .project import (
   OpenAuthorError,
+  debug_tracebacks_enabled,
+  describe_unexpected_error,
   ensure_project_identity,
   initialize_project,
   initialize_project_from_folder,
@@ -193,6 +195,12 @@ def build_parser() -> argparse.ArgumentParser:
   )
   project_ensure_id.add_argument("--id", dest="expected_id", default=None, help="Expected project id.")
   project_ensure_id.add_argument("--json", action="store_true", help="Output JSON.")
+  project_suggest_root = project_sub.add_parser("suggest-root", help="Suggest an unused folder for a new book.")
+  project_suggest_root.add_argument("--name", required=True, help="Book title.")
+  project_suggest_root.add_argument("--json", action="store_true", help="Output JSON.")
+  project_sample = project_sub.add_parser("sample", help="Create the built-in sample book in an empty folder.")
+  project_sample.add_argument("--target", required=True, help="Empty or missing folder for the sample book.")
+  project_sample.add_argument("--json", action="store_true", help="Output JSON.")
 
   manuscript_parser = subparsers.add_parser("manuscript", help="Import and export manuscript files.")
   manuscript_sub = manuscript_parser.add_subparsers(dest="manuscript_command", required=True)
@@ -1454,6 +1462,18 @@ def _run(args: argparse.Namespace) -> int:
       print(json.dumps(row))
     else:
       print(f"preview: {row.get('scene_count', 0)} scene(s)")
+    return 0
+
+  # These run before any book exists, so they must not require a project here.
+  if args.command == "project" and args.project_command == "suggest-root":
+    from .sample_book import suggest_project_root
+    suggestion = str(suggest_project_root(args.name))
+    print(json.dumps({"path": suggestion}) if args.json else suggestion)
+    return 0
+  if args.command == "project" and args.project_command == "sample":
+    from .sample_book import create_sample_book, sample_book_summary
+    row = sample_book_summary(create_sample_book(Path(args.target)))
+    print(json.dumps(row) if args.json else f"Created the sample book at {row['project_root']}")
     return 0
 
   paths = _paths_from_cwd()
@@ -2953,6 +2973,14 @@ def main(argv: list[str] | None = None) -> int:
   except (OpenAuthorError, OSError) as error:
     print(f"error: {error}", file=sys.stderr)
     return 2
+  except Exception as error:
+    # A defect must not reach the author as a raw traceback: the desktop shows
+    # stderr verbatim. Exit status 1 matches what an uncaught exception gave.
+    if debug_tracebacks_enabled():
+      import traceback
+      traceback.print_exc()
+    print(f"error: {describe_unexpected_error(error)}", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

@@ -455,6 +455,30 @@ def queue_memory_suggestion(
   return _versioned_suggestion(paths, suggestion)
 
 
+def _sorted_versioned_suggestions(
+  paths: ProjectPaths,
+  rows: list[dict[str, Any]],
+  sources: dict | None = None,
+) -> list[dict[str, Any]]:
+  cache: dict = sources if sources is not None else {}
+  return [_versioned_suggestion(paths, row, cache) for row in sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))]
+
+
+def _review_sources(scenes: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+  """Evidence sources for scenes this operation has already read under the lock.
+
+  Stamping review versions otherwise looks every evidence scene up again, which
+  on a long book rereads most of the manuscript once per suggestion list. An id
+  claimed by more than one file is left to the normal lookup.
+  """
+  claims = Counter(scene["id"] for scene in scenes)
+  return {
+    scene["id"]: {"body": scene["body"], "pov": scene.get("pov", "")}
+    for scene in scenes
+    if claims[scene["id"]] == 1
+  }
+
+
 @serialized_project_access
 def list_memory_suggestions(
   paths: ProjectPaths,
@@ -466,8 +490,7 @@ def list_memory_suggestions(
   rows = _read_store(paths)["suggestions"]
   if status is not None:
     rows = [row for row in rows if row.get("status") == status]
-  cache: dict = {}
-  return [_versioned_suggestion(paths, row, cache) for row in sorted(rows, key=lambda row: (-float(row.get("confidence", 0)), row.get("name", "")))]
+  return _sorted_versioned_suggestions(paths, rows)
 
 
 @serialized_project_access
@@ -512,8 +535,6 @@ def extract_memory_suggestions(
         "end": 0,
       })
     body = str(scene.get("body", ""))
-    prose = _unquoted_prose(body)
-    identity_free = _without_known_identities(prose, entities)
     for name, mention_start, mention_end in _proper_name_mentions(body):
       if name in NAME_STOPWORDS or len(name) < 3:
         continue
@@ -532,6 +553,8 @@ def extract_memory_suggestions(
     if selected and scene["id"] not in selected:
       continue
     scene_details.append(scene)
+    prose = _unquoted_prose(body)
+    identity_free = _without_known_identities(prose, entities)
     for entity in entities:
       names = [entity["name"], *entity.get("aliases", [])]
       for entity_name in names:
@@ -733,7 +756,9 @@ def extract_memory_suggestions(
     "added": added,
     "refreshed": refreshed,
     "pending": len([row for row in store["suggestions"] if row["status"] == "pending"]),
-    "suggestions": list_memory_suggestions(paths),
+    # The project lock has been held since ``all_scenes`` was read, so these
+    # are exactly the sources a fresh lookup would return.
+    "suggestions": _sorted_versioned_suggestions(paths, _read_store(paths)["suggestions"], _review_sources(all_scenes)),
   }
 
 

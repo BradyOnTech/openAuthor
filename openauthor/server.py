@@ -20,6 +20,7 @@ import base64
 import json
 import sys
 import threading
+import traceback
 import uuid
 from typing import Any, TextIO
 
@@ -42,7 +43,7 @@ from .assistant.mobile_outbox import (
   list_mobile_inbox_items,
   list_mobile_review_decisions,
 )
-from .project import OpenAuthorError, ProjectPaths, utc_now
+from .project import OpenAuthorError, ProjectPaths, debug_tracebacks_enabled, describe_unexpected_error, utc_now
 
 PROTOCOL_VERSION = 1
 
@@ -123,7 +124,12 @@ class ChatSidecarServer:
           error={"message": "Request frame must be an object.", "category": "invalid_request"},
         )
         continue
-      self._dispatch(request)
+      try:
+        self._dispatch(request)
+      except Exception as error:
+        # One failing request must not end the sidecar: later requests (and
+        # running chat turns) still need this process.
+        self._respond_unexpected(request.get("id"), error)
     for worker in self._workers:
       worker.join()
 
@@ -377,6 +383,16 @@ class ChatSidecarServer:
           "category": str(getattr(error, "category", "core_error")),
         },
       )
+    except Exception as error:
+      self._respond_unexpected(request_id, error)
+
+  def _respond_unexpected(self, request_id: Any, error: Exception) -> None:
+    if debug_tracebacks_enabled():
+      traceback.print_exception(error, file=sys.stderr)
+    self._writer.respond(
+      request_id,
+      error={"message": describe_unexpected_error(error), "category": "internal_error"},
+    )
 
   def _cancel_flag(self, request_key: str) -> threading.Event:
     with self._cancel_lock:
@@ -483,6 +499,16 @@ class ChatSidecarServer:
           "category": str(getattr(error, "category", "core_error")),
         },
       )
+    except Exception as error:
+      # Without a reply the desktop would wait on this turn indefinitely.
+      try:
+        try:
+          status = AssistantTurnStore(self._paths).get(turn_id).status
+        except Exception:
+          status = "failed"
+        emit_assistant_event("turn.status", {"status": status})
+      finally:
+        self._respond_unexpected(request_id, error)
     finally:
       with self._cancel_lock:
         self._cancel_flags.pop(request_key, None)

@@ -14,7 +14,7 @@ from .git_ops import current_branch, merge_revision_pair
 from .project import OpenAuthorError, ProjectPaths, atomic_write_json, atomic_write_text, utc_now
 from .project_locks import serialized_project_access
 from .revisions import create_revision, get_revision, read_file_at_revision, revision_head
-from .scenes import get_scene, split_scene_text, update_scene
+from .scenes import get_scene, read_scene_text, split_scene_text, update_scene
 from .writing_craft import DRAFT_REVISION_FOCUSES
 
 STATUSES = {"pending", "applied", "rejected"}
@@ -898,7 +898,7 @@ def _scene_digest(paths: ProjectPaths, scene_id: str) -> str:
 def _scene_digest_map(paths: ProjectPaths) -> dict[str, str]:
   digests: dict[str, str] = {}
   for scene_file in sorted(paths.scenes_dir.glob("*.md")):
-    front_matter, body = split_scene_text(scene_file.read_text(encoding="utf-8"))
+    front_matter, body = split_scene_text(read_scene_text(scene_file))
     identifier = front_matter.get("id", scene_file.stem)
     digests[identifier] = _digest_scene_payload(
       {

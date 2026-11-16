@@ -621,13 +621,16 @@ class AIModuleTests(unittest.TestCase):
         body="Fallback generation should proceed without retrieval index.",
       )
 
-      proposal = generate_proposal(
-        paths,
-        scene_id="scene-0001",
-        instruction="tighten pacing with fallback retrieval behavior",
-        provider="local",
-        retrieval_mode="auto",
-      )
+      # Auto mode now builds a missing index itself (tests/test_retrieval_auto.py).
+      # When that build cannot happen, the original degraded result still applies.
+      with patch("openauthor.retrieval.build_retrieval_index", side_effect=OpenAuthorError("Index could not be written.")):
+        proposal = generate_proposal(
+          paths,
+          scene_id="scene-0001",
+          instruction="tighten pacing with fallback retrieval behavior",
+          provider="local",
+          retrieval_mode="auto",
+        )
       retrieval = proposal["generation"]["retrieval"]
       self.assertEqual(retrieval["mode"], "auto")
       self.assertFalse(retrieval["used"])

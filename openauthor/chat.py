@@ -1070,6 +1070,9 @@ def _send_chat_message(
         tools=tools,
         turn_id=normalized_turn_id,
         round_index=round_index,
+        # A reply cut off at the length limit is still worth reading; it is
+        # marked on the stored message instead of being discarded.
+        allow_truncated=True,
       )
       if is_cancelled and is_cancelled(): raise ChatInterrupted("Chat turn interrupted by user.")
     except ChatInterrupted as error:
@@ -1159,6 +1162,7 @@ def _send_chat_message(
         "provider": provider,
         "model": model,
         "generation_id": completion.get("generation_id", ""),
+        **({"truncated": True} if completion.get("truncated") else {}),
       },
       turn_id=normalized_turn_id,
       channel=channel,

@@ -5,6 +5,7 @@ import hashlib
 import os
 import re
 import tempfile
+import unicodedata
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -204,28 +205,221 @@ def _scrivener_sections(source: Path) -> tuple[list[dict[str, Any]], list[str]]:
   return sections, warnings
 
 
-def _docx_paragraphs(path: Path) -> list[tuple[str, int, str]]:
+_WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+# Lines an author types to separate scenes inside one scene file. Export
+# centres them; nothing else about them changes, so they re-import verbatim.
+SCENE_BREAK_LINES = frozenset({"***", "* * *", "#"})
+_UNSUPPORTED_RUN_FORMATTING = {
+  "u": "underline",
+  "strike": "strikethrough",
+  "dstrike": "strikethrough",
+  "smallCaps": "small caps",
+  "caps": "all caps",
+  "vertAlign": "superscript or subscript",
+  "highlight": "highlighting",
+}
+
+Run = tuple[str, bool, bool]
+
+
+def _docx_toggle(properties: ElementTree.Element | None, name: str) -> bool | None:
+  """A run property such as ``w:b``: on, explicitly off, or not stated."""
+  node = properties.find(f"{_WORD}{name}") if properties is not None else None
+  if node is None:
+    return None
+  return node.get(f"{_WORD}val", "true").strip().lower() not in {"0", "false", "off", "none", "baseline"}
+
+
+def _docx_character_styles(archive: zipfile.ZipFile) -> dict[str, tuple[bool, bool]]:
+  """Bold/italic carried by character styles such as Emphasis and Strong."""
+  try:
+    root = ElementTree.fromstring(archive.read("word/styles.xml"))
+  except (KeyError, ElementTree.ParseError):
+    return {}
+  declared: dict[str, tuple[str, bool | None, bool | None]] = {}
+  for style in root.iter(f"{_WORD}style"):
+    if style.get(f"{_WORD}type") != "character":
+      continue
+    based_on = style.find(f"{_WORD}basedOn")
+    properties = style.find(f"{_WORD}rPr")
+    declared[style.get(f"{_WORD}styleId", "")] = (
+      based_on.get(f"{_WORD}val", "") if based_on is not None else "",
+      _docx_toggle(properties, "b"),
+      _docx_toggle(properties, "i"),
+    )
+
+  def resolve(identifier: str, seen: tuple[str, ...] = ()) -> tuple[bool, bool]:
+    if identifier not in declared or identifier in seen:
+      return False, False
+    based_on, bold, italic = declared[identifier]
+    inherited = resolve(based_on, (*seen, identifier))
+    return inherited[0] if bold is None else bold, inherited[1] if italic is None else italic
+
+  return {identifier: resolve(identifier) for identifier in declared}
+
+
+def _docx_paragraph_runs(paragraph: ElementTree.Element, styles: dict[str, tuple[bool, bool]], unsupported: set[str]) -> list[Run]:
+  runs: list[Run] = []
+
+  def visit(node: ElementTree.Element, bold: bool, italic: bool) -> None:
+    for child in node:
+      if child.tag == f"{_WORD}r":
+        properties = child.find(f"{_WORD}rPr")
+        style = properties.find(f"{_WORD}rStyle") if properties is not None else None
+        style_bold, style_italic = styles.get(style.get(f"{_WORD}val", ""), (False, False)) if style is not None else (False, False)
+        direct_bold, direct_italic = _docx_toggle(properties, "b"), _docx_toggle(properties, "i")
+        before = len(runs)
+        visit(child, style_bold if direct_bold is None else direct_bold, style_italic if direct_italic is None else direct_italic)
+        if properties is not None and any(text.strip() for text, _, _ in runs[before:]):
+          unsupported.update(label for name, label in _UNSUPPORTED_RUN_FORMATTING.items() if _docx_toggle(properties, name))
+      elif child.tag == f"{_WORD}t":
+        if child.text:
+          runs.append((child.text, bold, italic))
+      elif child.tag == f"{_WORD}tab":
+        runs.append(("\t", bold, italic))
+      elif child.tag in {f"{_WORD}br", f"{_WORD}cr"}:
+        runs.append(("\n", bold, italic))
+      else:
+        visit(child, bold, italic)
+
+  visit(paragraph, False, False)
+  return runs
+
+
+def _merge_runs(runs: list[Run]) -> list[Run]:
+  merged: list[Run] = []
+  for text, bold, italic in runs:
+    if not text:
+      continue
+    if merged and merged[-1][1:] == (bold, italic):
+      merged[-1] = (merged[-1][0] + text, bold, italic)
+    else:
+      merged.append((text, bold, italic))
+  return merged
+
+
+def _emphasis_segments(runs: list[Run]) -> list[Run]:
+  """Runs as Markdown can state them: merged, with whitespace left plain.
+
+  Whitespace carries no visible emphasis, so markers hug the words and the
+  spaces at the edge of an emphasised run stay outside them.
+  """
+  segments: list[Run] = []
+  for text, bold, italic in _merge_runs(runs):
+    core = text.strip()
+    if not core or not (bold or italic):
+      segments.append((text, False, False))
+      continue
+    segments.extend([(text[:len(text) - len(text.lstrip())], False, False), (core, bold, italic), (text[len(text.rstrip()):], False, False)])
+  return _merge_runs(segments)
+
+
+def _without_edge_punctuation(segments: list[Run]) -> list[Run]:
+  peeled: list[Run] = []
+  for text, bold, italic in segments:
+    start, end = 0, len(text)
+    while start < end and _is_punctuation(text[start]):
+      start += 1
+    while end > start and _is_punctuation(text[end - 1]):
+      end -= 1
+    emphasised = (bold or italic) and start < end
+    peeled.extend([(text[:start], False, False), (text[start:end], bold and emphasised, italic and emphasised), (text[end:], False, False)] if emphasised else [(text, False, False)])
+  return _merge_runs(peeled)
+
+
+def _grouped_emphasis(segments: list[Run]) -> str:
+  """Nest emphasis the way an author would type it: *She said **never** again.*"""
+  output: list[str] = []
+  index = 0
+  while index < len(segments):
+    text, bold, italic = segments[index]
+    if not (bold or italic):
+      output.append(text)
+      index += 1
+      continue
+    # A phrase is emphasised runs joined only by whitespace.
+    end = index + 1
+    while end < len(segments):
+      following = end + 1 if not segments[end][0].strip() and not (segments[end][1] or segments[end][2]) else end
+      if following < len(segments) and (segments[following][1] or segments[following][2]):
+        end = following + 1
+      else:
+        break
+    group = segments[index:end]
+    emphasised = [row for row in group if row[1] or row[2]]
+    all_bold = all(row[1] for row in emphasised)
+    all_italic = all(row[2] for row in emphasised)
+    if all_bold and all_italic:
+      output.append(f"***{''.join(row[0] for row in group)}***")
+    elif all_italic:
+      output.append("*" + "".join(f"**{row[0]}**" if row[1] else row[0] for row in group) + "*")
+    elif all_bold:
+      output.append("**" + "".join(f"*{row[0]}*" if row[2] else row[0] for row in group) + "**")
+    else:
+      output.append(_separate_emphasis(group, "*"))
+    index = end
+  return "".join(output)
+
+
+def _separate_emphasis(segments: list[Run], italic_marker: str) -> str:
+  parts: list[str] = []
+  for text, bold, italic in segments:
+    marker = "***" if bold and italic else "**" if bold else italic_marker if italic else ""
+    parts.append(f"{marker}{text}{marker}")
+  return "".join(parts)
+
+
+def _emphasis_line(runs: list[Run]) -> tuple[str, bool]:
+  """One line of Markdown for these runs, and whether emphasis was dropped.
+
+  Markdown cannot mark every boundary Word can (emphasis that starts inside a
+  word next to punctuation, for example). Each candidate is read back with the
+  export parser; a line no candidate can express keeps its words and loses its
+  emphasis rather than gaining stray asterisks.
+  """
+  segments = _emphasis_segments(runs)
+  # Second choice: keep the words emphasised but leave punctuation at the edge
+  # of an emphasised run plain, which is what usually blocks a marker.
+  for attempt in (segments, _without_edge_punctuation(segments)):
+    for candidate in (_grouped_emphasis(attempt), _separate_emphasis(attempt, "*"), _separate_emphasis(attempt, "_")):
+      if _emphasis_segments(_markdown_inline_runs(candidate)) == attempt:
+        return candidate, False
+  plain = "".join(text for text, _, _ in segments)
+  return plain, any(bold or italic for _, bold, italic in segments)
+
+
+def _emphasis_markdown(runs: list[Run]) -> tuple[str, bool]:
+  """Render Word runs as Markdown: *italic*, **bold**, ***both***."""
+  lines: list[list[Run]] = [[]]
+  for text, bold, italic in runs:
+    # Emphasis never spans a line break: each scene line is its own paragraph.
+    for position, piece in enumerate(text.split("\n")):
+      if position:
+        lines.append([])
+      lines[-1].append((piece, bold, italic))
+  rendered = [_emphasis_line(line) for line in lines]
+  return "\n".join(text for text, _ in rendered), any(dropped for _, dropped in rendered)
+
+
+def _docx_content(path: Path) -> tuple[list[tuple[str, int, str]], list[str]]:
+  """Paragraphs as (Markdown text, heading level, openAuthor role), plus the
+  kinds of character formatting present in the file that are not imported."""
   try:
     with zipfile.ZipFile(path) as archive:
       document = archive.read("word/document.xml")
+      styles = _docx_character_styles(archive)
   except (zipfile.BadZipFile, KeyError, OSError) as error:
     raise OpenAuthorError(f"Unable to read DOCX '{path}': {error}") from error
   try:
     root = ElementTree.fromstring(document)
   except ElementTree.ParseError as error:
     raise OpenAuthorError(f"DOCX document XML is invalid: {error}") from error
-  namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+  namespace = _WORD
+  unsupported: set[str] = set()
   paragraphs: list[tuple[str, int, str]] = []
   for paragraph in root.iter(f"{namespace}p"):
-    pieces: list[str] = []
-    for node in paragraph.iter():
-      if node.tag == f"{namespace}t" and node.text:
-        pieces.append(node.text)
-      elif node.tag == f"{namespace}tab":
-        pieces.append("\t")
-      elif node.tag in {f"{namespace}br", f"{namespace}cr"}:
-        pieces.append("\n")
-    value = "".join(pieces)
+    runs = _docx_paragraph_runs(paragraph, styles, unsupported)
+    plain = "".join(text for text, _, _ in runs)
     style = paragraph.find(f"{namespace}pPr/{namespace}pStyle")
     style_name = style.get(f"{namespace}val", "") if style is not None else ""
     role = {"OpenAuthorAct": "act", "OpenAuthorChapter": "chapter", "OpenAuthorScene": "scene"}.get(style_name, "")
@@ -233,14 +427,26 @@ def _docx_paragraphs(path: Path) -> list[tuple[str, int, str]]:
     outline = paragraph.find(f"{namespace}pPr/{namespace}outlineLvl")
     outline_value = outline.get(f"{namespace}val", "") if outline is not None else ""
     level = {"act": 1, "chapter": 2, "scene": 3}.get(role, 0) or (int(heading.group(1)) if heading else int(outline_value) + 1 if outline_value in {str(n) for n in range(9)} else 0)
-    paragraphs.append((value, level if value.strip() else 0, role))
-  return paragraphs
+    level = level if plain.strip() else 0
+    # Headings become titles, which are plain text; emphasis belongs to prose.
+    if level:
+      paragraphs.append((plain, level, role))
+      continue
+    text, dropped = _emphasis_markdown(runs)
+    if dropped:
+      unsupported.add("italic or bold that starts or stops where Markdown cannot mark it")
+    paragraphs.append((text, level, role))
+  return paragraphs, sorted(unsupported)
 
 
-def _docx_sections(path: Path, fallback: str) -> list[dict[str, Any]]:
+def _docx_paragraphs(path: Path) -> list[tuple[str, int, str]]:
+  return _docx_content(path)[0]
+
+
+def _docx_sections(path: Path, fallback: str, paragraphs: list[tuple[str, int, str]] | None = None) -> list[dict[str, Any]]:
   sections: list[dict[str, Any]] = []
   current: dict[str, Any] = {"title": fallback, "body": "", "level": 0, "heading": ""}
-  for text, level, role in _docx_paragraphs(path):
+  for text, level, role in _docx_paragraphs(path) if paragraphs is None else paragraphs:
     if level:
       if current["body"].strip() or current["heading"]:
         current["body"] = current["body"].strip()
@@ -258,9 +464,13 @@ def _docx_sections(path: Path, fallback: str) -> list[dict[str, Any]]:
   return sections
 
 
+def _docx_text(paragraphs: list[tuple[str, int, str]]) -> str:
+  return "\n".join(f"{'#' * level} {text}" if level else text for text, level, _ in paragraphs).strip()
+
+
 def _read_document(path: Path) -> str:
   if path.suffix.lower() == ".docx":
-    return "\n".join(f"{'#' * level} {text}" if level else text for text, level, _ in _docx_paragraphs(path)).strip()
+    return _docx_text(_docx_paragraphs(path))
   try:
     return path.read_text(encoding="utf-8-sig")
   except UnicodeDecodeError as error:
@@ -350,13 +560,17 @@ def _import_sections(source: Path, strategy: str) -> tuple[list[dict[str, Any]],
   sections: list[dict[str, Any]] = []
   warnings: list[str] = []
   for file_path in files:
+    docx_paragraphs: list[tuple[str, int, str]] = []
     if file_path.suffix.lower() == ".docx":
-      warnings.append(f"{file_path.name}: paragraph text and heading levels are imported; rich formatting, images, comments, tracked changes, headers and footnotes are not preserved. Keep the original file.")
-    text = _read_document(file_path).strip()
+      docx_paragraphs, unsupported = _docx_content(file_path)
+      warnings.append(f"{file_path.name}: paragraph text, heading levels, and italic and bold emphasis are imported (emphasis as Markdown *italic* and **bold**). Other formatting such as fonts, sizes, colours and alignment, plus images, comments, tracked changes, headers and footnotes, is not preserved. Keep the original file.")
+      if unsupported:
+        warnings.append(f"{file_path.name}: {', '.join(unsupported)} in the text has no Markdown equivalent here and is imported as plain text. If underline marks italics in this manuscript, convert it to italic in Word and import again.")
+    text = _docx_text(docx_paragraphs) if file_path.suffix.lower() == ".docx" else _read_document(file_path).strip()
     fallback = _clean_title(file_path.stem.replace("-", " ").replace("_", " "), "Untitled Scene")
     is_markdown_structure = file_path.suffix.lower() in {".md", ".markdown", ".docx"}
     if file_path.suffix.lower() == ".docx":
-      parts = _docx_sections(file_path, fallback)
+      parts = _docx_sections(file_path, fallback, docx_paragraphs)
       if resolved_strategy in {"files", "single"} and parts:
         if len(parts) > 1 or parts[0]["role"] in {"act", "chapter"}:
           warnings.append(f"{file_path.name}: {resolved_strategy.title()} strategy flattens the outline into one scene; empty parts and chapters are not retained as Plan containers. Choose Headings to retain and review boundaries.")
@@ -558,11 +772,107 @@ def _export_markdown(paths: ProjectPaths, target: Path) -> dict[str, Any]:
   return {"format": "markdown", "target": str(target), "files": files, "preserves": ["Scene prose and metadata", "Part/chapter/scene reading hierarchy, including empty parts and chapters, via openauthor-manuscript.json"], "losses": [*MANUSCRIPT_EXPORT_LOSSES, "Keep openauthor-manuscript.json with all scene files. Importing individual files without it cannot recover empty parts and chapters or their parentage."]}
 
 
+_DELIMITER_RUN = re.compile(r"\*+|_+")
+
+
+def _is_punctuation(char: str) -> bool:
+  return unicodedata.category(char)[0] in {"P", "S"}
+
+
+def _markdown_inline_runs(line: str) -> list[Run]:
+  """Split one prose line into runs for *italic*, _italic_ and **bold**.
+
+  Follows Markdown's delimiter rules so ordinary asterisks and underscores
+  (``2 * 3``, ``snake_case``, a lone ``*``) stay literal. Backslash-escaped
+  markers and double-underscore bold are exported as typed.
+  """
+  nodes: list[dict[str, Any]] = []
+  position = 0
+  for match in _DELIMITER_RUN.finditer(line):
+    if match.start() > position:
+      nodes.append({"text": line[position:match.start()]})
+    before = line[match.start() - 1] if match.start() else " "
+    after = line[match.end()] if match.end() < len(line) else " "
+    left = not after.isspace() and (not _is_punctuation(after) or before.isspace() or _is_punctuation(before))
+    right = not before.isspace() and (not _is_punctuation(before) or after.isspace() or _is_punctuation(after))
+    char, count = match.group(0)[0], len(match.group(0))
+    preceding = line[:match.start()]
+    escaped = (len(preceding) - len(preceding.rstrip("\\"))) % 2 == 1
+    if char == "*":
+      usable, can_open, can_close = count <= 3, left, right
+    else:
+      # An underscore inside a word never starts or ends emphasis.
+      usable = count == 1
+      can_open = left and (not right or _is_punctuation(before))
+      can_close = right and (not left or _is_punctuation(after))
+    # A backslash-escaped marker is the author saying "not emphasis"; it is
+    # exported exactly as typed.
+    usable = usable and not escaped
+    nodes.append({"char": char, "count": count, "open": usable and can_open, "close": usable and can_close})
+    position = match.end()
+  if position < len(line):
+    nodes.append({"text": line[position:]})
+
+  index = 0
+  while index < len(nodes):
+    closer = nodes[index]
+    if not (closer.get("close") and closer["count"] > 0):
+      index += 1
+      continue
+    opener_index = next(
+      (candidate for candidate in range(index - 1, -1, -1)
+       if nodes[candidate].get("open") and nodes[candidate]["count"] > 0 and nodes[candidate]["char"] == closer["char"]),
+      None,
+    )
+    if opener_index is None:
+      index += 1
+      continue
+    opener = nodes[opener_index]
+    strong = opener["count"] >= 2 and closer["count"] >= 2
+    used = 2 if strong else 1
+    opener["count"] -= used
+    closer["count"] -= used
+    nodes[opener_index + 1:index] = [{"span": "bold" if strong else "italic", "children": nodes[opener_index + 1:index]}]
+    index = opener_index + 2
+    if opener["count"] == 0:
+      del nodes[opener_index]
+      index -= 1
+    if closer["count"] == 0:
+      del nodes[index]
+
+  runs: list[Run] = []
+
+  def flatten(items: list[dict[str, Any]], bold: bool, italic: bool) -> None:
+    for item in items:
+      if "children" in item:
+        flatten(item["children"], bold or item["span"] == "bold", italic or item["span"] == "italic")
+      elif "text" in item:
+        runs.append((item["text"], bold, italic))
+      else:
+        runs.append((item["char"] * item["count"], bold, italic))
+
+  flatten(nodes, False, False)
+  return _merge_runs(runs)
+
+
+def _run_xml(text: str, bold: bool = False, italic: bool = False) -> str:
+  properties = ("<w:b/>" if bold else "") + ("<w:i/>" if italic else "")
+  return f"<w:r>{f'<w:rPr>{properties}</w:rPr>' if properties else ''}<w:t xml:space=\"preserve\">{escape(text)}</w:t></w:r>"
+
+
 def _paragraph_xml(text: str, *, heading: int = 0, role: str = "", page_break: bool = False) -> str:
   style = f"OpenAuthor{role.title()}" if role else f"Heading{heading}"
   properties = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if heading else ""
   break_xml = "<w:r><w:br w:type=\"page\"/></w:r>" if page_break else ""
-  return f"<w:p>{properties}{break_xml}<w:r><w:t xml:space=\"preserve\">{escape(text)}</w:t></w:r></w:p>"
+  return f"<w:p>{properties}{break_xml}{_run_xml(text)}</w:p>"
+
+
+def _prose_paragraph_xml(line: str) -> str:
+  """One scene line as a Word paragraph with typeset emphasis."""
+  if line.strip() in SCENE_BREAK_LINES:
+    return f'<w:p><w:pPr><w:jc w:val="center"/></w:pPr>{_run_xml(line.strip())}</w:p>'
+  runs = _markdown_inline_runs(line) or [("", False, False)]
+  return f"<w:p>{''.join(_run_xml(text, bold, italic) for text, bold, italic in runs)}</w:p>"
 
 
 def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
@@ -581,7 +891,7 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
       continue
     scene = by_id[section["scene_id"]]
     for line in scene["body"].rstrip().splitlines() or [""]:
-      paragraphs.append(_paragraph_xml(line))
+      paragraphs.append(_prose_paragraph_xml(line))
   document = (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
@@ -614,11 +924,15 @@ def _export_docx(paths: ProjectPaths, target: Path) -> dict[str, Any]:
     "format": "docx",
     "target": str(target),
     "files": [target.name],
-    "preserves": ["Scene prose and part/chapter/scene roles, including empty parts and chapters, while openAuthor paragraph styles are retained."],
+    "preserves": [
+      "Scene prose and part/chapter/scene roles, including empty parts and chapters, while openAuthor paragraph styles are retained.",
+      "Italic (*text* or _text_) and bold (**text**) emphasis is typeset as italic and bold, and a line holding only ***, * * * or # is centred as a scene break. Re-importing the DOCX restores the emphasis as *text* and **text**.",
+    ],
     "losses": [
       *MANUSCRIPT_EXPORT_LOSSES,
       "Scene metadata other than title is not represented in DOCX.",
-      "Markdown formatting syntax is exported as literal text, not typeset formatting.",
+      "Markdown syntax other than italic and bold emphasis (headings inside prose, lists, links, block quotes, code and backslash escapes) is exported as literal text, not typeset formatting.",
+      "Italics written with underscores come back as asterisks (*text*) when the DOCX is re-imported.",
       "Other editors can remove section styles. Without them, heading roles are inferred and empty headings may be omitted; review and correct the import preview. Files/Single strategy flattens hierarchy into prose.",
       "Comments, tracked changes, and source typography are not available in the scene model.",
     ],

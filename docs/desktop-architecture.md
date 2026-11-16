@@ -109,6 +109,7 @@ The command inventory below describes implemented core and bridge contracts. It 
 - Runtime config: `generation config --json`
 - Budget policy inspection/update: `generation budget [--reset|--max-...|--daily-...|--weekly-...] --json`
 - Proposal generation supports retrieval-backed mode (`--retrieval-mode off|auto|required`) and writes citation provenance into run/proposal generation payloads.
+- `auto` retrieval (the Assistant chat default) builds a missing retrieval index and refreshes a stale one before the provider call, under the project lock only while the index is written. The index records how it was built (`build.trigger`/`action`/`reasons`), and that record is copied into the run's `retrieval.index.build` provenance. If the build fails, `auto` degrades to no retrieved passages as before. `required` and `off` never build: `required` still fails without a usable index.
 - Active V2 exposes a basic read-only run history and separate budget controls. Rerun, pinning, comparison/export, and run-level provenance commands/helpers remain core capabilities without a current product workflow.
 
 ## Implemented command usage (Branch Workspace CLI primitives)

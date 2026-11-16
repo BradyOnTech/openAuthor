@@ -73,7 +73,8 @@ implementation from earlier phases.)
 - Markdown rendering via `desktop/src/chatMarkdown.ts` — a small tested
   parser (headings, ordered/unordered lists, blockquotes, fenced code,
   bold/italic/inline code) rendered as React nodes, no innerHTML.
-- Retrieval defaults to `auto`. Each message stores compact citations
+- Retrieval defaults to `auto`, which builds or refreshes the local index
+  itself when it is missing or stale. Each message stores compact citations
   (source, title, score, excerpt); the panel renders them as chips that open
   the cited scene/codex entry in an editor tab. Scene/codex @-mention pickers
   already existed in the V2 composer and are kept.

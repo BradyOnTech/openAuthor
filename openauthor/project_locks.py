@@ -4,6 +4,11 @@ Hold the project lock from the first read/precondition through commit or rollbac
 not just around individual file writes. Nested operations are reentrant. The lock
 file lives outside versioned book state and must never be unlinked on release.
 These advisory locks do not coordinate external editors or provide crash recovery.
+
+Waiting is bounded: a caller that cannot obtain the lock within the timeout
+(30 seconds, or ``OPENAUTHOR_LOCK_TIMEOUT_MS``) fails before its operation runs
+instead of hanging behind a stuck holder. A caller that obtains the lock within
+that time proceeds exactly as an unbounded wait would have.
 """
 
 from __future__ import annotations
@@ -12,6 +17,7 @@ import inspect
 import os
 import stat
 import threading
+import time
 from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Iterator, ParamSpec, TypeVar
@@ -32,6 +38,41 @@ _HELD = threading.local()
 _DESCRIPTORS: set[int] = set()
 P = ParamSpec("P")
 R = TypeVar("R")
+DEFAULT_LOCK_TIMEOUT_MS = 30_000
+LOCK_BUSY_MESSAGE = (
+  "Another openAuthor operation on this book is still running, so this one did not start. "
+  "Wait for it to finish and retry; if nothing else is running, close other openAuthor windows first. Nothing was changed."
+)
+
+
+def _lock_timeout_seconds() -> float:
+  raw = os.environ.get("OPENAUTHOR_LOCK_TIMEOUT_MS", "").strip()
+  try:
+    milliseconds = int(raw)
+  except ValueError:
+    milliseconds = DEFAULT_LOCK_TIMEOUT_MS
+  if milliseconds < 0:
+    milliseconds = DEFAULT_LOCK_TIMEOUT_MS
+  return milliseconds / 1000
+
+
+def _flock_until(descriptor: int, deadline: float) -> bool:
+  """Take the exclusive file lock, giving up once ``deadline`` has passed.
+
+  A free lock is taken on the first attempt. A held one is retried at short,
+  growing intervals, because flock has no timed form.
+  """
+  delay = 0.002
+  while True:
+    try:
+      fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+      return True
+    except BlockingIOError:
+      remaining = deadline - time.monotonic()
+      if remaining <= 0:
+        return False
+      time.sleep(min(delay, remaining))
+      delay = min(delay * 2, 0.05)
 
 
 def _after_fork() -> None:
@@ -62,7 +103,12 @@ def project_lock(paths: ProjectPaths) -> Iterator[None]:
     if local_lock is None:
       local_lock = threading.RLock()
       _LOCKS[key] = local_lock
-  with local_lock:
+  deadline = time.monotonic() + _lock_timeout_seconds()
+  # Another thread of this process (the sidecar runs several) may hold the
+  # book; the same deadline covers that wait and the cross-process one.
+  if not local_lock.acquire(timeout=max(0.0, deadline - time.monotonic())):
+    raise OpenAuthorError(LOCK_BUSY_MESSAGE)
+  try:
     held = getattr(_HELD, "keys", set())
     if key in held:
       yield
@@ -78,10 +124,11 @@ def project_lock(paths: ProjectPaths) -> Iterator[None]:
         _DESCRIPTORS.add(descriptor)
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
           raise OpenAuthorError("Project lock must be a regular file.")
-        fcntl.flock(descriptor, fcntl.LOCK_EX)
-        acquired = True
+        acquired = _flock_until(descriptor, deadline)
       except OSError as error:
         raise OpenAuthorError(f"Could not acquire safe project access: {error}") from error
+      if not acquired:
+        raise OpenAuthorError(LOCK_BUSY_MESSAGE)
       _HELD.keys = {*held, key}
       from .book_transactions import recover_book_transaction
       recover_book_transaction(paths)
@@ -95,6 +142,8 @@ def project_lock(paths: ProjectPaths) -> Iterator[None]:
         finally:
           _DESCRIPTORS.discard(descriptor)
           os.close(descriptor)
+  finally:
+    local_lock.release()
 
 
 def serialized_project_access(operation: Callable[P, R]) -> Callable[P, R]:
