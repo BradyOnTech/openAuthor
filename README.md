@@ -181,7 +181,7 @@ To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--pro
 
 ```bash
 make test            # Python suite (801 tests, ~1 min, no network)
-make test-desktop    # desktop Vitest suite (767 tests)
+make test-desktop    # desktop Vitest suite (769 tests)
 make test-all        # Python, desktop, contracts, gateway and mobile
 make check           # repository integrity and the no-placeholder audit
 ```

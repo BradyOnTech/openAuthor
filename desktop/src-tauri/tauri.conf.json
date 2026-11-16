@@ -19,7 +19,11 @@
         "minHeight": 560,
         "resizable": true
       }
-    ]
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https: wss:; media-src 'self' blob: mediastream:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'",
+      "devCsp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ipc: http://ipc.localhost http://localhost:5173 ws://localhost:5173 https: wss:"
+    }
   },
   "bundle": {
     "active": true,

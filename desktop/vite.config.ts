@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { CONTENT_SECURITY_POLICY } from "./contentSecurityPolicy";
 
 export default defineConfig({
   plugins: [react()],
@@ -11,5 +12,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true
+  },
+  // The production build is previewed under the packaged app's policy.
+  preview: {
+    headers: { "Content-Security-Policy": CONTENT_SECURITY_POLICY }
   }
 });
