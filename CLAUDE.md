@@ -43,6 +43,7 @@ make audit-no-mocks                 # fail on TODO/FIXME/TBD/NotImplemented/stub
 - Proposals/chats: `.openauthor/workspace/` (gitignored)
 - Generation logs: `.openauthor/generations/*.json` (full provenance)
 - Retrieval index: `.openauthor/retrieval/index.json` (gitignored)
+- Revision history: `.openauthor/revisions/` holds records (a manifest delta against the parent, with a full manifest at bounded intervals) and zlib-packed objects (`<digest>.z`, optionally stored against one earlier version of the same file). Read manifests only through `revisions._full_manifest`. Older full-manifest records and plain objects stay readable forever and are never rewritten; see `docs/manuscript-transactions.md`
 
 **Python module map**:
 - `cli.py` — argument parsing, command dispatch

@@ -208,6 +208,75 @@ subprocess regressions exercise legacy/different-identity restore refusal before
 any write, rollback of an attempted identity mutation after prose writes, and
 explicit recovery of a committed apply killed during journal retirement.
 
+## Revision store format — 2026-11-16
+
+`.openauthor/revisions/` holds `HEAD`, one JSON record per Revision in
+`records/<revision id>.json`, and content-addressed book files in
+`objects/<first two digest characters>/<remaining 62>`. An object's name is
+always the SHA-256 of its uncompressed UTF-8 content, in every form, so
+identical content is stored once and existing Revision ids and digests remain
+valid. `openauthor/revisions.py` is the only module that interprets these files;
+backups copy them byte for byte and everything else goes through
+`get_revision`, `read_file_at_revision`, `list_revisions`, `compare_revisions`,
+`restore_revision` and `verify_revision_store`.
+
+**Records.** Format 1 (`"schema_version": 1`) repeats the complete path-to-digest
+`manifest` in every record. Format 2 stores either a `manifest` or a
+`manifest_delta` against its parent: `{"distance", "changed", "removed"}`, where
+`distance` counts the records back to the nearest full manifest. A full manifest
+is written whenever the distance would exceed `FULL_MANIFEST_INTERVAL` (50), when
+there is no readable parent, or when the difference would be no smaller. Format 2 also
+keeps `file_count` (so listing history opens no ancestors) and the `nonce` that,
+with the parent, timestamp, message, kind and complete manifest, hashes to the
+Revision id. `_full_manifest` is the single function that rebuilds a manifest:
+each step must be exactly one closer to a full manifest, and the result must
+reproduce the Revision id. A missing, unparseable or altered ancestor therefore
+raises an `OpenAuthorError` naming the Revision (and the ancestor when it is
+known); it cannot yield a different manifest. Callers still receive records in
+the format-1 shape with a complete `manifest`, and CLI JSON is unchanged except
+that `schema_version` reports the stored format.
+
+**Objects.** Format-1 objects are plain text at `<digest>`. New objects are
+written to `<digest>.z`: one ASCII header line, then a zlib stream. The header
+is `openauthor-object 2 zlib` for a self-contained object, or
+`openauthor-object 2 zlib-dict <base digest> <ordinal>` when the stream was
+deflated with an earlier version of the same book path as a preset dictionary.
+The base is always self-contained, so reading any object opens at most two
+files, and up to `SHARED_BASE_LIMIT` (32) successive versions share one base
+before a self-contained copy is written again. The dictionary form is used only
+when it is at most half the size of the self-contained form and has been
+inflated back to the exact content before it is written. Content is verified
+against its digest on every read; if both forms of an object exist, either
+intact one is used.
+
+**Compatibility.** Readers accept both formats indefinitely and in any order
+along one history. Only newly written Revisions use format 2; existing records
+and objects are never rewritten, migrated or removed. An older openAuthor does
+not misread a book written by this one: it rejects a format-2 record as invalid
+Revision metadata before using it, and never opens packed data as prose because
+`<digest>.z` is not a name it looks for. Its history list, editor saves,
+startup health, backup creation and backup restore then stop with that error
+instead of continuing, so a backup made by this version must be restored with
+this version or a newer one. The one thing it can still do is record a named
+version, which it writes as a complete format-1 record with plain objects;
+this version reads that in place. Record
+formats above 2 and unknown object headers are refused with an "Update
+openAuthor" message.
+
+**Durability.** Objects, then the record, then `HEAD` are each published with a
+temporary file, `fsync`, rename and directory `fsync`, in that order. A
+dictionary-form object is written only after its base was read back and
+verified, and a difference record only after its parent's manifest was rebuilt
+and verified, so nothing becomes visible before what it depends on is durable.
+`HEAD` still takes part in the book-edit journal; records and objects do not,
+and may remain unreachable after a rollback as before.
+
+`tests/test_revision_store_format.py` covers a history that starts in format 1
+and continues in format 2 (list, read, compare, restore of every Revision,
+backup round trip, single and coordinated undo with exact bytes), manifests
+rebuilt across adds, edits, deletions and renames, damaged and missing
+ancestors and bases, refusal of newer formats, and a size guard on editor saves.
+
 ## Remaining limits
 
 The shared interface provides durable recovery for the participating edits;
@@ -248,6 +317,22 @@ it is not a transaction for every filesystem operation. In particular:
   The timeout covers only the shared project lock: named `project_write_lock`
   resources other than `book-write`, and Assistant thread locks, still wait
   without a limit.
+
+- The Revision store keeps every Revision; nothing prunes, expires or compacts
+  it. Any future removal of old history must treat the ancestors of a difference
+  record (up to the previous full manifest) and the base of a dictionary-form
+  object as still in use, or later Revisions become unreadable. Damage to a full
+  manifest record affects up to `FULL_MANIFEST_INTERVAL` following Revisions,
+  and damage to a shared base object affects up to `SHARED_BASE_LIMIT` later
+  versions of that one file; both are reported, not misread. Each save still
+  creates at least two small files (a record and an object), which occupy a
+  whole filesystem block each, so allocated disk space shrinks less than the
+  bytes written. Only the final 32 KB of an earlier version can serve as a
+  dictionary, so a file much larger than that (a scene beyond roughly 5,000
+  words, a large Story Memory file) is stored compressed but whole on each
+  change. `codex/suggestions.json` is rewritten by the save itself whenever the
+  saved scene carries suggestion evidence, because each evidence row is bound
+  to a fingerprint of the scene's prose; that is a second object per save.
 
 The prevention rule for future manuscript operations is to enter through the
 shared transaction interface and add a competing-caller regression, not introduce

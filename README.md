@@ -129,7 +129,7 @@ flowchart TB
 | --- | --- | --- |
 | [`openauthor/`](openauthor) | Python core: CLI, scenes, Story Memory, Change Sets, providers, budgets, retrieval, git ops, continuity checks | ~27k lines |
 | [`desktop/`](desktop) | Tauri 2 + React 19 + TypeScript desktop app and Rust bridge | ~39k lines |
-| [`tests/`](tests) | Python suite, run with the deterministic local provider | 720+ tests |
+| [`tests/`](tests) | Python suite, run with the deterministic local provider | 740+ tests |
 | [`mobile/`](mobile) | Expo / React Native read, chat, capture and review companion (also a PWA); intentionally cannot edit the manuscript | ~12k lines |
 | [`gateway/`](gateway) | Service that issues short-lived OpenAI Realtime voice sessions; the API key never leaves the server | ~6k lines |
 | [`supabase/`](supabase) | Postgres migrations and database tests for encrypted sync, device enrollment and account deletion | ~7k lines |
@@ -179,8 +179,8 @@ To use a real model, set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and pass `--pro
 ### Run the tests
 
 ```bash
-make test            # Python suite (729 tests, ~1 min, no network)
-make test-desktop    # desktop Vitest suite (747 tests)
+make test            # Python suite (745 tests, ~1 min, no network)
+make test-desktop    # desktop Vitest suite (752 tests)
 make test-all        # Python, desktop, contracts, gateway and mobile
 make check           # repository integrity and the no-placeholder audit
 ```

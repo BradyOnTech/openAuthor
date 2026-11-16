@@ -156,7 +156,11 @@ class CoordinatedUndoTests(unittest.TestCase):
   def test_missing_snapshot_object_blocks_before_any_write(self) -> None:
     record = get_revision(self.paths, self.applied["pre_apply_snapshot"])
     digest = record["manifest"][self.scene_paths[1].relative_to(self.paths.root).as_posix()]
-    (self.paths.revision_objects_dir / digest[:2] / digest[2:]).write_text("Damaged snapshot")
+    # New objects are stored packed ("<digest>.z"); damage the stored file,
+    # whichever form it has.
+    stored = list((self.paths.revision_objects_dir / digest[:2]).glob(f"{digest[2:]}*"))
+    self.assertEqual(len(stored), 1)
+    stored[0].write_text("Damaged snapshot")
     before = self.state()
     with self.assertRaisesRegex(OpenAuthorError, "integrity check"):
       self.undo()

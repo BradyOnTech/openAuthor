@@ -103,6 +103,37 @@ def atomic_write_text(path: Path, content: str) -> None:
     raise
 
 
+def atomic_write_bytes(path: Path, content: bytes) -> None:
+  """Publish immutable binary data with the same durability as text writes.
+
+  Used for files that never take part in a book-edit journal (packed Revision
+  objects), so there is no transaction delegation here.
+  """
+  path.parent.mkdir(parents=True, exist_ok=True)
+  fd, temp_name = tempfile.mkstemp(
+    prefix=f".{path.name}.",
+    suffix=".tmp",
+    dir=path.parent,
+  )
+  try:
+    with os.fdopen(fd, "wb") as handle:
+      handle.write(content)
+      handle.flush()
+      os.fsync(handle.fileno())
+    os.replace(temp_name, path)
+    directory_fd = os.open(path.parent, os.O_RDONLY)
+    try:
+      os.fsync(directory_fd)
+    finally:
+      os.close(directory_fd)
+  except BaseException:
+    try:
+      os.unlink(temp_name)
+    except FileNotFoundError:
+      pass
+    raise
+
+
 def atomic_write_json(path: Path, payload: Any) -> None:
   atomic_write_text(path, json.dumps(payload, indent=2) + "\n")
 

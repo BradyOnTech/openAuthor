@@ -130,8 +130,11 @@ with checkpointed_edit(paths, 'Interrupted change'):
       scene_path = get_scene(paths, "scene-0001")["path"]
       record = get_revision(paths, revision_id)
       digest = record["manifest"][scene_path]
-      object_path = paths.revision_objects_dir / digest[:2] / digest[2:]
-      object_path.write_text("tampered", encoding="utf-8")
+      # New objects are stored packed ("<digest>.z"); damage the stored file,
+      # whichever form it has.
+      stored = list((paths.revision_objects_dir / digest[:2]).glob(f"{digest[2:]}*"))
+      self.assertEqual(len(stored), 1)
+      stored[0].write_text("tampered", encoding="utf-8")
 
       with self.assertRaisesRegex(OpenAuthorError, "integrity"):
         read_file_at_revision(paths, revision_id, scene_path)
