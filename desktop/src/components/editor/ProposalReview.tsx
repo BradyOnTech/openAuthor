@@ -299,6 +299,27 @@ export function ProposalReview({ proposal: initial }: Props) {
     : proposal.status === "pending" && proposal.selection
       ? proposal.selection.action === "critique" ? "Feedback ready" : selectionUnchanged ? "No replacement suggested" : "Replacement awaiting review" : displayStatus;
 
+  // A creative review leads the page when there is one to read. When none
+  // could be made (the offline demo), its notice follows the before/after
+  // instead of pushing it down.
+  const craftReviewUnavailable = proposal.draft?.writing_review?.status === "unavailable";
+  const craftReview = proposal.draft?.writing_review ? <DraftCraftReview report={proposal.draft.writing_review} disabled={Boolean(busy)}
+        onChoose={proposal.status === "pending" && !proposal.stale ? candidate => {
+          setBusy("choose-candidate");
+          void flushProjectSceneSaves(projectRoot).then(saved => {
+            if (!saved) throw new Error("Save pending writing before choosing a candidate.");
+            return selectDraftCandidate(projectRoot, proposal, candidate);
+          }).then(updated => {
+            if (!view.current.mounted || view.current.key !== viewKey) return;
+            syncTab(updated); setMessage("Candidate selected. Review the rebuilt hunks before applying.");
+            return refreshProposals();
+          }).catch(error => {
+            if (view.current.mounted && view.current.key === viewKey) setError(error instanceof Error ? error.message : String(error));
+          }).finally(() => {
+            if (view.current.mounted && view.current.key === viewKey) setBusy("");
+          });
+        } : undefined} /> : null;
+
   return (
     <div className="review-card" style={{ background: "var(--bg-surface)", minHeight: "100%", overflow: "auto" }}>
       <div className="review-card__header">
@@ -315,22 +336,7 @@ export function ProposalReview({ proposal: initial }: Props) {
         </div>
       </div>
 
-      {proposal.draft?.writing_review && <DraftCraftReview report={proposal.draft.writing_review} disabled={Boolean(busy)}
-        onChoose={proposal.status === "pending" && !proposal.stale ? candidate => {
-          setBusy("choose-candidate");
-          void flushProjectSceneSaves(projectRoot).then(saved => {
-            if (!saved) throw new Error("Save pending writing before choosing a candidate.");
-            return selectDraftCandidate(projectRoot, proposal, candidate);
-          }).then(updated => {
-            if (!view.current.mounted || view.current.key !== viewKey) return;
-            syncTab(updated); setMessage("Candidate selected. Review the rebuilt hunks before applying.");
-            return refreshProposals();
-          }).catch(error => {
-            if (view.current.mounted && view.current.key === viewKey) setError(error instanceof Error ? error.message : String(error));
-          }).finally(() => {
-            if (view.current.mounted && view.current.key === viewKey) setBusy("");
-          });
-        } : undefined} />}
+      {craftReview && !craftReviewUnavailable && craftReview}
 
       {hasDraft && <DraftWordTarget body={proposal.proposed_body ?? ""} target={proposal.revision_intent?.scene_contract?.word_range} />}
 
@@ -425,6 +431,8 @@ export function ProposalReview({ proposal: initial }: Props) {
           </div>
         </div>
       )}
+
+      {craftReview && craftReviewUnavailable && craftReview}
 
       {proposal.instruction && (
         <div className="review-card__section">

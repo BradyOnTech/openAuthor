@@ -3722,6 +3722,30 @@ button.status-bar__item {
   border-radius: var(--radius-md);
 }
 
+.settings-editor__glossary {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.settings-editor__glossary > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.settings-editor__glossary dt {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.settings-editor__glossary dd {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .settings-editor__advanced > summary {
   cursor: pointer;
   font-family: var(--font-ui);

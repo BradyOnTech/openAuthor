@@ -18,6 +18,15 @@ const PROVIDER_INFO: {
   { id: "local", label: "Offline demo (mechanical edits only)", envVar: "" },
 ];
 
+const GLOSSARY: Array<[string, string]> = [
+  ["Scene", "One file of prose. A book is a folder of scenes you can read without openAuthor."],
+  ["Revision", "A saved state of the whole book. Every save and every applied change makes one, so anything can be undone."],
+  ["Change Set", "A proposed edit, shown as a before and after. Nothing reaches your manuscript until you apply it."],
+  ["Hunk", "One passage inside a Change Set. You include, exclude, edit or comment on each one separately."],
+  ["Storyline", "A separate copy of the book for trying an idea, such as another ending, without touching the original."],
+  ["Story Memory", "What the book has established: people, places, facts and who knows what. The AI is given only what you allow."],
+];
+
 export function SettingsEditor() {
   const { runtimeConfig, refreshRuntimeConfig, budget, projectRoot, setError, setMessage } = useWorkspace();
 
@@ -126,6 +135,16 @@ export function SettingsEditor() {
           </div>
         )}
         </details>
+
+        <div className="settings-editor__section">
+          <h3 className="settings-editor__section-title">How openAuthor names things</h3>
+          <div className="settings-editor__note">
+            openAuthor borrows its working method from software engineering, where every change is proposed, reviewed and reversible. The names follow.
+          </div>
+          <dl className="settings-editor__glossary">
+            {GLOSSARY.map(([term, meaning]) => <div key={term}><dt>{term}</dt><dd>{meaning}</dd></div>)}
+          </dl>
+        </div>
 
         <LocalActivityCard projectRoot={projectRoot} setError={setError} />
       </div>
