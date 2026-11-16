@@ -17,7 +17,11 @@
         "height": 900,
         "minWidth": 820,
         "minHeight": 560,
-        "resizable": true
+        "resizable": true,
+        "center": true,
+        "visible": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

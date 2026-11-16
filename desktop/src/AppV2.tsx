@@ -4,10 +4,12 @@ import { UIProvider, useUI } from "./contexts/UIContext";
 import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { EditorProvider } from "./contexts/EditorContext";
 import { Workbench } from "./components/workbench/Workbench";
+import { TitleBar } from "./components/workbench/TitleBar";
 import { CommandPalette } from "./components/overlay/CommandPalette";
 import { focusNewSceneTitle, useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { useEditor } from "./contexts/EditorContext";
 import { listenForMenuShortcuts } from "./menuShortcuts";
+import { announceFirstScreen } from "./nativeWindow";
 import { primaryModifier } from "./platformKeys";
 import { applyStoredProseSize, DEFAULT_PROSE_SIZE, setProseSize, stepProseSize } from "./proseSize";
 import { loadProjectBindings } from "./projectBindings";
@@ -197,6 +199,8 @@ function ProjectScopedEditor({ children }: { children: React.ReactNode }) {
 }
 
 export function AppV2() {
+  // Child effects have run by now, so the theme is already applied.
+  useEffect(() => announceFirstScreen(), []);
   return (
     <RegistryAuthGate>
       {(registryMode) => (
@@ -205,6 +209,7 @@ export function AppV2() {
           <WorkspaceProvider registryMode={registryMode}>
             <ProjectScopedEditor>
               <KeyboardShortcuts>
+                <TitleBar />
                 <Workbench />
                 <CommandPalette />
               </KeyboardShortcuts>

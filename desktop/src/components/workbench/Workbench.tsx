@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useUI } from "../../contexts/UIContext";
+import { useProjectName } from "../../hooks/useProjectName";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useEditor } from "../../contexts/EditorContext";
 import { ActivityBar } from "./ActivityBar";
@@ -34,6 +35,7 @@ export function Workbench() {
     refreshStartupHealth,
   } = useWorkspace();
 
+  const projectName = useProjectName();
   const projectReady = !!(activeProjectId && projectFound === true);
 
   // Thin old automatic saves, at most once a day, a little after the book opens.
@@ -67,6 +69,16 @@ export function Workbench() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [projectReady, closeProject]);
 
+  // A remembered book is being reopened: stay quiet rather than flash the
+  // welcome screen. The line appears only if opening takes a moment.
+  if (activeProjectId && projectRoot && projectFound === null) {
+    return (
+      <div className="workbench-opening" role="status">
+        <span className="workbench-opening__label">Opening {projectName || "your book"}…</span>
+      </div>
+    );
+  }
+
   if (!projectReady) {
     return <WelcomeScreen />;
   }
@@ -87,7 +99,7 @@ export function Workbench() {
         </div>
       )}
       {startupHealth && !startupHealth.ready && (
-        <div style={{ position: "fixed", top: "var(--space-3)", left: "50%", transform: "translateX(-50%)", zIndex: 650, width: "min(680px, calc(100vw - 32px))", padding: "var(--space-3) var(--space-4)", borderRadius: "var(--radius-md)", border: "1px solid var(--danger-border)", background: "var(--bg-elevated)", boxShadow: "var(--shadow-lg)", display: "flex", gap: "var(--space-3)", alignItems: "center" }}>
+        <div style={{ position: "fixed", top: "calc(var(--titlebar-height) + var(--space-3))", left: "50%", transform: "translateX(-50%)", zIndex: 650, width: "min(680px, calc(100vw - 32px))", padding: "var(--space-3) var(--space-4)", borderRadius: "var(--radius-md)", border: "1px solid var(--danger-border)", background: "var(--bg-elevated)", boxShadow: "var(--shadow-lg)", display: "flex", gap: "var(--space-3)", alignItems: "center" }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, color: "var(--danger-text)", marginBottom: 2 }}>
               This project needs attention before safe revision

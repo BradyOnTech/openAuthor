@@ -85,6 +85,7 @@
   --panel-min: 160px;
   --panel-max: 400px;
   --status-bar-height: 24px;
+  --titlebar-height: 0px;
   --tab-bar-height: 36px;
   --breadcrumb-height: 24px;
   --editor-max-width: 680px;
@@ -108,6 +109,7 @@
   --z-popover: 100;
   --z-command-palette: 200;
   --z-zen-mode: 300;
+  --z-titlebar: 350;
   --z-overlay: 400;
   --z-dropdown: var(--z-popover);
 
@@ -377,8 +379,98 @@ body {
 .workbench-frame {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - var(--titlebar-height));
+  margin-top: var(--titlebar-height);
   overflow: hidden;
+}
+
+.workbench-opening {
+  position: fixed;
+  inset: var(--titlebar-height) 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+}
+
+.workbench-opening__label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  opacity: 0;
+  animation: workbench-opening-appear var(--duration-slow) ease 600ms forwards;
+}
+
+@keyframes workbench-opening-appear {
+  to { opacity: 1; }
+}
+
+/* ── Title bar (Mac desktop window) ────────────────────────────────
+   The page owns the top edge of the Mac window, under the window buttons.
+   Everything else is laid out below --titlebar-height, which is zero in a
+   browser, on other platforms and in full screen. */
+
+html[data-titlebar="overlay"] {
+  --titlebar-height: 28px;
+}
+
+html[data-titlebar="overlay"][data-fullscreen] {
+  --titlebar-height: 0px;
+}
+
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-height);
+  z-index: var(--z-titlebar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Clear of the window buttons, and symmetric so the name stays centred. */
+  padding: 0 84px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-fullscreen] .titlebar {
+  display: none;
+}
+
+.titlebar--plain {
+  border-bottom-color: transparent;
+}
+
+.titlebar__title {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* Presses fall through to the strip, which is what moves the window. */
+  pointer-events: none;
+  transition: opacity var(--duration-normal) ease;
+}
+
+html[data-window-inactive] .titlebar__title {
+  opacity: 0.5;
+}
+
+/* Focus mode keeps the handle but shows only the page. */
+html:has(.scene-editor.zen-mode) .titlebar {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+html:has(.scene-editor.zen-mode) .titlebar__title {
+  opacity: 0;
 }
 
 /* Errors stay in the layout: they must remain readable without covering the
@@ -3154,6 +3246,7 @@ button.status-bar__item {
 .scene-editor.zen-mode {
   position: fixed;
   inset: 0;
+  padding-top: var(--titlebar-height);
   z-index: var(--z-zen-mode);
   background: var(--editor-bg-zen);
   display: flex;

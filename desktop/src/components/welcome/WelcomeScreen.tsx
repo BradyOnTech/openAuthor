@@ -271,7 +271,7 @@ export function WelcomeScreen() {
   return (
     <div style={{
       position: "fixed",
-      inset: 0,
+      inset: "var(--titlebar-height) 0 0 0",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -281,7 +281,7 @@ export function WelcomeScreen() {
       {(error || message) && (
         <div role={error ? "alert" : "status"} style={{
           position: "fixed",
-          top: "var(--space-2)",
+          top: "calc(var(--titlebar-height) + var(--space-2))",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 700,
@@ -304,7 +304,7 @@ export function WelcomeScreen() {
       <div style={{
         width: "100%",
         maxWidth: 560,
-        maxHeight: "100dvh",
+        maxHeight: "calc(100dvh - var(--titlebar-height))",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",

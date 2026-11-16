@@ -1,4 +1,5 @@
 mod credentials;
+mod main_window;
 mod menu;
 
 use serde::Serialize;
@@ -720,10 +721,17 @@ fn execute_core_command(project_root: String, args: Vec<String>, cancel_key: Opt
   )
 }
 
+/// The page has drawn its first screen; see `main_window::reveal`.
+#[tauri::command]
+fn main_window_ready(window: tauri::WebviewWindow) {
+  main_window::reveal(&window);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .manage(SidecarRegistry::default())
+    .manage(main_window::MainWindowState::default())
     .setup(|app| {
       // A menu that cannot be built must never stop the app from opening; the
       // platform's default menu stays in place and shortcuts keep working.
@@ -735,7 +743,21 @@ pub fn run() {
         }
         Err(error) => eprintln!("openAuthor: could not build the application menu: {error}"),
       }
+      // The window is created hidden; it appears once it is placed and the
+      // page reports its first screen (`main_window_ready`).
+      if let Some(window) = app.get_webview_window("main") {
+        main_window::restore(&window);
+        main_window::reveal_by_deadline(&window);
+      }
       Ok(())
+    })
+    .on_window_event(main_window::handle_event)
+    .on_page_load(|webview, payload| {
+      if payload.event() == tauri::webview::PageLoadEvent::Finished {
+        if let Some(window) = webview.app_handle().get_webview_window(webview.label()) {
+          main_window::announce_full_screen(&window);
+        }
+      }
     })
     .on_menu_event(|app, event| menu::handle_event(app, event.id().as_ref()))
     .invoke_handler(tauri::generate_handler![
@@ -747,10 +769,16 @@ pub fn run() {
       pick_folder,
       pick_zip_file,
       pick_manuscript_file,
-      pick_export_target
+      pick_export_target,
+      main_window_ready
     ])
-    .run(tauri::generate_context!())
-    .expect("error while running openAuthor desktop");
+    .build(tauri::generate_context!())
+    .expect("error while running openAuthor desktop")
+    .run(|app, event| {
+      if let tauri::RunEvent::Exit = event {
+        main_window::flush(app);
+      }
+    });
 }
 
 #[cfg(test)]

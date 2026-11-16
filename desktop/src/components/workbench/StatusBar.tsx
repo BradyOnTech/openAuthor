@@ -1,12 +1,10 @@
 import { useUI } from "../../contexts/UIContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { useProjectName } from "../../hooks/useProjectName";
 
 export function StatusBar() {
   const { theme, toggleTheme } = useUI();
   const {
-    activeProjectId,
-    projects,
-    projectRoot,
     projectFound,
     scenes,
     branches,
@@ -14,8 +12,7 @@ export function StatusBar() {
     closeProject,
   } = useWorkspace();
 
-  const projectName = projects.find((project) => project.id === activeProjectId)?.name
-    ?? (projectRoot ? projectRoot.split("/").pop() || "Project" : "No Project");
+  const projectName = useProjectName() || "No Project";
   const sceneCount = scenes.length;
   const wordCount = scenes.reduce((sum, s) => sum + (s.word_count ?? 0), 0);
   const currentBranch = branches.find((b) => b.current)?.name ?? "\u2014";
